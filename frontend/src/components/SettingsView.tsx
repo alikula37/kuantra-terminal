@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Database, Server, RefreshCw, Zap } from "lucide-react";
+import { UpdateNotifier } from "./updater/UpdateNotifier";
+import { SystemHealthSettings } from "./settings/SystemHealthSettings";
 
 export const SettingsView: React.FC = () => {
-  const [syncStatus, setSyncStatus] = React.useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   const handleManualSync = () => {
     setSyncStatus("Syncing...");
@@ -19,6 +21,13 @@ export const SettingsView: React.FC = () => {
         <p className="text-xs text-slate-400">System Parameters, Database Engines & Sub-100ms Stream Settings</p>
       </div>
 
+      {/* Auto-Updater Banner */}
+      <UpdateNotifier />
+
+      {/* Privacy Telemetry & Diagnostic Health */}
+      <SystemHealthSettings />
+
+      {/* Database Engines Diagnostic Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#0d121c] p-4 rounded-lg border border-surface-border space-y-3">
           <div className="flex items-center justify-between">
