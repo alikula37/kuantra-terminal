@@ -553,6 +553,16 @@ def get_orderflow_footprint_bars(symbol: str = "BTCUSDT", limit: int = 20):
         "bars": footprint_engine.get_footprint_candles(symbol=symbol, limit=limit)
     }
 
+from app.services.orderflow.delta_heatmap import delta_heatmap_engine
+
+@router.get("/orderflow/cvd")
+def get_orderflow_cvd_series(symbol: str = "BTCUSDT", limit: int = 100):
+    return delta_heatmap_engine.get_cvd_series(symbol=symbol, limit=limit)
+
+@router.get("/orderflow/heatmap")
+def get_orderflow_liquidity_heatmap(symbol: str = "BTCUSDT"):
+    return delta_heatmap_engine.get_liquidity_heatmap(symbol=symbol)
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
