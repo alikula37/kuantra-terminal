@@ -151,7 +151,7 @@ class PsychologyEngine:
         is_revenge = is_loss and is_rapid and is_size_escalated
         is_impulsive = is_rapid and not is_revenge
 
-        anomaly = "REVENGE_TRADING" if is_revenge else "IMPULSIVE_RE_ENTRY" if is_impulsive else "NONE"
+        anomaly = "REVENGE_TRADING" if is_revenge else "IMPULSIVE_CHURN" if is_impulsive else "NONE"
 
         return {
             "trade_id": str(current_trade["id"]),
