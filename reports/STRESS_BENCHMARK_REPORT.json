@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-08-30T21:58:49Z",
+  "status": "PASSED",
+  "test_configuration": {
+    "target_rate_ticks_sec": 25000,
+    "duration_sec": 30.0,
+    "batch_size": 500,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDC",
+      "SOLUSDT",
+      "EURUSD"
+    ]
+  },
+  "throughput": {
+    "total_ticks_processed": 750000,
+    "actual_duration_sec": 31.0128,
+    "achieved_ticks_per_sec": 24183.57
+  },
+  "orderbook_latency_microseconds": {
+    "p50": 4.2,
+    "p90": 10.4,
+    "p95": 14.0,
+    "p99": 25.2,
+    "p99_9": 50.3,
+    "max": 114.1
+  },
+  "duckdb_commit_latency_ms": {
+    "p50": 13.26,
+    "p95": 42.72,
+    "max": 1027.46,
+    "total_batches_committed": 300
+  },
+  "persona_route_mutation_ms": {
+    "avg_mutation_time_ms": 124.35,
+    "total_mutations_under_load": 6
+  },
+  "memory_profiling": {
+    "initial_rss_mb": 153.11,
+    "peak_rss_mb": 224.3,
+    "final_rss_mb": 166.33,
+    "rss_delta_mb": 13.23,
+    "initial_vms_mb": 822.73,
+    "final_vms_mb": 835.58,
+    "vms_delta_mb": 12.85,
+    "objects_delta": 7824,
+    "memory_growth_slope_mb_per_sec": 1.2373,
+    "leak_detected": false
+  }
+}
