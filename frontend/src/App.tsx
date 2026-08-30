@@ -6,6 +6,8 @@ import { JournalView } from "./components/JournalView";
 import { VirtualizedTradeJournal } from "./components/virtual/VirtualizedTradeJournal";
 import { DockLayoutView } from "./components/layout/DockLayoutView";
 import { WorkspacePresetSelector } from "./components/workspace/WorkspacePresetSelector";
+import { FootprintChart } from "./components/orderflow/FootprintChart";
+import { FixStatusWidget } from "./components/orderflow/FixStatusWidget";
 import { TradeReplayCanvas } from "./components/TradeReplayCanvas";
 import { PlaybookManager } from "./components/PlaybookManager";
 import { ExecutionDriftVisualizer } from "./components/ExecutionDriftVisualizer";
@@ -69,6 +71,8 @@ export default function App() {
         </div>
         <div className="flex-1 overflow-hidden">
           {popoutParam === "chart" && <DashboardView />}
+          {popoutParam === "orderflow" && <FootprintChart />}
+          {popoutParam === "fix_dma" && <FixStatusWidget />}
           {popoutParam === "virtual_journal" && <VirtualizedTradeJournal onReplayTrade={handleLaunchReplay} />}
           {popoutParam === "ai_coach" && <AiCoachPanel />}
           {popoutParam === "swarm" && <SwarmDebateVisualizer />}
@@ -90,6 +94,7 @@ export default function App() {
 
   const handlePopoutAll = () => {
     popout("chart", "Live Chart Monitor", 1200, 800);
+    popout("orderflow", "Order Flow Footprint", 1100, 750);
     popout("virtual_journal", "60 FPS Virtual Audit Log", 1000, 650);
   };
 
@@ -112,6 +117,8 @@ export default function App() {
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "orderflow" && <FootprintChart />}
+          {activeTab === "fix_dma" && <FixStatusWidget />}
           {activeTab === "docking" && <DockLayoutView onPopoutWindow={popout} />}
           {activeTab === "virtual_journal" && (
             <VirtualizedTradeJournal
