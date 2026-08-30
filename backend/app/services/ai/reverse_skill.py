@@ -35,36 +35,49 @@ class ReverseSkillTranspiler:
         overlay_match = re.search(r'overlay\s*=\s*(true|false)', code, re.IGNORECASE)
         is_overlay = overlay_match.group(1).lower() == "true" if overlay_match else True
 
+        # Extract numeric variable definitions (e.g. fast_len = 9)
+        var_map: Dict[str, Any] = {}
+        for m in re.finditer(r'(\w+)\s*=\s*(\d+(?:\.\d+)?)', code):
+            try:
+                var_map[m.group(1)] = int(m.group(2))
+            except ValueError:
+                var_map[m.group(1)] = float(m.group(2))
+
+        def resolve_len(token: str, default: int = 14) -> int:
+            if token.isdigit():
+                return int(token)
+            return int(var_map.get(token, default))
+
         # 2. Extract Indicators
         indicators = []
         # RSI
-        rsi_matches = re.finditer(r'(\w+)\s*=\s*(?:ta\.)?rsi\s*\(\s*(\w+)\s*,\s*(\d+)\s*\)', code, re.IGNORECASE)
+        rsi_matches = re.finditer(r'(\w+)\s*=\s*(?:ta\.)?rsi\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)', code, re.IGNORECASE)
         for m in rsi_matches:
             indicators.append({
                 "var_name": m.group(1),
                 "type": "RSI",
                 "source": m.group(2),
-                "length": int(m.group(3))
+                "length": resolve_len(m.group(3), 14)
             })
 
         # EMA
-        ema_matches = re.finditer(r'(\w+)\s*=\s*(?:ta\.)?ema\s*\(\s*(\w+)\s*,\s*(\d+)\s*\)', code, re.IGNORECASE)
+        ema_matches = re.finditer(r'(\w+)\s*=\s*(?:ta\.)?ema\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)', code, re.IGNORECASE)
         for m in ema_matches:
             indicators.append({
                 "var_name": m.group(1),
                 "type": "EMA",
                 "source": m.group(2),
-                "length": int(m.group(3))
+                "length": resolve_len(m.group(3), 20)
             })
 
         # SMA
-        sma_matches = re.finditer(r'(\w+)\s*=\s*(?:ta\.)?sma\s*\(\s*(\w+)\s*,\s*(\d+)\s*\)', code, re.IGNORECASE)
+        sma_matches = re.finditer(r'(\w+)\s*=\s*(?:ta\.)?sma\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)', code, re.IGNORECASE)
         for m in sma_matches:
             indicators.append({
                 "var_name": m.group(1),
                 "type": "SMA",
                 "source": m.group(2),
-                "length": int(m.group(3))
+                "length": resolve_len(m.group(3), 50)
             })
 
         # MACD
