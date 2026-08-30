@@ -664,6 +664,44 @@ def list_multi_accounts():
 def execute_fanout_order(payload: FanoutOrderSchema):
     return multi_account_allocator.fanout_order(payload.model_dump())
 
+from app.api.mobile_bridge import mobile_companion_bridge
+
+class MobilePairSchema(BaseModel):
+    pairing_token: str
+    device_id: str
+    device_name: str
+    platform: Optional[str] = "iOS"
+    biometric_supported: Optional[bool] = True
+
+class MobileRevokeSchema(BaseModel):
+    device_id: str
+
+@router.get("/mobile/pairing-qr")
+def get_mobile_pairing_qr_data():
+    return mobile_companion_bridge.generate_pairing_qr_payload()
+
+@router.post("/mobile/pair")
+def pair_mobile_device(payload: MobilePairSchema):
+    try:
+        return mobile_companion_bridge.verify_and_pair_device(
+            pairing_token=payload.pairing_token,
+            device_id=payload.device_id,
+            device_name=payload.device_name,
+            platform=payload.platform or "iOS",
+            biometric_supported=payload.biometric_supported if payload.biometric_supported is not None else True
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/mobile/devices")
+def list_mobile_devices():
+    return {"devices": mobile_companion_bridge.list_paired_devices()}
+
+@router.post("/mobile/revoke")
+def revoke_mobile_device(payload: MobileRevokeSchema):
+    success = mobile_companion_bridge.revoke_device(payload.device_id)
+    return {"status": "REVOKED" if success else "NOT_FOUND", "device_id": payload.device_id}
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
