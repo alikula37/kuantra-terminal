@@ -197,4 +197,25 @@ class SQLiteDriver:
             cursor.execute("SELECT key, value FROM user_settings")
             return {row["key"]: row["value"] for row in cursor.fetchall()}
 
+
+    def run_migrations(self, target_version: str = "head") -> bool:
+        """Executes Alembic migrations programmatically on SQLite database."""
+        try:
+            import os
+            from alembic.config import Config
+            from alembic import command
+
+            backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            ini_path = os.path.join(backend_dir, "alembic.ini")
+            if os.path.exists(ini_path):
+                alembic_cfg = Config(ini_path)
+                alembic_cfg.set_main_option("script_location", os.path.join(backend_dir, "alembic"))
+                alembic_cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.db_path}")
+                command.upgrade(alembic_cfg, target_version)
+                logger.info(f"SQLite Alembic migrations applied successfully to '{target_version}'.")
+                return True
+        except Exception as e:
+            logger.warning(f"Alembic migration runner fallback: {e}")
+        return False
+
 sqlite_driver = SQLiteDriver()
