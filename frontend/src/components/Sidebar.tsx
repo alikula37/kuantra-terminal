@@ -1,7 +1,7 @@
 import React from "react";
-import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, Sliders, Database, Cpu } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Sliders, Database, Cpu } from "lucide-react";
 
-export type NavTab = "dashboard" | "journal" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
+export type NavTab = "dashboard" | "journal" | "replay" | "playbook" | "drift" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -12,6 +12,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "journal", label: "Journal", icon: BookOpen },
+    { id: "replay", label: "Trade Replay", icon: PlayCircle },
+    { id: "playbook", label: "Strategy Playbook", icon: BookmarkCheck },
+    { id: "drift", label: "Execution Drift", icon: GitCommit },
     { id: "analytics", label: "Quant Scorecard", icon: BarChart3 },
     { id: "mae_mfe", label: "MAE / MFE Visualizer", icon: Crosshair },
     { id: "prop_shield", label: "Prop Firm Shield", icon: ShieldCheck },
@@ -21,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
 
   return (
     <aside className="w-56 bg-[#0d121c] border-r border-surface-border flex flex-col justify-between select-none">
-      <div className="p-3 space-y-1">
+      <div className="p-3 space-y-1 overflow-y-auto">
         <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
           Terminal Modules
         </div>
