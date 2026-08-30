@@ -1,93 +1,51 @@
 {
-  "release_tag": "v1.1.0-institutional",
+  "release_tag": "v1.2.0-modular",
   "product_name": "Kuantra Terminal",
-  "version": "1.1.0",
-  "generated_at": "2026-08-30T16:24:58Z",
-  "total_artifacts": 12,
+  "version": "1.2.0",
+  "generated_at": "2026-08-30T21:48:54Z",
+  "total_artifacts": 6,
   "artifacts": [
     {
-      "filename": "Kuantra-Terminal-1.0.0-Setup.exe",
+      "filename": "Kuantra-Terminal-1.2.0-Setup.exe",
       "platform": "Windows",
       "arch": "x64",
       "size_bytes": 56,
-      "sha256": "a47c58c7924e34d873000966f6818f667e0c2bc31a72798ee808b30debe8f379"
+      "sha256": "ed1ea07e5e8dbb9d393be5ef674d6c1b53df7c2c3c4fb43f668a6bff96ab7489"
     },
     {
-      "filename": "Kuantra-Terminal-1.0.0-aarch64.dmg",
+      "filename": "Kuantra-Terminal-1.2.0-aarch64.dmg",
       "platform": "macOS",
       "arch": "arm64",
       "size_bytes": 49,
-      "sha256": "90d990e742ed80eadbf23afd78637aac93f22a8f0b8d2dd86accf6f43bd084cc"
+      "sha256": "b57d7810b0e1d5b18f933b49f54bd67b7ebd8c5f8b0ac8ad0276d3eda26284a9"
     },
     {
-      "filename": "Kuantra-Terminal-1.0.0-x64.msi",
+      "filename": "Kuantra-Terminal-1.2.0-x64.msi",
       "platform": "Windows",
       "arch": "x64",
       "size_bytes": 38,
-      "sha256": "7922804cbf14bbd8fce8ab116651dca95c25a7ae149b7ded4ef72cb015bd26df"
+      "sha256": "ac73d65463f99c0704c597b69484520abee6bfbc42788b1d51600b346a0abf19"
     },
     {
-      "filename": "Kuantra-Terminal-1.1.0-Setup.exe",
-      "platform": "Windows",
-      "arch": "x64",
-      "size_bytes": 56,
-      "sha256": "933464576ee6080db7904fb66bf42bc6b63b7dd772ee81038683209420aa5a12"
-    },
-    {
-      "filename": "Kuantra-Terminal-1.1.0-aarch64.dmg",
-      "platform": "macOS",
-      "arch": "arm64",
-      "size_bytes": 49,
-      "sha256": "737323746088e90a76b165d9977642c50027e0134a6ad4113070fa457c86dc6f"
-    },
-    {
-      "filename": "Kuantra-Terminal-1.1.0-x64.msi",
-      "platform": "Windows",
-      "arch": "x64",
-      "size_bytes": 38,
-      "sha256": "f4f0232b08adeccdd6224c80d1bff0248a1faad7ee6f9ce715f1a540193f01c5"
-    },
-    {
-      "filename": "kuantra-terminal-1.0.0-windows-x64.zip",
+      "filename": "kuantra-terminal-1.2.0-windows-x64.zip",
       "platform": "Windows",
       "arch": "x64",
       "size_bytes": 35,
-      "sha256": "0cbb5fee1caae01ed1a02289a70f613d8f78be8db16750d4fc66da154bd31ace"
+      "sha256": "97f28a3c5ea66e967cdce80d6d3d54d7f51eb9f8aaf9a4beffdb7fdff04aa54c"
     },
     {
-      "filename": "kuantra-terminal-1.1.0-windows-x64.zip",
-      "platform": "Windows",
-      "arch": "x64",
-      "size_bytes": 35,
-      "sha256": "8a8f2a002d20a749ab9d4c685ad3b4e874077770a33511203cf7527ca58aeda5"
-    },
-    {
-      "filename": "kuantra-terminal_1.0.0_amd64.AppImage",
+      "filename": "kuantra-terminal_1.2.0_amd64.AppImage",
       "platform": "Linux",
       "arch": "x64",
       "size_bytes": 36,
-      "sha256": "60918dbd0c38c70a02dad0ffc0b6af02903e50658475eac7b5caebd3aa0769ba"
+      "sha256": "36ccc34adb7d035e24897b43fd4845030b2275d7ba15356c0466468a97cc1ae0"
     },
     {
-      "filename": "kuantra-terminal_1.0.0_amd64.deb",
+      "filename": "kuantra-terminal_1.2.0_amd64.deb",
       "platform": "Linux",
       "arch": "x64",
       "size_bytes": 56,
-      "sha256": "6620e35c3cac7d402e891256affc6875789e786cae35fde6e6eebabeba440e64"
-    },
-    {
-      "filename": "kuantra-terminal_1.1.0_amd64.AppImage",
-      "platform": "Linux",
-      "arch": "x64",
-      "size_bytes": 36,
-      "sha256": "d9189bb7ba69c8f53084b678e1a65dec7adf347c6c50e49bfd32b2eb9426be69"
-    },
-    {
-      "filename": "kuantra-terminal_1.1.0_amd64.deb",
-      "platform": "Linux",
-      "arch": "x64",
-      "size_bytes": 56,
-      "sha256": "5f75ba3796c9de85455ffd63c44ae410469a5a8f069a9b5050f15872bfa1d46a"
+      "sha256": "6e97c2fcb750bb0672695cc97bdafd39aec8f22a84fd54616d508f764bd17796"
     }
   ]
 }
