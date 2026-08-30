@@ -110,6 +110,74 @@ def get_analytics_overview():
 
 from app.services.compliance_engine import compliance_engine
 
+from app.replay.replay_service import replay_service
+
+class ReplayStepSchema(BaseModel):
+    direction: int = 1
+
+class ReplaySeekSchema(BaseModel):
+    target_index: int
+
+class ReplaySpeedSchema(BaseModel):
+    speed: float
+
+@router.get("/replay/session/{trade_id}")
+def get_replay_session_for_trade(trade_id: str):
+    return replay_service.create_session_for_trade(trade_id=trade_id)
+
+@router.post("/replay/{session_id}/step")
+def step_replay_frame(session_id: str, payload: ReplayStepSchema):
+    try:
+        return replay_service.step(session_id, direction=payload.direction)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.post("/replay/{session_id}/seek")
+def seek_replay_frame(session_id: str, payload: ReplaySeekSchema):
+    try:
+        return replay_service.seek(session_id, target_index=payload.target_index)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.post("/replay/{session_id}/speed")
+def set_replay_speed(session_id: str, payload: ReplaySpeedSchema):
+    try:
+        return replay_service.set_speed(session_id, speed=payload.speed)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.websocket("/ws/replay")
+async def websocket_replay_stream(websocket: WebSocket):
+    await websocket.accept()
+    session_id = None
+    try:
+        while True:
+            raw_msg = await websocket.receive_text()
+            data = json.loads(raw_msg)
+            action = data.get("action")
+            
+            if action == "INIT":
+                trade_id = data.get("trade_id", "TRD-DEFAULT")
+                session_dict = replay_service.create_session_for_trade(trade_id)
+                session_id = session_dict["session_id"]
+                await websocket.send_json({"type": "REPLAY_STATE", "data": session_dict})
+            elif action == "STEP" and session_id:
+                step_dir = data.get("direction", 1)
+                res = replay_service.step(session_id, direction=step_dir)
+                await websocket.send_json({"type": "REPLAY_STATE", "data": res})
+            elif action == "SEEK" and session_id:
+                idx = data.get("index", 0)
+                res = replay_service.seek(session_id, target_index=idx)
+                await websocket.send_json({"type": "REPLAY_STATE", "data": res})
+            elif action == "SPEED" and session_id:
+                speed_val = data.get("speed", 1.0)
+                res = replay_service.set_speed(session_id, speed=speed_val)
+                await websocket.send_json({"type": "REPLAY_STATE", "data": res})
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+
 @router.get("/compliance/status")
 def get_compliance_status():
     open_positions = binance_client._recalculate_open_positions(binance_client.last_price)
