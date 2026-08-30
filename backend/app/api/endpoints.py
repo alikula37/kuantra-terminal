@@ -120,6 +120,21 @@ def update_compliance_config(config_data: Dict[str, Any]):
     updated = compliance_engine.update_config(config_data)
     return {"status": "updated", "config": updated.model_dump()}
 
+from app.quant.pivot_engine import pivot_engine
+
+class PivotRequestSchema(BaseModel):
+    group_by: Optional[List[str]] = Field(default_factory=lambda: ["symbol"])
+    symbol: Optional[str] = None
+    side: Optional[str] = None
+
+@router.post("/analytics/pivot")
+def compute_pivot_analytics(req: PivotRequestSchema):
+    return pivot_engine.compute_pivot_grid(
+        group_by=req.group_by,
+        symbol_filter=req.symbol,
+        side_filter=req.side
+    )
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
