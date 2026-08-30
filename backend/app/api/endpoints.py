@@ -1176,3 +1176,56 @@ async def websocket_stream_endpoint(websocket: WebSocket):
         await ws_manager.disconnect(websocket)
     except Exception:
         await ws_manager.disconnect(websocket)
+
+# =============================================================================
+# OPERATIONAL MAINTENANCE & SYSTEM TELEMETRY ENDPOINTS
+# =============================================================================
+from app.services.maintenance.log_sanitizer import log_sanitizer_engine
+from app.services.maintenance.db_maintenance import db_maintenance_engine
+from app.services.maintenance.worker import maintenance_worker
+from app.core.config import settings
+
+APP_START_TIME = time.time()
+
+class SystemMaintenancePayload(BaseModel):
+    checkpoint_wal: Optional[bool] = True
+    compact_duckdb: Optional[bool] = False
+    prune_logs: Optional[bool] = False
+    backup_sqlite: Optional[bool] = False
+    all_tasks: Optional[bool] = False
+
+@router.get("/system/health/heartbeat")
+def get_system_health_heartbeat():
+    uptime = round(time.time() - APP_START_TIME, 2)
+    return {
+        "status": "HEALTHY",
+        "service": settings.app_name,
+        "version": settings.version,
+        "uptime_seconds": uptime,
+        "ipc_alive": True,
+        "worker_status": maintenance_worker.stats.get("worker_status", "IDLE"),
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    }
+
+@router.post("/system/maintenance/run")
+def run_manual_system_maintenance(payload: SystemMaintenancePayload):
+    results = {}
+    if payload.all_tasks:
+        return maintenance_worker.execute_daily_maintenance()
+
+    if payload.checkpoint_wal:
+        results["wal_checkpoint"] = db_maintenance_engine.run_sqlite_checkpoint(truncate=True)
+    if payload.compact_duckdb:
+        db_maintenance_engine.enforce_duckdb_memory_limit(2048)
+        results["cold_parquet_archival"] = db_maintenance_engine.archive_old_ticks_to_parquet(retention_days=7)
+    if payload.prune_logs:
+        results["log_rotation"] = log_sanitizer_engine.run_full_log_maintenance()
+    if payload.backup_sqlite:
+        results["shadow_backup"] = db_maintenance_engine.create_sqlite_shadow_backup(max_retention_days=30)
+
+    results["timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    return results
+
+@router.get("/system/storage/stats")
+def get_system_storage_statistics():
+    return db_maintenance_engine.get_storage_telemetry()
