@@ -15,7 +15,6 @@ class PsychologyEngine:
 
     @staticmethod
     def calculate_ema(values: List[float], period: int = 20) -> List[float]:
-        """Calculates Exponential Moving Average (EMA)."""
         if not values:
             return []
         if len(values) < period:
@@ -27,7 +26,6 @@ class PsychologyEngine:
 
     @staticmethod
     def calculate_atr(candles: List[Dict[str, Any]], period: int = 14) -> List[float]:
-        """Calculates Average True Range (ATR)."""
         if not candles:
             return []
         if len(candles) < 2:
@@ -59,7 +57,7 @@ class PsychologyEngine:
         d_EMA = |P_entry - EMA_20| / ATR_14
         Flags FOMO_HIGH_RISK if d_EMA > 2.5 and entry occurred in top/bottom 15% wick of extended bar.
         """
-        entry_price = float(trade["entry_price"])
+        entry_price = float(trade.get("entry_price") or 100.0)
         side = str(trade.get("side", "BUY")).upper()
         is_long = side in ("BUY", "LONG")
 
@@ -76,10 +74,8 @@ class PsychologyEngine:
             c_low = float(entry_candle["low"])
             bar_range = max(1e-4, c_high - c_low)
 
-            # d_EMA distance in ATR multiples
             d_ema = abs(entry_price - current_ema) / current_atr
 
-            # Wick extremity test: entered at high wick for Long or low wick for Short
             if is_long:
                 wick_extension_pct = ((entry_price - c_low) / bar_range) * 100.0
             else:
@@ -88,7 +84,6 @@ class PsychologyEngine:
             is_fomo = d_ema > 2.5 or (d_ema > 2.0 and wick_extension_pct >= 85.0)
             severity = "CRITICAL" if d_ema > 3.0 else "HIGH" if d_ema > 2.5 else "MODERATE" if d_ema > 1.8 else "NORMAL"
         else:
-            # Synthetic / fallback calculation if candles array is unavailable
             sl = float(trade["stop_loss"]) if trade.get("stop_loss") else None
             risk_unit = abs(entry_price - sl) if sl and abs(entry_price - sl) > 1e-6 else entry_price * 0.01
             current_atr = risk_unit * 0.8
@@ -110,6 +105,164 @@ class PsychologyEngine:
             "is_fomo": is_fomo,
             "severity": severity,
             "anomaly_type": "FOMO_CHASE" if is_fomo else "NONE"
+        }
+
+    @classmethod
+    def detect_revenge_trading(
+        cls,
+        current_trade: Dict[str, Any],
+        previous_trade: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Revenge Trading & Impulsive Churn Detector:
+        Delta_T = t_entry,n - t_exit,n-1
+        Flags REVENGE_TRADING if Delta_T < 180s AND Lot_n >= 1.5 * Lot_n-1 after a loss.
+        """
+        if not previous_trade:
+            return {
+                "trade_id": str(current_trade["id"]),
+                "is_revenge": False,
+                "delta_seconds": None,
+                "lot_escalation_ratio": 1.0,
+                "anomaly_type": "NONE"
+            }
+
+        prev_exit_str = previous_trade.get("exit_time")
+        curr_entry_str = current_trade.get("entry_time")
+        prev_pnl = float(previous_trade.get("pnl") or 0.0)
+        prev_qty = max(1e-4, float(previous_trade.get("qty") or 1.0))
+        curr_qty = float(current_trade.get("qty") or 1.0)
+        lot_ratio = curr_qty / prev_qty
+
+        delta_seconds = 999999
+        if prev_exit_str and curr_entry_str:
+            try:
+                t_exit = pd.to_datetime(prev_exit_str)
+                t_entry = pd.to_datetime(curr_entry_str)
+                delta_seconds = int((t_entry - t_exit).total_seconds())
+            except Exception:
+                pass
+
+        is_loss = prev_pnl < 0
+        is_rapid = 0 <= delta_seconds < 180
+        is_size_escalated = lot_ratio >= 1.45
+
+        is_revenge = is_loss and is_rapid and is_size_escalated
+        is_impulsive = is_rapid and not is_revenge
+
+        anomaly = "REVENGE_TRADING" if is_revenge else "IMPULSIVE_RE_ENTRY" if is_impulsive else "NONE"
+
+        return {
+            "trade_id": str(current_trade["id"]),
+            "is_revenge": is_revenge,
+            "is_impulsive": is_impulsive,
+            "delta_seconds": delta_seconds,
+            "prev_trade_pnl": round(prev_pnl, 2),
+            "lot_escalation_ratio": round(lot_ratio, 2),
+            "anomaly_type": anomaly
+        }
+
+    @classmethod
+    def calculate_session_tilt_score(
+        cls,
+        trades: Optional[List[Dict[str, Any]]] = None,
+        daily_loss_utilization_pct: float = 0.0
+    ) -> Dict[str, Any]:
+        """
+        Computes integrated Tilt Score (0 to 100) based on:
+        - Consecutive loss streaks
+        - Lot size escalation
+        - Rapid revenge entries (<180s)
+        - FOMO chase frequency
+        - Daily drawdown utilization
+        """
+        all_trades = trades if trades is not None else sqlite_driver.list_trades(limit=100)
+        if not all_trades:
+            return {
+                "tilt_score": 12,
+                "status": "CALM",
+                "consecutive_losses": 0,
+                "revenge_trades_count": 0,
+                "fomo_trades_count": 0,
+                "lot_escalation_detected": False,
+                "risk_message": "Disciplined execution state. No behavioral anomalies detected."
+            }
+
+        # Sort trades by entry time
+        sorted_trades = sorted(
+            [t for t in all_trades if t.get("entry_time")],
+            key=lambda x: str(x.get("entry_time", ""))
+        )
+
+        # 1. Consecutive loss count at tail
+        consecutive_losses = 0
+        for t in reversed(sorted_trades):
+            pnl = float(t.get("pnl") or 0.0)
+            if t.get("status") == "CLOSED":
+                if pnl < 0:
+                    consecutive_losses += 1
+                else:
+                    break
+
+        # 2. Revenge trades count
+        revenge_count = 0
+        impulsive_count = 0
+        for i in range(1, len(sorted_trades)):
+            chk = cls.detect_revenge_trading(sorted_trades[i], sorted_trades[i-1])
+            if chk["is_revenge"]:
+                revenge_count += 1
+            elif chk["is_impulsive"]:
+                impulsive_count += 1
+
+        # 3. FOMO entries count
+        fomo_count = 0
+        for t in sorted_trades[-15:]:
+            fomo_res = cls.detect_fomo_entry(t)
+            if fomo_res["is_fomo"]:
+                fomo_count += 1
+
+        # 4. Lot escalation check
+        qtys = [float(t.get("qty") or 1.0) for t in sorted_trades]
+        avg_qty = float(np.mean(qtys)) if qtys else 1.0
+        latest_qty = qtys[-1] if qtys else 1.0
+        lot_escalated = (latest_qty / avg_qty) >= 1.5 and consecutive_losses >= 1
+
+        # Score computation
+        raw_score = 10.0 # Base resting state
+        raw_score += consecutive_losses * 12.0
+        raw_score += revenge_count * 25.0
+        raw_score += impulsive_count * 10.0
+        raw_score += fomo_count * 12.0
+        if lot_escalated:
+            raw_score += 20.0
+        if daily_loss_utilization_pct >= 70.0:
+            raw_score += 25.0
+        elif daily_loss_utilization_pct >= 50.0:
+            raw_score += 15.0
+
+        tilt_score = int(max(0, min(100, round(raw_score))))
+
+        if tilt_score >= 80:
+            status = "BREACH_RISK"
+            msg = "CRITICAL COGNITIVE TILT: High revenge frequency and position sizing escalation. Mandatory trading pause recommended."
+        elif tilt_score >= 60:
+            status = "HIGH_TILT"
+            msg = "HIGH TILT DETECTED: Impulsive re-entries after losses observed. Reduce risk size to 0.5R."
+        elif tilt_score >= 30:
+            status = "ELEVATED"
+            msg = "ELEVATED EMOTIONAL AROUSAL: Loss streak or early chasing detected. Step away before next execution."
+        else:
+            status = "CALM"
+            msg = "Disciplined execution state. Emotional and operational risk within optimal thresholds."
+
+        return {
+            "tilt_score": tilt_score,
+            "status": status,
+            "consecutive_losses": consecutive_losses,
+            "revenge_trades_count": revenge_count,
+            "fomo_trades_count": fomo_count,
+            "lot_escalation_detected": lot_escalated,
+            "risk_message": msg
         }
 
 psychology_engine = PsychologyEngine()
