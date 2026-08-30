@@ -11,11 +11,11 @@
     "shell:allow-execute",
     "shell:allow-spawn",
     "stronghold:default",
-    "stronghold:allow-load-store",
-    "stronghold:allow-save-store",
-    "stronghold:allow-get-record",
-    "stronghold:allow-save-record",
-    "stronghold:allow-remove-record",
+    "stronghold:allow-load-client",
+    "stronghold:allow-save",
+    "stronghold:allow-get-store-record",
+    "stronghold:allow-save-store-record",
+    "stronghold:allow-remove-store-record",
     "window-state:default",
     "updater:default"
   ]

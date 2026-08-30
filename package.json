@@ -18,5 +18,8 @@
     "orderflow"
   ],
   "author": "Kuantra Quantitative Engineering",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
 }
