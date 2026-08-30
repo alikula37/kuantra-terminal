@@ -702,6 +702,33 @@ def revoke_mobile_device(payload: MobileRevokeSchema):
     success = mobile_companion_bridge.revoke_device(payload.device_id)
     return {"status": "REVOKED" if success else "NOT_FOUND", "device_id": payload.device_id}
 
+from app.services.biometrics.panic_switch import panic_kill_switch
+
+class PanicTriggerSchema(BaseModel):
+    source: Optional[str] = "WEARABLE_WATCH"
+    reason: Optional[str] = "Trader emergency 1-tap activation"
+
+class PanicDisarmSchema(BaseModel):
+    pin_or_passkey: str
+
+@router.post("/panic/trigger")
+def trigger_panic_kill_switch(payload: PanicTriggerSchema):
+    return panic_kill_switch.trigger_emergency_kill_switch(
+        source=payload.source or "WEARABLE_WATCH",
+        reason=payload.reason or "Trader emergency 1-tap activation"
+    )
+
+@router.post("/panic/disarm")
+def disarm_panic_kill_switch(payload: PanicDisarmSchema):
+    try:
+        return panic_kill_switch.disarm_lockdown(payload.pin_or_passkey)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+@router.get("/panic/status")
+def get_panic_kill_switch_status():
+    return panic_kill_switch.get_lockdown_status()
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()

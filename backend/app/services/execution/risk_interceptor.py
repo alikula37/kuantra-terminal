@@ -9,6 +9,7 @@ from app.psychology.psychology_engine import psychology_engine
 from app.services.compliance_engine import compliance_engine
 from app.services.biometrics.watch_bridge import biometric_watch_bridge
 from app.services.ai.agent_swarm import swarm_consensus_engine
+from app.services.biometrics.panic_switch import panic_kill_switch
 
 logger = logging.getLogger("risk_interceptor")
 
@@ -33,6 +34,12 @@ class RiskGuardrailInterceptor:
         side = str(order.get("side", "BUY")).upper()
         qty = float(order.get("qty", 1.0))
         price = float(order.get("price", 0.0))
+
+        # 0. Emergency Panic Kill-Switch Lockdown Check
+        if panic_kill_switch.is_locked_down:
+            reason = f"ORDER_BLOCKED_TERMINAL_LOCKDOWN: Emergency Kill-Switch activated ({panic_kill_switch.lockdown_reason}). Disarm via PIN/Passkey."
+            logger.critical(f"[RISK INTERCEPTOR] {reason}")
+            return False, reason, {"lockdown": panic_kill_switch.get_lockdown_status(), "stage": "PANIC_LOCKDOWN"}
 
         # 1. Biometric Wearable Stress Interceptor
         bio_state = biometric_watch_bridge.get_biometric_state()
