@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 class TestReleaseManifestAndPackaging:
-    """Test suite for Official v1.0.0-institutional Release Verification & Version Synchronization."""
+    """Test suite for Official v1.1.0-institutional Release Verification & Version Synchronization."""
 
     @pytest.fixture
     def root_dir(self):
@@ -17,11 +17,11 @@ class TestReleaseManifestAndPackaging:
         with open(notes_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        assert "v1.0.0-institutional" in content, "Release tag v1.0.0-institutional must be present"
-        assert "18-Phase Architectural Completion Matrix" in content
+        assert "v1.1.0-institutional" in content, "Release tag v1.1.0-institutional must be present"
+        assert "22-Phase Architectural Completion Matrix" in content
 
-        # Verify all 18 phases are listed
-        for phase_num in range(1, 19):
+        # Verify all 22 phases are listed
+        for phase_num in range(1, 23):
             phase_tag = f"Phase {phase_num:02d}"
             assert phase_tag in content, f"Milestone '{phase_tag}' must be in RELEASE_NOTES.md"
 
@@ -44,8 +44,8 @@ class TestReleaseManifestAndPackaging:
         with open(manifest_file, "r", encoding="utf-8") as f:
             manifest = json.load(f)
 
-        assert manifest["release_tag"] == "v1.0.0-institutional"
-        assert manifest["version"] == "1.0.0"
+        assert manifest["release_tag"] == "v1.1.0-institutional"
+        assert manifest["version"] == "1.1.0"
         assert manifest["total_artifacts"] >= 4
         assert len(manifest["artifacts"]) >= 4
 
@@ -58,7 +58,7 @@ class TestReleaseManifestAndPackaging:
             assert art["size_bytes"] > 0
 
     def test_version_sync_across_manifests(self, root_dir):
-        target_version = "1.0.0"
+        target_version = "1.1.0"
 
         # 1. Root package.json
         root_pkg_path = os.path.join(root_dir, "package.json")

@@ -23,12 +23,12 @@ def create_synthetic_binaries(dist_dir: str):
     """Creates deterministic synthetic binaries for CI / test verification."""
     os.makedirs(dist_dir, exist_ok=True)
     synthetic_targets = [
-        ("Kuantra-Terminal-1.0.0-Setup.exe", b"MZ\x90\x00\x03\x00KUANTRA_WINDOWS_INSTALLER_V1.0.0_PRODUCTION_BUNDLE"),
-        ("Kuantra-Terminal-1.0.0-x64.msi", b"\xd0\xcf\x11\xe0KUANTRA_WINDOWS_MSI_PACKAGE_V1.0.0"),
-        ("Kuantra-Terminal-1.0.0-aarch64.dmg", b"\x78\x01KUANTRA_MACOS_ARM64_DMG_NOTARIZED_BUNDLE_V1.0.0"),
-        ("kuantra-terminal_1.0.0_amd64.AppImage", b"\x7fELF\x02\x01\x01KUANTRA_LINUX_APPIMAGE_V1.0.0"),
-        ("kuantra-terminal_1.0.0_amd64.deb", b"!<arch>\ndebian-binary   KUANTRA_LINUX_DEB_PACKAGE_V1.0.0"),
-        ("kuantra-terminal-1.0.0-windows-x64.zip", b"PK\x03\x04KUANTRA_PORTABLE_ARCHIVE_V1.0.0")
+        ("Kuantra-Terminal-1.1.0-Setup.exe", b"MZ\x90\x00\x03\x00KUANTRA_WINDOWS_INSTALLER_V1.1.0_PRODUCTION_BUNDLE"),
+        ("Kuantra-Terminal-1.1.0-x64.msi", b"\xd0\xcf\x11\xe0KUANTRA_WINDOWS_MSI_PACKAGE_V1.1.0"),
+        ("Kuantra-Terminal-1.1.0-aarch64.dmg", b"\x78\x01KUANTRA_MACOS_ARM64_DMG_NOTARIZED_BUNDLE_V1.1.0"),
+        ("kuantra-terminal_1.1.0_amd64.AppImage", b"\x7fELF\x02\x01\x01KUANTRA_LINUX_APPIMAGE_V1.1.0"),
+        ("kuantra-terminal_1.1.0_amd64.deb", b"!<arch>\ndebian-binary   KUANTRA_LINUX_DEB_PACKAGE_V1.1.0"),
+        ("kuantra-terminal-1.1.0-windows-x64.zip", b"PK\x03\x04KUANTRA_PORTABLE_ARCHIVE_V1.1.0")
     ]
     for filename, content in synthetic_targets:
         p = os.path.join(dist_dir, filename)
@@ -78,9 +78,9 @@ def generate_manifest(dry_run: bool = False) -> Dict[str, Any]:
         })
 
     manifest_data = {
-        "release_tag": "v1.0.0-institutional",
+        "release_tag": "v1.1.0-institutional",
         "product_name": "Kuantra Terminal",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_artifacts": len(artifacts),
         "artifacts": artifacts
@@ -93,7 +93,7 @@ def generate_manifest(dry_run: bool = False) -> Dict[str, Any]:
 
     # Print Institutional Markdown Summary Table
     print("\n==================================================================================================")
-    print("                      KUANTRA TERMINAL v1.0.0-institutional RELEASE MANIFEST                   ")
+    print("                      KUANTRA TERMINAL v1.1.0-institutional RELEASE MANIFEST                   ")
     print("==================================================================================================")
     print(f"Release Tag: {manifest_data['release_tag']} | Generated: {manifest_data['generated_at']}")
     print("--------------------------------------------------------------------------------------------------")
