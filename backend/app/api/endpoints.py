@@ -525,6 +525,25 @@ class SwarmDebateSchema(BaseModel):
 def trigger_multi_agent_swarm_debate(payload: SwarmDebateSchema):
     return swarm_consensus_engine.conduct_debate(payload.model_dump())
 
+from app.services.biometrics.watch_bridge import biometric_watch_bridge
+
+class BiometricTelemetrySchema(BaseModel):
+    bpm: float
+    hrv: float
+    device_name: Optional[str] = "Apple Watch Ultra / BLE"
+
+@router.get("/biometrics/status")
+def get_biometric_telemetry_status():
+    return biometric_watch_bridge.get_biometric_state()
+
+@router.post("/biometrics/telemetry")
+def update_biometric_telemetry(payload: BiometricTelemetrySchema):
+    return biometric_watch_bridge.update_telemetry(
+        bpm=payload.bpm,
+        hrv=payload.hrv,
+        device_name=payload.device_name
+    )
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
