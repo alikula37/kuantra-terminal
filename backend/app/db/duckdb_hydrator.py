@@ -15,6 +15,18 @@ from app.db.sqlite_driver import sqlite_driver
 
 logger = logging.getLogger("duckdb_hydrator")
 
+def safe_parse_dt(val: Any) -> Optional[pd.Timestamp]:
+    """Robustly parses timestamps and strips timezone for standard DuckDB TIMESTAMP ingestion."""
+    if not val:
+        return None
+    try:
+        dt = pd.to_datetime(val)
+        if hasattr(dt, "tz") and dt.tz is not None:
+            dt = dt.tz_localize(None)
+        return dt
+    except Exception:
+        return None
+
 class DuckDBHydrator:
     """Detects missing/corrupted OLAP DuckDB stores and rebuilds from SQLite source of truth."""
 
@@ -61,13 +73,11 @@ class DuckDBHydrator:
             if recovered_count > 0:
                 trade_records = []
                 for t in canonical_trades:
-                    entry_t = t.get("entry_time")
-                    exit_t = t.get("exit_time")
+                    dt_in = safe_parse_dt(t.get("entry_time"))
+                    dt_out = safe_parse_dt(t.get("exit_time"))
                     duration = None
-                    if entry_t and exit_t:
+                    if dt_in and dt_out:
                         try:
-                            dt_in = pd.to_datetime(entry_t)
-                            dt_out = pd.to_datetime(exit_t)
                             duration = float((dt_out - dt_in).total_seconds())
                         except Exception:
                             pass
@@ -82,8 +92,8 @@ class DuckDBHydrator:
                         "qty": float(t["qty"]),
                         "stop_loss": float(t["stop_loss"]) if t.get("stop_loss") is not None else None,
                         "take_profit": float(t["take_profit"]) if t.get("take_profit") is not None else None,
-                        "entry_time": pd.to_datetime(t["entry_time"]) if t.get("entry_time") else None,
-                        "exit_time": pd.to_datetime(t["exit_time"]) if t.get("exit_time") else None,
+                        "entry_time": dt_in,
+                        "exit_time": dt_out,
                         "status": str(t.get("status", "OPEN")).upper(),
                         "pnl": pnl,
                         "r_multiple": float(t["r_multiple"]) if t.get("r_multiple") is not None else None,
