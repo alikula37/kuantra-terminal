@@ -486,6 +486,30 @@ def subscribe_to_adapter_symbols(payload: AdapterSubscribeSchema):
         return polygon_adapter.subscribe(payload.symbols)
     return {"status": "SUCCESS", "adapter": adapter_key, "symbols": payload.symbols}
 
+from app.services.execution.order_router import order_router
+from app.services.execution.risk_interceptor import risk_interceptor
+
+class LiveOrderSchema(BaseModel):
+    symbol: str
+    side: str
+    qty: float
+    price: float
+    exchange: Optional[str] = "BINANCE"
+    stop_loss: Optional[float] = None
+    take_profit: Optional[float] = None
+
+@router.post("/execution/order")
+def execute_live_order(payload: LiveOrderSchema):
+    return order_router.route_order(payload.model_dump())
+
+@router.get("/execution/status")
+def get_execution_guardrail_status():
+    return {
+        "guardrails_active": risk_interceptor.guardrails_active,
+        "max_tilt_score": risk_interceptor.max_allowed_tilt_score,
+        "supported_venues": ["BINANCE_FUTURES", "OKX_V5"]
+    }
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
