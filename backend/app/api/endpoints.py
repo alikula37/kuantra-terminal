@@ -376,6 +376,12 @@ def export_redacted_system_logs():
     zip_path = export_logs_zip()
     return FileResponse(zip_path, media_type="application/zip", filename="kuantra_diagnostics_redacted.zip")
 
+from app.core.hardware_detector import hardware_detector
+
+@router.get("/system/hardware")
+def get_system_hardware_profile():
+    return hardware_detector.detect_hardware()
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
