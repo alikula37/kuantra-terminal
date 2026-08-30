@@ -1,10 +1,35 @@
+import { useState } from "react";
+import { Header } from "./components/Header";
+import { Sidebar, NavTab } from "./components/Sidebar";
+import { DashboardView } from "./components/DashboardView";
+import { JournalView } from "./components/JournalView";
+import { AnalyticsView } from "./components/AnalyticsView";
+import { SettingsView } from "./components/SettingsView";
+import { NewTradeModal } from "./components/NewTradeModal";
+import { useWebSocket } from "./hooks/useWebSocket";
+
 export default function App() {
+  const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  useWebSocket();
+
   return (
-    <div className="flex h-screen w-screen bg-[#0b0e14] text-slate-100">
-      <div className="flex flex-1 flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold tracking-wider text-accent">KUANTRA TERMINAL</h1>
-        <p className="mt-2 text-xs text-slate-400 font-mono">Phase 1 Initializing...</p>
+    <div className="flex flex-col h-screen w-screen bg-[#0b0e14] text-slate-100 overflow-hidden select-none">
+      <Header onOpenNewTrade={() => setIsModalOpen(true)} />
+
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <main className="flex-1 flex flex-col overflow-hidden">
+          {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "journal" && <JournalView onOpenNewTrade={() => setIsModalOpen(true)} />}
+          {activeTab === "analytics" && <AnalyticsView />}
+          {activeTab === "settings" && <SettingsView />}
+        </main>
       </div>
+
+      <NewTradeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }
