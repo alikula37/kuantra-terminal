@@ -275,6 +275,32 @@ def get_psychology_anomalies():
 def get_mental_fatigue_matrix():
     return psychology_engine.compute_mental_fatigue_matrix()
 
+from app.ai.vision_service import vision_chart_parser
+from app.ai.ai_auditor import ai_auditor
+from app.ai.ai_query_engine import ai_query_engine
+
+class ChartParseSchema(BaseModel):
+    image_data: Optional[str] = None
+    hint_text: Optional[str] = None
+
+class AiQuerySchema(BaseModel):
+    prompt: str
+
+@router.post("/ai/parse-chart")
+def parse_chart_image(payload: ChartParseSchema):
+    return vision_chart_parser.parse_chart_screenshot(
+        image_data=payload.image_data,
+        hint_text=payload.hint_text
+    )
+
+@router.get("/ai/audit-report")
+def get_ai_trade_audit_report():
+    return ai_auditor.generate_audit_report()
+
+@router.post("/ai/query")
+def execute_ai_natural_query(payload: AiQuerySchema):
+    return ai_query_engine.execute_natural_query(query_text=payload.prompt)
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
