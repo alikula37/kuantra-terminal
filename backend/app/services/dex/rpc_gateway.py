@@ -85,12 +85,10 @@ class StableSwapAMM:
         fee_pct = fee_bps / 10000.0
         net_in = amount_in * (1.0 - fee_pct)
 
-        # High A coefficient produces flat invariant near 1:1 parity
-        d = reserve_a + reserve_b
-        new_reserve_a = reserve_a + net_in
-        # StableSwap iterative convergence approximation for 2-token pool
-        new_reserve_b = d - (new_reserve_a / (1.0 + (1.0 / (4.0 * amp_coeff_a))))
-        amount_out = max(0.0, reserve_b - new_reserve_b)
+        # High A coefficient produces flat invariant near 1:1 parity with minimal slippage
+        total_reserves = reserve_a + reserve_b
+        slippage_fraction = net_in / (4.0 * max(1, amp_coeff_a) * max(1.0, total_reserves))
+        amount_out = net_in * (1.0 - min(0.05, slippage_fraction))
 
         effective_price = amount_out / max(0.000001, amount_in)
         price_impact = max(0.0, ((1.0 - effective_price) / 1.0) * 100.0)
