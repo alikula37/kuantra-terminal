@@ -163,3 +163,85 @@ export interface PivotGridResponse {
   total_buckets: number;
   rows: PivotRow[];
 }
+export interface ReplayTradeState {
+  trade_id: string;
+  symbol: string;
+  side: string;
+  entry_price: number;
+  current_price: number;
+  qty: number;
+  stop_loss?: number | null;
+  take_profit?: number | null;
+  is_active: boolean;
+  is_past_exit: boolean;
+  unrealized_pnl: number;
+  r_multiple: number;
+  mae_r: number;
+  mfe_r: number;
+  entry_index: number;
+  exit_index: number;
+}
+
+export interface ReplaySessionResponse {
+  session_id: string;
+  symbol: string;
+  total_bars: number;
+  current_index: number;
+  entry_index: number;
+  exit_index: number;
+  speed_multiplier: number;
+  is_playing: boolean;
+  current_candle: Candle;
+  trade: ReplayTradeState | null;
+  visible_candles: Candle[];
+}
+
+export interface PlaybookRule {
+  id: string;
+  playbook_id: string;
+  rule_text: string;
+  is_mandatory: number | boolean;
+  weight: number;
+}
+
+export interface Playbook {
+  id: string;
+  title: string;
+  description: string;
+  win_rate_target: number;
+  rr_target: number;
+  created_at: string;
+  updated_at: string;
+  rules: PlaybookRule[];
+  trades_count: number;
+  performance: QuantScorecard;
+}
+
+export interface TradeDriftItem {
+  trade_id: string;
+  symbol: string;
+  side: string;
+  actual_entry: number;
+  planned_entry: number;
+  entry_drift_dollars: number;
+  actual_exit: number;
+  stop_loss?: number | null;
+  take_profit?: number | null;
+  actual_pnl: number;
+  theoretical_pnl: number;
+  is_early_exit: boolean;
+  panic_cost: number;
+  drift_ratio: number;
+  risk_unit: number;
+}
+
+export interface ExecutionDriftResponse {
+  total_trades: number;
+  total_actual_pnl: number;
+  total_theoretical_pnl: number;
+  total_panic_exit_leakage: number;
+  early_exits_count: number;
+  avg_drift_ratio: number;
+  execution_fidelity_pct: number;
+  trades: TradeDriftItem[];
+}

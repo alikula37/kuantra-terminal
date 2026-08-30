@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus } from "lucide-react";
+import { Filter, Plus, PlayCircle } from "lucide-react";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
+  onReplayTrade?: (tradeId: string) => void;
 }
 
-export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade }) => {
+export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onReplayTrade }) => {
   const { trades, setTrades } = useTradeStore();
   const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
@@ -87,7 +88,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade }) => {
               <th className="px-4 py-3">R-Multiple</th>
               <th className="px-4 py-3">Entry Time</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Notes</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-border/40 text-[11px]">
@@ -141,7 +142,16 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade }) => {
                         {t.status}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-slate-400 max-w-[150px] truncate">{t.notes || "-"}</td>
+                    <td className="px-4 py-2.5 text-right">
+                      <button
+                        onClick={() => onReplayTrade && onReplayTrade(t.id)}
+                        className="inline-flex items-center space-x-1 px-2 py-0.5 bg-accent/15 hover:bg-accent/30 border border-accent/40 text-accent font-bold rounded text-[10px] transition"
+                        title="Replay this trade bar-by-bar"
+                      >
+                        <PlayCircle className="w-3 h-3" />
+                        <span>Replay</span>
+                      </button>
+                    </td>
                   </tr>
                 );
               })
