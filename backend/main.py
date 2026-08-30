@@ -52,6 +52,9 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_router)
+    
+    from app.services.plugin_manager import plugin_manager
+    plugin_manager.set_app(app)
 
     @app.get("/health")
     async def health_check():

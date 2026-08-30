@@ -1,4 +1,5 @@
 from app.api.webhook_tv import webhook_router
+from app.api.plugin_endpoints import router as plugin_router
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
@@ -13,6 +14,7 @@ from app.quant.quant_engine import quant_engine
 
 router = APIRouter(prefix="/api/v1")
 router.include_router(webhook_router)
+router.include_router(plugin_router)
 
 class TradeCreateSchema(BaseModel):
     symbol: str = "BTCUSDT"
