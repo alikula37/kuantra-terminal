@@ -1,7 +1,7 @@
 import React from "react";
-import { LayoutDashboard, BookOpen, BarChart3, Sliders, Database, Layers, Cpu } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, Sliders, Database, Cpu } from "lucide-react";
 
-export type NavTab = "dashboard" | "journal" | "analytics" | "settings";
+export type NavTab = "dashboard" | "journal" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -12,13 +12,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "journal", label: "Journal", icon: BookOpen },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    { id: "analytics", label: "Quant Scorecard", icon: BarChart3 },
+    { id: "mae_mfe", label: "MAE / MFE Visualizer", icon: Crosshair },
+    { id: "prop_shield", label: "Prop Firm Shield", icon: ShieldCheck },
+    { id: "pivot_grid", label: "Dynamic Pivot Grid", icon: Layers },
     { id: "settings", label: "Settings", icon: Sliders },
   ];
 
   return (
     <aside className="w-56 bg-[#0d121c] border-r border-surface-border flex flex-col justify-between select-none">
-      {/* Navigation Links */}
       <div className="p-3 space-y-1">
         <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
           Terminal Modules
@@ -43,7 +45,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         })}
       </div>
 
-      {/* Core Diagnostics Panel */}
       <div className="p-3 border-t border-surface-border space-y-2 bg-[#090d14]/60">
         <div className="px-1 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
           Engine Diagnostics

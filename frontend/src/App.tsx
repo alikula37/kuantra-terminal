@@ -4,6 +4,9 @@ import { Sidebar, NavTab } from "./components/Sidebar";
 import { DashboardView } from "./components/DashboardView";
 import { JournalView } from "./components/JournalView";
 import { AnalyticsView } from "./components/AnalyticsView";
+import { MaeMfeVisualizer } from "./components/MaeMfeVisualizer";
+import { PropFirmShield } from "./components/PropFirmShield";
+import { PivotGrid } from "./components/PivotGrid";
 import { SettingsView } from "./components/SettingsView";
 import { NewTradeModal } from "./components/NewTradeModal";
 import { useWebSocket } from "./hooks/useWebSocket";
@@ -25,6 +28,9 @@ export default function App() {
           {activeTab === "dashboard" && <DashboardView />}
           {activeTab === "journal" && <JournalView onOpenNewTrade={() => setIsModalOpen(true)} />}
           {activeTab === "analytics" && <AnalyticsView />}
+          {activeTab === "mae_mfe" && <MaeMfeVisualizer />}
+          {activeTab === "prop_shield" && <PropFirmShield />}
+          {activeTab === "pivot_grid" && <PivotGrid />}
           {activeTab === "settings" && <SettingsView />}
         </main>
       </div>
