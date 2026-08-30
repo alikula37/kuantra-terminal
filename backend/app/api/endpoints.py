@@ -2,6 +2,7 @@ from app.api.webhook_tv import webhook_router
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
+import time
 from datetime import datetime
 from app.db.sqlite_driver import sqlite_driver
 from app.db.duckdb_driver import duckdb_driver
@@ -911,7 +912,7 @@ def configure_hardware_endpoint(payload: HardwareConfigurePayload):
 @router.post("/swarm/fast-eval")
 def fast_eval_swarm_endpoint(payload: SwarmFastEvalPayload):
     try:
-        return accelerated_swarm.evaluate_market_state(payload.dict())
+        return accelerated_swarm.evaluate_market_state(payload.model_dump())
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Accelerated Swarm evaluation error: {str(e)}")
 
