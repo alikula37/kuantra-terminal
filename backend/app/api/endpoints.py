@@ -915,6 +915,65 @@ def fast_eval_swarm_endpoint(payload: SwarmFastEvalPayload):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Accelerated Swarm evaluation error: {str(e)}")
 
+from app.services.dex.rpc_gateway import rpc_gateway
+from app.services.dex.arbitrage_engine import arbitrage_engine
+from app.services.dex.defai_agent import defai_agent
+
+class ScanOpportunitiesPayload(BaseModel):
+    chain: Optional[str] = "ethereum"
+    min_profit_usd: Optional[float] = 50.0
+    include_triangular: Optional[bool] = True
+
+class FlashLoanSimPayload(BaseModel):
+    chain: Optional[str] = "ethereum"
+    protocol: Optional[str] = "BALANCER_VAULT"
+    borrow_asset: Optional[str] = "WETH"
+    amount_usd: Optional[float] = 100000.0
+    route_spread_pct: Optional[float] = 0.58
+
+class DeFAIEvalPayload(BaseModel):
+    opportunity: Dict[str, Any]
+
+@router.get("/dex/chains")
+def get_dex_chains():
+    return rpc_gateway.list_chains()
+
+@router.post("/dex/scan-opportunities")
+def scan_dex_opportunities(payload: ScanOpportunitiesPayload):
+    try:
+        chain = payload.chain or "ethereum"
+        spatial_opps = arbitrage_engine.scan_spatial_opportunities(chain=chain)
+        tri_opps = arbitrage_engine.scan_triangular_opportunities(chain=chain) if payload.include_triangular else []
+        all_opps = spatial_opps + tri_opps
+        return {
+            "chain": chain.upper(),
+            "total_opportunities": len(all_opps),
+            "opportunities": all_opps,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"DEX scan error: {str(e)}")
+
+@router.post("/dex/simulate-flash-loan")
+def simulate_flash_loan_endpoint(payload: FlashLoanSimPayload):
+    try:
+        return arbitrage_engine.simulate_flash_loan(
+            chain=payload.chain or "ethereum",
+            protocol=payload.protocol or "BALANCER_VAULT",
+            borrow_asset=payload.borrow_asset or "WETH",
+            amount_usd=payload.amount_usd or 100000.0,
+            route_spread_pct=payload.route_spread_pct or 0.58
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Flash loan simulation error: {str(e)}")
+
+@router.post("/dex/defai-evaluate")
+def defai_evaluate_endpoint(payload: DeFAIEvalPayload):
+    try:
+        return defai_agent.evaluate_opportunity(opportunity=payload.opportunity)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"DeFAI evaluation error: {str(e)}")
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
