@@ -544,6 +544,15 @@ def update_biometric_telemetry(payload: BiometricTelemetrySchema):
         device_name=payload.device_name
     )
 
+from app.services.orderflow.footprint_engine import footprint_engine
+
+@router.get("/orderflow/footprint")
+def get_orderflow_footprint_bars(symbol: str = "BTCUSDT", limit: int = 20):
+    return {
+        "symbol": symbol.upper(),
+        "bars": footprint_engine.get_footprint_candles(symbol=symbol, limit=limit)
+    }
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
