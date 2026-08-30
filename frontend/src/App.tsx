@@ -29,6 +29,7 @@ import { SettingsView } from "./components/SettingsView";
 import { NewTradeModal } from "./components/NewTradeModal";
 import { ChartVisionUploader } from "./components/ChartVisionUploader";
 import { FirstBootWizard } from "./components/onboarding/FirstBootWizard";
+import { GPUTelemetryModal } from "./components/hardware/GPUTelemetryModal";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { usePopoutWindow } from "./hooks/usePopoutWindow";
 
@@ -40,6 +41,7 @@ export default function App() {
   const [isVisionModalOpen, setIsVisionModalOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isPanicModalOpen, setIsPanicModalOpen] = useState<boolean>(false);
+  const [isGPUModalOpen, setIsGPUModalOpen] = useState<boolean>(false);
 
   useWebSocket();
   const { popout } = usePopoutWindow();
@@ -116,6 +118,7 @@ export default function App() {
       <Header
         onOpenNewTrade={() => setIsModalOpen(true)}
         onOpenVisionUploader={() => setIsVisionModalOpen(true)}
+        onOpenGPUTelemetry={() => setIsGPUModalOpen(true)}
       />
 
       <WorkspacePresetSelector
@@ -169,6 +172,7 @@ export default function App() {
       <ChartVisionUploader isOpen={isVisionModalOpen} onClose={() => setIsVisionModalOpen(false)} />
       <FirstBootWizard isOpen={isOnboardingOpen} onCompleted={() => setIsOnboardingOpen(false)} />
       <PanicKillSwitchModal isOpen={isPanicModalOpen} onClose={() => setIsPanicModalOpen(false)} />
+      <GPUTelemetryModal isOpen={isGPUModalOpen} onClose={() => setIsGPUModalOpen(false)} />
     </div>
   );
 }

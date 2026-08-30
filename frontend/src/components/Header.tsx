@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Radio, PlusCircle, Zap, Camera, Sun, Moon, Globe } from "lucide-react";
+import { Radio, PlusCircle, Zap, Camera, Sun, Moon, Globe, Cpu } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTheme } from "../context/ThemeContext";
 import { useTranslation, SUPPORTED_LOCALES, Locale } from "../context/I18nContext";
@@ -7,9 +7,10 @@ import { useTranslation, SUPPORTED_LOCALES, Locale } from "../context/I18nContex
 interface HeaderProps {
   onOpenNewTrade: () => void;
   onOpenVisionUploader?: () => void;
+  onOpenGPUTelemetry?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUploader }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUploader, onOpenGPUTelemetry }) => {
   const { symbol, currentPrice, prevPrice, latencyMs, isConnected } = useMarketStore();
   const { theme, toggleTheme } = useTheme();
   const { locale, setLocale, t } = useTranslation();
@@ -107,6 +108,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUplo
         >
           {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-accent" />}
         </button>
+
+        {/* GPU Acceleration Telemetry Trigger */}
+        {onOpenGPUTelemetry && (
+          <button
+            onClick={onOpenGPUTelemetry}
+            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-purple-400 hover:text-purple-300 px-2.5 py-1 rounded text-xs font-mono transition"
+            title="Open Local GPU Acceleration & Telemetry Studio"
+          >
+            <Cpu className="w-3.5 h-3.5 text-purple-400" />
+            <span className="font-bold">GPU</span>
+          </button>
+        )}
 
         <div className="flex items-center space-x-1.5 bg-[#111722] px-2.5 py-1 rounded border border-surface-border text-xs font-mono">
           <Zap className="w-3.5 h-3.5 text-accent" />
