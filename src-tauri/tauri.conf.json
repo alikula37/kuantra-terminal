@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* wss://fstream.binance.com https://api.binance.com; img-src 'self' data: blob:; font-src 'self' data:;"
     }
   },
   "bundle": {
