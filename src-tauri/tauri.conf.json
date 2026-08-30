@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* wss://fstream.binance.com https://api.binance.com; img-src 'self' data: blob:; font-src 'self' data:;"
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* wss://fstream.binance.com https://api.binance.com https://github.com; img-src 'self' data: blob:; font-src 'self' data:;"
     }
   },
   "bundle": {
@@ -32,5 +32,13 @@
     "externalBin": [
       "binaries/kuantra-backend"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk4NzY1NDMyMQpSV1NEZlVqVUpqVUpqVUpqVUpqVUpqVUpqVUpqVUpqVUpqVUpqVUpqVUpqVUpqVUpqVUpqCg==",
+      "endpoints": [
+        "https://github.com/alikula37/kuantra-terminal/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

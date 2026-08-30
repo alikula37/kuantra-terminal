@@ -16,6 +16,7 @@
     "stronghold:allow-get-record",
     "stronghold:allow-save-record",
     "stronghold:allow-remove-record",
-    "window-state:default"
+    "window-state:default",
+    "updater:default"
   ]
 }
