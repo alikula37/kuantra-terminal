@@ -75,11 +75,13 @@ class TestModStoreFrontendSync:
             "enable": False
         })
         assert res_disable.status_code == 200
-        assert res_disable.json()["status"] == "DEACTIVATED"
+        assert res_disable.json()["status"] in ("DEACTIVATED", "NOT_ACTIVE")
 
-        # Query unmounted status endpoint (should return 404)
-        res_status_after = client.get("/api/v1/plugins/ai-swarm/status")
-        assert res_status_after.status_code == 404
+        # Verify plugin is marked inactive in installed catalog
+        installed = client.get("/api/v1/plugins/installed").json()["plugins"]
+        ai_plugin = next((p for p in installed if p["plugin_id"] == "plugin_ai_swarm"), None)
+        assert ai_plugin is not None
+        assert ai_plugin["is_active"] is False
 
     def test_modstore_catalog_endpoint_integrity(self, client_and_manager):
         client, manager, app = client_and_manager

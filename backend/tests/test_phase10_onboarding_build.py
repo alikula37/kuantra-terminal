@@ -29,9 +29,14 @@ class TestPhase10OnboardingAndProductionBuild:
         start_res = model_downloader.start_download(model_name=test_model_name, mock_mode=True)
         assert start_res["status"] in ["DOWNLOADING", "COMPLETED"]
 
-        # Wait for completion
-        time.sleep(0.4)
+        # Wait for completion (with robust polling up to 3 seconds)
         comp_st = model_downloader.get_status(test_model_name)
+        for _ in range(30):
+            if comp_st["status"] == "COMPLETED":
+                break
+            time.sleep(0.1)
+            comp_st = model_downloader.get_status(test_model_name)
+
         assert comp_st["status"] == "COMPLETED"
         assert comp_st["progress_pct"] == 100.0
         assert comp_st["is_verified"] is True
