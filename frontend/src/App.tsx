@@ -6,6 +6,7 @@ import { JournalView } from "./components/JournalView";
 import { VirtualizedTradeJournal } from "./components/virtual/VirtualizedTradeJournal";
 import { DockLayoutView } from "./components/layout/DockLayoutView";
 import { WorkspacePresetSelector } from "./components/workspace/WorkspacePresetSelector";
+import { BiometricHardwareStudio } from "./components/biometrics/BiometricHardwareStudio";
 import { FIXOrderBookStudio } from "./components/fix/FIXOrderBookStudio";
 import { DEXArbitrageStudio } from "./components/dex/DEXArbitrageStudio";
 import { MCPDataExplorer } from "./components/mcp/MCPDataExplorer";
@@ -82,6 +83,7 @@ export default function App() {
         </div>
         <div className="flex-1 overflow-hidden">
           {popoutParam === "chart" && <DashboardView />}
+          {popoutParam === "biometrics_studio" && <BiometricHardwareStudio />}
           {popoutParam === "fix_studio" && <FIXOrderBookStudio />}
           {popoutParam === "dex_arbitrage" && <DEXArbitrageStudio />}
           {popoutParam === "mcp_explorer" && <MCPDataExplorer />}
@@ -112,6 +114,7 @@ export default function App() {
 
   const handlePopoutAll = () => {
     popout("chart", "Live Chart Monitor", 1200, 800);
+    popout("biometrics_studio", "Biometric Hardware Studio", 1200, 800);
     popout("fix_studio", "L2/L3 DOM & FIX Studio", 1200, 800);
     popout("dex_arbitrage", "DEX Arbitrage Studio", 1200, 800);
     popout("mcp_explorer", "Financial MCP Explorer", 1200, 800);
@@ -139,6 +142,7 @@ export default function App() {
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "biometrics_studio" && <BiometricHardwareStudio />}
           {activeTab === "fix_studio" && <FIXOrderBookStudio />}
           {activeTab === "dex_arbitrage" && <DEXArbitrageStudio />}
           {activeTab === "mcp_explorer" && <MCPDataExplorer />}
