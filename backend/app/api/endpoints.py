@@ -382,6 +382,37 @@ from app.core.hardware_detector import hardware_detector
 def get_system_hardware_profile():
     return hardware_detector.detect_hardware()
 
+from app.core.model_downloader import model_downloader
+
+class ModelDownloadSchema(BaseModel):
+    model_name: Optional[str] = None
+    url: Optional[str] = None
+    mock_mode: bool = False
+
+@router.get("/system/model/status")
+def get_model_download_status(model_name: Optional[str] = None):
+    return model_downloader.get_status(model_name)
+
+@router.post("/system/model/download")
+def start_model_download(payload: ModelDownloadSchema):
+    return model_downloader.start_download(
+        model_name=payload.model_name,
+        url=payload.url,
+        mock_mode=payload.mock_mode
+    )
+
+@router.post("/system/model/pause")
+def pause_model_download(payload: ModelDownloadSchema):
+    return model_downloader.pause_download(model_name=payload.model_name)
+
+@router.post("/system/model/resume")
+def resume_model_download(payload: ModelDownloadSchema):
+    return model_downloader.resume_download(model_name=payload.model_name)
+
+@router.post("/system/model/cancel")
+def cancel_model_download(payload: ModelDownloadSchema):
+    return model_downloader.cancel_download(model_name=payload.model_name)
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
