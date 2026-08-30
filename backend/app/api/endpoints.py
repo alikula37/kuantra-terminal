@@ -563,6 +563,27 @@ def get_orderflow_cvd_series(symbol: str = "BTCUSDT", limit: int = 100):
 def get_orderflow_liquidity_heatmap(symbol: str = "BTCUSDT"):
     return delta_heatmap_engine.get_liquidity_heatmap(symbol=symbol)
 
+from app.services.execution.fix_bridge import quickfix_dma_client
+
+class FixOrderSchema(BaseModel):
+    symbol: str = "ESM6"
+    side: str = "BUY"
+    qty: float = 1.0
+    price: float = 5600.0
+
+@router.get("/fix/status")
+def get_quickfix_session_status():
+    return quickfix_dma_client.get_session_status()
+
+@router.post("/fix/order")
+def execute_quickfix_dma_order(payload: FixOrderSchema):
+    return quickfix_dma_client.send_new_order_single(
+        symbol=payload.symbol,
+        side=payload.side,
+        qty=payload.qty,
+        price=payload.price
+    )
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
