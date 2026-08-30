@@ -38,11 +38,16 @@ class ComplianceEngine:
         self.high_watermark = max(self.high_watermark, self.config.account_size)
         return self.config
 
-    def evaluate_compliance(self, open_positions: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    def evaluate_compliance(
+        self,
+        open_positions: Optional[List[Dict[str, Any]]] = None,
+        closed_trades: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
         """Comprehensive evaluation of account state against all prop firm rules."""
         positions = open_positions if open_positions is not None else []
-        all_trades = sqlite_driver.list_trades(limit=10000)
-        closed_trades = [t for t in all_trades if t.get("status") == "CLOSED"]
+        if closed_trades is None:
+            all_trades = sqlite_driver.list_trades(limit=10000)
+            closed_trades = [t for t in all_trades if t.get("status") == "CLOSED"]
 
         # Today's UTC date
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -197,7 +202,6 @@ class ComplianceEngine:
         }
 
     async def check_and_broadcast_alerts(self, open_positions: List[Dict[str, Any]]) -> None:
-        """Called during live tick loop to broadcast alerts if risk limits approach threshold."""
         try:
             status_data = self.evaluate_compliance(open_positions)
             if status_data["overall_status"] in ("WARN", "WARNING", "CRITICAL", "BREACHED"):
