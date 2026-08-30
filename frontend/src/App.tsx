@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Header } from "./components/Header";
 import { Sidebar, NavTab } from "./components/Sidebar";
 import { DashboardView } from "./components/DashboardView";
@@ -18,6 +18,7 @@ import { PivotGrid } from "./components/PivotGrid";
 import { SettingsView } from "./components/SettingsView";
 import { NewTradeModal } from "./components/NewTradeModal";
 import { ChartVisionUploader } from "./components/ChartVisionUploader";
+import { FirstBootWizard } from "./components/onboarding/FirstBootWizard";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { usePopoutWindow } from "./hooks/usePopoutWindow";
 
@@ -27,9 +28,21 @@ export default function App() {
   const [replayTradeId, setReplayTradeId] = useState<string>("TRD-DEFAULT");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isVisionModalOpen, setIsVisionModalOpen] = useState<boolean>(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
 
   useWebSocket();
   const { popout } = usePopoutWindow();
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/v1/onboarding/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.first_boot_completed) {
+          setIsOnboardingOpen(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Check if current window instance is a popped-out sub-window
   const popoutParam = useMemo(() => {
@@ -123,6 +136,7 @@ export default function App() {
 
       <NewTradeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       <ChartVisionUploader isOpen={isVisionModalOpen} onClose={() => setIsVisionModalOpen(false)} />
+      <FirstBootWizard isOpen={isOnboardingOpen} onCompleted={() => setIsOnboardingOpen(false)} />
     </div>
   );
 }

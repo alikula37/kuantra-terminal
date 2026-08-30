@@ -413,6 +413,37 @@ def resume_model_download(payload: ModelDownloadSchema):
 def cancel_model_download(payload: ModelDownloadSchema):
     return model_downloader.cancel_download(model_name=payload.model_name)
 
+
+class OnboardingCompleteSchema(BaseModel):
+    ai_mode: str # "cloud" | "local_gguf" | "skip"
+    api_key: Optional[str] = None
+    provider: Optional[str] = "openai"
+
+@router.get("/onboarding/status")
+def get_onboarding_status():
+    val = sqlite_driver.get_setting("first_boot_completed")
+    mode = sqlite_driver.get_setting("ai_mode") or "skip"
+    hw = hardware_detector.detect_hardware()
+    return {
+        "first_boot_completed": str(val).lower() in ("true", "1", '"true"') if val else False,
+        "ai_mode": mode,
+        "hardware": hw
+    }
+
+@router.post("/onboarding/complete")
+def complete_onboarding(payload: OnboardingCompleteSchema):
+    sqlite_driver.set_setting("first_boot_completed", "true")
+    sqlite_driver.set_setting("ai_mode", payload.ai_mode)
+
+    if payload.api_key:
+        from app.core.security import vault
+        vault.store_secret(f"{payload.provider.upper()}_API_KEY", payload.api_key)
+
+    if payload.ai_mode == "local_gguf":
+        model_downloader.start_download(mock_mode=True)
+
+    return {"status": "SUCCESS", "first_boot_completed": True, "ai_mode": payload.ai_mode}
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()

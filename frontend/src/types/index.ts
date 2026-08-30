@@ -321,3 +321,30 @@ export interface AiQueryResult {
   rows: Record<string, any>[];
   ai_commentary: string;
 }
+export interface HardwareProfile {
+  detected_backend: string;
+  hardware_tier: string;
+  device_name: string;
+  vram_gb: number;
+  cpu_cores: number;
+  recommended_quant: string;
+  recommended_threads: number;
+  estimated_tokens_per_sec: number;
+  notes: string;
+}
+
+export interface OnboardingStatusResponse {
+  first_boot_completed: boolean;
+  ai_mode: string;
+  hardware: HardwareProfile;
+}
+
+export interface ModelDownloadStatus {
+  model_name: string;
+  status: string;
+  progress_pct: number;
+  downloaded_bytes: number;
+  total_bytes: number;
+  speed_mbps: number;
+  is_verified: boolean;
+}
