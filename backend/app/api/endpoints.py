@@ -178,6 +178,52 @@ async def websocket_replay_stream(websocket: WebSocket):
     except Exception:
         pass
 
+from app.playbook.playbook_service import playbook_service
+
+class PlaybookCreateSchema(BaseModel):
+    title: str
+    description: str = ""
+    win_rate_target: float = 65.0
+    rr_target: float = 2.5
+    rules: Optional[List[Dict[str, Any]]] = None
+
+class PlaybookAuditSchema(BaseModel):
+    trade_id: str
+    playbook_id: str
+    checked_rule_ids: List[str]
+
+@router.get("/playbooks")
+def list_playbooks():
+    return playbook_service.list_playbooks()
+
+@router.post("/playbooks")
+def create_playbook(payload: PlaybookCreateSchema):
+    return playbook_service.create_playbook(
+        title=payload.title,
+        description=payload.description,
+        win_rate_target=payload.win_rate_target,
+        rr_target=payload.rr_target,
+        rules=payload.rules
+    )
+
+@router.get("/playbooks/{playbook_id}")
+def get_playbook_by_id(playbook_id: str):
+    pb = playbook_service.get_playbook(playbook_id)
+    if not pb:
+        raise HTTPException(status_code=404, detail="Playbook not found")
+    return pb
+
+@router.post("/playbooks/audit")
+def audit_trade_playbook(payload: PlaybookAuditSchema):
+    try:
+        return playbook_service.audit_trade_discipline(
+            trade_id=payload.trade_id,
+            playbook_id=payload.playbook_id,
+            checked_rule_ids=payload.checked_rule_ids
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 @router.get("/compliance/status")
 def get_compliance_status():
     open_positions = binance_client._recalculate_open_positions(binance_client.last_price)
