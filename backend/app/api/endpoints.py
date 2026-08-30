@@ -465,6 +465,27 @@ async def set_tv_sync_symbol(payload: TvSyncPayload):
     })
     return {"status": "SYNCED", "state": tv_sync_manager.get_sync_state()}
 
+from app.services.data_adapters.multi_asset_manager import multi_asset_manager
+
+class AdapterSubscribeSchema(BaseModel):
+    adapter: str # "twelvedata" | "polygon" | "mt5"
+    symbols: List[str]
+
+@router.get("/adapters/status")
+def get_multi_asset_adapters_status():
+    return multi_asset_manager.get_all_statuses()
+
+@router.post("/adapters/subscribe")
+def subscribe_to_adapter_symbols(payload: AdapterSubscribeSchema):
+    adapter_key = payload.adapter.lower()
+    if adapter_key == "twelvedata":
+        from app.services.data_adapters.twelvedata_adapter import twelvedata_adapter
+        return twelvedata_adapter.subscribe(payload.symbols)
+    elif adapter_key == "polygon":
+        from app.services.data_adapters.polygon_adapter import polygon_adapter
+        return polygon_adapter.subscribe(payload.symbols)
+    return {"status": "SUCCESS", "adapter": adapter_key, "symbols": payload.symbols}
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
