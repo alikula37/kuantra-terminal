@@ -511,6 +511,20 @@ def get_execution_guardrail_status():
         "supported_venues": ["BINANCE_FUTURES", "OKX_V5"]
     }
 
+from app.services.ai.agent_swarm import swarm_consensus_engine
+
+class SwarmDebateSchema(BaseModel):
+    symbol: str = "BTCUSDT"
+    side: str = "BUY"
+    price: float = 65000.0
+    stop_loss: Optional[float] = 64000.0
+    take_profit: Optional[float] = 67500.0
+    timeframe: Optional[str] = "15m"
+
+@router.post("/ai/swarm/debate")
+def trigger_multi_agent_swarm_debate(payload: SwarmDebateSchema):
+    return swarm_consensus_engine.conduct_debate(payload.model_dump())
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
