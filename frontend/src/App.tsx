@@ -7,18 +7,21 @@ import { TradeReplayCanvas } from "./components/TradeReplayCanvas";
 import { PlaybookManager } from "./components/PlaybookManager";
 import { ExecutionDriftVisualizer } from "./components/ExecutionDriftVisualizer";
 import { PsychologyView } from "./components/PsychologyView";
+import { AiCoachPanel } from "./components/AiCoachPanel";
 import { AnalyticsView } from "./components/AnalyticsView";
 import { MaeMfeVisualizer } from "./components/MaeMfeVisualizer";
 import { PropFirmShield } from "./components/PropFirmShield";
 import { PivotGrid } from "./components/PivotGrid";
 import { SettingsView } from "./components/SettingsView";
 import { NewTradeModal } from "./components/NewTradeModal";
+import { ChartVisionUploader } from "./components/ChartVisionUploader";
 import { useWebSocket } from "./hooks/useWebSocket";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [replayTradeId, setReplayTradeId] = useState<string>("TRD-DEFAULT");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isVisionModalOpen, setIsVisionModalOpen] = useState<boolean>(false);
 
   useWebSocket();
 
@@ -29,7 +32,10 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-[#0b0e14] text-slate-100 overflow-hidden select-none">
-      <Header onOpenNewTrade={() => setIsModalOpen(true)} />
+      <Header
+        onOpenNewTrade={() => setIsModalOpen(true)}
+        onOpenVisionUploader={() => setIsVisionModalOpen(true)}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -46,6 +52,7 @@ export default function App() {
           {activeTab === "playbook" && <PlaybookManager />}
           {activeTab === "drift" && <ExecutionDriftVisualizer />}
           {activeTab === "psychology" && <PsychologyView />}
+          {activeTab === "ai_coach" && <AiCoachPanel />}
           {activeTab === "analytics" && <AnalyticsView />}
           {activeTab === "mae_mfe" && <MaeMfeVisualizer />}
           {activeTab === "prop_shield" && <PropFirmShield />}
@@ -55,6 +62,7 @@ export default function App() {
       </div>
 
       <NewTradeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ChartVisionUploader isOpen={isVisionModalOpen} onClose={() => setIsVisionModalOpen(false)} />
     </div>
   );
 }
