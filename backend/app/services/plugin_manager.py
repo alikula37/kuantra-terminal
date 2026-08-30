@@ -164,8 +164,9 @@ class DynamicPluginManager:
                 self.app.include_router(router, prefix=meta.router_prefix or "")
                 new_routes = self.app.router.routes[initial_routes_count:]
                 self._mounted_routes[plugin_id] = new_routes
-                # Invalidate cached OpenAPI schema to reflect new endpoints
+                # Invalidate cached OpenAPI schema and rebuild ASGI middleware stack
                 self.app.openapi_schema = None
+                self.app.middleware_stack = self.app.build_middleware_stack()
 
             meta.is_active = True
             self._active_plugins[plugin_id] = plugin_instance
@@ -200,11 +201,12 @@ class DynamicPluginManager:
             if self.app:
                 await plugin_instance.on_shutdown(self.app)
 
-            # 2. Remove routes from Starlette app router
+            # 2. Remove routes from Starlette app router and rebuild middleware stack
             if self.app and plugin_id in self._mounted_routes:
                 routes_to_remove = self._mounted_routes.pop(plugin_id)
                 self.app.router.routes = [r for r in self.app.router.routes if r not in routes_to_remove]
                 self.app.openapi_schema = None
+                self.app.middleware_stack = self.app.build_middleware_stack()
 
             # 3. Unload heavy dependencies & clean sys.modules
             lazy_loader.unload_plugin_dependencies(plugin_id, meta.heavy_dependencies)
