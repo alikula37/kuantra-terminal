@@ -255,6 +255,26 @@ from app.quant.execution_drift import execution_drift_analyzer
 def get_execution_drift_analytics(symbol: Optional[str] = None):
     return execution_drift_analyzer.get_drift_analytics(symbol=symbol)
 
+from app.psychology.psychology_engine import psychology_engine
+
+@router.get("/psychology/tilt-status")
+def get_session_tilt_status():
+    compliance_status = compliance_engine.evaluate_compliance([])
+    daily_loss_util = 0.0
+    daily_rule = next((r for r in compliance_status["rules"] if r["rule"] == "Daily Max Loss"), None)
+    if daily_rule:
+        daily_loss_util = float(daily_rule.get("utilization_pct") or 0.0)
+
+    return psychology_engine.calculate_session_tilt_score(daily_loss_utilization_pct=daily_loss_util)
+
+@router.get("/psychology/anomalies")
+def get_psychology_anomalies():
+    return psychology_engine.get_all_anomalies()
+
+@router.get("/psychology/fatigue-matrix")
+def get_mental_fatigue_matrix():
+    return psychology_engine.compute_mental_fatigue_matrix()
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
