@@ -974,6 +974,89 @@ def defai_evaluate_endpoint(payload: DeFAIEvalPayload):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"DeFAI evaluation error: {str(e)}")
 
+from app.services.matching.order_book import global_order_book
+from app.services.fix.fix_gateway import fix_session
+from app.services.fix.dma_router import dma_router
+
+class FIXOrderSubmitPayload(BaseModel):
+    symbol: Optional[str] = "BTCUSDT"
+    side: str
+    price: float
+    qty: float
+    order_type: Optional[str] = "LIMIT"
+    tif: Optional[str] = "0"
+    destination: Optional[str] = "INTERNAL_MATCHING_ENGINE"
+
+class FIXOrderCancelPayload(BaseModel):
+    cl_ord_id: str
+    symbol: Optional[str] = "BTCUSDT"
+    side: Optional[str] = "BUY"
+
+class SimulateSweepPayload(BaseModel):
+    side: str
+    size: float
+
+@router.get("/fix/sessions")
+def get_fix_sessions():
+    return {
+        "status": fix_session.state,
+        "sender_comp_id": fix_session.sender_comp_id,
+        "target_comp_id": fix_session.target_comp_id,
+        "begin_string": fix_session.begin_string,
+        "out_seq_num": fix_session.out_seq_num,
+        "in_seq_num": fix_session.in_seq_num,
+        "heartbeat_interval_sec": fix_session.heartbeat_interval,
+        "message_history": fix_session.message_history
+    }
+
+@router.post("/fix/session/logon")
+def logon_fix_session():
+    raw_logon = fix_session.create_logon()
+    # Confirm logon
+    fix_session.process_incoming("8=FIX.4.4|9=45|35=A|49=CME_DMA_GATEWAY|56=KUANTRA_DMA|34=1|52=20260215-12:00:00.000|10=084|")
+    return {
+        "status": "LOGON_COMPLETED",
+        "session_state": fix_session.state,
+        "raw_message": raw_logon
+    }
+
+@router.post("/fix/order/submit")
+def submit_fix_order(payload: FIXOrderSubmitPayload):
+    try:
+        return dma_router.submit_order(
+            symbol=payload.symbol or "BTCUSDT",
+            side=payload.side,
+            price=payload.price,
+            qty=payload.qty,
+            order_type=payload.order_type or "LIMIT",
+            tif=payload.tif or "0",
+            destination=payload.destination or "INTERNAL_MATCHING_ENGINE"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Order submission error: {str(e)}")
+
+@router.post("/fix/order/cancel")
+def cancel_fix_order(payload: FIXOrderCancelPayload):
+    try:
+        return dma_router.cancel_order(
+            cl_ord_id=payload.cl_ord_id,
+            symbol=payload.symbol or "BTCUSDT",
+            side=payload.side or "BUY"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Order cancellation error: {str(e)}")
+
+@router.get("/orderbook/l2-snapshot")
+def get_orderbook_l2_snapshot(depth: Optional[int] = 20):
+    return global_order_book.get_l2_snapshot(depth=depth or 20)
+
+@router.post("/orderbook/simulate-fill")
+def simulate_orderbook_fill(payload: SimulateSweepPayload):
+    try:
+        return global_order_book.simulate_sweep(side=payload.side, size=payload.size)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Order book sweep error: {str(e)}")
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
