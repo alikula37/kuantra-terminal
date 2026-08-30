@@ -1,7 +1,7 @@
 import React from "react";
-import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu, Layout, Zap } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu, Layout, Zap, Activity, Users } from "lucide-react";
 
-export type NavTab = "dashboard" | "docking" | "virtual_journal" | "journal" | "replay" | "playbook" | "drift" | "psychology" | "ai_coach" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
+export type NavTab = "dashboard" | "docking" | "virtual_journal" | "journal" | "replay" | "playbook" | "drift" | "psychology" | "biometrics" | "ai_coach" | "swarm" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -18,7 +18,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
     { id: "playbook", label: "Strategy Playbook", icon: BookmarkCheck },
     { id: "drift", label: "Execution Drift", icon: GitCommit },
     { id: "psychology", label: "Psychology & Tilt", icon: Brain },
+    { id: "biometrics", label: "Biometric Wearable", icon: Activity },
     { id: "ai_coach", label: "AI Trade Auditor", icon: Bot },
+    { id: "swarm", label: "Multi-Agent Swarm", icon: Users },
     { id: "analytics", label: "Quant Scorecard", icon: BarChart3 },
     { id: "mae_mfe", label: "MAE / MFE Visualizer", icon: Crosshair },
     { id: "prop_shield", label: "Prop Firm Shield", icon: ShieldCheck },

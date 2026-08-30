@@ -10,7 +10,9 @@ import { TradeReplayCanvas } from "./components/TradeReplayCanvas";
 import { PlaybookManager } from "./components/PlaybookManager";
 import { ExecutionDriftVisualizer } from "./components/ExecutionDriftVisualizer";
 import { PsychologyView } from "./components/PsychologyView";
+import { WearableBiometricsHUD } from "./components/biometrics/WearableBiometricsHUD";
 import { AiCoachPanel } from "./components/AiCoachPanel";
+import { SwarmDebateVisualizer } from "./components/ai/SwarmDebateVisualizer";
 import { AnalyticsView } from "./components/AnalyticsView";
 import { MaeMfeVisualizer } from "./components/MaeMfeVisualizer";
 import { PropFirmShield } from "./components/PropFirmShield";
@@ -69,7 +71,9 @@ export default function App() {
           {popoutParam === "chart" && <DashboardView />}
           {popoutParam === "virtual_journal" && <VirtualizedTradeJournal onReplayTrade={handleLaunchReplay} />}
           {popoutParam === "ai_coach" && <AiCoachPanel />}
+          {popoutParam === "swarm" && <SwarmDebateVisualizer />}
           {popoutParam === "psychology" && <PsychologyView />}
+          {popoutParam === "biometrics" && <WearableBiometricsHUD />}
           {popoutParam === "analytics" && <AnalyticsView />}
         </div>
       </div>
@@ -80,7 +84,7 @@ export default function App() {
     setActivePreset(presetId);
     if (presetId === "day_trader") setActiveTab("dashboard");
     else if (presetId === "docking") setActiveTab("docking");
-    else if (presetId === "ai_focus") setActiveTab("ai_coach");
+    else if (presetId === "ai_focus") setActiveTab("swarm");
     else if (presetId === "quant_lab") setActiveTab("analytics");
   };
 
@@ -125,7 +129,9 @@ export default function App() {
           {activeTab === "playbook" && <PlaybookManager />}
           {activeTab === "drift" && <ExecutionDriftVisualizer />}
           {activeTab === "psychology" && <PsychologyView />}
+          {activeTab === "biometrics" && <WearableBiometricsHUD />}
           {activeTab === "ai_coach" && <AiCoachPanel />}
+          {activeTab === "swarm" && <SwarmDebateVisualizer />}
           {activeTab === "analytics" && <AnalyticsView />}
           {activeTab === "mae_mfe" && <MaeMfeVisualizer />}
           {activeTab === "prop_shield" && <PropFirmShield />}
