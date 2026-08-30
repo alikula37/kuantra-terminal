@@ -6,6 +6,7 @@ import { JournalView } from "./components/JournalView";
 import { TradeReplayCanvas } from "./components/TradeReplayCanvas";
 import { PlaybookManager } from "./components/PlaybookManager";
 import { ExecutionDriftVisualizer } from "./components/ExecutionDriftVisualizer";
+import { PsychologyView } from "./components/PsychologyView";
 import { AnalyticsView } from "./components/AnalyticsView";
 import { MaeMfeVisualizer } from "./components/MaeMfeVisualizer";
 import { PropFirmShield } from "./components/PropFirmShield";
@@ -44,6 +45,7 @@ export default function App() {
           {activeTab === "replay" && <TradeReplayCanvas tradeId={replayTradeId} />}
           {activeTab === "playbook" && <PlaybookManager />}
           {activeTab === "drift" && <ExecutionDriftVisualizer />}
+          {activeTab === "psychology" && <PsychologyView />}
           {activeTab === "analytics" && <AnalyticsView />}
           {activeTab === "mae_mfe" && <MaeMfeVisualizer />}
           {activeTab === "prop_shield" && <PropFirmShield />}

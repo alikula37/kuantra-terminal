@@ -1,12 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { TradingViewChart } from "./TradingViewChart";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TiltStatusResponse } from "../types";
+import { ArrowUpRight, ArrowDownRight, Brain } from "lucide-react";
 
 export const DashboardView: React.FC = () => {
   const { currentPrice, recentTicks } = useMarketStore();
   const { openPositions, updatePositionPnl } = useTradeStore();
+  const [tilt, setTilt] = useState<TiltStatusResponse | null>(null);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/v1/psychology/tilt-status")
+      .then((res) => res.json())
+      .then((data: TiltStatusResponse) => setTilt(data))
+      .catch(() => {});
+  }, []);
 
   const handleClosePosition = (tradeId: string) => {
     fetch(`http://127.0.0.1:8000/api/v1/trades/${tradeId}/close`, {
@@ -71,11 +80,31 @@ export const DashboardView: React.FC = () => {
 
       <div className="h-56 bg-[#0d121c] flex flex-col font-mono text-xs select-none">
         <div className="px-4 py-2 border-b border-surface-border flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-white text-xs">ACTIVE OPEN POSITIONS</span>
-            <span className="bg-[#1a2234] text-accent px-2 py-0.5 rounded text-[10px] font-bold">
-              {openPositions.length}
-            </span>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-white text-xs">ACTIVE OPEN POSITIONS</span>
+              <span className="bg-[#1a2234] text-accent px-2 py-0.5 rounded text-[10px] font-bold">
+                {openPositions.length}
+              </span>
+            </div>
+
+            {tilt && (
+              <div className="flex items-center space-x-1.5 pl-3 border-l border-surface-border text-[11px]">
+                <Brain className="w-3.5 h-3.5 text-purple-400" />
+                <span className="text-slate-400">Tilt:</span>
+                <span
+                  className={`font-bold px-1.5 py-0.2 rounded text-[10px] ${
+                    tilt.tilt_score >= 60
+                      ? "bg-loss/20 text-loss border border-loss/40"
+                      : tilt.tilt_score >= 30
+                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                      : "bg-gain/20 text-gain border border-gain/40"
+                  }`}
+                >
+                  {tilt.tilt_score} ({tilt.status})
+                </span>
+              </div>
+            )}
           </div>
           <span className="text-[11px] text-slate-400">Continuous PnL recalculation via AsyncIO</span>
         </div>
