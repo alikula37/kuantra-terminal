@@ -245,3 +245,47 @@ export interface ExecutionDriftResponse {
   execution_fidelity_pct: number;
   trades: TradeDriftItem[];
 }
+export interface TiltStatusResponse {
+  tilt_score: number;
+  status: "CALM" | "ELEVATED" | "HIGH_TILT" | "BREACH_RISK";
+  consecutive_losses: number;
+  revenge_trades_count: number;
+  fomo_trades_count: number;
+  lot_escalation_detected: boolean;
+  risk_message: string;
+}
+
+export interface BehavioralAnomaly {
+  trade_id: string;
+  symbol: string;
+  type: "FOMO_CHASE" | "REVENGE_TRADING" | "IMPULSIVE_CHURN";
+  severity: "NORMAL" | "MODERATE" | "HIGH" | "CRITICAL";
+  metric_detail: string;
+  pnl?: number | null;
+  entry_time?: string;
+}
+
+export interface AnomaliesResponse {
+  total_anomalies_count: number;
+  anomalies: BehavioralAnomaly[];
+}
+
+export interface FatigueMatrixRow {
+  sequence_num: number;
+  label: string;
+  trades_count: number;
+  win_rate: number;
+  total_pnl: number;
+  avg_pnl: number;
+  profit_factor: number;
+  expectancy: number;
+  fatigue_state: "PEAK_FOCUS" | "OPTIMAL" | "MODERATE_FATIGUE" | "SEVERE_OVERTRADING";
+}
+
+export interface FatigueMatrixResponse {
+  inflection_point: string;
+  early_win_rate_pct: number;
+  late_win_rate_pct: number;
+  performance_decay_pct: number;
+  matrix: FatigueMatrixRow[];
+}
