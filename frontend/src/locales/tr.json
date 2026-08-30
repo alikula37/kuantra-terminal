@@ -1,6 +1,8 @@
 {
   "nav": {
     "dashboard": "Gösterge Paneli",
+    "mcp_explorer": "Finansal MCP Ağ Geçidi",
+    "reverse_skill": "Tersine Mühendislik Stüdyosu",
     "mobile_companion": "Mobil Yardımcı & Passkey",
     "p2p_mesh": "Şifreli P2P Mesh",
     "copy_trading": "Çoklu Hesap Kopyalama",

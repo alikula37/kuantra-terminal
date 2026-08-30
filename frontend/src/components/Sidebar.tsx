@@ -1,7 +1,7 @@
 import React from "react";
-import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu, Layout, Zap, Activity, Users, Flame, Terminal, Share2, Copy, Smartphone } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu, Layout, Zap, Activity, Users, Flame, Terminal, Share2, Copy, Smartphone, Code } from "lucide-react";
 
-export type NavTab = "dashboard" | "docking" | "virtual_journal" | "journal" | "orderflow" | "fix_dma" | "p2p_mesh" | "copy_trading" | "mobile_companion" | "replay" | "playbook" | "drift" | "psychology" | "biometrics" | "ai_coach" | "swarm" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
+export type NavTab = "dashboard" | "mcp_explorer" | "reverse_skill" | "docking" | "virtual_journal" | "journal" | "orderflow" | "fix_dma" | "p2p_mesh" | "copy_trading" | "mobile_companion" | "replay" | "playbook" | "drift" | "psychology" | "biometrics" | "ai_coach" | "swarm" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -11,6 +11,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "mcp_explorer", label: "Financial MCP Gateway", icon: Database },
+    { id: "reverse_skill", label: "Reverse-Skill Studio", icon: Code },
     { id: "mobile_companion", label: "Mobile Companion & Passkey", icon: Smartphone },
     { id: "p2p_mesh", label: "Encrypted P2P Mesh", icon: Share2 },
     { id: "copy_trading", label: "Multi-Account Copy", icon: Copy },

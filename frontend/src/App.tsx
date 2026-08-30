@@ -6,6 +6,8 @@ import { JournalView } from "./components/JournalView";
 import { VirtualizedTradeJournal } from "./components/virtual/VirtualizedTradeJournal";
 import { DockLayoutView } from "./components/layout/DockLayoutView";
 import { WorkspacePresetSelector } from "./components/workspace/WorkspacePresetSelector";
+import { MCPDataExplorer } from "./components/mcp/MCPDataExplorer";
+import { ReverseSkillStudio } from "./components/studio/ReverseSkillStudio";
 import { MobileCompanionHUD } from "./components/mobile/MobileCompanionHUD";
 import { PanicKillSwitchModal } from "./components/mobile/PanicKillSwitchModal";
 import { MeshNetworkHUD } from "./components/p2p/MeshNetworkHUD";
@@ -76,6 +78,8 @@ export default function App() {
         </div>
         <div className="flex-1 overflow-hidden">
           {popoutParam === "chart" && <DashboardView />}
+          {popoutParam === "mcp_explorer" && <MCPDataExplorer />}
+          {popoutParam === "reverse_skill" && <ReverseSkillStudio />}
           {popoutParam === "mobile_companion" && <MobileCompanionHUD />}
           {popoutParam === "p2p_mesh" && <MeshNetworkHUD />}
           {popoutParam === "copy_trading" && <CopyTradingMatrix />}
@@ -102,7 +106,8 @@ export default function App() {
 
   const handlePopoutAll = () => {
     popout("chart", "Live Chart Monitor", 1200, 800);
-    popout("mobile_companion", "Mobile Companion Hub", 1100, 750);
+    popout("mcp_explorer", "Financial MCP Explorer", 1200, 800);
+    popout("reverse_skill", "Reverse-Skill Studio", 1200, 800);
     popout("virtual_journal", "60 FPS Virtual Audit Log", 1000, 650);
   };
 
@@ -125,6 +130,8 @@ export default function App() {
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "mcp_explorer" && <MCPDataExplorer />}
+          {activeTab === "reverse_skill" && <ReverseSkillStudio />}
           {activeTab === "mobile_companion" && <MobileCompanionHUD />}
           {activeTab === "p2p_mesh" && <MeshNetworkHUD />}
           {activeTab === "copy_trading" && <CopyTradingMatrix />}

@@ -1,6 +1,8 @@
 {
   "nav": {
     "dashboard": "Dashboard",
+    "mcp_explorer": "Financial MCP Gateway",
+    "reverse_skill": "Reverse-Skill Studio",
     "mobile_companion": "Mobile Companion & Passkey",
     "p2p_mesh": "Encrypted P2P Mesh",
     "copy_trading": "Multi-Account Copy",
