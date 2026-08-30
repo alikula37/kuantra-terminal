@@ -68,8 +68,17 @@ class DynamicPluginManager:
         self.discover_plugins()
 
     def set_app(self, app: FastAPI):
-        """Attaches the FastAPI application instance to the manager."""
+        """Attaches the FastAPI application instance to the manager and syncs mounted routers."""
         self.app = app
+        self._mounted_routes.clear()
+        for p_id, plugin_instance in list(self._active_plugins.items()):
+            router = plugin_instance.get_router()
+            meta = self._plugins_metadata.get(p_id, plugin_instance.metadata)
+            if router and self.app:
+                initial_routes_count = len(self.app.router.routes)
+                self.app.include_router(router, prefix=meta.router_prefix or "")
+                self._mounted_routes[p_id] = self.app.router.routes[initial_routes_count:]
+                self.app.openapi_schema = None
 
     def _init_sqlite_table(self):
         """Initializes the installed_plugins table in SQLite."""
@@ -109,7 +118,7 @@ class DynamicPluginManager:
                             author=data.get("author", "Kuantra Core Team"),
                             heavy_dependencies=data.get("heavy_dependencies", []),
                             router_prefix=data.get("router_prefix"),
-                            is_active=False,
+                            is_active=sub_dir.name in self._active_plugins,
                             ram_footprint_mb=data.get("ram_footprint_mb", 5.0),
                             persona_tags=data.get("persona_tags", []),
                             manifest_path=str(manifest_file)
@@ -126,7 +135,7 @@ class DynamicPluginManager:
         Dynamically activates a plugin, executes on_startup, attaches routes to Starlette routing table,
         and invalidates OpenAPI cache.
         """
-        if plugin_id in self._active_plugins:
+        if plugin_id in self._active_plugins and plugin_id in self._mounted_routes:
             return {"status": "ALREADY_ACTIVE", "plugin_id": plugin_id}
 
         if plugin_id not in self._plugins_metadata:

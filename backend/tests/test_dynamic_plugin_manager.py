@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from main import create_app
 from app.core.plugins import PluginMetadata, BasePlugin
 from app.core.lazy_loader import lazy_loader
-from app.services.plugin_manager import DynamicPluginManager, PERSONA_PROFILES
+from app.services.plugin_manager import plugin_manager, DynamicPluginManager, PERSONA_PROFILES
 
 class TestDynamicPluginManagerAndMicroKernel:
     """Test suite for Micro-Kernel Core, Dynamic Route Mutation, Lazy Loader, and ModStore."""
@@ -12,9 +12,9 @@ class TestDynamicPluginManagerAndMicroKernel:
     @pytest.fixture
     def client_and_manager(self):
         app = create_app()
-        manager = DynamicPluginManager(app=app)
+        plugin_manager.set_app(app)
         client = TestClient(app)
-        return client, manager, app
+        return client, plugin_manager, app
 
     def test_plugin_dynamic_mount_and_unmount(self, client_and_manager):
         client, manager, app = client_and_manager
