@@ -416,35 +416,88 @@ def cancel_model_download(payload: ModelDownloadSchema):
     return model_downloader.cancel_download(model_name=payload.model_name)
 
 
+from app.services.settings_service import settings_service
+
+class VaultStoreSchema(BaseModel):
+    key: Optional[str] = None
+    exchange: Optional[str] = None
+    value: Optional[str] = None
+    secret: Optional[str] = None
+
+class SettingsUpdateSchema(BaseModel):
+    active_theme: Optional[str] = None
+    active_locale: Optional[str] = None
+    trading_mode: Optional[str] = None
+    paper_balance: Optional[float] = None
+    first_boot_completed: Optional[bool] = None
+    ai_mode: Optional[str] = None
+
 class OnboardingCompleteSchema(BaseModel):
-    ai_mode: str # "cloud" | "local_gguf" | "skip"
+    ai_mode: Optional[str] = "local_gguf"
     api_key: Optional[str] = None
     provider: Optional[str] = "openai"
+    trading_mode: Optional[str] = "paper"
+    paper_balance: Optional[float] = 100000.0
+    active_theme: Optional[str] = "dark"
+    active_locale: Optional[str] = "en"
+    api_keys: Optional[Dict[str, str]] = None
+
+@router.get("/settings")
+def get_runtime_settings():
+    return settings_service.get_settings()
+
+@router.put("/settings")
+def update_runtime_settings(payload: SettingsUpdateSchema):
+    updates = {k: v for k, v in payload.dict().items() if v is not None}
+    return settings_service.update_settings(updates)
+
+@router.post("/vault/store")
+def store_vault_credential(payload: VaultStoreSchema):
+    key = payload.key or (f"{payload.exchange.upper()}_API_KEY" if payload.exchange else None)
+    val = payload.value or payload.secret
+    if not key or not val:
+        raise HTTPException(status_code=400, detail="Both 'key' (or 'exchange') and 'value' are required.")
+    settings_service.store_vault_secret(key, val)
+    return {"status": "STORED", "key": key.upper()}
 
 @router.get("/onboarding/status")
 def get_onboarding_status():
-    val = sqlite_driver.get_setting("first_boot_completed")
-    mode = sqlite_driver.get_setting("ai_mode") or "skip"
+    cfg = settings_service.get_settings()
     hw = hardware_detector.detect_hardware()
     return {
-        "first_boot_completed": str(val).lower() in ("true", "1", '"true"') if val else False,
-        "ai_mode": mode,
+        "first_boot_completed": cfg["first_boot_completed"],
+        "config": cfg,
+        "ai_mode": cfg.get("ai_mode", "local_gguf"),
         "hardware": hw
     }
 
 @router.post("/onboarding/complete")
 def complete_onboarding(payload: OnboardingCompleteSchema):
-    sqlite_driver.set_setting("first_boot_completed", "true")
-    sqlite_driver.set_setting("ai_mode", payload.ai_mode)
+    updates = {
+        "first_boot_completed": True,
+        "trading_mode": payload.trading_mode or "paper",
+        "paper_balance": payload.paper_balance if payload.paper_balance is not None else 100000.0,
+        "active_theme": payload.active_theme or "dark",
+        "active_locale": payload.active_locale or "en",
+        "ai_mode": payload.ai_mode or "local_gguf"
+    }
+    cfg = settings_service.update_settings(updates)
 
+    # Store individual api_keys dict if provided
+    if payload.api_keys:
+        for k, v in payload.api_keys.items():
+            if k and v:
+                settings_service.store_vault_secret(k, v)
+
+    # Backward compatibility with single api_key
     if payload.api_key:
-        from app.core.security import vault
-        vault.store_secret(f"{payload.provider.upper()}_API_KEY", payload.api_key)
+        provider_name = payload.provider or "OPENAI"
+        settings_service.store_vault_secret(f"{provider_name.upper()}_API_KEY", payload.api_key)
 
     if payload.ai_mode == "local_gguf":
         model_downloader.start_download(mock_mode=True)
 
-    return {"status": "SUCCESS", "first_boot_completed": True, "ai_mode": payload.ai_mode}
+    return {"status": "SUCCESS", "first_boot_completed": True, "ai_mode": cfg.get("ai_mode"), "config": cfg}
 
 from app.websocket.tv_sync import tv_sync_manager
 
