@@ -1,0 +1,11 @@
+{
+  "plugin_id": "plugin_orderflow",
+  "name": "Order Flow Footprint & Cumulative Volume Delta",
+  "version": "1.1.0",
+  "category": "Order Flow",
+  "description": "Real-time Order Flow Footprint with bid/ask diagonal imbalance detection and CVD accumulator.",
+  "heavy_dependencies": ["numpy"],
+  "router_prefix": "/api/v1/plugins/orderflow",
+  "ram_footprint_mb": 14.2,
+  "persona_tags": ["quant", "institutional", "full"]
+}

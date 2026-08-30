@@ -1,0 +1,11 @@
+{
+  "plugin_id": "plugin_dex_arbitrage",
+  "name": "Cross-DEX Flash Loan Arbitrage & MEV Protection",
+  "version": "1.1.0",
+  "category": "DeFi & MEV",
+  "description": "Multi-chain RPC gateway, Bellman-Ford negative cycle pathfinding, and zero-capital flash loans via Balancer/Morpho/Aave.",
+  "heavy_dependencies": ["web3"],
+  "router_prefix": "/api/v1/plugins/dex-arbitrage",
+  "ram_footprint_mb": 22.0,
+  "persona_tags": ["defai", "full"]
+}
