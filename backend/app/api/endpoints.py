@@ -808,6 +808,33 @@ def verify_passkey_assertion_endpoint(payload: PasskeyVerifySchema):
 def list_hardware_passkeys():
     return {"passkeys": webauthn_passkey_vault.list_passkeys()}
 
+from app.services.mcp.client_gateway import mcp_gateway
+
+class MCPQuerySchema(BaseModel):
+    source: str
+    query_type: Optional[str] = "default"
+    params: Optional[Dict[str, Any]] = None
+
+@router.get("/mcp/sources")
+def get_mcp_sources():
+    return mcp_gateway.list_sources()
+
+@router.post("/mcp/query")
+def query_mcp_gateway(payload: MCPQuerySchema):
+    try:
+        res = mcp_gateway.dispatch_query(
+            source=payload.source,
+            query_type=payload.query_type or "default",
+            params=payload.params or {}
+        )
+        return {"status": "SUCCESS", "source": payload.source, "data": res}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/mcp/sentiment/stream")
+def get_mcp_sentiment_stream():
+    return mcp_gateway.get_sentiment_stream()
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
