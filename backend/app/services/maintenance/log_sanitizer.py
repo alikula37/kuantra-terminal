@@ -17,20 +17,20 @@ from pathlib import Path
 # Comprehensive Regex Matchers for Credentials, Tokens & Secrets
 SECRET_PATTERNS: List[Tuple[re.Pattern, str]] = [
     # 1. API Key patterns (e.g., api_key="...", apiKey: "...", API_KEY=...)
-    (re.compile(r'(?i)(api[_-]?key|apikey|x-api-key)\s*[:=]\s*["'']?([a-zA-Z0-9_\-\.]{12,})["'']?'), r'\1=[REDACTED_SECRET]'),
+    (re.compile(r'(?i)(api[_-]?key|apikey|x-api-key)\s*[:=]\s*["\']?([a-zA-Z0-9_\-.]{12,})["\']?'), r'\1=[REDACTED_SECRET]'),
     # 2. Secret Key / Client Secret patterns
-    (re.compile(r'(?i)(secret[_-]?key|client[_-]?secret|app[_-]?secret)\s*[:=]\s*["'']?([a-zA-Z0-9_\-\.]{12,})["'']?'), r'\1=[REDACTED_SECRET]'),
+    (re.compile(r'(?i)(secret[_-]?key|client[_-]?secret|app[_-]?secret)\s*[:=]\s*["\']?([a-zA-Z0-9_\-.]{12,})["\']?'), r'\1=[REDACTED_SECRET]'),
     # 3. Private Keys (PEM header & hex private keys)
     (re.compile(r'-----BEGIN [A-Z ]*PRIVATE KEY-----[a-zA-Z0-9+/=\s\n\r]+-----END [A-Z ]*PRIVATE KEY-----'), '[REDACTED_SECRET]'),
-    (re.compile(r'(?i)(private[_-]?key)\s*[:=]\s*["'']?(0x[a-fA-F0-9]{64}|[a-fA-F0-9]{64})["'']?'), r'\1=[REDACTED_SECRET]'),
+    (re.compile(r'(?i)(private[_-]?key)\s*[:=]\s*["\']?(0x[a-fA-F0-9]{64}|[a-fA-F0-9]{64})["\']?'), r'\1=[REDACTED_SECRET]'),
     # 4. Bearer & JWT tokens
-    (re.compile(r'Bearer\s+[a-zA-Z0-9\-\._~+/]+=*'), 'Bearer [REDACTED_SECRET]'),
-    (re.compile(r'ey[a-zA-Z0-9_\-]{20,}\.[a-zA-Z0-9_\-]{20,}\.[a-zA-Z0-9_\-]{20,}'), '[REDACTED_SECRET]'),
+    (re.compile(r'Bearer\s+[a-zA-Z0-9\-._~+/]+=*'), 'Bearer [REDACTED_SECRET]'),
+    (re.compile(r'ey[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}'), '[REDACTED_SECRET]'),
     # 5. Passkeys, Attestation Signatures, Stronghold Tokens
-    (re.compile(r'(?i)(passkey|signature|auth_token|vault_token)\s*[:=]\s*["'']?([a-zA-Z0-9_\-\.]{16,})["'']?'), r'\1=[REDACTED_SECRET]'),
+    (re.compile(r'(?i)(passkey|signature|auth_token|vault_token)\s*[:=]\s*["\']?([a-zA-Z0-9_\-.]{16,})["\']?'), r'\1=[REDACTED_SECRET]'),
     (re.compile(r'WEBAUTHN_[A-Z0-9_]{16,}'), '[REDACTED_SECRET]'),
     # 6. Seed phrases (12-24 word BIP-39 pattern estimation)
-    (re.compile(r'(?i)(seed[_-]?phrase|mnemonic)\s*[:=]\s*["'']?([a-z]+(\s+[a-z]+){11,23})["'']?'), r'\1=[REDACTED_SECRET]'),
+    (re.compile(r'(?i)(seed[_-]?phrase|mnemonic)\s*[:=]\s*["\']?([a-z]+(\s+[a-z]+){11,23})["\']?'), r'\1=[REDACTED_SECRET]'),
     # 7. Common payment / SaaS API keys
     (re.compile(r'sk_live_[a-zA-Z0-9]{20,}'), '[REDACTED_SECRET]'),
     (re.compile(r'ghp_[a-zA-Z0-9]{20,}'), '[REDACTED_SECRET]')
