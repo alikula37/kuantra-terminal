@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Radio, PlusCircle, Zap, Camera } from "lucide-react";
+import { Radio, PlusCircle, Zap, Camera, Sun, Moon, Globe } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
+import { useTheme } from "../context/ThemeContext";
+import { useTranslation, SUPPORTED_LOCALES, Locale } from "../context/I18nContext";
 
 interface HeaderProps {
   onOpenNewTrade: () => void;
@@ -9,6 +11,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUploader }) => {
   const { symbol, currentPrice, prevPrice, latencyMs, isConnected } = useMarketStore();
+  const { theme, toggleTheme } = useTheme();
+  const { locale, setLocale, t } = useTranslation();
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
 
   useEffect(() => {
@@ -33,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUplo
               KUANTRA
             </span>
             <span className="text-[9px] text-accent font-mono tracking-widest leading-none mt-0.5">
-              TERMINAL v0.1
+              TERMINAL v2.0
             </span>
           </div>
         </div>
@@ -79,6 +83,31 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUplo
       </div>
 
       <div className="flex items-center space-x-3">
+        {/* Language Selector */}
+        <div className="flex items-center space-x-1 bg-[#111722] px-2 py-1 rounded border border-surface-border text-xs font-mono text-slate-300">
+          <Globe className="w-3.5 h-3.5 text-accent" />
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as Locale)}
+            className="bg-transparent border-none text-white text-xs focus:outline-none cursor-pointer"
+          >
+            {SUPPORTED_LOCALES.map((loc) => (
+              <option key={loc.id} value={loc.id} className="bg-[#0d121c] text-white">
+                {loc.id.toUpperCase()}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="p-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white rounded transition"
+          title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Theme`}
+        >
+          {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-accent" />}
+        </button>
+
         <div className="flex items-center space-x-1.5 bg-[#111722] px-2.5 py-1 rounded border border-surface-border text-xs font-mono">
           <Zap className="w-3.5 h-3.5 text-accent" />
           <span className="text-slate-400">LAT:</span>
@@ -103,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUplo
             title="Upload Chart Screenshot for Vision OCR"
           >
             <Camera className="w-3.5 h-3.5 text-accent" />
-            <span>VISION OCR</span>
+            <span>{t("dashboard.upload_chart_btn")}</span>
           </button>
         )}
 
@@ -112,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUplo
           className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-xs px-3 py-1.5 rounded transition shadow-md hover:shadow-cyan-500/20 active:scale-95"
         >
           <PlusCircle className="w-3.5 h-3.5" />
-          <span>LOG TRADE</span>
+          <span>{t("dashboard.new_trade_btn")}</span>
         </button>
       </div>
     </header>
