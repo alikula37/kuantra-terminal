@@ -729,6 +729,32 @@ def disarm_panic_kill_switch(payload: PanicDisarmSchema):
 def get_panic_kill_switch_status():
     return panic_kill_switch.get_lockdown_status()
 
+from app.services.security.passkey_vault import webauthn_passkey_vault
+
+class PasskeyVerifySchema(BaseModel):
+    challenge: str
+    credential_id: str
+    assertion_signature: str
+
+@router.get("/security/passkey/challenge")
+def get_passkey_auth_challenge(action: Optional[str] = "HIGH_VALUE_ORDER"):
+    return webauthn_passkey_vault.generate_auth_challenge(action=action or "HIGH_VALUE_ORDER")
+
+@router.post("/security/passkey/verify")
+def verify_passkey_assertion_endpoint(payload: PasskeyVerifySchema):
+    is_valid = webauthn_passkey_vault.verify_passkey_assertion(
+        challenge=payload.challenge,
+        credential_id=payload.credential_id,
+        assertion_signature=payload.assertion_signature
+    )
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Hardware Passkey verification failed.")
+    return {"status": "PASSED", "message": "FIDO2 Hardware Challenge Cleared."}
+
+@router.get("/security/passkey/list")
+def list_hardware_passkeys():
+    return {"passkeys": webauthn_passkey_vault.list_passkeys()}
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
