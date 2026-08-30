@@ -1,0 +1,22 @@
+{
+  "name": "kuantra-terminal",
+  "version": "1.0.0",
+  "description": "Institutional High-Frequency Algorithmic Desktop Trading Suite & AI Swarm Ecosystem",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "tauri": "tauri"
+  },
+  "keywords": [
+    "trading-terminal",
+    "algorithmic-trading",
+    "tauri",
+    "react",
+    "python",
+    "mcp",
+    "orderflow"
+  ],
+  "author": "Kuantra Quantitative Engineering",
+  "license": "MIT"
+}
