@@ -11,11 +11,11 @@ export const usePopoutWindow = () => {
       const windowLabel = `win-${panelId.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
       const targetUrl = `/?popout=${encodeURIComponent(panelId)}`;
 
-      // Check if Tauri runtime is available
-      if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
+      // Check if Tauri runtime is available via window object
+      const tauriInternals = typeof window !== "undefined" ? (window as any).__TAURI_INTERNALS__ : null;
+      if (tauriInternals && typeof tauriInternals.invoke === "function") {
         try {
-          const { invoke } = await import("@tauri-apps/api/core");
-          await invoke("create_popout_window", {
+          await tauriInternals.invoke("create_popout_window", {
             label: windowLabel,
             title: `Kuantra Terminal - ${title}`,
             url: targetUrl,

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import DockLayout, { LayoutData } from "rc-dock";
 import "rc-dock/dist/rc-dock-dark.css";
 import { TradingViewChart } from "../TradingViewChart";

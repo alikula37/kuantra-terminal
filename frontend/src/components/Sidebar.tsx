@@ -1,7 +1,7 @@
 import React from "react";
-import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu, Layout, Zap } from "lucide-react";
 
-export type NavTab = "dashboard" | "journal" | "replay" | "playbook" | "drift" | "psychology" | "ai_coach" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
+export type NavTab = "dashboard" | "docking" | "virtual_journal" | "journal" | "replay" | "playbook" | "drift" | "psychology" | "ai_coach" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -11,7 +11,9 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "journal", label: "Journal", icon: BookOpen },
+    { id: "docking", label: "Docking Workspace", icon: Layout },
+    { id: "virtual_journal", label: "60 FPS Virtual Journal", icon: Zap },
+    { id: "journal", label: "Standard Journal", icon: BookOpen },
     { id: "replay", label: "Trade Replay", icon: PlayCircle },
     { id: "playbook", label: "Strategy Playbook", icon: BookmarkCheck },
     { id: "drift", label: "Execution Drift", icon: GitCommit },
