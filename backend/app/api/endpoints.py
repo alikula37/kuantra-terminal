@@ -584,6 +584,30 @@ def execute_quickfix_dma_order(payload: FixOrderSchema):
         price=payload.price
     )
 
+from app.services.p2p.mesh_node import p2p_mesh_node
+
+class PeerConnectSchema(BaseModel):
+    peer_id: str
+    node_name: str
+    pubkey: str
+    endpoint: str
+    role: Optional[str] = "FOLLOWER"
+
+@router.get("/p2p/status")
+def get_p2p_mesh_status():
+    return p2p_mesh_node.get_mesh_status()
+
+@router.post("/p2p/peers/connect")
+def connect_p2p_peer(payload: PeerConnectSchema):
+    p2p_mesh_node.add_peer(
+        peer_id=payload.peer_id,
+        node_name=payload.node_name,
+        pubkey=payload.pubkey,
+        endpoint=payload.endpoint,
+        role=payload.role or "FOLLOWER"
+    )
+    return {"status": "CONNECTED", "peer_id": payload.peer_id}
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
