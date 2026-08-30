@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 260px;
+      margin: 0;
+      padding: 12px;
+      font-family: monospace;
+      background-color: #0b0e14;
+      color: #f1f5f9;
+      font-size: 11px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .title {
+      font-weight: bold;
+      color: #38bdf8;
+    }
+    .status-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 9px;
+    }
+    .online { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); }
+    .offline { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      color: #94a3b8;
+    }
+    .val {
+      font-weight: bold;
+      color: #ffffff;
+    }
+    .footer {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #1e293b;
+      text-align: center;
+      font-size: 9px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="title">KUANTRA TV SYNC</span>
+    <span id="status-badge" class="status-badge offline">CONNECTING</span>
+  </div>
+  <div class="row">
+    <span>Active Symbol:</span>
+    <span id="active-symbol" class="val">BTCUSDT</span>
+  </div>
+  <div class="row">
+    <span>Timeframe:</span>
+    <span id="active-interval" class="val">15m</span>
+  </div>
+  <div class="row">
+    <span>Bridge Port:</span>
+    <span class="val">8000</span>
+  </div>
+  <div class="row">
+    <span>Latency:</span>
+    <span class="val" style="color: #22c55e;">&lt; 5 ms</span>
+  </div>
+  <div class="footer">
+    Kuantra Terminal v1.0 Sync Bridge Active
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

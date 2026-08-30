@@ -62,6 +62,20 @@ def create_app() -> FastAPI:
             "last_price": binance_client.last_price
         }
 
+    from fastapi import WebSocket, WebSocketDisconnect
+from app.websocket.tv_sync import tv_sync_manager
+
+@app.websocket("/ws/tv-sync")
+async def websocket_tv_sync_endpoint(websocket: WebSocket):
+    await tv_sync_manager.connect_extension(websocket)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await tv_sync_manager.handle_extension_message(data)
+    except WebSocketDisconnect:
+        tv_sync_manager.disconnect_extension(websocket)
+    except Exception as e:
+        tv_sync_manager.disconnect_extension(websocket)
     return app
 
 app = create_app()

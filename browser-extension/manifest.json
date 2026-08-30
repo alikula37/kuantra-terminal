@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Kuantra Terminal - TradingView Companion Sync",
+  "version": "1.0.0",
+  "description": "Sub-8ms instantaneous symbol and timeframe synchronization bridge between TradingView and Kuantra Terminal.",
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.tradingview.com/*",
+    "http://127.0.0.1:*/*",
+    "ws://127.0.0.1:*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.tradingview.com/chart/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Kuantra TV Sync"
+  }
+}

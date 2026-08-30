@@ -444,6 +444,26 @@ def complete_onboarding(payload: OnboardingCompleteSchema):
 
     return {"status": "SUCCESS", "first_boot_completed": True, "ai_mode": payload.ai_mode}
 
+from app.websocket.tv_sync import tv_sync_manager
+
+class TvSyncPayload(BaseModel):
+    symbol: str
+    timeframe: Optional[str] = "15m"
+    exchange: Optional[str] = "BINANCE"
+
+@router.get("/tv/sync-status")
+def get_tv_sync_status():
+    return tv_sync_manager.get_sync_state()
+
+@router.post("/tv/sync-symbol")
+async def set_tv_sync_symbol(payload: TvSyncPayload):
+    await tv_sync_manager.handle_extension_message({
+        "symbol": payload.symbol,
+        "timeframe": payload.timeframe,
+        "exchange": payload.exchange
+    })
+    return {"status": "SYNCED", "state": tv_sync_manager.get_sync_state()}
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
