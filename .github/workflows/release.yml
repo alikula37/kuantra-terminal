@@ -1,0 +1,154 @@
+name: Kuantra Terminal Automated Multi-Platform Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-package:
+    name: Build & Package (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundle_ext: .exe
+            sidecar_bin: kuantra-backend-x86_64-pc-windows-msvc.exe
+
+          - os: macos-14
+            target: aarch64-apple-darwin
+            bundle_ext: .dmg
+            sidecar_bin: kuantra-backend-aarch64-apple-darwin
+
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundle_ext: .AppImage
+            sidecar_bin: kuantra-backend-x86_64-unknown-linux-gnu
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11 Toolchain
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Setup Node.js 20 Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package.json"
+
+      - name: Setup Rust Stable Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux Build Prerequisites
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libayatana-appindicator3-dev
+
+      - name: Install Python Dependencies & Nuitka Compiler
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install nuitka zstandard ordered-set
+
+      - name: Compile Nuitka C++ Backend Sidecar Binary
+        run: |
+          mkdir -p src-tauri/binaries
+          python backend/build_sidecar.py --target ${{ matrix.target }} --output-dir src-tauri/binaries
+
+      - name: Build Frontend Production Artifacts
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Build Tauri Desktop Package Bundle
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Kuantra Terminal ${{ github.ref_name }}"
+          releaseBody: "See RELEASE_NOTES.md for full institutional changelog."
+          releaseDraft: false
+          prerelease: false
+
+      - name: Stage & Calculate SHA-256 Artifact Checksums
+        shell: bash
+        run: |
+          mkdir -p release-staging
+          find src-tauri/target/release/bundle -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.zip" \) -exec cp {} release-staging/ \; || true
+          cd release-staging
+          for f in *; do
+            if [ -f "$f" ]; then
+              sha256sum "$f" > "$f.sha256"
+            fi
+          done
+
+      - name: Upload Platform Release Assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ matrix.target }}
+          path: release-staging/*
+          if-no-files-found: warn
+
+  publish-release:
+    name: Consolidate & Publish Official GitHub Release
+    needs: build-and-package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Download All Platform Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-release-assets
+          merge-multiple: true
+
+      - name: Generate Consolidated SHA-256 Checksum Manifest
+        shell: bash
+        run: |
+          mkdir -p dist-release
+          cp -r all-release-assets/* dist-release/ || true
+          cd dist-release
+          echo "## 🔒 Cryptographic SHA-256 Release Checksums" > CHECKSUMS.md
+          echo "" >> CHECKSUMS.md
+          echo "| Artifact Filename | SHA-256 Checksum |" >> CHECKSUMS.md
+          echo "|---|---|" >> CHECKSUMS.md
+          for f in *.exe *.msi *.dmg *.AppImage *.deb *.zip; do
+            if [ -f "$f" ]; then
+              HASH=$(sha256sum "$f" | cut -d ' ' -f 1)
+              echo "| \`$f\` | \`$HASH\` |" >> CHECKSUMS.md
+            fi
+          done
+
+      - name: Publish Official Release on GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          append_body: true
+          files: |
+            dist-release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
