@@ -1,7 +1,7 @@
 import React from "react";
-import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu, Layout, Zap, Activity, Users, Flame, Terminal } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu, Layout, Zap, Activity, Users, Flame, Terminal, Share2, Copy } from "lucide-react";
 
-export type NavTab = "dashboard" | "docking" | "virtual_journal" | "journal" | "orderflow" | "fix_dma" | "replay" | "playbook" | "drift" | "psychology" | "biometrics" | "ai_coach" | "swarm" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
+export type NavTab = "dashboard" | "docking" | "virtual_journal" | "journal" | "orderflow" | "fix_dma" | "p2p_mesh" | "copy_trading" | "replay" | "playbook" | "drift" | "psychology" | "biometrics" | "ai_coach" | "swarm" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -11,6 +11,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "p2p_mesh", label: "Encrypted P2P Mesh", icon: Share2 },
+    { id: "copy_trading", label: "Multi-Account Copy", icon: Copy },
     { id: "orderflow", label: "Order Flow Footprint", icon: Flame },
     { id: "fix_dma", label: "CME QuickFIX DMA", icon: Terminal },
     { id: "docking", label: "Docking Workspace", icon: Layout },

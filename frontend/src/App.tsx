@@ -6,6 +6,8 @@ import { JournalView } from "./components/JournalView";
 import { VirtualizedTradeJournal } from "./components/virtual/VirtualizedTradeJournal";
 import { DockLayoutView } from "./components/layout/DockLayoutView";
 import { WorkspacePresetSelector } from "./components/workspace/WorkspacePresetSelector";
+import { MeshNetworkHUD } from "./components/p2p/MeshNetworkHUD";
+import { CopyTradingMatrix } from "./components/p2p/CopyTradingMatrix";
 import { FootprintChart } from "./components/orderflow/FootprintChart";
 import { FixStatusWidget } from "./components/orderflow/FixStatusWidget";
 import { TradeReplayCanvas } from "./components/TradeReplayCanvas";
@@ -71,6 +73,8 @@ export default function App() {
         </div>
         <div className="flex-1 overflow-hidden">
           {popoutParam === "chart" && <DashboardView />}
+          {popoutParam === "p2p_mesh" && <MeshNetworkHUD />}
+          {popoutParam === "copy_trading" && <CopyTradingMatrix />}
           {popoutParam === "orderflow" && <FootprintChart />}
           {popoutParam === "fix_dma" && <FixStatusWidget />}
           {popoutParam === "virtual_journal" && <VirtualizedTradeJournal onReplayTrade={handleLaunchReplay} />}
@@ -94,7 +98,7 @@ export default function App() {
 
   const handlePopoutAll = () => {
     popout("chart", "Live Chart Monitor", 1200, 800);
-    popout("orderflow", "Order Flow Footprint", 1100, 750);
+    popout("p2p_mesh", "P2P Signal Mesh", 1100, 750);
     popout("virtual_journal", "60 FPS Virtual Audit Log", 1000, 650);
   };
 
@@ -117,6 +121,8 @@ export default function App() {
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "p2p_mesh" && <MeshNetworkHUD />}
+          {activeTab === "copy_trading" && <CopyTradingMatrix />}
           {activeTab === "orderflow" && <FootprintChart />}
           {activeTab === "fix_dma" && <FixStatusWidget />}
           {activeTab === "docking" && <DockLayoutView onPopoutWindow={popout} />}
