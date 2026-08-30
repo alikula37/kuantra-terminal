@@ -6,6 +6,8 @@ import { JournalView } from "./components/JournalView";
 import { VirtualizedTradeJournal } from "./components/virtual/VirtualizedTradeJournal";
 import { DockLayoutView } from "./components/layout/DockLayoutView";
 import { WorkspacePresetSelector } from "./components/workspace/WorkspacePresetSelector";
+import { MobileCompanionHUD } from "./components/mobile/MobileCompanionHUD";
+import { PanicKillSwitchModal } from "./components/mobile/PanicKillSwitchModal";
 import { MeshNetworkHUD } from "./components/p2p/MeshNetworkHUD";
 import { CopyTradingMatrix } from "./components/p2p/CopyTradingMatrix";
 import { FootprintChart } from "./components/orderflow/FootprintChart";
@@ -35,6 +37,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isVisionModalOpen, setIsVisionModalOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+  const [isPanicModalOpen, setIsPanicModalOpen] = useState<boolean>(false);
 
   useWebSocket();
   const { popout } = usePopoutWindow();
@@ -73,6 +76,7 @@ export default function App() {
         </div>
         <div className="flex-1 overflow-hidden">
           {popoutParam === "chart" && <DashboardView />}
+          {popoutParam === "mobile_companion" && <MobileCompanionHUD />}
           {popoutParam === "p2p_mesh" && <MeshNetworkHUD />}
           {popoutParam === "copy_trading" && <CopyTradingMatrix />}
           {popoutParam === "orderflow" && <FootprintChart />}
@@ -98,7 +102,7 @@ export default function App() {
 
   const handlePopoutAll = () => {
     popout("chart", "Live Chart Monitor", 1200, 800);
-    popout("p2p_mesh", "P2P Signal Mesh", 1100, 750);
+    popout("mobile_companion", "Mobile Companion Hub", 1100, 750);
     popout("virtual_journal", "60 FPS Virtual Audit Log", 1000, 650);
   };
 
@@ -121,6 +125,7 @@ export default function App() {
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "mobile_companion" && <MobileCompanionHUD />}
           {activeTab === "p2p_mesh" && <MeshNetworkHUD />}
           {activeTab === "copy_trading" && <CopyTradingMatrix />}
           {activeTab === "orderflow" && <FootprintChart />}
@@ -156,6 +161,7 @@ export default function App() {
       <NewTradeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       <ChartVisionUploader isOpen={isVisionModalOpen} onClose={() => setIsVisionModalOpen(false)} />
       <FirstBootWizard isOpen={isOnboardingOpen} onCompleted={() => setIsOnboardingOpen(false)} />
+      <PanicKillSwitchModal isOpen={isPanicModalOpen} onClose={() => setIsPanicModalOpen(false)} />
     </div>
   );
 }
