@@ -71,7 +71,7 @@ class TestPhase10OnboardingAndProductionBuild:
         with open(tauri_conf_path, "r", encoding="utf-8") as f:
             conf = json.load(f)
 
-        assert conf["version"] in ("1.0.0", "1.1.0")
+        assert conf["version"] in ("1.0.0", "1.1.0", "1.2.0")
         assert conf["productName"] == "Kuantra Terminal"
         assert "bundle" in conf
         bundle = conf["bundle"]
