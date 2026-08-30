@@ -249,6 +249,12 @@ def compute_pivot_analytics(req: PivotRequestSchema):
         side_filter=req.side
     )
 
+from app.quant.execution_drift import execution_drift_analyzer
+
+@router.get("/analytics/execution-drift")
+def get_execution_drift_analytics(symbol: Optional[str] = None):
+    return execution_drift_analyzer.get_drift_analytics(symbol=symbol)
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
