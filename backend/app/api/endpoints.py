@@ -10,7 +10,8 @@ from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
 from app.quant.quant_engine import quant_engine
 
-router = APIRouter(prefix="/api/v1")`nrouter.include_router(webhook_router)
+router = APIRouter(prefix="/api/v1")
+router.include_router(webhook_router)
 
 class TradeCreateSchema(BaseModel):
     symbol: str = "BTCUSDT"

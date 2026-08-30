@@ -5,11 +5,12 @@ import socket
 import asyncio
 from contextlib import asynccontextmanager
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.endpoints import router as api_router
 from app.websocket.binance_client import binance_client
+from app.websocket.tv_sync import tv_sync_manager
 
 def find_available_port(host: str = "127.0.0.1") -> int:
     """Binds to ephemeral port 0 and returns allocated dynamic port number."""
@@ -62,20 +63,18 @@ def create_app() -> FastAPI:
             "last_price": binance_client.last_price
         }
 
-    from fastapi import WebSocket, WebSocketDisconnect
-from app.websocket.tv_sync import tv_sync_manager
+    @app.websocket("/ws/tv-sync")
+    async def websocket_tv_sync_endpoint(websocket: WebSocket):
+        await tv_sync_manager.connect_extension(websocket)
+        try:
+            while True:
+                data = await websocket.receive_json()
+                await tv_sync_manager.handle_extension_message(data)
+        except WebSocketDisconnect:
+            tv_sync_manager.disconnect_extension(websocket)
+        except Exception:
+            tv_sync_manager.disconnect_extension(websocket)
 
-@app.websocket("/ws/tv-sync")
-async def websocket_tv_sync_endpoint(websocket: WebSocket):
-    await tv_sync_manager.connect_extension(websocket)
-    try:
-        while True:
-            data = await websocket.receive_json()
-            await tv_sync_manager.handle_extension_message(data)
-    except WebSocketDisconnect:
-        tv_sync_manager.disconnect_extension(websocket)
-    except Exception as e:
-        tv_sync_manager.disconnect_extension(websocket)
     return app
 
 app = create_app()

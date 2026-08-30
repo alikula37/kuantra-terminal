@@ -22,16 +22,22 @@ export const useTradingViewSync = (onSymbolChange?: (symbol: string, timeframe: 
       .then((res) => res.json())
       .then((data) => {
         if (data.active_symbol) {
+          setIsConnected(true);
           setSyncState({
             symbol: data.active_symbol,
             timeframe: data.active_timeframe || "15m",
             exchange: data.active_exchange || "BINANCE",
-            lastUpdated: data.last_sync_timestamp * 1000,
+            lastUpdated: (data.last_sync_timestamp || Date.now() / 1000) * 1000,
           });
+          if (onSymbolChange) {
+            onSymbolChange(data.active_symbol, data.active_timeframe || "15m");
+          }
         }
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {
+        setIsConnected(false);
+      });
+  }, [onSymbolChange]);
 
   useEffect(() => {
     fetchCurrentSync();
