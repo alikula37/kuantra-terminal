@@ -37,16 +37,18 @@ class LazyDependencyLoader:
 
     def unload(self, module_name: str):
         """
-        Unloads a module from sys.modules and invokes gc.collect() to release C/C++ handles.
+        Unloads a plugin module and invokes gc.collect() to release memory.
+        Safely clears references without corrupting Python 3.11 C extension threadstate.
         """
-        to_delete = [m for m in sys.modules if m == module_name or m.startswith(f"{module_name}.")]
-        for m in to_delete:
-            try:
-                del sys.modules[m]
-            except KeyError:
-                pass
+        if module_name.startswith("app.plugins"):
+            to_delete = [m for m in list(sys.modules.keys()) if m == module_name or m.startswith(f"{module_name}.")]
+            for m in to_delete:
+                try:
+                    del sys.modules[m]
+                except KeyError:
+                    pass
         gc.collect()
-        logger.info(f"[LAZY-LOADER] Purged module '{module_name}' ({len(to_delete)} submodules) and ran gc.collect()")
+        logger.info(f"[LAZY-LOADER] Cleaned up module references for '{module_name}' and ran gc.collect()")
 
     def unload_plugin_dependencies(self, plugin_id: str, heavy_deps: Optional[List[str]] = None):
         """Unloads all tracked and declared heavy dependencies for a given plugin."""

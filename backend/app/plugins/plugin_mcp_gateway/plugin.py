@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter
 from app.core.plugins import BasePlugin, PluginMetadata
-from app.services.mcp.client import mcp_client
+from app.services.mcp.client_gateway import mcp_gateway
 
 router = APIRouter()
 

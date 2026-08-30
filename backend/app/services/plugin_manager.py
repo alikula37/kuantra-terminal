@@ -193,7 +193,7 @@ class DynamicPluginManager:
 
             # 2. Remove routes from Starlette app router
             if self.app and plugin_id in self._mounted_routes:
-                routes_to_remove = set(self._mounted_routes.pop(plugin_id))
+                routes_to_remove = self._mounted_routes.pop(plugin_id)
                 self.app.router.routes = [r for r in self.app.router.routes if r not in routes_to_remove]
                 self.app.openapi_schema = None
 
