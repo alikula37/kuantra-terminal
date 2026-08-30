@@ -108,6 +108,18 @@ def delete_trade(trade_id: str):
 def get_analytics_overview():
     return duckdb_driver.get_aggregated_stats()
 
+from app.services.compliance_engine import compliance_engine
+
+@router.get("/compliance/status")
+def get_compliance_status():
+    open_positions = binance_client._recalculate_open_positions(binance_client.last_price)
+    return compliance_engine.evaluate_compliance(open_positions)
+
+@router.post("/compliance/config")
+def update_compliance_config(config_data: Dict[str, Any]):
+    updated = compliance_engine.update_config(config_data)
+    return {"status": "updated", "config": updated.model_dump()}
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()

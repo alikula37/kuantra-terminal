@@ -1,3 +1,4 @@
+from app.services.compliance_engine import compliance_engine
 import asyncio
 import json
 import logging
@@ -137,7 +138,16 @@ class BinanceStreamClient:
             "latency_ms": self.latency_ms,
             "open_positions": open_positions
         }
+                # Evaluate Prop Firm Compliance Shield
+        compliance_status = compliance_engine.evaluate_compliance(open_positions)
+        payload["compliance_status"] = compliance_status
+
         await ws_manager.broadcast(payload, channel="market_ticks")
+        if compliance_status["overall_status"] != "COMPLIANT":
+            await ws_manager.broadcast({
+                "type": "COMPLIANCE_ALERT",
+                "data": compliance_status
+            }, channel="system_metrics")
 
     def _recalculate_open_positions(self, current_price: float) -> List[Dict[str, Any]]:
         try:
