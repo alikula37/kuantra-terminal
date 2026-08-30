@@ -18,7 +18,7 @@ if ROOT_DIR not in sys.path:
 
 from app.services.maintenance.log_sanitizer import log_sanitizer_engine
 from app.services.maintenance.db_maintenance import db_maintenance_engine
-from app.services.security.stronghold_vault import stronghold_vault
+from app.core.security import StrongholdVault, vault as stronghold_vault
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("kuantra_cli")
