@@ -1057,6 +1057,57 @@ def simulate_orderbook_fill(payload: SimulateSweepPayload):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Order book sweep error: {str(e)}")
 
+from app.services.biometrics.hardware_driver import hardware_biometrics_driver
+from app.services.biometrics.stress_interceptor import stress_interceptor
+
+class BiometricConnectPayload(BaseModel):
+    device_id: str
+    protocol: Optional[str] = "BLE"
+
+class BiometricOverridePayload(BaseModel):
+    challenge_signature: str
+    passkey_user_id: Optional[str] = "TRADER_ADMIN"
+
+@router.get("/biometrics/devices")
+def get_biometric_devices():
+    return {
+        "devices": hardware_biometrics_driver.scan_devices(),
+        "active_device_id": hardware_biometrics_driver.active_device_id,
+        "is_connected": hardware_biometrics_driver.is_connected
+    }
+
+@router.post("/biometrics/connect")
+def connect_biometric_device(payload: BiometricConnectPayload):
+    try:
+        return hardware_biometrics_driver.connect_device(
+            device_id=payload.device_id,
+            protocol=payload.protocol or "BLE"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Biometric connect error: {str(e)}")
+
+@router.get("/biometrics/live-telemetry")
+def get_biometric_live_telemetry(bpm: Optional[float] = None, eda: Optional[float] = None):
+    try:
+        return stress_interceptor.evaluate_live_state(manual_bpm=bpm, manual_eda=eda)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Biometric telemetry error: {str(e)}")
+
+@router.post("/biometrics/override-lockout")
+def override_biometric_lockout(payload: BiometricOverridePayload):
+    try:
+        res = stress_interceptor.override_lockout_fido2(
+            challenge_signature=payload.challenge_signature,
+            passkey_user_id=payload.passkey_user_id or "TRADER_ADMIN"
+        )
+        if res.get("status") == "OVERRIDE_REJECTED":
+            raise HTTPException(status_code=403, detail=res.get("reason"))
+        return res
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Override error: {str(e)}")
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
