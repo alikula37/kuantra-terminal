@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import axios from "axios";
 
 export interface PluginMetadata {
   plugin_id: string;
@@ -56,10 +55,13 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
   const fetchPlugins = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE}/plugins/installed`);
-      if (res.data && res.data.plugins) {
-        setPlugins(res.data.plugins);
-        setActivePersona(res.data.active_persona || "full");
+      const res = await fetch(`${API_BASE}/plugins/installed`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.plugins) {
+          setPlugins(data.plugins);
+          setActivePersona(data.active_persona || "full");
+        }
       }
       setError(null);
     } catch (err: any) {
@@ -191,9 +193,10 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
   const togglePlugin = useCallback(
     async (pluginId: string, enable: boolean): Promise<boolean> => {
       try {
-        await axios.post(`${API_BASE}/plugins/toggle`, {
-          plugin_id: pluginId,
-          enable
+        await fetch(`${API_BASE}/plugins/toggle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plugin_id: pluginId, enable })
         });
         setPlugins((prev) =>
           prev.map((p) => (p.plugin_id === pluginId ? { ...p, is_active: enable } : p))
@@ -214,7 +217,11 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
   const applyPersona = useCallback(
     async (persona: string): Promise<boolean> => {
       try {
-        await axios.post(`${API_BASE}/plugins/apply-persona`, { persona });
+        await fetch(`${API_BASE}/plugins/apply-persona`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ persona })
+        });
         setActivePersona(persona);
         await fetchPlugins();
         return true;
