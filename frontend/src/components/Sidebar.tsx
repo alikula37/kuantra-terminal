@@ -1,7 +1,65 @@
 import React from "react";
-import { LayoutDashboard, BookOpen, BarChart3, Crosshair, ShieldCheck, Layers, PlayCircle, BookmarkCheck, GitCommit, Brain, Bot, Sliders, Database, Cpu, Layout, Zap, Activity, Users, Flame, Terminal, Share2, Copy, Smartphone, Code, ArrowRightLeft, AlignJustify, HeartPulse } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  BookOpen, 
+  BarChart3, 
+  Crosshair, 
+  ShieldCheck, 
+  Layers, 
+  PlayCircle, 
+  BookmarkCheck, 
+  GitCommit, 
+  Brain, 
+  Bot, 
+  Sliders, 
+  Database, 
+  Cpu, 
+  Layout, 
+  Zap, 
+  Activity, 
+  Users, 
+  Flame, 
+  Terminal, 
+  Share2, 
+  Copy, 
+  Smartphone, 
+  Code, 
+  ArrowRightLeft, 
+  AlignJustify, 
+  HeartPulse, 
+  Puzzle 
+} from "lucide-react";
+import { usePluginRegistry } from "../context/PluginRegistryContext";
+import { ExtensionSlot } from "./plugins/ExtensionSlot";
 
-export type NavTab = "dashboard" | "biometrics_studio" | "fix_studio" | "dex_arbitrage" | "mcp_explorer" | "reverse_skill" | "docking" | "virtual_journal" | "journal" | "orderflow" | "fix_dma" | "p2p_mesh" | "copy_trading" | "mobile_companion" | "replay" | "playbook" | "drift" | "psychology" | "biometrics" | "ai_coach" | "swarm" | "analytics" | "mae_mfe" | "prop_shield" | "pivot_grid" | "settings";
+export type NavTab = 
+  | "dashboard" 
+  | "biometrics_studio" 
+  | "fix_studio" 
+  | "dex_arbitrage" 
+  | "mcp_explorer" 
+  | "reverse_skill" 
+  | "docking" 
+  | "virtual_journal" 
+  | "journal" 
+  | "orderflow" 
+  | "fix_dma" 
+  | "p2p_mesh" 
+  | "copy_trading" 
+  | "mobile_companion" 
+  | "replay" 
+  | "playbook" 
+  | "drift" 
+  | "psychology" 
+  | "biometrics" 
+  | "ai_coach" 
+  | "swarm" 
+  | "analytics" 
+  | "mae_mfe" 
+  | "prop_shield" 
+  | "pivot_grid" 
+  | "modstore" 
+  | "settings";
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -9,42 +67,50 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
-  const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "biometrics_studio", label: "Hardware Biometrics Studio", icon: HeartPulse },
-    { id: "fix_studio", label: "L2/L3 DOM & FIX Studio", icon: AlignJustify },
-    { id: "dex_arbitrage", label: "DEX Arbitrage & Flash Loans", icon: ArrowRightLeft },
-    { id: "mcp_explorer", label: "Financial MCP Gateway", icon: Database },
-    { id: "reverse_skill", label: "Reverse-Skill Studio", icon: Code },
-    { id: "mobile_companion", label: "Mobile Companion & Passkey", icon: Smartphone },
-    { id: "p2p_mesh", label: "Encrypted P2P Mesh", icon: Share2 },
-    { id: "copy_trading", label: "Multi-Account Copy", icon: Copy },
-    { id: "orderflow", label: "Order Flow Footprint", icon: Flame },
-    { id: "fix_dma", label: "CME QuickFIX DMA", icon: Terminal },
-    { id: "docking", label: "Docking Workspace", icon: Layout },
-    { id: "virtual_journal", label: "60 FPS Virtual Journal", icon: Zap },
-    { id: "journal", label: "Standard Journal", icon: BookOpen },
-    { id: "replay", label: "Trade Replay", icon: PlayCircle },
-    { id: "playbook", label: "Strategy Playbook", icon: BookmarkCheck },
-    { id: "drift", label: "Execution Drift", icon: GitCommit },
-    { id: "psychology", label: "Psychology & Tilt", icon: Brain },
-    { id: "biometrics", label: "Biometric Wearable", icon: Activity },
-    { id: "ai_coach", label: "AI Trade Auditor", icon: Bot },
-    { id: "swarm", label: "Multi-Agent Swarm", icon: Users },
-    { id: "analytics", label: "Quant Scorecard", icon: BarChart3 },
-    { id: "mae_mfe", label: "MAE / MFE Visualizer", icon: Crosshair },
-    { id: "prop_shield", label: "Prop Firm Shield", icon: ShieldCheck },
-    { id: "pivot_grid", label: "Dynamic Pivot Grid", icon: Layers },
-    { id: "settings", label: "Settings", icon: Sliders },
+  const { isPluginActive } = usePluginRegistry();
+
+  const allNavItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, core: true },
+    { id: "modstore", label: "ModStore & Hub 🧩", icon: Puzzle, core: true },
+    { id: "biometrics_studio", label: "Hardware Biometrics Studio", icon: HeartPulse, pluginId: "plugin_biometrics" },
+    { id: "fix_studio", label: "L2/L3 DOM & FIX Studio", icon: AlignJustify, pluginId: "plugin_fix_dma" },
+    { id: "dex_arbitrage", label: "DEX Arbitrage & Flash Loans", icon: ArrowRightLeft, pluginId: "plugin_dex_arbitrage" },
+    { id: "mcp_explorer", label: "Financial MCP Gateway", icon: Database, pluginId: "plugin_mcp_gateway" },
+    { id: "reverse_skill", label: "Reverse-Skill Studio", icon: Code, pluginId: "plugin_reverse_skill" },
+    { id: "mobile_companion", label: "Mobile Companion & Passkey", icon: Smartphone, core: true },
+    { id: "p2p_mesh", label: "Encrypted P2P Mesh", icon: Share2, core: true },
+    { id: "copy_trading", label: "Multi-Account Copy", icon: Copy, core: true },
+    { id: "orderflow", label: "Order Flow Footprint", icon: Flame, pluginId: "plugin_orderflow" },
+    { id: "fix_dma", label: "CME QuickFIX DMA", icon: Terminal, pluginId: "plugin_fix_dma" },
+    { id: "docking", label: "Docking Workspace", icon: Layout, core: true },
+    { id: "virtual_journal", label: "60 FPS Virtual Journal", icon: Zap, core: true },
+    { id: "journal", label: "Standard Journal", icon: BookOpen, core: true },
+    { id: "replay", label: "Trade Replay", icon: PlayCircle, core: true },
+    { id: "playbook", label: "Strategy Playbook", icon: BookmarkCheck, core: true },
+    { id: "drift", label: "Execution Drift", icon: GitCommit, core: true },
+    { id: "psychology", label: "Psychology & Tilt", icon: Brain, core: true },
+    { id: "biometrics", label: "Biometric Wearable", icon: Activity, pluginId: "plugin_biometrics" },
+    { id: "ai_coach", label: "AI Trade Auditor", icon: Bot, core: true },
+    { id: "swarm", label: "Multi-Agent Swarm", icon: Users, pluginId: "plugin_ai_swarm" },
+    { id: "analytics", label: "Quant Scorecard", icon: BarChart3, core: true },
+    { id: "mae_mfe", label: "MAE / MFE Visualizer", icon: Crosshair, core: true },
+    { id: "prop_shield", label: "Prop Firm Shield", icon: ShieldCheck, pluginId: "plugin_quant_shield" },
+    { id: "pivot_grid", label: "Dynamic Pivot Grid", icon: Layers, core: true },
+    { id: "settings", label: "Settings", icon: Sliders, core: true },
   ];
+
+  const visibleNavItems = allNavItems.filter(
+    (item) => item.core || (item.pluginId && isPluginActive(item.pluginId))
+  );
 
   return (
     <aside className="w-56 bg-[#0d121c] border-r border-surface-border flex flex-col justify-between select-none">
       <div className="p-3 space-y-1 overflow-y-auto">
-        <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-          Terminal Modules
+        <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold flex items-center justify-between">
+          <span>Active Modules</span>
+          <span className="text-accent">{visibleNavItems.length}</span>
         </div>
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
@@ -62,6 +128,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
             </button>
           );
         })}
+
+        {/* Dynamic Extension Slot for 3rd-party/ModStore plugins */}
+        <ExtensionSlot slot="sidebar" />
       </div>
 
       <div className="p-3 border-t border-surface-border space-y-2 bg-[#090d14]/60">

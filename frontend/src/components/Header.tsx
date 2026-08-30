@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { Radio, PlusCircle, Zap, Camera, Sun, Moon, Globe, Cpu } from "lucide-react";
+import { Radio, PlusCircle, Zap, Camera, Sun, Moon, Globe, Cpu, Sliders } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTheme } from "../context/ThemeContext";
 import { useTranslation, SUPPORTED_LOCALES, Locale } from "../context/I18nContext";
+import { usePluginRegistry } from "../context/PluginRegistryContext";
+import { ExtensionSlot } from "./plugins/ExtensionSlot";
 
 interface HeaderProps {
   onOpenNewTrade: () => void;
   onOpenVisionUploader?: () => void;
   onOpenGPUTelemetry?: () => void;
+  onOpenPersonaSelector?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUploader, onOpenGPUTelemetry }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  onOpenNewTrade, 
+  onOpenVisionUploader, 
+  onOpenGPUTelemetry,
+  onOpenPersonaSelector 
+}) => {
   const { symbol, currentPrice, prevPrice, latencyMs, isConnected } = useMarketStore();
   const { theme, toggleTheme } = useTheme();
   const { locale, setLocale, t } = useTranslation();
+  const { activePersona } = usePluginRegistry();
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
 
   useEffect(() => {
@@ -84,6 +93,21 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUplo
       </div>
 
       <div className="flex items-center space-x-3">
+        {/* Dynamic Plugin Header Extension Slots */}
+        <ExtensionSlot slot="header" />
+
+        {/* Persona Preset Trigger */}
+        {onOpenPersonaSelector && (
+          <button
+            onClick={onOpenPersonaSelector}
+            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-accent px-2.5 py-1 rounded text-xs font-mono transition"
+            title="Switch Architectural Persona Preset"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span className="font-bold uppercase text-[10px]">{activePersona.replace("kuantra_", "")}</span>
+          </button>
+        )}
+
         {/* Language Selector */}
         <div className="flex items-center space-x-1 bg-[#111722] px-2 py-1 rounded border border-surface-border text-xs font-mono text-slate-300">
           <Globe className="w-3.5 h-3.5 text-accent" />

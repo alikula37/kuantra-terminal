@@ -33,6 +33,8 @@ import { NewTradeModal } from "./components/NewTradeModal";
 import { ChartVisionUploader } from "./components/ChartVisionUploader";
 import { FirstBootWizard } from "./components/onboarding/FirstBootWizard";
 import { GPUTelemetryModal } from "./components/hardware/GPUTelemetryModal";
+import { ModStoreStudio } from "./components/plugins/ModStoreStudio";
+import { PersonaSelectorModal } from "./components/onboarding/PersonaSelectorModal";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { usePopoutWindow } from "./hooks/usePopoutWindow";
 
@@ -45,6 +47,7 @@ export default function App() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isPanicModalOpen, setIsPanicModalOpen] = useState<boolean>(false);
   const [isGPUModalOpen, setIsGPUModalOpen] = useState<boolean>(false);
+  const [isPersonaModalOpen, setIsPersonaModalOpen] = useState<boolean>(false);
 
   useWebSocket();
   const { popout } = usePopoutWindow();
@@ -83,6 +86,7 @@ export default function App() {
         </div>
         <div className="flex-1 overflow-hidden">
           {popoutParam === "chart" && <DashboardView />}
+          {popoutParam === "modstore" && <ModStoreStudio onOpenPersonaSelector={() => setIsPersonaModalOpen(true)} />}
           {popoutParam === "biometrics_studio" && <BiometricHardwareStudio />}
           {popoutParam === "fix_studio" && <FIXOrderBookStudio />}
           {popoutParam === "dex_arbitrage" && <DEXArbitrageStudio />}
@@ -128,6 +132,7 @@ export default function App() {
         onOpenNewTrade={() => setIsModalOpen(true)}
         onOpenVisionUploader={() => setIsVisionModalOpen(true)}
         onOpenGPUTelemetry={() => setIsGPUModalOpen(true)}
+        onOpenPersonaSelector={() => setIsPersonaModalOpen(true)}
       />
 
       <WorkspacePresetSelector
@@ -142,6 +147,7 @@ export default function App() {
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "modstore" && <ModStoreStudio onOpenPersonaSelector={() => setIsPersonaModalOpen(true)} />}
           {activeTab === "biometrics_studio" && <BiometricHardwareStudio />}
           {activeTab === "fix_studio" && <FIXOrderBookStudio />}
           {activeTab === "dex_arbitrage" && <DEXArbitrageStudio />}
@@ -185,6 +191,7 @@ export default function App() {
       <FirstBootWizard isOpen={isOnboardingOpen} onCompleted={() => setIsOnboardingOpen(false)} />
       <PanicKillSwitchModal isOpen={isPanicModalOpen} onClose={() => setIsPanicModalOpen(false)} />
       <GPUTelemetryModal isOpen={isGPUModalOpen} onClose={() => setIsGPUModalOpen(false)} />
+      <PersonaSelectorModal isOpen={isPersonaModalOpen} onClose={() => setIsPersonaModalOpen(false)} />
     </div>
   );
 }
