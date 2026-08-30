@@ -7,6 +7,7 @@ from app.db.duckdb_driver import duckdb_driver
 from app.db.sync_pipeline import sync_pipeline
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
+from app.quant.quant_engine import quant_engine
 
 router = APIRouter(prefix="/api/v1")
 
@@ -114,6 +115,13 @@ def get_analytics_symbols():
 @router.get("/analytics/equity")
 def get_analytics_equity():
     return duckdb_driver.get_equity_curve()
+
+@router.get("/analytics/quant")
+def get_analytics_quant():
+    all_closed = [t for t in sqlite_driver.list_trades(limit=10000, status="CLOSED") if t.get("pnl") is not None]
+    pnls = [float(t["pnl"]) for t in all_closed]
+    r_mults = [float(t["r_multiple"]) for t in all_closed if t.get("r_multiple") is not None]
+    return quant_engine.calculate_full_performance_suite(pnls, r_multiples=r_mults if len(r_mults) == len(pnls) else None)
 
 @router.get("/market/candles")
 def get_market_candles(
