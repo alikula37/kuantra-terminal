@@ -340,6 +340,42 @@ def list_workspace_presets():
         presets.append("Multi-Chart Grid")
     return {"presets": presets}
 
+from app.core.telemetry import telemetry_manager
+from app.core.logging_config import export_logs_zip
+from fastapi.responses import FileResponse
+
+class TelemetryConsentSchema(BaseModel):
+    opt_in: bool
+
+class SpoolCrashSchema(BaseModel):
+    error_type: str
+    message: str
+    stack_trace: str
+
+@router.get("/telemetry/status")
+def get_telemetry_status():
+    return {
+        "opt_in": telemetry_manager.is_opted_in(),
+        "queued_crashes": telemetry_manager.get_queued_crashes_count()
+    }
+
+@router.post("/telemetry/consent")
+def set_telemetry_consent(payload: TelemetryConsentSchema):
+    telemetry_manager.set_opt_in(payload.opt_in)
+    if payload.opt_in:
+        telemetry_manager.flush_queue()
+    return {"status": "UPDATED", "opt_in": payload.opt_in}
+
+@router.post("/telemetry/spool-crash")
+def spool_client_crash(payload: SpoolCrashSchema):
+    telemetry_manager.spool_crash(payload.error_type, payload.message, payload.stack_trace)
+    return {"status": "SPOOLED"}
+
+@router.get("/telemetry/export-logs")
+def export_redacted_system_logs():
+    zip_path = export_logs_zip()
+    return FileResponse(zip_path, media_type="application/zip", filename="kuantra_diagnostics_redacted.zip")
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
