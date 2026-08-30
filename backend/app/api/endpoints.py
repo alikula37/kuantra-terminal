@@ -835,6 +835,46 @@ def query_mcp_gateway(payload: MCPQuerySchema):
 def get_mcp_sentiment_stream():
     return mcp_gateway.get_sentiment_stream()
 
+from app.services.ai.reverse_skill import reverse_skill_engine
+
+class PineScriptPayload(BaseModel):
+    pine_code: str
+
+class CSVAnalyzePayload(BaseModel):
+    csv_content: Optional[str] = None
+    trades: Optional[List[Dict[str, Any]]] = None
+
+class DeployAgentPayload(BaseModel):
+    agent_name: str
+    strategy_config: Dict[str, Any]
+    initial_capital: Optional[float] = 50000.0
+
+@router.post("/reverse-skill/transpile-pinescript")
+def transpile_pinescript_endpoint(payload: PineScriptPayload):
+    try:
+        return reverse_skill_engine.transpile_pinescript(payload.pine_code)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Pine Script transpilation error: {str(e)}")
+
+@router.post("/reverse-skill/analyze-csv")
+def analyze_csv_trades_endpoint(payload: CSVAnalyzePayload):
+    try:
+        content = payload.csv_content or payload.trades or ""
+        return reverse_skill_engine.analyze_csv_trades(content)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"CSV trade analysis error: {str(e)}")
+
+@router.post("/reverse-skill/deploy-agent")
+def deploy_reverse_skill_agent(payload: DeployAgentPayload):
+    try:
+        return reverse_skill_engine.deploy_agent(
+            agent_name=payload.agent_name,
+            strategy_config=payload.strategy_config,
+            initial_capital=payload.initial_capital if payload.initial_capital is not None else 50000.0
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Agent deployment error: {str(e)}")
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
