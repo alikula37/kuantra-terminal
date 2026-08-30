@@ -1,0 +1,117 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "mobile_companion": "Mobile Companion & Passkey",
+    "p2p_mesh": "Encrypted P2P Mesh",
+    "copy_trading": "Multi-Account Copy",
+    "orderflow": "Order Flow Footprint",
+    "fix_dma": "CME QuickFIX DMA",
+    "docking": "Docking Workspace",
+    "virtual_journal": "60 FPS Virtual Journal",
+    "journal": "Standard Journal",
+    "replay": "Trade Replay",
+    "playbook": "Strategy Playbook",
+    "drift": "Execution Drift",
+    "psychology": "Psychology & Tilt",
+    "biometrics": "Biometric Wearable",
+    "ai_coach": "AI Trade Auditor",
+    "swarm": "Multi-Agent Swarm",
+    "analytics": "Quant Scorecard",
+    "mae_mfe": "MAE / MFE Visualizer",
+    "prop_shield": "Prop Firm Shield",
+    "pivot_grid": "Dynamic Pivot Grid",
+    "settings": "Settings"
+  },
+  "onboarding": {
+    "wizard_title": "Kuantra Institutional Terminal Setup",
+    "wizard_subtitle": "Configure your trading environment, encryption vault, and system preferences",
+    "step1_title": "Trading Environment",
+    "step1_desc": "Select your live order routing or simulated paper trading execution environment",
+    "step2_title": "Stronghold Vault Credentials",
+    "step2_desc": "Securely encrypt API credentials in-memory using Argon2id + AES-256-GCM",
+    "step3_title": "Theme & Localization",
+    "step3_desc": "Customize your visual workspace palette and internationalized terminal language",
+    "step4_title": "Verification & Handshake",
+    "step4_desc": "Verify C++ sidecar connectivity, WebSocket data streams, and database integrity",
+    "mode": {
+      "live_title": "Live Realtime Feed & Execution",
+      "live_desc": "Direct market routing with Binance, OKX, and CME QuickFIX DMA",
+      "paper_title": "Simulated Paper Trading",
+      "paper_desc": "Risk-free execution engine pre-seeded with virtual institutional capital",
+      "balance_label": "Paper Trading Starting Balance ($)"
+    },
+    "vault": {
+      "twelvedata_label": "TwelveData API Key",
+      "polygon_label": "Polygon.io API Key",
+      "binance_key_label": "Binance API Key",
+      "binance_secret_label": "Binance API Secret",
+      "okx_key_label": "OKX API Key",
+      "okx_secret_label": "OKX API Secret",
+      "okx_passphrase_label": "OKX Passphrase",
+      "optional_notice": "Credentials are zero-plaintext and strictly encrypted in memory"
+    },
+    "preferences": {
+      "theme_label": "Visual Theme",
+      "theme_dark": "Institutional Dark (#0b0e14)",
+      "theme_light": "High-Contrast Light (#f8fafc)",
+      "locale_label": "Interface Language",
+      "locale_en": "English (EN)",
+      "locale_tr": "Türkçe (TR)",
+      "locale_de": "Deutsch (DE)"
+    },
+    "verification": {
+      "checking_sidecar": "Testing C++ sidecar IPC connection...",
+      "checking_sqlite": "Verifying SQLite OLTP (WAL mode)...",
+      "checking_duckdb": "Inspecting DuckDB OLAP columnar engine...",
+      "checking_websocket": "Establishing local WebSocket telemetry bridge...",
+      "all_systems_go": "All institutional engine components verified and ready!",
+      "complete_btn": "Launch Terminal Dashboard"
+    },
+    "buttons": {
+      "next": "Continue",
+      "back": "Previous",
+      "skip": "Skip for now"
+    }
+  },
+  "dashboard": {
+    "net_pnl": "Net Realized PnL",
+    "win_rate": "Win Rate",
+    "profit_factor": "Profit Factor",
+    "sharpe_ratio": "Sharpe Ratio",
+    "active_positions": "Active Positions",
+    "new_trade_btn": "New Trade Execution",
+    "upload_chart_btn": "Upload Chart OCR",
+    "live_market": "Live Market Feeds"
+  },
+  "orderflow": {
+    "footprint_title": "Order Flow Footprint Matrix",
+    "cvd_title": "Cumulative Volume Delta (CVD)",
+    "heatmap_title": "Limit Order Book Liquidity Heatmap",
+    "fix_status": "CME / ICE QuickFIX DMA Engine"
+  },
+  "metrics": {
+    "mae_title": "Maximum Adverse Excursion (MAE)",
+    "mfe_title": "Maximum Favorable Excursion (MFE)",
+    "sqn_score": "System Quality Number (SQN)",
+    "sortino_ratio": "Sortino Ratio",
+    "expectancy": "Mathematical Expectancy (EV)"
+  },
+  "vault": {
+    "title": "Tauri Stronghold Vault",
+    "status_encrypted": "AES-256-GCM Encrypted",
+    "saved": "{exchange} credentials securely saved to Stronghold Vault."
+  },
+  "settings": {
+    "title": "System & Runtime Settings",
+    "theme_title": "Active Theme Palette",
+    "locale_title": "Display Language",
+    "mode_title": "Active Trading Mode",
+    "paper_balance": "Paper Trading Virtual Balance",
+    "save_btn": "Save Preferences"
+  },
+  "alerts": {
+    "panic_triggered": "Emergency Panic Kill-Switch activated! Flattening positions...",
+    "terminal_locked": "Terminal in Read-Only Lockdown Mode",
+    "passkey_required": "WebAuthn Hardware Passkey required for orders exceeding $50,000"
+  }
+}

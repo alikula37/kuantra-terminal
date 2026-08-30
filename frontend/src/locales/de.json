@@ -1,0 +1,117 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "mobile_companion": "Mobile Begleit-App & Passkey",
+    "p2p_mesh": "Verschlüsseltes P2P-Netz",
+    "copy_trading": "Multi-Konto-Kopierhandel",
+    "orderflow": "Auftragsfluss-Footprint",
+    "fix_dma": "CME QuickFIX DMA",
+    "docking": "Docking-Arbeitsbereich",
+    "virtual_journal": "60 FPS Virtuelles Journal",
+    "journal": "Standard-Handelsjournal",
+    "replay": "Handels-Wiedergabe",
+    "playbook": "Strategie-Handbuch",
+    "drift": "Ausführungsabweichung",
+    "psychology": "Psychologie & Tilt",
+    "biometrics": "Biometrische Wearables",
+    "ai_coach": "KI-Handelsprüfer",
+    "swarm": "Multi-Agenten-Schwarm",
+    "analytics": "Quantitatives Scorecard",
+    "mae_mfe": "MAE / MFE Visualisierer",
+    "prop_shield": "Prop-Firm Schutzschild",
+    "pivot_grid": "Dynamische Pivot-Tabelle",
+    "settings": "Einstellungen"
+  },
+  "onboarding": {
+    "wizard_title": "Kuantra Institutionelle Terminal-Einrichtung",
+    "wizard_subtitle": "Konfigurieren Sie Ihre Handelsumgebung, Ihren Tresor und Ihre Einstellungen",
+    "step1_title": "Handelsumgebung",
+    "step1_desc": "Wählen Sie zwischen Live-Order-Routing und simuliertem Demohandel",
+    "step2_title": "Stronghold Tresor-Zugangsdaten",
+    "step2_desc": "API-Schlüssel sicher im Arbeitsspeicher mit Argon2id + AES-256-GCM verschlüsseln",
+    "step3_title": "Design & Lokalisierung",
+    "step3_desc": "Passen Sie Ihre visuelle Farbpalette und die Sprache der Benutzeroberfläche an",
+    "step4_title": "Überprüfung & Handshake",
+    "step4_desc": "Überprüfen Sie die C++ Sidecar-Verbindung, WebSocket-Datenströme und Datenbankintegrität",
+    "mode": {
+      "live_title": "Live-Echtzeit-Feed & Ausführung",
+      "live_desc": "Direktes Markt-Routing über Binance, OKX und CME QuickFIX DMA",
+      "paper_title": "Simulierter Demohandel",
+      "paper_desc": "Risikofreie Ausführungs-Engine mit virtuellem institutionellem Kapital",
+      "balance_label": "Demohandel-Startguthaben ($)"
+    },
+    "vault": {
+      "twelvedata_label": "TwelveData API-Schlüssel",
+      "polygon_label": "Polygon.io API-Schlüssel",
+      "binance_key_label": "Binance API-Schlüssel",
+      "binance_secret_label": "Binance API-Geheimnis",
+      "okx_key_label": "OKX API-Schlüssel",
+      "okx_secret_label": "OKX API-Geheimnis",
+      "okx_passphrase_label": "OKX Passphrase",
+      "optional_notice": "Zugangsdaten sind niemals im Klartext und werden im Speicher verschlüsselt"
+    },
+    "preferences": {
+      "theme_label": "Visuelles Design",
+      "theme_dark": "Institutionell Dunkel (#0b0e14)",
+      "theme_light": "Kontrastreich Hell (#f8fafc)",
+      "locale_label": "Sprache der Benutzeroberfläche",
+      "locale_en": "English (EN)",
+      "locale_tr": "Türkçe (TR)",
+      "locale_de": "Deutsch (DE)"
+    },
+    "verification": {
+      "checking_sidecar": "C++ Sidecar IPC-Verbindung wird getestet...",
+      "checking_sqlite": "SQLite OLTP (WAL-Modus) wird überprüft...",
+      "checking_duckdb": "DuckDB OLAP Columnar-Engine wird inspiziert...",
+      "checking_websocket": "Lokale WebSocket-Telemetriebrücke wird aufgebaut...",
+      "all_systems_go": "Alle institutionellen Systemkomponenten erfolgreich verifiziert!",
+      "complete_btn": "Terminal-Dashboard Starten"
+    },
+    "buttons": {
+      "next": "Weiter",
+      "back": "Zurück",
+      "skip": "Vorläufig überspringen"
+    }
+  },
+  "dashboard": {
+    "net_pnl": "Realisierter Netto-GuV",
+    "win_rate": "Gewinnrate",
+    "profit_factor": "Profitfaktor",
+    "sharpe_ratio": "Sharpe-Ratio",
+    "active_positions": "Offene Positionen",
+    "new_trade_btn": "Neuer Trade Ausführen",
+    "upload_chart_btn": "Chart-OCR Hochladen",
+    "live_market": "Live-Markt-Feeds"
+  },
+  "orderflow": {
+    "footprint_title": "Orderflow-Footprint-Matrix",
+    "cvd_title": "Kumulatives Volumendelta (CVD)",
+    "heatmap_title": "Orderbuch-Liquiditäts-Heatmap",
+    "fix_status": "CME / ICE QuickFIX DMA-Engine"
+  },
+  "metrics": {
+    "mae_title": "Maximaler Negativer Ausschlag (MAE)",
+    "mfe_title": "Maximaler Positiver Ausschlag (MFE)",
+    "sqn_score": "System-Qualitätszahl (SQN)",
+    "sortino_ratio": "Sortino-Ratio",
+    "expectancy": "Mathematische Erwartung (EV)"
+  },
+  "vault": {
+    "title": "Tauri Stronghold Tresor",
+    "status_encrypted": "Mit AES-256-GCM verschlüsselt",
+    "saved": "{exchange}-Zugangsdaten sicher im Stronghold-Tresor gespeichert."
+  },
+  "settings": {
+    "title": "System- & Laufzeiteinstellungen",
+    "theme_title": "Aktive Farbpalette",
+    "locale_title": "Anzeigesprache",
+    "mode_title": "Aktiver Handelsmodus",
+    "paper_balance": "Demohandel-Guthaben",
+    "save_btn": "Einstellungen Speichern"
+  },
+  "alerts": {
+    "panic_triggered": "Notfall-Panikschalter aktiviert! Positionen werden geschlossen...",
+    "terminal_locked": "Terminal im schreibgeschützten Sperrmodus",
+    "passkey_required": "WebAuthn Hardware-Passkey für Aufträge über 50.000 $ erforderlich"
+  }
+}

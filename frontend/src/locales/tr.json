@@ -1,0 +1,117 @@
+{
+  "nav": {
+    "dashboard": "Gösterge Paneli",
+    "mobile_companion": "Mobil Yardımcı & Passkey",
+    "p2p_mesh": "Şifreli P2P Mesh",
+    "copy_trading": "Çoklu Hesap Kopyalama",
+    "orderflow": "Emir Akışı Footprint",
+    "fix_dma": "CME QuickFIX DMA",
+    "docking": "Pencereli Çalışma Alanı",
+    "virtual_journal": "60 FPS Sanal Günlük",
+    "journal": "Standart İşlem Günlüğü",
+    "replay": "İşlem Tekrar Oynatma",
+    "playbook": "Strateji El Kitabı",
+    "drift": "Uygulama Sapması",
+    "psychology": "Psikoloji & Tilt",
+    "biometrics": "Biyometrik Giyilebilir",
+    "ai_coach": "Yapay Zeka Denetçisi",
+    "swarm": "Çoklu Ajan Sürüsü",
+    "analytics": "Kantitatif Skor Kartı",
+    "mae_mfe": "MAE / MFE Görselleştirici",
+    "prop_shield": "Prop Firm Koruma Kalkanı",
+    "pivot_grid": "Dinamik Pivot Tablo",
+    "settings": "Ayarlar"
+  },
+  "onboarding": {
+    "wizard_title": "Kuantra Kurumsal Terminal Kurulumu",
+    "wizard_subtitle": "Ticaret ortamınızı, şifreleme kasanızı ve sistem tercihlerinizi yapılandırın",
+    "step1_title": "Ticaret Ortamı",
+    "step1_desc": "Canlı emir iletimi veya simüle edilmiş sanal işlem ortamınızı seçin",
+    "step2_title": "Stronghold Kasa Kimlik Bilgileri",
+    "step2_desc": "API anahtarlarını Argon2id + AES-256-GCM ile bellekte güvenle şifreleyin",
+    "step3_title": "Tema & Yerelleştirme",
+    "step3_desc": "Görsel çalışma alanı paletinizi ve arayüz dilinizi özelleştirin",
+    "step4_title": "Doğrulama & El Sıkışma",
+    "step4_desc": "C++ sidecar bağlantısını, WebSocket veri akışlarını ve veritabanı bütünlüğünü doğrulayın",
+    "mode": {
+      "live_title": "Canlı Gerçek Zamanlı Veri & İletim",
+      "live_desc": "Binance, OKX ve CME QuickFIX DMA ile doğrudan piyasa iletimi",
+      "paper_title": "Simüle Edilmiş Sanal Ticaret",
+      "paper_desc": "Sanal kurumsal sermaye ile risksiz emir simülasyon motoru",
+      "balance_label": "Sanal Ticaret Başlangıç Bakiyesi ($)"
+    },
+    "vault": {
+      "twelvedata_label": "TwelveData API Anahtarı",
+      "polygon_label": "Polygon.io API Anahtarı",
+      "binance_key_label": "Binance API Anahtarı",
+      "binance_secret_label": "Binance API Gizli Anahtarı",
+      "okx_key_label": "OKX API Anahtarı",
+      "okx_secret_label": "OKX API Gizli Anahtarı",
+      "okx_passphrase_label": "OKX Parolası (Passphrase)",
+      "optional_notice": "Kimlik bilgileri düz metin içermez ve bellekte sıkı şekilde şifrelenir"
+    },
+    "preferences": {
+      "theme_label": "Görsel Tema",
+      "theme_dark": "Kurumsal Koyu (#0b0e14)",
+      "theme_light": "Yüksek Kontrast Açık (#f8fafc)",
+      "locale_label": "Arayüz Dili",
+      "locale_en": "English (EN)",
+      "locale_tr": "Türkçe (TR)",
+      "locale_de": "Deutsch (DE)"
+    },
+    "verification": {
+      "checking_sidecar": "C++ sidecar IPC bağlantısı test ediliyor...",
+      "checking_sqlite": "SQLite OLTP (WAL modu) doğrulanıyor...",
+      "checking_duckdb": "DuckDB OLAP sütunsal motoru inceleniyor...",
+      "checking_websocket": "Yerel WebSocket telemetri köprüsü kuruluyor...",
+      "all_systems_go": "Tüm kurumsal motor bileşenleri doğrulandı ve hazır!",
+      "complete_btn": "Terminal Gösterge Panelini Başlat"
+    },
+    "buttons": {
+      "next": "Devam Et",
+      "back": "Geri",
+      "skip": "Şimdilik Atla"
+    }
+  },
+  "dashboard": {
+    "net_pnl": "Net Gerçekleşen Kâr/Zarar",
+    "win_rate": "Kazanma Oranı",
+    "profit_factor": "Kâr Faktörü",
+    "sharpe_ratio": "Sharpe Oranı",
+    "active_positions": "Açık Pozisyonlar",
+    "new_trade_btn": "Yeni İşlem Girişi",
+    "upload_chart_btn": "Grafik OCR Yükle",
+    "live_market": "Canlı Piyasa Akışları"
+  },
+  "orderflow": {
+    "footprint_title": "Emir Akışı Footprint Matrisi",
+    "cvd_title": "Kümülatif Hacim Deltası (CVD)",
+    "heatmap_title": "Limit Emir Defteri Likidite Isı Haritası",
+    "fix_status": "CME / ICE QuickFIX DMA Motoru"
+  },
+  "metrics": {
+    "mae_title": "Maksimum Ters Hareket (MAE)",
+    "mfe_title": "Maksimum Lehte Hareket (MFE)",
+    "sqn_score": "Sistem Kalite Numarası (SQN)",
+    "sortino_ratio": "Sortino Oranı",
+    "expectancy": "Matematiksel Beklenti (EV)"
+  },
+  "vault": {
+    "title": "Tauri Stronghold Kasası",
+    "status_encrypted": "AES-256-GCM ile Şifreli",
+    "saved": "{exchange} kimlik bilgileri Stronghold Kasasına güvenle kaydedildi."
+  },
+  "settings": {
+    "title": "Sistem & Çalışma Zamanı Ayarları",
+    "theme_title": "Aktif Tema Paleti",
+    "locale_title": "Görüntüleme Dili",
+    "mode_title": "Aktif Ticaret Modu",
+    "paper_balance": "Sanal Ticaret Bakiyesi",
+    "save_btn": "Tercihleri Kaydet"
+  },
+  "alerts": {
+    "panic_triggered": "Acil Durum Panik Butonu tetiklendi! Pozisyonlar kapatılıyor...",
+    "terminal_locked": "Terminal Salt-Okunur Kilit Modunda",
+    "passkey_required": "$50.000 üzerindeki emirler için WebAuthn Donanım Anahtarı gereklidir"
+  }
+}
