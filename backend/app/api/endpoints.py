@@ -301,6 +301,45 @@ def get_ai_trade_audit_report():
 def execute_ai_natural_query(payload: AiQuerySchema):
     return ai_query_engine.execute_natural_query(query_text=payload.prompt)
 
+
+class WorkspaceLayoutSchema(BaseModel):
+    preset_name: str = "default"
+    layout_data: Dict[str, Any]
+
+@router.get("/workspace/layout/{preset_name}")
+def get_workspace_layout(preset_name: str):
+    key = f"layout_{preset_name}"
+    val = sqlite_driver.get_setting(key)
+    if val:
+        try:
+            return {"preset_name": preset_name, "layout_data": json.loads(val)}
+        except Exception:
+            return {"preset_name": preset_name, "layout_data": val}
+    return {"preset_name": preset_name, "layout_data": None}
+
+@router.post("/workspace/layout")
+def save_workspace_layout(payload: WorkspaceLayoutSchema):
+    key = f"layout_{payload.preset_name}"
+    sqlite_driver.set_setting(key, payload.layout_data)
+    return {"status": "SAVED", "preset_name": payload.preset_name}
+
+@router.get("/workspace/presets")
+def list_workspace_presets():
+    settings_dict = sqlite_driver.get_all_settings()
+    presets = []
+    for k in settings_dict.keys():
+        if k.startswith("layout_"):
+            presets.append(k.replace("layout_", ""))
+    if "default" not in presets:
+        presets.insert(0, "default")
+    if "Day Trader" not in presets:
+        presets.append("Day Trader")
+    if "AI Auditor Focus" not in presets:
+        presets.append("AI Auditor Focus")
+    if "Multi-Chart Grid" not in presets:
+        presets.append("Multi-Chart Grid")
+    return {"presets": presets}
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
