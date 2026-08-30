@@ -875,6 +875,46 @@ def deploy_reverse_skill_agent(payload: DeployAgentPayload):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Agent deployment error: {str(e)}")
 
+from app.services.ai.hardware_engine import hardware_engine, gguf_inference_engine
+from app.services.ai.accelerated_swarm import accelerated_swarm
+
+class HardwareConfigurePayload(BaseModel):
+    engine: str
+    n_gpu_layers: int
+    threads: int
+    context_length: int
+
+class SwarmFastEvalPayload(BaseModel):
+    symbol: Optional[str] = "BTCUSDT"
+    price: Optional[float] = 65000.0
+    cvd_delta: Optional[float] = 420.0
+    imbalance_ratio: Optional[float] = 3.2
+    rsi: Optional[float] = 32.5
+    account_drawdown_pct: Optional[float] = 1.2
+
+@router.get("/hardware/gpu-status")
+def get_hardware_gpu_status():
+    return hardware_engine.get_realtime_metrics()
+
+@router.post("/hardware/configure")
+def configure_hardware_endpoint(payload: HardwareConfigurePayload):
+    try:
+        return hardware_engine.configure_hardware(
+            engine=payload.engine,
+            n_gpu_layers=payload.n_gpu_layers,
+            threads=payload.threads,
+            context_length=payload.context_length
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/swarm/fast-eval")
+def fast_eval_swarm_endpoint(payload: SwarmFastEvalPayload):
+    try:
+        return accelerated_swarm.evaluate_market_state(payload.dict())
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Accelerated Swarm evaluation error: {str(e)}")
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
