@@ -24,7 +24,7 @@ export interface Trade {
 }
 
 export interface Candle {
-  time: number; // UNIX timestamp in seconds
+  time: number;
   open: number;
   high: number;
   low: number;
@@ -64,4 +64,102 @@ export interface SymbolBreakdown {
   total_pnl: number;
   avg_pnl: number;
   win_rate: number;
+}
+
+export interface MaeMfePoint {
+  trade_id: string;
+  symbol: string;
+  side: string;
+  entry_price: number;
+  exit_price: number;
+  stop_loss?: number | null;
+  take_profit?: number | null;
+  risk_unit: number;
+  mae_price: number;
+  mfe_price: number;
+  mae_r: number;
+  mfe_r: number;
+  exit_efficiency: number;
+  pnl: number;
+  r_multiple: number;
+  status: string;
+  entry_time?: string;
+  exit_time?: string;
+}
+
+export interface StopSensitivity {
+  stop_distance_r: number;
+  survival_rate_pct: number;
+}
+
+export interface MaeMfeAnalyticsResponse {
+  total_analyzed: number;
+  average_mae_r: number;
+  average_mfe_r: number;
+  average_exit_efficiency_pct: number;
+  trades_left_money_on_table: number;
+  recommended_target_r: number;
+  stop_loss_sensitivities: StopSensitivity[];
+  points: MaeMfePoint[];
+}
+
+export interface ComplianceRuleStatus {
+  rule: string;
+  limit: string;
+  current: string;
+  utilization_pct: number;
+  status: "PASS" | "WARN" | "CRITICAL" | "BREACH" | "IN_PROGRESS" | "PASSED";
+}
+
+export interface ComplianceConfigData {
+  account_size: number;
+  daily_loss_limit_pct: number;
+  max_drawdown_pct: number;
+  profit_target_pct: number;
+  min_trading_days: number;
+  trailing_drawdown: boolean;
+  require_stop_loss: boolean;
+  max_risk_per_trade_pct: number;
+}
+
+export interface ComplianceStatusResponse {
+  account_size: number;
+  current_equity: number;
+  high_watermark: number;
+  today_pnl: number;
+  all_time_pnl: number;
+  current_drawdown_amount: number;
+  current_drawdown_pct: number;
+  daily_loss_budget: number;
+  daily_loss_remaining: number;
+  max_dd_budget: number;
+  max_dd_remaining: number;
+  profit_target_amount: number;
+  days_traded: number;
+  overall_status: "COMPLIANT" | "WARNING" | "CRITICAL" | "BREACHED";
+  is_breached: boolean;
+  rules: ComplianceRuleStatus[];
+  naked_positions_count: number;
+  config: ComplianceConfigData;
+}
+
+export interface PivotRow {
+  dimensions: Record<string, string>;
+  group_key: string;
+  trades_count: number;
+  win_rate: number;
+  total_pnl: number;
+  avg_pnl: number;
+  profit_factor: number;
+  avg_r_multiple: number;
+  sqn: number;
+  expectancy: number;
+  max_win: number;
+  max_loss: number;
+}
+
+export interface PivotGridResponse {
+  dimensions: string[];
+  total_buckets: number;
+  rows: PivotRow[];
 }
