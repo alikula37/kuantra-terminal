@@ -1,6 +1,7 @@
 {
   "nav": {
     "dashboard": "Dashboard",
+    "fix_studio": "L2/L3 DOM & FIX-Studio",
     "dex_arbitrage": "DEX-Arbitrage & Flash-Darlehen",
     "mcp_explorer": "Finanzielles MCP-Gateway",
     "reverse_skill": "Reverse-Skill-Studio",
