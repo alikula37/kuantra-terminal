@@ -124,16 +124,16 @@ class HardwareStressInterceptor:
             "timestamp": now
         }
 
-    def evaluate_order_gate(self, requested_size: float, active_drawdown_pct: float = 0.0) -> Dict[str, Any]:
+    def evaluate_order_gate(self, requested_size: float, active_drawdown_pct: float = 0.0, live_state: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Compliance Layer Interceptor:
         - Rejects order if CRITICAL_TILT_LOCKOUT or PANIC_EMERGENCY
         - Clamps size to 50% if ELEVATED_STRESS
         - Permits full size if NOMINAL
         """
-        live = self.evaluate_live_state()
-        state = live["lockout_state"]
-        s_bio = live["s_bio"]
+        live = live_state if live_state is not None else self.evaluate_live_state()
+        state = live.get("lockout_state", self.lockout_state)
+        s_bio = live.get("s_bio", 50.0)
 
         if state in ("CRITICAL_TILT_LOCKOUT", "PANIC_EMERGENCY"):
             return {
