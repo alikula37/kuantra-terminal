@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::Arc;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Manager, State, WebviewWindowBuilder, WebviewUrl};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandEvent;
 
@@ -28,11 +28,43 @@ fn get_backend_url(state: State<'_, BackendState>) -> String {
     }
 }
 
+#[tauri::command]
+async fn create_popout_window(
+    app: AppHandle,
+    label: String,
+    title: String,
+    url: String,
+    width: f64,
+    height: f64,
+) -> Result<String, String> {
+    if let Some(existing) = app.get_webview_window(&label) {
+        let _ = existing.set_focus();
+        return Ok(format!("Focused existing window: {}", label));
+    }
+
+    let webview_url = if url.starts_with("http") {
+        WebviewUrl::External(url.parse().map_err(|e| format!("Invalid URL: {}", e))?)
+    } else {
+        WebviewUrl::App(url.into())
+    };
+
+    WebviewWindowBuilder::new(&app, &label, webview_url)
+        .title(&title)
+        .inner_size(width, height)
+        .min_inner_size(600.0, 400.0)
+        .resizable(true)
+        .decorations(true)
+        .build()
+        .map_err(|e| format!("Failed to create pop-out window: {}", e))?;
+
+    println!("[+] Pop-out window created: {} ('{}')", label, title);
+    Ok(format!("Created window {}", label))
+}
+
 pub fn spawn_sidecar(app: &AppHandle, port_state: Arc<AtomicU16>) {
     let parent_pid = std::process::id();
     let shell = app.shell();
 
-    // Spawn Nuitka sidecar binary with dynamic port (0) and parent PID watcher
     let sidecar_cmd = shell.sidecar("kuantra-backend");
     
     match sidecar_cmd {
@@ -42,7 +74,7 @@ pub fn spawn_sidecar(app: &AppHandle, port_state: Arc<AtomicU16>) {
                 "--parent-pid", &parent_pid.to_string(),
             ]);
 
-            let (mut rx, child) = cmd_with_args
+            let (mut rx, _child) = cmd_with_args
                 .spawn()
                 .expect("Failed to spawn Kuantra Terminal backend sidecar");
 
@@ -56,7 +88,6 @@ pub fn spawn_sidecar(app: &AppHandle, port_state: Arc<AtomicU16>) {
                             let text = String::from_utf8_lossy(&line);
                             print!("{}", text);
                             
-                            // Parse standard handshake string: KUANTRA_BACKEND_PORT:<port>
                             if let Some(pos) = text.find("KUANTRA_BACKEND_PORT:") {
                                 let remainder = &text[pos + "KUANTRA_BACKEND_PORT:".len()..];
                                 if let Some(first_line) = remainder.lines().next() {
@@ -81,7 +112,6 @@ pub fn spawn_sidecar(app: &AppHandle, port_state: Arc<AtomicU16>) {
         }
         Err(e) => {
             eprintln!("[!] Note: Sidecar binary not found in dev mode (fallback to Python): {}", e);
-            // Default dev fallback to 8000
             port_state.store(8000, Ordering::SeqCst);
         }
     }
@@ -96,11 +126,13 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(managed_state)
         .invoke_handler(tauri::generate_handler![
             get_system_status,
             get_backend_port,
-            get_backend_url
+            get_backend_url,
+            create_popout_window
         ])
         .setup(move |app| {
             spawn_sidecar(app.handle(), port_state);
