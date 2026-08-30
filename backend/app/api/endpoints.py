@@ -112,6 +112,22 @@ def get_analytics_overview():
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
 
+from app.quant.mae_mfe import mae_mfe_analyzer
+
+@router.get("/analytics/mae-mfe")
+def get_mae_mfe_analytics(symbol: Optional[str] = None):
+    return mae_mfe_analyzer.get_mae_mfe_scatter_data(symbol=symbol)
+
+@router.get("/analytics/optimal-exits")
+def get_optimal_exits_analytics(symbol: Optional[str] = None):
+    data = mae_mfe_analyzer.get_mae_mfe_scatter_data(symbol=symbol)
+    return {
+        "recommended_target_r": data["recommended_target_r"],
+        "average_exit_efficiency_pct": data["average_exit_efficiency_pct"],
+        "trades_left_money_on_table": data["trades_left_money_on_table"],
+        "stop_loss_sensitivities": data["stop_loss_sensitivities"]
+    }
+
 @router.get("/analytics/equity")
 def get_analytics_equity():
     return duckdb_driver.get_equity_curve()
