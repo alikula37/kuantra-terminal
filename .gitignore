@@ -22,3 +22,12 @@ dist/
 
 # Rust / Tauri
 src-tauri/target/
+
+# Distribution Binaries (Keep MANIFEST.json tracked)
+dist-binaries/*.exe
+dist-binaries/*.msi
+dist-binaries/*.dmg
+dist-binaries/*.AppImage
+dist-binaries/*.deb
+dist-binaries/*.zip
+backend/data/
