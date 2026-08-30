@@ -289,3 +289,35 @@ export interface FatigueMatrixResponse {
   performance_decay_pct: number;
   matrix: FatigueMatrixRow[];
 }
+export interface VisionParseResult {
+  symbol: string;
+  timeframe: string;
+  side: string;
+  entry_price: number;
+  stop_loss: number;
+  take_profit: number;
+  risk_unit: number;
+  reward_unit: number;
+  risk_reward_ratio: number;
+  confidence_score: number;
+  validation_notes: string;
+  raw_ocr_snippet: string;
+}
+
+export interface AiAuditReportResponse {
+  grade: string;
+  executive_summary: string;
+  strengths: string[];
+  critical_risks: string[];
+  actionable_directives: string[];
+  deterministic_context: Record<string, any>;
+}
+
+export interface AiQueryResult {
+  query: string;
+  sql: string;
+  total_records: number;
+  columns: string[];
+  rows: Record<string, any>[];
+  ai_commentary: string;
+}

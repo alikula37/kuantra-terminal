@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Radio, PlusCircle, Zap } from "lucide-react";
+import { Radio, PlusCircle, Zap, Camera } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
 
 interface HeaderProps {
   onOpenNewTrade: () => void;
+  onOpenVisionUploader?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade, onOpenVisionUploader }) => {
   const { symbol, currentPrice, prevPrice, latencyMs, isConnected } = useMarketStore();
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
 
@@ -94,6 +95,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNewTrade }) => {
           <Radio className={`w-3.5 h-3.5 ${isConnected ? "animate-pulse text-gain" : "text-amber-400"}`} />
           <span className="text-[11px] font-semibold">{isConnected ? "LIVE FEED" : "SIMULATED"}</span>
         </div>
+
+        {onOpenVisionUploader && (
+          <button
+            onClick={onOpenVisionUploader}
+            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white text-xs px-3 py-1.5 rounded transition"
+            title="Upload Chart Screenshot for Vision OCR"
+          >
+            <Camera className="w-3.5 h-3.5 text-accent" />
+            <span>VISION OCR</span>
+          </button>
+        )}
 
         <button
           onClick={onOpenNewTrade}
