@@ -608,6 +608,46 @@ def connect_p2p_peer(payload: PeerConnectSchema):
     )
     return {"status": "CONNECTED", "peer_id": payload.peer_id}
 
+from app.services.p2p.copy_engine import copy_trading_engine
+
+class CopySignalCreateSchema(BaseModel):
+    symbol: str = "BTCUSDT"
+    side: str = "BUY"
+    entry_price: float = 64800.0
+    stop_loss: float = 63900.0
+    take_profit: float = 67500.0
+    risk_pct: Optional[float] = 1.0
+    notes: Optional[str] = ""
+
+class CopySignalExecuteSchema(BaseModel):
+    signal: Dict[str, Any]
+    follower_equity: Optional[float] = 100000.0
+    exchange: Optional[str] = "BINANCE"
+
+@router.post("/p2p/copy/broadcast")
+def broadcast_copy_signal(payload: CopySignalCreateSchema):
+    return copy_trading_engine.create_master_signal(
+        symbol=payload.symbol,
+        side=payload.side,
+        entry_price=payload.entry_price,
+        stop_loss=payload.stop_loss,
+        take_profit=payload.take_profit,
+        risk_pct=payload.risk_pct or 1.0,
+        notes=payload.notes or ""
+    )
+
+@router.post("/p2p/copy/execute")
+def execute_follower_copy_trade(payload: CopySignalExecuteSchema):
+    return copy_trading_engine.execute_copy_signal(
+        signal=payload.signal,
+        follower_equity=payload.follower_equity,
+        exchange=payload.exchange or "BINANCE"
+    )
+
+@router.get("/p2p/copy/signals")
+def get_p2p_copy_signals():
+    return copy_trading_engine.get_signal_history()
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
