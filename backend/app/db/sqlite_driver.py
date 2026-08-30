@@ -83,7 +83,7 @@ class SQLiteDriver:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO trades (
+                INSERT OR REPLACE INTO trades (
                     id, symbol, side, entry_price, exit_price, qty,
                     stop_loss, take_profit, entry_time, exit_time,
                     status, pnl, r_multiple, commission, notes, created_at, updated_at

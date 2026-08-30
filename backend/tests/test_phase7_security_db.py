@@ -1,3 +1,4 @@
+import time
 import os
 import sys
 import pytest
@@ -52,7 +53,7 @@ class TestPhase7SecurityAndDbHydration:
     def test_duckdb_shadow_hydration_integrity_and_recovery(self):
         # Insert a sample trade into SQLite OLTP
         test_trade = {
-            "id": "TRD-HYDRATE-01",
+            "id": f"TRD-HYDRATE-{int(time.time()*1000)}",
             "symbol": "BTCUSDT",
             "side": "BUY",
             "entry_price": 65000.0,
