@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import subprocess
 import pytest
@@ -34,7 +35,7 @@ class TestReleaseManifestAndPackaging:
 
         # Execute manifest generator in dry-run mode
         result = subprocess.run(
-            [os.sys.executable, script_path, "--dry-run"],
+            [sys.executable, script_path, "--dry-run"],
             capture_output=True,
             text=True
         )

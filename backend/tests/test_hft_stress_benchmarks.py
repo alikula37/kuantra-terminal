@@ -60,8 +60,21 @@ class TestHFTStressAndMemoryBenchmarks:
 
     def test_duckdb_storage_microbatch_commit_under_load(self):
         """Verifies 100,000 tick ingestion into DuckDB OLAP with commit time < 45ms."""
-        driver = DuckDBDriver()
-        conn = driver.get_connection()
+        import duckdb
+        conn = duckdb.connect()
+        conn.execute("""
+            CREATE TABLE market_candles (
+                symbol VARCHAR,
+                timeframe VARCHAR,
+                timestamp TIMESTAMP,
+                open DOUBLE,
+                high DOUBLE,
+                low DOUBLE,
+                close DOUBLE,
+                volume DOUBLE,
+                trades_count BIGINT
+            )
+        """)
         generator = SyntheticMarketGenerator()
 
         total_ticks = 100000

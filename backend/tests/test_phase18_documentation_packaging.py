@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import pytest
 
@@ -51,7 +52,7 @@ class TestPhase18DocumentationAndPackaging:
 
         # Execute verify script via python subprocess
         result = subprocess.run(
-            [os.sys.executable, script_path],
+            [sys.executable, script_path],
             capture_output=True,
             text=True
         )
