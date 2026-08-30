@@ -1,6 +1,7 @@
 {
   "nav": {
     "dashboard": "Dashboard",
+    "dex_arbitrage": "DEX-Arbitrage & Flash-Darlehen",
     "mcp_explorer": "Finanzielles MCP-Gateway",
     "reverse_skill": "Reverse-Skill-Studio",
     "mobile_companion": "Mobile Begleit-App & Passkey",

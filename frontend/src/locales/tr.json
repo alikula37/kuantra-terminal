@@ -1,6 +1,7 @@
 {
   "nav": {
     "dashboard": "Gösterge Paneli",
+    "dex_arbitrage": "DEX Arbitraj ve Flaş Krediler",
     "mcp_explorer": "Finansal MCP Ağ Geçidi",
     "reverse_skill": "Tersine Mühendislik Stüdyosu",
     "mobile_companion": "Mobil Yardımcı & Passkey",

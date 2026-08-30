@@ -1,6 +1,7 @@
 {
   "nav": {
     "dashboard": "Dashboard",
+    "dex_arbitrage": "DEX Arbitrage & Flash Loans",
     "mcp_explorer": "Financial MCP Gateway",
     "reverse_skill": "Reverse-Skill Studio",
     "mobile_companion": "Mobile Companion & Passkey",
