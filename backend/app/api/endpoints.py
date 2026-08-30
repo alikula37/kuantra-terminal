@@ -648,6 +648,22 @@ def execute_follower_copy_trade(payload: CopySignalExecuteSchema):
 def get_p2p_copy_signals():
     return copy_trading_engine.get_signal_history()
 
+from app.services.execution.multi_account_router import multi_account_allocator
+
+class FanoutOrderSchema(BaseModel):
+    symbol: str = "BTCUSDT"
+    side: str = "BUY"
+    qty: float = 1.0
+    price: float = 64800.0
+
+@router.get("/accounts/list")
+def list_multi_accounts():
+    return {"accounts": multi_account_allocator.list_accounts()}
+
+@router.post("/accounts/fanout")
+def execute_fanout_order(payload: FanoutOrderSchema):
+    return multi_account_allocator.fanout_order(payload.model_dump())
+
 @router.get("/analytics/symbols")
 def get_analytics_symbols():
     return duckdb_driver.get_symbol_breakdown()
