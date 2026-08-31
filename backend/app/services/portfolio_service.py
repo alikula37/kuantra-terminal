@@ -43,19 +43,47 @@ class PortfolioAnalyticsService:
     """
     Unified portfolio aggregator and institutional risk analytics engine.
     Computes real-time exposure, historical equity curve, drawdowns, and multi-asset breakdown.
+    Operates strictly with zero-mock data and dynamic user-configured initial balance.
     """
 
-    DEFAULT_INITIAL_BALANCE: float = 100000.0
+    def __init__(self, default_initial_balance: Optional[float] = None):
+        self._default_initial_balance = default_initial_balance
 
-    def __init__(self, default_initial_balance: float = 100000.0):
-        self.default_initial_balance = default_initial_balance
+    def get_configured_initial_balance(self) -> float:
+        """Retrieves user-configured starting balance from SQLite settings with 0.0 default."""
+        if self._default_initial_balance is not None:
+            return float(self._default_initial_balance)
+        try:
+            from app.services.settings_service import settings_service
+            settings = settings_service.get_settings()
+            if "user_initial_balance" in settings and settings["user_initial_balance"] is not None:
+                return float(settings["user_initial_balance"])
+            if "initial_balance" in settings and settings["initial_balance"] is not None:
+                return float(settings["initial_balance"])
+            if "paper_balance" in settings and settings["paper_balance"] is not None:
+                return float(settings["paper_balance"])
+        except Exception as e:
+            logger.debug(f"[PORTFOLIO] Could not retrieve initial balance from settings: {e}")
+        return 0.0
+
+    def set_initial_balance(self, new_balance: float) -> Dict[str, Any]:
+        """Sets and persists starting equity balance in SQLite settings."""
+        from app.services.settings_service import settings_service
+        val = max(0.0, float(new_balance))
+        settings_service.update_settings({
+            "user_initial_balance": val,
+            "initial_balance": val,
+            "paper_balance": val
+        })
+        logger.info(f"[PORTFOLIO] Updated user starting balance to ${val:,.2f}")
+        return self.get_portfolio_summary(initial_balance=val)
 
     def get_portfolio_summary(self, initial_balance: Optional[float] = None) -> Dict[str, Any]:
         """
         Computes holistic portfolio health, equity metrics, and open risk exposures.
         Guarantees zero divide-by-zero errors even on empty or initial states.
         """
-        balance = initial_balance if initial_balance is not None else self.default_initial_balance
+        balance = initial_balance if initial_balance is not None else self.get_configured_initial_balance()
         trades = sqlite_driver.list_trades(limit=100000)
 
         closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
@@ -262,7 +290,7 @@ class PortfolioAnalyticsService:
         Builds chronological cumulative equity and drawdown progression time-series.
         Ideal for rendering continuous equity growth charts in the frontend.
         """
-        balance = initial_balance if initial_balance is not None else self.default_initial_balance
+        balance = initial_balance if initial_balance is not None else self.get_configured_initial_balance()
         trades = sqlite_driver.list_trades(limit=100000)
         closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
 

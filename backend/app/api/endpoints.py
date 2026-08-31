@@ -1345,3 +1345,16 @@ def get_portfolio_heatmap_endpoint():
     Returns daily calendar PnL series with normalized intensity for heatmap visualizers.
     """
     return portfolio_service.get_daily_pnl_heatmap()
+
+
+class SetInitialBalanceSchema(BaseModel):
+    initial_balance: float = 0.0
+
+
+@router.post("/portfolio/set-initial-balance")
+def set_portfolio_initial_balance_endpoint(payload: SetInitialBalanceSchema):
+    """
+    Explicitly configures and persists the user starting equity capital in SQLite settings.
+    Recalculates equity and returns updated portfolio summary.
+    """
+    return portfolio_service.set_initial_balance(new_balance=payload.initial_balance)
