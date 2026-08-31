@@ -98,7 +98,7 @@ class MaeMfeAnalyzer:
         
         # If no real closed trades in SQLite yet, generate realistic baseline analytics
         if not closed_trades:
-            return cls._generate_mock_dataset()
+            return {"status": "NO_DATA", "message": "No closed trades available for MAE/MFE analysis.", "trades": [], "scatter_data": []}
 
         scatter_points = []
         for t in closed_trades:
@@ -144,72 +144,6 @@ class MaeMfeAnalyzer:
             "points": scatter_points
         }
 
-    @classmethod
-    def _generate_mock_dataset(cls) -> Dict[str, Any]:
-        """Provides seed institutional scatter distribution if database has no closed trades."""
-        mock_points = []
-        np.random.seed(42)
-        for i in range(35):
-            is_win = np.random.rand() > 0.35
-            side = "BUY" if np.random.rand() > 0.5 else "SELL"
-            entry = 65000.0 + np.random.randn() * 1000
-            risk = 650.0
-            
-            if is_win:
-                mfe_r = round(float(np.random.uniform(1.5, 4.2)), 2)
-                mae_r = round(float(np.random.uniform(-0.15, -0.85)), 2)
-                r_mult = round(float(np.random.uniform(1.0, mfe_r * 0.9)), 2)
-                eff = round(r_mult / mfe_r, 4)
-                pnl = r_mult * risk
-            else:
-                mfe_r = round(float(np.random.uniform(0.1, 1.2)), 2)
-                mae_r = round(float(np.random.uniform(-1.0, -1.5)), 2)
-                r_mult = round(float(np.random.uniform(-1.0, -0.5)), 2)
-                eff = 0.0
-                pnl = r_mult * risk
 
-            exit_p = entry + (r_mult * risk if side == "BUY" else -r_mult * risk)
-
-            mock_points.append({
-                "trade_id": f"TRD-{1000 + i}",
-                "symbol": "BTCUSDT",
-                "side": side,
-                "entry_price": round(entry, 2),
-                "exit_price": round(exit_p, 2),
-                "stop_loss": round(entry - risk if side == "BUY" else entry + risk, 2),
-                "take_profit": round(entry + risk * 3 if side == "BUY" else entry - risk * 3, 2),
-                "risk_unit": round(risk, 2),
-                "mae_price": round(entry + mae_r * risk, 2),
-                "mfe_price": round(entry + mfe_r * risk, 2),
-                "mae_r": mae_r,
-                "mfe_r": mfe_r,
-                "exit_efficiency": eff,
-                "pnl": round(pnl, 2),
-                "r_multiple": r_mult,
-                "status": "CLOSED",
-                "entry_time": "2026-08-30T10:00:00",
-                "exit_time": "2026-08-30T11:00:00"
-            })
-
-        avg_mae = float(np.mean([p["mae_r"] for p in mock_points]))
-        avg_mfe = float(np.mean([p["mfe_r"] for p in mock_points]))
-        avg_eff = float(np.mean([p["exit_efficiency"] for p in mock_points]))
-
-        return {
-            "total_analyzed": len(mock_points),
-            "average_mae_r": round(avg_mae, 2),
-            "average_mfe_r": round(avg_mfe, 2),
-            "average_exit_efficiency_pct": round(avg_eff * 100, 1),
-            "trades_left_money_on_table": 4,
-            "recommended_target_r": 2.75,
-            "stop_loss_sensitivities": [
-                {"stop_distance_r": 0.5, "survival_rate_pct": 34.3},
-                {"stop_distance_r": 0.75, "survival_rate_pct": 68.6},
-                {"stop_distance_r": 1.0, "survival_rate_pct": 88.6},
-                {"stop_distance_r": 1.25, "survival_rate_pct": 94.3},
-                {"stop_distance_r": 1.5, "survival_rate_pct": 100.0}
-            ],
-            "points": mock_points
-        }
 
 mae_mfe_analyzer = MaeMfeAnalyzer()

@@ -276,7 +276,7 @@ class PsychologyEngine:
         all_trades = trades if trades is not None else sqlite_driver.list_trades(limit=1000, status="CLOSED")
 
         if not all_trades or len(all_trades) < 5:
-            return cls._generate_mock_fatigue_matrix()
+            return {"status": "NO_DATA", "message": "No session data available for fatigue analysis.", "fatigue_matrix": []}
 
         # Group trades by calendar date
         daily_groups: Dict[str, List[Dict[str, Any]]] = {}
@@ -350,26 +350,7 @@ class PsychologyEngine:
             "matrix": matrix_rows
         }
 
-    @classmethod
-    def _generate_mock_fatigue_matrix(cls) -> Dict[str, Any]:
-        """Provides seed institutional fatigue degradation profile."""
-        matrix = [
-            {"sequence_num": 1, "label": "Trade #1", "trades_count": 28, "win_rate": 71.4, "total_pnl": 12400.0, "avg_pnl": 442.86, "profit_factor": 3.65, "expectancy": 410.0, "fatigue_state": "PEAK_FOCUS"},
-            {"sequence_num": 2, "label": "Trade #2", "trades_count": 26, "win_rate": 69.2, "total_pnl": 9800.0, "avg_pnl": 376.92, "profit_factor": 3.10, "expectancy": 350.0, "fatigue_state": "PEAK_FOCUS"},
-            {"sequence_num": 3, "label": "Trade #3", "trades_count": 22, "win_rate": 63.6, "total_pnl": 5900.0, "avg_pnl": 268.18, "profit_factor": 2.45, "expectancy": 240.0, "fatigue_state": "OPTIMAL"},
-            {"sequence_num": 4, "label": "Trade #4", "trades_count": 18, "win_rate": 50.0, "total_pnl": 1200.0, "avg_pnl": 66.67, "profit_factor": 1.45, "expectancy": 60.0, "fatigue_state": "OPTIMAL"},
-            {"sequence_num": 5, "label": "Trade #5", "trades_count": 14, "win_rate": 42.8, "total_pnl": -850.0, "avg_pnl": -60.71, "profit_factor": 0.85, "expectancy": -55.0, "fatigue_state": "MODERATE_FATIGUE"},
-            {"sequence_num": 6, "label": "Trade #6", "trades_count": 10, "win_rate": 30.0, "total_pnl": -3400.0, "avg_pnl": -340.0, "profit_factor": 0.42, "expectancy": -310.0, "fatigue_state": "MODERATE_FATIGUE"},
-            {"sequence_num": 7, "label": "Trade #7", "trades_count": 7, "win_rate": 28.5, "total_pnl": -2800.0, "avg_pnl": -400.0, "profit_factor": 0.35, "expectancy": -380.0, "fatigue_state": "SEVERE_OVERTRADING"},
-            {"sequence_num": 8, "label": "Trade #8+", "trades_count": 5, "win_rate": 20.0, "total_pnl": -4500.0, "avg_pnl": -900.0, "profit_factor": 0.20, "expectancy": -850.0, "fatigue_state": "SEVERE_OVERTRADING"},
-        ]
-        return {
-            "inflection_point": "Trade #4",
-            "early_win_rate_pct": 68.1,
-            "late_win_rate_pct": 26.2,
-            "performance_decay_pct": 41.9,
-            "matrix": matrix
-        }
+
 
     @classmethod
     def get_all_anomalies(cls) -> Dict[str, Any]:

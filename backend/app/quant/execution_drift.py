@@ -90,7 +90,7 @@ class ExecutionDriftAnalyzer:
         closed_trades = sqlite_driver.list_trades(limit=1000, symbol=symbol, status="CLOSED")
 
         if not closed_trades:
-            return cls._generate_mock_drift_dataset()
+            return {"status": "NO_DATA", "message": "No closed trades available for drift analysis.", "drift_data": []}
 
         drift_items = [cls.analyze_trade_drift(t) for t in closed_trades]
 
@@ -114,71 +114,6 @@ class ExecutionDriftAnalyzer:
             "trades": drift_items
         }
 
-    @classmethod
-    def _generate_mock_drift_dataset(cls) -> Dict[str, Any]:
-        """Provides seed institutional execution comparison dataset."""
-        mock_trades = []
-        np.random.seed(42)
-        for i in range(25):
-            side = "BUY" if np.random.rand() > 0.5 else "SELL"
-            entry = 65000.0 + np.random.randn() * 800
-            risk = 600.0
-            tp_dist = risk * 2.5
-            is_win = np.random.rand() > 0.35
-            
-            sl = entry - risk if side == "BUY" else entry + risk
-            tp = entry + tp_dist if side == "BUY" else entry - tp_dist
-            
-            # Simulate early panic exit vs full target
-            is_early = np.random.rand() > 0.6
-            if is_win:
-                if is_early:
-                    actual_exit = entry + risk * 1.2 if side == "BUY" else entry - risk * 1.2
-                    actual_pnl = risk * 1.2
-                    theo_pnl = tp_dist
-                    panic_cost = tp_dist - actual_pnl
-                else:
-                    actual_exit = tp
-                    actual_pnl = tp_dist
-                    theo_pnl = tp_dist
-                    panic_cost = 0.0
-            else:
-                actual_exit = sl
-                actual_pnl = -risk
-                theo_pnl = -risk
-                panic_cost = 0.0
 
-            mock_trades.append({
-                "trade_id": f"TRD-{2000 + i}",
-                "symbol": "BTCUSDT",
-                "side": side,
-                "actual_entry": round(entry, 2),
-                "planned_entry": round(entry, 2),
-                "entry_drift_dollars": round(float(np.random.uniform(5, 25)), 2),
-                "actual_exit": round(actual_exit, 2),
-                "stop_loss": round(sl, 2),
-                "take_profit": round(tp, 2),
-                "actual_pnl": round(actual_pnl, 2),
-                "theoretical_pnl": round(theo_pnl, 2),
-                "is_early_exit": is_early,
-                "panic_cost": round(panic_cost, 2),
-                "drift_ratio": round((actual_pnl - theo_pnl) / risk, 2),
-                "risk_unit": round(risk, 2)
-            })
-
-        tot_act = sum(t["actual_pnl"] for t in mock_trades)
-        tot_theo = sum(t["theoretical_pnl"] for t in mock_trades)
-        tot_panic = sum(t["panic_cost"] for t in mock_trades)
-
-        return {
-            "total_trades": len(mock_trades),
-            "total_actual_pnl": round(tot_act, 2),
-            "total_theoretical_pnl": round(tot_theo, 2),
-            "total_panic_exit_leakage": round(tot_panic, 2),
-            "early_exits_count": sum(1 for t in mock_trades if t["is_early_exit"]),
-            "avg_drift_ratio": -0.32,
-            "execution_fidelity_pct": 74.5,
-            "trades": mock_trades
-        }
 
 execution_drift_analyzer = ExecutionDriftAnalyzer()
