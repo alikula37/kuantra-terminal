@@ -10,6 +10,7 @@ from app.db.duckdb_driver import duckdb_driver
 from app.db.sync_pipeline import sync_pipeline
 from app.db.repositories.candles_repo import candles_repo
 from app.services.market_data.public_fetcher import public_market_fetcher
+from app.services.portfolio_service import portfolio_service
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
 from app.quant.quant_engine import quant_engine
@@ -1302,3 +1303,45 @@ def clear_market_data_cache(
         "symbol": symbol,
         "timeframe": timeframe
     }
+
+
+# ==============================================================================
+# MULTI-ASSET PORTFOLIO AGGREGATOR & RISK ANALYTICS ENDPOINTS
+# ==============================================================================
+
+@router.get("/portfolio/summary")
+def get_portfolio_summary_endpoint(
+    initial_balance: Optional[float] = Query(None, description="Custom starting equity balance")
+):
+    """
+    Returns complete portfolio health, equity metrics, today's PnL,
+    win rate, profit factor, max drawdown, and open R-risk exposure.
+    """
+    return portfolio_service.get_portfolio_summary(initial_balance=initial_balance)
+
+
+@router.get("/portfolio/multi-asset-breakdown")
+def get_portfolio_multi_asset_breakdown_endpoint():
+    """
+    Returns performance, volume, and trade metrics grouped by asset symbol
+    across crypto, forex, commodities, and equities.
+    """
+    return portfolio_service.get_multi_asset_breakdown()
+
+
+@router.get("/portfolio/equity-curve")
+def get_portfolio_equity_curve_endpoint(
+    initial_balance: Optional[float] = Query(None, description="Custom starting equity balance")
+):
+    """
+    Returns chronological cumulative equity progression and peak-to-trough drawdown time-series.
+    """
+    return portfolio_service.get_equity_curve_series(initial_balance=initial_balance)
+
+
+@router.get("/portfolio/heatmap")
+def get_portfolio_heatmap_endpoint():
+    """
+    Returns daily calendar PnL series with normalized intensity for heatmap visualizers.
+    """
+    return portfolio_service.get_daily_pnl_heatmap()
