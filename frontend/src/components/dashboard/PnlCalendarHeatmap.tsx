@@ -82,7 +82,7 @@ export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, lo
             {t("heatmap.active_days", { count: activeDays })}
           </span>
           <span className={`font-bold ${totalPnL >= 0 ? "text-gain" : "text-loss"}`}>
-            Net: {totalPnL >= 0 ? "+" : ""}${totalPnL.toFixed(2)}
+            {t("heatmap.net_pnl_val", { pnl: `${totalPnL >= 0 ? "+" : ""}$${totalPnL.toFixed(2)}` })}
           </span>
         </div>
       </div>
@@ -110,12 +110,10 @@ export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, lo
                   <span className={hoveredDay.pnl >= 0 ? "text-gain font-bold" : "text-loss font-bold"}>
                     {hoveredDay.pnl >= 0 ? "+" : ""}${hoveredDay.pnl.toFixed(2)}
                   </span>{" "}
-                  ({t("heatmap.tooltip", {
-                    date: "",
-                    pnl: "",
+                  ({t("heatmap.trades_summary", {
                     count: hoveredDay.trades_count,
                     rate: hoveredDay.win_rate.toFixed(0)
-                  }).split(":")[1]?.trim() || `${hoveredDay.trades_count} Trades`})
+                  })})
                 </span>
               ) : (
                 <span className="font-semibold text-slate-400">

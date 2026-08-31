@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Activity, Heart, ShieldAlert, Key, Zap, Bluetooth, Battery, RefreshCw, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "../../context/I18nContext";
 
 export const BiometricHardwareStudio: React.FC = () => {
+  const { t } = useTranslation();
   const [telemetry, setTelemetry] = useState<any>(null);
   const [devices, setDevices] = useState<any[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("POLAR-H10-8849");
@@ -50,7 +52,7 @@ export const BiometricHardwareStudio: React.FC = () => {
       });
       setSelectedDeviceId(devId);
       fetchDevices();
-      setOverrideMsg(`Connected to ${devId} via ${proto}`);
+      setOverrideMsg(t("biometrics_studio.connected_msg", { dev: devId, proto }));
       setTimeout(() => setOverrideMsg(null), 3500);
     } catch (e) {
       console.error(e);
@@ -68,7 +70,7 @@ export const BiometricHardwareStudio: React.FC = () => {
         }),
       });
       await res.json();
-      setOverrideMsg(`Lockout Override Approved by FIDO2 Passkey! State reset to NOMINAL.`);
+      setOverrideMsg(t("biometrics_studio.fido2_approved"));
       // Reset sliders to calm
       setSimBpm(68);
       setSimEda(2.0);
@@ -90,11 +92,11 @@ export const BiometricHardwareStudio: React.FC = () => {
           <div className="flex items-center space-x-2">
             <Activity className="w-5 h-5 text-accent" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              HARDWARE BIOMETRICS & PHYSIOLOGICAL TILT INTERCEPTOR
+              {t("biometrics_studio.title")}
             </h2>
           </div>
           <p className="text-xs text-slate-400">
-            BLE GATT Polar H10 &bull; Empatica E4 EDA &bull; Real-Time HRV RMSSD &bull; FIDO2 Hardware Lockout
+            {t("biometrics_studio.subtitle")}
           </p>
         </div>
 
@@ -102,10 +104,10 @@ export const BiometricHardwareStudio: React.FC = () => {
           {isLockout && (
             <button
               onClick={handleFIDO2Override}
-              className="flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-1.5 rounded text-xs transition shadow"
+              className="flex items-center space-x-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-1.5 rounded text-xs transition shadow cursor-pointer"
             >
               <Key className="w-3.5 h-3.5" />
-              <span>FIDO2 PASSKEY OVERRIDE</span>
+              <span>{t("biometrics_studio.fido2_override")}</span>
             </button>
           )}
 
@@ -114,7 +116,7 @@ export const BiometricHardwareStudio: React.FC = () => {
               fetchDevices();
               fetchTelemetry();
             }}
-            className="p-1.5 bg-[#0d121c] hover:bg-[#111722] border border-surface-border rounded text-slate-400 hover:text-white transition"
+            className="p-1.5 bg-[#0d121c] hover:bg-[#111722] border border-surface-border rounded text-slate-400 hover:text-white transition cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -137,9 +139,9 @@ export const BiometricHardwareStudio: React.FC = () => {
               <ShieldAlert className="w-6 h-6 text-loss" />
             </div>
             <div>
-              <span className="text-sm font-bold text-loss block">CRITICAL BIOMETRIC TILT LOCKOUT ACTIVE</span>
+              <span className="text-sm font-bold text-loss block">{t("biometrics_studio.lockout_title")}</span>
               <p className="text-xs text-slate-300">
-                Stress Score (S_bio: {sBio}) breached safety threshold (75.0). All DMA/FIX/DEX order execution is locked.
+                {t("biometrics_studio.lockout_desc", { score: sBio })}
               </p>
             </div>
           </div>
@@ -148,7 +150,7 @@ export const BiometricHardwareStudio: React.FC = () => {
               {Math.floor((telemetry?.lockout_remaining_seconds || 900) / 60)}:
               {String((telemetry?.lockout_remaining_seconds || 900) % 60).padStart(2, "0")}
             </span>
-            <span className="text-[10px] text-slate-400 block">COOLDOWN REMAINING</span>
+            <span className="text-[10px] text-slate-400 block">{t("biometrics_studio.cooldown_remaining")}</span>
           </div>
         </div>
       )}
@@ -160,7 +162,7 @@ export const BiometricHardwareStudio: React.FC = () => {
           <div className="flex items-center justify-between border-b border-surface-border pb-2">
             <span className="text-xs font-bold text-white flex items-center space-x-1.5">
               <Heart className="w-4 h-4 text-rose-500 animate-pulse" />
-              <span>LIVE BIOMETRIC RADAR</span>
+              <span>{t("biometrics_studio.radar_title")}</span>
             </span>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
               sBio < 60 ? "bg-gain/20 text-gain" : sBio < 75 ? "bg-amber-500/20 text-amber-400" : "bg-loss/20 text-loss"
@@ -177,7 +179,7 @@ export const BiometricHardwareStudio: React.FC = () => {
               {sBio}
             </div>
             <span className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
-              COMPOSITE STRESS (S_bio / 100)
+              {t("biometrics_studio.composite_stress")}
             </span>
 
             <div className="w-full bg-[#111722] h-2 rounded-full mt-4 overflow-hidden">
@@ -193,19 +195,19 @@ export const BiometricHardwareStudio: React.FC = () => {
           {/* Metrics Grid */}
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="bg-[#111722] p-3 rounded border border-surface-border">
-              <span className="text-slate-400 text-[10px] block">HEART RATE</span>
+              <span className="text-slate-400 text-[10px] block">{t("biometrics_studio.heart_rate")}</span>
               <span className="text-xl font-bold text-rose-400 font-mono">{telemetry?.bpm || 72} BPM</span>
             </div>
             <div className="bg-[#111722] p-3 rounded border border-surface-border">
-              <span className="text-slate-400 text-[10px] block">HRV (RMSSD)</span>
+              <span className="text-slate-400 text-[10px] block">{t("biometrics_studio.hrv_rmssd")}</span>
               <span className="text-xl font-bold text-accent font-mono">{telemetry?.rmssd_ms || 45.2} ms</span>
             </div>
             <div className="bg-[#111722] p-3 rounded border border-surface-border">
-              <span className="text-slate-400 text-[10px] block">EDA CONDUCTANCE</span>
+              <span className="text-slate-400 text-[10px] block">{t("biometrics_studio.eda_conductance")}</span>
               <span className="text-xl font-bold text-purple-400 font-mono">{telemetry?.eda_microsiemens || 2.4} μS</span>
             </div>
             <div className="bg-[#111722] p-3 rounded border border-surface-border">
-              <span className="text-slate-400 text-[10px] block">SIGNAL QUALITY (SQI)</span>
+              <span className="text-slate-400 text-[10px] block">{t("biometrics_studio.signal_quality")}</span>
               <span className="text-xl font-bold text-gain font-mono">{telemetry?.signal_quality_pct || 98.5}%</span>
             </div>
           </div>
@@ -215,13 +217,13 @@ export const BiometricHardwareStudio: React.FC = () => {
         <div className="bg-[#0d121c] p-4 rounded-lg border border-surface-border space-y-4">
           <span className="text-xs font-bold text-white flex items-center space-x-1.5 border-b border-surface-border pb-2">
             <Zap className="w-4 h-4 text-accent" />
-            <span>PHYSIOLOGICAL STRESS STIMULATOR & TEST BENCH</span>
+            <span>{t("biometrics_studio.stimulator_title")}</span>
           </span>
 
           <div className="space-y-4 text-xs">
             <div>
               <div className="flex justify-between text-slate-300 text-[11px] mb-1">
-                <span>Simulated Heart Rate:</span>
+                <span>{t("biometrics_studio.sim_hr")}</span>
                 <span className="text-rose-400 font-bold font-mono">{simBpm} BPM</span>
               </div>
               <input
@@ -236,7 +238,7 @@ export const BiometricHardwareStudio: React.FC = () => {
 
             <div>
               <div className="flex justify-between text-slate-300 text-[11px] mb-1">
-                <span>Simulated EDA Skin Conductance:</span>
+                <span>{t("biometrics_studio.sim_eda")}</span>
                 <span className="text-purple-400 font-bold font-mono">{simEda} μS</span>
               </div>
               <input
@@ -251,18 +253,18 @@ export const BiometricHardwareStudio: React.FC = () => {
             </div>
 
             <div className="bg-[#111722] p-3 rounded border border-surface-border space-y-2">
-              <span className="font-bold text-white text-[11px] block">STRESS FACTOR BREAKDOWN</span>
+              <span className="font-bold text-white text-[11px] block">{t("biometrics_studio.factor_breakdown")}</span>
               <div className="space-y-1.5 text-[10px] font-mono text-slate-400">
                 <div className="flex justify-between">
-                  <span>HRV Parasympathetic Index (40%):</span>
+                  <span>{t("biometrics_studio.hrv_parasympathetic")}</span>
                   <span className="text-accent font-bold">{telemetry?.components?.hrv_stress_component || 0} / 100</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Elevated BPM Factor (35%):</span>
+                  <span>{t("biometrics_studio.elevated_bpm")}</span>
                   <span className="text-rose-400 font-bold">{telemetry?.components?.bpm_stress_component || 0} / 100</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>EDA Sympathetic Surge (25%):</span>
+                  <span>{t("biometrics_studio.eda_sympathetic")}</span>
                   <span className="text-purple-400 font-bold">{telemetry?.components?.eda_arousal_component || 0} / 100</span>
                 </div>
               </div>
@@ -274,18 +276,18 @@ export const BiometricHardwareStudio: React.FC = () => {
                   setSimBpm(62);
                   setSimEda(1.8);
                 }}
-                className="bg-gain/20 hover:bg-gain text-gain hover:text-black font-bold py-2 rounded text-[10px] transition"
+                className="bg-gain/20 hover:bg-gain text-gain hover:text-black font-bold py-2 rounded text-[10px] transition cursor-pointer"
               >
-                SET CALM BASELINE
+                {t("biometrics_studio.set_calm")}
               </button>
               <button
                 onClick={() => {
                   setSimBpm(118);
                   setSimEda(19.2);
                 }}
-                className="bg-loss/20 hover:bg-loss text-loss hover:text-white font-bold py-2 rounded text-[10px] transition"
+                className="bg-loss/20 hover:bg-loss text-loss hover:text-white font-bold py-2 rounded text-[10px] transition cursor-pointer"
               >
-                TRIGGER CRITICAL TILT
+                {t("biometrics_studio.trigger_tilt")}
               </button>
             </div>
           </div>
@@ -296,9 +298,9 @@ export const BiometricHardwareStudio: React.FC = () => {
           <div className="flex items-center justify-between border-b border-surface-border pb-2">
             <span className="text-xs font-bold text-white flex items-center space-x-1.5">
               <Bluetooth className="w-4 h-4 text-accent" />
-              <span>DETECTED WEARABLE HARDWARE</span>
+              <span>{t("biometrics_studio.detected_hardware")}</span>
             </span>
-            <span className="text-[10px] text-slate-400">{devices.length} Devices</span>
+            <span className="text-[10px] text-slate-400">{t("biometrics_studio.devices_count", { count: devices.length })}</span>
           </div>
 
           <div className="flex-1 space-y-2 overflow-y-auto text-xs">
@@ -331,7 +333,7 @@ export const BiometricHardwareStudio: React.FC = () => {
                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
                       isSelected ? "bg-accent text-black" : "bg-[#090d14] text-slate-400"
                     }`}>
-                      {isSelected ? "PAIRED" : "CONNECT"}
+                      {isSelected ? t("biometrics_studio.paired") : t("biometrics_studio.connect")}
                     </span>
                   </div>
                 </div>

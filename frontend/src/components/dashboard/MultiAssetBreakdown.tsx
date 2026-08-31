@@ -69,7 +69,7 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
           <PieChart className="w-4 h-4 text-accent" />
           <span className="text-xs font-bold text-white uppercase tracking-wider">{t("breakdown.title")}</span>
         </div>
-        <span className="text-[10px] text-slate-400 font-semibold">{items.length} Instrument</span>
+        <span className="text-[10px] text-slate-400 font-semibold">{t("breakdown.instruments_count", { count: items.length })}</span>
       </div>
 
       <div className="mt-3 space-y-3 overflow-y-auto flex-1 pr-1 custom-scrollbar">

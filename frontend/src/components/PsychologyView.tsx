@@ -3,8 +3,11 @@ import { TiltMeter } from "./TiltMeter";
 import { FomoDetectorCard } from "./FomoDetectorCard";
 import { FatigueHeatmap } from "./FatigueHeatmap";
 import { Brain } from "lucide-react";
+import { useTranslation } from "../context/I18nContext";
 
 export const PsychologyView: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-y-auto p-4 select-none font-mono space-y-4">
       {/* View Header */}
@@ -12,10 +15,10 @@ export const PsychologyView: React.FC = () => {
         <div>
           <h2 className="text-base font-bold text-white flex items-center space-x-2">
             <Brain className="w-4 h-4 text-purple-400" />
-            <span>ALGORITHMIC TRADING PSYCHOLOGY & TILT ENGINE</span>
+            <span>{t("psychology.title")}</span>
           </h2>
           <p className="text-xs text-slate-400">
-            Real-time Cognitive Biases, FOMO Detection, Revenge Trading Guardian & Fatigue Heatmap
+            {t("psychology.subtitle")}
           </p>
         </div>
       </div>

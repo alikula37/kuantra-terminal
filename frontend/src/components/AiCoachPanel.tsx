@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { AiAuditReportResponse, AiQueryResult } from "../types";
 import { Bot, Sparkles, AlertTriangle, CheckCircle2, Search, ArrowRight } from "lucide-react";
+import { useTranslation } from "../context/I18nContext";
 
 export const AiCoachPanel: React.FC = () => {
+  const { t } = useTranslation();
   const [report, setReport] = useState<AiAuditReportResponse | null>(null);
   const [queryText, setQueryText] = useState<string>("");
   const [queryResult, setQueryResult] = useState<AiQueryResult | null>(null);
@@ -47,14 +49,14 @@ export const AiCoachPanel: React.FC = () => {
   };
 
   if (isLoading || !report) {
-    return <div className="p-8 text-center text-slate-400 font-mono">Generating Deterministic AI Audit...</div>;
+    return <div className="p-8 text-center text-slate-400 font-mono">{t("ai_coach.loading")}</div>;
   }
 
   const sampleQueries = [
-    "Show worst trades on BTCUSDT",
-    "Show winning trades with R > 2",
-    "Summarize asset breakdown",
-    "List open positions",
+    t("ai_coach.sample_worst_btc"),
+    t("ai_coach.sample_high_r"),
+    t("ai_coach.sample_breakdown"),
+    t("ai_coach.sample_open_positions"),
   ];
 
   return (
@@ -64,10 +66,10 @@ export const AiCoachPanel: React.FC = () => {
         <div>
           <h2 className="text-base font-bold text-white flex items-center space-x-2">
             <Bot className="w-4 h-4 text-accent" />
-            <span>DETERMINISTIC AI TRADE AUDITOR & NATURAL LANGUAGE COGNITIVE AGENT</span>
+            <span>{t("ai_coach.title")}</span>
           </h2>
           <p className="text-xs text-slate-400">
-            Zero-Hallucination Mathematical Audit & DuckDB Natural Language Interface
+            {t("ai_coach.subtitle")}
           </p>
         </div>
       </div>
@@ -80,15 +82,15 @@ export const AiCoachPanel: React.FC = () => {
               {report.grade}
             </div>
             <div>
-              <span className="text-xs text-slate-400 block font-semibold">OVERALL PERFORMANCE GRADE</span>
-              <span className="text-sm font-bold text-white">Institutional Execution Quality</span>
+              <span className="text-xs text-slate-400 block font-semibold">{t("ai_coach.overall_grade")}</span>
+              <span className="text-sm font-bold text-white">{t("ai_coach.institutional_quality")}</span>
             </div>
           </div>
 
           <div className="text-right text-xs">
-            <span className="text-slate-400 block text-[10px]">VERIFIED SQN / WIN RATE</span>
+            <span className="text-slate-400 block text-[10px]">{t("ai_coach.verified_sqn_wr")}</span>
             <span className="font-bold text-gain">
-              SQN: {report.deterministic_context.sqn} | {report.deterministic_context.win_rate_pct}% WR
+              {t("ai_coach.sqn_wr_val", { sqn: report.deterministic_context.sqn, wr: report.deterministic_context.win_rate_pct })}
             </span>
           </div>
         </div>
@@ -103,7 +105,7 @@ export const AiCoachPanel: React.FC = () => {
           <div className="bg-[#111722] p-3 rounded border border-surface-border space-y-2">
             <span className="font-bold text-gain flex items-center space-x-1.5 text-[11px]">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>QUANTITATIVE STRENGTHS</span>
+              <span>{t("ai_coach.quant_strengths")}</span>
             </span>
             <ul className="space-y-1.5 text-[11px] text-slate-300">
               {report.strengths.map((s, idx) => (
@@ -119,7 +121,7 @@ export const AiCoachPanel: React.FC = () => {
           <div className="bg-[#111722] p-3 rounded border border-surface-border space-y-2">
             <span className="font-bold text-loss flex items-center space-x-1.5 text-[11px]">
               <AlertTriangle className="w-3.5 h-3.5" />
-              <span>CRITICAL EXECUTION RISKS</span>
+              <span>{t("ai_coach.critical_risks")}</span>
             </span>
             <ul className="space-y-1.5 text-[11px] text-slate-300">
               {report.critical_risks.map((r, idx) => (
@@ -136,12 +138,12 @@ export const AiCoachPanel: React.FC = () => {
         <div className="bg-[#111722] p-3 rounded border border-surface-border space-y-2 text-xs">
           <span className="font-bold text-accent flex items-center space-x-1.5 text-[11px]">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>AI DIRECTIVES FOR NEXT TRADING SESSION</span>
+            <span>{t("ai_coach.directives_title")}</span>
           </span>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             {report.actionable_directives.map((d, idx) => (
               <div key={idx} className="bg-[#0d121c] p-2 rounded border border-surface-border text-[11px] text-slate-200">
-                <span className="text-accent font-bold block mb-1">Directive #{idx + 1}:</span>
+                <span className="text-accent font-bold block mb-1">{t("ai_coach.directive_num", { num: idx + 1 })}</span>
                 <span>{d}</span>
               </div>
             ))}
@@ -154,9 +156,9 @@ export const AiCoachPanel: React.FC = () => {
         <div className="flex items-center space-x-2 border-b border-surface-border pb-2">
           <Search className="w-4 h-4 text-purple-400" />
           <div>
-            <h3 className="text-xs font-bold text-white">NATURAL LANGUAGE DUCKDB QUERY ENGINE</h3>
+            <h3 className="text-xs font-bold text-white">{t("ai_coach.duckdb_title")}</h3>
             <p className="text-[10px] text-slate-400">
-              Ask natural questions to instantly query the embedded OLAP trade database
+              {t("ai_coach.duckdb_desc")}
             </p>
           </div>
         </div>
@@ -168,7 +170,7 @@ export const AiCoachPanel: React.FC = () => {
             value={queryText}
             onChange={(e) => setQueryText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleRunQuery()}
-            placeholder="e.g. Show worst trades on BTCUSDT or High R-Multiple trades..."
+            placeholder={t("ai_coach.query_placeholder")}
             className="flex-1 bg-[#111722] border border-surface-border px-3 py-2 rounded text-white text-xs focus:outline-none focus:border-accent"
           />
           <button
@@ -176,14 +178,14 @@ export const AiCoachPanel: React.FC = () => {
             disabled={isQuerying}
             className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-4 py-2 rounded text-xs transition"
           >
-            <span>{isQuerying ? "Querying..." : "RUN QUERY"}</span>
+            <span>{isQuerying ? t("ai_coach.querying") : t("ai_coach.run_query")}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Quick Suggestion Chips */}
         <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          <span className="text-slate-500 mr-1">Suggestions:</span>
+          <span className="text-slate-500 mr-1">{t("ai_coach.suggestions")}</span>
           {sampleQueries.map((q, idx) => (
             <button
               key={idx}
@@ -203,7 +205,7 @@ export const AiCoachPanel: React.FC = () => {
           <div className="space-y-2 pt-2 border-t border-surface-border">
             <div className="bg-[#111722] p-2.5 rounded border border-surface-border text-xs flex items-center justify-between">
               <span className="text-slate-300">
-                <strong className="text-accent">AI Commentary:</strong> {queryResult.ai_commentary}
+                <strong className="text-accent">{t("ai_coach.ai_commentary")}</strong> {queryResult.ai_commentary}
               </span>
               <span className="text-[10px] text-slate-400 font-mono bg-black/40 px-2 py-0.5 rounded">
                 SQL: {queryResult.sql.slice(0, 45)}...
@@ -225,7 +227,7 @@ export const AiCoachPanel: React.FC = () => {
                   {queryResult.rows.length === 0 ? (
                     <tr>
                       <td colSpan={queryResult.columns.length} className="p-4 text-center text-slate-500">
-                        No rows returned.
+                        {t("ai_coach.no_rows")}
                       </td>
                     </tr>
                   ) : (

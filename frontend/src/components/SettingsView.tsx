@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Database, Server, RefreshCw, Zap, DollarSign, Check } from "lucide-react";
 import { UpdateNotifier } from "./updater/UpdateNotifier";
 import { SystemHealthSettings } from "./settings/SystemHealthSettings";
+import { useTranslation } from "../context/I18nContext";
 
 export const SettingsView: React.FC = () => {
+  const { t } = useTranslation();
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [initialBalance, setInitialBalance] = useState<number>(0);
   const [balanceSavedMsg, setBalanceSavedMsg] = useState<string | null>(null);
@@ -31,20 +33,20 @@ export const SettingsView: React.FC = () => {
         body: JSON.stringify({ initial_balance: Number(initialBalance) }),
       });
       if (res.ok) {
-        setBalanceSavedMsg("Başlangıç sermayesi başarıyla güncellendi!");
+        setBalanceSavedMsg(t("settings.save_capital_success"));
         setTimeout(() => setBalanceSavedMsg(null), 3000);
       }
     } catch {
-      setBalanceSavedMsg("Kayıt sırasında hata oluştu.");
+      setBalanceSavedMsg(t("settings.save_capital_error"));
     } finally {
       setIsSavingBalance(false);
     }
   };
 
   const handleManualSync = () => {
-    setSyncStatus("Syncing...");
+    setSyncStatus(t("settings.syncing"));
     setTimeout(() => {
-      setSyncStatus("Full OLTP -> DuckDB sync completed successfully!");
+      setSyncStatus(t("settings.sync_success"));
       setTimeout(() => setSyncStatus(null), 3000);
     }, 600);
   };
@@ -52,8 +54,8 @@ export const SettingsView: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-y-auto p-4 select-none font-mono space-y-4 custom-scrollbar">
       <div className="pb-3 border-b border-surface-border">
-        <h2 className="text-base font-bold text-white">TERMINAL CONFIGURATION & ARCHITECTURE</h2>
-        <p className="text-xs text-slate-400">System Parameters, Database Engines & Sub-100ms Stream Settings</p>
+        <h2 className="text-base font-bold text-white">{t("settings.terminal_config")}</h2>
+        <p className="text-xs text-slate-400">{t("settings.terminal_config_sub")}</p>
       </div>
 
       {/* Account & Capital Management */}
@@ -61,14 +63,14 @@ export const SettingsView: React.FC = () => {
         <div className="flex items-center justify-between">
           <span className="font-bold text-white text-xs flex items-center space-x-2">
             <DollarSign className="w-4 h-4 text-accent" />
-            <span>Kasa & Başlangıç Sermayesi Yönetimi</span>
+            <span>{t("settings.capital_title")}</span>
           </span>
           <span className="bg-accent/20 text-accent text-[10px] font-bold px-2 py-0.5 rounded">
-            PORTFOLIO ENGINE
+            {t("settings.capital_badge")}
           </span>
         </div>
         <p className="text-xs text-slate-400">
-          Terminal kasanız ve kümülatif getiri eğriniz bu başlangıç sermayesi üzerinden hesaplanır.
+          {t("settings.capital_desc")}
         </p>
         <form onSubmit={handleSaveBalance} className="flex flex-wrap items-center gap-3 pt-1">
           <div className="relative">
@@ -90,7 +92,7 @@ export const SettingsView: React.FC = () => {
             className="px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs flex items-center space-x-1.5 transition disabled:opacity-50 cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>{isSavingBalance ? "Kaydediliyor..." : "Sermayeyi Güncelle"}</span>
+            <span>{isSavingBalance ? t("settings.saving_capital_btn") : t("settings.save_capital_btn")}</span>
           </button>
           {balanceSavedMsg && (
             <span className="text-xs text-gain font-semibold animate-fade-in">{balanceSavedMsg}</span>
@@ -110,22 +112,22 @@ export const SettingsView: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="font-bold text-white text-xs flex items-center space-x-2">
               <Database className="w-4 h-4 text-gain" />
-              <span>SQLite OLTP Storage</span>
+              <span>{t("settings.sqlite_title")}</span>
             </span>
             <span className="bg-gain/20 text-gain text-[10px] font-bold px-2 py-0.5 rounded">
-              WAL MODE ACTIVE
+              {t("settings.wal_badge")}
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            Write-Ahead Logging enabled with zero-lock trade inserts, foreign key constraints, and crash resilience.
+            {t("settings.sqlite_desc")}
           </p>
           <div className="bg-[#090d14] p-2.5 rounded text-[11px] text-slate-300 space-y-1">
             <div className="flex justify-between">
-              <span className="text-slate-500">Journal Mode:</span>
-              <span className="font-bold text-accent">WAL (Write-Ahead Logging)</span>
+              <span className="text-slate-500">{t("settings.journal_mode")}</span>
+              <span className="font-bold text-accent">{t("settings.wal_val")}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Synchronous:</span>
+              <span className="text-slate-500">{t("settings.synchronous")}</span>
               <span className="text-slate-200">NORMAL</span>
             </div>
           </div>
@@ -135,23 +137,23 @@ export const SettingsView: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="font-bold text-white text-xs flex items-center space-x-2">
               <Server className="w-4 h-4 text-accent" />
-              <span>DuckDB OLAP Analytics</span>
+              <span>{t("settings.duckdb_title")}</span>
             </span>
             <span className="bg-accent/20 text-accent text-[10px] font-bold px-2 py-0.5 rounded">
-              COLUMNAR VECTORIZED
+              {t("settings.columnar_badge")}
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            High-speed in-process columnar database executing aggregated analytics and market candle queries in &lt;5ms.
+            {t("settings.duckdb_desc")}
           </p>
           <div className="bg-[#090d14] p-2.5 rounded text-[11px] text-slate-300 space-y-1">
             <div className="flex justify-between">
-              <span className="text-slate-500">Engine Type:</span>
-              <span className="font-bold text-accent">DuckDB Embedded C++</span>
+              <span className="text-slate-500">{t("settings.engine_type")}</span>
+              <span className="font-bold text-accent">{t("settings.duckdb_val")}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Query Engine:</span>
-              <span className="text-slate-200">Vectorized Execution</span>
+              <span className="text-slate-500">{t("settings.query_engine")}</span>
+              <span className="text-slate-200">{t("settings.vectorized_val")}</span>
             </div>
           </div>
         </div>
@@ -160,19 +162,19 @@ export const SettingsView: React.FC = () => {
       <div className="bg-[#0d121c] p-4 rounded-lg border border-surface-border space-y-4">
         <h3 className="font-bold text-white text-xs flex items-center space-x-2">
           <Zap className="w-4 h-4 text-yellow-400" />
-          <span>Real-time Stream & Dual Database Synchronization</span>
+          <span>{t("settings.sync_title")}</span>
         </h3>
         <p className="text-xs text-slate-400">
-          Sync newly recorded trades across SQLite into DuckDB columnar analytical tables.
+          {t("settings.sync_desc")}
         </p>
 
         <div className="flex items-center space-x-4">
           <button
             onClick={handleManualSync}
-            className="flex items-center space-x-2 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white px-4 py-2 rounded text-xs font-bold transition"
+            className="flex items-center space-x-2 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white px-4 py-2 rounded text-xs font-bold transition cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5 text-accent" />
-            <span>TRIGGER FULL DUAL-DB SYNC</span>
+            <span>{t("settings.sync_btn")}</span>
           </button>
           {syncStatus && <span className="text-xs text-gain font-bold">{syncStatus}</span>}
         </div>

@@ -105,7 +105,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             {summary.win_rate.toFixed(1)}%
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            {summary.total_closed_trades} {t("breakdown.trades_count", { count: "" }).replace("{count}", "").trim()}
+            {t("portfolio.trades_count", { count: summary.total_closed_trades })}
           </div>
         </div>
       </div>
@@ -123,7 +123,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             {summary.profit_factor >= 999 ? "∞" : summary.profit_factor.toFixed(2)}
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            Profit / Loss
+            {t("portfolio.profit_loss_ratio")}
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             -{summary.max_drawdown_pct.toFixed(2)}%
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            -${summary.max_drawdown_usd.toFixed(2)} (Peak-to-Trough)
+            {t("portfolio.peak_to_trough", { amount: summary.max_drawdown_usd.toFixed(2) })}
           </div>
         </div>
       </div>
@@ -159,7 +159,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             {isAvgRPositive ? "+" : ""}{summary.avg_r_multiple.toFixed(2)}R
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            EV / Trade
+            {t("portfolio.ev_per_trade")}
           </div>
         </div>
       </div>
