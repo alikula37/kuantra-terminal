@@ -65,10 +65,8 @@ jobs:
         run: |
           set -o pipefail
           python -m pytest backend/tests -v --tb=short 2>&1 | tee pytest_log.txt || {
-            echo "### ❌ Pytest Failure Output (${{ matrix.os }})" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 100 pytest_log.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            FAIL_MSG=$(tail -n 60 pytest_log.txt | tr '\r' ' ' | tr '\n' ' ' | sed 's/"/\\"/g')
+            echo "::error title=PytestFailure::$FAIL_MSG"
             exit 1
           }
 
