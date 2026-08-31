@@ -19,17 +19,17 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             bundle_ext: .exe
-            sidecar_bin: kuantra-backend-x86_64-pc-windows-msvc.exe
+            sidecar_name: kuantra-backend-x86_64-pc-windows-msvc.exe
 
-          - os: macos-14
+          - os: macos-latest
             target: aarch64-apple-darwin
             bundle_ext: .dmg
-            sidecar_bin: kuantra-backend-aarch64-apple-darwin
+            sidecar_name: kuantra-backend-aarch64-apple-darwin
 
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             bundle_ext: .AppImage
-            sidecar_bin: kuantra-backend-x86_64-unknown-linux-gnu
+            sidecar_name: kuantra-backend-x86_64-unknown-linux-gnu
 
     steps:
       - name: Checkout Source Code
@@ -60,22 +60,60 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
             librsvg2-dev \
             patchelf \
             libssl-dev \
             libayatana-appindicator3-dev
 
-      - name: Install Python Dependencies & Nuitka Compiler
+      - name: Install Python Dependencies & Packaging Tools
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
-          pip install nuitka zstandard ordered-set
+          pip install cryptography alembic pytest pytest-asyncio anyio psutil httpx pyyaml pyinstaller
 
-      - name: Compile Nuitka C++ Backend Sidecar Binary
+      - name: Compile Backend Sidecar Binary
+        shell: bash
         run: |
           mkdir -p src-tauri/binaries
-          python backend/build_sidecar.py --target ${{ matrix.target }} --output-dir src-tauri/binaries
+          python -m PyInstaller \
+            --onefile \
+            --clean \
+            --name "${{ matrix.sidecar_name }}" \
+            --distpath "src-tauri/binaries" \
+            --workpath "backend/build" \
+            --specpath "backend" \
+            --exclude-module duckdb \
+            --exclude-module pandas \
+            --exclude-module numpy \
+            --exclude-module scipy \
+            --exclude-module torch \
+            --exclude-module bleak \
+            --exclude-module web3 \
+            --exclude-module quickfix \
+            --exclude-module PIL \
+            --exclude-module matplotlib \
+            --exclude-module tkinter \
+            --exclude-module pytest \
+            --exclude-module unittest \
+            --exclude-module doctest \
+            --exclude-module test \
+            --exclude-module alembic.testing \
+            --exclude-module setuptools \
+            --exclude-module pkg_resources \
+            --exclude-module winloop \
+            --exclude-module ccxt.pro \
+            --exclude-module aiohttp.test_utils \
+            --collect-submodules app \
+            --collect-submodules starlette \
+            --collect-submodules fastapi \
+            --collect-submodules uvicorn \
+            --collect-submodules pydantic \
+            --collect-submodules cryptography \
+            backend/main.py
+
+          if [ -f "src-tauri/binaries/${{ matrix.sidecar_name }}" ]; then
+            chmod +x "src-tauri/binaries/${{ matrix.sidecar_name }}" || true
+          fi
 
       - name: Build Frontend Production Artifacts
         run: |
@@ -91,7 +129,7 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "Kuantra Terminal ${{ github.ref_name }}"
           releaseBody: "See RELEASE_NOTES.md for full institutional changelog."
-          releaseDraft: false
+          releaseDraft: true
           prerelease: false
 
       - name: Stage & Calculate SHA-256 Artifact Checksums
@@ -149,6 +187,7 @@ jobs:
         with:
           body_path: RELEASE_NOTES.md
           append_body: true
+          draft: false
           files: |
             dist-release/*
         env:

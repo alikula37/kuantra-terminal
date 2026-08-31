@@ -67,16 +67,17 @@ def build_nuitka_command(
 
 def run_build(
     output_dir: str = "../src-tauri/binaries",
+    target: Optional[str] = None,
     dry_run: bool = False
 ) -> int:
     """Executes Nuitka build pipeline and verifies output binary path."""
-    triple = get_target_triple()
+    triple = target or get_target_triple()
     binary_name = get_binary_name(triple)
     
     abs_output_dir = os.path.abspath(output_dir)
     os.makedirs(abs_output_dir, exist_ok=True)
     
-    cmd = build_nuitka_command(output_dir=abs_output_dir)
+    cmd = build_nuitka_command(output_dir=abs_output_dir, target_triple=triple)
     print(f"[*] Target Architecture: {triple}")
     print(f"[*] Target Binary Name: {binary_name}")
     print(f"[*] Output Directory: {abs_output_dir}")
@@ -98,7 +99,8 @@ def run_build(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Kuantra Terminal Nuitka Sidecar Compiler")
     parser.add_argument("--dry-run", action="store_true", help="Print Nuitka compilation command without running")
+    parser.add_argument("--target", default=None, help="Target architecture triple")
     parser.add_argument("--output-dir", default="../src-tauri/binaries", help="Target output directory")
     args = parser.parse_args()
 
-    sys.exit(run_build(output_dir=args.output_dir, dry_run=args.dry_run))
+    sys.exit(run_build(output_dir=args.output_dir, target=args.target, dry_run=args.dry_run))
