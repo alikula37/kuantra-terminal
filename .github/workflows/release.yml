@@ -150,23 +150,37 @@ jobs:
         run: |
           npx tauri build --bundles appimage
 
-      - name: Stage & Calculate SHA-256 Artifact Checksums
+      - name: Rename Bundles to Clean Asset Names
         shell: bash
         run: |
           mkdir -p release-staging
-          find src-tauri/target/release/bundle -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.zip" \) -exec cp {} release-staging/ \; || true
-          cd release-staging
-          for f in *; do
-            if [ -f "$f" ]; then
-              sha256sum "$f" > "$f.sha256"
-            fi
-          done
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version" 2>/dev/null || echo "1.3.0")
 
-      - name: Upload Platform Release Assets
+          # Windows: find NSIS .exe and rename
+          WIN_EXE=$(find src-tauri/target/release/bundle/nsis -name "*.exe" 2>/dev/null | head -1)
+          if [ -n "$WIN_EXE" ]; then
+            cp "$WIN_EXE" "release-staging/Kuantra-Terminal-${VERSION}-Setup.exe"
+          fi
+
+          # macOS: find .dmg and rename
+          MAC_DMG=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" 2>/dev/null | head -1)
+          if [ -n "$MAC_DMG" ]; then
+            cp "$MAC_DMG" "release-staging/Kuantra-Terminal-${VERSION}-aarch64.dmg"
+          fi
+
+          # Linux: find .AppImage and rename
+          LINUX_AI=$(find src-tauri/target/release/bundle/appimage -name "*.AppImage" 2>/dev/null | head -1)
+          if [ -n "$LINUX_AI" ]; then
+            cp "$LINUX_AI" "release-staging/Kuantra-Terminal-${VERSION}-amd64.AppImage"
+          fi
+
+          ls -lh release-staging/
+
+      - name: Upload Platform Release Asset
         uses: actions/upload-artifact@v4
         with:
           name: release-assets-${{ matrix.target }}
-          path: release-staging/*
+          path: release-staging/Kuantra-Terminal-*
           if-no-files-found: warn
 
   publish-release:
@@ -183,22 +197,28 @@ jobs:
           path: all-release-assets
           merge-multiple: true
 
-      - name: Generate Consolidated SHA-256 Checksum Manifest
+      - name: Build MANIFEST.json with SHA-256 Checksums
         shell: bash
         run: |
           mkdir -p dist-release
-          cp -r all-release-assets/* dist-release/ || true
+          cp all-release-assets/Kuantra-Terminal-* dist-release/ 2>/dev/null || true
+
           cd dist-release
-          echo "## 🔒 Cryptographic SHA-256 Release Checksums" > CHECKSUMS.md
-          echo "" >> CHECKSUMS.md
-          echo "| Artifact Filename | SHA-256 Checksum |" >> CHECKSUMS.md
-          echo "|---|---|" >> CHECKSUMS.md
-          for f in *.exe *.msi *.dmg *.AppImage *.deb *.zip; do
-            if [ -f "$f" ]; then
-              HASH=$(sha256sum "$f" | cut -d ' ' -f 1)
-              echo "| \`$f\` | \`$HASH\` |" >> CHECKSUMS.md
-            fi
-          done
+          python3 - <<'EOF'
+          import json, hashlib, os, glob
+
+          manifest = {"version": "1.3.0", "tag": os.environ.get("GITHUB_REF_NAME", ""), "assets": []}
+          for fpath in sorted(glob.glob("Kuantra-Terminal-*")):
+              if os.path.isfile(fpath):
+                  sha256 = hashlib.sha256(open(fpath, "rb").read()).hexdigest()
+                  size = os.path.getsize(fpath)
+                  manifest["assets"].append({"filename": fpath, "sha256": sha256, "size": size})
+                  print(f"  {fpath}: {sha256}")
+
+          with open("MANIFEST.json", "w") as f:
+              json.dump(manifest, f, indent=2)
+          print("MANIFEST.json written.")
+          EOF
 
       - name: Publish Official Release on GitHub
         uses: softprops/action-gh-release@v2
@@ -212,4 +232,5 @@ jobs:
           prerelease: false
           fail_on_unmatched_files: false
           files: |
-            dist-release/*
+            dist-release/Kuantra-Terminal-*
+            dist-release/MANIFEST.json

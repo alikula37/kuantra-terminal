@@ -78,14 +78,19 @@ class TestCICDWorkflowsAndPackaging:
 
         assert any("checkout" in u.lower() for u in bp_uses)
         assert any("upload-artifact" in u.lower() for u in bp_uses)
-        assert any("checksum" in n.lower() or "sha-256" in n.lower() for n in bp_names)
+        # Staging step renames bundles to clean asset names (no individual .sha256 files)
+        assert any("rename" in n.lower() or "clean" in n.lower() or "bundle" in n.lower() for n in bp_names)
 
         # Check publish-release job
         pub_job = rel_data["jobs"]["publish-release"]
         assert pub_job.get("needs") == "build-and-package"
-        pub_uses = [s.get("uses", "") for s in pub_job["steps"]]
+        pub_steps = pub_job["steps"]
+        pub_uses = [s.get("uses", "") for s in pub_steps]
+        pub_names = [s.get("name", "") for s in pub_steps]
         assert any("download-artifact" in u.lower() for u in pub_uses)
         assert any("action-gh-release" in u.lower() for u in pub_uses)
+        # Consolidated checksums are in MANIFEST.json generated in publish-release
+        assert any("manifest" in n.lower() or "checksum" in n.lower() or "sha-256" in n.lower() for n in pub_names)
 
     def test_sidecar_target_triple_mappings(self):
         # 1. Windows x64
