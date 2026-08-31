@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, HistogramData } from "lightweight-charts";
 import { useMarketStore } from "../stores/marketStore";
+import { useTranslation } from "../context/I18nContext";
 import { RefreshCw, AlertCircle, BarChart2 } from "lucide-react";
 
 export interface CandleDataPoint {
@@ -32,6 +33,7 @@ const TIMEFRAMES = [
 ];
 
 export const TradingViewChart: React.FC = () => {
+  const { t } = useTranslation();
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -140,24 +142,33 @@ export const TradingViewChart: React.FC = () => {
     };
   }, []);
 
-  // Fetch 100% Real Historical Market Data from Backend
+  // Fetch 100% Real Historical Market Data from Backend with Timeout & AbortController Guard
   const fetchMarketCandles = useCallback(async () => {
     setIsLoading(true);
     setErrorMsg(null);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     try {
       const url = `http://127.0.0.1:8000/api/v1/market-data/candles?symbol=${encodeURIComponent(
         activeSymbol
       )}&timeframe=${encodeURIComponent(activeTimeframe)}&limit=500`;
 
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: controller.signal });
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Piyasa verisi alınamadı.`);
+        throw new Error(`HTTP ${response.status}: ${activeSymbol} verisi alınamadı.`);
       }
 
-      const rawData: CandleDataPoint[] = await response.json();
-      if (!Array.isArray(rawData) || rawData.length === 0) {
-        throw new Error("Seçili sembol veya zaman dilimi için veri bulunamadı.");
+      const jsonRes = await response.json();
+      const rawData: CandleDataPoint[] = Array.isArray(jsonRes)
+        ? jsonRes
+        : Array.isArray(jsonRes?.candles)
+        ? jsonRes.candles
+        : [];
+
+      if (!rawData || rawData.length === 0) {
+        throw new Error(t("market_chart.no_candles", { symbol: activeSymbol }));
       }
 
       // Deduplicate and sort strictly ascending by time
@@ -177,6 +188,10 @@ export const TradingViewChart: React.FC = () => {
       });
 
       const sortedCandles = Array.from(timeMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+
+      if (sortedCandles.length === 0) {
+        throw new Error(t("market_chart.no_candles", { symbol: activeSymbol }));
+      }
 
       const chartCandles: CandlestickData<Time>[] = sortedCandles.map((c) => ({
         time: c.timestamp as Time,
@@ -201,18 +216,24 @@ export const TradingViewChart: React.FC = () => {
       const last = sortedCandles[sortedCandles.length - 1];
       setLatestCandle(last);
       updateTick(last.close, 12, Date.now(), last.volume);
+      setErrorMsg(null);
     } catch (err: any) {
       console.warn("[TradingViewChart] Real market data error:", err);
-      setErrorMsg(err.message || "Piyasa verisi alınamadı. Lütfen bağlantınızı kontrol edin.");
+      const isAbort = err.name === "AbortError";
+      const message = isAbort
+        ? t("market_chart.fetch_timeout", { symbol: activeSymbol })
+        : err.message || `${activeSymbol} piyasa verisi alınamadı.`;
+      setErrorMsg(message);
       if (candleSeriesRef.current && volumeSeriesRef.current) {
         candleSeriesRef.current.setData([]);
         volumeSeriesRef.current.setData([]);
       }
       setLatestCandle(null);
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
-  }, [activeSymbol, activeTimeframe, updateTick]);
+  }, [activeSymbol, activeTimeframe, updateTick, t]);
 
   // Trigger real data fetch on symbol or timeframe change
   useEffect(() => {
@@ -264,7 +285,7 @@ export const TradingViewChart: React.FC = () => {
           <form onSubmit={handleCustomSymbolSubmit} className="flex items-center">
             <input
               type="text"
-              placeholder="Sembol Ara..."
+              placeholder={t("market_chart.search_placeholder")}
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value.toUpperCase())}
               className="bg-[#111722] border border-surface-border rounded px-2 py-1 text-[11px] text-white w-24 focus:outline-none focus:border-accent uppercase"
@@ -294,7 +315,7 @@ export const TradingViewChart: React.FC = () => {
             onClick={fetchMarketCandles}
             disabled={isLoading}
             className="p-1.5 rounded bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white transition disabled:opacity-50"
-            title="Verileri Güncelle"
+            title={t("market_chart.refresh_tooltip")}
           >
             <RefreshCw className={`w-3.5 h-3.5 text-accent ${isLoading ? "animate-spin" : ""}`} />
           </button>
@@ -348,7 +369,7 @@ export const TradingViewChart: React.FC = () => {
         {isLoading && !latestCandle && (
           <div className="absolute inset-0 bg-[#0b0e14]/80 flex flex-col items-center justify-center space-y-2 z-10">
             <RefreshCw className="w-6 h-6 text-accent animate-spin" />
-            <span className="text-xs text-slate-400">Canlı Piyasa Mumları Alınıyor ({activeSymbol})...</span>
+            <span className="text-xs text-slate-400">{t("market_chart.loading_candles", { symbol: activeSymbol })}</span>
           </div>
         )}
 
@@ -356,13 +377,13 @@ export const TradingViewChart: React.FC = () => {
         {errorMsg && (
           <div className="absolute inset-0 bg-[#0b0e14]/90 flex flex-col items-center justify-center p-6 space-y-3 z-20 text-center">
             <AlertCircle className="w-8 h-8 text-rose-400" />
-            <div className="text-sm font-bold text-white">Piyasa Verisi Alınamadı</div>
+            <div className="text-sm font-bold text-white">{t("market_chart.error_title")}</div>
             <p className="text-xs text-slate-400 max-w-md">{errorMsg}</p>
             <button
               onClick={fetchMarketCandles}
               className="px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-xs rounded transition shadow-md cursor-pointer"
             >
-              Tekrar Dene
+              {t("market_chart.retry_btn")}
             </button>
           </div>
         )}

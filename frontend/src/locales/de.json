@@ -248,9 +248,18 @@
     "loading": "Quantitative Analytik wird geladen..."
   },
   "mae_mfe": {
-    "title": "MAXIMALER TERS- / G?NSTIGER AUSSCHLAG (MAE / MFE)",
-    "subtitle": "Intraday-Kursschwankungsverteilung & Exit-Effizienz-Analyse",
-    "waiting_title": "MAE / MFE Streuungsanalyse wartet auf Trades",
-    "waiting_desc": "Mindestens 1 abgeschlossener Trade ist erforderlich, um die MAE/MFE-Streuungsanalyse zu berechnen."
+    "title": "MAXIMALE UNGÜNSTIGE / GÜNSTIGE AUSLENKUNG (MAE / MFE)",
+    "subtitle": "Intraday-Preisschwankungsverteilung & Analyse der optimalen Ausstiegseffizienz",
+    "waiting_title": "Warten auf MAE / MFE Risiko-Streuungsdaten",
+    "waiting_desc": "Mindestens 1 abgeschlossener Trade ist erforderlich, um MAE/MFE und Ausstiegseffizienz zu berechnen."
+  },
+  "market_chart": {
+    "search_placeholder": "Symbol suchen...",
+    "refresh_tooltip": "Daten aktualisieren",
+    "loading_candles": "Live-Marktkerzen werden geladen ({symbol})...",
+    "error_title": "Marktdatenabruf fehlgeschlagen",
+    "retry_btn": "Wiederholen",
+    "fetch_timeout": "Zeitüberschreitung bei der Datenabfrage für {symbol} (6s).",
+    "no_candles": "Keine Kerzendaten für {symbol} in diesem Zeitfenster gefunden."
   }
 }

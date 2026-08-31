@@ -252,5 +252,14 @@
     "subtitle": "G?n ??i Fiyat Sal?n?m Da??l?m? & En ?yi ??k?? Verimlili?i Analizi",
     "waiting_title": "MAE / MFE Risk Sa??l?m Analiti?i Bekleniyor",
     "waiting_desc": "MAE/MFE Risk Sa??l?m Analiti?i ve ??k?? Verimlili?i hesaplamalar? i?in en az 1 tamamlanm?? i?lem gereklidir."
+  },
+  "market_chart": {
+    "search_placeholder": "Sembol Ara...",
+    "refresh_tooltip": "Verileri Güncelle",
+    "loading_candles": "Canlı Piyasa Mumları Alınıyor ({symbol})...",
+    "error_title": "Piyasa Verisi Alınamadı",
+    "retry_btn": "Tekrar Dene",
+    "fetch_timeout": "{symbol} veri isteği zaman aşımına uğradı (6s).",
+    "no_candles": "{symbol} için seçili zaman diliminde mum verisi bulunamadı."
   }
 }

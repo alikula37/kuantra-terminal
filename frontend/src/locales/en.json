@@ -250,7 +250,16 @@
   "mae_mfe": {
     "title": "MAXIMUM ADVERSE / FAVORABLE EXCURSION (MAE / MFE)",
     "subtitle": "Intraday Price Swing Distribution & Best-Exit Efficiency Analysis",
-    "waiting_title": "MAE / MFE Scatter Analytics Awaiting Trades",
-    "waiting_desc": "At least 1 completed trade is required to compute MAE/MFE risk scatter and exit efficiency."
+    "waiting_title": "Waiting for MAE / MFE Risk Distribution Data",
+    "waiting_desc": "At least 1 completed (closed) trade is required to compute MAE/MFE Risk Distribution and Exit Efficiency."
+  },
+  "market_chart": {
+    "search_placeholder": "Search Symbol...",
+    "refresh_tooltip": "Refresh Data",
+    "loading_candles": "Fetching Live Market Candles ({symbol})...",
+    "error_title": "Market Data Fetch Failed",
+    "retry_btn": "Retry",
+    "fetch_timeout": "{symbol} data request timed out (6s).",
+    "no_candles": "No candle data found for {symbol} on this timeframe."
   }
 }
