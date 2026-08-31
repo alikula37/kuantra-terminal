@@ -53,10 +53,17 @@ export default function App() {
   const { popout } = usePopoutWindow();
 
   useEffect(() => {
+    // 1. Check if user has selected an architectural persona on first boot
+    const savedPersona = localStorage.getItem("kuantra_selected_persona");
+    if (!savedPersona) {
+      setIsPersonaModalOpen(true);
+    }
+
+    // 2. Check general onboarding wizard status
     fetch("http://127.0.0.1:8000/api/v1/onboarding/status")
       .then((res) => res.json())
       .then((data) => {
-        if (!data.first_boot_completed) {
+        if (!data.first_boot_completed && savedPersona) {
           setIsOnboardingOpen(true);
         }
       })

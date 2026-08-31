@@ -71,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
 
   const allNavItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, core: true },
-    { id: "modstore", label: "ModStore & Hub 🧩", icon: Puzzle, core: true },
+    { id: "modstore", label: "ModStore & Eklenti Merkezi 🧩", icon: Puzzle, core: true },
     { id: "biometrics_studio", label: "Hardware Biometrics Studio", icon: HeartPulse, pluginId: "plugin_biometrics" },
     { id: "fix_studio", label: "L2/L3 DOM & FIX Studio", icon: AlignJustify, pluginId: "plugin_fix_dma" },
     { id: "dex_arbitrage", label: "DEX Arbitrage & Flash Loans", icon: ArrowRightLeft, pluginId: "plugin_dex_arbitrage" },

@@ -81,8 +81,16 @@ export const PersonaSelectorModal: React.FC<PersonaSelectorModalProps> = ({ isOp
 
   const handleApply = async () => {
     setApplying(true);
+    localStorage.setItem("kuantra_selected_persona", selectedPersona);
     await applyPersona(selectedPersona);
     setApplying(false);
+    onClose();
+  };
+
+  const handleCancelOrClose = () => {
+    if (!localStorage.getItem("kuantra_selected_persona")) {
+      localStorage.setItem("kuantra_selected_persona", "kuantra_lite");
+    }
     onClose();
   };
 
@@ -103,54 +111,56 @@ export const PersonaSelectorModal: React.FC<PersonaSelectorModalProps> = ({ isOp
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCancelOrClose}
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Persona Selection Grid */}
+        {/* Persona Cards Grid */}
         <div className="p-5 overflow-y-auto space-y-3 flex-1">
-          {Object.entries(PERSONA_DETAILS).map(([key, details]) => {
+          {Object.entries(PERSONA_DETAILS).map(([id, details]) => {
+            const isSelected = selectedPersona === id;
             const Icon = details.icon;
-            const isSelected = selectedPersona === key;
             return (
               <div
-                key={key}
-                onClick={() => setSelectedPersona(key)}
-                className={`p-4 rounded-xl border transition cursor-pointer flex items-start justify-between ${
+                key={id}
+                onClick={() => setSelectedPersona(id)}
+                className={`p-4 rounded-xl border transition cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
                   isSelected
                     ? "border-accent bg-accent/10 shadow-lg shadow-accent/5 ring-1 ring-accent"
-                    : "border-surface-border bg-[#111724]/50 hover:bg-[#131b2c] hover:border-slate-600"
+                    : "border-surface-border bg-[#111724]/60 hover:bg-[#111724] hover:border-slate-700"
                 }`}
               >
-                <div className="flex items-start space-x-3.5">
-                  <div className={`p-2.5 rounded-lg border ${details.color} mt-0.5`}>
+                <div className="flex items-start space-x-3.5 flex-1">
+                  <div className={`p-2.5 rounded-lg border shrink-0 ${details.color}`}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
-                      <span className="font-bold text-sm text-white font-mono">{details.title}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                      <h3 className="font-bold text-sm text-white font-mono">{details.title}</h3>
+                      <span
+                        className={`text-[9px] font-mono font-extrabold px-2 py-0.5 rounded border uppercase ${details.color}`}
+                      >
                         {details.badge}
                       </span>
                     </div>
                     <p className="text-xs text-slate-300">{details.description}</p>
-                    <div className="flex flex-wrap gap-1.5 pt-1.5">
-                      {details.included.map((inc, i) => (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {details.included.map((feat, i) => (
                         <span
                           key={i}
-                          className="text-[10px] font-mono text-slate-400 bg-black/40 px-2 py-0.5 rounded border border-slate-800"
+                          className="text-[10px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded"
                         >
-                          ✓ {inc}
+                          ✓ {feat}
                         </span>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end space-y-2 shrink-0 pl-3">
+                <div className="flex items-center space-x-4 shrink-0 self-end md:self-center">
                   <div className="text-right">
                     <span className="text-xs font-mono font-bold text-accent block">{details.ram}</span>
                     <span className="text-[10px] font-mono text-slate-500 block">{details.boot}</span>
@@ -175,7 +185,7 @@ export const PersonaSelectorModal: React.FC<PersonaSelectorModalProps> = ({ isOp
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={onClose}
+              onClick={handleCancelOrClose}
               className="px-4 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition"
             >
               Cancel

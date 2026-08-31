@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Radio, PlusCircle, Zap, Camera, Sun, Moon, Globe, Cpu, Sliders } from "lucide-react";
+import { Radio, PlusCircle, Zap, Camera, Sun, Moon, Globe, Cpu } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTheme } from "../context/ThemeContext";
 import { useTranslation, SUPPORTED_LOCALES, Locale } from "../context/I18nContext";
@@ -96,15 +96,18 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Dynamic Plugin Header Extension Slots */}
         <ExtensionSlot slot="header" />
 
-        {/* Persona Preset Trigger */}
+        {/* Prominent Persona Preset Badge */}
         {onOpenPersonaSelector && (
           <button
             onClick={onOpenPersonaSelector}
-            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-accent px-2.5 py-1 rounded text-xs font-mono transition"
-            title="Switch Architectural Persona Preset"
+            className="flex items-center space-x-1.5 bg-gradient-to-r from-accent/20 to-blue-600/20 hover:from-accent/30 hover:to-blue-600/30 border border-accent/40 text-accent px-3 py-1 rounded-md text-xs font-mono font-bold transition shadow-sm hover:shadow-accent/10 active:scale-95"
+            title="Mimari Modu & Persona Değiştir (ModStore)"
           >
-            <Sliders className="w-3.5 h-3.5" />
-            <span className="font-bold uppercase text-[10px]">{activePersona.replace("kuantra_", "")}</span>
+            <Zap className="w-3.5 h-3.5 text-accent animate-pulse" />
+            <span className="uppercase text-[11px] font-extrabold tracking-wide">
+              {activePersona === "kuantra_lite" ? "⚡ LITE MODE" : `⚡ ${activePersona.replace("kuantra_", "").toUpperCase()} MODE`}
+            </span>
+            <span className="text-[10px] text-slate-400 font-normal ml-0.5">| Değiştir</span>
           </button>
         )}
 
