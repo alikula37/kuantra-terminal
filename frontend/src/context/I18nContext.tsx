@@ -93,10 +93,10 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return path;
       }
 
-      // Handle dynamic string interpolation {key}
+      // Handle dynamic string interpolation {key} or {{key}}
       if (params) {
         return Object.entries(params).reduce((str, [k, v]) => {
-          return str.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+          return str.replace(new RegExp(`(?:\\{\\{|\\{)${k}(?:\\}\\}|\\})`, "g"), String(v));
         }, rawString);
       }
 
