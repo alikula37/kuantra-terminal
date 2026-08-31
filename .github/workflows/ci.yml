@@ -61,20 +61,8 @@ jobs:
           pip install cryptography alembic pytest pytest-asyncio anyio psutil httpx pyyaml pyinstaller
 
       - name: Execute Comprehensive Pytest Suite
-        shell: bash
         run: |
-          python -m pytest backend/tests -v --tb=short 2>&1 | tee pytest_log.txt
-      - name: Push Pytest Failure Log to Debug Branch
-        if: failure()
-        shell: bash
-        run: |
-          git config --global user.name "GitHub Actions CI"
-          git config --global user.email "ci@kuantra.local"
-          git checkout -B "ci-debug-${{ matrix.os }}"
-          cp pytest_log.txt "ci_failure_${{ matrix.os }}.log" || true
-          git add "ci_failure_${{ matrix.os }}.log"
-          git commit -m "ci: failure log for ${{ matrix.os }}" || true
-          git push -f origin "ci-debug-${{ matrix.os }}" || true
+          python -m pytest backend/tests -v --tb=short
 
       - name: Verify Frontend Production Build & TypeScript Types
         run: |

@@ -96,9 +96,25 @@ class MaeMfeAnalyzer:
         """Aggregate MAE vs MFE scatter plot points and overall exit efficiency analytics."""
         closed_trades = sqlite_driver.list_trades(limit=1000, symbol=symbol, status="CLOSED")
         
-        # If no real closed trades in SQLite yet, generate realistic baseline analytics
+        # If no real closed trades in SQLite yet, return zero-state schema
         if not closed_trades:
-            return {"status": "NO_DATA", "message": "No closed trades available for MAE/MFE analysis.", "trades": [], "scatter_data": []}
+            return {
+                "status": "NO_DATA",
+                "message": "No closed trades available for MAE/MFE analysis.",
+                "total_analyzed": 0,
+                "average_mae_r": 0.0,
+                "average_mfe_r": 0.0,
+                "average_exit_efficiency_pct": 0.0,
+                "trades_left_money_on_table": 0,
+                "recommended_target_r": 2.0,
+                "stop_loss_sensitivities": [
+                    {"stop_distance_r": m, "survival_rate_pct": 0.0}
+                    for m in [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+                ],
+                "points": [],
+                "scatter_data": [],
+                "trades": []
+            }
 
         scatter_points = []
         for t in closed_trades:
