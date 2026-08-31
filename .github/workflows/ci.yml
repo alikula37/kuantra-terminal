@@ -61,8 +61,23 @@ jobs:
           pip install cryptography alembic pytest pytest-asyncio anyio psutil httpx pyyaml pyinstaller
 
       - name: Execute Comprehensive Pytest Suite
+        shell: bash
         run: |
-          python -m pytest backend/tests -v --tb=short
+          set -o pipefail
+          python -m pytest backend/tests -v --tb=short 2>&1 | tee pytest_log.txt || {
+            echo "### ❌ Pytest Failure Output (${{ matrix.os }})" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 100 pytest_log.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
+
+      - name: Upload Pytest Failure Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-logs-${{ matrix.os }}
+          path: pytest_log.txt
 
       - name: Verify Frontend Production Build & TypeScript Types
         run: |
