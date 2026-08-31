@@ -9,7 +9,15 @@ import { useMarketStore } from "../stores/marketStore";
 import { usePluginRegistry } from "../context/PluginRegistryContext";
 import { RefreshCw, LayoutDashboard } from "lucide-react";
 
-export const DashboardView: React.FC = () => {
+interface DashboardViewProps {
+  onOpenNewTrade?: () => void;
+  onOpenInitialBalanceModal?: () => void;
+}
+
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  onOpenNewTrade,
+  onOpenInitialBalanceModal
+}) => {
   const { openPositions, updatePositionPnl } = useTradeStore();
   const { currentPrice } = useMarketStore();
   const { isLiteMode } = usePluginRegistry();
@@ -91,12 +99,20 @@ export const DashboardView: React.FC = () => {
       </div>
 
       {/* Section 1: Portfolio Key Performance Indicators (KPIs) */}
-      <PortfolioKpiGrid summary={summary} loading={loading} />
+      <PortfolioKpiGrid 
+        summary={summary} 
+        loading={loading} 
+        onOpenInitialBalanceModal={onOpenInitialBalanceModal} 
+      />
 
       {/* Section 2: Two-Column Grid -> Equity Curve Chart & Multi-Asset Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[320px]">
         <div className="lg:col-span-2 h-full">
-          <EquityCurveChart series={equityCurve} loading={loading} />
+          <EquityCurveChart 
+            series={equityCurve} 
+            loading={loading} 
+            onOpenNewTrade={onOpenNewTrade}
+          />
         </div>
         <div className="lg:col-span-1 h-full">
           <MultiAssetBreakdown items={breakdown} loading={loading} />
@@ -107,6 +123,7 @@ export const DashboardView: React.FC = () => {
       <OpenPositionsTable
         positions={openPositions}
         onClosePosition={handleClosePosition}
+        onOpenNewTrade={onOpenNewTrade}
         loading={loading}
       />
 

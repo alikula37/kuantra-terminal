@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Plus } from "lucide-react";
 
 export interface EquityCurvePoint {
   timestamp: number;
@@ -14,9 +14,14 @@ export interface EquityCurvePoint {
 interface EquityCurveChartProps {
   series: EquityCurvePoint[];
   loading?: boolean;
+  onOpenNewTrade?: () => void;
 }
 
-export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({ series, loading }) => {
+export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
+  series,
+  loading,
+  onOpenNewTrade,
+}) => {
   const [hoveredPoint, setHoveredPoint] = useState<EquityCurvePoint | null>(null);
 
   if (loading) {
@@ -27,11 +32,29 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({ series, load
     );
   }
 
-  if (!series || series.length === 0) {
+  const isRealHistory = series && series.length > 0 && !(series.length === 1 && series[0].symbol === "INITIAL");
+
+  if (!isRealHistory) {
     return (
-      <div className="bg-[#111722] p-4 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-slate-500 font-mono text-xs">
-        <TrendingUp className="w-8 h-8 text-slate-600 mb-2" />
-        <span>Görselleştirilecek işlem geçmişi bulunamadı.</span>
+      <div className="bg-[#111722] p-6 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-center select-none font-mono">
+        <div className="w-12 h-12 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
+          <TrendingUp className="w-6 h-6 text-accent" />
+        </div>
+        <h4 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
+          Kümülatif Bakiye Eğrisi Bekleniyor
+        </h4>
+        <p className="text-xs text-slate-400 max-w-md mb-4 leading-relaxed">
+          Henüz kapatılmış bir işlem bulunmuyor. İlk işleminizi kaydettiğinizde kümülatif büyüme ve drawdown eğrisi burada dinamik olarak çizilecektir.
+        </p>
+        {onOpenNewTrade && (
+          <button
+            onClick={onOpenNewTrade}
+            className="flex items-center space-x-1.5 px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs transition shadow-md cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Yeni İşlem Girişi</span>
+          </button>
+        )}
       </div>
     );
   }

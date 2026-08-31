@@ -7,7 +7,8 @@ import {
   TrendingUp, 
   Zap, 
   ArrowUpRight, 
-  ArrowDownRight 
+  ArrowDownRight,
+  Edit2
 } from "lucide-react";
 
 export interface PortfolioSummaryData {
@@ -34,9 +35,14 @@ export interface PortfolioSummaryData {
 interface PortfolioKpiGridProps {
   summary: PortfolioSummaryData | null;
   loading?: boolean;
+  onOpenInitialBalanceModal?: () => void;
 }
 
-export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({ summary, loading }) => {
+export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
+  summary,
+  loading,
+  onOpenInitialBalanceModal,
+}) => {
   if (loading || !summary) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 select-none font-mono">
@@ -53,13 +59,24 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({ summary, loa
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 select-none font-mono">
       {/* 1. Toplam Kasa & Net PnL */}
-      <div className="bg-[#111722] p-3 rounded-lg border border-surface-border flex flex-col justify-between hover:border-slate-700 transition">
+      <div
+        onClick={onOpenInitialBalanceModal}
+        className={`bg-[#111722] p-3 rounded-lg border border-surface-border flex flex-col justify-between hover:border-accent/60 transition group ${
+          onOpenInitialBalanceModal ? "cursor-pointer" : ""
+        }`}
+        title="Başlangıç Bakiyesini Ayarla"
+      >
         <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] uppercase font-semibold tracking-wider">TOPLAM KASA</span>
+          <div className="flex items-center space-x-1">
+            <span className="text-[10px] uppercase font-semibold tracking-wider">TOPLAM KASA</span>
+            {onOpenInitialBalanceModal && (
+              <Edit2 className="w-2.5 h-2.5 text-slate-500 group-hover:text-accent transition opacity-60 group-hover:opacity-100" />
+            )}
+          </div>
           <Wallet className="w-3.5 h-3.5 text-accent" />
         </div>
         <div className="mt-1">
-          <div className="text-base font-bold text-white">
+          <div className="text-base font-bold text-white group-hover:text-cyan-300 transition">
             ${summary.total_equity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className={`text-[11px] font-semibold flex items-center mt-0.5 ${isNetPnlPositive ? "text-gain" : "text-loss"}`}>

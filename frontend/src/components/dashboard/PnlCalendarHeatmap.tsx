@@ -98,15 +98,25 @@ export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, lo
         <div className="flex items-center justify-between pt-2 border-t border-surface-border/50 text-[10px] text-slate-400">
           <div>
             {hoveredDay ? (
-              <span className="font-semibold text-slate-200">
-                📅 {hoveredDay.date}:{" "}
-                <span className={hoveredDay.pnl >= 0 ? "text-gain font-bold" : "text-loss font-bold"}>
-                  {hoveredDay.pnl >= 0 ? "+" : ""}${hoveredDay.pnl.toFixed(2)}
-                </span>{" "}
-                ({hoveredDay.trades_count} İşlem, {hoveredDay.win_rate.toFixed(0)}% WR)
-              </span>
+              hoveredDay.trades_count > 0 ? (
+                <span className="font-semibold text-slate-200">
+                  📅 {hoveredDay.date}:{" "}
+                  <span className={hoveredDay.pnl >= 0 ? "text-gain font-bold" : "text-loss font-bold"}>
+                    {hoveredDay.pnl >= 0 ? "+" : ""}${hoveredDay.pnl.toFixed(2)}
+                  </span>{" "}
+                  ({hoveredDay.trades_count} İşlem, {hoveredDay.win_rate.toFixed(0)}% WR)
+                </span>
+              ) : (
+                <span className="font-semibold text-slate-400">
+                  📅 {hoveredDay.date}: <span className="text-slate-500">İşlem Kaydı Yok ($0.00)</span>
+                </span>
+              )
             ) : (
-              <span className="text-slate-500">Detayları görmek için gün kutucuklarının üzerine gelin.</span>
+              <span className="text-slate-500">
+                {activeDays === 0
+                  ? "Son 90 günde kaydedilmiş kâr/zarar işlemi bulunmuyor."
+                  : "Detayları görmek için gün kutucuklarının üzerine gelin."}
+              </span>
             )}
           </div>
 

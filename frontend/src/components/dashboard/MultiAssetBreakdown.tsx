@@ -29,9 +29,16 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
 
   if (!items || items.length === 0) {
     return (
-      <div className="bg-[#111722] p-4 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-slate-500 font-mono text-xs">
-        <Layers className="w-8 h-8 text-slate-600 mb-2" />
-        <span>Henüz kaydedilmiş çoklu varlık işlemi bulunmuyor.</span>
+      <div className="bg-[#111722] p-6 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-center select-none font-mono">
+        <div className="w-12 h-12 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
+          <Layers className="w-6 h-6 text-slate-500" />
+        </div>
+        <h4 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
+          Varlık Dağılımı Boş
+        </h4>
+        <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+          Farklı enstrümanlarda (Kripto, FX, Emtia, Hisse) işlem kaydettikçe kâr/zarar dökümü burada listelenecektir.
+        </p>
       </div>
     );
   }
