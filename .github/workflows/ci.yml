@@ -138,5 +138,5 @@ jobs:
           python scripts/generate_release_manifest.py
 
           echo "=== PUBLISHING GENUINE DMG TO GITHUB RELEASE ==="
-          gh release create v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg dist-binaries/MANIFEST.json --title "Kuantra Terminal v1.3.0-production" --notes-file RELEASE_NOTES.md --clobber || gh release upload v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg dist-binaries/MANIFEST.json --clobber
+          gh release create v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg dist-binaries/MANIFEST.json --title "Kuantra Terminal v1.3.0-production" --notes-file RELEASE_NOTES.md || gh release upload v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg dist-binaries/MANIFEST.json --clobber
           echo "[+] Successfully published Kuantra-Terminal-1.3.0-aarch64.dmg to GitHub Release v1.3.0-production"
