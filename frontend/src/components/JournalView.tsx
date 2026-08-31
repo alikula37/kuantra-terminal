@@ -96,8 +96,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
               <span>{t("journal.manual_entry")}</span>
             </button>
             <button
-              onClick={() => alert("CSV Import: Standard trade record headers supported.")}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold rounded text-xs transition cursor-pointer"
+              onClick={() => { /* TODO: Implement CSV import with file picker */ }}
+              disabled
+              title="CSV import coming soon"
+              className="flex items-center space-x-1.5 px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold rounded text-xs transition cursor-not-allowed opacity-50"
             >
               <Upload className="w-4 h-4 text-slate-400" />
               <span>{t("journal.import_csv")}</span>

@@ -12,7 +12,6 @@ import { DEXArbitrageStudio } from "./components/dex/DEXArbitrageStudio";
 import { MCPDataExplorer } from "./components/mcp/MCPDataExplorer";
 import { ReverseSkillStudio } from "./components/studio/ReverseSkillStudio";
 import { MobileCompanionHUD } from "./components/mobile/MobileCompanionHUD";
-import { PanicKillSwitchModal } from "./components/mobile/PanicKillSwitchModal";
 import { MeshNetworkHUD } from "./components/p2p/MeshNetworkHUD";
 import { CopyTradingMatrix } from "./components/p2p/CopyTradingMatrix";
 import { FootprintChart } from "./components/orderflow/FootprintChart";
@@ -49,7 +48,6 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isVisionModalOpen, setIsVisionModalOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
-  const [isPanicModalOpen, setIsPanicModalOpen] = useState<boolean>(false);
   const [isGPUModalOpen, setIsGPUModalOpen] = useState<boolean>(false);
   const [isPersonaModalOpen, setIsPersonaModalOpen] = useState<boolean>(false);
   const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] = useState<boolean>(false);
@@ -215,7 +213,6 @@ export default function App() {
       <InitialBalanceModal isOpen={isInitialBalanceModalOpen} onClose={() => setIsInitialBalanceModalOpen(false)} />
       <ChartVisionUploader isOpen={isVisionModalOpen} onClose={() => setIsVisionModalOpen(false)} />
       <FirstBootWizard isOpen={isOnboardingOpen} onCompleted={() => setIsOnboardingOpen(false)} />
-      <PanicKillSwitchModal isOpen={isPanicModalOpen} onClose={() => setIsPanicModalOpen(false)} />
       <GPUTelemetryModal isOpen={isGPUModalOpen} onClose={() => setIsGPUModalOpen(false)} />
       <PersonaSelectorModal isOpen={isPersonaModalOpen} onClose={() => setIsPersonaModalOpen(false)} />
     </div>
