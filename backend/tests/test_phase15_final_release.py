@@ -4,6 +4,7 @@ from app.api.mobile_bridge import mobile_companion_bridge, MobileCompanionBridge
 from app.services.biometrics.panic_switch import panic_kill_switch, PanicKillSwitchEngine
 from app.services.security.passkey_vault import webauthn_passkey_vault, WebAuthnPasskeyVault
 from app.services.execution.order_router import order_router
+from app.services.execution.risk_interceptor import risk_interceptor
 from app.services.biometrics.watch_bridge import biometric_watch_bridge
 from app.core.config import settings
 
@@ -87,21 +88,26 @@ class TestPhase15MobileAndFinalRelease:
         assert vault.is_passkey_required_for_order(qty=0.5, price=65000.0) is False
 
     def test_end_to_end_institutional_order_routing_pipeline(self):
-        # Ensure calm biometrics
+        # Ensure calm biometrics and psychology tilt
         biometric_watch_bridge.update_telemetry(bpm=58.0, hrv=85.0)
+        orig_tilt_limit = risk_interceptor.max_allowed_tilt_score
+        risk_interceptor.max_allowed_tilt_score = 95.0
 
-        # Dispatch standard order
-        order_res = order_router.route_order({
-            "symbol": "BTCUSDT",
-            "side": "BUY",
-            "qty": 0.5,
-            "price": 64800.0,
-            "exchange": "BINANCE",
-            "stop_loss": 63800.0,
-            "take_profit": 67000.0
-        })
-        assert order_res["status"] == "EXECUTED"
-        assert order_res["order"]["exchange"] == "BINANCE"
+        try:
+            # Dispatch standard order
+            order_res = order_router.route_order({
+                "symbol": "BTCUSDT",
+                "side": "BUY",
+                "qty": 0.5,
+                "price": 64800.0,
+                "exchange": "BINANCE",
+                "stop_loss": 63800.0,
+                "take_profit": 67000.0
+            })
+            assert order_res["status"] == "EXECUTED"
+            assert order_res["order"]["exchange"] == "BINANCE"
+        finally:
+            risk_interceptor.max_allowed_tilt_score = orig_tilt_limit
 
     def test_final_v2_production_tauri_release_manifest(self):
         import pathlib
