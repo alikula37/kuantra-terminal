@@ -81,35 +81,49 @@ export const MaeMfeVisualizer: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <div className="bg-[#0d121c] p-3 rounded-lg border border-surface-border">
-          <span className="text-[10px] text-slate-400 block font-semibold">AVG EXIT EFFICIENCY</span>
-          <span className="text-xl font-bold text-gain">{data.average_exit_efficiency_pct}%</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">(Actual PnL / MFE Potential)</span>
+      {data.total_analyzed === 0 || data.points.length === 0 ? (
+        <div className="flex-1 bg-[#0d121c] p-12 rounded-lg border border-surface-border flex flex-col items-center justify-center text-center select-none font-mono">
+          <div className="w-14 h-14 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
+            <Crosshair className="w-7 h-7 text-accent" />
+          </div>
+          <h3 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
+            MAE / MFE Risk Saçılım Analitiği Bekleniyor
+          </h3>
+          <p className="text-xs text-slate-400 max-w-md leading-relaxed">
+            MAE/MFE Risk Saçılım Analitiği ve Çıkış Verimliliği hesaplamaları için en az 1 tamamlanmış işlem gereklidir.
+          </p>
         </div>
+      ) : (
+        <>
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="bg-[#0d121c] p-3 rounded-lg border border-surface-border">
+              <span className="text-[10px] text-slate-400 block font-semibold">AVG EXIT EFFICIENCY</span>
+              <span className="text-xl font-bold text-gain">{data.average_exit_efficiency_pct}%</span>
+              <span className="text-[9px] text-slate-500 block mt-0.5">(Actual PnL / MFE Potential)</span>
+            </div>
 
-        <div className="bg-[#0d121c] p-3 rounded-lg border border-surface-border">
-          <span className="text-[10px] text-slate-400 block font-semibold">RECOMMENDED TARGET (75TH %)</span>
-          <span className="text-xl font-bold text-accent">+{data.recommended_target_r} R</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">Optimal take profit cluster</span>
-        </div>
+            <div className="bg-[#0d121c] p-3 rounded-lg border border-surface-border">
+              <span className="text-[10px] text-slate-400 block font-semibold">RECOMMENDED TARGET (75TH %)</span>
+              <span className="text-xl font-bold text-accent">+{data.recommended_target_r} R</span>
+              <span className="text-[9px] text-slate-500 block mt-0.5">Optimal take profit cluster</span>
+            </div>
 
-        <div className="bg-[#0d121c] p-3 rounded-lg border border-surface-border">
-          <span className="text-[10px] text-slate-400 block font-semibold">LEFT MONEY ON TABLE</span>
-          <span className="text-xl font-bold text-amber-400">{data.trades_left_money_on_table} Trades</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">Reached &gt;2R MFE but exited &lt;0.5R</span>
-        </div>
+            <div className="bg-[#0d121c] p-3 rounded-lg border border-surface-border">
+              <span className="text-[10px] text-slate-400 block font-semibold">LEFT MONEY ON TABLE</span>
+              <span className="text-xl font-bold text-amber-400">{data.trades_left_money_on_table} Trades</span>
+              <span className="text-[9px] text-slate-500 block mt-0.5">Reached &gt;2R MFE but exited &lt;0.5R</span>
+            </div>
 
-        <div className="bg-[#0d121c] p-3 rounded-lg border border-surface-border">
-          <span className="text-[10px] text-slate-400 block font-semibold">AVG ADVERSE EXCURSION</span>
-          <span className="text-xl font-bold text-slate-200">{data.average_mae_r} R</span>
-          <span className="text-[9px] text-slate-500 block mt-0.5">Mean heat endured before exit</span>
-        </div>
-      </div>
+            <div className="bg-[#0d121c] p-3 rounded-lg border border-surface-border">
+              <span className="text-[10px] text-slate-400 block font-semibold">AVG ADVERSE EXCURSION</span>
+              <span className="text-xl font-bold text-slate-200">{data.average_mae_r} R</span>
+              <span className="text-[9px] text-slate-500 block mt-0.5">Mean heat endured before exit</span>
+            </div>
+          </div>
 
-      {/* Main Scatter Visualizer Canvas + Details Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Main Scatter Visualizer Canvas + Details Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Interactive Scatter Plot */}
         <div className="lg:col-span-2 bg-[#0d121c] p-4 rounded-lg border border-surface-border relative flex flex-col items-center">
           <div className="w-full flex items-center justify-between mb-2">
@@ -299,7 +313,9 @@ export const MaeMfeVisualizer: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
+  )}
+</div>
   );
 };
 

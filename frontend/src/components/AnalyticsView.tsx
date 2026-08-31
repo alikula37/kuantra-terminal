@@ -21,33 +21,29 @@ export const AnalyticsView: React.FC = () => {
         setScorecard(quantData);
       } else {
         setScorecard({
-          total_trades: 42,
-          win_rate: 64.29,
-          loss_rate: 35.71,
-          total_pnl: 18450.0,
-          avg_win: 850.0,
-          avg_loss: 340.0,
-          profit_factor: 2.85,
-          expectancy: 425.0,
-          sqn: 2.74,
-          sharpe_ratio: 2.15,
-          sortino_ratio: 3.42,
-          max_drawdown_amount: 1420.0,
-          max_drawdown_pct: 6.8,
-          half_kelly_pct: 21.4,
+          total_trades: 0,
+          win_rate: 0.0,
+          loss_rate: 0.0,
+          total_pnl: 0.0,
+          avg_win: 0.0,
+          avg_loss: 0.0,
+          profit_factor: 0.0,
+          expectancy: 0.0,
+          sqn: 0.0,
+          sharpe_ratio: 0.0,
+          sortino_ratio: 0.0,
+          max_drawdown_amount: 0.0,
+          max_drawdown_pct: 0.0,
+          half_kelly_pct: 0.0,
         });
       }
-      setSymbols(Array.isArray(symData) && symData.length > 0 ? symData : [
-        { symbol: "BTCUSDT", count: 26, total_pnl: 12400.0, avg_pnl: 476.92, win_rate: 69.2 },
-        { symbol: "ETHUSDT", count: 12, total_pnl: 4800.0, avg_pnl: 400.0, win_rate: 58.3 },
-        { symbol: "SOLUSDT", count: 4, total_pnl: 1250.0, avg_pnl: 312.5, win_rate: 50.0 },
-      ]);
+      setSymbols(Array.isArray(symData) ? symData : []);
       setIsLoading(false);
     });
   }, []);
 
   if (isLoading || !scorecard) {
-    return <div className="p-8 text-center text-slate-400 font-mono">Loading quant analytics...</div>;
+    return <div className="p-8 text-center text-slate-400 font-mono">Kantitatif analitik yükleniyor...</div>;
   }
 
   return (
@@ -62,7 +58,21 @@ export const AnalyticsView: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      {scorecard.total_trades === 0 ? (
+        <div className="flex-1 bg-[#0d121c] p-12 rounded-lg border border-surface-border flex flex-col items-center justify-center text-center select-none font-mono">
+          <div className="w-14 h-14 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
+            <Target className="w-7 h-7 text-accent" />
+          </div>
+          <h3 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
+            Kantitatif Analitik Verisi Bekleniyor
+          </h3>
+          <p className="text-xs text-slate-400 max-w-md leading-relaxed">
+            MAE/MFE ve Quant Skor Kartı hesaplamaları için en az 1 tamamlanmış (kapatılmış) işlem gereklidir.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-[#0d121c] p-3.5 rounded-lg border border-surface-border flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] text-slate-400 font-semibold">SYSTEM QUALITY NUMBER</span>
@@ -174,6 +184,8 @@ export const AnalyticsView: React.FC = () => {
           </tbody>
         </table>
       </div>
-    </div>
+    </>
+  )}
+</div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, PlayCircle } from "lucide-react";
+import { Filter, Plus, PlayCircle, BookOpen, Upload } from "lucide-react";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
@@ -66,7 +66,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
 
           <button
             onClick={onOpenNewTrade}
-            className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-3 py-1.5 rounded transition shadow-md"
+            className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-3 py-1.5 rounded transition shadow-md cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>RECORD TRADE</span>
@@ -74,31 +74,60 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
         </div>
       </div>
 
-      <div className="flex-1 mt-4 overflow-y-auto rounded-lg border border-surface-border bg-[#0d121c]">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-[#090d14] text-[10px] text-slate-400 uppercase tracking-wider sticky top-0 border-b border-surface-border">
-            <tr>
-              <th className="px-4 py-3">Trade ID</th>
-              <th className="px-4 py-3">Symbol</th>
-              <th className="px-4 py-3">Side</th>
-              <th className="px-4 py-3">Entry ($)</th>
-              <th className="px-4 py-3">Exit ($)</th>
-              <th className="px-4 py-3">Qty</th>
-              <th className="px-4 py-3">PnL ($)</th>
-              <th className="px-4 py-3">R-Multiple</th>
-              <th className="px-4 py-3">Entry Time</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-surface-border/40 text-[11px]">
-            {filteredTrades.length === 0 ? (
+      {trades.length === 0 ? (
+        <div className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none font-mono">
+          <div className="w-14 h-14 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
+            <BookOpen className="w-7 h-7 text-accent" />
+          </div>
+          <h3 className="text-base font-bold text-white mb-1.5 uppercase tracking-wide">
+            İşlem Günlüğünüz Temiz ve Hazır
+          </h3>
+          <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+            Henüz kaydedilmiş bir işlem bulunmuyor. Yeni bir işlem kaydederek veya harici işlem geçmişinizi CSV olarak içe aktararak kantitatif analitiğinizi başlatabilirsiniz.
+          </p>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={onOpenNewTrade}
+              className="flex items-center space-x-1.5 px-4 py-2 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs transition shadow-md cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Manuel İşlem Girişi</span>
+            </button>
+            <button
+              onClick={() => alert("CSV İçe Aktarma: Günlük işlem formatı desteklenmektedir.")}
+              className="flex items-center space-x-1.5 px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold rounded text-xs transition cursor-pointer"
+            >
+              <Upload className="w-4 h-4 text-slate-400" />
+              <span>CSV İçe Aktar</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 mt-4 overflow-y-auto rounded-lg border border-surface-border bg-[#0d121c]">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[#090d14] text-[10px] text-slate-400 uppercase tracking-wider sticky top-0 border-b border-surface-border">
               <tr>
-                <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
-                  No trades found matching current filter criteria.
-                </td>
+                <th className="px-4 py-3">Trade ID</th>
+                <th className="px-4 py-3">Symbol</th>
+                <th className="px-4 py-3">Side</th>
+                <th className="px-4 py-3">Entry ($)</th>
+                <th className="px-4 py-3">Exit ($)</th>
+                <th className="px-4 py-3">Qty</th>
+                <th className="px-4 py-3">PnL ($)</th>
+                <th className="px-4 py-3">R-Multiple</th>
+                <th className="px-4 py-3">Entry Time</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
-            ) : (
+            </thead>
+            <tbody className="divide-y divide-surface-border/40 text-[11px]">
+              {filteredTrades.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
+                    Filtre kriterlerine uygun işlem bulunamadı.
+                  </td>
+                </tr>
+              ) : (
               filteredTrades.map((t) => {
                 const pnl = t.pnl || 0;
                 const isWin = pnl > 0;
@@ -159,6 +188,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
           </tbody>
         </table>
       </div>
-    </div>
+    )}
+  </div>
   );
 };
