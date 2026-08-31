@@ -32,8 +32,9 @@ def create_synthetic_binaries(dist_dir: str):
     ]
     for filename, content in synthetic_targets:
         p = os.path.join(dist_dir, filename)
-        with open(p, "wb") as f:
-            f.write(content)
+        if not os.path.exists(p) or os.path.getsize(p) < 1024:
+            with open(p, "wb") as f:
+                f.write(content)
 
 def generate_manifest(dry_run: bool = False) -> Dict[str, Any]:
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

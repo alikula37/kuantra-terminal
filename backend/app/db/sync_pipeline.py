@@ -14,16 +14,21 @@ class SyncPipeline:
         if trade_data.get("id") and sqlite_driver.get_trade(trade_data["id"]):
             updated = sqlite_driver.update_trade(trade_data["id"], trade_data)
             if updated:
-                duckdb_driver.sync_trade(updated)
+                if getattr(duckdb_driver, "is_available", False):
+                    duckdb_driver.sync_trade(updated)
                 return updated
         
         saved = sqlite_driver.insert_trade(trade_data)
-        duckdb_driver.sync_trade(saved)
+        if getattr(duckdb_driver, "is_available", False):
+            duckdb_driver.sync_trade(saved)
         return saved
 
     @staticmethod
     def full_sync() -> int:
         """Run full synchronization of all historical SQLite trades into DuckDB."""
+        if not getattr(duckdb_driver, "is_available", False):
+            logger.info("DuckDB not available; skipping full sync in Lite mode.")
+            return 0
         all_trades = sqlite_driver.list_trades(limit=100000)
         synced_count = duckdb_driver.sync_all_trades(all_trades)
         logger.info(f"Full OLTP -> OLAP sync completed: {synced_count} trades synchronized.")

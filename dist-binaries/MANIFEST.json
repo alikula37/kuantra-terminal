@@ -2,15 +2,15 @@
   "release_tag": "v1.2.0-modular",
   "product_name": "Kuantra Terminal",
   "version": "1.2.0",
-  "generated_at": "2026-08-30T23:02:34Z",
+  "generated_at": "2026-08-31T07:18:59Z",
   "total_artifacts": 6,
   "artifacts": [
     {
       "filename": "Kuantra-Terminal-1.2.0-Setup.exe",
       "platform": "Windows",
       "arch": "x64",
-      "size_bytes": 56,
-      "sha256": "ed1ea07e5e8dbb9d393be5ef674d6c1b53df7c2c3c4fb43f668a6bff96ab7489"
+      "size_bytes": 30468588,
+      "sha256": "81498d70d6ed58cf47bfeb7e3d9871937a06b04f18f82938cd58c7569d454d52"
     },
     {
       "filename": "Kuantra-Terminal-1.2.0-aarch64.dmg",

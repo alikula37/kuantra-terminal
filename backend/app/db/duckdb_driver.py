@@ -1,8 +1,17 @@
-import duckdb
+try:
+    import duckdb
+except ImportError:
+    duckdb = None
+
 import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-import pandas as pd
+
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 from app.core.paths import get_duckdb_path
 
 logger = logging.getLogger(__name__)
@@ -12,9 +21,15 @@ class DuckDBDriver:
 
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = db_path or get_duckdb_path()
-        self._init_db()
+        self.is_available = duckdb is not None
+        if self.is_available:
+            self._init_db()
+        else:
+            logger.info("[DUCKDB] Running in Lite Core mode (DuckDB not loaded)")
 
-    def get_connection(self) -> duckdb.DuckDBPyConnection:
+    def get_connection(self):
+        if not self.is_available or duckdb is None:
+            raise RuntimeError("DuckDB is not installed or loaded in current environment.")
         return duckdb.connect(self.db_path)
 
     def _init_db(self):

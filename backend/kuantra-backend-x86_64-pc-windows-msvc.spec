@@ -1,31 +1,25 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_submodules
 
-datas = []
-binaries = []
 hiddenimports = []
-tmp_ret = collect_all('app')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('duckdb')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('uvicorn')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('fastapi')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
-tmp_ret = collect_all('websockets')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+hiddenimports += collect_submodules('app')
+hiddenimports += collect_submodules('starlette')
+hiddenimports += collect_submodules('fastapi')
+hiddenimports += collect_submodules('uvicorn')
+hiddenimports += collect_submodules('pydantic')
+hiddenimports += collect_submodules('cryptography')
 
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=binaries,
-    datas=datas,
+    binaries=[],
+    datas=[],
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['duckdb', 'pandas', 'numpy', 'scipy', 'torch', 'bleak', 'web3', 'quickfix', 'PIL', 'matplotlib', 'tkinter', 'pytest', 'unittest', 'doctest', 'test', 'alembic.testing', 'setuptools', 'pkg_resources', 'xmlrpc', 'pydoc', 'curses'],
     noarchive=False,
     optimize=0,
 )
@@ -40,7 +34,7 @@ exe = EXE(
     name='kuantra-backend-x86_64-pc-windows-msvc',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=False,
+    strip=True,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
