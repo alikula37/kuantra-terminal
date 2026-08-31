@@ -35,10 +35,13 @@ import { FirstBootWizard } from "./components/onboarding/FirstBootWizard";
 import { GPUTelemetryModal } from "./components/hardware/GPUTelemetryModal";
 import { ModStoreStudio } from "./components/plugins/ModStoreStudio";
 import { PersonaSelectorModal } from "./components/onboarding/PersonaSelectorModal";
+import { TradingViewChart } from "./components/TradingViewChart";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { usePopoutWindow } from "./hooks/usePopoutWindow";
+import { usePluginRegistry } from "./context/PluginRegistryContext";
 
 export default function App() {
+  const { isLiteMode } = usePluginRegistry();
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [activePreset, setActivePreset] = useState<string>("day_trader");
   const [replayTradeId, setReplayTradeId] = useState<string>("TRD-DEFAULT");
@@ -142,18 +145,25 @@ export default function App() {
         onOpenPersonaSelector={() => setIsPersonaModalOpen(true)}
       />
 
-      <WorkspacePresetSelector
-        currentPreset={activePreset}
-        onSelectPreset={handlePresetSelect}
-        onPopoutAll={handlePopoutAll}
-        onResetLayout={() => handlePresetSelect("day_trader")}
-      />
+      {!isLiteMode && (
+        <WorkspacePresetSelector
+          currentPreset={activePreset}
+          onSelectPreset={handlePresetSelect}
+          onPopoutAll={handlePopoutAll}
+          onResetLayout={() => handlePresetSelect("day_trader")}
+        />
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "charts" && (
+            <div className="flex-1 flex flex-col overflow-hidden bg-[#0b0e14]">
+              <TradingViewChart />
+            </div>
+          )}
           {activeTab === "modstore" && <ModStoreStudio onOpenPersonaSelector={() => setIsPersonaModalOpen(true)} />}
           {activeTab === "biometrics_studio" && <BiometricHardwareStudio />}
           {activeTab === "fix_studio" && <FIXOrderBookStudio />}

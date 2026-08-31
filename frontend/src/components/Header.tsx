@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { symbol, currentPrice, prevPrice, latencyMs, isConnected } = useMarketStore();
   const { theme, toggleTheme } = useTheme();
   const { locale, setLocale, t } = useTranslation();
-  const { activePersona } = usePluginRegistry();
+  const { activePersona, isLiteMode, isPluginActive } = usePluginRegistry();
   const [priceFlash, setPriceFlash] = useState<"up" | "down" | null>(null);
 
   useEffect(() => {
@@ -44,10 +44,10 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-sm tracking-wider text-slate-100 font-mono leading-none">
-              KUANTRA
+              {isLiteMode ? "KUANTRA LITE" : "KUANTRA"}
             </span>
             <span className="text-[9px] text-accent font-mono tracking-widest leading-none mt-0.5">
-              TERMINAL v2.0
+              {isLiteMode ? "DISCIPLINED CORE" : "TERMINAL v2.0"}
             </span>
           </div>
         </div>
@@ -77,20 +77,22 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      <div className="hidden lg:flex items-center space-x-6 text-xs font-mono text-slate-400">
-        <div>
-          <span className="text-[10px] text-slate-500 block">24H HIGH</span>
-          <span className="text-slate-200">{(currentPrice * 1.03).toFixed(2)}</span>
+      {!isLiteMode && (
+        <div className="hidden lg:flex items-center space-x-6 text-xs font-mono text-slate-400">
+          <div>
+            <span className="text-[10px] text-slate-500 block">24H HIGH</span>
+            <span className="text-slate-200">{(currentPrice * 1.03).toFixed(2)}</span>
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-500 block">24H LOW</span>
+            <span className="text-slate-200">{(currentPrice * 0.96).toFixed(2)}</span>
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-500 block">24H VOL (USDT)</span>
+            <span className="text-slate-200">1.48B</span>
+          </div>
         </div>
-        <div>
-          <span className="text-[10px] text-slate-500 block">24H LOW</span>
-          <span className="text-slate-200">{(currentPrice * 0.96).toFixed(2)}</span>
-        </div>
-        <div>
-          <span className="text-[10px] text-slate-500 block">24H VOL (USDT)</span>
-          <span className="text-slate-200">1.48B</span>
-        </div>
-      </div>
+      )}
 
       <div className="flex items-center space-x-3">
         {/* Dynamic Plugin Header Extension Slots */}
@@ -105,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Zap className="w-3.5 h-3.5 text-accent animate-pulse" />
             <span className="uppercase text-[11px] font-extrabold tracking-wide">
-              {activePersona === "kuantra_lite" ? "⚡ LITE MODE" : `⚡ ${activePersona.replace("kuantra_", "").toUpperCase()} MODE`}
+              {isLiteMode ? "⚡ LITE MODE" : `⚡ ${activePersona.replace("kuantra_", "").toUpperCase()} MODE`}
             </span>
             <span className="text-[10px] text-slate-400 font-normal ml-0.5">| Değiştir</span>
           </button>
@@ -136,8 +138,8 @@ export const Header: React.FC<HeaderProps> = ({
           {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-accent" />}
         </button>
 
-        {/* GPU Acceleration Telemetry Trigger */}
-        {onOpenGPUTelemetry && (
+        {/* GPU Acceleration Telemetry Trigger - Only visible if plugin_ai_swarm is active */}
+        {!isLiteMode && isPluginActive("plugin_ai_swarm") && onOpenGPUTelemetry && (
           <button
             onClick={onOpenGPUTelemetry}
             className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-purple-400 hover:text-purple-300 px-2.5 py-1 rounded text-xs font-mono transition"
@@ -165,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="text-[11px] font-semibold">{isConnected ? "LIVE FEED" : "SIMULATED"}</span>
         </div>
 
-        {onOpenVisionUploader && (
+        {!isLiteMode && onOpenVisionUploader && (
           <button
             onClick={onOpenVisionUploader}
             className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white text-xs px-3 py-1.5 rounded transition"
