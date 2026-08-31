@@ -20,20 +20,6 @@ class MobileCompanionBridge:
     def __init__(self):
         self.paired_devices: Dict[str, Dict[str, Any]] = {}
         self.active_pairing_tokens: Dict[str, float] = {} # token -> expires_at
-        self._init_mock_paired_device()
-
-    def _init_mock_paired_device(self):
-        """Initializes primary mobile companion."""
-        self.paired_devices["DEV-IPHONE-15-PRO"] = {
-            "device_id": "DEV-IPHONE-15-PRO",
-            "device_name": "Trader iPhone 15 Pro (Biometrics Active)",
-            "platform": "iOS",
-            "app_version": "2.0.0",
-            "paired_at": time.time() - 86400,
-            "last_active": time.time(),
-            "is_biometric_enabled": True,
-            "status": "PAIRED_SECURE"
-        }
 
     def generate_pairing_qr_payload(self) -> Dict[str, Any]:
         """Generates a cryptographic time-limited QR pairing token."""

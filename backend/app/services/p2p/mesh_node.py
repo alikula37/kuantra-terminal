@@ -23,9 +23,7 @@ class P2PMeshNode:
         self.node_id = f"12D3KooW{hashlib.sha256(self.pubkey.encode()).hexdigest()[:16]}"
         self.peers: Dict[str, Dict[str, Any]] = {}
         self.session_keys: Dict[str, str] = {}
-        self.is_active = True
         self.start_time = time.time()
-        self._init_mock_peers()
 
     @staticmethod
     def _generate_identity_keypair() -> Tuple[str, str]:
@@ -34,25 +32,6 @@ class P2PMeshNode:
         priv = hashlib.sha256(raw_seed.encode()).hexdigest()
         pub = hashlib.sha256(priv.encode()).hexdigest()
         return priv, pub
-
-    def _init_mock_peers(self):
-        """Initializes baseline connected mesh peers."""
-        self.add_peer(
-            peer_id="12D3KooW-AlphaQuant",
-            node_name="Alpha-Macro-Master",
-            pubkey="pubkey-alpha-99a8b7c6d5",
-            endpoint="192.168.1.105:9001",
-            role="MASTER",
-            latency_ms=14.2
-        )
-        self.add_peer(
-            peer_id="12D3KooW-LondonRelay",
-            node_name="LD4-Equinix-Relay",
-            pubkey="pubkey-relay-1122334455",
-            endpoint="51.15.89.20:9001",
-            role="RELAY",
-            latency_ms=28.5
-        )
 
     def add_peer(
         self,
@@ -135,7 +114,7 @@ class P2PMeshNode:
             "node_name": self.node_name,
             "role": self.role,
             "public_key": self.pubkey,
-            "is_active": self.is_active,
+            "is_active": len(self.peers) > 0,
             "peers_count": len(self.peers),
             "noise_protocol": "Noise_IK_25519_ChaChaPoly_BLAKE2s",
             "peers": list(self.peers.values())

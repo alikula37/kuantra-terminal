@@ -68,22 +68,8 @@ class BinanceStreamClient:
 
     async def _run_simulated_stream(self, duration_seconds: int = 10):
         """Simulate high-frequency realistic order book ticks & candles when offline."""
-        start = time.time()
-        while self.is_running and (time.time() - start < duration_seconds):
-            drift = random.gauss(0, 8.5)
-            self.last_price = max(100.0, self.last_price + drift)
-            now_ms = int(time.time() * 1000)
-
-            tick_event = {
-                "e": "trade",
-                "E": now_ms,
-                "s": self.symbol,
-                "p": f"{self.last_price:.2f}",
-                "q": f"{random.uniform(0.01, 1.5):.4f}",
-                "m": random.choice([True, False])
-            }
-            await self._process_tick(self.last_price, now_ms, float(tick_event["q"]))
-            await asyncio.sleep(0.1)
+        logger.warning("[BINANCE WS] Offline mode — no live data available. Waiting for reconnect...")
+        await asyncio.sleep(duration_seconds)
 
     async def _handle_message(self, data: Dict[str, Any]):
         event_type = data.get("e")

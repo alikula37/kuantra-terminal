@@ -19,15 +19,6 @@ class WebAuthnPasskeyVault:
         self.high_value_threshold_usd = high_value_threshold_usd
         self.registered_credentials: Dict[str, Dict[str, Any]] = {}
         self.active_challenges: Dict[str, float] = {} # challenge -> expires_at
-        self._init_mock_passkey()
-
-    def _init_mock_passkey(self):
-        """Initializes primary hardware passkey (Apple TouchID / YubiKey 5)."""
-        self.register_passkey(
-            credential_id="CRED-YUBIKEY-FIDO2-01",
-            public_key="pubkey-fido2-ed25519-yubikey-primary",
-            device_name="YubiKey 5 NFC / TouchID Enclave"
-        )
 
     def register_passkey(
         self,
