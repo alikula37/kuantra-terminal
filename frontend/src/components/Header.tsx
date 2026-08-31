@@ -37,13 +37,15 @@ interface HeaderProps {
   onOpenVisionUploader?: () => void;
   onOpenGPUTelemetry?: () => void;
   onOpenPersonaSelector?: () => void;
+  onOpenInitialBalanceModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   onOpenNewTrade, 
   onOpenVisionUploader, 
   onOpenGPUTelemetry,
-  onOpenPersonaSelector 
+  onOpenPersonaSelector,
+  onOpenInitialBalanceModal
 }) => {
   const { latencyMs } = useMarketStore();
   const { theme, toggleTheme } = useTheme();
@@ -51,8 +53,8 @@ export const Header: React.FC<HeaderProps> = ({
   const { activePersona, isLiteMode, isPluginActive } = usePluginRegistry();
 
   const [portfolio, setPortfolio] = useState<PortfolioSummary>({
-    initial_balance: 100000.0,
-    total_equity: 100000.0,
+    initial_balance: 0.0,
+    total_equity: 0.0,
     net_pnl: 0.0,
     net_pnl_pct: 0.0,
     today_pnl: 0.0,
@@ -109,12 +111,18 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Portfolio-First Live Telemetry Strip */}
         <div className="flex items-center space-x-4 font-mono text-xs">
           {/* 1. Total Equity & Net PnL */}
-          <div className="flex items-center space-x-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
+          <div 
+            onClick={onOpenInitialBalanceModal}
+            className={`flex items-center space-x-2 bg-[#111722] px-3 py-1 rounded border border-surface-border transition group ${
+              onOpenInitialBalanceModal ? "cursor-pointer hover:border-accent/60" : ""
+            }`}
+            title="Başlangıç Bakiyesini Ayarla"
+          >
             <Wallet className="w-3.5 h-3.5 text-accent" />
             <div className="flex flex-col">
-              <span className="text-[9px] text-slate-500 font-semibold leading-tight">TOPLAM KASA</span>
+              <span className="text-[9px] text-slate-500 font-semibold leading-tight group-hover:text-cyan-400 transition">TOPLAM KASA</span>
               <div className="flex items-baseline space-x-1.5 leading-tight">
-                <span className="text-white font-bold text-xs">
+                <span className="text-white font-bold text-xs group-hover:text-cyan-300 transition">
                   ${portfolio.total_equity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className={`text-[10px] font-bold ${isNetPnlPositive ? "text-gain" : "text-loss"}`}>

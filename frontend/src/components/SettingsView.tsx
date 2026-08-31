@@ -1,10 +1,45 @@
-import React, { useState } from "react";
-import { Database, Server, RefreshCw, Zap } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Database, Server, RefreshCw, Zap, DollarSign, Check } from "lucide-react";
 import { UpdateNotifier } from "./updater/UpdateNotifier";
 import { SystemHealthSettings } from "./settings/SystemHealthSettings";
 
 export const SettingsView: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [initialBalance, setInitialBalance] = useState<number>(0);
+  const [balanceSavedMsg, setBalanceSavedMsg] = useState<string | null>(null);
+  const [isSavingBalance, setIsSavingBalance] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/v1/portfolio/summary")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.initial_balance === "number") {
+          setInitialBalance(data.initial_balance);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSaveBalance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingBalance(true);
+    setBalanceSavedMsg(null);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/v1/portfolio/set-initial-balance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initial_balance: Number(initialBalance) }),
+      });
+      if (res.ok) {
+        setBalanceSavedMsg("Başlangıç sermayesi başarıyla güncellendi!");
+        setTimeout(() => setBalanceSavedMsg(null), 3000);
+      }
+    } catch {
+      setBalanceSavedMsg("Kayıt sırasında hata oluştu.");
+    } finally {
+      setIsSavingBalance(false);
+    }
+  };
 
   const handleManualSync = () => {
     setSyncStatus("Syncing...");
@@ -15,10 +50,52 @@ export const SettingsView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-y-auto p-4 select-none font-mono space-y-4">
+    <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-y-auto p-4 select-none font-mono space-y-4 custom-scrollbar">
       <div className="pb-3 border-b border-surface-border">
         <h2 className="text-base font-bold text-white">TERMINAL CONFIGURATION & ARCHITECTURE</h2>
         <p className="text-xs text-slate-400">System Parameters, Database Engines & Sub-100ms Stream Settings</p>
+      </div>
+
+      {/* Account & Capital Management */}
+      <div className="bg-[#0d121c] p-4 rounded-lg border border-surface-border space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-white text-xs flex items-center space-x-2">
+            <DollarSign className="w-4 h-4 text-accent" />
+            <span>Kasa & Başlangıç Sermayesi Yönetimi</span>
+          </span>
+          <span className="bg-accent/20 text-accent text-[10px] font-bold px-2 py-0.5 rounded">
+            PORTFOLIO ENGINE
+          </span>
+        </div>
+        <p className="text-xs text-slate-400">
+          Terminal kasanız ve kümülatif getiri eğriniz bu başlangıç sermayesi üzerinden hesaplanır.
+        </p>
+        <form onSubmit={handleSaveBalance} className="flex flex-wrap items-center gap-3 pt-1">
+          <div className="relative">
+            <span className="absolute left-3 top-2 text-slate-500 text-sm">$</span>
+            <input
+              type="number"
+              step="any"
+              min="0"
+              value={initialBalance || ""}
+              onChange={(e) => setInitialBalance(Number(e.target.value))}
+              placeholder="0.00"
+              className="bg-[#090d14] border border-surface-border rounded pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-accent font-bold w-48"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isSavingBalance}
+            className="px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs flex items-center space-x-1.5 transition disabled:opacity-50 cursor-pointer"
+          >
+            <Check className="w-3.5 h-3.5" />
+            <span>{isSavingBalance ? "Kaydediliyor..." : "Sermayeyi Güncelle"}</span>
+          </button>
+          {balanceSavedMsg && (
+            <span className="text-xs text-gain font-semibold animate-fade-in">{balanceSavedMsg}</span>
+          )}
+        </form>
       </div>
 
       {/* Auto-Updater Banner */}

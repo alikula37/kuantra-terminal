@@ -35,6 +35,7 @@ import { FirstBootWizard } from "./components/onboarding/FirstBootWizard";
 import { GPUTelemetryModal } from "./components/hardware/GPUTelemetryModal";
 import { ModStoreStudio } from "./components/plugins/ModStoreStudio";
 import { PersonaSelectorModal } from "./components/onboarding/PersonaSelectorModal";
+import { InitialBalanceModal } from "./components/modals/InitialBalanceModal";
 import { TradingViewChart } from "./components/TradingViewChart";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { usePopoutWindow } from "./hooks/usePopoutWindow";
@@ -51,6 +52,7 @@ export default function App() {
   const [isPanicModalOpen, setIsPanicModalOpen] = useState<boolean>(false);
   const [isGPUModalOpen, setIsGPUModalOpen] = useState<boolean>(false);
   const [isPersonaModalOpen, setIsPersonaModalOpen] = useState<boolean>(false);
+  const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] = useState<boolean>(false);
 
   useWebSocket();
   const { popout } = usePopoutWindow();
@@ -143,6 +145,7 @@ export default function App() {
         onOpenVisionUploader={() => setIsVisionModalOpen(true)}
         onOpenGPUTelemetry={() => setIsGPUModalOpen(true)}
         onOpenPersonaSelector={() => setIsPersonaModalOpen(true)}
+        onOpenInitialBalanceModal={() => setIsInitialBalanceModalOpen(true)}
       />
 
       {!isLiteMode && (
@@ -158,7 +161,12 @@ export default function App() {
         <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         <main className="flex-1 flex flex-col overflow-hidden">
-          {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "dashboard" && (
+            <DashboardView
+              onOpenNewTrade={() => setIsModalOpen(true)}
+              onOpenInitialBalanceModal={() => setIsInitialBalanceModalOpen(true)}
+            />
+          )}
           {activeTab === "charts" && (
             <div className="flex-1 flex flex-col overflow-hidden bg-[#0b0e14]">
               <TradingViewChart />
@@ -204,6 +212,7 @@ export default function App() {
       </div>
 
       <NewTradeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <InitialBalanceModal isOpen={isInitialBalanceModalOpen} onClose={() => setIsInitialBalanceModalOpen(false)} />
       <ChartVisionUploader isOpen={isVisionModalOpen} onClose={() => setIsVisionModalOpen(false)} />
       <FirstBootWizard isOpen={isOnboardingOpen} onCompleted={() => setIsOnboardingOpen(false)} />
       <PanicKillSwitchModal isOpen={isPanicModalOpen} onClose={() => setIsPanicModalOpen(false)} />
