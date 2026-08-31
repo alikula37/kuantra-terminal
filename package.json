@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "npm --prefix frontend run dev",
+    "check:i18n": "npm --prefix frontend run check:i18n",
     "build": "npm --prefix frontend run build",
     "tauri": "tauri"
   },
