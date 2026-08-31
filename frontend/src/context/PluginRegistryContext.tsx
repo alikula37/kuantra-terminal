@@ -27,9 +27,42 @@ export interface PluginContribution {
   routePath?: string;
 }
 
+export const PERSONA_PLUGIN_MAP: Record<string, string[]> = {
+  lite: [],
+  kuantra_lite: [],
+  quant: ["plugin_quant_shield", "plugin_orderflow", "plugin_duckdb", "plugin_backtester"],
+  kuantra_quant: ["plugin_quant_shield", "plugin_orderflow", "plugin_duckdb", "plugin_backtester"],
+  defai: ["plugin_dex_arbitrage", "plugin_ai_swarm", "plugin_mcp_gateway", "plugin_reverse_skill"],
+  kuantra_defai: ["plugin_dex_arbitrage", "plugin_ai_swarm", "plugin_mcp_gateway", "plugin_reverse_skill"],
+  institutional: ["plugin_fix_dma", "plugin_biometrics", "plugin_orderflow", "plugin_p2p_copy", "plugin_quant_shield", "plugin_ai_swarm", "plugin_reverse_skill"],
+  kuantra_institutional: ["plugin_fix_dma", "plugin_biometrics", "plugin_orderflow", "plugin_p2p_copy", "plugin_quant_shield", "plugin_ai_swarm", "plugin_reverse_skill"],
+  full: [
+    "plugin_quant_shield",
+    "plugin_orderflow",
+    "plugin_ai_swarm",
+    "plugin_mcp_gateway",
+    "plugin_reverse_skill",
+    "plugin_dex_arbitrage",
+    "plugin_fix_dma",
+    "plugin_biometrics"
+  ],
+  kuantra_full: [
+    "plugin_quant_shield",
+    "plugin_orderflow",
+    "plugin_ai_swarm",
+    "plugin_mcp_gateway",
+    "plugin_reverse_skill",
+    "plugin_dex_arbitrage",
+    "plugin_fix_dma",
+    "plugin_biometrics"
+  ]
+};
+
 interface PluginRegistryContextType {
   plugins: PluginMetadata[];
+  activePlugins: string[];
   activePersona: string;
+  isLiteMode: boolean;
   loading: boolean;
   error: string | null;
   contributions: PluginContribution[];
@@ -47,10 +80,18 @@ const API_BASE = "http://127.0.0.1:8000/api/v1";
 
 export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [plugins, setPlugins] = useState<PluginMetadata[]>([]);
-  const [activePersona, setActivePersona] = useState<string>("full");
+  const [activePersona, setActivePersona] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("kuantra_selected_persona") || "kuantra_lite";
+    }
+    return "kuantra_lite";
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [contributions, setContributions] = useState<PluginContribution[]>([]);
+
+  const isLiteMode = activePersona === "lite" || activePersona === "kuantra_lite";
+  const activePlugins = plugins.filter((p) => p.is_active).map((p) => p.plugin_id);
 
   const fetchPlugins = useCallback(async () => {
     try {
@@ -60,12 +101,16 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
         const data = await res.json();
         if (data && data.plugins) {
           setPlugins(data.plugins);
-          setActivePersona(data.active_persona || "full");
+          const persona = data.active_persona || localStorage.getItem("kuantra_selected_persona") || "kuantra_lite";
+          setActivePersona(persona);
         }
       }
       setError(null);
     } catch (err: any) {
       console.warn("[PluginRegistry] Backend unavailable, initializing fallback local plugins:", err.message);
+      const currentPersona = localStorage.getItem("kuantra_selected_persona") || "kuantra_lite";
+      const targetActiveSet = new Set(PERSONA_PLUGIN_MAP[currentPersona] || []);
+
       // Fallback local plugins if backend sidecar is still booting
       setPlugins([
         {
@@ -77,7 +122,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           author: "Kuantra Core Team",
           heavy_dependencies: ["duckdb", "numpy"],
           router_prefix: "/api/v1/plugins/quant-shield",
-          is_active: true,
+          is_active: targetActiveSet.has("plugin_quant_shield"),
           ram_footprint_mb: 18.5,
           persona_tags: ["quant", "institutional", "full"]
         },
@@ -90,7 +135,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           author: "Kuantra Core Team",
           heavy_dependencies: ["numpy"],
           router_prefix: "/api/v1/plugins/orderflow",
-          is_active: true,
+          is_active: targetActiveSet.has("plugin_orderflow"),
           ram_footprint_mb: 14.2,
           persona_tags: ["quant", "institutional", "full"]
         },
@@ -217,17 +262,28 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
   const applyPersona = useCallback(
     async (persona: string): Promise<boolean> => {
       try {
+        localStorage.setItem("kuantra_selected_persona", persona);
+        setActivePersona(persona);
+
+        // Immediate optimistic synchronization of all plugin states
+        const targetActiveSet = new Set(PERSONA_PLUGIN_MAP[persona] || []);
+        setPlugins((prev) =>
+          prev.map((p) => ({
+            ...p,
+            is_active: targetActiveSet.has(p.plugin_id)
+          }))
+        );
+
         await fetch(`${API_BASE}/plugins/apply-persona`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ persona })
         });
-        setActivePersona(persona);
+        
         await fetchPlugins();
         return true;
       } catch (err) {
         console.error(`Failed to apply persona ${persona}:`, err);
-        setActivePersona(persona);
         return false;
       }
     },
@@ -256,7 +312,9 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
     <PluginRegistryContext.Provider
       value={{
         plugins,
+        activePlugins,
         activePersona,
+        isLiteMode,
         loading,
         error,
         contributions,

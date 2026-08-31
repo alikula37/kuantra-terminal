@@ -23,8 +23,11 @@ logger = logging.getLogger("plugin_manager")
 
 PERSONA_PROFILES: Dict[str, List[str]] = {
     "kuantra_lite": [],
+    "lite": [],
     "kuantra_quant": ["plugin_quant_shield", "plugin_orderflow"],
+    "quant": ["plugin_quant_shield", "plugin_orderflow"],
     "kuantra_defai": ["plugin_ai_swarm", "plugin_dex_arbitrage", "plugin_mcp_gateway"],
+    "defai": ["plugin_ai_swarm", "plugin_dex_arbitrage", "plugin_mcp_gateway"],
     "kuantra_institutional": [
         "plugin_quant_shield",
         "plugin_orderflow",
@@ -33,7 +36,25 @@ PERSONA_PROFILES: Dict[str, List[str]] = {
         "plugin_ai_swarm",
         "plugin_reverse_skill"
     ],
+    "institutional": [
+        "plugin_quant_shield",
+        "plugin_orderflow",
+        "plugin_fix_dma",
+        "plugin_biometrics",
+        "plugin_ai_swarm",
+        "plugin_reverse_skill"
+    ],
     "full": [
+        "plugin_quant_shield",
+        "plugin_orderflow",
+        "plugin_ai_swarm",
+        "plugin_mcp_gateway",
+        "plugin_reverse_skill",
+        "plugin_dex_arbitrage",
+        "plugin_fix_dma",
+        "plugin_biometrics"
+    ],
+    "kuantra_full": [
         "plugin_quant_shield",
         "plugin_orderflow",
         "plugin_ai_swarm",
