@@ -2,20 +2,24 @@ import React, { useState, useEffect } from "react";
 import { TradingViewChart } from "./TradingViewChart";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
+import { usePluginRegistry } from "../context/PluginRegistryContext";
 import { TiltStatusResponse } from "../types";
-import { ArrowUpRight, ArrowDownRight, Brain } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Brain, DollarSign, Target, Award, ShieldAlert } from "lucide-react";
 
 export const DashboardView: React.FC = () => {
   const { currentPrice, recentTicks } = useMarketStore();
-  const { openPositions, updatePositionPnl } = useTradeStore();
+  const { openPositions, trades, updatePositionPnl } = useTradeStore();
+  const { isLiteMode, isPluginActive } = usePluginRegistry();
   const [tilt, setTilt] = useState<TiltStatusResponse | null>(null);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/v1/psychology/tilt-status")
-      .then((res) => res.json())
-      .then((data: TiltStatusResponse) => setTilt(data))
-      .catch(() => {});
-  }, []);
+    if (!isLiteMode) {
+      fetch("http://127.0.0.1:8000/api/v1/psychology/tilt-status")
+        .then((res) => res.json())
+        .then((data: TiltStatusResponse) => setTilt(data))
+        .catch(() => {});
+    }
+  }, [isLiteMode]);
 
   const handleClosePosition = (tradeId: string) => {
     fetch(`http://127.0.0.1:8000/api/v1/trades/${tradeId}/close`, {
@@ -34,48 +38,99 @@ export const DashboardView: React.FC = () => {
       });
   };
 
+  // Calculate simple journal metrics for Lite Mode
+  const closedTrades = trades.filter((t) => t.status === "CLOSED");
+  const winTrades = closedTrades.filter((t) => (t.pnl || 0) > 0);
+  const winRate = closedTrades.length > 0 ? ((winTrades.length / closedTrades.length) * 100).toFixed(1) : "0.0";
+  const netPnl = closedTrades.reduce((acc, t) => acc + (t.pnl || 0), 0);
+  const totalOpenPnl = openPositions.reduce((acc, p) => acc + (p.unrealized_pnl || 0), 0);
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#0b0e14]">
+      {/* Lite Mode Top KPI Metric Banner */}
+      {isLiteMode && (
+        <div className="bg-[#0d121c] border-b border-surface-border px-4 py-2.5 grid grid-cols-2 md:grid-cols-4 gap-3 select-none font-mono">
+          <div className="flex items-center space-x-2.5 bg-[#111722] p-2 rounded border border-surface-border">
+            <DollarSign className={`w-4 h-4 ${netPnl >= 0 ? "text-gain" : "text-loss"}`} />
+            <div>
+              <span className="text-[10px] text-slate-500 block">NET GERÇEKLEŞEN PNL</span>
+              <span className={`text-xs font-bold ${netPnl >= 0 ? "text-gain" : "text-loss"}`}>
+                {netPnl >= 0 ? "+" : ""}${netPnl.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2.5 bg-[#111722] p-2 rounded border border-surface-border">
+            <Target className="w-4 h-4 text-accent" />
+            <div>
+              <span className="text-[10px] text-slate-500 block">KAZANMA ORANI (WIN RATE)</span>
+              <span className="text-xs font-bold text-white">{winRate}%</span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2.5 bg-[#111722] p-2 rounded border border-surface-border">
+            <Award className="w-4 h-4 text-amber-400" />
+            <div>
+              <span className="text-[10px] text-slate-500 block">AÇIK POZİSYON PNL</span>
+              <span className={`text-xs font-bold ${totalOpenPnl >= 0 ? "text-gain" : "text-loss"}`}>
+                {totalOpenPnl >= 0 ? "+" : ""}${totalOpenPnl.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2.5 bg-[#111722] p-2 rounded border border-surface-border">
+            <ShieldAlert className="w-4 h-4 text-emerald-400" />
+            <div>
+              <span className="text-[10px] text-slate-500 block">DİSİPLİN PUANI</span>
+              <span className="text-xs font-bold text-gain">100 / 100 (A+)</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 flex min-h-0 border-b border-surface-border">
         <div className="flex-[3] flex flex-col min-w-0">
           <TradingViewChart />
         </div>
 
-        <div className="w-64 border-l border-surface-border bg-[#0d121c] flex flex-col font-mono text-xs">
-          <div className="px-3 py-2 border-b border-surface-border font-bold text-slate-300 flex items-center justify-between text-[11px]">
-            <span>LIVE TICK TAPE</span>
-            <span className="text-[10px] text-accent">SUB-100MS</span>
-          </div>
+        {/* Live Tick Tape ladder - Only visible in Non-Lite / Pro modes */}
+        {!isLiteMode && (
+          <div className="w-64 border-l border-surface-border bg-[#0d121c] flex flex-col font-mono text-xs">
+            <div className="px-3 py-2 border-b border-surface-border font-bold text-slate-300 flex items-center justify-between text-[11px]">
+              <span>LIVE TICK TAPE</span>
+              <span className="text-[10px] text-accent">SUB-100MS</span>
+            </div>
 
-          <div className="grid grid-cols-3 px-3 py-1.5 text-[10px] text-slate-500 border-b border-surface-border font-semibold">
-            <span>PRICE</span>
-            <span className="text-right">QTY</span>
-            <span className="text-right">TIME</span>
-          </div>
+            <div className="grid grid-cols-3 px-3 py-1.5 text-[10px] text-slate-500 border-b border-surface-border font-semibold">
+              <span>PRICE</span>
+              <span className="text-right">QTY</span>
+              <span className="text-right">TIME</span>
+            </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-surface-border/40">
-            {recentTicks.length === 0 ? (
-              <div className="p-4 text-center text-slate-500 text-[11px]">Awaiting ticks...</div>
-            ) : (
-              recentTicks.map((tick, idx) => (
-                <div key={idx} className="grid grid-cols-3 px-3 py-1 text-[11px] items-center hover:bg-[#111722]">
-                  <span className={`font-semibold flex items-center ${tick.side === "BUY" ? "text-gain" : "text-loss"}`}>
-                    {tick.side === "BUY" ? (
-                      <ArrowUpRight className="w-3 h-3 mr-0.5 inline" />
-                    ) : (
-                      <ArrowDownRight className="w-3 h-3 mr-0.5 inline" />
-                    )}
-                    {tick.price.toFixed(2)}
-                  </span>
-                  <span className="text-right text-slate-300">{tick.volume.toFixed(4)}</span>
-                  <span className="text-right text-slate-500 text-[10px]">
-                    {new Date(tick.time).toLocaleTimeString()}
-                  </span>
-                </div>
-              ))
-            )}
+            <div className="flex-1 overflow-y-auto divide-y divide-surface-border/40">
+              {recentTicks.length === 0 ? (
+                <div className="p-4 text-center text-slate-500 text-[11px]">Awaiting ticks...</div>
+              ) : (
+                recentTicks.map((tick, idx) => (
+                  <div key={idx} className="grid grid-cols-3 px-3 py-1 text-[11px] items-center hover:bg-[#111722]">
+                    <span className={`font-semibold flex items-center ${tick.side === "BUY" ? "text-gain" : "text-loss"}`}>
+                      {tick.side === "BUY" ? (
+                        <ArrowUpRight className="w-3 h-3 mr-0.5 inline" />
+                      ) : (
+                        <ArrowDownRight className="w-3 h-3 mr-0.5 inline" />
+                      )}
+                      {tick.price.toFixed(2)}
+                    </span>
+                    <span className="text-right text-slate-300">{tick.volume.toFixed(4)}</span>
+                    <span className="text-right text-slate-500 text-[10px]">
+                      {new Date(tick.time).toLocaleTimeString()}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="h-56 bg-[#0d121c] flex flex-col font-mono text-xs select-none">
@@ -88,7 +143,7 @@ export const DashboardView: React.FC = () => {
               </span>
             </div>
 
-            {tilt && (
+            {!isLiteMode && tilt && isPluginActive("plugin_biometrics") && (
               <div className="flex items-center space-x-1.5 pl-3 border-l border-surface-border text-[11px]">
                 <Brain className="w-3.5 h-3.5 text-purple-400" />
                 <span className="text-slate-400">Tilt:</span>
