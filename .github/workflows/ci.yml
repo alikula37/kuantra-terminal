@@ -63,19 +63,18 @@ jobs:
       - name: Execute Comprehensive Pytest Suite
         shell: bash
         run: |
-          set -o pipefail
-          python -m pytest backend/tests -v --tb=short 2>&1 | tee pytest_log.txt || {
-            FAIL_MSG=$(tail -n 60 pytest_log.txt | tr '\r' ' ' | tr '\n' ' ' | sed 's/"/\\"/g')
-            echo "::error title=PytestFailure::$FAIL_MSG"
-            exit 1
-          }
-
-      - name: Upload Pytest Failure Logs
+          python -m pytest backend/tests -v --tb=short 2>&1 | tee pytest_log.txt
+      - name: Push Pytest Failure Log to Debug Branch
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-logs-${{ matrix.os }}
-          path: pytest_log.txt
+        shell: bash
+        run: |
+          git config --global user.name "GitHub Actions CI"
+          git config --global user.email "ci@kuantra.local"
+          git checkout -B "ci-debug-${{ matrix.os }}"
+          cp pytest_log.txt "ci_failure_${{ matrix.os }}.log" || true
+          git add "ci_failure_${{ matrix.os }}.log"
+          git commit -m "ci: failure log for ${{ matrix.os }}" || true
+          git push -f origin "ci-debug-${{ matrix.os }}" || true
 
       - name: Verify Frontend Production Build & TypeScript Types
         run: |
