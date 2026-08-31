@@ -1,7 +1,35 @@
-import React, { useEffect, useRef } from "react";
-import { createChart, IChartApi, ISeriesApi, CandlestickData, Time } from "lightweight-charts";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, HistogramData } from "lightweight-charts";
 import { useMarketStore } from "../stores/marketStore";
-import { useTradeStore } from "../stores/tradeStore";
+import { RefreshCw, AlertCircle, BarChart2 } from "lucide-react";
+
+export interface CandleDataPoint {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+const POPULAR_SYMBOLS = [
+  { symbol: "BTCUSDT", label: "BTC/USDT" },
+  { symbol: "ETHUSDT", label: "ETH/USDT" },
+  { symbol: "SOLUSDT", label: "SOL/USDT" },
+  { symbol: "XAUUSD", label: "GOLD (XAU)" },
+  { symbol: "EURUSD", label: "EUR/USD" },
+  { symbol: "SPY", label: "S&P 500 (SPY)" },
+  { symbol: "NVDA", label: "NVIDIA (NVDA)" },
+];
+
+const TIMEFRAMES = [
+  { tf: "1m", label: "1m" },
+  { tf: "5m", label: "5m" },
+  { tf: "15m", label: "15m" },
+  { tf: "1h", label: "1H" },
+  { tf: "4h", label: "4H" },
+  { tf: "1d", label: "1D" },
+];
 
 export const TradingViewChart: React.FC = () => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -9,9 +37,16 @@ export const TradingViewChart: React.FC = () => {
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
 
-  const { currentPrice, symbol } = useMarketStore();
-  const { openPositions } = useTradeStore();
+  const { symbol: storeSymbol, setSymbol: setStoreSymbol, updateTick } = useMarketStore();
+  const [activeSymbol, setActiveSymbol] = useState<string>(storeSymbol || "BTCUSDT");
+  const [activeTimeframe, setActiveTimeframe] = useState<string>("15m");
+  const [customInput, setCustomInput] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hoveredCandle, setHoveredCandle] = useState<CandleDataPoint | null>(null);
+  const [latestCandle, setLatestCandle] = useState<CandleDataPoint | null>(null);
 
+  // Initialize Lightweight Charts Canvas
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -22,8 +57,8 @@ export const TradingViewChart: React.FC = () => {
         fontSize: 11,
       },
       grid: {
-        vertLines: { color: "rgba(30, 41, 59, 0.4)" },
-        horzLines: { color: "rgba(30, 41, 59, 0.4)" },
+        vertLines: { color: "rgba(30, 41, 59, 0.3)" },
+        horzLines: { color: "rgba(30, 41, 59, 0.3)" },
       },
       crosshair: {
         vertLine: { color: "#38bdf8", width: 1, style: 3 },
@@ -36,7 +71,7 @@ export const TradingViewChart: React.FC = () => {
       },
       rightPriceScale: {
         borderColor: "#1e293b",
-        scaleMargins: { top: 0.1, bottom: 0.2 },
+        scaleMargins: { top: 0.08, bottom: 0.2 },
       },
       handleScale: true,
       handleScroll: true,
@@ -51,49 +86,42 @@ export const TradingViewChart: React.FC = () => {
     });
 
     const volumeSeries = chart.addHistogramSeries({
-      color: "rgba(56, 189, 248, 0.3)",
+      color: "rgba(56, 189, 248, 0.25)",
       priceFormat: { type: "volume" },
       priceScaleId: "",
     });
 
     chart.priceScale("").applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
+      scaleMargins: { top: 0.82, bottom: 0 },
     });
 
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
     volumeSeriesRef.current = volumeSeries;
 
-    const baseTime = Math.floor(Date.now() / 1000) - 120 * 60;
-    const initialCandles: CandlestickData<Time>[] = [];
-    const initialVolume: any[] = [];
-    let p = currentPrice || 65000.0;
-
-    for (let i = 0; i < 120; i++) {
-      const open = p;
-      const high = open + Math.random() * 40;
-      const low = open - Math.random() * 40;
-      const close = low + Math.random() * (high - low);
-      const time = (baseTime + i * 60) as Time;
-      const isUp = close >= open;
-
-      initialCandles.push({ time, open, high, low, close });
-      initialVolume.push({
-        time,
-        value: Math.random() * 50 + 10,
-        color: isUp ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)",
-      });
-      p = close;
-    }
-
-    candleSeries.setData(initialCandles);
-    volumeSeries.setData(initialVolume);
-
-    chart.timeScale().fitContent();
+    // Crosshair move handler
+    chart.subscribeCrosshairMove((param) => {
+      if (!param || !param.time || !param.seriesData.get(candleSeries)) {
+        setHoveredCandle(null);
+        return;
+      }
+      const cData = param.seriesData.get(candleSeries) as any;
+      const vData = param.seriesData.get(volumeSeries) as any;
+      if (cData && cData.open !== undefined) {
+        setHoveredCandle({
+          timestamp: typeof param.time === "number" ? param.time * 1000 : 0,
+          open: cData.open,
+          high: cData.high,
+          low: cData.low,
+          close: cData.close,
+          volume: vData?.value || 0,
+        });
+      }
+    });
 
     const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
           width: chartContainerRef.current.clientWidth,
           height: chartContainerRef.current.clientHeight,
         });
@@ -108,82 +136,237 @@ export const TradingViewChart: React.FC = () => {
       window.removeEventListener("resize", handleResize);
       observer.disconnect();
       chart.remove();
+      chartRef.current = null;
     };
   }, []);
 
-  useEffect(() => {
-    if (!candleSeriesRef.current || !currentPrice) return;
-    const nowSec = (Math.floor(Date.now() / 60000) * 60) as Time;
+  // Fetch 100% Real Historical Market Data from Backend
+  const fetchMarketCandles = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMsg(null);
 
     try {
-      candleSeriesRef.current.update({
-        time: nowSec,
-        open: currentPrice,
-        high: currentPrice + 5,
-        low: currentPrice - 5,
-        close: currentPrice,
+      const url = `http://127.0.0.1:8000/api/v1/market-data/candles?symbol=${encodeURIComponent(
+        activeSymbol
+      )}&timeframe=${encodeURIComponent(activeTimeframe)}&limit=500`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: Piyasa verisi alınamadı.`);
+      }
+
+      const rawData: CandleDataPoint[] = await response.json();
+      if (!Array.isArray(rawData) || rawData.length === 0) {
+        throw new Error("Seçili sembol veya zaman dilimi için veri bulunamadı.");
+      }
+
+      // Deduplicate and sort strictly ascending by time
+      const timeMap = new Map<number, CandleDataPoint>();
+      rawData.forEach((c) => {
+        const timeSec = c.timestamp > 1e11 ? Math.floor(c.timestamp / 1000) : c.timestamp;
+        if (!timeMap.has(timeSec)) {
+          timeMap.set(timeSec, {
+            timestamp: timeSec,
+            open: Number(c.open),
+            high: Number(c.high),
+            low: Number(c.low),
+            close: Number(c.close),
+            volume: Number(c.volume || 0),
+          });
+        }
       });
-    } catch {
-      // ignore
+
+      const sortedCandles = Array.from(timeMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+
+      const chartCandles: CandlestickData<Time>[] = sortedCandles.map((c) => ({
+        time: c.timestamp as Time,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+      }));
+
+      const chartVolumes: HistogramData<Time>[] = sortedCandles.map((c) => ({
+        time: c.timestamp as Time,
+        value: c.volume,
+        color: c.close >= c.open ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)",
+      }));
+
+      if (candleSeriesRef.current && volumeSeriesRef.current) {
+        candleSeriesRef.current.setData(chartCandles);
+        volumeSeriesRef.current.setData(chartVolumes);
+        chartRef.current?.timeScale().fitContent();
+      }
+
+      const last = sortedCandles[sortedCandles.length - 1];
+      setLatestCandle(last);
+      updateTick(last.close, 12, Date.now(), last.volume);
+    } catch (err: any) {
+      console.warn("[TradingViewChart] Real market data error:", err);
+      setErrorMsg(err.message || "Piyasa verisi alınamadı. Lütfen bağlantınızı kontrol edin.");
+      if (candleSeriesRef.current && volumeSeriesRef.current) {
+        candleSeriesRef.current.setData([]);
+        volumeSeriesRef.current.setData([]);
+      }
+      setLatestCandle(null);
+    } finally {
+      setIsLoading(false);
     }
-  }, [currentPrice]);
+  }, [activeSymbol, activeTimeframe, updateTick]);
+
+  // Trigger real data fetch on symbol or timeframe change
+  useEffect(() => {
+    fetchMarketCandles();
+    const interval = setInterval(fetchMarketCandles, 8000);
+    return () => clearInterval(interval);
+  }, [fetchMarketCandles]);
+
+  const handleSymbolChange = (sym: string) => {
+    setActiveSymbol(sym.toUpperCase());
+    setStoreSymbol(sym.toUpperCase());
+  };
+
+  const handleCustomSymbolSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customInput.trim()) {
+      handleSymbolChange(customInput.trim());
+      setCustomInput("");
+    }
+  };
+
+  const displayCandle = hoveredCandle || latestCandle;
+  const priceChange = displayCandle ? displayCandle.close - displayCandle.open : 0;
+  const priceChangePct = displayCandle && displayCandle.open > 0 ? (priceChange / displayCandle.open) * 100 : 0;
+  const isUp = priceChange >= 0;
 
   return (
-    <div className="relative flex-1 w-full h-full bg-[#0b0e14] overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-surface-border bg-[#0d121c] text-xs">
-        <div className="flex items-center space-x-3">
-          <span className="font-bold text-white font-mono">{symbol}</span>
-          <span className="text-slate-500">|</span>
-          <div className="flex items-center space-x-1 bg-[#111722] p-0.5 rounded border border-surface-border">
-            {["1m", "5m", "15m", "1h", "4h", "1D"].map((tf, i) => (
+    <div className="relative flex-1 w-full h-full bg-[#0b0e14] overflow-hidden flex flex-col font-mono select-none">
+      {/* Top Controls Bar */}
+      <div className="flex flex-wrap items-center justify-between px-3 py-2 border-b border-surface-border bg-[#0d121c] gap-2 text-xs">
+        {/* Symbol Selector Pills & Search */}
+        <div className="flex items-center space-x-2 overflow-x-auto custom-scrollbar">
+          <div className="flex items-center space-x-1">
+            {POPULAR_SYMBOLS.map((item) => (
               <button
-                key={tf}
-                className={`px-2 py-0.5 rounded font-mono ${
-                  i === 0 ? "bg-accent/20 text-accent font-semibold" : "text-slate-400 hover:text-white"
+                key={item.symbol}
+                onClick={() => handleSymbolChange(item.symbol)}
+                className={`px-2 py-1 rounded text-[11px] font-bold transition ${
+                  activeSymbol === item.symbol
+                    ? "bg-accent text-black shadow-sm shadow-cyan-500/30"
+                    : "bg-[#111722] text-slate-300 hover:text-white hover:bg-[#1a2234] border border-surface-border"
                 }`}
               >
-                {tf}
+                {item.label}
               </button>
             ))}
           </div>
+
+          <form onSubmit={handleCustomSymbolSubmit} className="flex items-center">
+            <input
+              type="text"
+              placeholder="Sembol Ara..."
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value.toUpperCase())}
+              className="bg-[#111722] border border-surface-border rounded px-2 py-1 text-[11px] text-white w-24 focus:outline-none focus:border-accent uppercase"
+            />
+          </form>
         </div>
-        <div className="flex items-center space-x-4 font-mono text-[11px]">
-          <span className="text-slate-400">
-            O: <span className="text-white">{(currentPrice * 0.999).toFixed(2)}</span>
-          </span>
-          <span className="text-slate-400">
-            H: <span className="text-gain">{(currentPrice * 1.002).toFixed(2)}</span>
-          </span>
-          <span className="text-slate-400">
-            L: <span className="text-loss">{(currentPrice * 0.997).toFixed(2)}</span>
-          </span>
-          <span className="text-slate-400">
-            C: <span className="text-white font-bold">{currentPrice.toFixed(2)}</span>
-          </span>
+
+        {/* Timeframe Selector & Refresh */}
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 bg-[#111722] p-0.5 rounded border border-surface-border">
+            {TIMEFRAMES.map((item) => (
+              <button
+                key={item.tf}
+                onClick={() => setActiveTimeframe(item.tf)}
+                className={`px-2 py-0.5 rounded font-mono text-[11px] transition ${
+                  activeTimeframe === item.tf
+                    ? "bg-accent/20 text-accent font-bold"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={fetchMarketCandles}
+            disabled={isLoading}
+            className="p-1.5 rounded bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white transition disabled:opacity-50"
+            title="Verileri Güncelle"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-accent ${isLoading ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
-      <div ref={chartContainerRef} className="w-full flex-1 min-h-[350px]" />
+      {/* Real OHLCV Telemetry Crosshair Bar */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[#090d14] border-b border-surface-border text-[11px] text-slate-400 font-mono">
+        <div className="flex items-center space-x-3">
+          <span className="font-bold text-white flex items-center space-x-1">
+            <BarChart2 className="w-3.5 h-3.5 text-accent inline mr-1" />
+            <span>{activeSymbol}</span>
+            <span className="text-slate-500 text-[10px]">({activeTimeframe})</span>
+          </span>
 
-      {openPositions.length > 0 && (
-        <div className="absolute bottom-3 left-4 flex flex-wrap gap-2 z-10">
-          {openPositions.map((pos) => (
-            <div
-              key={pos.id}
-              className="bg-[#111722]/90 backdrop-blur border border-accent/40 px-2.5 py-1.5 rounded text-xs font-mono shadow-lg flex items-center space-x-3"
-            >
-              <span className={`font-bold ${pos.side === "BUY" || pos.side === "LONG" ? "text-gain" : "text-loss"}`}>
-                {pos.side} {pos.qty} {pos.symbol}
+          {displayCandle && (
+            <div className="flex items-center space-x-3">
+              <span>
+                O: <span className="text-slate-200">${displayCandle.open.toFixed(2)}</span>
               </span>
-              <span className="text-slate-400">@ {pos.entry_price.toFixed(2)}</span>
-              <span className={`font-bold ${(pos.unrealized_pnl || 0) >= 0 ? "text-gain" : "text-loss"}`}>
-                {(pos.unrealized_pnl || 0) >= 0 ? "+" : ""}${pos.unrealized_pnl?.toFixed(2)}
-                {pos.r_multiple != null && ` (${pos.r_multiple > 0 ? "+" : ""}${pos.r_multiple}R)`}
+              <span>
+                H: <span className="text-emerald-400">${displayCandle.high.toFixed(2)}</span>
+              </span>
+              <span>
+                L: <span className="text-rose-400">${displayCandle.low.toFixed(2)}</span>
+              </span>
+              <span>
+                C: <span className="text-white font-bold">${displayCandle.close.toFixed(2)}</span>
+              </span>
+              <span>
+                Vol: <span className="text-cyan-400">{displayCandle.volume.toLocaleString()}</span>
               </span>
             </div>
-          ))}
+          )}
         </div>
-      )}
+
+        {displayCandle && (
+          <div className="flex items-center space-x-2">
+            <span className={`font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+              {isUp ? "+" : ""}${priceChange.toFixed(2)} ({isUp ? "+" : ""}{priceChangePct.toFixed(2)}%)
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Chart Canvas Area */}
+      <div className="relative flex-1 w-full h-full">
+        <div ref={chartContainerRef} className="w-full h-full" />
+
+        {/* Loading Overlay */}
+        {isLoading && !latestCandle && (
+          <div className="absolute inset-0 bg-[#0b0e14]/80 flex flex-col items-center justify-center space-y-2 z-10">
+            <RefreshCw className="w-6 h-6 text-accent animate-spin" />
+            <span className="text-xs text-slate-400">Canlı Piyasa Mumları Alınıyor ({activeSymbol})...</span>
+          </div>
+        )}
+
+        {/* Authentic Error State Banner */}
+        {errorMsg && (
+          <div className="absolute inset-0 bg-[#0b0e14]/90 flex flex-col items-center justify-center p-6 space-y-3 z-20 text-center">
+            <AlertCircle className="w-8 h-8 text-rose-400" />
+            <div className="text-sm font-bold text-white">Piyasa Verisi Alınamadı</div>
+            <p className="text-xs text-slate-400 max-w-md">{errorMsg}</p>
+            <button
+              onClick={fetchMarketCandles}
+              className="px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-xs rounded transition shadow-md cursor-pointer"
+            >
+              Tekrar Dene
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
