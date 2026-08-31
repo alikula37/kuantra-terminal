@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "check:i18n": "node ./scripts/check-i18n.js",
     "i18n:check": "node ./scripts/check-i18n.js",
-    "build": "npm run i18n:check && tsc && vite build",
+    "build": "npm run check:i18n && tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
