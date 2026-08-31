@@ -67,12 +67,27 @@ class SQLiteDriver:
                     updated_at TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS market_candles_cache (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    symbol TEXT NOT NULL,
+                    timeframe TEXT NOT NULL,
+                    timestamp INTEGER NOT NULL,
+                    open REAL NOT NULL,
+                    high REAL NOT NULL,
+                    low REAL NOT NULL,
+                    close REAL NOT NULL,
+                    volume REAL NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol);
                 CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status);
                 CREATE INDEX IF NOT EXISTS idx_trades_entry_time ON trades(entry_time);
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_candles_sym_tf_time ON market_candles_cache(symbol, timeframe, timestamp);
+                CREATE INDEX IF NOT EXISTS idx_candles_lookup ON market_candles_cache(symbol, timeframe, timestamp ASC);
             """)
             conn.commit()
-            logger.info("SQLite OLTP schema initialized with WAL mode.")
+            logger.info("SQLite OLTP schema initialized with WAL mode and candle cache.")
 
     def insert_trade(self, trade: Dict[str, Any]) -> Dict[str, Any]:
         now = datetime.utcnow().isoformat()

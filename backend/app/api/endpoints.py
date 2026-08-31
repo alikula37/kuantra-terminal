@@ -8,6 +8,8 @@ from datetime import datetime
 from app.db.sqlite_driver import sqlite_driver
 from app.db.duckdb_driver import duckdb_driver
 from app.db.sync_pipeline import sync_pipeline
+from app.db.repositories.candles_repo import candles_repo
+from app.services.market_data.public_fetcher import public_market_fetcher
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
 from app.quant.quant_engine import quant_engine
@@ -1231,3 +1233,72 @@ def run_manual_system_maintenance(payload: SystemMaintenancePayload):
 @router.get("/system/storage/stats")
 def get_system_storage_statistics():
     return db_maintenance_engine.get_storage_telemetry()
+
+
+# ==============================================================================
+# ZERO-AUTH PUBLIC MARKET DATA & SQLITE CANDLE CACHE ENDPOINTS
+# ==============================================================================
+
+@router.get("/market-data/candles")
+async def get_market_candles(
+    symbol: str = Query("BTCUSDT", description="Market symbol (e.g. BTCUSDT, ETHUSDT, EURUSD, SPY)"),
+    timeframe: str = Query("1h", description="Candle timeframe (e.g. 1m, 5m, 15m, 1h, 4h, 1d)"),
+    limit: int = Query(500, ge=1, le=1000, description="Max candle records to return"),
+    start_time: Optional[int] = Query(None, description="Start timestamp (ms)"),
+    end_time: Optional[int] = Query(None, description="End timestamp (ms)"),
+    force_refresh: bool = Query(False, description="Force fresh fetch from public APIs")
+):
+    """
+    Returns historical OHLCV candlestick data for crypto or macro/forex assets.
+    Operates with zero API keys using public REST gateways and local SQLite caching.
+    """
+    try:
+        candles = await candles_repo.get_or_fetch_candles(
+            symbol=symbol,
+            timeframe=timeframe,
+            limit=limit,
+            start_ts=start_time,
+            end_ts=end_time,
+            force_refresh=force_refresh
+        )
+        return {
+            "symbol": symbol.upper(),
+            "timeframe": timeframe,
+            "count": len(candles),
+            "candles": candles
+        }
+    except Exception as e:
+        logger.error(f"[MARKET-DATA-API] Failed to fetch market candles for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch market candles: {str(e)}")
+
+
+@router.get("/market-data/status")
+def get_market_data_status():
+    """Returns local candle cache status, total records, and supported public exchanges."""
+    stats = candles_repo.get_cache_stats()
+    return {
+        "status": "HEALTHY",
+        "auth_required": False,
+        "cache_total_records": stats["total_records"],
+        "symbols_count": stats["symbols_count"],
+        "symbols_cached": stats["symbols"],
+        "timeframes_cached": stats["timeframes"],
+        "oldest_timestamp": stats["oldest_timestamp"],
+        "newest_timestamp": stats["newest_timestamp"],
+        "supported_exchanges": ["binance_public", "bybit_public", "yahoo_public", "stooq_public"]
+    }
+
+
+@router.post("/market-data/cache/clear")
+def clear_market_data_cache(
+    symbol: Optional[str] = Query(None, description="Symbol to clear"),
+    timeframe: Optional[str] = Query(None, description="Timeframe to clear")
+):
+    """Clears cached candle records from local SQLite database."""
+    deleted = candles_repo.clear_cache(symbol=symbol, timeframe=timeframe)
+    return {
+        "status": "CLEARED",
+        "deleted_count": deleted,
+        "symbol": symbol,
+        "timeframe": timeframe
+    }
