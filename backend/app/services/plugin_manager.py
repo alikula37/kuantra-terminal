@@ -147,8 +147,20 @@ class DynamicPluginManager:
 
         try:
             # 1. Dynamically import plugin module
-            module_path = f"app.plugins.{plugin_id}.plugin"
-            plugin_mod = importlib.import_module(module_path)
+            plugin_py_path = Path(meta.manifest_path).parent / "plugin.py" if meta.manifest_path else None
+            if plugin_py_path and plugin_py_path.exists():
+                import importlib.util
+                spec = importlib.util.spec_from_file_location(f"plugin_{plugin_id}", str(plugin_py_path))
+                if spec and spec.loader:
+                    plugin_mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(plugin_mod)
+                else:
+                    module_path = f"app.plugins.{plugin_id}.plugin"
+                    plugin_mod = importlib.import_module(module_path)
+            else:
+                module_path = f"app.plugins.{plugin_id}.plugin"
+                plugin_mod = importlib.import_module(module_path)
+
             plugin_class = getattr(plugin_mod, "Plugin")
             plugin_instance: BasePlugin = plugin_class(metadata=meta)
 

@@ -4,7 +4,7 @@ Provides endpoints for inspecting installed plugins, runtime hot-toggling,
 persona batch switching, and ModStore marketplace discovery.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from app.services.plugin_manager import plugin_manager, PERSONA_PROFILES
@@ -96,10 +96,56 @@ def get_modstore_catalog():
             "downloads": 24100,
             "verified": True,
             "installed": False
+        },
+        {
+            "id": "mod_hft_tick_compressor",
+            "name": "ZSTD High-Frequency Tick Database Compressor",
+            "category": "Storage",
+            "version": "1.0.1",
+            "author": "Kuantra Infrastructure",
+            "description": "Lossless column-oriented tick archival achieving 85%+ storage footprint reduction.",
+            "rating": 4.75,
+            "downloads": 6200,
+            "verified": True,
+            "installed": False
         }
     ]
     return {
-        "catalog_version": "1.1.0",
+        "catalog_version": "1.2.0",
         "total_available": len(catalog),
         "modules": catalog
     }
+
+class DownloadPluginRequest(BaseModel):
+    plugin_id: str
+    download_url: Optional[str] = None
+    expected_sha256: Optional[str] = None
+
+@router.post("/download")
+async def download_plugin_endpoint(req: DownloadPluginRequest, background_tasks: BackgroundTasks):
+    """Initiates an asynchronous download and dynamic mounting task for a remote .kmod plugin."""
+    from app.services.modstore_downloader import modstore_downloader
+    import uuid
+    task_id = str(uuid.uuid4())[:8]
+    background_tasks.add_task(
+        modstore_downloader.download_and_install,
+        plugin_id=req.plugin_id,
+        download_url=req.download_url,
+        expected_sha256=req.expected_sha256,
+        task_id=task_id
+    )
+    return {
+        "status": "QUEUED",
+        "task_id": task_id,
+        "plugin_id": req.plugin_id,
+        "message": f"Plugin download task '{task_id}' queued successfully."
+    }
+
+@router.get("/download-status/{task_id}")
+def get_download_status_endpoint(task_id: str):
+    """Fetches real-time progress and completion status for a plugin download task."""
+    from app.services.modstore_downloader import modstore_downloader
+    status_data = modstore_downloader.get_task_status(task_id)
+    if not status_data:
+        raise HTTPException(status_code=404, detail=f"Download task '{task_id}' not found.")
+    return status_data

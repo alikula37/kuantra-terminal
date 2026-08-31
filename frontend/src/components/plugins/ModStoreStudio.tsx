@@ -20,6 +20,66 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const [downloadingModules, setDownloadingModules] = useState<
+    Record<string, { progress: number; status: string; taskId?: string }>
+  >({});
+
+  const handleInstallModule = async (moduleId: string) => {
+    try {
+      setDownloadingModules((prev) => ({
+        ...prev,
+        [moduleId]: { progress: 10, status: "İndirme Başlatılıyor..." }
+      }));
+
+      const res = await fetch("http://127.0.0.1:8000/api/v1/plugins/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plugin_id: moduleId })
+      });
+
+      if (!res.ok) {
+        throw new Error("Download request failed");
+      }
+
+      const data = await res.json();
+      const taskId = data.task_id;
+
+      // Poll status
+      const interval = setInterval(async () => {
+        try {
+          const stRes = await fetch(`http://127.0.0.1:8000/api/v1/plugins/download-status/${taskId}`);
+          if (stRes.ok) {
+            const stData = await stRes.json();
+            const pct = stData.progress_percent || 0;
+            let statusText = `Modül İndiriliyor: 18 MB / %${pct}...`;
+            if (stData.status === "verifying") statusText = "SHA-256 İmzası Doğrulanıyor...";
+            if (stData.status === "extracting") statusText = ".kmod Paketi Çıkarılıyor...";
+            if (stData.status === "activating") statusText = "Dinamik Router Bağlanıyor...";
+            if (stData.status === "completed") statusText = "Yüklendi & Aktif Edildi!";
+
+            setDownloadingModules((prev) => ({
+              ...prev,
+              [moduleId]: { progress: pct, status: statusText, taskId }
+            }));
+
+            if (stData.status === "completed" || stData.status === "failed") {
+              clearInterval(interval);
+              await refreshPlugins();
+            }
+          }
+        } catch (err) {
+          clearInterval(interval);
+        }
+      }, 250);
+    } catch (err: any) {
+      console.error("Failed to install module:", err);
+      setDownloadingModules((prev) => ({
+        ...prev,
+        [moduleId]: { progress: 0, status: "İndirme Hatası" }
+      }));
+    }
+  };
+
   // Compute live memory stats
   const baseCoreRamMb = 22.0;
   const activePluginsRamMb = plugins
@@ -259,41 +319,83 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
         {/* Tab 2: ModStore Marketplace Catalog */}
         {activeTab === "marketplace" && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {marketplaceModules.map((mod) => (
-              <div
-                key={mod.id}
-                className="p-4 rounded-xl border border-surface-border bg-[#111724]/80 flex flex-col justify-between space-y-3"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center space-x-1.5">
-                        <h3 className="font-bold text-sm text-white font-mono">{mod.name}</h3>
-                        {mod.verified && <ShieldCheck className="w-3.5 h-3.5 text-accent shrink-0" />}
+            {marketplaceModules.map((mod) => {
+              const installedPlugin = plugins.find(
+                (p) => p.plugin_id === mod.id || p.plugin_id === `plugin_${mod.id}`
+              );
+              const isInstalled = !!installedPlugin;
+              const downloadState = downloadingModules[mod.id];
+              const isDownloading = !!downloadState && downloadState.progress < 100 && downloadState.status !== "İndirme Hatası";
+
+              return (
+                <div
+                  key={mod.id}
+                  className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 transition ${
+                    isInstalled
+                      ? "border-gain/30 bg-[#111c24]/90 shadow-md"
+                      : "border-surface-border bg-[#111724]/80 hover:border-slate-700"
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center space-x-1.5">
+                          <h3 className="font-bold text-sm text-white font-mono">{mod.name}</h3>
+                          {mod.verified && <ShieldCheck className="w-3.5 h-3.5 text-accent shrink-0" />}
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400">{mod.author}</span>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-400">{mod.author}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                        v{mod.version}
+                      </span>
                     </div>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                      v{mod.version}
-                    </span>
+
+                    <p className="text-xs text-slate-300">{mod.description}</p>
                   </div>
 
-                  <p className="text-xs text-slate-300">{mod.description}</p>
-                </div>
+                  {/* Live Download Progress Bar */}
+                  {downloadState && (
+                    <div className="space-y-1.5 bg-[#090d14] p-2.5 rounded-lg border border-surface-border">
+                      <div className="flex justify-between text-[10px] font-mono">
+                        <span className="text-accent font-semibold">{downloadState.status}</span>
+                        <span className="text-white font-bold">{downloadState.progress}%</span>
+                      </div>
+                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${downloadState.progress}%` }}
+                          className={`h-full transition-all duration-300 ${
+                            downloadState.progress === 100 ? "bg-gain" : "bg-accent animate-pulse"
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  )}
 
-                <div className="pt-3 border-t border-surface-border/50 flex items-center justify-between">
-                  <div className="text-[11px] font-mono text-slate-400 space-x-2">
-                    <span>★ {mod.rating}</span>
-                    <span>• {mod.downloads} DLs</span>
+                  <div className="pt-3 border-t border-surface-border/50 flex items-center justify-between">
+                    <div className="text-[11px] font-mono text-slate-400 space-x-2">
+                      <span>★ {mod.rating}</span>
+                      <span>• {mod.downloads} DLs</span>
+                    </div>
+
+                    {isInstalled ? (
+                      <div className="flex items-center space-x-1.5 px-3 py-1 rounded text-xs font-mono font-bold bg-gain/20 text-gain border border-gain/40">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>INSTALLED</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleInstallModule(mod.id)}
+                        disabled={isDownloading}
+                        className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded text-xs font-mono font-bold bg-accent hover:bg-sky-400 text-black transition shadow-md active:scale-95 disabled:opacity-50"
+                      >
+                        <Download className={`w-3.5 h-3.5 ${isDownloading ? "animate-bounce" : ""}`} />
+                        <span>{isDownloading ? "İNDİRİLİYOR..." : "AKTİF ET / İNDİR"}</span>
+                      </button>
+                    )}
                   </div>
-
-                  <button className="flex items-center space-x-1.5 px-3 py-1 rounded text-xs font-mono font-bold bg-accent hover:bg-sky-400 text-black transition shadow-sm">
-                    <Download className="w-3 h-3" />
-                    <span>INSTALL</span>
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
