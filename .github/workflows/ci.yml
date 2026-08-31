@@ -61,8 +61,6 @@ jobs:
           pip install cryptography alembic pytest pytest-asyncio anyio psutil httpx pyyaml pyinstaller
 
       - name: Execute Comprehensive Pytest Suite
-        env:
-          PYTHONPATH: .${{ matrix.os == 'windows-latest' && ';' || ':' }}backend
         run: |
           python -m pytest backend/tests -v --tb=short
 
