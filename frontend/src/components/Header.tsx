@@ -101,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({
               {isLiteMode ? "KUANTRA LITE" : "KUANTRA"}
             </span>
             <span className="text-[9px] text-accent font-mono tracking-widest leading-none mt-0.5">
-              {isLiteMode ? "DISCIPLINED CORE" : "QUANT TERMINAL"}
+              {isLiteMode ? t("header.disciplined_core") : t("header.quant_terminal")}
             </span>
           </div>
         </div>
@@ -116,11 +116,13 @@ export const Header: React.FC<HeaderProps> = ({
             className={`flex items-center space-x-2 bg-[#111722] px-3 py-1 rounded border border-surface-border transition group ${
               onOpenInitialBalanceModal ? "cursor-pointer hover:border-accent/60" : ""
             }`}
-            title="Başlangıç Bakiyesini Ayarla"
+            title={t("header.set_initial_capital")}
           >
             <Wallet className="w-3.5 h-3.5 text-accent" />
             <div className="flex flex-col">
-              <span className="text-[9px] text-slate-500 font-semibold leading-tight group-hover:text-cyan-400 transition">TOPLAM KASA</span>
+              <span className="text-[9px] text-slate-500 font-semibold leading-tight group-hover:text-cyan-400 transition">
+                {t("header.total_equity")}
+              </span>
               <div className="flex items-baseline space-x-1.5 leading-tight">
                 <span className="text-white font-bold text-xs group-hover:text-cyan-300 transition">
                   ${portfolio.total_equity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -136,13 +138,15 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="hidden sm:flex items-center space-x-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
             <div className="flex flex-col">
-              <span className="text-[9px] text-slate-500 font-semibold leading-tight">AÇIK RİSK (EXPOSURE)</span>
+              <span className="text-[9px] text-slate-500 font-semibold leading-tight">
+                {t("header.open_risk")}
+              </span>
               <div className="flex items-baseline space-x-1.5 leading-tight">
                 <span className="text-amber-400 font-bold text-xs">
                   {portfolio.open_risk_r.toFixed(1)}R (${portfolio.open_risk_usd.toFixed(2)})
                 </span>
                 <span className="text-[10px] text-slate-400">
-                  | {portfolio.active_positions_count} Pozisyon
+                  | {portfolio.active_positions_count} {t("header.positions")}
                 </span>
               </div>
             </div>
@@ -152,7 +156,9 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="hidden md:flex items-center space-x-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
             <Calendar className="w-3.5 h-3.5 text-sky-400" />
             <div className="flex flex-col">
-              <span className="text-[9px] text-slate-500 font-semibold leading-tight">BUGÜN (REALIZED)</span>
+              <span className="text-[9px] text-slate-500 font-semibold leading-tight">
+                {t("header.today_realized")}
+              </span>
               <div className="flex items-baseline space-x-1.5 leading-tight">
                 <span className={`font-bold text-xs ${isTodayPnlPositive ? "text-gain" : "text-loss"}`}>
                   {isTodayPnlPositive ? "+" : ""}${portfolio.today_pnl.toFixed(2)}
@@ -176,13 +182,12 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenPersonaSelector}
             className="flex items-center space-x-1.5 bg-gradient-to-r from-accent/20 to-blue-600/20 hover:from-accent/30 hover:to-blue-600/30 border border-accent/40 text-accent px-3 py-1 rounded-md text-xs font-mono font-bold transition shadow-sm hover:shadow-accent/10 active:scale-95"
-            title="Mimari Modu & Persona Değiştir (ModStore)"
+            title={t("header.change_persona")}
           >
             <Zap className="w-3.5 h-3.5 text-accent animate-pulse" />
             <span className="uppercase text-[11px] font-extrabold tracking-wide">
               {isLiteMode ? "⚡ LITE MODE" : `⚡ ${activePersona.replace("kuantra_", "").toUpperCase()} MODE`}
             </span>
-            <span className="text-[10px] text-slate-400 font-normal ml-0.5">| Değiştir</span>
           </button>
         )}
 
@@ -247,7 +252,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-xs px-3 py-1.5 rounded transition shadow-md hover:shadow-cyan-500/20 active:scale-95"
         >
           <PlusCircle className="w-3.5 h-3.5" />
-          <span>+ Manuel İşlem Girişi</span>
+          <span>{t("header.new_trade_btn")}</span>
         </button>
       </div>
     </header>

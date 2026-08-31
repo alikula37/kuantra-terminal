@@ -1,5 +1,6 @@
 import React from "react";
 import { PieChart, Layers } from "lucide-react";
+import { useTranslation } from "../../context/I18nContext";
 
 export interface AssetBreakdownItem {
   symbol: string;
@@ -19,10 +20,12 @@ interface MultiAssetBreakdownProps {
 }
 
 export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items, loading }) => {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <div className="bg-[#111722] p-4 rounded-lg border border-surface-border animate-pulse h-80 flex flex-col justify-center items-center text-slate-500 font-mono text-xs">
-        <span>Varlık Dağılımı Yükleniyor...</span>
+        <span>{t("breakdown.loading")}</span>
       </div>
     );
   }
@@ -34,10 +37,10 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
           <Layers className="w-6 h-6 text-slate-500" />
         </div>
         <h4 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
-          Varlık Dağılımı Boş
+          {t("breakdown.empty_title")}
         </h4>
         <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-          Farklı enstrümanlarda (Kripto, FX, Emtia, Hisse) işlem kaydettikçe kâr/zarar dökümü burada listelenecektir.
+          {t("breakdown.empty_desc")}
         </p>
       </div>
     );
@@ -49,13 +52,13 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
   const getAssetClassBadge = (cls: string) => {
     switch (cls) {
       case "forex":
-        return <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">FX</span>;
+        return <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">{t("breakdown.fx")}</span>;
       case "commodity":
-        return <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">EMTİA</span>;
+        return <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">{t("breakdown.commodity")}</span>;
       case "equity":
-        return <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">HİSSE</span>;
+        return <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-bold">{t("breakdown.equity")}</span>;
       default:
-        return <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">KRİPTO</span>;
+        return <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold">{t("breakdown.crypto")}</span>;
     }
   };
 
@@ -64,9 +67,9 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
       <div className="flex items-center justify-between pb-3 border-b border-surface-border">
         <div className="flex items-center space-x-2">
           <PieChart className="w-4 h-4 text-accent" />
-          <span className="text-xs font-bold text-white uppercase tracking-wider">VARLIK PERFORMANS DAĞILIMI</span>
+          <span className="text-xs font-bold text-white uppercase tracking-wider">{t("breakdown.title")}</span>
         </div>
-        <span className="text-[10px] text-slate-400 font-semibold">{items.length} Farklı Enstrüman</span>
+        <span className="text-[10px] text-slate-400 font-semibold">{items.length} Instrument</span>
       </div>
 
       <div className="mt-3 space-y-3 overflow-y-auto flex-1 pr-1 custom-scrollbar">
@@ -83,7 +86,7 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-[10px] text-slate-400">
-                    {item.trade_count} İşlem ({item.win_rate.toFixed(0)}% WR)
+                    {t("breakdown.trades_count", { count: item.trade_count })} ({item.win_rate.toFixed(0)}% WR)
                   </span>
                   <span className={`font-bold ${isProfitable ? "text-gain" : "text-loss"}`}>
                     {isProfitable ? "+" : ""}${item.net_pnl.toFixed(2)}
@@ -100,9 +103,9 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
               </div>
 
               <div className="flex items-center justify-between text-[9px] text-slate-500 mt-1">
-                <span>Hacim: ${item.total_volume.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                <span>{t("breakdown.volume", { vol: item.total_volume.toLocaleString("en-US", { maximumFractionDigits: 0 }) })}</span>
                 {item.open_positions > 0 && (
-                  <span className="text-amber-400 font-semibold">{item.open_positions} Açık Pozisyon</span>
+                  <span className="text-amber-400 font-semibold">{item.open_positions} {t("header.positions")}</span>
                 )}
               </div>
             </div>

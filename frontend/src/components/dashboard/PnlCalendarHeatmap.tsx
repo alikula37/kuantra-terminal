@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Calendar } from "lucide-react";
+import { useTranslation } from "../../context/I18nContext";
 
 export interface DailyHeatmapItem {
   date: string;
@@ -17,12 +18,13 @@ interface PnlCalendarHeatmapProps {
 }
 
 export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, loading }) => {
+  const { t } = useTranslation();
   const [hoveredDay, setHoveredDay] = useState<DailyHeatmapItem | null>(null);
 
   if (loading) {
     return (
       <div className="bg-[#111722] p-4 rounded-lg border border-surface-border animate-pulse h-48 flex items-center justify-center text-slate-500 font-mono text-xs">
-        <span>Performans Isı Haritası Yükleniyor...</span>
+        <span>{t("heatmap.loading")}</span>
       </div>
     );
   }
@@ -71,10 +73,14 @@ export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, lo
       <div className="flex items-center justify-between pb-3 border-b border-surface-border">
         <div className="flex items-center space-x-2">
           <Calendar className="w-4 h-4 text-accent" />
-          <span className="text-xs font-bold text-white uppercase tracking-wider">90 GÜNLÜK PNL TAKVİM ISI HARİTASI</span>
+          <span className="text-xs font-bold text-white uppercase tracking-wider">
+            {t("heatmap.title")}
+          </span>
         </div>
         <div className="flex items-center space-x-4 text-xs">
-          <span className="text-[10px] text-slate-400">{activeDays} Aktif İşlem Günü</span>
+          <span className="text-[10px] text-slate-400">
+            {t("heatmap.active_days", { count: activeDays })}
+          </span>
           <span className={`font-bold ${totalPnL >= 0 ? "text-gain" : "text-loss"}`}>
             Net: {totalPnL >= 0 ? "+" : ""}${totalPnL.toFixed(2)}
           </span>
@@ -104,30 +110,35 @@ export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, lo
                   <span className={hoveredDay.pnl >= 0 ? "text-gain font-bold" : "text-loss font-bold"}>
                     {hoveredDay.pnl >= 0 ? "+" : ""}${hoveredDay.pnl.toFixed(2)}
                   </span>{" "}
-                  ({hoveredDay.trades_count} İşlem, {hoveredDay.win_rate.toFixed(0)}% WR)
+                  ({t("heatmap.tooltip", {
+                    date: "",
+                    pnl: "",
+                    count: hoveredDay.trades_count,
+                    rate: hoveredDay.win_rate.toFixed(0)
+                  }).split(":")[1]?.trim() || `${hoveredDay.trades_count} Trades`})
                 </span>
               ) : (
                 <span className="font-semibold text-slate-400">
-                  📅 {hoveredDay.date}: <span className="text-slate-500">İşlem Kaydı Yok ($0.00)</span>
+                  📅 {hoveredDay.date}: <span className="text-slate-500">{t("heatmap.no_trades")}</span>
                 </span>
               )
             ) : (
               <span className="text-slate-500">
                 {activeDays === 0
-                  ? "Son 90 günde kaydedilmiş kâr/zarar işlemi bulunmuyor."
-                  : "Detayları görmek için gün kutucuklarının üzerine gelin."}
+                  ? t("heatmap.empty_90_days")
+                  : t("heatmap.hover_guide")}
               </span>
             )}
           </div>
 
           <div className="flex items-center space-x-1.5">
-            <span>Kayıp</span>
+            <span>{t("heatmap.loss")}</span>
             <div className="w-2.5 h-2.5 rounded-xs bg-rose-600 border border-rose-500" />
             <div className="w-2.5 h-2.5 rounded-xs bg-rose-800 border border-rose-700" />
             <div className="w-2.5 h-2.5 rounded-xs bg-[#161f2e] border border-[#1e293b]" />
             <div className="w-2.5 h-2.5 rounded-xs bg-emerald-800 border border-emerald-700" />
             <div className="w-2.5 h-2.5 rounded-xs bg-emerald-500 border border-emerald-400" />
-            <span>Kâr</span>
+            <span>{t("heatmap.profit")}</span>
           </div>
         </div>
       </div>

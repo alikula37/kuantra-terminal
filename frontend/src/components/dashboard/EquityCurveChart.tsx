@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { TrendingUp, Plus } from "lucide-react";
+import { useTranslation } from "../../context/I18nContext";
 
 export interface EquityCurvePoint {
   timestamp: number;
@@ -22,12 +23,13 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
   loading,
   onOpenNewTrade,
 }) => {
+  const { t } = useTranslation();
   const [hoveredPoint, setHoveredPoint] = useState<EquityCurvePoint | null>(null);
 
   if (loading) {
     return (
       <div className="bg-[#111722] p-4 rounded-lg border border-surface-border animate-pulse h-80 flex flex-col justify-center items-center text-slate-500 font-mono text-xs">
-        <span>Kümülatif Kasa Eğrisi Yükleniyor...</span>
+        <span>{t("equity_curve.loading")}</span>
       </div>
     );
   }
@@ -41,10 +43,10 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
           <TrendingUp className="w-6 h-6 text-accent" />
         </div>
         <h4 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
-          Kümülatif Bakiye Eğrisi Bekleniyor
+          {t("equity_curve.waiting_title")}
         </h4>
         <p className="text-xs text-slate-400 max-w-md mb-4 leading-relaxed">
-          Henüz kapatılmış bir işlem bulunmuyor. İlk işleminizi kaydettiğinizde kümülatif büyüme ve drawdown eğrisi burada dinamik olarak çizilecektir.
+          {t("equity_curve.waiting_desc")}
         </p>
         {onOpenNewTrade && (
           <button
@@ -52,7 +54,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
             className="flex items-center space-x-1.5 px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs transition shadow-md cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Yeni İşlem Girişi</span>
+            <span>{t("equity_curve.new_trade_action")}</span>
           </button>
         )}
       </div>
@@ -82,21 +84,23 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
     return padding.left + (index / (series.length - 1)) * innerWidth;
   };
 
-  const getYEquity = (val: number) => {
-    return padding.top + equityHeight - ((val - yEquityMin) / (yEquityMax - yEquityMin)) * equityHeight;
+  const getEquityY = (val: number) => {
+    const norm = (val - yEquityMin) / (yEquityMax - yEquityMin);
+    return padding.top + equityHeight - norm * equityHeight;
   };
 
-  const getYDd = (val: number) => {
-    const top = padding.top + equityHeight + gap;
-    return top + (Math.abs(val) / Math.abs(minDd || 1.0)) * ddHeight;
+  const getDdY = (val: number) => {
+    const norm = Math.abs(val) / Math.abs(minDd || 1.0);
+    return padding.top + equityHeight + gap + norm * ddHeight;
   };
-
-  // Build SVG Paths
-  const equityPoints = series.map((p, i) => `${getX(i)},${getYEquity(p.equity)}`).join(" ");
-  const equityAreaPath = `${getX(0)},${getYEquity(yEquityMin)} ` + equityPoints + ` ${getX(series.length - 1)},${getYEquity(yEquityMin)}`;
 
   const ddZeroY = padding.top + equityHeight + gap;
-  const ddPoints = series.map((p, i) => `${getX(i)},${getYDd(p.drawdown_pct)}`).join(" ");
+
+  // Build SVG Paths
+  const equityPoints = series.map((p, idx) => `${getX(idx)},${getEquityY(p.equity)}`).join(" ");
+  const equityAreaPath = `${getX(0)},${padding.top + equityHeight} ` + equityPoints + ` ${getX(series.length - 1)},${padding.top + equityHeight}`;
+
+  const ddPoints = series.map((p, idx) => `${getX(idx)},${getDdY(p.drawdown_pct)}`).join(" ");
   const ddAreaPath = `${getX(0)},${ddZeroY} ` + ddPoints + ` ${getX(series.length - 1)},${ddZeroY}`;
 
   const currentPoint = hoveredPoint || series[series.length - 1];
@@ -106,15 +110,17 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
       <div className="flex items-center justify-between pb-2 border-b border-surface-border">
         <div className="flex items-center space-x-2">
           <TrendingUp className="w-4 h-4 text-accent" />
-          <span className="text-xs font-bold text-white uppercase tracking-wider">KÜMÜLATİF KASA & SU ALTI DRAWDOWN</span>
+          <span className="text-xs font-bold text-white uppercase tracking-wider">
+            {t("equity_curve.chart_title")}
+          </span>
         </div>
         <div className="flex items-center space-x-3 text-xs">
           <div className="flex items-center space-x-1.5">
-            <span className="text-[10px] text-slate-500">KASA:</span>
+            <span className="text-[10px] text-slate-500">{t("equity_curve.equity_growth").toUpperCase()}:</span>
             <span className="font-bold text-white">${currentPoint.equity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className="text-[10px] text-slate-500">DD:</span>
+            <span className="text-[10px] text-slate-500">{t("equity_curve.drawdown").toUpperCase()}:</span>
             <span className="font-bold text-loss">{currentPoint.drawdown_pct.toFixed(2)}%</span>
           </div>
         </div>
@@ -213,7 +219,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
           {/* Interactive Hover Circles and Vertical Guide */}
           {series.map((p, i) => {
             const x = getX(i);
-            const y = getYEquity(p.equity);
+            const y = getEquityY(p.equity);
             return (
               <g key={i} className="cursor-pointer" onMouseEnter={() => setHoveredPoint(p)}>
                 <rect
@@ -235,7 +241,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
                       strokeDasharray="2 2"
                     />
                     <circle cx={x} cy={y} r="4" fill="#00e5ff" stroke="#0d121c" strokeWidth="2" />
-                    <circle cx={x} cy={getYDd(p.drawdown_pct)} r="3" fill="#ef4444" />
+                    <circle cx={x} cy={getDdY(p.drawdown_pct)} r="3" fill="#ef4444" />
                   </>
                 )}
               </g>

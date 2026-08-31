@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, DollarSign, Check } from "lucide-react";
+import { useTranslation } from "../../context/I18nContext";
 
 interface InitialBalanceModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
   currentBalance = 0,
   onBalanceUpdated,
 }) => {
+  const { t } = useTranslation();
   const [balance, setBalance] = useState<number>(currentBalance);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,14 +34,14 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initial_balance: Number(balance) }),
       });
-      if (!res.ok) throw new Error("Bakiye güncellenemedi.");
+      if (!res.ok) throw new Error("Failed to update starting balance.");
       const data = await res.json();
       if (onBalanceUpdated) {
         onBalanceUpdated(data.initial_balance);
       }
       onClose();
     } catch (err: any) {
-      setError(err.message || "Bakiye kaydedilemedi");
+      setError(err.message || "Failed to save balance");
     } finally {
       setIsSubmitting(false);
     }
@@ -52,7 +54,7 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
           <div className="flex items-center space-x-2">
             <DollarSign className="w-5 h-5 text-accent" />
             <h3 className="text-sm font-bold text-white uppercase tracking-wide">
-              Başlangıç Sermayesi Yapılandırması
+              {t("initial_balance.modal_title")}
             </h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer">
@@ -61,12 +63,14 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
         </div>
 
         <p className="text-xs text-slate-300">
-          Terminal kasanız ve kümülatif getiri eğriniz bu başlangıç sermayesi üzerinden hesaplanır.
+          {t("initial_balance.modal_desc")}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-slate-400 block text-xs mb-1.5">Başlangıç Bakiyesi ($)</label>
+            <label className="text-slate-400 block text-xs mb-1.5">
+              {t("initial_balance.input_label")}
+            </label>
             <div className="relative">
               <span className="absolute left-3 top-2 text-slate-500 text-sm">$</span>
               <input
@@ -75,7 +79,7 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
                 min="0"
                 value={balance || ""}
                 onChange={(e) => setBalance(Number(e.target.value))}
-                placeholder="Örn: 10,000"
+                placeholder={t("initial_balance.placeholder")}
                 className="w-full bg-[#0b0e14] border border-surface-border rounded pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-accent font-bold"
                 required
               />
@@ -84,7 +88,9 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
 
           {/* Quick Preset Buttons */}
           <div>
-            <span className="text-[11px] text-slate-400 block mb-1.5">Hızlı Miktar Seçenekleri:</span>
+            <span className="text-[11px] text-slate-400 block mb-1.5">
+              {t("initial_balance.preset_label")}
+            </span>
             <div className="grid grid-cols-5 gap-1.5">
               {PRESET_AMOUNTS.map((amt) => (
                 <button
@@ -111,7 +117,7 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
               onClick={onClose}
               className="flex-1 py-2 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-300 font-semibold rounded text-xs transition cursor-pointer"
             >
-              İptal
+              {t("initial_balance.cancel")}
             </button>
             <button
               type="submit"
@@ -119,7 +125,7 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
               className="flex-1 py-2 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs flex items-center justify-center space-x-1.5 transition disabled:opacity-50 cursor-pointer"
             >
               <Check className="w-4 h-4" />
-              <span>{isSubmitting ? "Kaydediliyor..." : "Kaydet ve Güncelle"}</span>
+              <span>{isSubmitting ? t("initial_balance.saving") : t("initial_balance.save")}</span>
             </button>
           </div>
         </form>

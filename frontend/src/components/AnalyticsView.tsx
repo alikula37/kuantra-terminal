@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { QuantScorecard, SymbolBreakdown } from "../types";
 import { Award, TrendingUp, ShieldAlert, Target, PieChart } from "lucide-react";
+import { useTranslation } from "../context/I18nContext";
 
 export const AnalyticsView: React.FC = () => {
+  const { t } = useTranslation();
   const [scorecard, setScorecard] = useState<QuantScorecard | null>(null);
   const [symbols, setSymbols] = useState<SymbolBreakdown[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -43,18 +45,18 @@ export const AnalyticsView: React.FC = () => {
   }, []);
 
   if (isLoading || !scorecard) {
-    return <div className="p-8 text-center text-slate-400 font-mono">Kantitatif analitik yükleniyor...</div>;
+    return <div className="p-8 text-center text-slate-400 font-mono">{t("analytics.loading")}</div>;
   }
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-y-auto p-4 select-none font-mono space-y-4">
       <div className="pb-3 border-b border-surface-border flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-white">QUANTITATIVE PERFORMANCE SCORECARD</h2>
-          <p className="text-xs text-slate-400">Institutional Expectancy, Risk-Adjusted Ratios & Statistical Quality</p>
+          <h2 className="text-base font-bold text-white">{t("analytics.title")}</h2>
+          <p className="text-xs text-slate-400">{t("analytics.subtitle")}</p>
         </div>
         <div className="bg-[#111722] px-3 py-1.5 rounded border border-surface-border text-xs text-accent font-bold">
-          TOTAL CLOSED TRADES: {scorecard.total_trades}
+          {t("analytics.total_closed", { count: scorecard.total_trades })}
         </div>
       </div>
 
@@ -64,10 +66,10 @@ export const AnalyticsView: React.FC = () => {
             <Target className="w-7 h-7 text-accent" />
           </div>
           <h3 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
-            Kantitatif Analitik Verisi Bekleniyor
+            {t("analytics.waiting_title")}
           </h3>
           <p className="text-xs text-slate-400 max-w-md leading-relaxed">
-            MAE/MFE ve Quant Skor Kartı hesaplamaları için en az 1 tamamlanmış (kapatılmış) işlem gereklidir.
+            {t("analytics.waiting_desc")}
           </p>
         </div>
       ) : (

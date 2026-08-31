@@ -11,6 +11,8 @@ import {
   Edit2
 } from "lucide-react";
 
+import { useTranslation } from "../../context/I18nContext";
+
 export interface PortfolioSummaryData {
   initial_balance: number;
   total_equity: number;
@@ -43,6 +45,8 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
   loading,
   onOpenInitialBalanceModal,
 }) => {
+  const { t } = useTranslation();
+
   if (loading || !summary) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 select-none font-mono">
@@ -64,11 +68,13 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
         className={`bg-[#111722] p-3 rounded-lg border border-surface-border flex flex-col justify-between hover:border-accent/60 transition group ${
           onOpenInitialBalanceModal ? "cursor-pointer" : ""
         }`}
-        title="Başlangıç Bakiyesini Ayarla"
+        title={t("portfolio.set_balance_tooltip")}
       >
         <div className="flex items-center justify-between text-slate-400">
           <div className="flex items-center space-x-1">
-            <span className="text-[10px] uppercase font-semibold tracking-wider">TOPLAM KASA</span>
+            <span className="text-[10px] uppercase font-semibold tracking-wider">
+              {t("portfolio.total_equity")}
+            </span>
             {onOpenInitialBalanceModal && (
               <Edit2 className="w-2.5 h-2.5 text-slate-500 group-hover:text-accent transition opacity-60 group-hover:opacity-100" />
             )}
@@ -89,7 +95,9 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
       {/* 2. Kazanma Oranı (Win Rate) */}
       <div className="bg-[#111722] p-3 rounded-lg border border-surface-border flex flex-col justify-between hover:border-slate-700 transition">
         <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] uppercase font-semibold tracking-wider">KAZANMA ORANI</span>
+          <span className="text-[10px] uppercase font-semibold tracking-wider">
+            {t("portfolio.win_rate")}
+          </span>
           <Target className="w-3.5 h-3.5 text-sky-400" />
         </div>
         <div className="mt-1">
@@ -97,7 +105,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             {summary.win_rate.toFixed(1)}%
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            {summary.total_closed_trades} Toplam İşlem
+            {summary.total_closed_trades} {t("breakdown.trades_count", { count: "" }).replace("{count}", "").trim()}
           </div>
         </div>
       </div>
@@ -105,7 +113,9 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
       {/* 3. Kâr Faktörü (Profit Factor) */}
       <div className="bg-[#111722] p-3 rounded-lg border border-surface-border flex flex-col justify-between hover:border-slate-700 transition">
         <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] uppercase font-semibold tracking-wider">KÂR FAKTÖRÜ</span>
+          <span className="text-[10px] uppercase font-semibold tracking-wider">
+            {t("portfolio.profit_factor")}
+          </span>
           <Scale className="w-3.5 h-3.5 text-emerald-400" />
         </div>
         <div className="mt-1">
@@ -113,7 +123,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             {summary.profit_factor >= 999 ? "∞" : summary.profit_factor.toFixed(2)}
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            Brüt Kâr / Zarar
+            Profit / Loss
           </div>
         </div>
       </div>
@@ -121,7 +131,9 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
       {/* 4. Maksimum Drawdown */}
       <div className="bg-[#111722] p-3 rounded-lg border border-surface-border flex flex-col justify-between hover:border-slate-700 transition">
         <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] uppercase font-semibold tracking-wider">MAX DRAWDOWN</span>
+          <span className="text-[10px] uppercase font-semibold tracking-wider">
+            {t("portfolio.max_drawdown")}
+          </span>
           <ShieldAlert className="w-3.5 h-3.5 text-loss" />
         </div>
         <div className="mt-1">
@@ -137,7 +149,9 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
       {/* 5. Ortalama R-Multiple */}
       <div className="bg-[#111722] p-3 rounded-lg border border-surface-border flex flex-col justify-between hover:border-slate-700 transition">
         <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] uppercase font-semibold tracking-wider">ORTALAMA R</span>
+          <span className="text-[10px] uppercase font-semibold tracking-wider">
+            {t("portfolio.avg_r_multiple")}
+          </span>
           <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
         </div>
         <div className="mt-1">
@@ -145,7 +159,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             {isAvgRPositive ? "+" : ""}{summary.avg_r_multiple.toFixed(2)}R
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            İşlem Başına R-Getiri
+            EV / Trade
           </div>
         </div>
       </div>
@@ -153,7 +167,9 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
       {/* 6. Açık Pozisyon Riski */}
       <div className="bg-[#111722] p-3 rounded-lg border border-surface-border flex flex-col justify-between hover:border-slate-700 transition">
         <div className="flex items-center justify-between text-slate-400">
-          <span className="text-[10px] uppercase font-semibold tracking-wider">AÇIK RİSK (EXPOSURE)</span>
+          <span className="text-[10px] uppercase font-semibold tracking-wider">
+            {t("portfolio.open_risk")}
+          </span>
           <Zap className="w-3.5 h-3.5 text-amber-400" />
         </div>
         <div className="mt-1">
@@ -161,7 +177,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             {summary.open_risk_r.toFixed(1)}R
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            ${summary.open_risk_usd.toFixed(2)} ({summary.active_positions_count} Pozisyon)
+            ${summary.open_risk_usd.toFixed(2)} ({summary.active_positions_count} {t("header.positions")})
           </div>
         </div>
       </div>

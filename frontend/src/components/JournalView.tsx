@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTradeStore } from "../stores/tradeStore";
 import { Filter, Plus, PlayCircle, BookOpen, Upload } from "lucide-react";
+import { useTranslation } from "../context/I18nContext";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
@@ -8,6 +9,7 @@ interface JournalViewProps {
 }
 
 export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onReplayTrade }) => {
+  const { t } = useTranslation();
   const { trades, setTrades } = useTradeStore();
   const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
@@ -33,8 +35,8 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
     <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-hidden p-4 select-none font-mono">
       <div className="flex items-center justify-between pb-4 border-b border-surface-border">
         <div>
-          <h2 className="text-base font-bold text-white">TRADE LOGGING JOURNAL</h2>
-          <p className="text-xs text-slate-400">Institutional Execution Records & Audit Trail</p>
+          <h2 className="text-base font-bold text-white">{t("journal.title")}</h2>
+          <p className="text-xs text-slate-400">{t("journal.subtitle")}</p>
         </div>
 
         <div className="flex items-center space-x-3 text-xs">
@@ -45,7 +47,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
               onChange={(e) => setFilterSymbol(e.target.value)}
               className="bg-transparent text-white focus:outline-none"
             >
-              <option value="ALL">All Symbols</option>
+              <option value="ALL">{t("journal.filter_all_symbols")}</option>
               <option value="BTCUSDT">BTCUSDT</option>
               <option value="ETHUSDT">ETHUSDT</option>
               <option value="SOLUSDT">SOLUSDT</option>
@@ -58,9 +60,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
               onChange={(e) => setFilterStatus(e.target.value)}
               className="bg-transparent text-white focus:outline-none"
             >
-              <option value="ALL">All Status</option>
-              <option value="OPEN">Open</option>
-              <option value="CLOSED">Closed</option>
+              <option value="ALL">{t("journal.filter_all_status")}</option>
+              <option value="OPEN">{t("journal.status_open")}</option>
+              <option value="CLOSED">{t("journal.status_closed")}</option>
             </select>
           </div>
 
@@ -69,7 +71,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
             className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-3 py-1.5 rounded transition shadow-md cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>RECORD TRADE</span>
+            <span>{t("journal.manual_entry")}</span>
           </button>
         </div>
       </div>
@@ -80,10 +82,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
             <BookOpen className="w-7 h-7 text-accent" />
           </div>
           <h3 className="text-base font-bold text-white mb-1.5 uppercase tracking-wide">
-            İşlem Günlüğünüz Temiz ve Hazır
+            {t("journal.empty_title")}
           </h3>
           <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
-            Henüz kaydedilmiş bir işlem bulunmuyor. Yeni bir işlem kaydederek veya harici işlem geçmişinizi CSV olarak içe aktararak kantitatif analitiğinizi başlatabilirsiniz.
+            {t("journal.empty_desc")}
           </p>
           <div className="flex items-center space-x-3">
             <button
@@ -91,14 +93,14 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
               className="flex items-center space-x-1.5 px-4 py-2 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs transition shadow-md cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Manuel İşlem Girişi</span>
+              <span>{t("journal.manual_entry")}</span>
             </button>
             <button
-              onClick={() => alert("CSV İçe Aktarma: Günlük işlem formatı desteklenmektedir.")}
+              onClick={() => alert("CSV Import: Standard trade record headers supported.")}
               className="flex items-center space-x-1.5 px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold rounded text-xs transition cursor-pointer"
             >
               <Upload className="w-4 h-4 text-slate-400" />
-              <span>CSV İçe Aktar</span>
+              <span>{t("journal.import_csv")}</span>
             </button>
           </div>
         </div>
@@ -107,78 +109,78 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
           <table className="w-full text-left text-xs">
             <thead className="bg-[#090d14] text-[10px] text-slate-400 uppercase tracking-wider sticky top-0 border-b border-surface-border">
               <tr>
-                <th className="px-4 py-3">Trade ID</th>
-                <th className="px-4 py-3">Symbol</th>
-                <th className="px-4 py-3">Side</th>
-                <th className="px-4 py-3">Entry ($)</th>
-                <th className="px-4 py-3">Exit ($)</th>
-                <th className="px-4 py-3">Qty</th>
-                <th className="px-4 py-3">PnL ($)</th>
-                <th className="px-4 py-3">R-Multiple</th>
-                <th className="px-4 py-3">Entry Time</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{t("journal.col_trade_id")}</th>
+                <th className="px-4 py-3">{t("journal.col_symbol")}</th>
+                <th className="px-4 py-3">{t("journal.col_side")}</th>
+                <th className="px-4 py-3">{t("journal.col_entry")}</th>
+                <th className="px-4 py-3">{t("journal.col_exit")}</th>
+                <th className="px-4 py-3">{t("journal.col_qty")}</th>
+                <th className="px-4 py-3">{t("journal.col_pnl")}</th>
+                <th className="px-4 py-3">{t("journal.col_r")}</th>
+                <th className="px-4 py-3">{t("journal.col_time")}</th>
+                <th className="px-4 py-3">{t("journal.col_status")}</th>
+                <th className="px-4 py-3 text-right">{t("journal.col_actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border/40 text-[11px]">
               {filteredTrades.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
-                    Filtre kriterlerine uygun işlem bulunamadı.
+                    {t("journal.no_matching")}
                   </td>
                 </tr>
               ) : (
-              filteredTrades.map((t) => {
-                const pnl = t.pnl || 0;
+              filteredTrades.map((tItem) => {
+                const pnl = tItem.pnl || 0;
                 const isWin = pnl > 0;
                 return (
-                  <tr key={t.id} className="hover:bg-[#111722] transition">
-                    <td className="px-4 py-2.5 font-bold text-accent">{t.id}</td>
-                    <td className="px-4 py-2.5 font-bold text-white">{t.symbol}</td>
+                  <tr key={tItem.id} className="hover:bg-[#111722] transition">
+                    <td className="px-4 py-2.5 font-bold text-accent">{tItem.id}</td>
+                    <td className="px-4 py-2.5 font-bold text-white">{tItem.symbol}</td>
                     <td className="px-4 py-2.5">
                       <span
                         className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          t.side === "BUY" || t.side === "LONG"
+                          tItem.side === "BUY" || tItem.side === "LONG"
                             ? "bg-gain/20 text-gain"
                             : "bg-loss/20 text-loss"
                         }`}
                       >
-                        {t.side}
+                        {tItem.side}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-slate-200">${Number(t.entry_price).toFixed(2)}</td>
+                    <td className="px-4 py-2.5 text-slate-200">${Number(tItem.entry_price).toFixed(2)}</td>
                     <td className="px-4 py-2.5 text-slate-200">
-                      {t.exit_price != null ? `$${Number(t.exit_price).toFixed(2)}` : "-"}
+                      {tItem.exit_price != null ? `$${Number(tItem.exit_price).toFixed(2)}` : "-"}
                     </td>
-                    <td className="px-4 py-2.5 text-slate-300">{t.qty}</td>
+                    <td className="px-4 py-2.5 text-slate-300">{tItem.qty}</td>
                     <td className={`px-4 py-2.5 font-bold ${isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
-                      {t.status === "CLOSED" ? `${isWin ? "+" : ""}$${pnl.toFixed(2)}` : "-"}
+                      {tItem.status === "CLOSED" ? `${isWin ? "+" : ""}$${pnl.toFixed(2)}` : "-"}
                     </td>
                     <td className={`px-4 py-2.5 font-bold ${isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
-                      {t.r_multiple != null ? `${t.r_multiple > 0 ? "+" : ""}${t.r_multiple}R` : "-"}
+                      {tItem.r_multiple != null ? `${tItem.r_multiple > 0 ? "+" : ""}${tItem.r_multiple}R` : "-"}
                     </td>
                     <td className="px-4 py-2.5 text-slate-400 text-[10px]">
-                      {new Date(t.entry_time).toLocaleString()}
+                      {new Date(tItem.entry_time).toLocaleString()}
                     </td>
                     <td className="px-4 py-2.5">
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          t.status === "OPEN"
+                          tItem.status === "OPEN"
                             ? "bg-sky-500/20 text-accent border border-accent/30"
                             : "bg-slate-800 text-slate-300"
                         }`}
                       >
-                        {t.status}
+                        {tItem.status}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <button
-                        onClick={() => onReplayTrade && onReplayTrade(t.id)}
+                        onClick={() => onReplayTrade && onReplayTrade(tItem.id)}
                         className="inline-flex items-center space-x-1 px-2 py-0.5 bg-accent/15 hover:bg-accent/30 border border-accent/40 text-accent font-bold rounded text-[10px] transition"
                         title="Replay this trade bar-by-bar"
                       >
                         <PlayCircle className="w-3 h-3" />
-                        <span>Replay</span>
+                        <span>{t("journal.replay_btn")}</span>
                       </button>
                     </td>
                   </tr>

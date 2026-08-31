@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { MaeMfeAnalyticsResponse, MaeMfePoint } from "../types";
 import { Crosshair, ShieldAlert, TrendingUp } from "lucide-react";
+import { useTranslation } from "../context/I18nContext";
 
 export const MaeMfeVisualizer: React.FC = () => {
+  const { t } = useTranslation();
   const [data, setData] = useState<MaeMfeAnalyticsResponse | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<MaeMfePoint | null>(null);
   const [filterSide, setFilterSide] = useState<string>("ALL");
@@ -59,10 +61,10 @@ export const MaeMfeVisualizer: React.FC = () => {
         <div>
           <h2 className="text-base font-bold text-white flex items-center space-x-2">
             <Crosshair className="w-4 h-4 text-accent" />
-            <span>MAXIMUM ADVERSE / FAVORABLE EXCURSION (MAE / MFE)</span>
+            <span>{t("mae_mfe.title")}</span>
           </h2>
           <p className="text-xs text-slate-400">
-            Intraday Price Swing Distribution & Best-Exit Efficiency Analysis
+            {t("mae_mfe.subtitle")}
           </p>
         </div>
 
@@ -87,10 +89,10 @@ export const MaeMfeVisualizer: React.FC = () => {
             <Crosshair className="w-7 h-7 text-accent" />
           </div>
           <h3 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
-            MAE / MFE Risk Saçılım Analitiği Bekleniyor
+            {t("mae_mfe.waiting_title")}
           </h3>
           <p className="text-xs text-slate-400 max-w-md leading-relaxed">
-            MAE/MFE Risk Saçılım Analitiği ve Çıkış Verimliliği hesaplamaları için en az 1 tamamlanmış işlem gereklidir.
+            {t("mae_mfe.waiting_desc")}
           </p>
         </div>
       ) : (
