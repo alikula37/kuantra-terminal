@@ -140,3 +140,58 @@ jobs:
           echo "=== PUBLISHING GENUINE DMG TO GITHUB RELEASE ==="
           gh release create v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg dist-binaries/MANIFEST.json --title "Kuantra Terminal v1.3.0-production" --notes-file RELEASE_NOTES.md || gh release upload v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg dist-binaries/MANIFEST.json --clobber
           echo "[+] Successfully published Kuantra-Terminal-1.3.0-aarch64.dmg to GitHub Release v1.3.0-production"
+
+      - name: Build Windows NSIS Bundle & Publish to GitHub Release
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== COMPILING WINDOWS CORE SIDECAR ==="
+          New-Item -ItemType Directory -Force -Path src-tauri/binaries
+          python -m PyInstaller `
+            --onefile `
+            --clean `
+            --name "kuantra-backend-x86_64-pc-windows-msvc" `
+            --distpath "src-tauri/binaries" `
+            --workpath "backend/build" `
+            --specpath "backend" `
+            --exclude-module duckdb `
+            --exclude-module pandas `
+            --exclude-module numpy `
+            --exclude-module scipy `
+            --exclude-module torch `
+            --exclude-module bleak `
+            --exclude-module web3 `
+            --exclude-module quickfix `
+            --exclude-module PIL `
+            --exclude-module matplotlib `
+            --exclude-module tkinter `
+            --exclude-module pytest `
+            --exclude-module unittest `
+            --exclude-module doctest `
+            --exclude-module test `
+            --exclude-module alembic.testing `
+            --exclude-module setuptools `
+            --exclude-module pkg_resources `
+            --exclude-module ccxt.pro `
+            --exclude-module aiohttp.test_utils `
+            --collect-submodules app `
+            --collect-submodules starlette `
+            --collect-submodules fastapi `
+            --collect-submodules uvicorn `
+            --collect-submodules pydantic `
+            --collect-submodules cryptography `
+            backend/main.py
+
+          echo "=== BUILDING NATIVE WINDOWS NSIS INSTALLER ==="
+          npm install
+          npx tauri build --bundles nsis
+
+          echo "=== PACKAGING & UPLOAD WINDOWS SETUP ==="
+          New-Item -ItemType Directory -Force -Path dist-binaries
+          $EXE_PATH = (Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe | Select-Object -First 1).FullName
+          Copy-Item $EXE_PATH "dist-binaries/Kuantra-Terminal-1.3.0-Setup.exe" -Force
+          python scripts/generate_release_manifest.py
+          gh release create v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-Setup.exe dist-binaries/MANIFEST.json --title "Kuantra Terminal v1.3.0-production" --notes-file RELEASE_NOTES.md || gh release upload v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-Setup.exe dist-binaries/MANIFEST.json --clobber
+          echo "[+] Successfully published Kuantra-Terminal-1.3.0-Setup.exe to GitHub Release v1.3.0-production"
