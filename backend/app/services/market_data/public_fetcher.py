@@ -97,6 +97,10 @@ def normalize_crypto_symbol(symbol: str) -> str:
     if not cleaned:
         return "BTCUSDT"
 
+    # If it is a recognized macro ticker, preserve clean ticker symbol
+    if cleaned in MACRO_SYMBOL_MAP or symbol.upper().strip() in MACRO_SYMBOL_MAP:
+        return cleaned
+
     # If ticker has a valid quote currency attached (and isn't just the base ticker itself)
     has_valid_quote = any(
         cleaned.endswith(q) and len(cleaned) > len(q)
@@ -129,15 +133,38 @@ class PublicMarketDataFetcher:
 
     def __init__(self, timeout: float = 10.0):
         self.timeout = timeout
-        self.user_agent = "KuantraTerminal/1.2.0 (Zero-Auth Public Market Fetcher)"
+        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
 
     def _get_headers(self) -> Dict[str, str]:
         return {
             "User-Agent": self.user_agent,
             "Accept": "application/json, text/plain, */*",
-            "Accept-Encoding": "gzip, deflate",
+            "Accept-Language": "en-US,en;q=0.9",
             "Cache-Control": "no-cache"
         }
+
+    def _map_yahoo_interval_and_range(self, interval: str, period: Optional[str] = None) -> Tuple[str, str]:
+        """Maps standard interval to Yahoo interval and appropriate query range."""
+        norm_int = normalize_interval(interval)
+        if norm_int == "1m":
+            return "1m", period or "1d"
+        elif norm_int in ("3m", "5m"):
+            return "5m", period or "5d"
+        elif norm_int == "15m":
+            return "15m", period or "5d"
+        elif norm_int == "30m":
+            return "30m", period or "1mo"
+        elif norm_int in ("1h", "60m"):
+            return "60m", period or "1mo"
+        elif norm_int in ("2h", "4h", "6h", "8h", "12h"):
+            return "60m", period or "3mo"
+        elif norm_int in ("1d", "1D", "d", "3d"):
+            return "1d", period or "1y"
+        elif norm_int in ("1w", "1W", "w"):
+            return "1wk", period or "2y"
+        elif norm_int in ("1M", "M"):
+            return "1mo", period or "5y"
+        return "1d", period or "1mo"
 
     async def fetch_crypto_candles(
         self,
@@ -150,7 +177,12 @@ class PublicMarketDataFetcher:
         """
         Fetches historical OHLCV crypto candles from public Binance REST endpoint.
         Falls back automatically to Bybit public API if Binance encounters rate limiting or downtime.
+        If symbol is in MACRO_SYMBOL_MAP, routes automatically to fetch_macro_candles.
         """
+        clean_sym = symbol.upper().strip()
+        if clean_sym in MACRO_SYMBOL_MAP or symbol in MACRO_SYMBOL_MAP:
+            return await self.fetch_macro_candles(symbol=clean_sym, interval=interval)
+
         norm_sym = normalize_crypto_symbol(symbol)
         norm_int = normalize_interval(interval)
         clamped_limit = max(1, min(1000, limit))
@@ -280,39 +312,28 @@ class PublicMarketDataFetcher:
         self,
         symbol: str,
         interval: str = "1d",
-        period: str = "1mo"
+        period: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         Fetches historical macro/forex/indices candles from public Yahoo Finance v8 or Stooq.
+        Includes automatic fallback to Binance PAXGUSDT for gold (XAUUSD/GOLD).
         Zero API keys required.
         """
         clean_sym = symbol.upper().strip()
         yahoo_ticker, stooq_ticker = MACRO_SYMBOL_MAP.get(clean_sym, (clean_sym, clean_sym.lower()))
 
-        # Map interval for Yahoo Finance
-        yahoo_interval = interval
-        if interval in ("1h", "60m"):
-            yahoo_interval = "60m"
-        elif interval in ("1d", "D"):
-            yahoo_interval = "1d"
-        elif interval in ("1w", "W"):
-            yahoo_interval = "1wk"
-        elif interval in ("1M", "M"):
-            yahoo_interval = "1mo"
+        yahoo_interval, auto_range = self._map_yahoo_interval_and_range(interval, period)
 
         # 1. Try Yahoo Finance Chart API
         try:
             url = self.YAHOO_CHART_URL.format(ticker=yahoo_ticker)
             params = {
                 "interval": yahoo_interval,
-                "range": period,
+                "range": auto_range,
                 "includePrePost": "false",
                 "events": "div|split"
             }
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "application/json"
-            }
+            headers = self._get_headers()
 
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 res = await client.get(url, params=params, headers=headers)
@@ -324,9 +345,29 @@ class PublicMarketDataFetcher:
                         return candles
                 logger.warning(f"[PUBLIC-FETCHER] Yahoo Finance returned status {res.status_code} for {yahoo_ticker}")
         except Exception as e:
-            logger.warning(f"[PUBLIC-FETCHER] Yahoo Finance fetch error for {clean_sym}: {e}. Trying Stooq fallback...")
+            logger.warning(f"[PUBLIC-FETCHER] Yahoo Finance fetch error for {clean_sym} ({yahoo_ticker}): {e}")
 
-        # 2. Try Stooq Public CSV Fallback
+        # 2. Fallback for Gold (XAUUSD / GOLD): Binance PAXGUSDT
+        if clean_sym in ("XAUUSD", "GOLD"):
+            try:
+                logger.info(f"[PUBLIC-FETCHER] Attempting Binance PAXGUSDT fallback for {clean_sym}...")
+                norm_int = normalize_interval(interval)
+                params = {
+                    "symbol": "PAXGUSDT",
+                    "interval": norm_int,
+                    "limit": 500
+                }
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    res = await client.get(self.BINANCE_KLINES_URL, params=params, headers=self._get_headers())
+                    if res.status_code == 200:
+                        candles = self._parse_binance_klines(res.json())
+                        if candles:
+                            logger.info(f"[PUBLIC-FETCHER] Binance PAXGUSDT fallback succeeded for {clean_sym} ({len(candles)} candles).")
+                            return candles
+            except Exception as e:
+                logger.warning(f"[PUBLIC-FETCHER] Binance PAXGUSDT fallback error for {clean_sym}: {e}")
+
+        # 3. Try Stooq Public CSV Fallback
         try:
             stooq_url = self.STOOQ_CSV_URL.format(ticker=stooq_ticker)
             async with httpx.AsyncClient(timeout=self.timeout) as client:
