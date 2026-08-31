@@ -98,6 +98,9 @@ const NewTradeModal = lazy(() =>
 const InitialBalanceModal = lazy(() =>
   import("./components/modals/InitialBalanceModal").then((m) => ({ default: m.InitialBalanceModal }))
 );
+const CsvImportModal = lazy(() =>
+  import("./components/modals/CsvImportModal").then((m) => ({ default: m.CsvImportModal }))
+);
 const ChartVisionUploader = lazy(() =>
   import("./components/ChartVisionUploader").then((m) => ({ default: m.ChartVisionUploader }))
 );
@@ -117,6 +120,7 @@ export default function App() {
   const [activePreset, setActivePreset] = useState<string>("day_trader");
   const [replayTradeId, setReplayTradeId] = useState<string>("TRD-DEFAULT");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState<boolean>(false);
   const [isVisionModalOpen, setIsVisionModalOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isGPUModalOpen, setIsGPUModalOpen] = useState<boolean>(false);
@@ -243,6 +247,7 @@ export default function App() {
           {activeTab === "journal" && (
             <JournalView
               onOpenNewTrade={() => setIsModalOpen(true)}
+              onOpenCsvImport={() => setIsCsvModalOpen(true)}
               onReplayTrade={handleLaunchReplay}
             />
           )}
@@ -268,6 +273,7 @@ export default function App() {
             {activeTab === "virtual_journal" && (
               <VirtualizedTradeJournal
                 onOpenNewTrade={() => setIsModalOpen(true)}
+                onOpenCsvImport={() => setIsCsvModalOpen(true)}
                 onReplayTrade={handleLaunchReplay}
               />
             )}
@@ -289,6 +295,7 @@ export default function App() {
 
       <Suspense fallback={null}>
         {isModalOpen && <NewTradeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+        {isCsvModalOpen && <CsvImportModal isOpen={isCsvModalOpen} onClose={() => setIsCsvModalOpen(false)} />}
         {isInitialBalanceModalOpen && (
           <InitialBalanceModal isOpen={isInitialBalanceModalOpen} onClose={() => setIsInitialBalanceModalOpen(false)} />
         )}

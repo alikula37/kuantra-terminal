@@ -5,10 +5,11 @@ import { useTranslation } from "../context/I18nContext";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
+  onOpenCsvImport?: () => void;
   onReplayTrade?: (tradeId: string) => void;
 }
 
-export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onReplayTrade }) => {
+export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onReplayTrade }) => {
   const { t } = useTranslation();
   const { trades, setTrades } = useTradeStore();
   const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
@@ -67,6 +68,14 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
           </div>
 
           <button
+            onClick={onOpenCsvImport}
+            className="flex items-center space-x-1.5 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold px-3 py-1.5 rounded transition shadow-sm cursor-pointer"
+          >
+            <Upload className="w-3.5 h-3.5 text-accent" />
+            <span>{t("journal.import_csv")}</span>
+          </button>
+
+          <button
             onClick={onOpenNewTrade}
             className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-3 py-1.5 rounded transition shadow-md cursor-pointer"
           >
@@ -96,12 +105,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onRepl
               <span>{t("journal.manual_entry")}</span>
             </button>
             <button
-              onClick={() => { /* TODO: Implement CSV import with file picker */ }}
-              disabled
-              title="CSV import coming soon"
-              className="flex items-center space-x-1.5 px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold rounded text-xs transition cursor-not-allowed opacity-50"
+              onClick={onOpenCsvImport}
+              className="flex items-center space-x-1.5 px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold rounded text-xs transition cursor-pointer"
             >
-              <Upload className="w-4 h-4 text-slate-400" />
+              <Upload className="w-4 h-4 text-accent" />
               <span>{t("journal.import_csv")}</span>
             </button>
           </div>

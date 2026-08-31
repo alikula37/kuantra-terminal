@@ -1,6 +1,6 @@
 from app.api.webhook_tv import webhook_router
 from app.api.plugin_endpoints import router as plugin_router
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query, UploadFile, File, Response
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 import time
@@ -11,6 +11,7 @@ from app.db.sync_pipeline import sync_pipeline
 from app.db.repositories.candles_repo import candles_repo
 from app.services.market_data.public_fetcher import public_market_fetcher
 from app.services.portfolio_service import portfolio_service
+from app.services.csv_importer import csv_trade_importer
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
 from app.quant.quant_engine import quant_engine
@@ -111,6 +112,45 @@ def delete_trade(trade_id: str):
     if not success:
         raise HTTPException(status_code=404, detail="Trade not found")
     return {"status": "deleted", "id": trade_id}
+
+@router.post("/journal/import-csv")
+async def import_csv_trades(file: UploadFile = File(...)):
+    """Imports multi-format trade history from Binance, Bybit, MetaTrader, or Generic CSV."""
+    if not file.filename or not file.filename.lower().endswith((".csv", ".txt")):
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .csv or .txt file.")
+    try:
+        content = await file.read()
+        res = csv_trade_importer.parse_and_import_csv(content, file.filename)
+        summary = portfolio_service.get_portfolio_summary()
+        res["portfolio_summary"] = summary
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process CSV file: {str(e)}")
+
+@router.post("/journal/preview-csv")
+async def preview_csv_trades(file: UploadFile = File(...)):
+    """Parses and previews CSV rows without committing to the database."""
+    if not file.filename or not file.filename.lower().endswith((".csv", ".txt")):
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .csv or .txt file.")
+    try:
+        content = await file.read()
+        return csv_trade_importer.parse_and_preview_csv(content, file.filename)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse CSV preview: {str(e)}")
+
+@router.get("/journal/template-csv")
+def get_template_csv():
+    """Returns downloadable generic Kuantra CSV template."""
+    csv_data = csv_trade_importer.generate_generic_template_csv()
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=kuantra_trade_template.csv"}
+    )
 
 @router.get("/analytics/overview")
 def get_analytics_overview():

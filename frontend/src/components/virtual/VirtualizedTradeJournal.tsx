@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Trade } from "../../types";
-import { Zap, Play, Search, Filter } from "lucide-react";
+import { Zap, Play, Search, Filter, Upload } from "lucide-react";
 
 interface VirtualizedTradeJournalProps {
   onReplayTrade?: (tradeId: string) => void;
   onOpenNewTrade?: () => void;
+  onOpenCsvImport?: () => void;
 }
 
 export const VirtualizedTradeJournal: React.FC<VirtualizedTradeJournalProps> = ({
   onReplayTrade,
   onOpenNewTrade,
+  onOpenCsvImport,
 }) => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -127,10 +129,20 @@ export const VirtualizedTradeJournal: React.FC<VirtualizedTradeJournalProps> = (
             ))}
           </div>
 
+          {onOpenCsvImport && (
+            <button
+              onClick={onOpenCsvImport}
+              className="flex items-center space-x-1 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold text-xs px-2.5 py-1 rounded transition cursor-pointer"
+            >
+              <Upload className="w-3 h-3 text-accent" />
+              <span>CSV IMPORT</span>
+            </button>
+          )}
+
           {onOpenNewTrade && (
             <button
               onClick={onOpenNewTrade}
-              className="bg-accent hover:bg-sky-400 text-black font-bold text-xs px-3 py-1 rounded transition"
+              className="bg-accent hover:bg-sky-400 text-black font-bold text-xs px-3 py-1 rounded transition cursor-pointer"
             >
               + LOG TRADE
             </button>
