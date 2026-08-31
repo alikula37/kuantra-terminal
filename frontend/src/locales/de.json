@@ -126,7 +126,7 @@
     "today_realized": "HEUTE (REALISIERT)",
     "disciplined_core": "DISZIPLINIERTES CORE",
     "quant_terminal": "QUANT-TERMINAL",
-    "change_persona": "Architektur-Persona ?ndern",
+    "change_persona": "Architektur-Persona ändern",
     "set_initial_capital": "Startkapital festlegen",
     "positions": "Positionen",
     "new_trade_btn": "NEUER HANDEL"
@@ -153,7 +153,7 @@
   "equity_curve": {
     "loading": "Kumulative Kapitalkurve wird geladen...",
     "waiting_title": "Kumulative Kapitalkurve wartet auf Trades",
-    "waiting_desc": "Bisher wurden keine geschlossenen Trades erfasst. Sobald Sie Ihren ersten Trade abschlie?en, wird die Wachstumskurve hier dynamisch visualisiert.",
+    "waiting_desc": "Bisher wurden keine geschlossenen Trades erfasst. Sobald Sie Ihren ersten Trade abschließen, wird die Wachstumskurve hier dynamisch visualisiert.",
     "new_trade_action": "Neuen Trade erfassen",
     "chart_title": "KUMULATIVE KAPITAL- & DRAWDOWN-KURVE",
     "equity_growth": "Kapitalwachstum",
@@ -179,7 +179,7 @@
     "active_count": "{count} Aktive Positionen",
     "empty_title": "Keine offenen Positionen",
     "empty_desc": "Sie halten derzeit keine offenen Positionen mit Marktrisiko (Gesamtrisiko: 0.0R).",
-    "open_action": "Neue Position er?ffnen",
+    "open_action": "Neue Position eröffnen",
     "col_symbol": "Symbol",
     "col_side": "Richtung",
     "col_qty": "Menge",
@@ -189,7 +189,7 @@
     "col_pnl": "Unrealisierter PnL ($ / %)",
     "col_r": "Offenes R",
     "col_actions": "Aktion",
-    "close_btn": "Position schlie?en",
+    "close_btn": "Position schließen",
     "edit_btn": "Bearbeiten"
   },
   "heatmap": {
@@ -197,7 +197,7 @@
     "title": "90-TAGE PNL-KALENDER-HEATMAP",
     "active_days": "{count} Aktive Handelstage",
     "no_trades": "Keine Trades erfasst ($0.00)",
-    "hover_guide": "Fahren Sie mit der Maus ?ber die Datumsfelder f?r Details.",
+    "hover_guide": "Fahren Sie mit der Maus über die Datumsfelder f?r Details.",
     "empty_90_days": "In den letzten 90 Tagen wurden keine realisierten PnL-Trades erfasst.",
     "loss": "Verlust",
     "profit": "Gewinn",
@@ -208,7 +208,7 @@
     "modal_desc": "Ihre Terminal-Kapitalkennzahlen und die Wachstumskurve basieren auf diesem Startkapital.",
     "input_label": "Startguthaben ($)",
     "placeholder": "z.B. 10.000",
-    "preset_label": "Schnellauswahl-Betr?ge:",
+    "preset_label": "Schnellauswahl-Beträge:",
     "cancel": "Abbrechen",
     "save": "Speichern & Aktualisieren",
     "saving": "Wird gespeichert...",
@@ -216,7 +216,7 @@
   },
   "journal": {
     "title": "HANDELSJOURNAL",
-    "subtitle": "Institutionelle Ausf?hrungsprotokolle & Pr?fpfad",
+    "subtitle": "Institutionelle Ausführungsprotokolle & Prüfpfad",
     "empty_title": "Ihr Handelsjournal ist bereit",
     "empty_desc": "Bisher wurden keine Trades erfasst. Beginnen Sie mit der Erfassung eines Trades oder importieren Sie Ihre historische CSV-Datei.",
     "manual_entry": "Manuelle Trade-Erfassung",
@@ -236,12 +236,12 @@
     "col_time": "Einstiegszeit",
     "col_status": "Status",
     "col_actions": "Aktionen",
-    "no_matching": "Keine Trades entsprechen den gew?hlten Filterkriterien.",
+    "no_matching": "Keine Trades entsprechen den gewählten Filterkriterien.",
     "replay_btn": "Wiedergabe"
   },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE-SCORECARD",
-    "subtitle": "Institutionelle Erwartung, risikobereinigte Kennzahlen & statistische Qualit?t",
+    "subtitle": "Institutionelle Erwartung, risikobereinigte Kennzahlen & statistische Qualität",
     "total_closed": "GESAMTE ABGESCHLOSSENE TRADES: {count}",
     "waiting_title": "Quantitative Analytik wartet auf Trades",
     "waiting_desc": "Mindestens 1 abgeschlossener Trade ist erforderlich, um MAE/MFE und Quant-Scorecard-Kennzahlen zu berechnen.",
