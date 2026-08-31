@@ -203,3 +203,59 @@ class TestPortfolioAnalyticsService:
         res_heat = client.get("/api/v1/portfolio/heatmap")
         assert res_heat.status_code == 200
         assert isinstance(res_heat.json(), list)
+
+        # 5. POST /api/v1/portfolio/set-initial-balance
+        res_set = client.post("/api/v1/portfolio/set-initial-balance", json={"initial_balance": 25000.0})
+        assert res_set.status_code == 200
+        data_set = res_set.json()
+        assert data_set["initial_balance"] == 25000.0
+        assert data_set["total_equity"] >= 25000.0
+
+    def test_clean_startup_zero_state(self):
+        """Validates that a fresh installation with 0 trades returns exact zero-state metrics."""
+        service = PortfolioAnalyticsService(default_initial_balance=0.0)
+        with patch.object(sqlite_driver, "list_trades", return_value=[]):
+            summary = service.get_portfolio_summary()
+            assert summary["initial_balance"] == 0.0
+            assert summary["total_equity"] == 0.0
+            assert summary["net_pnl"] == 0.0
+            assert summary["net_pnl_pct"] == 0.0
+            assert summary["today_pnl"] == 0.0
+            assert summary["today_pnl_pct"] == 0.0
+            assert summary["today_trades_count"] == {"wins": 0, "losses": 0, "total": 0}
+            assert summary["open_risk_usd"] == 0.0
+            assert summary["open_risk_r"] == 0.0
+            assert summary["active_positions_count"] == 0
+            assert summary["total_closed_trades"] == 0
+            assert summary["win_rate"] == 0.0
+            assert summary["profit_factor"] == 0.0
+            assert summary["avg_r_multiple"] == 0.0
+            assert summary["max_drawdown_usd"] == 0.0
+            assert summary["max_drawdown_pct"] == 0.0
+
+            breakdown = service.get_multi_asset_breakdown()
+            assert breakdown == []
+
+            heatmap = service.get_daily_pnl_heatmap()
+            assert heatmap == []
+
+    def test_set_user_initial_balance(self):
+        """Verifies setting custom balance accurately updates total_equity and persists across service reloads."""
+        service = PortfolioAnalyticsService()
+        with patch.object(sqlite_driver, "list_trades", return_value=[]):
+            res = service.set_initial_balance(12500.0)
+            assert res["initial_balance"] == 12500.0
+            assert res["total_equity"] == 12500.0
+            assert res["net_pnl"] == 0.0
+
+            # Reload summary
+            reloaded = service.get_portfolio_summary()
+            assert reloaded["initial_balance"] == 12500.0
+            assert reloaded["total_equity"] == 12500.0
+
+    def test_zero_division_guard_all_metrics(self):
+        """Validates that Win Rate, Profit Factor, Max Drawdown, and Avg R never produce NaN or inf with zero closed trades."""
+        service = PortfolioAnalyticsService(default_initial_balance=0.0)
+        with patch.object(sqlite_driver, "list_trades", return_value=[]):
+            summary = service.get_portfolio_summary()
+            assert not any(str(v).lower() in ("nan", "inf", "-inf") for v in summary.values() if isinstance(v, (int, float)))
