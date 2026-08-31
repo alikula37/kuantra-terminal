@@ -19,7 +19,9 @@ class SettingsService:
         "active_theme": "dark",
         "active_locale": "en",
         "trading_mode": "paper",
-        "paper_balance": 100000.0,
+        "user_initial_balance": 0.0,
+        "initial_balance": 0.0,
+        "paper_balance": 0.0,
         "ai_mode": "local_gguf"
     }
 
@@ -31,11 +33,11 @@ class SettingsService:
         for k, v in raw_settings.items():
             if k == "first_boot_completed":
                 settings["first_boot_completed"] = str(v).lower() in ("true", "1", '"true"')
-            elif k == "paper_balance":
+            elif k in ("user_initial_balance", "initial_balance", "paper_balance"):
                 try:
-                    settings["paper_balance"] = float(v)
+                    settings[k] = float(v)
                 except (ValueError, TypeError):
-                    settings["paper_balance"] = 100000.0
+                    settings[k] = 0.0
             elif k in self.DEFAULT_SETTINGS:
                 try:
                     # Parse json if stored with quotes
@@ -43,8 +45,15 @@ class SettingsService:
                     settings[k] = parsed
                 except Exception:
                     settings[k] = v
+            else:
+                settings[k] = v
 
         return settings
+
+    def get_setting(self, key: str, default: Any = None) -> Any:
+        """Retrieves a single setting key with fallback."""
+        settings = self.get_settings()
+        return settings.get(key, default)
 
     def update_settings(self, updates: Dict[str, Any]) -> Dict[str, Any]:
         """Persists updated configuration into SQLite user_settings."""
