@@ -9,6 +9,7 @@ import json
 import time
 import re
 import logging
+import os
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Header, HTTPException, Request
@@ -18,7 +19,7 @@ logger = logging.getLogger("webhook_tv")
 
 webhook_router = APIRouter(tags=["Webhook"])
 
-WEBHOOK_SECRET_KEY = "kuantra_secure_tv_webhook_secret_key_2026"
+WEBHOOK_SECRET_KEY = os.environ.get("KUANTRA_WEBHOOK_SECRET", "change_me_in_production")
 
 class TradingViewSignalPayload(BaseModel):
     symbol: str

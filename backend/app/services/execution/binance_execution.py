@@ -27,6 +27,7 @@ class BinanceExecutionClient:
 
         order_id = f"BIN-{int(time.time()*1000)}"
         logger.info(f"[BINANCE] Executing {side} {qty} {symbol} @ {price} ({order_type})")
+        logger.warning("[BINANCE] PAPER MODE: No live API call made. Order simulated locally.")
 
         return {
             "exchange": "BINANCE",
@@ -36,7 +37,7 @@ class BinanceExecutionClient:
             "qty": qty,
             "price": price,
             "status": "FILLED",
-            "mode": "LIVE_DIRECT" if key else "PAPER_SIMULATED",
+            "mode": "PAPER_SIMULATED",
             "timestamp": time.time()
         }
 

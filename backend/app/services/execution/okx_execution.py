@@ -26,6 +26,7 @@ class OkxExecutionClient:
         key, secret, _ = self.get_credentials()
         order_id = f"OKX-{int(time.time()*1000)}"
         logger.info(f"[OKX] Executing {side} {qty} {symbol} @ {price}")
+        logger.warning("[OKX] PAPER MODE: No live API call made. Order simulated locally.")
 
         return {
             "exchange": "OKX",
@@ -35,7 +36,7 @@ class OkxExecutionClient:
             "qty": qty,
             "price": price,
             "status": "FILLED",
-            "mode": "LIVE_DIRECT" if key else "PAPER_SIMULATED",
+            "mode": "PAPER_SIMULATED",
             "timestamp": time.time()
         }
 

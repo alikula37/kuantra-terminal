@@ -128,7 +128,7 @@ class QuickFixDmaClient:
         }
         raw_fix = self.encode_fix_message(msg_type="D", fields=fields)
 
-        # 3. Simulate microsecond gateway match & Execution Report (35=8)
+        # 3. Paper mode simulated microsecond gateway match & Execution Report (35=8)
         t_end = time.perf_counter()
         self.round_trip_latency_us = round((t_end - t_start) * 1_000_000, 1)
 
@@ -145,6 +145,7 @@ class QuickFixDmaClient:
             "round_trip_latency_us": max(120.0, self.round_trip_latency_us),
             "raw_fix_wire": raw_fix.replace(SOH, "|"),
             "risk_metadata": risk_meta,
+            "simulated": True,
             "timestamp": time.time()
         }
 
