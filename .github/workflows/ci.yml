@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   test-and-lint:
     name: Test & Lint (${{ matrix.os }})
@@ -54,7 +57,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
-          pip install cryptography alembic pytest pytest-asyncio anyio psutil httpx pyyaml
+          pip install cryptography alembic pytest pytest-asyncio anyio psutil httpx pyyaml pyinstaller
 
       - name: Execute Comprehensive Pytest Suite
         run: |
@@ -65,3 +68,71 @@ jobs:
           cd frontend
           npm install
           npm run build
+
+      - name: Build macOS Lite Sidecar & Tauri DMG Bundle
+        if: matrix.os == 'macos-latest'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== COMPILING MACOS LITE CORE SIDECAR ==="
+          mkdir -p src-tauri/binaries
+          python -m PyInstaller \
+            --onefile \
+            --clean \
+            --name "kuantra-backend-aarch64-apple-darwin" \
+            --distpath "src-tauri/binaries" \
+            --workpath "backend/build" \
+            --specpath "backend" \
+            --exclude-module duckdb \
+            --exclude-module pandas \
+            --exclude-module numpy \
+            --exclude-module scipy \
+            --exclude-module torch \
+            --exclude-module bleak \
+            --exclude-module web3 \
+            --exclude-module quickfix \
+            --exclude-module PIL \
+            --exclude-module matplotlib \
+            --exclude-module tkinter \
+            --exclude-module pytest \
+            --exclude-module unittest \
+            --exclude-module doctest \
+            --exclude-module test \
+            --exclude-module alembic.testing \
+            --exclude-module setuptools \
+            --exclude-module pkg_resources \
+            --collect-submodules app \
+            --collect-submodules starlette \
+            --collect-submodules fastapi \
+            --collect-submodules uvicorn \
+            --collect-submodules pydantic \
+            --collect-submodules cryptography \
+            backend/main.py
+          
+          chmod +x src-tauri/binaries/kuantra-backend-aarch64-apple-darwin
+          echo "Sidecar binary size: $(stat -f%z src-tauri/binaries/kuantra-backend-aarch64-apple-darwin) bytes"
+
+          echo "=== BUILDING NATIVE MACOS DMG BUNDLE ==="
+          npm install
+          npx tauri build --bundles dmg
+
+          echo "=== PACKAGING & MANIFEST GENERATION ==="
+          mkdir -p dist-binaries
+          DMG_PATH=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" | head -n 1)
+          echo "Generated DMG at: $DMG_PATH"
+          ls -lh "$DMG_PATH"
+
+          cp "$DMG_PATH" dist-binaries/Kuantra-Terminal-1.2.0-aarch64.dmg
+          DMG_SIZE=$(stat -f%z "dist-binaries/Kuantra-Terminal-1.2.0-aarch64.dmg")
+          echo "Real DMG Size: $DMG_SIZE bytes"
+
+          if [ "$DMG_SIZE" -gt 36700160 ]; then
+            echo "ERROR: DMG size exceeds 35MB limit!"
+            exit 1
+          fi
+
+          python scripts/generate_release_manifest.py
+
+          echo "=== PUBLISHING GENUINE DMG TO GITHUB RELEASE ==="
+          gh release upload v1.2.0-modular dist-binaries/Kuantra-Terminal-1.2.0-aarch64.dmg dist-binaries/MANIFEST.json --clobber
+          echo "[+] Successfully published Kuantra-Terminal-1.2.0-aarch64.dmg to GitHub Release v1.2.0-modular"
