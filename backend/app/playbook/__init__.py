@@ -1,1 +1,1 @@
-﻿"""Strategy Playbook & Discipline Engine for Kuantra Terminal."""
+"""Strategy Playbook & Discipline Engine for Kuantra Terminal."""

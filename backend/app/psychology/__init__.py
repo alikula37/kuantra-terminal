@@ -1,1 +1,1 @@
-﻿"""Behavioral Psychology & Tilt Engine package for Kuantra Terminal."""
+"""Behavioral Psychology & Tilt Engine package for Kuantra Terminal."""

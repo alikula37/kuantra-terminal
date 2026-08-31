@@ -1,1 +1,1 @@
-﻿"""Services package for Kuantra Terminal."""
+"""Services package for Kuantra Terminal."""

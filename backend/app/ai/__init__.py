@@ -1,1 +1,1 @@
-﻿"""AI & Vision OCR Services package for Kuantra Terminal."""
+"""AI & Vision OCR Services package for Kuantra Terminal."""

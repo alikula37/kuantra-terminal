@@ -1,1 +1,1 @@
-﻿"""Trade Replay Engine package for Kuantra Terminal."""
+"""Trade Replay Engine package for Kuantra Terminal."""
