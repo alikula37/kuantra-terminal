@@ -39,6 +39,20 @@ class TestPhase14P2PCopyAndMultiAccount:
             endpoint="10.0.0.5:9001",
             role="FOLLOWER"
         )
+        node.add_peer(
+            peer_id="12D3KooW-Slave02",
+            node_name="Slave-02",
+            pubkey="pubkey-slave-02",
+            endpoint="10.0.0.6:9002",
+            role="FOLLOWER"
+        )
+        node.add_peer(
+            peer_id="12D3KooW-Slave03",
+            node_name="Slave-03",
+            pubkey="pubkey-slave-03",
+            endpoint="10.0.0.7:9003",
+            role="FOLLOWER"
+        )
         assert len(node.peers) >= 3
         st = node.get_mesh_status()
         assert st["is_active"] is True

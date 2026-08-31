@@ -104,7 +104,10 @@ class TestPhase15MobileAndFinalRelease:
         assert order_res["order"]["exchange"] == "BINANCE"
 
     def test_final_v2_production_tauri_release_manifest(self):
-        with open("src-tauri/tauri.conf.json", "r", encoding="utf-8") as f:
+        import pathlib
+        repo_root = pathlib.Path(__file__).resolve().parent.parent.parent
+        tauri_conf_path = repo_root / "src-tauri" / "tauri.conf.json"
+        with open(tauri_conf_path, "r", encoding="utf-8") as f:
             tauri_config = json.load(f)
 
         assert tauri_config["productName"] == "Kuantra Terminal"
