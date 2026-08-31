@@ -92,30 +92,4 @@ export function useWebSocket() {
       }
     };
   }, [connect]);
-
-  useEffect(() => {
-    let mockInterval: number | null = null;
-    const checkMock = () => {
-      const isConnected = useMarketStore.getState().isConnected;
-      if (!isConnected && !mockInterval) {
-        let basePrice = 65200.0;
-        mockInterval = window.setInterval(() => {
-          if (!useMarketStore.getState().isConnected) {
-            const delta = (Math.random() - 0.49) * 15;
-            basePrice += delta;
-            updateTick(Number(basePrice.toFixed(2)), Math.floor(Math.random() * 15) + 8, Date.now(), Number((Math.random() * 1.5).toFixed(4)));
-          }
-        }, 150);
-      } else if (isConnected && mockInterval) {
-        clearInterval(mockInterval);
-        mockInterval = null;
-      }
-    };
-
-    const interval = setInterval(checkMock, 1000);
-    return () => {
-      clearInterval(interval);
-      if (mockInterval) clearInterval(mockInterval);
-    };
-  }, [updateTick]);
 }
