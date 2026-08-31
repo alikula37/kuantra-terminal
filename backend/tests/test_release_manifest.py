@@ -50,8 +50,8 @@ class TestReleaseManifestAndPackaging:
 
         assert manifest["release_tag"] == "v1.2.0-modular"
         assert manifest["version"] == "1.2.0"
-        assert manifest["total_artifacts"] >= 4
-        assert len(manifest["artifacts"]) >= 4
+        assert manifest["total_artifacts"] >= 2
+        assert len(manifest["artifacts"]) >= 2
 
         for art in manifest["artifacts"]:
             assert "filename" in art

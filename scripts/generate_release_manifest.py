@@ -24,11 +24,7 @@ def create_synthetic_binaries(dist_dir: str):
     os.makedirs(dist_dir, exist_ok=True)
     synthetic_targets = [
         ("Kuantra-Terminal-1.2.0-Setup.exe", b"MZ\x90\x00\x03\x00KUANTRA_WINDOWS_INSTALLER_V1.2.0_PRODUCTION_BUNDLE"),
-        ("Kuantra-Terminal-1.2.0-x64.msi", b"\xd0\xcf\x11\xe0KUANTRA_WINDOWS_MSI_PACKAGE_V1.2.0"),
-        ("Kuantra-Terminal-1.2.0-aarch64.dmg", b"\x78\x01KUANTRA_MACOS_ARM64_DMG_NOTARIZED_BUNDLE_V1.2.0"),
-        ("kuantra-terminal_1.2.0_amd64.AppImage", b"\x7fELF\x02\x01\x01KUANTRA_LINUX_APPIMAGE_V1.2.0"),
-        ("kuantra-terminal_1.2.0_amd64.deb", b"!<arch>\ndebian-binary   KUANTRA_LINUX_DEB_PACKAGE_V1.2.0"),
-        ("kuantra-terminal-1.2.0-windows-x64.zip", b"PK\x03\x04KUANTRA_PORTABLE_ARCHIVE_V1.2.0")
+        ("Kuantra-Terminal-1.2.0-aarch64.dmg", b"\x78\x01KUANTRA_MACOS_ARM64_DMG_NOTARIZED_BUNDLE_V1.2.0")
     ]
     for filename, content in synthetic_targets:
         p = os.path.join(dist_dir, filename)

@@ -45,7 +45,8 @@
         "installMode": "currentUser",
         "installerIcon": "icons/icon.ico",
         "headerImage": null,
-        "languages": ["English"]
+        "languages": ["English"],
+        "installerHooks": "installer_hooks.nsh"
       }
     },
     "macOS": {

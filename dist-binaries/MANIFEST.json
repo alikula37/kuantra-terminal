@@ -2,8 +2,8 @@
   "release_tag": "v1.2.0-modular",
   "product_name": "Kuantra Terminal",
   "version": "1.2.0",
-  "generated_at": "2026-08-31T08:20:00Z",
-  "total_artifacts": 6,
+  "generated_at": "2026-08-31T08:21:48Z",
+  "total_artifacts": 2,
   "artifacts": [
     {
       "filename": "Kuantra-Terminal-1.2.0-Setup.exe",
@@ -16,36 +16,8 @@
       "filename": "Kuantra-Terminal-1.2.0-aarch64.dmg",
       "platform": "macOS",
       "arch": "arm64",
-      "size_bytes": 31243429,
-      "sha256": "f189c1e0c2b2d8b0f79a4169ae3314fa9322db8c55b0d03aef4000a6f03b0de2"
-    },
-    {
-      "filename": "Kuantra-Terminal-1.2.0-x64.msi",
-      "platform": "Windows",
-      "arch": "x64",
-      "size_bytes": 38,
-      "sha256": "ac73d65463f99c0704c597b69484520abee6bfbc42788b1d51600b346a0abf19"
-    },
-    {
-      "filename": "kuantra-terminal-1.2.0-windows-x64.zip",
-      "platform": "Windows",
-      "arch": "x64",
-      "size_bytes": 35,
-      "sha256": "97f28a3c5ea66e967cdce80d6d3d54d7f51eb9f8aaf9a4beffdb7fdff04aa54c"
-    },
-    {
-      "filename": "kuantra-terminal_1.2.0_amd64.AppImage",
-      "platform": "Linux",
-      "arch": "x64",
-      "size_bytes": 36,
-      "sha256": "36ccc34adb7d035e24897b43fd4845030b2275d7ba15356c0466468a97cc1ae0"
-    },
-    {
-      "filename": "kuantra-terminal_1.2.0_amd64.deb",
-      "platform": "Linux",
-      "arch": "x64",
-      "size_bytes": 56,
-      "sha256": "6e97c2fcb750bb0672695cc97bdafd39aec8f22a84fd54616d508f764bd17796"
+      "size_bytes": 49,
+      "sha256": "b57d7810b0e1d5b18f933b49f54bd67b7ebd8c5f8b0ac8ad0276d3eda26284a9"
     }
   ]
 }

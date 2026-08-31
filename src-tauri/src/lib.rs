@@ -124,7 +124,7 @@ pub fn run() {
         port: port_state.clone(),
     };
 
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -139,6 +139,27 @@ pub fn run() {
             spawn_sidecar(app.handle(), port_state);
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running Kuantra Terminal application");
+        .build(tauri::generate_context!())
+        .expect("error while building Kuantra Terminal application");
+
+    app.run(|_app_handle, event| {
+        if let tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit = event {
+            println!("[-] Kuantra Terminal exiting - running process cleanup hooks...");
+            #[cfg(unix)]
+            {
+                use std::process::Command;
+                let _ = Command::new("pkill").arg("-f").arg("kuantra-backend").output();
+            }
+            #[cfg(windows)]
+            {
+                use std::process::Command;
+                let _ = Command::new("taskkill")
+                    .args(["/F", "/IM", "kuantra-backend.exe", "/T"])
+                    .output();
+                let _ = Command::new("taskkill")
+                    .args(["/F", "/IM", "kuantra-backend-x86_64-pc-windows-msvc.exe", "/T"])
+                    .output();
+            }
+        }
+    });
 }
