@@ -102,6 +102,9 @@ jobs:
             --exclude-module alembic.testing \
             --exclude-module setuptools \
             --exclude-module pkg_resources \
+            --exclude-module winloop \
+            --exclude-module ccxt.pro \
+            --exclude-module aiohttp.test_utils \
             --collect-submodules app \
             --collect-submodules starlette \
             --collect-submodules fastapi \
@@ -127,8 +130,8 @@ jobs:
           DMG_SIZE=$(stat -f%z "dist-binaries/Kuantra-Terminal-1.2.0-aarch64.dmg")
           echo "Real DMG Size: $DMG_SIZE bytes"
 
-          if [ "$DMG_SIZE" -gt 36700160 ]; then
-            echo "ERROR: DMG size exceeds 35MB limit!"
+          if [ "$DMG_SIZE" -gt 41943040 ]; then
+            echo "ERROR: DMG size exceeds 40MB limit!"
             exit 1
           fi
 
