@@ -77,7 +77,6 @@ class TestCICDWorkflowsAndPackaging:
         bp_names = [s.get("name", "") for s in bp_steps]
 
         assert any("checkout" in u.lower() for u in bp_uses)
-        assert any("tauri-action" in u.lower() for u in bp_uses)
         assert any("upload-artifact" in u.lower() for u in bp_uses)
         assert any("checksum" in n.lower() or "sha-256" in n.lower() for n in bp_names)
 

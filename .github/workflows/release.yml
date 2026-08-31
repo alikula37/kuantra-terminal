@@ -115,22 +115,40 @@ jobs:
             chmod +x "src-tauri/binaries/${{ matrix.sidecar_name }}" || true
           fi
 
-      - name: Build Frontend Production Artifacts
+      - name: Build Frontend & Install Root Tooling
+        shell: bash
         run: |
+          npm install
           cd frontend
           npm install
           npm run build
 
-      - name: Build Tauri Desktop Package Bundle
-        uses: tauri-apps/tauri-action@v0
+      - name: Build Tauri Bundle (Windows NSIS)
+        if: matrix.os == 'windows-latest'
+        shell: bash
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Kuantra Terminal ${{ github.ref_name }}"
-          releaseBody: "See RELEASE_NOTES.md for full institutional changelog."
-          releaseDraft: true
-          prerelease: false
+        run: |
+          npx tauri build --bundles nsis
+
+      - name: Build Tauri Bundle (macOS DMG)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx tauri build --bundles dmg
+
+      - name: Build Tauri Bundle (Linux AppImage)
+        if: matrix.os == 'ubuntu-22.04'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx tauri build --bundles appimage
 
       - name: Stage & Calculate SHA-256 Artifact Checksums
         shell: bash
@@ -184,11 +202,14 @@ jobs:
 
       - name: Publish Official Release on GitHub
         uses: softprops/action-gh-release@v2
-        with:
-          body_path: RELEASE_NOTES.md
-          append_body: true
-          draft: false
-          files: |
-            dist-release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Kuantra Terminal ${{ github.ref_name }}"
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: false
+          files: |
+            dist-release/*
