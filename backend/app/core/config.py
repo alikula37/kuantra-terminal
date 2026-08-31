@@ -6,7 +6,7 @@ load_dotenv()
 
 class AppSettings(BaseModel):
     app_name: str = "Kuantra Terminal Backend"
-    version: str = "1.2.0"
+    version: str = "1.3.0"
     debug: bool = True
     host: str = "127.0.0.1"
     port: int = 8000

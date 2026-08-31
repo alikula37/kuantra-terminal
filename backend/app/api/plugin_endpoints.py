@@ -107,7 +107,7 @@ def get_modstore_catalog():
         }
     ]
     return {
-        "catalog_version": "1.2.0",
+        "catalog_version": "1.3.0",
         "total_available": len(catalog),
         "modules": catalog
     }

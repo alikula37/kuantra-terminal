@@ -48,8 +48,8 @@ class TestReleaseManifestAndPackaging:
         with open(manifest_file, "r", encoding="utf-8") as f:
             manifest = json.load(f)
 
-        assert manifest["release_tag"] == "v1.2.0-modular"
-        assert manifest["version"] == "1.2.0"
+        assert manifest["release_tag"] in ("v1.2.0-modular", "v1.3.0-production")
+        assert manifest["version"] in ("1.2.0", "1.3.0")
         assert manifest["total_artifacts"] >= 2
         assert len(manifest["artifacts"]) >= 2
 
@@ -62,7 +62,7 @@ class TestReleaseManifestAndPackaging:
             assert art["size_bytes"] > 0
 
     def test_version_sync_across_manifests(self, root_dir):
-        target_version = "1.2.0"
+        target_version = "1.3.0"
 
         # 1. Root package.json
         root_pkg_path = os.path.join(root_dir, "package.json")

@@ -23,8 +23,8 @@ def create_synthetic_binaries(dist_dir: str):
     """Creates deterministic synthetic binaries for CI / test verification."""
     os.makedirs(dist_dir, exist_ok=True)
     synthetic_targets = [
-        ("Kuantra-Terminal-1.2.0-Setup.exe", b"MZ\x90\x00\x03\x00KUANTRA_WINDOWS_INSTALLER_V1.2.0_PRODUCTION_BUNDLE"),
-        ("Kuantra-Terminal-1.2.0-aarch64.dmg", b"\x78\x01KUANTRA_MACOS_ARM64_DMG_NOTARIZED_BUNDLE_V1.2.0")
+        ("Kuantra-Terminal-1.3.0-Setup.exe", b"MZ\x90\x00\x03\x00KUANTRA_WINDOWS_INSTALLER_V1.3.0_PRODUCTION_BUNDLE"),
+        ("Kuantra-Terminal-1.3.0-aarch64.dmg", b"\x78\x01KUANTRA_MACOS_ARM64_DMG_NOTARIZED_BUNDLE_V1.3.0")
     ]
     for filename, content in synthetic_targets:
         p = os.path.join(dist_dir, filename)
@@ -75,9 +75,9 @@ def generate_manifest(dry_run: bool = False) -> Dict[str, Any]:
         })
 
     manifest_data = {
-        "release_tag": "v1.2.0-modular",
+        "release_tag": "v1.3.0-production",
         "product_name": "Kuantra Terminal",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_artifacts": len(artifacts),
         "artifacts": artifacts
@@ -90,7 +90,7 @@ def generate_manifest(dry_run: bool = False) -> Dict[str, Any]:
 
     # Print Institutional Markdown Summary Table
     print("\n==================================================================================================")
-    print("                      KUANTRA TERMINAL v1.2.0-modular RELEASE MANIFEST                   ")
+    print("                      KUANTRA TERMINAL v1.3.0-production RELEASE MANIFEST                   ")
     print("==================================================================================================")
     print(f"Release Tag: {manifest_data['release_tag']} | Generated: {manifest_data['generated_at']}")
     print("--------------------------------------------------------------------------------------------------")

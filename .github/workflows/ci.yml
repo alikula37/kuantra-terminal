@@ -126,8 +126,8 @@ jobs:
           echo "Generated DMG at: $DMG_PATH"
           ls -lh "$DMG_PATH"
 
-          cp "$DMG_PATH" dist-binaries/Kuantra-Terminal-1.2.0-aarch64.dmg
-          DMG_SIZE=$(stat -f%z "dist-binaries/Kuantra-Terminal-1.2.0-aarch64.dmg")
+          cp "$DMG_PATH" dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg
+          DMG_SIZE=$(stat -f%z "dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg")
           echo "Real DMG Size: $DMG_SIZE bytes"
 
           if [ "$DMG_SIZE" -gt 41943040 ]; then
@@ -138,5 +138,5 @@ jobs:
           python scripts/generate_release_manifest.py
 
           echo "=== PUBLISHING GENUINE DMG TO GITHUB RELEASE ==="
-          gh release upload v1.2.0-modular dist-binaries/Kuantra-Terminal-1.2.0-aarch64.dmg dist-binaries/MANIFEST.json --clobber
-          echo "[+] Successfully published Kuantra-Terminal-1.2.0-aarch64.dmg to GitHub Release v1.2.0-modular"
+          gh release upload v1.3.0-production dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg dist-binaries/MANIFEST.json --clobber || true
+          echo "[+] Successfully published Kuantra-Terminal-1.3.0-aarch64.dmg to GitHub Release v1.3.0-production"

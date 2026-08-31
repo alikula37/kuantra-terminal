@@ -89,7 +89,7 @@ class TestModStoreFrontendSync:
         res = client.get("/api/v1/plugins/modstore-catalog")
         assert res.status_code == 200
         data = res.json()
-        assert data["catalog_version"] in ("1.1.0", "1.2.0")
+        assert data["catalog_version"] in ("1.1.0", "1.2.0", "1.3.0")
         assert len(data["modules"]) >= 3
 
         module_ids = [m["id"] for m in data["modules"]]
