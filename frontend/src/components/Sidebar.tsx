@@ -108,10 +108,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const { isPluginActive, activePlugins, isLiteMode } = usePluginRegistry();
   const { t } = useTranslation();
 
-  const visibleNavItems = [
-    ...CORE_NAV_ITEMS,
-    ...PLUGIN_NAV_ITEMS.filter((item) => isPluginActive(item.pluginId))
-  ];
+  const visibleNavItems = isLiteMode
+    ? CORE_NAV_ITEMS
+    : [
+        ...CORE_NAV_ITEMS,
+        ...PLUGIN_NAV_ITEMS.filter((item) => isPluginActive(item.pluginId))
+      ];
 
   return (
     <aside className="w-56 bg-[#0d121c] border-r border-surface-border flex flex-col justify-between select-none shrink-0">
@@ -143,8 +145,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           );
         })}
 
-        {/* Dynamic Extension Slot for 3rd-party/ModStore plugins */}
-        <ExtensionSlot slot="sidebar" />
+        {/* Dynamic Extension Slot for 3rd-party/ModStore plugins (only in non-lite modes) */}
+        {!isLiteMode && <ExtensionSlot slot="sidebar" />}
       </div>
 
       <div className="p-3 border-t border-surface-border space-y-2 bg-[#090d14]/60">

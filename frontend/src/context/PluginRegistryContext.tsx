@@ -148,7 +148,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           author: "Kuantra Core Team",
           heavy_dependencies: ["torch", "llama_cpp"],
           router_prefix: "/api/v1/plugins/ai-swarm",
-          is_active: true,
+          is_active: targetActiveSet.has("plugin_ai_swarm"),
           ram_footprint_mb: 45.0,
           persona_tags: ["defai", "institutional", "full"]
         },
@@ -161,7 +161,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           author: "Kuantra Core Team",
           heavy_dependencies: ["httpx"],
           router_prefix: "/api/v1/plugins/mcp",
-          is_active: true,
+          is_active: targetActiveSet.has("plugin_mcp_gateway"),
           ram_footprint_mb: 12.0,
           persona_tags: ["defai", "full"]
         },
@@ -174,7 +174,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           author: "Kuantra Core Team",
           heavy_dependencies: [],
           router_prefix: "/api/v1/plugins/reverse-skill",
-          is_active: true,
+          is_active: targetActiveSet.has("plugin_reverse_skill"),
           ram_footprint_mb: 8.5,
           persona_tags: ["institutional", "full"]
         },
@@ -187,7 +187,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           author: "Kuantra Core Team",
           heavy_dependencies: ["web3"],
           router_prefix: "/api/v1/plugins/dex-arbitrage",
-          is_active: true,
+          is_active: targetActiveSet.has("plugin_dex_arbitrage"),
           ram_footprint_mb: 22.0,
           persona_tags: ["defai", "full"]
         },
@@ -200,7 +200,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           author: "Kuantra Core Team",
           heavy_dependencies: ["quickfix"],
           router_prefix: "/api/v1/plugins/fix-dma",
-          is_active: true,
+          is_active: targetActiveSet.has("plugin_fix_dma"),
           ram_footprint_mb: 28.0,
           persona_tags: ["institutional", "full"]
         },
@@ -213,7 +213,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           author: "Kuantra Core Team",
           heavy_dependencies: ["bleak"],
           router_prefix: "/api/v1/plugins/biometrics",
-          is_active: true,
+          is_active: targetActiveSet.has("plugin_biometrics"),
           ram_footprint_mb: 16.0,
           persona_tags: ["institutional", "full"]
         }
@@ -229,10 +229,11 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
 
   const isPluginActive = useCallback(
     (pluginId: string) => {
+      if (isLiteMode) return false;
       const p = plugins.find((item) => item.plugin_id === pluginId);
       return p ? p.is_active : false;
     },
-    [plugins]
+    [plugins, isLiteMode]
   );
 
   const togglePlugin = useCallback(
