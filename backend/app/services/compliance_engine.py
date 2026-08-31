@@ -13,11 +13,18 @@ from app.websocket.connection_manager import ws_manager
 
 logger = logging.getLogger(__name__)
 
+def get_default_account_size() -> float:
+    try:
+        val = sqlite_driver.get_setting("user_initial_balance", default="100000.0")
+        return float(val) if val is not None else 100000.0
+    except Exception:
+        return 100000.0
+
 class ComplianceConfig(BaseModel):
-    account_size: float = 100000.0
-    daily_loss_limit_pct: float = 5.0      # 5% = $5,000 on $100k
-    max_drawdown_pct: float = 10.0         # 10% = $10,000 on $100k
-    profit_target_pct: float = 10.0        # 10% = $10,000 profit target
+    account_size: float = Field(default_factory=get_default_account_size)
+    daily_loss_limit_pct: float = 5.0      # 5% daily limit
+    max_drawdown_pct: float = 10.0         # 10% max drawdown
+    profit_target_pct: float = 10.0        # 10% profit target
     min_trading_days: int = 5
     trailing_drawdown: bool = True
     require_stop_loss: bool = True

@@ -26,8 +26,23 @@ class VisionChartParser:
         """
         # 1. OCR Text extraction heuristics
         extracted_text = hint_text or ""
-        if image_data and not extracted_text:
-            extracted_text = cls._simulate_ocr_extraction(image_data)
+        if not extracted_text:
+            if image_data:
+                return {
+                    "status": "UNAVAILABLE",
+                    "message": "OCR Engine not configured. Please use manual trade ticket or CSV import.",
+                    "symbol": None,
+                    "side": None,
+                    "entry_price": None,
+                    "stop_loss": None,
+                    "take_profit": None,
+                    "confidence_score": 0.0
+                }
+            return {
+                "status": "NO_INPUT",
+                "message": "No chart image or hint text provided for extraction.",
+                "confidence_score": 0.0
+            }
 
         # 2. Extract Asset Symbol
         symbol = cls._extract_symbol(extracted_text)
@@ -189,11 +204,5 @@ class VisionChartParser:
 
         return entry, sl, tp
 
-    @classmethod
-    def _simulate_ocr_extraction(cls, base64_str: str) -> str:
-        """Fallback simulation decoding image payload tags or embedded metadata."""
-        if "SHORT" in base64_str.upper() or "SELL" in base64_str.upper():
-            return "BTCUSDT 5m Short Position Entry: 64850.00 Stop: 65400.00 Target: 63200.00 Risk/Reward: 3.0"
-        return "BTCUSDT 15m Long Position Entry: 64200.00 Stop: 63600.00 Target: 65800.00 Risk/Reward: 2.67"
 
 vision_chart_parser = VisionChartParser()

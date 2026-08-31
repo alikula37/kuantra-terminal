@@ -11,6 +11,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from app.services.p2p.mesh_node import p2p_mesh_node
 from app.services.execution.order_router import order_router
+from app.db.sqlite_driver import sqlite_driver
 
 logger = logging.getLogger("copy_engine")
 
@@ -19,9 +20,13 @@ class ZeroKnowledgeCopyEngine:
 
     def __init__(self):
         self.signal_history: List[Dict[str, Any]] = []
+        try:
+            init_bal = float(sqlite_driver.get_setting("user_initial_balance", default="0.0") or 0.0)
+        except Exception:
+            init_bal = 0.0
         self.follower_settings = {
             "is_auto_copy_enabled": True,
-            "follower_equity": 100000.0,
+            "follower_equity": init_bal if init_bal > 0 else 10000.0,
             "max_risk_per_trade_pct": 2.0,
             "allowed_masters": ["12D3KooW-AlphaQuant", p2p_mesh_node.node_id]
         }

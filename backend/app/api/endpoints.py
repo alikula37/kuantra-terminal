@@ -443,7 +443,7 @@ class OnboardingCompleteSchema(BaseModel):
     api_key: Optional[str] = None
     provider: Optional[str] = "openai"
     trading_mode: Optional[str] = "paper"
-    paper_balance: Optional[float] = 100000.0
+    paper_balance: Optional[float] = None
     active_theme: Optional[str] = "dark"
     active_locale: Optional[str] = "en"
     api_keys: Optional[Dict[str, str]] = None
@@ -479,10 +479,16 @@ def get_onboarding_status():
 
 @router.post("/onboarding/complete")
 def complete_onboarding(payload: OnboardingCompleteSchema):
+    initial_bal = payload.paper_balance
+    if initial_bal is None:
+        try:
+            initial_bal = float(settings_service.get_setting("user_initial_balance", default="0.0") or 0.0)
+        except Exception:
+            initial_bal = 0.0
     updates = {
         "first_boot_completed": True,
         "trading_mode": payload.trading_mode or "paper",
-        "paper_balance": payload.paper_balance if payload.paper_balance is not None else 100000.0,
+        "paper_balance": initial_bal,
         "active_theme": payload.active_theme or "dark",
         "active_locale": payload.active_locale or "en",
         "ai_mode": payload.ai_mode or "local_gguf"
@@ -680,7 +686,7 @@ class CopySignalCreateSchema(BaseModel):
 
 class CopySignalExecuteSchema(BaseModel):
     signal: Dict[str, Any]
-    follower_equity: Optional[float] = 100000.0
+    follower_equity: Optional[float] = None
     exchange: Optional[str] = "BINANCE"
 
 @router.post("/p2p/copy/broadcast")

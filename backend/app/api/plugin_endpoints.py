@@ -59,17 +59,16 @@ def list_available_personas():
 
 @router.get("/modstore-catalog")
 def get_modstore_catalog():
-    """Returns curated ModStore marketplace catalog of verified institutional modules."""
+    """Returns curated ModStore marketplace catalog of verified institutional modules and remote extensions."""
     catalog = [
         {
             "id": "mod_options_greeks",
             "name": "Options Analytics & Live Black-Scholes Greeks",
             "category": "Derivatives",
-            "version": "1.0.4",
+            "version": "1.0.0",
             "author": "Kuantra Institutional",
-            "description": "Real-time volatility smile, Delta/Gamma/Vega/Theta surface visualizer with CME options DMA.",
-            "rating": 4.9,
-            "downloads": 12450,
+            "description": "Volatility smile, Delta/Gamma/Vega/Theta surface visualizer with options calculation models.",
+            "status": "Available on-demand / Remote Registry",
             "verified": True,
             "installed": False
         },
@@ -77,11 +76,10 @@ def get_modstore_catalog():
             "id": "mod_macro_nowcasting",
             "name": "Global Macro Nowcasting & Central Bank Sentiment",
             "category": "Macro & NLP",
-            "version": "2.1.0",
+            "version": "1.0.0",
             "author": "Kuantra Research",
-            "description": "Scrapes FOMC, ECB, and BOJ minutes using fine-tuned transformer models for macro bias scoring.",
-            "rating": 4.8,
-            "downloads": 8920,
+            "description": "Automated central bank speech parser and economic indicator nowcasting engine.",
+            "status": "Available on-demand / Remote Registry",
             "verified": True,
             "installed": False
         },
@@ -89,11 +87,10 @@ def get_modstore_catalog():
             "id": "mod_binance_liquidation_radar",
             "name": "High-Density Liquidation Heatmap & Cascade Hunter",
             "category": "Order Flow",
-            "version": "1.3.2",
+            "version": "1.0.0",
             "author": "Community Verified",
-            "description": "Live visual liquidation levels and high-conviction cascading squeeze entry alerts.",
-            "rating": 4.95,
-            "downloads": 24100,
+            "description": "Liquidation volume cluster detector and cascading squeeze event monitor.",
+            "status": "Available on-demand / Remote Registry",
             "verified": True,
             "installed": False
         },
@@ -101,11 +98,10 @@ def get_modstore_catalog():
             "id": "mod_hft_tick_compressor",
             "name": "ZSTD High-Frequency Tick Database Compressor",
             "category": "Storage",
-            "version": "1.0.1",
+            "version": "1.0.0",
             "author": "Kuantra Infrastructure",
-            "description": "Lossless column-oriented tick archival achieving 85%+ storage footprint reduction.",
-            "rating": 4.75,
-            "downloads": 6200,
+            "description": "Lossless column-oriented tick archival achieving high-density storage compression.",
+            "status": "Available on-demand / Remote Registry",
             "verified": True,
             "installed": False
         }

@@ -23,8 +23,10 @@ def temp_plugins_dir(tmp_path):
     return target
 
 @pytest.mark.asyncio
-async def test_modstore_downloader_synthetic_lifecycle(temp_plugins_dir):
+async def test_modstore_downloader_offline_registry_and_verification(temp_plugins_dir, tmp_path):
     downloader = ModStoreDownloader(target_dir=temp_plugins_dir)
+    
+    # 1. Unconfigured / offline registry returns honest REGISTRY_OFFLINE status
     res = await downloader.download_and_install(
         plugin_id="mod_test_analytics",
         download_url=None,
@@ -32,14 +34,22 @@ async def test_modstore_downloader_synthetic_lifecycle(temp_plugins_dir):
         task_id="test_task_1"
     )
 
-    assert res["success"] is True
+    assert res["success"] is False
     assert res["task_id"] == "test_task_1"
-    assert "plugin_mod_test_analytics" in res["plugin_id"]
+    assert res["status"] == "REGISTRY_OFFLINE"
 
     status = downloader.get_task_status("test_task_1")
     assert status is not None
-    assert status["status"] == "completed"
-    assert status["progress_percent"] == 100
+    assert status["status"] == "offline_registry"
+
+    # 2. Authentic SHA-256 verification test
+    dummy_bundle = tmp_path / "bundle.kmod"
+    dummy_bundle.write_bytes(b"AUTHENTIC_ENCRYPTED_KMOD_BUNDLE_PAYLOAD")
+    import hashlib
+    correct_hash = hashlib.sha256(b"AUTHENTIC_ENCRYPTED_KMOD_BUNDLE_PAYLOAD").hexdigest()
+    
+    assert downloader._verify_sha256(dummy_bundle, correct_hash) is True
+    assert downloader._verify_sha256(dummy_bundle, "wrong_hash_00000000000000000000000000000000") is False
 
 def test_modstore_catalog_and_download_endpoints():
     # 1. Test catalog retrieval

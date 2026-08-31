@@ -42,46 +42,6 @@ class ModStoreDownloader:
         calculated = h.hexdigest().lower()
         return calculated == expected_hash.lower()
 
-    def _create_synthetic_bundle(self, plugin_id: str, bundle_path: Path):
-        """Creates a valid .kmod synthetic plugin zip bundle for testing or offline installations."""
-        with zipfile.ZipFile(bundle_path, "w", zipfile.ZIP_DEFLATED) as zf:
-            manifest_data = {
-                "plugin_id": plugin_id,
-                "name": f"Module {plugin_id.replace('plugin_', '').replace('mod_', '').title()}",
-                "version": "1.2.0",
-                "category": "ModStore Extension",
-                "description": f"Dynamically downloaded institutional add-on for {plugin_id}.",
-                "author": "Kuantra Community Verified",
-                "heavy_dependencies": [],
-                "router_prefix": f"/api/v1/plugins/{plugin_id.replace('plugin_', '').replace('mod_', '')}",
-                "ram_footprint_mb": 12.0,
-                "persona_tags": ["full", "quant", "institutional"]
-            }
-            zf.writestr("manifest.json", json.dumps(manifest_data, indent=2))
-            plugin_py = f"""
-import logging
-from fastapi import APIRouter
-from app.services.plugin_manager import BasePlugin
-
-logger = logging.getLogger("{plugin_id}")
-
-class Plugin(BasePlugin):
-    async def on_startup(self, app):
-        logger.info("[{plugin_id}] Dynamic plugin on_startup hook initialized successfully.")
-
-    async def on_shutdown(self, app):
-        logger.info("[{plugin_id}] Dynamic plugin on_shutdown hook cleanly stopped.")
-
-    def get_router(self):
-        router = APIRouter(prefix="{manifest_data['router_prefix']}", tags=["{plugin_id}"])
-        @router.get("/status")
-        async def get_status():
-            return {{"status": "ONLINE", "plugin_id": "{plugin_id}", "dynamic_loaded": True}}
-        return router
-"""
-            zf.writestr("plugin.py", plugin_py)
-            zf.writestr("__init__.py", "")
-
     async def download_and_install(
         self,
         plugin_id: str,
@@ -90,7 +50,7 @@ class Plugin(BasePlugin):
         task_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Asynchronously downloads, verifies, extracts, and mounts a remote plugin.
+        Asynchronously downloads, verifies, extracts, and mounts a remote plugin from a verified registry.
         """
         tid = task_id or str(uuid.uuid4())[:8]
         self._tasks[tid] = {
@@ -99,7 +59,7 @@ class Plugin(BasePlugin):
             "status": "downloading",
             "progress_percent": 5,
             "bytes_downloaded": 0,
-            "total_bytes": 1024 * 1024 * 18, # 18 MB estimated baseline
+            "total_bytes": 1024 * 1024 * 18,
             "error": None
         }
 
@@ -108,7 +68,7 @@ class Plugin(BasePlugin):
             plugin_dest = self.target_dir / plugin_folder_name
             temp_bundle = self.target_dir / f"{plugin_folder_name}_temp.kmod"
 
-            # 1. Download or synthesize archive
+            # 1. Download archive from registry if remote URL is configured
             if download_url and download_url.startswith(("http://", "https://")):
                 logger.info(f"[MODSTORE-DOWNLOADER] Downloading {plugin_id} from {download_url}...")
                 
@@ -127,12 +87,16 @@ class Plugin(BasePlugin):
 
                 await asyncio.to_thread(_download_worker)
             else:
-                # Local synthetic simulation for offline/testing/mock
-                for step in range(1, 10):
-                    await asyncio.sleep(0.04)
-                    self._tasks[tid]["progress_percent"] = step * 10
-                    self._tasks[tid]["bytes_downloaded"] = step * 1024 * 1024 * 2
-                self._create_synthetic_bundle(plugin_folder_name, temp_bundle)
+                self._tasks[tid]["status"] = "offline_registry"
+                self._tasks[tid]["progress_percent"] = 0
+                self._tasks[tid]["error"] = "Plugin registry URL not configured."
+                return {
+                    "success": False,
+                    "task_id": tid,
+                    "plugin_id": plugin_id,
+                    "status": "REGISTRY_OFFLINE",
+                    "message": f"Plugin registry endpoint not configured for '{plugin_id}'. Module is cataloged as remote on-demand."
+                }
 
             # 2. Checksum Verification
             self._tasks[tid]["status"] = "verifying"

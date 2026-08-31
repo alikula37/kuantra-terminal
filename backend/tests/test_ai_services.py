@@ -48,6 +48,13 @@ class TestAiAndVisionServices:
         assert res["take_profit"] > res["entry_price"]
         assert "Corrected" in res["notes"]
 
+    def test_vision_ocr_unconfigured_engine_honest_response(self):
+        res = vision_chart_parser.parse_chart_screenshot(image_data="base64_raw_image_bytes_without_ocr")
+        assert res["status"] == "UNAVAILABLE"
+        assert "OCR Engine not configured" in res["message"]
+        assert res["confidence_score"] == 0.0
+
+
     def test_ai_auditor_deterministic_context_generation(self):
         ctx = ai_auditor.generate_audit_context()
         required_keys = [

@@ -63,8 +63,7 @@ class ModelDownloader:
         self,
         model_name: Optional[str] = None,
         url: Optional[str] = None,
-        expected_sha256: Optional[str] = None,
-        mock_mode: bool = False
+        expected_sha256: Optional[str] = None
     ) -> Dict[str, Any]:
         """Initiates or resumes chunked GGUF download in background thread."""
         name = model_name or self.DEFAULT_MODEL_NAME
@@ -82,7 +81,7 @@ class ModelDownloader:
             "progress_pct": self._downloads.get(name, {}).get("progress_pct", 0.0),
             "downloaded_bytes": self._downloads.get(name, {}).get("downloaded_bytes", 0),
             "total_bytes": 1250000000,
-            "speed_mbps": 18.5,
+            "speed_mbps": 0.0,
             "is_verified": False,
             "url": download_url,
             "expected_sha256": expected_sha256,
@@ -91,7 +90,7 @@ class ModelDownloader:
 
         thread = threading.Thread(
             target=self._download_worker,
-            args=(name, download_url, expected_sha256, mock_mode),
+            args=(name, download_url, expected_sha256),
             daemon=True
         )
         self._threads[name] = thread
@@ -145,38 +144,11 @@ class ModelDownloader:
         self,
         name: str,
         url: str,
-        expected_sha256: Optional[str],
-        mock_mode: bool
+        expected_sha256: Optional[str]
     ):
         """Worker executing streaming chunked download with HTTP Range."""
         target_file = MODELS_DIR / name
         part_file = MODELS_DIR / f"{name}.part"
-
-        if mock_mode:
-            # Fast deterministic mock simulation for unit testing
-            total = 1000000
-            current = self._downloads[name]["downloaded_bytes"]
-            while current < total:
-                if self._cancel_events[name].is_set():
-                    return
-                if self._pause_events[name].is_set():
-                    return
-                time.sleep(0.05)
-                current += 200000
-                current = min(current, total)
-                pct = round((current / total) * 100, 1)
-                self._downloads[name]["downloaded_bytes"] = current
-                self._downloads[name]["total_bytes"] = total
-                self._downloads[name]["progress_pct"] = pct
-                self._downloads[name]["speed_mbps"] = 24.5
-
-            with open(target_file, "wb") as f:
-                f.write(b"MOCK_GGUF_MODEL_TENSOR_WEIGHTS_KUANTRA_V1")
-
-            self._downloads[name]["status"] = "COMPLETED"
-            self._downloads[name]["progress_pct"] = 100.0
-            self._downloads[name]["is_verified"] = True
-            return
 
         # Real HTTP Range download
         try:
