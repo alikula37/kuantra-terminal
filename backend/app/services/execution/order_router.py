@@ -35,30 +35,36 @@ class OrderRouter:
             }
 
         # 2. Route to Target Exchange Execution Client
-        if "OKX" in venue:
-            exec_res = okx_execution.place_order(symbol, side, qty, price)
-        else:
-            exec_res = binance_execution.place_order(symbol, side, qty, price)
+        mode = str(order_payload.get("mode", "PAPER")).upper()
+        stop_loss = order_payload.get("stop_loss")
+        take_profit = order_payload.get("take_profit")
+        order_type = str(order_payload.get("order_type", "LIMIT")).upper()
 
-        # 3. Persist Order Execution in SQLite OLTP
-        trade_entry = {
-            "id": exec_res["order_id"],
-            "symbol": symbol,
-            "side": side,
-            "entry_price": price,
-            "exit_price": None,
-            "qty": qty,
-            "stop_loss": order_payload.get("stop_loss"),
-            "take_profit": order_payload.get("take_profit"),
-            "entry_time": time.strftime("%Y-%m-%dT%H:%M:%S"),
-            "status": "OPEN",
-            "pnl": 0.0,
-            "notes": f"Executed via {venue} Router ({exec_res['mode']})"
-        }
-        sqlite_driver.insert_trade(trade_entry)
+        if "OKX" in venue:
+            exec_res = okx_execution.place_order(
+                symbol=symbol,
+                side=side,
+                qty=qty,
+                price=price,
+                order_type=order_type,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+                mode=mode
+            )
+        else:
+            exec_res = binance_execution.place_order(
+                symbol=symbol,
+                side=side,
+                qty=qty,
+                price=price,
+                order_type=order_type,
+                stop_loss=stop_loss,
+                take_profit=take_profit,
+                mode=mode
+            )
 
         return {
-            "status": "EXECUTED",
+            "status": "EXECUTED" if exec_res.get("success", True) else "FAILED",
             "order": exec_res,
             "risk_metadata": meta
         }

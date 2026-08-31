@@ -9,7 +9,8 @@ import {
   Cpu, 
   Wallet, 
   ShieldAlert, 
-  Calendar 
+  Calendar,
+  Key
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useTranslation, SUPPORTED_LOCALES, Locale } from "../context/I18nContext";
@@ -38,6 +39,7 @@ interface HeaderProps {
   onOpenGPUTelemetry?: () => void;
   onOpenPersonaSelector?: () => void;
   onOpenInitialBalanceModal?: () => void;
+  onOpenApiKeySettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -45,7 +47,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenVisionUploader, 
   onOpenGPUTelemetry,
   onOpenPersonaSelector,
-  onOpenInitialBalanceModal
+  onOpenInitialBalanceModal,
+  onOpenApiKeySettings
 }) => {
   const { latencyMs } = useMarketStore();
   const { theme, toggleTheme } = useTheme();
@@ -210,11 +213,23 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
-          className="p-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white rounded transition"
+          className="p-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white rounded transition cursor-pointer"
           title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Theme`}
         >
           {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-accent" />}
         </button>
+
+        {/* Exchange API Key Configuration Trigger */}
+        {onOpenApiKeySettings && (
+          <button
+            onClick={onOpenApiKeySettings}
+            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white px-2.5 py-1 rounded text-xs font-mono transition cursor-pointer"
+            title="Configure Exchange API Keys"
+          >
+            <Key className="w-3.5 h-3.5 text-accent" />
+            <span className="font-bold">{t("exchange.header_btn")}</span>
+          </button>
+        )}
 
         {/* GPU Acceleration Telemetry Trigger - Only visible if plugin_ai_swarm is active */}
         {!isLiteMode && isPluginActive("plugin_ai_swarm") && onOpenGPUTelemetry && (

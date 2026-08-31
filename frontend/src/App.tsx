@@ -101,6 +101,9 @@ const InitialBalanceModal = lazy(() =>
 const CsvImportModal = lazy(() =>
   import("./components/modals/CsvImportModal").then((m) => ({ default: m.CsvImportModal }))
 );
+const ApiKeySettingsModal = lazy(() =>
+  import("./components/modals/ApiKeySettingsModal").then((m) => ({ default: m.ApiKeySettingsModal }))
+);
 const ChartVisionUploader = lazy(() =>
   import("./components/ChartVisionUploader").then((m) => ({ default: m.ChartVisionUploader }))
 );
@@ -121,6 +124,7 @@ export default function App() {
   const [replayTradeId, setReplayTradeId] = useState<string>("TRD-DEFAULT");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState<boolean>(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [isVisionModalOpen, setIsVisionModalOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isGPUModalOpen, setIsGPUModalOpen] = useState<boolean>(false);
@@ -221,6 +225,7 @@ export default function App() {
         onOpenGPUTelemetry={() => setIsGPUModalOpen(true)}
         onOpenPersonaSelector={() => setIsPersonaModalOpen(true)}
         onOpenInitialBalanceModal={() => setIsInitialBalanceModalOpen(true)}
+        onOpenApiKeySettings={() => setIsApiKeyModalOpen(true)}
       />
 
       {!isLiteMode && (
@@ -294,8 +299,17 @@ export default function App() {
       </div>
 
       <Suspense fallback={null}>
-        {isModalOpen && <NewTradeModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />}
+        {isModalOpen && (
+          <NewTradeModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onOpenApiKeySettings={() => setIsApiKeyModalOpen(true)}
+          />
+        )}
         {isCsvModalOpen && <CsvImportModal isOpen={isCsvModalOpen} onClose={() => setIsCsvModalOpen(false)} />}
+        {isApiKeyModalOpen && (
+          <ApiKeySettingsModal isOpen={isApiKeyModalOpen} onClose={() => setIsApiKeyModalOpen(false)} />
+        )}
         {isInitialBalanceModalOpen && (
           <InitialBalanceModal isOpen={isInitialBalanceModalOpen} onClose={() => setIsInitialBalanceModalOpen(false)} />
         )}

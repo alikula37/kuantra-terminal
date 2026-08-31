@@ -80,6 +80,18 @@ class SQLiteDriver:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
 
+                CREATE TABLE IF NOT EXISTS exchange_credentials (
+                    exchange_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    api_key_encrypted TEXT NOT NULL,
+                    api_secret_encrypted TEXT NOT NULL,
+                    passphrase_encrypted TEXT,
+                    is_testnet INTEGER DEFAULT 0,
+                    is_active INTEGER DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol);
                 CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status);
                 CREATE INDEX IF NOT EXISTS idx_trades_entry_time ON trades(entry_time);

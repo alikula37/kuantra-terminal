@@ -1,43 +1,38 @@
 """
-OKX V5 Private Channel & REST Live Execution Client.
+OKX V5 Live & Paper Execution Client Bridge.
+Powered by authentic CCXT Execution Engine.
 """
 
-import time
-import logging
-from typing import Dict, Any, Optional, Tuple
-from app.core.security import vault
+from typing import Dict, Any, Optional
+from app.services.execution.ccxt_engine import ccxt_execution_engine
 
-logger = logging.getLogger("okx_execution")
 
 class OkxExecutionClient:
-    """Dispatches orders to OKX V5 Private API."""
+    """Dispatches orders to OKX V5 Unified via CCXT."""
 
-    def __init__(self):
-        self.is_live: bool = False
+    def place_order(
+        self,
+        symbol: str,
+        side: str,
+        qty: float,
+        price: float,
+        order_type: str = "LIMIT",
+        stop_loss: Optional[float] = None,
+        take_profit: Optional[float] = None,
+        mode: str = "PAPER"
+    ) -> Dict[str, Any]:
+        """Places order on OKX via CCXT or paper simulated sandbox."""
+        return ccxt_execution_engine.create_order(
+            symbol=symbol,
+            side=side,
+            order_type=order_type,
+            qty=qty,
+            price=price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            exchange_id="okx",
+            mode=mode
+        )
 
-    def get_credentials(self) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        key = vault.get_secret("OKX_API_KEY")
-        secret = vault.get_secret("OKX_API_SECRET")
-        passphrase = vault.get_secret("OKX_API_PASSPHRASE")
-        return key, secret, passphrase
-
-    def place_order(self, symbol: str, side: str, qty: float, price: float, order_type: str = "limit") -> Dict[str, Any]:
-        """Places live order on OKX V5 (or paper simulation)."""
-        key, secret, _ = self.get_credentials()
-        order_id = f"OKX-{int(time.time()*1000)}"
-        logger.info(f"[OKX] Executing {side} {qty} {symbol} @ {price}")
-        logger.warning("[OKX] PAPER MODE: No live API call made. Order simulated locally.")
-
-        return {
-            "exchange": "OKX",
-            "order_id": order_id,
-            "symbol": symbol.upper(),
-            "side": side.upper(),
-            "qty": qty,
-            "price": price,
-            "status": "FILLED",
-            "mode": "PAPER_SIMULATED",
-            "timestamp": time.time()
-        }
 
 okx_execution = OkxExecutionClient()

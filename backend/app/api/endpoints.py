@@ -12,6 +12,8 @@ from app.db.repositories.candles_repo import candles_repo
 from app.services.market_data.public_fetcher import public_market_fetcher
 from app.services.portfolio_service import portfolio_service
 from app.services.csv_importer import csv_trade_importer
+from app.services.exchange.credentials_manager import exchange_credentials_manager
+from app.services.execution.ccxt_engine import ccxt_execution_engine
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
 from app.quant.quant_engine import quant_engine
@@ -151,6 +153,123 @@ def get_template_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=kuantra_trade_template.csv"}
     )
+
+# --- EXCHANGE API CREDENTIALS & EXECUTION ROUTES ---
+
+class ExchangeCredentialsSaveSchema(BaseModel):
+    exchange_id: str
+    name: Optional[str] = None
+    api_key: str
+    api_secret: str
+    passphrase: Optional[str] = None
+    is_testnet: Optional[bool] = False
+    is_active: Optional[bool] = True
+
+class ExchangeConnectionTestSchema(BaseModel):
+    exchange_id: str
+    api_key: Optional[str] = None
+    api_secret: Optional[str] = None
+    passphrase: Optional[str] = None
+    is_testnet: Optional[bool] = False
+
+class OrderDispatchSchema(BaseModel):
+    symbol: str = "BTCUSDT"
+    side: str = "BUY"
+    order_type: str = "LIMIT"
+    qty: float
+    price: Optional[float] = None
+    stop_loss: Optional[float] = None
+    take_profit: Optional[float] = None
+    exchange: Optional[str] = "binance_futures"
+    mode: Optional[str] = "PAPER"
+    notes: Optional[str] = ""
+
+@router.get("/exchange/credentials")
+def list_exchange_credentials():
+    """Lists configured exchange API accounts with masked secrets."""
+    return exchange_credentials_manager.list_configured_exchanges()
+
+@router.post("/exchange/credentials")
+def save_exchange_credentials(payload: ExchangeCredentialsSaveSchema):
+    """Encrypts and securely stores exchange API credentials."""
+    try:
+        return exchange_credentials_manager.save_credentials(
+            exchange_id=payload.exchange_id,
+            name=payload.name,
+            api_key=payload.api_key,
+            api_secret=payload.api_secret,
+            passphrase=payload.passphrase,
+            is_testnet=bool(payload.is_testnet),
+            is_active=bool(payload.is_active)
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to encrypt credentials: {str(e)}")
+
+@router.delete("/exchange/credentials/{exchange_id}")
+def delete_exchange_credentials(exchange_id: str):
+    """Purges exchange credentials from vault and database."""
+    deleted = exchange_credentials_manager.delete_credentials(exchange_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"No credentials found for '{exchange_id}'")
+    return {"status": "deleted", "exchange_id": exchange_id}
+
+@router.post("/exchange/test-connection")
+def test_exchange_connection(payload: ExchangeConnectionTestSchema):
+    """Genuinely verifies exchange API connectivity via CCXT."""
+    res = exchange_credentials_manager.test_connection(
+        exchange_id=payload.exchange_id,
+        api_key=payload.api_key,
+        api_secret=payload.api_secret,
+        passphrase=payload.passphrase,
+        is_testnet=payload.is_testnet
+    )
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res)
+    return res
+
+@router.get("/exchange/balances")
+def get_exchange_balances(exchange_id: str = "binance_futures"):
+    """Fetches real-time equity & margin from connected exchange."""
+    res = ccxt_execution_engine.sync_exchange_balances(exchange_id=exchange_id)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Failed to sync balances"))
+    return res
+
+@router.post("/execution/order")
+def dispatch_order(order: OrderDispatchSchema):
+    """Places order via CCXT or paper trading with Pre-Execution Risk Gatekeeper."""
+    res = ccxt_execution_engine.create_order(
+        symbol=order.symbol,
+        side=order.side,
+        order_type=order.order_type,
+        qty=order.qty,
+        price=order.price,
+        stop_loss=order.stop_loss,
+        take_profit=order.take_profit,
+        exchange_id=order.exchange or "binance_futures",
+        mode=order.mode or "PAPER",
+        notes=order.notes
+    )
+    if not res.get("success"):
+        if res.get("status") == "REJECTED":
+            raise HTTPException(status_code=422, detail=res)
+        raise HTTPException(status_code=400, detail=res)
+    return res
+
+@router.get("/execution/orders/open")
+def get_open_orders(exchange_id: str = "binance_futures", symbol: Optional[str] = None, mode: str = "PAPER"):
+    """Lists active open orders from exchange or paper log."""
+    return ccxt_execution_engine.fetch_open_orders(exchange_id=exchange_id, symbol=symbol, mode=mode)
+
+@router.delete("/execution/orders/{order_id}")
+def cancel_execution_order(order_id: str, symbol: Optional[str] = None, exchange_id: str = "binance_futures", mode: str = "PAPER"):
+    """Cancels active order."""
+    res = ccxt_execution_engine.cancel_order(order_id=order_id, symbol=symbol, exchange_id=exchange_id, mode=mode)
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res)
+    return res
 
 @router.get("/analytics/overview")
 def get_analytics_overview():
