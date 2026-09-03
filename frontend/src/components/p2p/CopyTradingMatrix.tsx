@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Users, Layers, Send, RefreshCw, CheckCircle2 } from "lucide-react";
+import { apiUrl } from "../../lib/backend";
 
 interface SubAccount {
   account_id: string;
@@ -38,7 +39,7 @@ export const CopyTradingMatrix: React.FC = () => {
   const [fanoutReport, setFanoutReport] = useState<FanoutReport | null>(null);
 
   const fetchAccounts = () => {
-    fetch("http://127.0.0.1:8000/api/v1/accounts/list")
+    fetch(apiUrl("/api/v1/accounts/list"))
       .then((res) => res.json())
       .then((data) => {
         if (data.accounts) setAccounts(data.accounts);
@@ -55,7 +56,7 @@ export const CopyTradingMatrix: React.FC = () => {
   const dispatchFanout = async () => {
     setIsDispatching(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/accounts/fanout", {
+      const res = await fetch(apiUrl("/api/v1/accounts/fanout"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol, side, qty: baseQty, price }),

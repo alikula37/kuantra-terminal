@@ -76,45 +76,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "=== COMPILING MACOS LITE CORE SIDECAR ==="
-          mkdir -p src-tauri/binaries
-          python -m PyInstaller \
-            --onefile \
-            --clean \
-            --name "kuantra-backend-aarch64-apple-darwin" \
-            --distpath "src-tauri/binaries" \
-            --workpath "backend/build" \
-            --specpath "backend" \
-            --exclude-module duckdb \
-            --exclude-module pandas \
-            --exclude-module numpy \
-            --exclude-module scipy \
-            --exclude-module torch \
-            --exclude-module bleak \
-            --exclude-module web3 \
-            --exclude-module quickfix \
-            --exclude-module PIL \
-            --exclude-module matplotlib \
-            --exclude-module tkinter \
-            --exclude-module pytest \
-            --exclude-module unittest \
-            --exclude-module doctest \
-            --exclude-module test \
-            --exclude-module alembic.testing \
-            --exclude-module setuptools \
-            --exclude-module pkg_resources \
-            --exclude-module winloop \
-            --exclude-module ccxt.pro \
-            --exclude-module aiohttp.test_utils \
-            --collect-submodules app \
-            --collect-submodules starlette \
-            --collect-submodules fastapi \
-            --collect-submodules uvicorn \
-            --collect-submodules pydantic \
-            --collect-submodules cryptography \
-            backend/main.py
-          
-          chmod +x src-tauri/binaries/kuantra-backend-aarch64-apple-darwin
-          echo "Sidecar binary size: $(stat -f%z src-tauri/binaries/kuantra-backend-aarch64-apple-darwin) bytes"
+          bash scripts/build_sidecar.sh aarch64-apple-darwin
 
           echo "=== BUILDING NATIVE MACOS DMG BUNDLE ==="
           npm install
@@ -130,8 +92,9 @@ jobs:
           DMG_SIZE=$(stat -f%z "dist-binaries/Kuantra-Terminal-1.3.0-aarch64.dmg")
           echo "Real DMG Size: $DMG_SIZE bytes"
 
-          if [ "$DMG_SIZE" -gt 41943040 ]; then
-            echo "ERROR: DMG size exceeds 40MB limit!"
+          # Sidecar bundles numpy/pandas/scipy/duckdb (hard backend deps), so allow up to 300MB.
+          if [ "$DMG_SIZE" -gt 314572800 ]; then
+            echo "ERROR: DMG size exceeds 300MB limit!"
             exit 1
           fi
 
@@ -148,41 +111,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "=== COMPILING WINDOWS CORE SIDECAR ==="
-          mkdir -p src-tauri/binaries
-          python -m PyInstaller \
-            --onefile \
-            --clean \
-            --name "kuantra-backend-x86_64-pc-windows-msvc" \
-            --distpath "src-tauri/binaries" \
-            --workpath "backend/build" \
-            --specpath "backend" \
-            --exclude-module duckdb \
-            --exclude-module pandas \
-            --exclude-module numpy \
-            --exclude-module scipy \
-            --exclude-module torch \
-            --exclude-module bleak \
-            --exclude-module web3 \
-            --exclude-module quickfix \
-            --exclude-module PIL \
-            --exclude-module matplotlib \
-            --exclude-module tkinter \
-            --exclude-module pytest \
-            --exclude-module unittest \
-            --exclude-module doctest \
-            --exclude-module test \
-            --exclude-module alembic.testing \
-            --exclude-module setuptools \
-            --exclude-module pkg_resources \
-            --exclude-module ccxt.pro \
-            --exclude-module aiohttp.test_utils \
-            --collect-submodules app \
-            --collect-submodules starlette \
-            --collect-submodules fastapi \
-            --collect-submodules uvicorn \
-            --collect-submodules pydantic \
-            --collect-submodules cryptography \
-            backend/main.py
+          bash scripts/build_sidecar.sh x86_64-pc-windows-msvc
 
           echo "=== BUILDING NATIVE WINDOWS NSIS INSTALLER ==="
           npm install

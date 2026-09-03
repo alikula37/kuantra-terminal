@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ComplianceStatusResponse } from "../types";
 import { ShieldCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
+import { apiUrl } from "../lib/backend";
 
 export const PropFirmShield: React.FC = () => {
   const { t } = useTranslation();
@@ -9,7 +10,7 @@ export const PropFirmShield: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchStatus = () => {
-    fetch("http://127.0.0.1:8000/api/v1/compliance/status")
+    fetch(apiUrl("/api/v1/compliance/status"))
       .then((res) => res.json())
       .then((resData) => {
         setStatus(resData);

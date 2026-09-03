@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PivotGridResponse, PivotRow } from "../types";
 import { Layers, ArrowUpDown, Download, Filter, CheckSquare, Square } from "lucide-react";
+import { apiUrl } from "../lib/backend";
 
 export const PivotGrid: React.FC = () => {
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>(["symbol", "session"]);
@@ -19,7 +20,7 @@ export const PivotGrid: React.FC = () => {
 
   const fetchPivot = (dims: string[]) => {
     setIsLoading(true);
-    fetch("http://127.0.0.1:8000/api/v1/analytics/pivot", {
+    fetch(apiUrl("/api/v1/analytics/pivot"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ group_by: dims }),

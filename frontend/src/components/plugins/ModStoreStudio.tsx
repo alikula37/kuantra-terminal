@@ -13,6 +13,7 @@ import {
   RefreshCw 
 } from "lucide-react";
 import { usePluginRegistry } from "../../context/PluginRegistryContext";
+import { apiBase, apiUrl } from "../../lib/backend";
 
 export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = ({ onOpenPersonaSelector }) => {
   const { plugins, activePersona, loading, togglePlugin, refreshPlugins } = usePluginRegistry();
@@ -31,7 +32,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
         [moduleId]: { progress: 10, status: "İndirme Başlatılıyor..." }
       }));
 
-      const res = await fetch("http://127.0.0.1:8000/api/v1/plugins/download", {
+      const res = await fetch(apiUrl("/api/v1/plugins/download"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plugin_id: moduleId })
@@ -47,7 +48,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
       // Poll status
       const interval = setInterval(async () => {
         try {
-          const stRes = await fetch(`http://127.0.0.1:8000/api/v1/plugins/download-status/${taskId}`);
+          const stRes = await fetch(`${apiBase()}/api/v1/plugins/download-status/${taskId}`);
           if (stRes.ok) {
             const stData = await stRes.json();
             const pct = stData.progress_percent || 0;

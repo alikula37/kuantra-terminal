@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Bot, MessageSquare, RefreshCw } from "lucide-react";
+import { apiUrl } from "../../lib/backend";
 
 interface AgentVote {
   agent: string;
@@ -33,7 +34,7 @@ export const SwarmDebateVisualizer: React.FC = () => {
   const runDebate = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/ai/swarm/debate", {
+      const res = await fetch(apiUrl("/api/v1/ai/swarm/debate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

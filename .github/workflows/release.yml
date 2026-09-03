@@ -74,46 +74,7 @@ jobs:
       - name: Compile Backend Sidecar Binary
         shell: bash
         run: |
-          mkdir -p src-tauri/binaries
-          python -m PyInstaller \
-            --onefile \
-            --clean \
-            --name "${{ matrix.sidecar_name }}" \
-            --distpath "src-tauri/binaries" \
-            --workpath "backend/build" \
-            --specpath "backend" \
-            --exclude-module duckdb \
-            --exclude-module pandas \
-            --exclude-module numpy \
-            --exclude-module scipy \
-            --exclude-module torch \
-            --exclude-module bleak \
-            --exclude-module web3 \
-            --exclude-module quickfix \
-            --exclude-module PIL \
-            --exclude-module matplotlib \
-            --exclude-module tkinter \
-            --exclude-module pytest \
-            --exclude-module unittest \
-            --exclude-module doctest \
-            --exclude-module test \
-            --exclude-module alembic.testing \
-            --exclude-module setuptools \
-            --exclude-module pkg_resources \
-            --exclude-module winloop \
-            --exclude-module ccxt.pro \
-            --exclude-module aiohttp.test_utils \
-            --collect-submodules app \
-            --collect-submodules starlette \
-            --collect-submodules fastapi \
-            --collect-submodules uvicorn \
-            --collect-submodules pydantic \
-            --collect-submodules cryptography \
-            backend/main.py
-
-          if [ -f "src-tauri/binaries/${{ matrix.sidecar_name }}" ]; then
-            chmod +x "src-tauri/binaries/${{ matrix.sidecar_name }}" || true
-          fi
+          bash scripts/build_sidecar.sh "${{ matrix.target }}"
 
       - name: Build Frontend & Install Root Tooling
         shell: bash

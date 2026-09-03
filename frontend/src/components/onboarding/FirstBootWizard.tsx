@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ShieldCheck, ArrowRight, ArrowLeft, Check, Lock, Sun, Moon, Globe, Layers, Activity, CheckCircle2 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation, SUPPORTED_LOCALES } from "../../context/I18nContext";
+import { apiUrl } from "../../lib/backend";
 
 interface FirstBootWizardProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
         api_keys: apiKeys,
       };
 
-      const res = await fetch("http://127.0.0.1:8000/api/v1/onboarding/complete", {
+      const res = await fetch(apiUrl("/api/v1/onboarding/complete"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

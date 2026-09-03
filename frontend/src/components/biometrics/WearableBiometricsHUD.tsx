@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Activity, Heart, ShieldAlert, CheckCircle2, Bluetooth, Sliders, Zap } from "lucide-react";
+import { apiUrl } from "../../lib/backend";
 
 interface BiometricStatus {
   device_name: string;
@@ -25,7 +26,7 @@ export const WearableBiometricsHUD: React.FC = () => {
   });
 
   const fetchStatus = () => {
-    fetch("http://127.0.0.1:8000/api/v1/biometrics/status")
+    fetch(apiUrl("/api/v1/biometrics/status"))
       .then((res) => res.json())
       .then((data: BiometricStatus) => setStatus(data))
       .catch(() => {});
@@ -38,7 +39,7 @@ export const WearableBiometricsHUD: React.FC = () => {
   }, []);
 
   const sendSimulation = (bpmVal: number, hrvVal: number) => {
-    fetch("http://127.0.0.1:8000/api/v1/biometrics/telemetry", {
+    fetch(apiUrl("/api/v1/biometrics/telemetry"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bpm: bpmVal, hrv: hrvVal, device_name: "Apple Watch Ultra / BLE" }),

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Database, FileText, Globe, Flame, Activity, RefreshCw, Send, ShieldAlert, CheckCircle2, Search, TrendingUp } from "lucide-react";
+import { apiUrl } from "../../lib/backend";
 
 export const MCPDataExplorer: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"sec" | "macro" | "sentiment" | "onchain">("sentiment");
@@ -18,7 +19,7 @@ export const MCPDataExplorer: React.FC = () => {
     setIsLoading(true);
     try {
       if (activeTab === "sec") {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/mcp/query", {
+        const res = await fetch(apiUrl("/api/v1/mcp/query"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ source: "sec_edgar", params: { ticker } }),
@@ -26,7 +27,7 @@ export const MCPDataExplorer: React.FC = () => {
         const data = await res.json();
         setSecData(data.data);
       } else if (activeTab === "macro") {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/mcp/query", {
+        const res = await fetch(apiUrl("/api/v1/mcp/query"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ source: "macro_fundamentals", params: { asset: "US10Y" } }),
@@ -34,7 +35,7 @@ export const MCPDataExplorer: React.FC = () => {
         const data = await res.json();
         setMacroData(data.data);
       } else if (activeTab === "sentiment") {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/mcp/query", {
+        const res = await fetch(apiUrl("/api/v1/mcp/query"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ source: "cryptopanic_sentiment", params: { filter: "all" } }),
@@ -42,7 +43,7 @@ export const MCPDataExplorer: React.FC = () => {
         const data = await res.json();
         setSentimentData(data.data);
       } else if (activeTab === "onchain") {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/mcp/query", {
+        const res = await fetch(apiUrl("/api/v1/mcp/query"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ source: "onchain_analytics", params: { network } }),

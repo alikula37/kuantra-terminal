@@ -3,6 +3,7 @@ import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, HistogramDat
 import { useMarketStore } from "../stores/marketStore";
 import { useTranslation } from "../context/I18nContext";
 import { RefreshCw, AlertCircle, BarChart2 } from "lucide-react";
+import { apiBase } from "../lib/backend";
 
 export interface CandleDataPoint {
   timestamp: number;
@@ -151,7 +152,7 @@ export const TradingViewChart: React.FC = () => {
     const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     try {
-      const url = `http://127.0.0.1:8000/api/v1/market-data/candles?symbol=${encodeURIComponent(
+      const url = `${apiBase()}/api/v1/market-data/candles?symbol=${encodeURIComponent(
         activeSymbol
       )}&timeframe=${encodeURIComponent(activeTimeframe)}&limit=500`;
 

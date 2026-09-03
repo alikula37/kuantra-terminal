@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { QuantScorecard, SymbolBreakdown } from "../types";
 import { Award, TrendingUp, ShieldAlert, Target, PieChart } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
+import { apiUrl } from "../lib/backend";
 
 export const AnalyticsView: React.FC = () => {
   const { t } = useTranslation();
@@ -12,10 +13,10 @@ export const AnalyticsView: React.FC = () => {
   useEffect(() => {
     setIsLoading(true);
     Promise.all([
-      fetch("http://127.0.0.1:8000/api/v1/analytics/quant")
+      fetch(apiUrl("/api/v1/analytics/quant"))
         .then((res) => res.json())
         .catch(() => null),
-      fetch("http://127.0.0.1:8000/api/v1/analytics/symbols")
+      fetch(apiUrl("/api/v1/analytics/symbols"))
         .then((res) => res.json())
         .catch(() => []),
     ]).then(([quantData, symData]) => {

@@ -61,13 +61,37 @@ async fn create_popout_window(
     Ok(format!("Created window {}", label))
 }
 
-pub fn spawn_sidecar(app: &AppHandle, port_state: Arc<AtomicU16>) {
-    let parent_pid = std::process::id();
+/// Locate the bundled backend.
+///
+/// macOS ships a PyInstaller `--onedir` tree under `Contents/Resources/backend`
+/// (see tauri.macos.conf.json and scripts/build_sidecar.sh) because a
+/// `--onefile` sidecar re-extracts and gets re-scanned by macOS on every
+/// launch, costing 35-50s per start. Other platforms use the Tauri sidecar.
+fn backend_command(app: &AppHandle) -> Result<tauri_plugin_shell::process::Command, String> {
     let shell = app.shell();
 
-    let sidecar_cmd = shell.sidecar("kuantra-backend");
-    
-    match sidecar_cmd {
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(resource_dir) = app.path().resource_dir() {
+            let backend_dir = resource_dir.join("backend");
+            let exe = backend_dir.join("kuantra-backend");
+            if exe.is_file() {
+                return Ok(shell.command(&exe).current_dir(&backend_dir));
+            }
+            eprintln!(
+                "[!] Bundled backend not found at {}; falling back to sidecar lookup",
+                exe.display()
+            );
+        }
+    }
+
+    shell.sidecar("kuantra-backend").map_err(|e| e.to_string())
+}
+
+pub fn spawn_sidecar(app: &AppHandle, port_state: Arc<AtomicU16>) {
+    let parent_pid = std::process::id();
+
+    match backend_command(app) {
         Ok(cmd) => {
             let cmd_with_args = cmd.args([
                 "--port", "0",
@@ -119,7 +143,9 @@ pub fn spawn_sidecar(app: &AppHandle, port_state: Arc<AtomicU16>) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let port_state = Arc::new(AtomicU16::new(8000));
+    // 0 = "sidecar has not reported its port yet". The frontend polls
+    // `get_backend_port` until this becomes non-zero.
+    let port_state = Arc::new(AtomicU16::new(0));
     let managed_state = BackendState {
         port: port_state.clone(),
     };

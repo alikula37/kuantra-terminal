@@ -1,8 +1,10 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
+import { wsUrl } from "../lib/backend";
 
-const WS_URL = "ws://127.0.0.1:8000/api/v1/ws/stream";
+// Resolved lazily: the backend port is only known after resolveBackendUrl().
+const getWsUrl = () => wsUrl("/api/v1/ws/stream");
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
@@ -18,7 +20,7 @@ export function useWebSocket() {
     }
 
     try {
-      const ws = new WebSocket(WS_URL);
+      const ws = new WebSocket(getWsUrl());
       wsRef.current = ws;
 
       ws.onopen = () => {

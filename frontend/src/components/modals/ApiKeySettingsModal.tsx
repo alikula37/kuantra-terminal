@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Key, Shield, CheckCircle2, AlertTriangle, Trash2, RefreshCw, X, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
+import { apiBase, apiUrl } from "../../lib/backend";
 
 interface ApiKeySettingsModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
 
   const fetchConfigs = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/exchange/credentials");
+      const res = await fetch(apiUrl("/api/v1/exchange/credentials"));
       if (res.ok) {
         const data = await res.json();
         setConfigs(data);
@@ -88,7 +89,7 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
         payload.is_testnet = isTestnet;
       }
 
-      const res = await fetch("http://127.0.0.1:8000/api/v1/exchange/test-connection", {
+      const res = await fetch(apiUrl("/api/v1/exchange/test-connection"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -129,7 +130,7 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
     setStatusMessage(null);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/exchange/credentials", {
+      const res = await fetch(apiUrl("/api/v1/exchange/credentials"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -165,7 +166,7 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
     setStatusMessage(null);
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/exchange/credentials/${activeTab}`, {
+      const res = await fetch(`${apiBase()}/api/v1/exchange/credentials/${activeTab}`, {
         method: "DELETE",
       });
 

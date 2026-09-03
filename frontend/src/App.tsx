@@ -7,6 +7,7 @@ import { ModuleLoadingSkeleton } from "./components/layout/ModuleLoadingSkeleton
 import { useWebSocket } from "./hooks/useWebSocket";
 import { usePopoutWindow } from "./hooks/usePopoutWindow";
 import { usePluginRegistry } from "./context/PluginRegistryContext";
+import { apiUrl } from "./lib/backend";
 
 // Lazy-loaded Studio & Advanced Analysis Modules for Lite Mode bundle isolation
 const VirtualizedTradeJournal = lazy(() =>
@@ -142,7 +143,7 @@ export default function App() {
     }
 
     // 2. Check general onboarding wizard status
-    fetch("http://127.0.0.1:8000/api/v1/onboarding/status")
+    fetch(apiUrl("/api/v1/onboarding/status"))
       .then((res) => res.json())
       .then((data) => {
         if (!data.first_boot_completed && savedPersona) {

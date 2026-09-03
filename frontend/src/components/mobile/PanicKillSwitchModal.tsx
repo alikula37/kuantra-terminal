@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AlertOctagon, ShieldAlert, Lock, Unlock, Zap, X } from "lucide-react";
+import { apiUrl } from "../../lib/backend";
 
 interface PanicStatus {
   is_locked_down: boolean;
@@ -19,7 +20,7 @@ export const PanicKillSwitchModal: React.FC<PanicKillSwitchModalProps> = ({ isOp
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchStatus = () => {
-    fetch("http://127.0.0.1:8000/api/v1/panic/status")
+    fetch(apiUrl("/api/v1/panic/status"))
       .then((res) => res.json())
       .then((data) => setPanicStatus(data))
       .catch(() => {});
@@ -33,7 +34,7 @@ export const PanicKillSwitchModal: React.FC<PanicKillSwitchModalProps> = ({ isOp
     setIsProcessing(true);
     setErrorMsg(null);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/panic/trigger", {
+      const res = await fetch(apiUrl("/api/v1/panic/trigger"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -58,7 +59,7 @@ export const PanicKillSwitchModal: React.FC<PanicKillSwitchModalProps> = ({ isOp
     setIsProcessing(true);
     setErrorMsg(null);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/panic/disarm", {
+      const res = await fetch(apiUrl("/api/v1/panic/disarm"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin_or_passkey: disarmPin }),

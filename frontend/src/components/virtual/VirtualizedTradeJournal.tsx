@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Trade } from "../../types";
 import { Zap, Play, Search, Filter, Upload } from "lucide-react";
+import { apiUrl } from "../../lib/backend";
 
 interface VirtualizedTradeJournalProps {
   onReplayTrade?: (tradeId: string) => void;
@@ -23,7 +24,7 @@ export const VirtualizedTradeJournal: React.FC<VirtualizedTradeJournalProps> = (
 
   const fetchTrades = () => {
     setIsLoading(true);
-    fetch("http://127.0.0.1:8000/api/v1/trades?limit=10000")
+    fetch(apiUrl("/api/v1/trades?limit=10000"))
       .then((res) => res.json())
       .then((data: Trade[]) => {
         // If small dataset, generate synthetic dense volume for 60FPS stress test demonstration

@@ -4,6 +4,7 @@ import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
 import { useTranslation } from "../context/I18nContext";
 import { TradeSide } from "../types";
+import { apiBase, apiUrl } from "../lib/backend";
 
 interface NewTradeModalProps {
   isOpen: boolean;
@@ -39,7 +40,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
 
   useEffect(() => {
     if (mode === "LIVE" && isOpen) {
-      fetch(`http://127.0.0.1:8000/api/v1/exchange/balances?exchange_id=${exchange}`)
+      fetch(`${apiBase()}/api/v1/exchange/balances?exchange_id=${exchange}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.free_quote !== undefined) {
@@ -58,7 +59,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     setErrorMessage(null);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/v1/market-data/candles?symbol=${encodeURIComponent(
+        `${apiBase()}/api/v1/market-data/candles?symbol=${encodeURIComponent(
           tradeSymbol.toUpperCase()
         )}&timeframe=1m&limit=1`
       );
@@ -114,7 +115,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     };
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/execution/order", {
+      const res = await fetch(apiUrl("/api/v1/execution/order"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
