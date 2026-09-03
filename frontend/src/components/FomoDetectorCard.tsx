@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { AnomaliesResponse } from "../types";
 import { Flame } from "lucide-react";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export const FomoDetectorCard: React.FC = () => {
   const [anomaliesData, setAnomaliesData] = useState<AnomaliesResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchAnomalies = () => {
-    fetch(apiUrl("/api/v1/psychology/anomalies"))
+    apiFetch(apiUrl("/api/v1/psychology/anomalies"))
       .then((res) => res.json())
       .then((data: AnomaliesResponse) => {
         setAnomaliesData(data);

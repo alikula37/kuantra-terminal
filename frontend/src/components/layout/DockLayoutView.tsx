@@ -8,7 +8,7 @@ import { MaeMfeVisualizer } from "../MaeMfeVisualizer";
 import { PropFirmShield } from "../PropFirmShield";
 import { PivotGrid } from "../PivotGrid";
 import { Layout, Save, RotateCcw, MonitorUp } from "lucide-react";
-import { apiBase, apiUrl } from "../../lib/backend";
+import { apiBase, apiFetch, apiUrl } from "../../lib/backend";
 
 interface DockLayoutViewProps {
   onPopoutWindow?: (panelId: string) => void;
@@ -91,7 +91,7 @@ export const DockLayoutView: React.FC<DockLayoutViewProps> = ({ onPopoutWindow }
 
   const loadPresetLayout = (presetName: string) => {
     setActivePreset(presetName);
-    fetch(`${apiBase()}/api/v1/workspace/layout/${encodeURIComponent(presetName)}`)
+    apiFetch(`${apiBase()}/api/v1/workspace/layout/${encodeURIComponent(presetName)}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.layout_data && dockRef.current) {
@@ -109,7 +109,7 @@ export const DockLayoutView: React.FC<DockLayoutViewProps> = ({ onPopoutWindow }
   const handleSaveLayout = () => {
     if (!dockRef.current) return;
     const saved = dockRef.current.saveLayout();
-    fetch(apiUrl("/api/v1/workspace/layout"), {
+    apiFetch(apiUrl("/api/v1/workspace/layout"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

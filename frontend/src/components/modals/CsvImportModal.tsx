@@ -2,7 +2,8 @@ import React, { useState, useRef } from "react";
 import { Upload, FileText, CheckCircle2, AlertTriangle, Download, X, RefreshCw } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
 import { useTradeStore } from "../../stores/tradeStore";
-import { apiUrl } from "../../lib/backend";
+import { apiFetch, apiUrl } from "../../lib/backend";
+import { downloadFromBackend } from "../../lib/desktop";
 
 interface CsvImportModalProps {
   isOpen: boolean;
@@ -65,7 +66,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(apiUrl("/api/v1/journal/preview-csv"), {
+      const res = await apiFetch(apiUrl("/api/v1/journal/preview-csv"), {
         method: "POST",
         body: formData,
       });
@@ -113,7 +114,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
       const formData = new FormData();
       formData.append("file", selectedFile);
 
-      const res = await fetch(apiUrl("/api/v1/journal/import-csv"), {
+      const res = await apiFetch(apiUrl("/api/v1/journal/import-csv"), {
         method: "POST",
         body: formData,
       });
@@ -133,7 +134,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
       });
 
       // Refetch trades in store
-      fetch(apiUrl("/api/v1/trades?limit=200"))
+      apiFetch(apiUrl("/api/v1/trades?limit=200"))
         .then((r) => r.json())
         .then((tradesData) => {
           if (Array.isArray(tradesData)) {
@@ -153,7 +154,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   };
 
   const handleDownloadTemplate = () => {
-    window.open(apiUrl("/api/v1/journal/template-csv"), "_blank");
+    downloadFromBackend("/api/v1/journal/template-csv", "kuantra_trade_template.csv");
   };
 
   const getFormatBadgeText = (format: string | null) => {

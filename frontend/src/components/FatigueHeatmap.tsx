@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FatigueMatrixResponse } from "../types";
 import { Activity } from "lucide-react";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export const FatigueHeatmap: React.FC = () => {
   const [data, setData] = useState<FatigueMatrixResponse | null>(null);
@@ -9,7 +9,7 @@ export const FatigueHeatmap: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    fetch(apiUrl("/api/v1/psychology/fatigue-matrix"))
+    apiFetch(apiUrl("/api/v1/psychology/fatigue-matrix"))
       .then((res) => res.json())
       .then((resData: FatigueMatrixResponse) => {
         setData(resData);

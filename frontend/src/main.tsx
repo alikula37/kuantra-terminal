@@ -4,11 +4,13 @@ import "./index.css";
 import { ThemeProvider } from "./context/ThemeContext";
 import { I18nProvider } from "./context/I18nContext";
 import { PluginRegistryProvider } from "./context/PluginRegistryContext";
-import { resolveBackendUrl } from "./lib/backend";
+import { bridgeReady } from "./lib/bridge";
+import { installPushSink } from "./lib/push";
 
-// The backend port is dynamic in the packaged app; resolve it before any
-// component fires its first request.
-resolveBackendUrl().finally(() => {
+// Inside the desktop app the Python bridge is injected right after load; wait for it so the
+// first requests never fall back to the browser path. In a plain browser this resolves at once.
+bridgeReady().finally(() => {
+  installPushSink();
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <I18nProvider>

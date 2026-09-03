@@ -8,7 +8,7 @@ import { useTradeStore } from "../stores/tradeStore";
 import { useMarketStore } from "../stores/marketStore";
 import { usePluginRegistry } from "../context/PluginRegistryContext";
 import { RefreshCw, LayoutDashboard } from "lucide-react";
-import { apiBase, apiUrl } from "../lib/backend";
+import { apiBase, apiFetch, apiUrl } from "../lib/backend";
 
 interface DashboardViewProps {
   onOpenNewTrade?: () => void;
@@ -33,10 +33,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const fetchDashboardData = useCallback(async () => {
     try {
       const [sumRes, breakRes, curveRes, heatRes] = await Promise.all([
-        fetch(apiUrl("/api/v1/portfolio/summary")),
-        fetch(apiUrl("/api/v1/portfolio/multi-asset-breakdown")),
-        fetch(apiUrl("/api/v1/portfolio/equity-curve")),
-        fetch(apiUrl("/api/v1/portfolio/heatmap"))
+        apiFetch(apiUrl("/api/v1/portfolio/summary")),
+        apiFetch(apiUrl("/api/v1/portfolio/multi-asset-breakdown")),
+        apiFetch(apiUrl("/api/v1/portfolio/equity-curve")),
+        apiFetch(apiUrl("/api/v1/portfolio/heatmap"))
       ]);
 
       if (sumRes.ok) setSummary(await sumRes.json());
@@ -64,7 +64,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const handleClosePosition = async (tradeId: string) => {
     try {
-      await fetch(`${apiBase()}/api/v1/trades/${tradeId}/close`, {
+      await apiFetch(`${apiBase()}/api/v1/trades/${tradeId}/close`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ArrowRightLeft, ShieldCheck, Zap, RefreshCw, Layers, CheckCircle2, DollarSign, Activity, Compass } from "lucide-react";
-import { apiUrl } from "../../lib/backend";
+import { apiFetch, apiUrl } from "../../lib/backend";
 
 export const DEXArbitrageStudio: React.FC = () => {
   const [selectedChain, setSelectedChain] = useState<string>("ethereum");
@@ -24,7 +24,7 @@ export const DEXArbitrageStudio: React.FC = () => {
   const fetchOpportunities = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(apiUrl("/api/v1/dex/scan-opportunities"), {
+      const res = await apiFetch(apiUrl("/api/v1/dex/scan-opportunities"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chain: selectedChain, min_profit_usd: 50.0, include_triangular: true }),
@@ -55,7 +55,7 @@ export const DEXArbitrageStudio: React.FC = () => {
     if (!selectedOpp) return;
     try {
       // 1. Run Flash Loan Simulation
-      const simRes = await fetch(apiUrl("/api/v1/dex/simulate-flash-loan"), {
+      const simRes = await apiFetch(apiUrl("/api/v1/dex/simulate-flash-loan"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -70,7 +70,7 @@ export const DEXArbitrageStudio: React.FC = () => {
       setSimResult(simData);
 
       // 2. Run DeFAI Agent Evaluation
-      const defaiRes = await fetch(apiUrl("/api/v1/dex/defai-evaluate"), {
+      const defaiRes = await apiFetch(apiUrl("/api/v1/dex/defai-evaluate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ opportunity: selectedOpp }),

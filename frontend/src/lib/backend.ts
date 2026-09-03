@@ -1,98 +1,105 @@
 /**
- * Single source of truth for the backend base URL.
+ * Single source of truth for how the UI reaches the backend.
  *
- * In the packaged Tauri app the Python sidecar is started with `--port 0`
- * and reports the ephemeral port it bound to. The Rust side exposes that port
- * through the `get_backend_port` command. Nothing in the frontend may
- * hardcode `127.0.0.1:8000`: in a packaged build that port belongs to whatever
- * else happens to be listening on the user's machine, not to Kuantra.
- *
- * In plain browser/dev mode (no Tauri runtime) we fall back to the default
- * port used by `python backend/main.py`.
+ * Desktop (pywebview): no HTTP at all. apiFetch() serialises the request and calls
+ * window.pywebview.api.request(); the reply is rebuilt into a real Response.
+ * Browser dev (vite + `python backend/main.py`): plain fetch against DEFAULT_BASE.
  */
+import { getBridge, type BridgeFile } from "./bridge";
 
-const DEFAULT_PORT = 8000;
-const DEFAULT_BASE = `http://127.0.0.1:${DEFAULT_PORT}`;
+export const DEFAULT_BASE = "http://127.0.0.1:8000";
 
-let resolvedBase: string = DEFAULT_BASE;
-let resolved = false;
-
-type TauriInternals = { invoke?: (cmd: string, args?: Record<string, unknown>) => Promise<unknown> };
-
-function tauriInternals(): TauriInternals | null {
-  if (typeof window === "undefined") return null;
-  const internals = (window as unknown as { __TAURI_INTERNALS__?: TauriInternals }).__TAURI_INTERNALS__;
-  return internals && typeof internals.invoke === "function" ? internals : null;
-}
-
-/** Current HTTP base, e.g. `http://127.0.0.1:53211`. Never ends with a slash. */
 export function apiBase(): string {
-  return resolvedBase;
+  return getBridge() ? "" : DEFAULT_BASE;
 }
 
-/** Build an absolute HTTP URL for a backend path starting with `/`. */
 export function apiUrl(path: string): string {
-  return `${resolvedBase}${path}`;
+  return `${apiBase()}${path}`;
 }
 
-/** Build an absolute WebSocket URL for a backend path starting with `/`. */
 export function wsUrl(path: string): string {
-  return `${resolvedBase.replace(/^http/, "ws")}${path}`;
+  return `${DEFAULT_BASE.replace(/^http/, "ws")}${path}`;
 }
 
-export function isBackendResolved(): boolean {
-  return resolved;
+function splitUrl(input: string): { path: string; query: string } {
+  let s = input;
+  if (s.startsWith(DEFAULT_BASE)) s = s.slice(DEFAULT_BASE.length);
+  const m = /^https?:\/\/[^/]+(\/.*)?$/.exec(s);
+  if (m) s = m[1] || "/";
+  const q = s.indexOf("?");
+  return q === -1 ? { path: s, query: "" } : { path: s.slice(0, q), query: s.slice(q + 1) };
 }
 
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+function normalizeHeaders(h: HeadersInit | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!h) return out;
+  if (typeof Headers !== "undefined" && h instanceof Headers) h.forEach((v, k) => (out[k] = v));
+  else if (Array.isArray(h)) h.forEach(([k, v]) => (out[k] = v));
+  else Object.entries(h).forEach(([k, v]) => (out[k] = String(v)));
+  return out;
+}
 
-/**
- * Resolve the backend URL from the Tauri runtime. Polls `get_backend_port`
- * until the sidecar has reported its port (0 means "not yet"), then falls back
- * to the default port after `timeoutMs` so the UI still renders if the
- * sidecar failed to start.
- */
-export async function resolveBackendUrl(timeoutMs = 120000, pollMs = 250): Promise<string> {
-  const internals = tauriInternals();
-  if (!internals) {
-    resolved = true;
-    return resolvedBase;
-  }
+async function blobToBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
 
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const port = await internals.invoke!("get_backend_port");
-      if (typeof port === "number" && port > 0) {
-        resolvedBase = `http://127.0.0.1:${port}`;
-        console.info(`[backend] resolved sidecar at ${resolvedBase}`);
-        // The port is reported before uvicorn binds; wait until it answers.
-        await waitForHttp(resolvedBase, Math.max(5000, deadline - Date.now()), pollMs);
-        resolved = true;
-        return resolvedBase;
-      }
-    } catch (err) {
-      console.warn("[backend] get_backend_port failed, using default port:", err);
-      break;
+function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
+  const bin = atob(b64);
+  // Backed by a plain ArrayBuffer (not ArrayBufferLike) so it satisfies BodyInit under TS 5.7 libs.
+  const out = new Uint8Array(new ArrayBuffer(bin.length));
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function abortError(): Error {
+  const e = new Error("The operation was aborted.");
+  e.name = "AbortError";
+  return e;
+}
+
+function raceAbort<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(abortError());
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortError());
+    signal.addEventListener("abort", onAbort, { once: true });
+    p.then((v) => { signal.removeEventListener("abort", onAbort); resolve(v); },
+           (e) => { signal.removeEventListener("abort", onAbort); reject(e); });
+  });
+}
+
+const NULL_BODY_STATUS = new Set([101, 204, 205, 304]);
+
+export async function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const api = getBridge();
+  if (!api) return fetch(input, init);
+
+  const { path, query } = splitUrl(input);
+  const method = (init.method || "GET").toUpperCase();
+  const headers = normalizeHeaders(init.headers);
+  let body: string | null = null;
+  const files: BridgeFile[] = [];
+  const fields: [string, string][] = [];
+
+  if (typeof FormData !== "undefined" && init.body instanceof FormData) {
+    for (const [k, v] of (init.body as any).entries() as Iterable<[string, FormDataEntryValue]>) {
+      if (typeof v === "string") fields.push([k, v]);
+      else files.push({ field: k, filename: (v as File).name || "upload", content_type: v.type || "application/octet-stream", data_b64: await blobToBase64(v) });
     }
-    await sleep(pollMs);
+  } else if (typeof init.body === "string") {
+    body = init.body;
+  } else if (init.body instanceof Blob) {
+    files.push({ field: "file", filename: "upload", content_type: init.body.type || "application/octet-stream", data_b64: await blobToBase64(init.body) });
+  } else if (init.body != null) {
+    body = String(init.body);
   }
 
-  console.warn(`[backend] sidecar port not reported within ${timeoutMs}ms, falling back to ${DEFAULT_BASE}`);
-  resolved = true;
-  return resolvedBase;
-}
+  const call = api.request({ method, path, query, headers, body, files, fields });
+  const result = init.signal ? await raceAbort(call, init.signal) : await call;
 
-/** Poll `/health` until the backend responds (any HTTP status counts). */
-async function waitForHttp(base: string, timeoutMs: number, pollMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      await fetch(`${base}/health`, { cache: "no-store" });
-      return;
-    } catch {
-      await sleep(pollMs);
-    }
-  }
-  console.warn(`[backend] ${base} did not answer within ${timeoutMs}ms; continuing anyway`);
+  const status = result.status >= 200 && result.status <= 599 ? result.status : 500;
+  const payload: BodyInit | null = NULL_BODY_STATUS.has(status) ? null : result.body_b64 != null ? base64ToBytes(result.body_b64) : result.body ?? "";
+  return new Response(payload, { status, headers: result.headers });
 }

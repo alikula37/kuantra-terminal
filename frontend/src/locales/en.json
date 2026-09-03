@@ -49,7 +49,7 @@
     "step3_title": "Theme & Localization",
     "step3_desc": "Customize your visual workspace palette and internationalized terminal language",
     "step4_title": "Verification & Handshake",
-    "step4_desc": "Verify C++ sidecar connectivity, WebSocket data streams, and database integrity",
+    "step4_desc": "Verify desktop core connectivity, live data streams, and database integrity",
     "mode": {
       "live_title": "Live Realtime Feed & Execution",
       "live_desc": "Direct market routing with Binance, OKX, and CME QuickFIX DMA",
@@ -77,7 +77,7 @@
       "locale_de": "Deutsch (DE)"
     },
     "verification": {
-      "checking_sidecar": "Testing C++ sidecar IPC connection...",
+      "checking_sidecar": "Testing desktop core IPC connection...",
       "checking_sqlite": "Verifying SQLite OLTP (WAL mode)...",
       "checking_duckdb": "Inspecting DuckDB OLAP columnar engine...",
       "checking_websocket": "Establishing local WebSocket telemetry bridge...",
@@ -114,9 +114,9 @@
     "expectancy": "Mathematical Expectancy (EV)"
   },
   "vault": {
-    "title": "Tauri Stronghold Vault",
+    "title": "Encrypted Local Vault",
     "status_encrypted": "AES-256-GCM Encrypted",
-    "saved": "{exchange} credentials securely saved to Stronghold Vault."
+    "saved": "{exchange} credentials securely saved to the encrypted local vault."
   },
   "settings": {
     "title": "System & Runtime Settings",

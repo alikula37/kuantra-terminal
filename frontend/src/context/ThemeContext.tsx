@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export type Theme = "dark" | "light";
 
@@ -114,7 +114,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     applyDomTokens(newTheme);
 
     // Sync with backend asynchronously
-    fetch(apiUrl("/api/v1/settings"), {
+    apiFetch(apiUrl("/api/v1/settings"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active_theme: newTheme }),
@@ -129,7 +129,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   useEffect(() => {
     applyDomTokens(theme);
 
-    fetch(apiUrl("/api/v1/settings"))
+    apiFetch(apiUrl("/api/v1/settings"))
       .then((res) => res.json())
       .then((data) => {
         if (data && (data.active_theme === "light" || data.active_theme === "dark")) {

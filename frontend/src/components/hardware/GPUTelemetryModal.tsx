@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Cpu, Zap, Activity, Thermometer, Sliders, Play, CheckCircle2, X, RefreshCw, Layers } from "lucide-react";
-import { apiUrl } from "../../lib/backend";
+import { apiFetch, apiUrl } from "../../lib/backend";
 
 interface GPUTelemetryModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export const GPUTelemetryModal: React.FC<GPUTelemetryModalProps> = ({ isOpen, on
   const fetchStatus = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(apiUrl("/api/v1/hardware/gpu-status"));
+      const res = await apiFetch(apiUrl("/api/v1/hardware/gpu-status"));
       const data = await res.json();
       setMetrics(data);
       setSelectedEngine(data.engine || "CUDA");
@@ -43,7 +43,7 @@ export const GPUTelemetryModal: React.FC<GPUTelemetryModalProps> = ({ isOpen, on
 
   const handleSaveConfig = async () => {
     try {
-      const res = await fetch(apiUrl("/api/v1/hardware/configure"), {
+      const res = await apiFetch(apiUrl("/api/v1/hardware/configure"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -66,7 +66,7 @@ export const GPUTelemetryModal: React.FC<GPUTelemetryModalProps> = ({ isOpen, on
     setIsBenchmarking(true);
     setBenchmarkResult(null);
     try {
-      const res = await fetch(apiUrl("/api/v1/swarm/fast-eval"), {
+      const res = await apiFetch(apiUrl("/api/v1/swarm/fast-eval"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { VisionParseResult } from "../types";
 import { Camera, Upload, CheckCircle2, ArrowRight, RefreshCw, X } from "lucide-react";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 interface ChartVisionUploaderProps {
   isOpen: boolean;
@@ -55,7 +55,7 @@ export const ChartVisionUploader: React.FC<ChartVisionUploaderProps> = ({
     setSuccessMessage(null);
 
     try {
-      const res = await fetch(apiUrl("/api/v1/ai/parse-chart"), {
+      const res = await apiFetch(apiUrl("/api/v1/ai/parse-chart"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image_data: base64Data }),
@@ -85,7 +85,7 @@ export const ChartVisionUploader: React.FC<ChartVisionUploaderProps> = ({
         notes: `Vision OCR Trade Setup (${parseResult.timeframe}) | RR: ${parseResult.risk_reward_ratio}R | Confidence: ${(parseResult.confidence_score * 100).toFixed(0)}%`,
       };
 
-      const res = await fetch(apiUrl("/api/v1/trades"), {
+      const res = await apiFetch(apiUrl("/api/v1/trades"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

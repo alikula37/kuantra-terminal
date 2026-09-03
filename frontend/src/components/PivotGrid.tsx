@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { PivotGridResponse, PivotRow } from "../types";
 import { Layers, ArrowUpDown, Download, Filter, CheckSquare, Square } from "lucide-react";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
+import { saveTextFile } from "../lib/desktop";
 
 export const PivotGrid: React.FC = () => {
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>(["symbol", "session"]);
@@ -20,7 +21,7 @@ export const PivotGrid: React.FC = () => {
 
   const fetchPivot = (dims: string[]) => {
     setIsLoading(true);
-    fetch(apiUrl("/api/v1/analytics/pivot"), {
+    apiFetch(apiUrl("/api/v1/analytics/pivot"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ group_by: dims }),
@@ -93,12 +94,7 @@ export const PivotGrid: React.FC = () => {
       ].join(","));
     }
 
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.setAttribute("href", url);
-    a.setAttribute("download", `kuantra_pivot_${Date.now()}.csv`);
-    a.click();
+    saveTextFile(`kuantra_pivot_${Date.now()}.csv`, csvRows.join("\n"));
   };
 
   return (

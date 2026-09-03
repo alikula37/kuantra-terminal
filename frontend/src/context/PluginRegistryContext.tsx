@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export interface PluginMetadata {
   plugin_id: string;
@@ -77,7 +77,7 @@ interface PluginRegistryContextType {
 
 const PluginRegistryContext = createContext<PluginRegistryContextType | undefined>(undefined);
 
-// Resolved lazily: the backend port is only known after resolveBackendUrl().
+// Resolved lazily: apiUrl() is path-only inside the desktop bridge, absolute in browser dev.
 const API_BASE = () => apiUrl("/api/v1");
 
 export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -98,7 +98,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
   const fetchPlugins = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE()}/plugins/installed`);
+      const res = await apiFetch(`${API_BASE()}/plugins/installed`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.plugins) {
@@ -241,7 +241,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
   const togglePlugin = useCallback(
     async (pluginId: string, enable: boolean): Promise<boolean> => {
       try {
-        await fetch(`${API_BASE()}/plugins/toggle`, {
+        await apiFetch(`${API_BASE()}/plugins/toggle`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plugin_id: pluginId, enable })
@@ -277,7 +277,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
           }))
         );
 
-        await fetch(`${API_BASE()}/plugins/apply-persona`, {
+        await apiFetch(`${API_BASE()}/plugins/apply-persona`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ persona })

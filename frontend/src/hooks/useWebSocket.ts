@@ -2,19 +2,61 @@ import { useEffect, useRef, useCallback } from "react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
 import { wsUrl } from "../lib/backend";
+import { getBridge } from "../lib/bridge";
+import { openStream, subscribePush } from "../lib/push";
 
-// Resolved lazily: the backend port is only known after resolveBackendUrl().
+// Only used by the browser dev fallback; the desktop app has no HTTP/WS listener at all.
 const getWsUrl = () => wsUrl("/api/v1/ws/stream");
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const pingIntervalRef = useRef<number | null>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const { setConnectionStatus, updateTick, updateCandle } = useMarketStore();
   const { updatePositionPnl } = useTradeStore();
 
+  const handleMessage = useCallback(
+    (message: any) => {
+      if (message.type === "TICK") {
+        updateTick(
+          message.price,
+          message.latency_ms || 12,
+          message.timestamp || Date.now(),
+          message.volume
+        );
+        if (message.open_positions) {
+          updatePositionPnl(message.open_positions);
+        }
+      } else if (message.type === "CANDLE_UPDATE") {
+        updateCandle(message.data);
+      } else if (message.type === "SNAPSHOT") {
+        if (message.last_price) {
+          updateTick(message.last_price, 12, Date.now());
+        }
+        if (message.open_positions) {
+          updatePositionPnl(message.open_positions);
+        }
+      }
+    },
+    [updateTick, updateCandle, updatePositionPnl]
+  );
+
   const connect = useCallback(() => {
+    // Desktop: Python pushes batches into window.__kuantraPush; there is no socket.
+    if (getBridge()) {
+      if (unsubscribeRef.current) return;
+      unsubscribeRef.current = subscribePush(handleMessage);
+      openStream()
+        .then((snap) => {
+          if (snap) handleMessage(snap);
+          setConnectionStatus(true);
+        })
+        .catch(() => setConnectionStatus(false));
+      return;
+    }
+
     if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -36,28 +78,7 @@ export function useWebSocket() {
       ws.onmessage = (event) => {
         try {
           if (event.data === "pong") return;
-          const message = JSON.parse(event.data);
-
-          if (message.type === "TICK") {
-            updateTick(
-              message.price,
-              message.latency_ms || 12,
-              message.timestamp || Date.now(),
-              message.volume
-            );
-            if (message.open_positions) {
-              updatePositionPnl(message.open_positions);
-            }
-          } else if (message.type === "CANDLE_UPDATE") {
-            updateCandle(message.data);
-          } else if (message.type === "SNAPSHOT") {
-            if (message.last_price) {
-              updateTick(message.last_price, 12, Date.now());
-            }
-            if (message.open_positions) {
-              updatePositionPnl(message.open_positions);
-            }
-          }
+          handleMessage(JSON.parse(event.data));
         } catch {
           // ignore
         }
@@ -81,7 +102,7 @@ export function useWebSocket() {
         connect();
       }, 3000);
     }
-  }, [setConnectionStatus, updateTick, updateCandle, updatePositionPnl]);
+  }, [handleMessage, setConnectionStatus]);
 
   useEffect(() => {
     connect();
@@ -89,6 +110,10 @@ export function useWebSocket() {
     return () => {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
       if (wsRef.current) {
         wsRef.current.close();
       }

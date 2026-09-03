@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export interface TvSyncState {
   symbol: string;
@@ -19,7 +19,7 @@ export const useTradingViewSync = (onSymbolChange?: (symbol: string, timeframe: 
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   const fetchCurrentSync = useCallback(() => {
-    fetch(apiUrl("/api/v1/tv/sync-status"))
+    apiFetch(apiUrl("/api/v1/tv/sync-status"))
       .then((res) => res.json())
       .then((data) => {
         if (data.active_symbol) {

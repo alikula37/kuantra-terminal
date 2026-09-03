@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTradeStore } from "../stores/tradeStore";
 import { Filter, Plus, PlayCircle, BookOpen, Upload } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
@@ -17,7 +17,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
 
   useEffect(() => {
-    fetch(apiUrl("/api/v1/trades?limit=200"))
+    apiFetch(apiUrl("/api/v1/trades?limit=200"))
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {

@@ -3,7 +3,7 @@ import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, HistogramDat
 import { useMarketStore } from "../stores/marketStore";
 import { useTranslation } from "../context/I18nContext";
 import { RefreshCw, AlertCircle, BarChart2 } from "lucide-react";
-import { apiBase } from "../lib/backend";
+import { apiBase, apiFetch } from "../lib/backend";
 
 export interface CandleDataPoint {
   timestamp: number;
@@ -156,7 +156,7 @@ export const TradingViewChart: React.FC = () => {
         activeSymbol
       )}&timeframe=${encodeURIComponent(activeTimeframe)}&limit=500`;
 
-      const response = await fetch(url, { signal: controller.signal });
+      const response = await apiFetch(url, { signal: controller.signal });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${activeSymbol} verisi alınamadı.`);
       }

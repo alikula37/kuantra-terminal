@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Smartphone, QrCode, ShieldCheck, Key, Trash2, RefreshCw, Lock } from "lucide-react";
-import { apiUrl } from "../../lib/backend";
+import { apiFetch, apiUrl } from "../../lib/backend";
 
 interface PairedDevice {
   device_id: string;
@@ -32,7 +32,7 @@ export const MobileCompanionHUD: React.FC = () => {
 
   const fetchMobileData = () => {
     setIsLoading(true);
-    fetch(apiUrl("/api/v1/mobile/devices"))
+    apiFetch(apiUrl("/api/v1/mobile/devices"))
       .then((res) => res.json())
       .then((data) => {
         if (data.devices) setDevices(data.devices);
@@ -40,7 +40,7 @@ export const MobileCompanionHUD: React.FC = () => {
       .catch(() => {})
       .finally(() => setIsLoading(false));
 
-    fetch(apiUrl("/api/v1/security/passkey/list"))
+    apiFetch(apiUrl("/api/v1/security/passkey/list"))
       .then((res) => res.json())
       .then((data) => {
         if (data.passkeys) setPasskeys(data.passkeys);
@@ -49,7 +49,7 @@ export const MobileCompanionHUD: React.FC = () => {
   };
 
   const generateNewQr = () => {
-    fetch(apiUrl("/api/v1/mobile/pairing-qr"))
+    apiFetch(apiUrl("/api/v1/mobile/pairing-qr"))
       .then((res) => res.json())
       .then((data) => setQrData(data))
       .catch(() => {});
@@ -61,7 +61,7 @@ export const MobileCompanionHUD: React.FC = () => {
   }, []);
 
   const revokeDevice = (deviceId: string) => {
-    fetch(apiUrl("/api/v1/mobile/revoke"), {
+    apiFetch(apiUrl("/api/v1/mobile/revoke"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ device_id: deviceId }),

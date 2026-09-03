@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AiAuditReportResponse, AiQueryResult } from "../types";
 import { Bot, Sparkles, AlertTriangle, CheckCircle2, Search, ArrowRight } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export const AiCoachPanel: React.FC = () => {
   const { t } = useTranslation();
@@ -14,7 +14,7 @@ export const AiCoachPanel: React.FC = () => {
 
   const fetchReport = () => {
     setIsLoading(true);
-    fetch(apiUrl("/api/v1/ai/audit-report"))
+    apiFetch(apiUrl("/api/v1/ai/audit-report"))
       .then((res) => res.json())
       .then((data: AiAuditReportResponse) => {
         setReport(data);
@@ -35,7 +35,7 @@ export const AiCoachPanel: React.FC = () => {
 
     setIsQuerying(true);
     try {
-      const res = await fetch(apiUrl("/api/v1/ai/query"), {
+      const res = await apiFetch(apiUrl("/api/v1/ai/query"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: promptToSend }),

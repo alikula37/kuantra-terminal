@@ -3,7 +3,7 @@ import { Database, Server, RefreshCw, Zap, DollarSign, Check } from "lucide-reac
 import { UpdateNotifier } from "./updater/UpdateNotifier";
 import { SystemHealthSettings } from "./settings/SystemHealthSettings";
 import { useTranslation } from "../context/I18nContext";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export const SettingsView: React.FC = () => {
   const { t } = useTranslation();
@@ -13,7 +13,7 @@ export const SettingsView: React.FC = () => {
   const [isSavingBalance, setIsSavingBalance] = useState<boolean>(false);
 
   useEffect(() => {
-    fetch(apiUrl("/api/v1/portfolio/summary"))
+    apiFetch(apiUrl("/api/v1/portfolio/summary"))
       .then((res) => res.json())
       .then((data) => {
         if (data && typeof data.initial_balance === "number") {
@@ -28,7 +28,7 @@ export const SettingsView: React.FC = () => {
     setIsSavingBalance(true);
     setBalanceSavedMsg(null);
     try {
-      const res = await fetch(apiUrl("/api/v1/portfolio/set-initial-balance"), {
+      const res = await apiFetch(apiUrl("/api/v1/portfolio/set-initial-balance"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initial_balance: Number(initialBalance) }),

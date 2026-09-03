@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { TiltStatusResponse } from "../types";
 import { Brain, AlertCircle, CheckCircle2 } from "lucide-react";
-import { apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export const TiltMeter: React.FC = () => {
   const [tilt, setTilt] = useState<TiltStatusResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchTilt = () => {
-    fetch(apiUrl("/api/v1/psychology/tilt-status"))
+    apiFetch(apiUrl("/api/v1/psychology/tilt-status"))
       .then((res) => res.json())
       .then((data: TiltStatusResponse) => {
         setTilt(data);

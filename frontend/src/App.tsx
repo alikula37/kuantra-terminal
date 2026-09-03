@@ -7,7 +7,7 @@ import { ModuleLoadingSkeleton } from "./components/layout/ModuleLoadingSkeleton
 import { useWebSocket } from "./hooks/useWebSocket";
 import { usePopoutWindow } from "./hooks/usePopoutWindow";
 import { usePluginRegistry } from "./context/PluginRegistryContext";
-import { apiUrl } from "./lib/backend";
+import { apiFetch, apiUrl } from "./lib/backend";
 
 // Lazy-loaded Studio & Advanced Analysis Modules for Lite Mode bundle isolation
 const VirtualizedTradeJournal = lazy(() =>
@@ -143,7 +143,7 @@ export default function App() {
     }
 
     // 2. Check general onboarding wizard status
-    fetch(apiUrl("/api/v1/onboarding/status"))
+    apiFetch(apiUrl("/api/v1/onboarding/status"))
       .then((res) => res.json())
       .then((data) => {
         if (!data.first_boot_completed && savedPersona) {
@@ -172,7 +172,7 @@ export default function App() {
       <div className="h-screen w-screen bg-[#0b0e14] text-slate-100 flex flex-col font-mono select-none overflow-hidden">
         <div className="h-8 bg-[#0d121c] border-b border-surface-border px-3 flex items-center justify-between text-[11px]">
           <span className="text-accent font-bold">KUANTRA DETACHED MONITOR ({popoutParam.toUpperCase()})</span>
-          <span className="text-slate-500 text-[10px]">Tauri Multi-Screen Sync Active</span>
+          <span className="text-slate-500 text-[10px]">Multi-Screen Sync Active</span>
         </div>
         <div className="flex-1 overflow-hidden">
           <Suspense fallback={<ModuleLoadingSkeleton moduleName={popoutParam} />}>
