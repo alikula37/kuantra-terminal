@@ -34,10 +34,15 @@ def main() -> int:
     env = {**os.environ,
            "KUANTRA_DATA_DIR": str(ROOT / "dist" / "smoke-data"),
            "KUANTRA_GATEWAY_ENABLED": "0"}
-    proc = subprocess.run(
-        [str(exe), "--smoke", "--smoke-report", args.report, "--smoke-timeout", str(args.timeout)],
-        env=env, timeout=args.timeout + 60,
-    )
+    hard_timeout = args.timeout + 60
+    try:
+        proc = subprocess.run(
+            [str(exe), "--smoke", "--smoke-report", args.report, "--smoke-timeout", str(args.timeout)],
+            env=env, timeout=hard_timeout,
+        )
+    except subprocess.TimeoutExpired:
+        print(f"SMOKE FAIL (timeout after {hard_timeout:g} s)")
+        return 1
     report = Path(args.report)
     print(report.read_text() if report.exists() else "no smoke report written")
     ok = proc.returncode == 0 and report.exists() and json.loads(report.read_text()).get("ok") is True

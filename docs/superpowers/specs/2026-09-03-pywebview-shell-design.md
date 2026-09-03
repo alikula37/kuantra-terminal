@@ -110,7 +110,7 @@ Two features are used by *other programs* and therefore still need a socket:
 the TradingView Chrome extension (`/ws/tv-sync`) and TradingView alert webhooks
 (`/api/v1/webhook/tradingview`). They are served by a tiny FastAPI sub-app on uvicorn bound to
 `127.0.0.1:8765` (settings `gateway_enabled`, `gateway_host`, `gateway_port`; env
-`GATEWAY_PORT` etc.). The socket is pre-bound by us; if the port is busy the gateway is disabled
+`KUANTRA_GATEWAY_ENABLED`, `KUANTRA_GATEWAY_HOST`, `KUANTRA_GATEWAY_PORT`). The socket is pre-bound by us; if the port is busy the gateway is disabled
 and logged, the app still starts. The frontend never talks to it. The Chrome extension defaults
 to 8765 and lets the user change the port in its popup.
 

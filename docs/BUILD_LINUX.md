@@ -18,11 +18,13 @@ AppImage.
 - **Python 3.11+**
 - **Node.js 20+ & npm**
 
-System libraries required both to build and to *run* the AppImage:
+System libraries required both to build and to *run* the AppImage (`binutils` is build-only:
+PyInstaller shells out to `objdump` to scan shared-library dependencies):
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
+  binutils \
   libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
   libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libnss3 libasound2 libgl1 \
   libegl1 libxdamage1 libxcomposite1 libxrandr2 libxtst6 libdbus-1-3

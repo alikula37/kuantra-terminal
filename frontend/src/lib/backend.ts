@@ -21,11 +21,15 @@ export function wsUrl(path: string): string {
   return `${DEFAULT_BASE.replace(/^http/, "ws")}${path}`;
 }
 
+/** True for our own backend: a relative URL, or an absolute one under DEFAULT_BASE. */
+function isBackendUrl(input: string): boolean {
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(input) && !input.startsWith("//")) return true;
+  return input === DEFAULT_BASE || input.startsWith(`${DEFAULT_BASE}/`) || input.startsWith(`${DEFAULT_BASE}?`);
+}
+
 function splitUrl(input: string): { path: string; query: string } {
   let s = input;
-  if (s.startsWith(DEFAULT_BASE)) s = s.slice(DEFAULT_BASE.length);
-  const m = /^https?:\/\/[^/]+(\/.*)?$/.exec(s);
-  if (m) s = m[1] || "/";
+  if (s.startsWith(DEFAULT_BASE)) s = s.slice(DEFAULT_BASE.length) || "/";
   const q = s.indexOf("?");
   return q === -1 ? { path: s, query: "" } : { path: s.slice(0, q), query: s.slice(q + 1) };
 }
@@ -75,12 +79,15 @@ const NULL_BODY_STATUS = new Set([204, 205, 304]);
 
 export async function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
   const api = getBridge();
-  if (!api) return fetch(input, init);
+  // A third-party absolute URL (an exchange API, a CDN) is not ours to route through the bridge:
+  // the backend would try to serve it as one of its own paths. Only our own backend is bridged.
+  if (!api || !isBackendUrl(input)) return fetch(input, init);
 
   const { path, query } = splitUrl(input);
   const method = (init.method || "GET").toUpperCase();
   const headers = normalizeHeaders(init.headers);
   let body: string | null = null;
+  let bodyB64: string | null = null;
   const files: BridgeFile[] = [];
   const fields: [string, string][] = [];
 
@@ -92,12 +99,15 @@ export async function apiFetch(input: string, init: RequestInit = {}): Promise<R
   } else if (typeof init.body === "string") {
     body = init.body;
   } else if (init.body instanceof Blob) {
-    files.push({ field: "file", filename: "upload", content_type: init.body.type || "application/octet-stream", data_b64: await blobToBase64(init.body) });
+    // fetch() would send a bare Blob as the raw request body, so the bridge does the same:
+    // wrapping it in a multipart part named "file" would silently change the request shape.
+    bodyB64 = await blobToBase64(init.body);
+    if (!Object.keys(headers).some((k) => k.toLowerCase() === "content-type") && init.body.type) headers["Content-Type"] = init.body.type;
   } else if (init.body != null) {
     body = String(init.body);
   }
 
-  const call = api.request({ method, path, query, headers, body, files, fields });
+  const call = api.request({ method, path, query, headers, body, body_b64: bodyB64, files, fields });
   const result = init.signal ? await raceAbort(call, init.signal) : await call;
 
   const status = result.status >= 200 && result.status <= 599 ? result.status : 500;

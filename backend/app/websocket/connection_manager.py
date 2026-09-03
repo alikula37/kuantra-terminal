@@ -33,12 +33,24 @@ class ConnectionManager:
         logger.info(f"WebSocket client disconnected. Total clients: {len(self.active_connections)}")
 
     def attach(self, sink, channels: Optional[Set[str]] = None) -> None:
-        """Register a non-WebSocket sink (anything with `async send_text(str)`), e.g. the desktop push channel."""
+        """Register a non-WebSocket sink (anything with `async send_text(str)`), e.g. the desktop push channel.
+
+        Deliberately synchronous and unlocked: call it from the backend loop thread only (the
+        desktop bridge does, via runtime.run), so it cannot interleave with an awaiting broadcast.
+        See detach() for the one case that is allowed off-loop.
+        """
         self.active_connections.add(sink)
         self.subscriptions[sink] = set(channels or {"market_ticks", "kline_updates", "open_positions", "system_metrics"})
         logger.info(f"Push sink attached. Total clients: {len(self.active_connections)}")
 
     def detach(self, sink) -> None:
+        """Remove a sink registered with attach(). Same threading rule as attach(), with one
+        documented exception: during shutdown (PushChannel.stop) the caller has no reference to
+        the backend loop, so it calls this directly from the thread that is stopping the channel.
+        That is safe because both operations here are single, GIL-atomic container mutations
+        (set.discard / dict.pop) that cannot leave a half-updated state, and because the stopping
+        sink no longer drains its queue - the worst outcome of racing an in-flight broadcast is
+        one message enqueued into a channel nobody reads."""
         self.active_connections.discard(sink)
         self.subscriptions.pop(sink, None)
 

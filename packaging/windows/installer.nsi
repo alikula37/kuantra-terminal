@@ -1,6 +1,5 @@
 ; Kuantra Terminal per-user installer. Build: makensis -DVERSION=x.y.z -DSRCDIR=<dist\Kuantra Terminal> -DOUTFILE=<path> -DICON=<icon.ico> installer.nsi
 !include "MUI2.nsh"
-!include "LogicLib.nsh"
 
 !define APP_NAME "Kuantra Terminal"
 !define EXE_NAME "Kuantra Terminal.exe"
@@ -19,7 +18,6 @@ SetCompressor /SOLID lzma
 !define MUI_UNICON "${ICON}"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\${EXE_NAME}"
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
@@ -27,12 +25,12 @@ SetCompressor /SOLID lzma
 !insertmacro MUI_LANGUAGE "English"
 
 Function KillRunning
-  nsExec::ExecToLog 'taskkill /F /T /IM "Kuantra Terminal.exe"'
+  nsExec::ExecToLog 'taskkill /F /T /IM "${EXE_NAME}"'
   Pop $0
 FunctionEnd
 
 Function un.KillRunning
-  nsExec::ExecToLog 'taskkill /F /T /IM "Kuantra Terminal.exe"'
+  nsExec::ExecToLog 'taskkill /F /T /IM "${EXE_NAME}"'
   Pop $0
 FunctionEnd
 
@@ -61,7 +59,8 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk"
   RMDir "$SMPROGRAMS\${APP_NAME}"
   Delete "$DESKTOP\${APP_NAME}.lnk"
-  RMDir /r "$INSTDIR"
+  Delete /REBOOTOK "$INSTDIR\Uninstall.exe"
+  RMDir /r /REBOOTOK "$INSTDIR"
   DeleteRegKey HKCU "${UNINST_KEY}"
   DeleteRegKey HKCU "Software\${APP_NAME}"
 SectionEnd

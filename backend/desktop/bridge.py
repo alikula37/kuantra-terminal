@@ -12,6 +12,7 @@ import sys
 import webbrowser
 from asyncio import CancelledError
 from concurrent.futures import CancelledError as FuturesCancelledError
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -19,16 +20,27 @@ from app.core.paths import DATA_DIR, is_frozen
 from app.version import __version__
 from desktop import clipboard
 from desktop.push import PushChannel
-from desktop.runtime import BackendRuntime
+from desktop.runtime import BackendRuntime, RuntimeStopped
 
 logger = logging.getLogger("desktop.bridge")
 
 TEXT_TYPES = ("application/json", "text/", "application/xml", "application/javascript", "application/problem+json")
 
+# Hop-by-hop and framing headers describe the transport we do not have. Passing them to fetch()
+# in the UI makes it disagree with the body we actually hand over (notably content-length, which
+# counts bytes, not the decoded string).
+HOP_BY_HOP_HEADERS = {
+    "content-length", "content-encoding", "transfer-encoding", "connection", "keep-alive", "upgrade",
+}
+
 
 def _is_text(content_type: str) -> bool:
     ct = (content_type or "").lower()
     return any(ct.startswith(t) for t in TEXT_TYPES)
+
+
+def _passthrough_headers(headers) -> dict:
+    return {k: v for k, v in headers.items() if k.lower() not in HOP_BY_HOP_HEADERS}
 
 
 class DesktopBridge:
@@ -41,9 +53,11 @@ class DesktopBridge:
         windows_getter: Optional[Callable[[], list]] = None,
         dialog_window_getter: Optional[Callable[[], object]] = None,
     ):
-        self.runtime = runtime
-        self.push = push
-        self.gateway = gateway
+        # Leading underscore is load-bearing: pywebview walks the js_api object's public
+        # attributes and recursively exposes non-callable ones to JavaScript.
+        self._runtime = runtime
+        self._push = push
+        self._gateway = gateway
         self.index_url = index_url
         self._windows = windows_getter or (lambda: [])
         self._dialog_window = dialog_window_getter
@@ -62,19 +76,24 @@ class DesktopBridge:
         if req.get("body_b64"):
             body_bytes = base64.b64decode(req["body_b64"])
         try:
-            resp = self.runtime.call(
+            resp = self._runtime.call(
                 req.get("method", "GET"), req.get("path", "/"), req.get("query") or "",
                 headers=req.get("headers") or {}, body=body_bytes, files=files or None, fields=fields or None,
             )
-        except (RuntimeError, CancelledError, FuturesCancelledError) as exc:
+        except (RuntimeStopped, CancelledError, FuturesCancelledError) as exc:
             # The backend loop is gone (app is closing). Answer the UI instead of hanging its thread.
             logger.debug("request during shutdown: %s", exc)
             return {"status": 503, "headers": {"content-type": "application/json"},
                     "body": '{"detail":"backend unavailable"}', "body_b64": None}
+        except FuturesTimeoutError:
+            logger.warning("request timed out: %s %s", req.get("method", "GET"), req.get("path", "/"))
+            return {"status": 504, "headers": {"content-type": "application/json"},
+                    "body": '{"detail":"backend timed out"}', "body_b64": None}
+        headers = _passthrough_headers(resp.headers)
         content_type = resp.headers.get("content-type", "")
         if _is_text(content_type) or not resp.content:
-            return {"status": resp.status, "headers": resp.headers, "body": resp.content.decode("utf-8", errors="replace"), "body_b64": None}
-        return {"status": resp.status, "headers": resp.headers, "body": None, "body_b64": base64.b64encode(resp.content).decode("ascii")}
+            return {"status": resp.status, "headers": headers, "body": resp.content.decode("utf-8", errors="replace"), "body_b64": None}
+        return {"status": resp.status, "headers": headers, "body": None, "body_b64": base64.b64encode(resp.content).decode("ascii")}
 
     # ---- live stream -----------------------------------------------------------------------
     def stream_open(self) -> dict:
@@ -83,7 +102,7 @@ class DesktopBridge:
 
         async def _attach():
             if not self._stream_attached:
-                ws_manager.attach(self.push, PushChannel.CHANNELS)
+                ws_manager.attach(self._push, PushChannel.CHANNELS)
                 self._stream_attached = True
             return {
                 "type": "SNAPSHOT",
@@ -92,7 +111,7 @@ class DesktopBridge:
                 "open_positions": binance_client._recalculate_open_positions(binance_client.last_price),
             }
 
-        return self.runtime.run(_attach())
+        return self._runtime.run(_attach())
 
     # ---- windows ---------------------------------------------------------------------------
     def open_popout(self, spec: dict) -> dict:
@@ -137,7 +156,7 @@ class DesktopBridge:
         return {"saved": True, "path": path}
 
     def download(self, spec: dict) -> dict:
-        resp = self.runtime.call("GET", spec["path"], spec.get("query") or "")
+        resp = self._runtime.call("GET", spec["path"], spec.get("query") or "")
         if resp.status != 200:
             return {"saved": False, "path": None, "status": resp.status}
         filename = spec.get("filename")
@@ -176,5 +195,5 @@ class DesktopBridge:
             "gui": gui_name,
             "frozen": is_frozen(),
             "data_dir": str(DATA_DIR),
-            "gateway_url": getattr(self.gateway, "url", None),
+            "gateway_url": getattr(self._gateway, "url", None),
         }

@@ -20,7 +20,7 @@ All AI coding agents (Antigravity, Cursor, Copilot) operating on this repository
   * Sidebar MUST display strictly the 6 core views (Dashboard, Journal, Charts, Analytics, ModStore, Settings).
   * All 20+ specialized tabs, HFT DOM widgets, GPU meters, and docking presets MUST be purged from the DOM.
   * Active modules badge must render `LITE ÇEKİRDEK (0 Eklenti)` / `LITE CORE (0 Plugins)`.
-- Heavy specialized libraries (PyTorch, DuckDB, Web3, Bleak, QuickFIX) must never be bundled in the core installer; they must be streamed on-demand via ModStore `.kmod` packages.
+- Heavy specialized libraries (PyTorch, Web3, Bleak, QuickFIX) must never be bundled in the core installer; they must be streamed on-demand via ModStore `.kmod` packages. numpy/pandas/scipy/duckdb are part of the core analytics stack and ARE always bundled.
 
 ## 📦 4. PACKAGING & LIFECYCLE MANAGEMENT
 - The desktop app is a single pywebview + in-process FastAPI process frozen with PyInstaller (`packaging/kuantra.spec`); there is no local HTTP port between the UI and the backend.

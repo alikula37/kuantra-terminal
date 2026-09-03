@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import sys
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -57,13 +58,19 @@ def resolve_frontend_index(frontend_dir: str | None = None) -> Path:
 
 
 def _configure_logging(debug: bool) -> None:
-    from app.core.logging_config import LOGS_DIR  # sets up rotating file handler on import
+    # Order matters. app.core.logging_config installs a StreamHandler bound to sys.stdout *at
+    # import time*, so a windowed exe (where stdout is None) has to get a real stream first or
+    # every console log line raises. basicConfig cannot fix that afterwards either: importing
+    # logging_config already attached handlers to the root logger, which makes basicConfig a
+    # no-op, so the level is set explicitly instead.
     if sys.stdout is None or sys.stderr is None:  # windowed exe on Windows
-        log = open(LOGS_DIR / "kuantra_desktop.log", "a", encoding="utf-8")
+        logs_dir = DATA_DIR / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        log = open(logs_dir / "kuantra_desktop.log", "a", encoding="utf-8", buffering=1)
         sys.stdout = sys.stdout or log
         sys.stderr = sys.stderr or log
-    logging.basicConfig(level=logging.DEBUG if debug else logging.INFO, stream=sys.stdout,
-                        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    import app.core.logging_config  # noqa: F401  - sets up console + rotating file handlers
+    logging.getLogger().setLevel(logging.DEBUG if debug else logging.INFO)
 
 
 def build_app(args) -> AppContext:
@@ -88,8 +95,24 @@ def build_app(args) -> AppContext:
     return AppContext(runtime=runtime, push=push, gateway=gateway, bridge=bridge, index_url=index_url)
 
 
+_shutdown_done = threading.Event()
+
+
 def shutdown(ctx: AppContext) -> None:
-    for step in (lambda: ctx.push.stop(), lambda: ctx.gateway and ctx.gateway.stop(), lambda: ctx.runtime.stop()):
+    """Stop the shell's own resources exactly once.
+
+    Called both from the last window's `closed` event and again after `webview.start()` returns,
+    whichever happens first. Timeouts are short because the first call runs on the GUI thread and
+    a slow shutdown there looks like a frozen window.
+    """
+    if _shutdown_done.is_set():
+        return
+    _shutdown_done.set()
+    for step in (
+        lambda: ctx.push.stop(),
+        lambda: ctx.gateway and ctx.gateway.stop(timeout=3.0),
+        lambda: ctx.runtime.stop(timeout=5.0),
+    ):
         try:
             step()
         except Exception as exc:  # noqa: BLE001
@@ -97,9 +120,11 @@ def shutdown(ctx: AppContext) -> None:
 
 
 def _default_gui() -> str | None:
-    if sys.platform.startswith("linux"):
-        return os.environ.get("PYWEBVIEW_GUI", "qt")
-    return os.environ.get("PYWEBVIEW_GUI")
+    # macOS uses its native WKWebView; Windows and Linux both use Qt WebEngine, which ships as a
+    # plain pip wheel and needs neither pythonnet nor the WebView2 runtime on the target machine.
+    if sys.platform == "darwin":
+        return os.environ.get("PYWEBVIEW_GUI")
+    return os.environ.get("PYWEBVIEW_GUI", "qt")
 
 
 def main(argv=None) -> int:

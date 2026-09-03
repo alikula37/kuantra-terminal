@@ -4,8 +4,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_nsis_script_contract():
     nsi = (ROOT / "packaging" / "windows" / "installer.nsi").read_text()
-    for needle in ("RequestExecutionLevel user", "$LOCALAPPDATA\\Programs", 'taskkill /F /T /IM "Kuantra Terminal.exe"',
-                   "Section \"Uninstall\"", "${VERSION}"):
+    for needle in ("RequestExecutionLevel user", "$LOCALAPPDATA\\Programs", "taskkill /F /T /IM",
+                   '!define EXE_NAME "Kuantra Terminal.exe"', "Section \"Uninstall\"", "${VERSION}"):
         assert needle in nsi, needle
 
 

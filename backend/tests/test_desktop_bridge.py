@@ -40,6 +40,14 @@ def test_request_json(bridge):
     assert "content-type" in r["headers"]
 
 
+def test_request_strips_framing_headers(bridge):
+    r = bridge.request({"method": "GET", "path": "/health", "query": "", "headers": {}, "body": None, "files": [], "fields": []})
+    lowered = {k.lower() for k in r["headers"]}
+    assert "content-length" not in lowered
+    assert not lowered & {"content-encoding", "transfer-encoding", "connection", "keep-alive", "upgrade"}
+    assert "content-type" in lowered  # the useful headers still come through
+
+
 def test_request_multipart(bridge):
     csv = base64.b64encode(b"symbol,side,qty,price\nBTCUSDT,BUY,1,100\n").decode()
     r = bridge.request({"method": "POST", "path": "/api/v1/journal/preview-csv", "query": "", "headers": {},
@@ -58,9 +66,9 @@ def test_stream_open_returns_snapshot_and_attaches(bridge, runtime):
     snap = bridge.stream_open()
     assert snap["type"] == "SNAPSHOT" and "last_price" in snap
     from app.websocket.connection_manager import ws_manager
-    assert bridge.push in ws_manager.active_connections
+    assert bridge._push in ws_manager.active_connections
     bridge.stream_open()  # idempotent
-    assert list(ws_manager.active_connections).count(bridge.push) == 1
+    assert list(ws_manager.active_connections).count(bridge._push) == 1
 
 
 def test_save_file_text_and_base64(bridge, tmp_path):
@@ -82,6 +90,23 @@ def test_open_external_rejects_non_http(bridge, monkeypatch):
     assert bridge.open_external("file:///etc/passwd") == {"ok": False}
     assert bridge.open_external("https://example.com") == {"ok": True}
     assert opened == ["https://example.com"]
+
+
+def test_only_intended_methods_are_exposed_to_js(bridge):
+    """pywebview publishes every public attribute of js_api, recursing into non-callable objects.
+
+    A public `self.runtime`/`self.push`/`self.gateway` would therefore hand the UI (and anything
+    running in it) the backend loop and the uvicorn server themselves, `stop()` included.
+    """
+    public = {n for n in dir(bridge) if not n.startswith("_")}
+    assert {n for n in public if callable(getattr(bridge, n))} == {
+        "request", "stream_open", "open_popout", "save_file", "download",
+        "copy_text", "open_external", "get_app_info",
+    }
+    for name in public:
+        value = getattr(bridge, name)
+        if not callable(value):
+            assert not hasattr(value, "stop"), f"public attribute {name!r} exposes a stoppable object to JS"
 
 
 def test_get_app_info(bridge):

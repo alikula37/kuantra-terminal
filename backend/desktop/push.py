@@ -16,8 +16,12 @@ logger = logging.getLogger("desktop.push")
 class PushChannel:
     CHANNELS = {"market_ticks", "kline_updates", "open_positions", "system_metrics", "tv_sync"}
 
+    MAX_QUEUE = 5000
+
     def __init__(self, flush_interval: float = 0.05, max_batch: int = 500):
-        self._queue: "queue.Queue[str]" = queue.Queue()
+        # Bounded: if the UI stalls, market ticks must not grow the queue without limit. The
+        # oldest message is the one worth losing, so a full queue drops from the front.
+        self._queue: "queue.Queue[str]" = queue.Queue(maxsize=self.MAX_QUEUE)
         self._interval = flush_interval
         self._max_batch = max_batch
         self._get_windows: Callable[[], list] = lambda: []
@@ -28,7 +32,17 @@ class PushChannel:
         self._get_windows = get_windows
 
     async def send_text(self, text: str) -> None:  # ConnectionManager sink protocol
-        self._queue.put_nowait(text)
+        try:
+            self._queue.put_nowait(text)
+        except queue.Full:
+            try:
+                self._queue.get_nowait()  # drop the oldest, keep the freshest state
+            except queue.Empty:
+                pass
+            try:
+                self._queue.put_nowait(text)
+            except queue.Full:
+                logger.debug("push queue full; dropping message")
 
     def pending(self) -> int:
         return self._queue.qsize()
@@ -45,6 +59,15 @@ class PushChannel:
         if self._thread is not None:
             self._thread.join(timeout=2)
             self._thread = None
+        # A stopped channel must not stay subscribed: nothing drains the queue any more, so
+        # every later broadcast would just accumulate. There is no runtime reference here to hop
+        # onto the backend loop with; ConnectionManager.detach documents this shutdown path as the
+        # one allowed off-loop caller. Imported here to avoid an import cycle.
+        try:
+            from app.websocket.connection_manager import ws_manager
+            ws_manager.detach(self)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("detach on stop failed: %s", exc)
 
     def _drain(self) -> List[str]:
         items: List[str] = []
@@ -61,6 +84,8 @@ class PushChannel:
             items = self._drain()
             if not items:
                 continue
+            # Each item is already a complete JSON document from json.dumps (ensure_ascii=True by
+            # default), so it carries no raw newline or non-ASCII byte and concatenating is valid.
             batch = "[" + ",".join(items) + "]"
             script = f"window.__kuantraPush && window.__kuantraPush({batch})"
             for win in list(self._get_windows()):

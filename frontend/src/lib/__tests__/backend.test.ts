@@ -46,6 +46,35 @@ describe("apiFetch in desktop mode", () => {
     expect(request.mock.calls[0][0].fields).toEqual([["note", "hello"]]);
   });
 
+  it("sends a raw Blob body as body_b64 with the caller's content type", async () => {
+    const request = vi.fn(async () => ({ status: 200, headers: {}, body: "{}", body_b64: null }));
+    installBridge({ request });
+    const { apiFetch } = await import("../backend");
+    await apiFetch("/api/v1/upload", { method: "POST", headers: { "Content-Type": "application/pdf" }, body: new Blob(["%PDF-1.4"]) });
+    const req = request.mock.calls[0][0] as any;
+    expect(req.files).toEqual([]);
+    expect(req.body).toBe(null);
+    expect(atob(req.body_b64)).toBe("%PDF-1.4");
+    expect(req.headers["Content-Type"]).toBe("application/pdf");
+  });
+
+  it("passes a third-party absolute URL through to real fetch", async () => {
+    const request = vi.fn(async () => ({ status: 200, headers: {}, body: "{}", body_b64: null }));
+    const fetchMock = vi.fn(async () => new Response("[]", { status: 200 }));
+    installBridge({ request });
+    vi.stubGlobal("fetch", fetchMock);
+    const { apiFetch } = await import("../backend");
+    const init: RequestInit = { method: "GET" };
+    await apiFetch("https://api.binance.com/api/v3/time", init);
+    expect(request).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith("https://api.binance.com/api/v3/time", init);
+    // ...while our own backend still goes through the bridge, absolute or not.
+    await apiFetch("http://127.0.0.1:8000/api/v1/x");
+    await apiFetch("/api/v1/y");
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("maps non-2xx to ok=false and decodes base64 bodies", async () => {
     installBridge({ request: async () => ({ status: 404, headers: {}, body: null, body_b64: btoa("nope") }) });
     const { apiFetch } = await import("../backend");

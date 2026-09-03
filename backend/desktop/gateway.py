@@ -8,17 +8,20 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
+import sys
 from typing import Optional
 
 import uvicorn
 from fastapi import FastAPI
 
-from app.api.webhook_tv import webhook_router
+from app.api.webhook_tv import WEBHOOK_SECRET_KEY, webhook_router
 from app.api.tv_sync_ws import tv_sync_websocket
 from app.core.config import settings
 from app.version import __version__
 
 logger = logging.getLogger("desktop.gateway")
+
+DEFAULT_WEBHOOK_SECRET = "change_me_in_production"  # mirrors app.api.webhook_tv's fallback
 
 
 def build_gateway_app() -> FastAPI:
@@ -44,9 +47,25 @@ class IntegrationsGateway:
         self._task = None
         self._sock: Optional[socket.socket] = None
 
+    def _warn_on_default_webhook_secret(self) -> None:
+        """The webhook route is the one thing here reachable by any other program on the machine."""
+        if WEBHOOK_SECRET_KEY == DEFAULT_WEBHOOK_SECRET:
+            logger.warning(
+                "TradingView webhook secret is still the built-in default; set KUANTRA_WEBHOOK_SECRET "
+                "so that any local process cannot post alerts to %s:%s/api/v1/webhook/tradingview",
+                self.host, self.port,
+            )
+
     def start(self) -> bool:
+        self._warn_on_default_webhook_secret()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if sys.platform.startswith("win"):
+            # On Windows SO_REUSEADDR lets a second process steal a port another one is already
+            # listening on; SO_EXCLUSIVEADDRUSE is the flag that actually means "fail if taken",
+            # which is what the busy-port fallback below relies on.
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        else:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             sock.bind((self.host, self.port))
             sock.listen(128)
@@ -82,7 +101,7 @@ class IntegrationsGateway:
             self._sock.close()
         return self.enabled
 
-    def stop(self) -> None:
+    def stop(self, timeout: float = 5.0) -> None:
         if self._server is None:
             return
         self._server.should_exit = True
@@ -90,12 +109,12 @@ class IntegrationsGateway:
         async def _wait():
             if self._task is not None:
                 try:
-                    await asyncio.wait_for(self._task, 5)
+                    await asyncio.wait_for(self._task, timeout)
                 except Exception:  # noqa: BLE001
                     pass
 
         try:
-            self._runtime.run(_wait(), timeout=8)
+            self._runtime.run(_wait(), timeout=timeout + 1)
         except Exception:  # noqa: BLE001
             pass
         if self._sock is not None:

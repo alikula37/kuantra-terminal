@@ -118,7 +118,7 @@ In this milestone, Kuantra Terminal transforms from a monolithic trading operati
 | **Phase 03** | **Trade Replay & Strategy Playbook** | Tick-by-tick market replay animator and execution drift / panic exit cost calculator. | ✅ Complete |
 | **Phase 04** | **Behavioral Psychology Engine** | Real-time FOMO chase detector, Revenge Trading mitigation, and Session Tilt Meter. | ✅ Complete |
 | **Phase 05** | **Multimodal Vision OCR & AI Auditor** | Chart screenshot parser (PNG/JPG), DuckDB price cross-validator, and NL Query Engine. | ✅ Complete |
-| **Phase 06** | **Nuitka C++ Sidecar & Dynamic Port** | C++ binary transpilation, `--port 0` dynamic allocation, and parent process watcher. | ✅ Complete |
+| **Phase 06** | **Nuitka C++ Sidecar & Dynamic Port** *(historical, replaced by the pywebview shell in 1.3.0)* | C++ binary transpilation, `--port 0` dynamic allocation, and parent process watcher. | ✅ Complete |
 | **Phase 07** | **Stronghold Vault & Shadow Recovery** | Argon2id + AES-256-GCM secret vault, Alembic migrations, and DuckDB Shadow Hydration. | ✅ Complete |
 | **Phase 08** | **Multi-Monitor Pop-Out & Virtualization** | `rc-dock` layout serialization, multi-window popout sync, and 60 FPS TanStack DOM. | ✅ Complete |
 | **Phase 09** | **Log Rotation & Signed Auto-Updater** | Automatic PII/Secret redaction, Opt-in telemetry, and Ed25519 auto-updater infrastructure. | ✅ Complete |
@@ -147,7 +147,7 @@ In this milestone, Kuantra Terminal transforms from a monolithic trading operati
 
 ### 2. Starlette Dynamic Route Mutation
 - **Runtime Hot-Mounting**: `DynamicPluginManager.activate_plugin()` dynamically imports plugin classes, executes startup lifecycle hooks, appends routes directly to `app.router.routes`, and invalidates cached OpenAPI schemas.
-- **Runtime Hot-Unmounting**: `DynamicPluginManager.deactivate_plugin()` cleanly excises routes from Starlette's routing table in $O(N)$ linear time without requiring sidecar restarts.
+- **Runtime Hot-Unmounting**: `DynamicPluginManager.deactivate_plugin()` cleanly excises routes from Starlette's routing table in $O(N)$ linear time without requiring sidecar restarts *(historical, replaced by the pywebview shell in 1.3.0: the backend now runs in-process, so a toggle restarts nothing at all)*.
 
 ### 3. Five Architectural Persona Presets
 - **Kuantra Lite** (~20 MB RAM): Lean core for disciplined trade journal logging and essential MAE/MFE analytics.

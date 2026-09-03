@@ -10,10 +10,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _excludes_block(spec: str) -> str:
-    """Return the text of the `excludes = [...]` literal in the spec."""
-    match = re.search(r"excludes\s*=\s*\[(.*?)\]", spec, re.DOTALL)
-    assert match, "spec has no `excludes = [...]` literal"
-    return match.group(1)
+    """Return the concatenated text of every `excludes = [...]` / `excludes += [...]` literal.
+
+    The spec builds the exclude list in several steps (a base literal plus per-platform
+    `+=` additions), so a guard that only looked at the first literal would miss a module
+    excluded later on.
+    """
+    matches = re.findall(r"excludes\s*\+?=\s*\[(.*?)\]", spec, re.DOTALL)
+    assert matches, "spec has no `excludes = [...]` literal"
+    return "\n".join(matches)
 
 
 def test_spec_and_scripts_exist():

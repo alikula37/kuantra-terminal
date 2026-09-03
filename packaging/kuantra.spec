@@ -23,6 +23,11 @@ datas = [
     (os.path.join(BACKEND, "alembic"), "alembic"),
 ]
 datas += collect_data_files("app", includes=["**/*.json", "**/*.yaml", "**/*.yml", "**/*.sql", "**/*.md", "**/*.txt"])
+# The bundled plugin packages have no __init__.py, so collect_submodules("app") never sees them and
+# their plugin.py files would be dropped. DynamicPluginManager loads each one through
+# spec_from_file_location(manifest_dir/"plugin.py"), so shipping the tree verbatim as data makes the
+# frozen app behave exactly like a dev checkout.
+datas += [(os.path.join(BACKEND, "app", "plugins"), os.path.join("app", "plugins"))]
 
 hiddenimports = []
 for pkg in ["app", "starlette", "fastapi", "uvicorn", "pydantic", "cryptography", "webview", "httpx", "anyio",
@@ -43,6 +48,15 @@ hiddenimports += [
     "uvicorn.lifespan.on",
     "duckdb", "pandas", "numpy",
 ]
+# pywebview picks its GUI backend by importing a platform module by name at runtime.
+if IS_MAC:
+    hiddenimports += ["webview.platforms.cocoa"]
+else:
+    hiddenimports += [
+        "webview.platforms.qt",
+        "PyQt6.QtWebEngineWidgets", "PyQt6.QtWebEngineCore", "PyQt6.QtWebChannel", "PyQt6.QtNetwork",
+        "qtpy.QtWebEngineWidgets",
+    ]
 
 excludes = ["torch", "bleak", "web3", "quickfix", "PIL", "matplotlib", "tkinter", "pytest", "test",
             "alembic.testing", "setuptools", "pkg_resources", "ccxt.pro", "aiohttp.test_utils"]

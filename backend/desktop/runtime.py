@@ -18,6 +18,10 @@ logger = logging.getLogger("desktop.runtime")
 INTERNAL_BASE_URL = "http://kuantra.desktop"
 
 
+class RuntimeStopped(RuntimeError):
+    """Raised by BackendRuntime.run() when the loop is stopping, stopped, or already closed."""
+
+
 @dataclass
 class BridgeResponse:
     status: int
@@ -124,7 +128,7 @@ class BackendRuntime:
             raise RuntimeError("runtime not started")
         if self._stopping.is_set() or self._stopped.is_set() or self.loop.is_closed():
             coro.close()
-            raise RuntimeError("backend runtime is shutting down")
+            raise RuntimeStopped("backend runtime is shutting down")
         fut = asyncio.run_coroutine_threadsafe(coro, self.loop)
         with self._inflight_lock:
             self._inflight.add(fut)
@@ -154,7 +158,12 @@ class BackendRuntime:
         kwargs = {"headers": {k: v for k, v in headers.items() if k.lower() != "content-length"}}
         if files or fields:
             kwargs["files"] = [(f[0], (f[1], f[2], f[3])) for f in (files or [])]
-            kwargs["data"] = {k: v for k, v in (fields or [])}
+            # A form may repeat a field name (checkbox groups, multi-selects); httpx encodes a
+            # list value as repeated parts, so never collapse the pairs into a plain dict.
+            data: dict = {}
+            for key, value in (fields or []):
+                data.setdefault(key, []).append(value)
+            kwargs["data"] = data
             kwargs["headers"].pop("Content-Type", None)
             kwargs["headers"].pop("content-type", None)
         elif body is not None:

@@ -51,14 +51,16 @@ def create_app() -> FastAPI:
 
     return app
 
-app = create_app()
-
 def main():
     """Development HTTP server. The desktop app does not use this; see desktop_main.py."""
     parser = argparse.ArgumentParser(description="Kuantra Terminal Backend (dev server)")
     parser.add_argument("--host", default=settings.host)
     parser.add_argument("--port", type=int, default=settings.port)
     args = parser.parse_args()
+    # Built here rather than at module level: the desktop shell imports create_app() and builds
+    # its own instance, and an import-time app would construct a second one (re-running plugin
+    # discovery and rebinding the manager) for nothing.
+    app = create_app()
     print(f"[+] Kuantra dev backend on http://{args.host}:{args.port}", flush=True)
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 
