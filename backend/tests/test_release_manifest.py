@@ -82,8 +82,14 @@ class TestReleaseManifestAndPackaging:
             tauri_conf = json.load(f)
         assert tauri_conf["version"] == target_version, f"tauri.conf.json version mismatch: {tauri_conf['version']}"
 
-        # 4. Backend app/__init__.py
+        # 4. Backend app/version.py is the single source of truth; app/__init__.py re-exports it.
+        version_py_path = os.path.join(root_dir, "backend", "app", "version.py")
+        with open(version_py_path, "r", encoding="utf-8") as f:
+            version_content = f.read()
+        assert f'__version__ = "{target_version}"' in version_content, "backend/app/version.py version mismatch"
+
         init_py_path = os.path.join(root_dir, "backend", "app", "__init__.py")
         with open(init_py_path, "r", encoding="utf-8") as f:
             init_content = f.read()
-        assert f'__version__ = "{target_version}"' in init_content, "backend/app/__init__.py version mismatch"
+        assert "from app.version import __version__" in init_content, \
+            "backend/app/__init__.py must re-export the single-source version"

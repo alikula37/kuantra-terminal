@@ -36,7 +36,7 @@ class MobileCompanionBridge:
             "version": settings.version,
             "node_id": p2p_mesh_node.node_id,
             "pairing_token": pairing_token,
-            "host_url": f"http://127.0.0.1:{settings.port}",
+            "host_url": settings.gateway_url(),
             "expires_at": expires_at
         }
 

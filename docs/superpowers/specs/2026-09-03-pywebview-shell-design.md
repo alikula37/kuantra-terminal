@@ -121,9 +121,9 @@ to 8765 and lets the user change the port in its popup.
   `com.kuantra.terminal`, `LSMinimumSystemVersion 11.0`, `NSHighResolutionCapable`.
 - macOS: `Kuantra Terminal.app` → ad-hoc `codesign --deep -s -` → DMG via `hdiutil`
   (`Kuantra-Terminal-<ver>-aarch64.dmg`).
-- Windows: WebView2 (pywebview `edgechromium`), NSIS per-user installer
-  (`Kuantra-Terminal-<ver>-Setup.exe`), kills running instances, installs the WebView2 evergreen
-  runtime if missing.
+- Windows: Qt WebEngine backend (PyQt6 + PyQt6-WebEngine, self-contained; the native
+  WebView2/pythonnet backend freezes unreliably under PyInstaller), NSIS per-user installer
+  (`Kuantra-Terminal-<ver>-Setup.exe`), kills running instances.
 - Linux: pywebview `qt` backend (PyQt6 + PyQt6-WebEngine, self-contained) packaged as AppImage
   (`Kuantra-Terminal-<ver>-x86_64.AppImage`) with `.desktop` + icon.
 - Every build ends with a smoke run: `<exe> --smoke --smoke-report smoke.json` opens a hidden

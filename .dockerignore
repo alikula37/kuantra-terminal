@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+dist
+build
+.git
+backend/data
+**/__pycache__
+.superpowers
+src-tauri/target
+src-tauri/binaries
+frontend/dist

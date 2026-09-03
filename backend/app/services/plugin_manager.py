@@ -71,13 +71,17 @@ class DynamicPluginManager:
 
     def __init__(self, app: Optional[FastAPI] = None, plugins_dir: Optional[str] = None):
         self.app = app
+        from app.core.paths import USER_PLUGINS_DIR, is_frozen
         if plugins_dir:
             self.plugins_dir = Path(plugins_dir)
         else:
             backend_dir = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             self.plugins_dir = backend_dir / "plugins"
-
-        self.plugins_dir.mkdir(parents=True, exist_ok=True)
+        # Downloaded .kmod plugins must never be written into the install directory.
+        self.user_plugins_dir = Path(plugins_dir) if plugins_dir else USER_PLUGINS_DIR
+        if not is_frozen():
+            self.plugins_dir.mkdir(parents=True, exist_ok=True)
+        self.user_plugins_dir.mkdir(parents=True, exist_ok=True)
 
         self._plugins_metadata: Dict[str, PluginMetadata] = {}
         self._active_plugins: Dict[str, BasePlugin] = {}
@@ -117,36 +121,45 @@ class DynamicPluginManager:
             logger.warning(f"[PLUGIN-MANAGER] Failed to init installed_plugins table: {e}")
 
     def discover_plugins(self) -> Dict[str, PluginMetadata]:
-        """Scans the plugins directory and reads all manifest.json descriptors."""
+        """Scans the bundled and user plugin directories and reads all manifest.json descriptors."""
         self._plugins_metadata.clear()
-        if not self.plugins_dir.exists():
-            return self._plugins_metadata
 
-        for sub_dir in self.plugins_dir.iterdir():
-            if sub_dir.is_dir() and sub_dir.name.startswith("plugin_"):
-                manifest_file = sub_dir / "manifest.json"
-                if manifest_file.exists():
-                    try:
-                        with open(manifest_file, "r", encoding="utf-8") as f:
-                            data = json.load(f)
+        scanned_roots: List[Path] = []
+        for root in (self.plugins_dir, getattr(self, "user_plugins_dir", None)):
+            if root is None or not root.exists():
+                continue
+            if any(root.resolve() == seen.resolve() for seen in scanned_roots):
+                continue
+            scanned_roots.append(root)
 
-                        meta = PluginMetadata(
-                            plugin_id=data.get("plugin_id", sub_dir.name),
-                            name=data.get("name", sub_dir.name),
-                            version=data.get("version", "1.0.0"),
-                            category=data.get("category", "General"),
-                            description=data.get("description", ""),
-                            author=data.get("author", "Kuantra Core Team"),
-                            heavy_dependencies=data.get("heavy_dependencies", []),
-                            router_prefix=data.get("router_prefix"),
-                            is_active=sub_dir.name in self._active_plugins,
-                            ram_footprint_mb=data.get("ram_footprint_mb", 5.0),
-                            persona_tags=data.get("persona_tags", []),
-                            manifest_path=str(manifest_file)
-                        )
-                        self._plugins_metadata[meta.plugin_id] = meta
-                    except Exception as e:
-                        logger.error(f"[PLUGIN-MANAGER] Failed to parse manifest in {sub_dir.name}: {e}")
+        for root in scanned_roots:
+            for sub_dir in root.iterdir():
+                if sub_dir.is_dir() and sub_dir.name.startswith("plugin_"):
+                    manifest_file = sub_dir / "manifest.json"
+                    if manifest_file.exists():
+                        try:
+                            with open(manifest_file, "r", encoding="utf-8") as f:
+                                data = json.load(f)
+
+                            meta = PluginMetadata(
+                                plugin_id=data.get("plugin_id", sub_dir.name),
+                                name=data.get("name", sub_dir.name),
+                                version=data.get("version", "1.0.0"),
+                                category=data.get("category", "General"),
+                                description=data.get("description", ""),
+                                author=data.get("author", "Kuantra Core Team"),
+                                heavy_dependencies=data.get("heavy_dependencies", []),
+                                router_prefix=data.get("router_prefix"),
+                                is_active=sub_dir.name in self._active_plugins,
+                                ram_footprint_mb=data.get("ram_footprint_mb", 5.0),
+                                persona_tags=data.get("persona_tags", []),
+                                manifest_path=str(manifest_file)
+                            )
+                            # Bundled plugins are scanned first and win on duplicate ids.
+                            if meta.plugin_id not in self._plugins_metadata:
+                                self._plugins_metadata[meta.plugin_id] = meta
+                        except Exception as e:
+                            logger.error(f"[PLUGIN-MANAGER] Failed to parse manifest in {sub_dir.name}: {e}")
 
         logger.info(f"[PLUGIN-MANAGER] Discovered {len(self._plugins_metadata)} plugins.")
         return self._plugins_metadata

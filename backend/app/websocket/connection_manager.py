@@ -11,10 +11,10 @@ class ConnectionManager:
     """AsyncIO WebSocket Connection & Channel Broadcast Manager with sub-100ms dispatch."""
 
     def __init__(self):
-        # Set of active client websockets
-        self.active_connections: Set[WebSocket] = set()
+        # Set of active client sinks (WebSockets, or the desktop push channel)
+        self.active_connections: Set[Any] = set()
         # Optional topic/channel subscriptions per client
-        self.subscriptions: Dict[WebSocket, Set[str]] = {}
+        self.subscriptions: Dict[Any, Set[str]] = {}
         self._lock = asyncio.Lock()
         self.total_messages_sent: int = 0
         self.last_broadcast_time: float = time.time()
@@ -31,6 +31,16 @@ class ConnectionManager:
             self.active_connections.discard(websocket)
             self.subscriptions.pop(websocket, None)
         logger.info(f"WebSocket client disconnected. Total clients: {len(self.active_connections)}")
+
+    def attach(self, sink, channels: Optional[Set[str]] = None) -> None:
+        """Register a non-WebSocket sink (anything with `async send_text(str)`), e.g. the desktop push channel."""
+        self.active_connections.add(sink)
+        self.subscriptions[sink] = set(channels or {"market_ticks", "kline_updates", "open_positions", "system_metrics"})
+        logger.info(f"Push sink attached. Total clients: {len(self.active_connections)}")
+
+    def detach(self, sink) -> None:
+        self.active_connections.discard(sink)
+        self.subscriptions.pop(sink, None)
 
     async def broadcast(self, message: Dict[str, Any], channel: Optional[str] = None):
         """Broadcast JSON payload to connected clients with channel filtering."""

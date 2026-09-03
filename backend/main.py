@@ -1,31 +1,12 @@
-import sys
-import os
 import argparse
-import socket
-import asyncio
 from contextlib import asynccontextmanager
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.endpoints import router as api_router
+from app.api.tv_sync_ws import tv_sync_websocket
 from app.websocket.binance_client import binance_client
-from app.websocket.tv_sync import tv_sync_manager
-
-def find_available_port(host: str = "127.0.0.1") -> int:
-    """Binds to ephemeral port 0 and returns allocated dynamic port number."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((host, 0))
-        s.listen(1)
-        port = s.getsockname()[1]
-    return port
-
-def report_port_handshake(port: int):
-    """Outputs standard Tauri sidecar IPC handshake string to stdout."""
-    handshake_msg = f"KUANTRA_BACKEND_PORT:{port}\n"
-    sys.stdout.write(handshake_msg)
-    sys.stdout.flush()
-    print(f"[+] Kuantra Terminal Backend bound to http://127.0.0.1:{port}", flush=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -66,46 +47,21 @@ def create_app() -> FastAPI:
             "last_price": binance_client.last_price
         }
 
-    @app.websocket("/ws/tv-sync")
-    async def websocket_tv_sync_endpoint(websocket: WebSocket):
-        await tv_sync_manager.connect_extension(websocket)
-        try:
-            while True:
-                data = await websocket.receive_json()
-                await tv_sync_manager.handle_extension_message(data)
-        except WebSocketDisconnect:
-            tv_sync_manager.disconnect_extension(websocket)
-        except Exception:
-            tv_sync_manager.disconnect_extension(websocket)
+    app.add_api_websocket_route("/ws/tv-sync", tv_sync_websocket)
 
     return app
 
 app = create_app()
 
 def main():
-    parser = argparse.ArgumentParser(description="Kuantra Terminal Backend Server")
-    parser.add_argument("--host", default=settings.host, help="Bind host address")
-    parser.add_argument("--port", type=int, default=settings.port, help="Port to bind (0 for ephemeral dynamic port)")
-    parser.add_argument("--parent-pid", type=int, default=None, help="Parent Tauri process PID to watch")
-    parser.add_argument("--reload", action="store_true", help="Enable reload mode")
+    """Development HTTP server. The desktop app does not use this; see desktop_main.py."""
+    parser = argparse.ArgumentParser(description="Kuantra Terminal Backend (dev server)")
+    parser.add_argument("--host", default=settings.host)
+    parser.add_argument("--port", type=int, default=settings.port)
     args = parser.parse_args()
+    print(f"[+] Kuantra dev backend on http://{args.host}:{args.port}", flush=True)
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 
-    actual_port = args.port
-    if actual_port == 0:
-        actual_port = find_available_port(args.host)
-
-    # Report port to parent process (Tauri sidecar IPC handshake)
-    report_port_handshake(actual_port)
-
-    # Start Parent Process Watcher if PID provided
-    if args.parent_pid:
-        try:
-            from app.core.parent_watcher import start_parent_watcher
-            start_parent_watcher(args.parent_pid)
-        except Exception as e:
-            print(f"[!] Warning: Unable to start parent watcher: {e}", flush=True)
-
-    uvicorn.run(app, host=args.host, port=actual_port, log_level="info")
 
 if __name__ == "__main__":
     main()

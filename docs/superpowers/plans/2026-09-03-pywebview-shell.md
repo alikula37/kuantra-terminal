@@ -1431,9 +1431,12 @@ def test_smoke_mode_end_to_end(tmp_path):
 ```
 pywebview>=6.2
 pyinstaller>=6.10
-PyQt6>=6.7; sys_platform == "linux"
-PyQt6-WebEngine>=6.7; sys_platform == "linux"
-QtPy>=2.4; sys_platform == "linux"
+# Qt backend on Linux AND Windows: pure-pip wheels that PyInstaller packages reliably. The
+# Windows-native edgechromium backend depends on pythonnet, whose PyInstaller freezing is
+# inconsistent across machines (pywebview#1215); Qt avoids that and the WebView2 runtime.
+PyQt6>=6.7; sys_platform != "darwin"
+PyQt6-WebEngine>=6.7; sys_platform != "darwin"
+QtPy>=2.4; sys_platform != "darwin"
 ```
 
 `backend/main.py` — keep `create_app()`, `lifespan`, `/health`; replace the `/ws/tv-sync` block with the shared handler (Task 4); replace everything from `def find_available_port` through the end with:
@@ -1601,9 +1604,11 @@ def shutdown(ctx: AppContext) -> None:
 
 
 def _default_gui() -> str | None:
-    if sys.platform.startswith("linux"):
-        return os.environ.get("PYWEBVIEW_GUI", "qt")
-    return os.environ.get("PYWEBVIEW_GUI")
+    # macOS: native WKWebView (cocoa). Windows + Linux: Qt WebEngine (self-contained wheels,
+    # no pythonnet/.NET or WebView2 runtime dependency — reliable under PyInstaller).
+    if sys.platform == "darwin":
+        return os.environ.get("PYWEBVIEW_GUI")
+    return os.environ.get("PYWEBVIEW_GUI", "qt")
 
 
 def main(argv=None) -> int:
@@ -2350,8 +2355,10 @@ excludes = ["torch", "bleak", "web3", "quickfix", "PIL", "matplotlib", "tkinter"
             "alembic.testing", "setuptools", "pkg_resources", "ccxt.pro", "aiohttp.test_utils"]
 if not IS_WIN:
     excludes.append("winloop")
-if not IS_LINUX:
+if IS_MAC:
     excludes += ["PyQt6", "PyQt5", "PySide6", "PySide2", "qtpy"]
+else:
+    excludes += ["PyQt5", "PySide6", "PySide2"]
 
 a = Analysis(
     [os.path.join(BACKEND, "desktop_main.py")],
@@ -2552,7 +2559,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_nsis_script_contract():
     nsi = (ROOT / "packaging" / "windows" / "installer.nsi").read_text()
     for needle in ("RequestExecutionLevel user", "$LOCALAPPDATA\\Programs", 'taskkill /F /T /IM "Kuantra Terminal.exe"',
-                   "F3017226-FE2A-4295-8BDF-00C3A9A7E4C5", "MicrosoftEdgeWebview2Setup.exe", "Section \"Uninstall\"", "${VERSION}"):
+                   "Section \"Uninstall\"", "${VERSION}"):
         assert needle in nsi, needle
 
 
@@ -2577,7 +2584,6 @@ def test_linux_desktop_and_apprun():
 !define EXE_NAME "Kuantra Terminal.exe"
 !define PUBLISHER "Kuantra Quantitative Engineering"
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\KuantraTerminal"
-!define WEBVIEW2_KEY "Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
 
 Name "${APP_NAME}"
 OutFile "${OUTFILE}"
@@ -2608,29 +2614,11 @@ Function un.KillRunning
   Pop $0
 FunctionEnd
 
-Function EnsureWebView2
-  ReadRegStr $0 HKCU "${WEBVIEW2_KEY}" "pv"
-  ${If} $0 == ""
-    ReadRegStr $0 HKLM "${WEBVIEW2_KEY}" "pv"
-  ${EndIf}
-  ${If} $0 == ""
-    ReadRegStr $0 HKLM "SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
-  ${EndIf}
-  ${If} $0 == ""
-    DetailPrint "Installing Microsoft Edge WebView2 Runtime..."
-    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri https://go.microsoft.com/fwlink/p/?LinkId=2124703 -OutFile \"$TEMP\MicrosoftEdgeWebview2Setup.exe\""'
-    Pop $0
-    ExecWait '"$TEMP\MicrosoftEdgeWebview2Setup.exe" /silent /install' $0
-    Delete "$TEMP\MicrosoftEdgeWebview2Setup.exe"
-  ${EndIf}
-FunctionEnd
-
 Section "Install"
   Call KillRunning
   SetOutPath "$INSTDIR"
   RMDir /r "$INSTDIR\_internal"
   File /r "${SRCDIR}\*.*"
-  Call EnsureWebView2
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   CreateDirectory "$SMPROGRAMS\${APP_NAME}"
   CreateShortcut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${EXE_NAME}"
@@ -2875,9 +2863,12 @@ jobs:
           sudo apt-get install -y xvfb libfuse2 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
             libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libnss3 libasound2 libgl1 libegl1 \
             libxdamage1 libxcomposite1 libxrandr2 libxtst6 libdbus-1-3
-      - name: Install NSIS
+      - name: Install NSIS (windows-2025 images ship without it)
         if: runner.os == 'Windows'
-        run: choco install nsis -y --no-progress
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { choco install nsis -y --no-progress }
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Append
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip

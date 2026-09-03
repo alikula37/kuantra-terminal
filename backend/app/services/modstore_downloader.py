@@ -25,7 +25,7 @@ class ModStoreDownloader:
     """Manages downloading, extracting, verifying, and dynamically mounting .kmod plugins."""
 
     def __init__(self, target_dir: Optional[Path] = None):
-        self.target_dir = target_dir or plugin_manager.plugins_dir
+        self.target_dir = target_dir or plugin_manager.user_plugins_dir
         self.target_dir.mkdir(parents=True, exist_ok=True)
         self._tasks: Dict[str, Dict[str, Any]] = {}
 
@@ -125,7 +125,6 @@ class ModStoreDownloader:
 
             # 5. Discover & Dynamically Activate
             self._tasks[tid]["status"] = "activating"
-            plugin_manager.plugins_dir = self.target_dir
             plugin_manager.discover_plugins()
             await plugin_manager.activate_plugin(plugin_folder_name)
 
