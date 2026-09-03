@@ -175,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           <div className="flex items-center justify-between text-slate-400">
             <span className="flex items-center space-x-1.5">
               <Cpu className="w-3 h-3 text-purple-400" />
-              <span>FastAPI Sidecar</span>
+              <span>Desktop Core</span>
             </span>
             <span className="text-purple-400 text-[10px] font-semibold">ASYNCIO</span>
           </div>

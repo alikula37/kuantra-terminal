@@ -63,7 +63,7 @@ class PIISecretSanitizerFilter(logging.Filter):
 class LogRotationManager:
     """
     Automated Log Rotation, Gzip Compression, and 14-Day TTL Retention Engine.
-    Targets: kuantra_app.log, kuantra_sidecar_ipc.log, kuantra_quant.log, kuantra_biometrics.log
+    Targets: kuantra_app.log, kuantra_bridge_ipc.log, kuantra_quant.log, kuantra_biometrics.log
     """
 
     MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB

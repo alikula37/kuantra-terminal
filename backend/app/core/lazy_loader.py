@@ -61,7 +61,7 @@ class LazyDependencyLoader:
 
     @staticmethod
     def get_process_memory_mb() -> float:
-        """Returns the current Resident Set Size (RSS) in MB for the backend sidecar."""
+        """Returns the current Resident Set Size (RSS) in MB for the desktop core process."""
         process = psutil.Process(os.getpid())
         return round(process.memory_info().rss / (1024 * 1024), 2)
 

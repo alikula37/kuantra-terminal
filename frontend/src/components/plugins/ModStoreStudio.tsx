@@ -168,7 +168,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Hot-mount, unmount, and configure modular quantitative algorithms and sidecar subsystems.
+              Hot-mount, unmount, and configure modular quantitative algorithms and desktop core subsystems.
             </p>
           </div>
         </div>
@@ -406,7 +406,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
             <div className="p-5 rounded-xl border border-surface-border bg-[#111724] space-y-4">
               <h2 className="text-sm font-bold font-mono text-white flex items-center space-x-2">
                 <Cpu className="w-4 h-4 text-accent" />
-                <span>Sidecar Dynamic Memory Footprint</span>
+                <span>Desktop Core Dynamic Memory Footprint</span>
               </h2>
 
               {/* Progress / Gauge Bar */}

@@ -6,6 +6,4 @@ build
 backend/data
 **/__pycache__
 .superpowers
-src-tauri/target
-src-tauri/binaries
 frontend/dist

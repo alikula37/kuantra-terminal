@@ -1,0 +1,5 @@
+#!/bin/bash
+HERE="$(dirname "$(readlink -f "$0")")"
+export PYWEBVIEW_GUI="${PYWEBVIEW_GUI:-qt}"
+export QTWEBENGINE_CHROMIUM_FLAGS="${QTWEBENGINE_CHROMIUM_FLAGS:---disable-gpu-sandbox}"
+exec "$HERE/usr/bin/kuantra-terminal" "$@"

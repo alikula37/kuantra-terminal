@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Kuantra Terminal
+Comment=Institutional quant trading terminal
+Exec=kuantra-terminal
+Icon=kuantra-terminal
+Terminal=false
+Categories=Office;Finance;
+StartupWMClass=kuantra-terminal

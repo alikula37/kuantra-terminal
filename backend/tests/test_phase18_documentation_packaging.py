@@ -43,8 +43,10 @@ class TestPhase18DocumentationAndPackaging:
             assert os.path.exists(rb_path), f"Missing build runbook: {rb}"
             with open(rb_path, "r", encoding="utf-8") as f:
                 rb_content = f.read()
-            assert "Nuitka" in rb_content
-            assert "Tauri" in rb_content
+            assert "pywebview" in rb_content, f"{rb} must document the pywebview shell"
+            assert "PyInstaller" in rb_content, f"{rb} must document the PyInstaller build"
+            assert "Nuitka" not in rb_content, f"{rb} must not reference the removed Nuitka sidecar"
+            assert "Tauri" not in rb_content, f"{rb} must not reference the removed Tauri shell"
 
     def test_packaging_verification_script(self, root_dir):
         script_path = os.path.join(root_dir, "scripts", "verify_packaging.py")

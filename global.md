@@ -22,9 +22,10 @@ All AI coding agents (Antigravity, Cursor, Copilot) operating on this repository
   * Active modules badge must render `LITE ÇEKİRDEK (0 Eklenti)` / `LITE CORE (0 Plugins)`.
 - Heavy specialized libraries (PyTorch, DuckDB, Web3, Bleak, QuickFIX) must never be bundled in the core installer; they must be streamed on-demand via ModStore `.kmod` packages.
 
-## 📦 4. ULTRA-LIGHT PACKAGING & LIFECYCLE MANAGEMENT (<30 MB)
-- Windows (`.exe`) and macOS (`.dmg`) installers must strictly remain under 30 MB.
-- NSIS installer and macOS lifecycle handlers MUST terminate running `kuantra-backend` and `Kuantra Terminal` instances prior to installation/update to prevent file-lock write errors.
+## 📦 4. PACKAGING & LIFECYCLE MANAGEMENT
+- The desktop app is a single pywebview + in-process FastAPI process frozen with PyInstaller (`packaging/kuantra.spec`); there is no local HTTP port between the UI and the backend.
+- Installers and uninstallers MUST terminate any running `Kuantra Terminal` process before writing files, to prevent file-lock write errors (the NSIS installer does this).
+- User data MUST live in the per-user data directory (`KUANTRA_DATA_DIR` / OS default), never inside the install tree.
 
 ## ✅ 5. DEFINITION OF DONE (DoD)
 A task is complete ONLY when all 4 conditions are met:

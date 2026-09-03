@@ -41,7 +41,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
   const runVerificationHandshake = async () => {
     setIsVerifying(true);
     setVerificationProgress(20);
-    setVerificationLogs([t("onboarding.verification.checking_sidecar")]);
+    setVerificationLogs([t("onboarding.verification.checking_desktop_core")]);
 
     await new Promise((r) => setTimeout(r, 400));
     setVerificationProgress(50);

@@ -113,7 +113,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
       const currentPersona = localStorage.getItem("kuantra_selected_persona") || "kuantra_lite";
       const targetActiveSet = new Set(PERSONA_PLUGIN_MAP[currentPersona] || []);
 
-      // Fallback local plugins if backend sidecar is still booting
+      // Fallback local plugins if the desktop core is still booting
       setPlugins([
         {
           plugin_id: "plugin_quant_shield",

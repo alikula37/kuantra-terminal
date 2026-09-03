@@ -1,3 +1,62 @@
+# 🚀 Desktop shell: Tauri → pywebview
+
+**Applies to**: `v1.3.0-production` and later &bull; **Platforms**: Windows (x64), macOS (Apple Silicon / Intel), Linux (x86_64)
+
+Kuantra Terminal's desktop shell has been rebuilt. The Rust/Tauri wrapper and the background
+Python server process are gone; the terminal now runs as a **single Python process** — a
+pywebview window hosting the React bundle, with the FastAPI backend dispatched in-process over
+ASGI and frozen with PyInstaller.
+
+### What changes for you
+
+1. **One process, no local port.**
+   The UI no longer talks to the backend over `http://127.0.0.1:<port>`; requests are dispatched
+   in-process and live data arrives through a batched push channel. Nothing listens on a loopback
+   port for the UI, and there is no second process to leave orphaned. Firewall prompts on first
+   launch are gone.
+
+2. **Bundled browser engine — no runtime prerequisites.**
+   macOS uses the system WKWebView. Windows and Linux ship Qt WebEngine inside the package, so
+   **the WebView2 runtime is no longer required on Windows**.
+
+3. **Your data moved out of the install folder.**
+   Databases, logs, downloaded plugins and UI state now live in a per-user data directory that
+   upgrades and uninstalls never touch:
+
+   | Platform | Location |
+   |:---|:---|
+   | macOS | `~/Library/Application Support/Kuantra Terminal` |
+   | Windows | `%LOCALAPPDATA%\Kuantra Terminal` |
+   | Linux | `$XDG_DATA_HOME/kuantra-terminal` (fallback `~/.local/share/kuantra-terminal`) |
+
+   Set `KUANTRA_DATA_DIR` to override it. If you are upgrading from an older build, copy your
+   existing `backend/data` contents into the new directory before first launch.
+
+4. **TradingView extension now uses port 8765.**
+   The only socket the app opens is the integrations gateway on `127.0.0.1:8765`, serving the
+   Chrome extension (`/ws/tv-sync`) and TradingView alert webhooks
+   (`/api/v1/webhook/tradingview`). Update the bundled extension (v1.3.0) — its popup now has a
+   **Bridge Port** field, defaulting to 8765. On the app side the port is configurable via
+   `KUANTRA_GATEWAY_PORT` / `KUANTRA_GATEWAY_HOST` / `KUANTRA_GATEWAY_ENABLED`; if the port is
+   busy the gateway is disabled automatically and the app still starts.
+
+5. **macOS first launch takes longer, once.**
+   The app is unsigned/un-notarized: **right-click → Open** the first time. That first launch
+   after installing from the DMG can take up to ~40 seconds while Gatekeeper scans the app tree;
+   every launch afterwards takes 1–2 seconds.
+
+6. **Installers.**
+   `Kuantra-Terminal-<ver>-aarch64.dmg` (macOS, ad-hoc signed),
+   `Kuantra-Terminal-<ver>-Setup.exe` (Windows, per-user NSIS installer that terminates running
+   `Kuantra Terminal` instances before install/uninstall) and
+   `Kuantra-Terminal-<ver>-x86_64.AppImage` (Linux). The AppImage needs the X11/XCB runtime
+   libraries listed in `docs/BUILD_LINUX.md`.
+
+Build and packaging instructions: `docs/BUILD_MACOS.md`, `docs/BUILD_WINDOWS.md`,
+`docs/BUILD_LINUX.md`. Architecture: `ARCHITECTURE.md` §1.
+
+---
+
 # 🚀 Kuantra Terminal v1.3.0-production Release Notes
 
 **Release Tag**: `v1.3.0-production`  

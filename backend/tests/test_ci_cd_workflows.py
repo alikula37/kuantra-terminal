@@ -1,10 +1,11 @@
 import os
-import yaml
+
 import pytest
-from build_sidecar import get_target_triple, get_binary_name, build_nuitka_command
+import yaml
+
 
 class TestCICDWorkflowsAndPackaging:
-    """Test suite for GitHub Actions CI/CD workflows, YAML integrity, and sidecar matrix mappings."""
+    """Test suite for the pywebview/PyInstaller GitHub Actions CI and release pipelines."""
 
     @pytest.fixture
     def root_dir(self):
@@ -15,25 +16,24 @@ class TestCICDWorkflowsAndPackaging:
         assert os.path.exists(ci_path), ".github/workflows/ci.yml must exist"
 
         with open(ci_path, "r", encoding="utf-8") as f:
-            ci_data = yaml.safe_load(f)
+            ci_raw = f.read()
+        ci_data = yaml.safe_load(ci_raw)
 
         assert "name" in ci_data
-        # Triggers
-        triggers = ci_data.get("on", {}) or ci_data.get(True, {})
-        assert "push" in triggers or True in triggers
-        assert "pull_request" in triggers or True in triggers
+        # Triggers (PyYAML parses the bare `on:` key as the boolean True)
+        triggers = ci_data.get("on", ci_data.get(True, {}))
+        assert "push" in triggers
+        assert "pull_request" in triggers
 
         # Jobs
         assert "jobs" in ci_data
-        assert "test-and-lint" in ci_data["jobs"]
+        assert "test-and-build" in ci_data["jobs"]
 
-        job = ci_data["jobs"]["test-and-lint"]
+        job = ci_data["jobs"]["test-and-build"]
         assert "strategy" in job
         matrix = job["strategy"]["matrix"]
         assert "os" in matrix
-        assert "windows-latest" in matrix["os"]
-        assert "macos-latest" in matrix["os"]
-        assert "ubuntu-latest" in matrix["os"]
+        assert matrix["os"] == ["windows-latest", "macos-latest", "ubuntu-22.04"]
 
         # Steps
         steps = job["steps"]
@@ -43,20 +43,36 @@ class TestCICDWorkflowsAndPackaging:
         assert any("checkout" in u.lower() for u in step_uses)
         assert any("setup-python" in u.lower() for u in step_uses)
         assert any("setup-node" in u.lower() for u in step_uses)
-        assert any("rust-toolchain" in u.lower() for u in step_uses)
-        assert any("pytest" in n.lower() or "test" in n.lower() for n in step_names)
-        assert any("frontend" in n.lower() or "build" in n.lower() for n in step_names)
+        assert any("upload-artifact" in u.lower() for u in step_uses)
+
+        for required_step in (
+            "Run backend tests",
+            "Frontend tests and build",
+            "Build desktop app",
+            "Smoke test desktop app",
+        ):
+            assert required_step in step_names, f"ci.yml must have a '{required_step}' step"
+
+        # The Rust toolchain is gone with the Tauri shell.
+        assert "rust-toolchain" not in ci_raw
+        assert not any("rust-toolchain" in u.lower() for u in step_uses)
 
     def test_release_workflow_yaml_syntax(self, root_dir):
         rel_path = os.path.join(root_dir, ".github", "workflows", "release.yml")
         assert os.path.exists(rel_path), ".github/workflows/release.yml must exist"
 
         with open(rel_path, "r", encoding="utf-8") as f:
-            rel_data = yaml.safe_load(f)
+            rel_raw = f.read()
+        rel_data = yaml.safe_load(rel_raw)
 
         assert "name" in rel_data
         assert "permissions" in rel_data
         assert rel_data["permissions"].get("contents") == "write"
+
+        # Triggers: tag pushes only
+        triggers = rel_data.get("on", rel_data.get(True, {}))
+        assert "push" in triggers
+        assert triggers["push"]["tags"] == ["v*"]
 
         # Jobs
         assert "jobs" in rel_data
@@ -65,11 +81,19 @@ class TestCICDWorkflowsAndPackaging:
 
         bp_job = rel_data["jobs"]["build-and-package"]
         matrix_includes = bp_job["strategy"]["matrix"]["include"]
-        targets = [m["target"] for m in matrix_includes]
+        oses = [m["os"] for m in matrix_includes]
+        packages = [m["package"] for m in matrix_includes]
 
-        assert "x86_64-pc-windows-msvc" in targets
-        assert "aarch64-apple-darwin" in targets
-        assert "x86_64-unknown-linux-gnu" in targets
+        assert "windows-latest" in oses
+        assert "macos-latest" in oses
+        assert "ubuntu-22.04" in oses
+
+        for script in (
+            "scripts/package_windows.sh",
+            "scripts/package_macos.sh",
+            "scripts/package_linux.sh",
+        ):
+            assert any(script in p for p in packages), f"release.yml must run {script}"
 
         # Check steps in build-and-package
         bp_steps = bp_job["steps"]
@@ -78,8 +102,9 @@ class TestCICDWorkflowsAndPackaging:
 
         assert any("checkout" in u.lower() for u in bp_uses)
         assert any("upload-artifact" in u.lower() for u in bp_uses)
-        # Staging step renames bundles to clean asset names (no individual .sha256 files)
-        assert any("rename" in n.lower() or "clean" in n.lower() or "bundle" in n.lower() for n in bp_names)
+        assert "Build desktop app" in bp_names
+        assert "Smoke test desktop app" in bp_names
+        assert "Package" in bp_names
 
         # Check publish-release job
         pub_job = rel_data["jobs"]["publish-release"]
@@ -88,33 +113,22 @@ class TestCICDWorkflowsAndPackaging:
         pub_uses = [s.get("uses", "") for s in pub_steps]
         pub_names = [s.get("name", "") for s in pub_steps]
         assert any("download-artifact" in u.lower() for u in pub_uses)
-        assert any("action-gh-release" in u.lower() for u in pub_uses)
-        # Consolidated checksums are in MANIFEST.json generated in publish-release
-        assert any("manifest" in n.lower() or "checksum" in n.lower() or "sha-256" in n.lower() for n in pub_names)
+        assert any("softprops/action-gh-release" in u.lower() for u in pub_uses)
+        # Consolidated checksums live in MANIFEST.json, generated in publish-release
+        assert any("manifest" in n.lower() for n in pub_names)
+        assert "scripts/generate_release_manifest.py" in rel_raw
 
-    def test_sidecar_target_triple_mappings(self):
-        # 1. Windows x64
-        win_bin = get_binary_name("x86_64-pc-windows-msvc")
-        assert win_bin == "kuantra-backend-x86_64-pc-windows-msvc.exe"
+        # No Rust / Tauri leftovers in the release pipeline.
+        assert "rust-toolchain" not in rel_raw
+        assert "tauri" not in rel_raw.lower()
 
-        # 2. macOS Apple Silicon (ARM64)
-        mac_arm = get_binary_name("aarch64-apple-darwin")
-        assert mac_arm == "kuantra-backend-aarch64-apple-darwin"
-
-        # 3. macOS Intel (x64)
-        mac_intel = get_binary_name("x86_64-apple-darwin")
-        assert mac_intel == "kuantra-backend-x86_64-apple-darwin"
-
-        # 4. Linux x64
-        linux_bin = get_binary_name("x86_64-unknown-linux-gnu")
-        assert linux_bin == "kuantra-backend-x86_64-unknown-linux-gnu"
-
-        # 5. Nuitka Command Generation
-        cmd = build_nuitka_command(
-            output_dir="../src-tauri/binaries",
-            entry_point="main.py",
-            target_triple="x86_64-pc-windows-msvc"
-        )
-        assert "--onefile" in cmd
-        assert "--standalone" in cmd
-        assert "--output-filename=kuantra-backend-x86_64-pc-windows-msvc.exe" in cmd
+    def test_legacy_tauri_and_nuitka_artifacts_removed(self, root_dir):
+        for legacy in (
+            os.path.join("backend", "build_sidecar.py"),
+            os.path.join("backend", "kuantra-backend-x86_64-pc-windows-msvc.spec"),
+            os.path.join("backend", "kuantra-backend-aarch64-apple-darwin.spec"),
+            os.path.join("backend", "kuantra-backend.spec"),
+            os.path.join(".github", "workflows", "cleanup-release-assets.yml"),
+        ):
+            assert not os.path.exists(os.path.join(root_dir, legacy)), \
+                f"Legacy Tauri/Nuitka artifact must be deleted: {legacy}"

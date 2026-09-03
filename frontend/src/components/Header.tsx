@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
         setPortfolio(data);
       }
     } catch (err) {
-      // Backend sidecar booting, keep existing state
+      // Desktop core booting, keep existing state
     }
   };
 

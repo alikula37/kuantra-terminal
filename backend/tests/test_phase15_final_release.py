@@ -1,4 +1,3 @@
-import json
 import pytest
 from app.api.mobile_bridge import mobile_companion_bridge, MobileCompanionBridge
 from app.services.biometrics.panic_switch import panic_kill_switch, PanicKillSwitchEngine
@@ -109,14 +108,12 @@ class TestPhase15MobileAndFinalRelease:
         finally:
             risk_interceptor.max_allowed_tilt_score = orig_tilt_limit
 
-    def test_final_v2_production_tauri_release_manifest(self):
+    def test_final_production_pyinstaller_release_spec(self):
         import pathlib
         repo_root = pathlib.Path(__file__).resolve().parent.parent.parent
-        tauri_conf_path = repo_root / "src-tauri" / "tauri.conf.json"
-        with open(tauri_conf_path, "r", encoding="utf-8") as f:
-            tauri_config = json.load(f)
+        spec_path = repo_root / "packaging" / "kuantra.spec"
+        assert spec_path.exists(), "packaging/kuantra.spec must exist"
 
-        assert tauri_config["productName"] == "Kuantra Terminal"
-        assert "bundle" in tauri_config
-        assert "security" in tauri_config.get("app", {}) or "security" in tauri_config
-        assert tauri_config["app"]["security"]["csp"] is not None
+        spec_source = spec_path.read_text(encoding="utf-8")
+        assert 'APP_NAME = "Kuantra Terminal"' in spec_source
+        assert "com.kuantra.terminal" in spec_source

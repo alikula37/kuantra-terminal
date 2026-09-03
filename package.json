@@ -7,20 +7,19 @@
     "dev": "npm --prefix frontend run dev",
     "check:i18n": "npm --prefix frontend run check:i18n",
     "build": "npm --prefix frontend run build",
-    "tauri": "tauri"
+    "test": "npm --prefix frontend test",
+    "desktop": "python backend/desktop_main.py --dev-url http://localhost:5173",
+    "desktop:build": "python scripts/build_desktop.py"
   },
   "keywords": [
     "trading-terminal",
     "algorithmic-trading",
-    "tauri",
+    "pywebview",
     "react",
     "python",
     "mcp",
     "orderflow"
   ],
   "author": "Kuantra Quantitative Engineering",
-  "license": "MIT",
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.11.4"
-  }
+  "license": "MIT"
 }

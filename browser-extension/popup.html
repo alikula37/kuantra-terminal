@@ -42,6 +42,44 @@
       font-weight: bold;
       color: #ffffff;
     }
+    .port-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 6px;
+      color: #94a3b8;
+    }
+    .port-row input {
+      width: 72px;
+      background: #111722;
+      border: 1px solid #1e293b;
+      border-radius: 4px;
+      color: #ffffff;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 5px;
+      text-align: right;
+    }
+    .port-row button {
+      background: #0f2136;
+      border: 1px solid #38bdf8;
+      border-radius: 4px;
+      color: #38bdf8;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 9px;
+      font-weight: bold;
+      padding: 4px 8px;
+    }
+    .port-row button:hover { background: #14314f; }
+    .hint {
+      color: #64748b;
+      font-size: 9px;
+      margin: -2px 0 8px 0;
+    }
+    .hint.saved { color: #22c55e; }
     .footer {
       margin-top: 10px;
       padding-top: 8px;
@@ -65,16 +103,20 @@
     <span>Timeframe:</span>
     <span id="active-interval" class="val">15m</span>
   </div>
-  <div class="row">
+  <div class="port-row">
     <span>Bridge Port:</span>
-    <span class="val">8000</span>
+    <span>
+      <input id="port" type="number" min="1024" max="65535" step="1" value="8765">
+      <button id="save-port" type="button">SAVE</button>
+    </span>
   </div>
+  <div id="port-hint" class="hint">Desktop app integrations gateway (default 8765).</div>
   <div class="row">
     <span>Latency:</span>
     <span class="val" style="color: #22c55e;">&lt; 5 ms</span>
   </div>
   <div class="footer">
-    Kuantra Terminal v1.0 Sync Bridge Active
+    Kuantra Terminal v1.3.0 Sync Bridge
   </div>
   <script src="popup.js"></script>
 </body>

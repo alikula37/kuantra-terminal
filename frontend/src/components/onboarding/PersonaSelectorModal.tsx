@@ -106,7 +106,7 @@ export const PersonaSelectorModal: React.FC<PersonaSelectorModalProps> = ({ isOp
             <div>
               <h2 className="text-base font-bold text-white tracking-wide">Select Architectural Persona</h2>
               <p className="text-xs text-slate-400 font-mono mt-0.5">
-                Tailor backend sidecar memory consumption, router footprint, and UI complexity.
+                Tailor desktop core memory consumption, router footprint, and UI complexity.
               </p>
             </div>
           </div>
@@ -196,7 +196,7 @@ export const PersonaSelectorModal: React.FC<PersonaSelectorModalProps> = ({ isOp
               className="flex items-center space-x-2 px-5 py-2 rounded-lg text-xs font-bold font-mono bg-accent hover:bg-sky-400 text-black transition shadow-md shadow-accent/20 active:scale-95 disabled:opacity-50"
             >
               {applying ? (
-                <span>Re-configuring Sidecar...</span>
+                <span>Re-configuring Desktop Core...</span>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />

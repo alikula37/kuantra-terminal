@@ -4,16 +4,16 @@ import { Download, RefreshCw, CheckCircle2, ShieldCheck, ArrowRight } from "luci
 export const UpdateNotifier: React.FC = () => {
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
-  const [statusMessage, setStatusMessage] = useState<string>("Current version: v0.1.0 (Latest Release)");
+  const [statusMessage, setStatusMessage] = useState<string>("Current version: v1.3.0 (Latest Release)");
 
   const checkForUpdates = async () => {
     setIsChecking(true);
-    setStatusMessage("Verifying Ed25519 cryptographic signatures on GitHub releases...");
+    setStatusMessage("Checking GitHub releases for a newer Kuantra Terminal build...");
 
     setTimeout(() => {
       setIsChecking(false);
       setUpdateAvailable(false);
-      setStatusMessage("Kuantra Terminal is up to date (v0.1.0). Ed25519 signature verified.");
+      setStatusMessage("Kuantra Terminal is up to date (v1.3.0).");
     }, 1200);
   };
 
@@ -23,11 +23,11 @@ export const UpdateNotifier: React.FC = () => {
         <div className="flex items-center space-x-2">
           <ShieldCheck className="w-4 h-4 text-gain" />
           <span className="text-xs font-bold text-white uppercase tracking-wider">
-            ED25519 SIGNED AUTO-UPDATER
+            RELEASE CHANNEL
           </span>
         </div>
         <span className="text-[10px] text-accent bg-[#111722] px-2 py-0.5 rounded border border-surface-border font-bold">
-          v0.1.0-STABLE
+          v1.3.0-STABLE
         </span>
       </div>
 
@@ -49,7 +49,7 @@ export const UpdateNotifier: React.FC = () => {
 
       {updateAvailable && (
         <div className="p-3 bg-accent/15 border border-accent/40 rounded flex items-center justify-between">
-          <span className="text-xs text-white font-bold">New signed release available: v0.2.0</span>
+          <span className="text-xs text-white font-bold">New release available: v1.4.0</span>
           <button className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-3 py-1 rounded text-xs transition">
             <Download className="w-3.5 h-3.5" />
             <span>UPDATE & RESTART</span>

@@ -1,197 +1,92 @@
-name: Kuantra Terminal Automated Multi-Platform Release
+name: Kuantra Terminal Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: [ 'v*' ]
 
 permissions:
   contents: write
 
 jobs:
   build-and-package:
-    name: Build & Package (${{ matrix.target }})
+    name: Package (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            bundle_ext: .exe
-            sidecar_name: kuantra-backend-x86_64-pc-windows-msvc.exe
-
+            package: bash scripts/package_windows.sh
           - os: macos-latest
-            target: aarch64-apple-darwin
-            bundle_ext: .dmg
-            sidecar_name: kuantra-backend-aarch64-apple-darwin
-
+            package: bash scripts/package_macos.sh
           - os: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            bundle_ext: .AppImage
-            sidecar_name: kuantra-backend-x86_64-unknown-linux-gnu
-
+            package: bash scripts/package_linux.sh
     steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Setup Python 3.11 Toolchain
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
-          cache-dependency-path: "backend/requirements.txt"
-
-      - name: Setup Node.js 20 Environment
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: "frontend/package-lock.json"
-
-      - name: Setup Rust Stable Toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Install Linux Build Prerequisites
-        if: matrix.os == 'ubuntu-22.04'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Linux desktop dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            librsvg2-dev \
-            patchelf \
-            libssl-dev \
-            libayatana-appindicator3-dev
-
-      - name: Install Python Dependencies & Packaging Tools
+          sudo apt-get install -y xvfb libfuse2 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libnss3 libasound2 libgl1 libegl1 \
+            libxdamage1 libxcomposite1 libxrandr2 libxtst6 libdbus-1-3
+      - name: Install NSIS (windows-2025 images ship without it)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { choco install nsis -y --no-progress }
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Append
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt
-          pip install cryptography alembic pytest pytest-asyncio anyio psutil httpx pyyaml pyinstaller
-
-      - name: Compile Backend Sidecar Binary
-        shell: bash
+          pip install -r backend/requirements.txt -r backend/requirements-desktop.txt
+      - name: Build frontend
+        working-directory: frontend
         run: |
-          bash scripts/build_sidecar.sh "${{ matrix.target }}"
-
-      - name: Build Frontend & Install Root Tooling
-        shell: bash
-        run: |
-          npm install
-          cd frontend
-          npm install
+          npm ci
           npm run build
-
-      - name: Build Tauri Bundle (Windows NSIS)
-        if: matrix.os == 'windows-latest'
+      - name: Build desktop app
+        run: python scripts/build_desktop.py --skip-frontend
+      - name: Smoke test desktop app
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu"
         run: |
-          npx tauri build --bundles nsis
-
-      - name: Build Tauri Bundle (macOS DMG)
-        if: matrix.os == 'macos-latest'
+          if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run -a python scripts/smoke_desktop.py; else python scripts/smoke_desktop.py; fi
+      - name: Package
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npx tauri build --bundles dmg
-
-      - name: Build Tauri Bundle (Linux AppImage)
-        if: matrix.os == 'ubuntu-22.04'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npx tauri build --bundles appimage
-
-      - name: Rename Bundles to Clean Asset Names
-        shell: bash
-        run: |
-          mkdir -p release-staging
-          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version" 2>/dev/null || echo "1.3.0")
-
-          # Windows: find NSIS .exe and rename
-          WIN_EXE=$(find src-tauri/target/release/bundle/nsis -name "*.exe" 2>/dev/null | head -1)
-          if [ -n "$WIN_EXE" ]; then
-            cp "$WIN_EXE" "release-staging/Kuantra-Terminal-${VERSION}-Setup.exe"
-          fi
-
-          # macOS: find .dmg and rename
-          MAC_DMG=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" 2>/dev/null | head -1)
-          if [ -n "$MAC_DMG" ]; then
-            cp "$MAC_DMG" "release-staging/Kuantra-Terminal-${VERSION}-aarch64.dmg"
-          fi
-
-          # Linux: find .AppImage and rename
-          LINUX_AI=$(find src-tauri/target/release/bundle/appimage -name "*.AppImage" 2>/dev/null | head -1)
-          if [ -n "$LINUX_AI" ]; then
-            cp "$LINUX_AI" "release-staging/Kuantra-Terminal-${VERSION}-amd64.AppImage"
-          fi
-
-          ls -lh release-staging/
-
-      - name: Upload Platform Release Asset
-        uses: actions/upload-artifact@v4
+        run: ${{ matrix.package }}
+      - uses: actions/upload-artifact@v4
         with:
-          name: release-assets-${{ matrix.target }}
-          path: release-staging/Kuantra-Terminal-*
-          if-no-files-found: warn
+          name: release-${{ matrix.os }}
+          path: dist/Kuantra-Terminal-*
+          if-no-files-found: error
 
   publish-release:
-    name: Consolidate & Publish Official GitHub Release
+    name: Publish GitHub Release
     needs: build-and-package
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Download All Platform Artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          path: all-release-assets
+          path: dist
           merge-multiple: true
-
-      - name: Build MANIFEST.json with SHA-256 Checksums
-        shell: bash
-        run: |
-          mkdir -p dist-release
-          cp all-release-assets/Kuantra-Terminal-* dist-release/ 2>/dev/null || true
-
-          cd dist-release
-          python3 - <<'EOF'
-          import json, hashlib, os, glob
-
-          manifest = {"version": "1.3.0", "tag": os.environ.get("GITHUB_REF_NAME", ""), "assets": []}
-          for fpath in sorted(glob.glob("Kuantra-Terminal-*")):
-              if os.path.isfile(fpath):
-                  sha256 = hashlib.sha256(open(fpath, "rb").read()).hexdigest()
-                  size = os.path.getsize(fpath)
-                  manifest["assets"].append({"filename": fpath, "sha256": sha256, "size": size})
-                  print(f"  {fpath}: {sha256}")
-
-          with open("MANIFEST.json", "w") as f:
-              json.dump(manifest, f, indent=2)
-          print("MANIFEST.json written.")
-          EOF
-
-      - name: Publish Official Release on GitHub
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build MANIFEST.json
+        run: python scripts/generate_release_manifest.py --dist dist --tag "${GITHUB_REF_NAME}"
+      - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "Kuantra Terminal ${{ github.ref_name }}"
+          name: Kuantra Terminal ${{ github.ref_name }}
           body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: false
-          fail_on_unmatched_files: false
           files: |
-            dist-release/Kuantra-Terminal-*
-            dist-release/MANIFEST.json
+            dist/Kuantra-Terminal-*
+            dist/MANIFEST.json

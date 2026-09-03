@@ -1,14 +1,14 @@
 <div align="center">
 
-# ⚡ KUANTRA TERMINAL v1.2.0-modular
+# ⚡ KUANTRA TERMINAL v1.3.0
 ### High-Performance Algorithmic Desktop Trading Terminal & Micro-Kernel Architecture
 
 [![Build & Test Status](https://img.shields.io/badge/Tests-182%2B%20Passing%20%7C%20100%25-10b981?style=for-the-badge&logo=pytest&logoColor=white)](https://github.com/alikula37/kuantra-terminal)
 [![Architecture: Micro-Kernel](https://img.shields.io/badge/Architecture-Micro--Kernel%20%2B%20Lazy%20Load-8b5cf6?style=for-the-badge&logo=puzzle&logoColor=white)](https://github.com/alikula37/kuantra-terminal)
-[![Version: 1.2.0](https://img.shields.io/badge/Release-v1.2.0--modular-38bdf8?style=for-the-badge&logo=tag&logoColor=white)](https://github.com/alikula37/kuantra-terminal/releases)
+[![Version: 1.3.0](https://img.shields.io/badge/Release-v1.3.0-38bdf8?style=for-the-badge&logo=tag&logoColor=white)](https://github.com/alikula37/kuantra-terminal/releases)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-38bdf8?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![TypeScript 5.0+](https://img.shields.io/badge/TypeScript-5.0+-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tauri 2.0](https://img.shields.io/badge/Tauri-2.0%20Sidecar-ffc131?style=for-the-badge&logo=tauri&logoColor=black)](https://tauri.app/)
+[![Desktop Shell: pywebview](https://img.shields.io/badge/Desktop-pywebview%20Single%20Process-ffc131?style=for-the-badge&logo=python&logoColor=black)](https://pywebview.flowrl.com/)
 [![Storage Engines](https://img.shields.io/badge/Engines-SQLite%20WAL%20%7C%20DuckDB%20OLAP-f59e0b?style=for-the-badge&logo=sqlite&logoColor=white)](https://duckdb.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-slate?style=for-the-badge)](LICENSE)
 
@@ -27,7 +27,7 @@ Kuantra Terminal is architected around a high-performance **Micro-Kernel Core** 
 ```
 +===================================================================================================+
 |                                    KUANTRA INSTITUTIONAL DESKTOP                                  |
-|                     (Tauri 2.0 Rust Shell + React 18 Dynamic Code-Splitting)                      |
+|            (pywebview Single-Process Shell + React 18 Dynamic Code-Splitting)                     |
 +===================================================================================================+
 |  [ React 18 Shell (<300 kB Main Bundle) ]                                                         |
 |   ├── Dynamic React.lazy() Module Code-Splitting (On-Demand Loading, Zero Idle Overhead)          |
@@ -35,14 +35,14 @@ Kuantra Terminal is architected around a high-performance **Micro-Kernel Core** 
 |   └── Tri-Locale i18n Engine (EN / TR / DE Automated Parity Validation across 392 Keys)           |
 +-------------------------------------------------+-------------------------------------------------+
                                                   |
-                         IPC Dynamic Port Stream  | (KUANTRA_BACKEND_PORT:<port>)
+           In-Process ASGI Bridge (no socket)  | window.pywebview.api -> DesktopBridge
                                                   v
 +===================================================================================================+
 |                                 MICRO-KERNEL FASTAPI ROUTE ENGINE                                 |
 |                       (DynamicPluginManager + LazyDependencyLoader Runtime)                       |
 +===================================================================================================+
 |  [ Active Production Core (~20 MB RAM / <350ms Boot) ]                                            |
-|   ├── Parent Process Watcher & Dynamic Ephemeral Loopback Port Allocator                          |
+|   ├── In-Process ASGI Dispatch (httpx.ASGITransport) & 50 ms Batched Push Stream                  |
 |   ├── SQLite WAL Checkpointing, DuckDB OLAP Analytics & Zero-State Storage Engine                 |
 |   ├── Public Multi-Source Market Data Pipeline (Binance Spot, Bybit, Yahoo Finance, Stooq)       |
 |   └── Full Quant Engine (MAE/MFE Excursion, Exit Efficiency, SQN, Sharpe/Sortino, Drawdown)   |
@@ -95,9 +95,11 @@ The following modules and capabilities are **100% implemented, verified with aut
    - Full translation coverage across English (`en`), Turkish (`tr`), and German (`de`).
    - Automated CI validator (`npm run check:i18n`) guaranteeing 100% key parity, zero raw hardcoded JSX strings, and strict UTF-8 character integrity.
 
-7. **Ultra-Lightweight Desktop Packaging**:
-   - Native Windows NSIS installer (`<30 MB`) with atomic mutex locking and pre-install process termination hooks.
-   - Native Apple Silicon macOS DMG (`<30 MB`) with automated code signing and notarization workflow.
+7. **Single-Process Desktop Packaging (pywebview + PyInstaller)**:
+   - One OS process: a pywebview window plus the FastAPI backend dispatched in-process over ASGI — no local HTTP port between the UI and the backend.
+   - macOS uses WKWebView (`cocoa`); Windows and Linux bundle Qt WebEngine (PyQt6), so **the WebView2 runtime is not required** on Windows.
+   - Native Windows NSIS per-user installer that terminates running `Kuantra Terminal` instances before install/uninstall, Apple Silicon macOS DMG (ad-hoc signed), and Linux x86_64 AppImage.
+   - Per-user data directory outside the install tree (`~/Library/Application Support/Kuantra Terminal`, `%LOCALAPPDATA%\Kuantra Terminal`, `$XDG_DATA_HOME/kuantra-terminal`), overridable with `KUANTRA_DATA_DIR`.
 
 ---
 
@@ -149,15 +151,18 @@ collected 182 items across 31 test suites
 ### 1. Prerequisites
 - Python 3.11+
 - Node.js 20+ & npm
-- Rust Stable Toolchain (for Tauri desktop packaging)
+- Windows only: NSIS (`makensis` on `PATH`) to build the installer
+- Linux only: the X11/XCB runtime libraries listed in [`docs/BUILD_LINUX.md`](docs/BUILD_LINUX.md)
+
+No Rust toolchain and no C++ compiler are needed — nothing is compiled from source.
 
 ### 2. Backend Setup
 ```bash
-# Install backend dependencies
-pip install -r backend/requirements.txt
+# Install backend + desktop shell dependencies (pywebview, PyInstaller, Qt on Win/Linux)
+pip install -r backend/requirements.txt -r backend/requirements-desktop.txt
 
-# Run pytest suite
-python -m pytest backend/tests -v --tb=short
+# Run pytest suite (use a fresh data directory)
+KUANTRA_DATA_DIR="$(mktemp -d)" python -m pytest backend/tests -q
 ```
 
 ### 3. Frontend Setup
@@ -170,9 +175,42 @@ npm install
 # Run i18n parity check
 npm run check:i18n
 
+# Run the vitest suite
+npm test
+
 # Build production bundle
 npm run build
 ```
+
+### 4. Running in Development
+```bash
+# Browser loop: Vite on :5173 + uvicorn on :8000
+npm run dev
+python backend/main.py
+
+# Desktop loop: a real pywebview window with the Python bridge, Vite hot reload
+npm run desktop
+```
+
+### 5. Building the Desktop App
+```bash
+python scripts/build_desktop.py   # frontend build + PyInstaller freeze -> dist/
+python scripts/smoke_desktop.py   # headless self-test of the frozen app
+
+bash scripts/package_macos.sh     # dist/Kuantra-Terminal-<ver>-aarch64.dmg
+bash scripts/package_windows.sh   # dist/Kuantra-Terminal-<ver>-Setup.exe   (needs NSIS)
+bash scripts/package_linux.sh     # dist/Kuantra-Terminal-<ver>-x86_64.AppImage
+```
+
+Platform runbooks: [macOS](docs/BUILD_MACOS.md) &bull; [Windows](docs/BUILD_WINDOWS.md) &bull; [Linux](docs/BUILD_LINUX.md).
+
+> **macOS first launch**: the app is not notarized. Right-click → **Open** the first time, and
+> allow up to ~40 s while Gatekeeper scans the app tree. Later launches take 1–2 s.
+
+### 6. TradingView Chrome Extension
+`browser-extension/` connects to the desktop app's integrations gateway on
+`ws://127.0.0.1:8765/ws/tv-sync`. The port is configurable from the extension popup and on the app
+side via `KUANTRA_GATEWAY_PORT` / `KUANTRA_GATEWAY_HOST` / `KUANTRA_GATEWAY_ENABLED`.
 
 ---
 

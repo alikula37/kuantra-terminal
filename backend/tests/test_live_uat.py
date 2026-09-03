@@ -2,11 +2,16 @@ import pytest
 from scripts.run_live_uat import KuantraLiveUATRunner
 
 class TestLiveUserAcceptanceTesting:
-    """Automated Pytest wrapper for Kuantra Terminal v1.1.0-institutional 5-Scenario UAT Suite."""
+    """Automated Pytest wrapper for the Kuantra Terminal 5-Scenario UAT Suite."""
 
-    # Scenario 1 covered the Tauri sidecar port handshake, which the pywebview shell removed
-    # (the UI now calls the backend in-process). scripts/run_live_uat.py still carries the dead
-    # scenario and is rewritten with the rest of the release tooling.
+    def test_live_uat_scenario_1_in_process_backend(self):
+        # Scenario 1 used to spawn the Tauri sidecar and read the KUANTRA_BACKEND_PORT
+        # stdout handshake. The pywebview shell hosts FastAPI in-process, so the scenario
+        # now asserts the in-process /health contract instead.
+        runner = KuantraLiveUATRunner()
+        runner.run_scenario_1_in_process_backend()
+        assert runner.results[0]["status"] == "PASSED"
+        assert runner.results[0]["telemetry"]["health_status"] == "online"
 
     def test_live_uat_scenario_2_hardware_gpu_swarm(self):
         runner = KuantraLiveUATRunner()
