@@ -154,7 +154,9 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   };
 
   const handleDownloadTemplate = () => {
-    downloadFromBackend("/api/v1/journal/template-csv", "kuantra_trade_template.csv");
+    downloadFromBackend("/api/v1/journal/template-csv", "kuantra_trade_template.csv").then((ok) => {
+      if (!ok) console.warn("CSV template download was cancelled or failed.");
+    });
   };
 
   const getFormatBadgeText = (format: string | null) => {

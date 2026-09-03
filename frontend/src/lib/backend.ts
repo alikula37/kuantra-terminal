@@ -70,7 +70,8 @@ function raceAbort<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
   });
 }
 
-const NULL_BODY_STATUS = new Set([101, 204, 205, 304]);
+// 101 is intentionally absent: the clamp below already rewrites anything under 200 to 500.
+const NULL_BODY_STATUS = new Set([204, 205, 304]);
 
 export async function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
   const api = getBridge();

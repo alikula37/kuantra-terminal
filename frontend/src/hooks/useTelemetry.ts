@@ -56,7 +56,9 @@ export const useTelemetry = () => {
   };
 
   const exportRedactedLogs = () => {
-    downloadFromBackend("/api/v1/telemetry/export-logs", "kuantra_diagnostics_redacted.zip");
+    downloadFromBackend("/api/v1/telemetry/export-logs", "kuantra_diagnostics_redacted.zip").then((ok) => {
+      if (!ok) console.warn("Redacted log export was cancelled or failed.");
+    });
   };
 
   return {

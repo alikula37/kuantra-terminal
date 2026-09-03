@@ -94,7 +94,9 @@ export const PivotGrid: React.FC = () => {
       ].join(","));
     }
 
-    saveTextFile(`kuantra_pivot_${Date.now()}.csv`, csvRows.join("\n"));
+    saveTextFile(`kuantra_pivot_${Date.now()}.csv`, csvRows.join("\n")).then((ok) => {
+      if (!ok) console.warn("Pivot CSV export was cancelled or failed.");
+    });
   };
 
   return (

@@ -1,17 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 declare const globalThis: any;
 
 function installBridge(impl: Partial<Record<string, any>>) {
-  globalThis.window = globalThis;
-  globalThis.pywebview = { api: impl };
+  vi.stubGlobal("pywebview", { api: impl });
 }
 
 beforeEach(() => {
   vi.resetModules();
-  delete globalThis.pywebview;
-  globalThis.window = globalThis;
-  globalThis.location = { protocol: "http:", href: "http://localhost:5173/" };
+  vi.stubGlobal("window", globalThis);
+  vi.stubGlobal("location", { protocol: "http:", href: "http://localhost:5173/" });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("apiFetch in desktop mode", () => {
@@ -53,6 +55,14 @@ describe("apiFetch in desktop mode", () => {
     expect(await res.text()).toBe("nope");
   });
 
+  it("clamps an out-of-range status to 500 and keeps the body", async () => {
+    installBridge({ request: async () => ({ status: 101, headers: {}, body: "switching", body_b64: null }) });
+    const { apiFetch } = await import("../backend");
+    const res = await apiFetch("/api/v1/upgrade");
+    expect(res.status).toBe(500);
+    expect(await res.text()).toBe("switching");
+  });
+
   it("rejects with AbortError when the signal fires", async () => {
     installBridge({ request: () => new Promise(() => {}) });
     const { apiFetch } = await import("../backend");
@@ -71,13 +81,16 @@ describe("apiFetch in desktop mode", () => {
 });
 
 describe("apiFetch in browser dev mode", () => {
-  it("delegates to window.fetch with the default base", async () => {
-    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
-    globalThis.fetch = fetchMock;
+  it("delegates to window.fetch with the default base and forwards init untouched", async () => {
+    const fetchMock = vi.fn(async (_input: any, _init?: any) => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
     const { apiFetch, apiUrl, apiBase, wsUrl } = await import("../backend");
     expect(apiBase()).toBe("http://127.0.0.1:8000");
     expect(wsUrl("/api/v1/ws/stream")).toBe("ws://127.0.0.1:8000/api/v1/ws/stream");
-    await apiFetch(apiUrl("/api/v1/x"));
-    expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:8000/api/v1/x", expect.anything());
+    const init: RequestInit = { method: "POST", headers: { "X-Test": "1" }, body: "payload" };
+    await apiFetch(apiUrl("/api/v1/x"), init);
+    expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:8000/api/v1/x", init);
+    // The very same object, not a copy: no serialisation happens outside the desktop app.
+    expect(fetchMock.mock.calls[0][1]).toBe(init);
   });
 });

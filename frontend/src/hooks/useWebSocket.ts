@@ -53,7 +53,17 @@ export function useWebSocket() {
           if (snap) handleMessage(snap);
           setConnectionStatus(true);
         })
-        .catch(() => setConnectionStatus(false));
+        .catch(() => {
+          setConnectionStatus(false);
+          // Drop the subscription first, otherwise the guard above short-circuits the retry.
+          if (unsubscribeRef.current) {
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
+          }
+          reconnectTimeoutRef.current = window.setTimeout(() => {
+            connect();
+          }, 3000);
+        });
       return;
     }
 
