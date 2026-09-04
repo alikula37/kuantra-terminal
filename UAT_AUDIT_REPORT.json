@@ -1,6 +1,6 @@
 {
-  "version": "1.3.0",
-  "release_tag": "v1.3.0",
+  "version": "1.4.0",
+  "release_tag": "v1.4.0",
   "pass_rate_pct": 100.0,
   "scenarios": [
     {
@@ -11,7 +11,7 @@
       "telemetry": {
         "transport": "in-process ASGI (no sidecar subprocess)",
         "health_status": "online",
-        "backend_version": "1.3.0",
+        "backend_version": "1.4.0",
         "boot_latency_ms": "19.97ms"
       }
     },

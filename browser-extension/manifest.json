@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Kuantra Terminal - TradingView Companion Sync",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Sub-8ms symbol and timeframe synchronization bridge between TradingView and the Kuantra Terminal desktop app (integrations gateway, default port 8765).",
   "permissions": [
     "tabs",
