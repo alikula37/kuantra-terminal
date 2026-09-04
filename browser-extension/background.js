@@ -1,45 +1,114 @@
 /**
  * Kuantra Terminal - Service Worker & Local WS Bridge
- * Maintains persistent WebSocket connection to Kuantra C++ Sidecar ws://127.0.0.1:8000/ws/tv-sync
+ *
+ * Maintains a persistent WebSocket connection to the Kuantra Terminal desktop app's
+ * integrations gateway: ws://127.0.0.1:<bridgePort>/ws/tv-sync
+ *
+ * The desktop app runs as a single process; the gateway is the only socket it exposes
+ * and it listens on 127.0.0.1:8765 by default. The port is configurable from the popup
+ * and is persisted in chrome.storage.local under `bridgePort`.
  */
+
+const DEFAULT_BRIDGE_PORT = 8765;
 
 let ws = null;
 let isConnected = false;
 let currentSymbol = "BTCUSDT";
 let currentInterval = "15m";
+let activePort = DEFAULT_BRIDGE_PORT;
+let reconnectTimer = null;
 
-function connectWebSocket() {
+function normalizePort(value) {
+  const port = parseInt(value, 10);
+  if (!Number.isFinite(port) || port < 1024 || port > 65535) return DEFAULT_BRIDGE_PORT;
+  return port;
+}
+
+function scheduleReconnect(delay = 2000) {
+  if (reconnectTimer !== null) clearTimeout(reconnectTimer);
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connectWebSocket();
+  }, delay);
+}
+
+function closeSocket() {
+  if (!ws) return;
+  const stale = ws;
+  ws = null;
+  stale.onopen = null;
+  stale.onmessage = null;
+  stale.onclose = null;
+  stale.onerror = null;
   try {
-    ws = new WebSocket("ws://127.0.0.1:8000/ws/tv-sync");
-
-    ws.onopen = () => {
-      isConnected = true;
-      console.log("[Kuantra TV Sync] Bridge connected to Kuantra Terminal Sidecar!");
-      chrome.storage.local.set({ isConnected: true });
-    };
-
-    ws.onmessage = (event) => {
-      console.log("[Kuantra TV Sync] Message from terminal:", event.data);
-    };
-
-    ws.onclose = () => {
-      isConnected = false;
-      chrome.storage.local.set({ isConnected: false });
-      setTimeout(connectWebSocket, 2000); // Reconnect loop
-    };
-
-    ws.onerror = (err) => {
-      isConnected = false;
-      chrome.storage.local.set({ isConnected: false });
-      ws.close();
-    };
+    stale.close();
   } catch (e) {
-    isConnected = false;
-    setTimeout(connectWebSocket, 2000);
+    /* already closed */
   }
 }
 
+function connectWebSocket() {
+  chrome.storage.local.get(["bridgePort"], (data) => {
+    activePort = normalizePort(data.bridgePort);
+    const url = `ws://127.0.0.1:${activePort}/ws/tv-sync`;
+    const socket = (() => {
+      try {
+        return new WebSocket(url);
+      } catch (e) {
+        return null;
+      }
+    })();
+
+    if (!socket) {
+      isConnected = false;
+      chrome.storage.local.set({ isConnected: false });
+      scheduleReconnect();
+      return;
+    }
+
+    ws = socket;
+
+    socket.onopen = () => {
+      if (ws !== socket) return;
+      isConnected = true;
+      console.log(`[Kuantra TV Sync] Bridge connected to Kuantra Terminal on port ${activePort}`);
+      chrome.storage.local.set({ isConnected: true });
+    };
+
+    socket.onmessage = (event) => {
+      console.log("[Kuantra TV Sync] Message from terminal:", event.data);
+    };
+
+    socket.onclose = () => {
+      if (ws !== socket) return;
+      isConnected = false;
+      chrome.storage.local.set({ isConnected: false });
+      scheduleReconnect();
+    };
+
+    socket.onerror = () => {
+      if (ws !== socket) return;
+      isConnected = false;
+      chrome.storage.local.set({ isConnected: false });
+      closeSocket();
+      scheduleReconnect();
+    };
+  });
+}
+
 connectWebSocket();
+
+// Reconnect immediately when the user changes the bridge port in the popup.
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local" || !changes.bridgePort) return;
+  const nextPort = normalizePort(changes.bridgePort.newValue);
+  if (nextPort === activePort && ws && ws.readyState === WebSocket.OPEN) return;
+  console.log(`[Kuantra TV Sync] Bridge port changed to ${nextPort}, reconnecting...`);
+  isConnected = false;
+  chrome.storage.local.set({ isConnected: false });
+  closeSocket();
+  scheduleReconnect(0);
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "TV_SYMBOL_CHANGE") {
@@ -61,7 +130,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         source: "browser_extension",
         timestamp: message.timestamp
       }));
-      console.log("[Kuantra TV Sync] Forwarded to Kuantra Sidecar:", message.symbol);
+      console.log("[Kuantra TV Sync] Forwarded to Kuantra Terminal:", message.symbol);
     }
     sendResponse({ status: "SENT", symbol: message.symbol });
   }

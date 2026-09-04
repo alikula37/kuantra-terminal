@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Activity, Heart, ShieldAlert, Key, Zap, Bluetooth, Battery, RefreshCw, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
+import { apiBase, apiFetch, apiUrl } from "../../lib/backend";
 
 export const BiometricHardwareStudio: React.FC = () => {
   const { t } = useTranslation();
@@ -15,7 +16,7 @@ export const BiometricHardwareStudio: React.FC = () => {
 
   const fetchTelemetry = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/biometrics/live-telemetry?bpm=${simBpm}&eda=${simEda}`);
+      const res = await apiFetch(`${apiBase()}/api/v1/biometrics/live-telemetry?bpm=${simBpm}&eda=${simEda}`);
       const data = await res.json();
       setTelemetry(data);
     } catch (e) {
@@ -25,7 +26,7 @@ export const BiometricHardwareStudio: React.FC = () => {
 
   const fetchDevices = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/biometrics/devices");
+      const res = await apiFetch(apiUrl("/api/v1/biometrics/devices"));
       const data = await res.json();
       setDevices(data.devices || []);
       if (data.active_device_id) {
@@ -45,7 +46,7 @@ export const BiometricHardwareStudio: React.FC = () => {
 
   const handleConnectDevice = async (devId: string, proto: string) => {
     try {
-      await fetch("http://127.0.0.1:8000/api/v1/biometrics/connect", {
+      await apiFetch(apiUrl("/api/v1/biometrics/connect"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ device_id: devId, protocol: proto }),
@@ -61,7 +62,7 @@ export const BiometricHardwareStudio: React.FC = () => {
 
   const handleFIDO2Override = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/biometrics/override-lockout", {
+      const res = await apiFetch(apiUrl("/api/v1/biometrics/override-lockout"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

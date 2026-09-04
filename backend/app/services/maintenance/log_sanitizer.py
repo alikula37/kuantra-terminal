@@ -14,6 +14,8 @@ import logging
 from typing import List, Tuple, Optional, Dict, Any
 from pathlib import Path
 
+from app.core.logging_config import LOGS_DIR
+
 # Comprehensive Regex Matchers for Credentials, Tokens & Secrets
 SECRET_PATTERNS: List[Tuple[re.Pattern, str]] = [
     # 1. API Key patterns (e.g., api_key="...", apiKey: "...", API_KEY=...)
@@ -61,14 +63,14 @@ class PIISecretSanitizerFilter(logging.Filter):
 class LogRotationManager:
     """
     Automated Log Rotation, Gzip Compression, and 14-Day TTL Retention Engine.
-    Targets: kuantra_app.log, kuantra_sidecar_ipc.log, kuantra_quant.log, kuantra_biometrics.log
+    Targets: kuantra_app.log, kuantra_bridge_ipc.log, kuantra_quant.log, kuantra_biometrics.log
     """
 
     MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB
     RETENTION_TTL_DAYS = 14                 # 14-Day TTL Cleanup
 
     def __init__(self, logs_dir: Optional[str] = None):
-        self.logs_dir = Path(logs_dir) if logs_dir else Path(os.getcwd()) / "logs"
+        self.logs_dir = Path(logs_dir) if logs_dir else LOGS_DIR
         self.archive_dir = self.logs_dir / "archive"
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self.archive_dir.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,9 @@
+node_modules
+**/node_modules
+dist
+build
+.git
+backend/data
+**/__pycache__
+.superpowers
+frontend/dist

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Share2, ShieldCheck, Activity, Radio, Lock, RefreshCw, Send, CheckCircle2 } from "lucide-react";
+import { apiFetch, apiUrl } from "../../lib/backend";
 
 interface Peer {
   peer_id: string;
@@ -40,7 +41,7 @@ export const MeshNetworkHUD: React.FC = () => {
 
   const fetchMeshStatus = () => {
     setIsLoading(true);
-    fetch("http://127.0.0.1:8000/api/v1/p2p/status")
+    apiFetch(apiUrl("/api/v1/p2p/status"))
       .then((res) => res.json())
       .then((data) => setStatus(data))
       .catch(() => {})
@@ -55,7 +56,7 @@ export const MeshNetworkHUD: React.FC = () => {
 
   const broadcastTestSignal = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/p2p/copy/broadcast", {
+      const res = await apiFetch(apiUrl("/api/v1/p2p/copy/broadcast"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

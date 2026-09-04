@@ -17,19 +17,13 @@ venv/
 
 # Node & Frontend
 node_modules/
-dist/
 .vite/
+
+# Desktop build outputs
+dist/
 build/
 
-# Rust / Tauri
-src-tauri/target/
-src-tauri/binaries/
-
-# Distribution Binaries (Keep MANIFEST.json tracked)
-dist-binaries/*.exe
-dist-binaries/*.msi
-dist-binaries/*.dmg
-dist-binaries/*.AppImage
-dist-binaries/*.deb
-dist-binaries/*.zip
 backend/data/
+.claude/*
+# Agent scratch workspace (ledgers, briefs, review diffs)
+.superpowers/

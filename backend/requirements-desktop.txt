@@ -1,0 +1,8 @@
+pywebview>=6.2
+pyinstaller>=6.10
+# Qt backend on Linux AND Windows: pure-pip wheels that PyInstaller packages reliably. The
+# Windows-native edgechromium backend depends on pythonnet, whose PyInstaller freezing is
+# inconsistent across machines (pywebview#1215); Qt avoids that and the WebView2 runtime.
+PyQt6>=6.7; sys_platform != "darwin"
+PyQt6-WebEngine>=6.7; sys_platform != "darwin"
+QtPy>=2.4; sys_platform != "darwin"

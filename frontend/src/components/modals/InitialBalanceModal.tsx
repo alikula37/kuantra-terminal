@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, DollarSign, Check } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
+import { apiFetch, apiUrl } from "../../lib/backend";
 
 interface InitialBalanceModalProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ export const InitialBalanceModal: React.FC<InitialBalanceModalProps> = ({
     setIsSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/portfolio/set-initial-balance", {
+      const res = await apiFetch(apiUrl("/api/v1/portfolio/set-initial-balance"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ initial_balance: Number(balance) }),

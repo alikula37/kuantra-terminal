@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Code, FileSpreadsheet, Play, Rocket, CheckCircle2, Layers, Cpu, Copy, Check, BarChart3 } from "lucide-react";
+import { apiFetch, apiUrl } from "../../lib/backend";
+import { copyText } from "../../lib/desktop";
 
 const SAMPLE_PINE_TEMPLATES = {
   rsi_reversal: `//@version=5
@@ -66,7 +68,7 @@ export const ReverseSkillStudio: React.FC = () => {
     setDeployMsg(null);
     try {
       if (inputMode === "pinescript") {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/reverse-skill/transpile-pinescript", {
+        const res = await apiFetch(apiUrl("/api/v1/reverse-skill/transpile-pinescript"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pine_code: pineCode }),
@@ -75,7 +77,7 @@ export const ReverseSkillStudio: React.FC = () => {
         setTranspileResult(data);
         setOutputTab("dsl");
       } else {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/reverse-skill/analyze-csv", {
+        const res = await apiFetch(apiUrl("/api/v1/reverse-skill/analyze-csv"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ csv_content: csvContent }),
@@ -96,7 +98,7 @@ export const ReverseSkillStudio: React.FC = () => {
       const agentName = transpileResult?.strategy_name || "Synthesized_Quant_Agent";
       const config = transpileResult?.ruleset || csvResult?.signature || {};
 
-      const res = await fetch("http://127.0.0.1:8000/api/v1/reverse-skill/deploy-agent", {
+      const res = await apiFetch(apiUrl("/api/v1/reverse-skill/deploy-agent"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,9 +116,12 @@ export const ReverseSkillStudio: React.FC = () => {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    copyText(text).then((ok) => {
+      if (ok) {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      }
+    });
   };
 
   return (

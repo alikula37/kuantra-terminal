@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ExecutionDriftResponse } from "../types";
 import { GitCommit, Target } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export const ExecutionDriftVisualizer: React.FC = () => {
   const { t } = useTranslation();
@@ -10,7 +11,7 @@ export const ExecutionDriftVisualizer: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    fetch("http://127.0.0.1:8000/api/v1/analytics/execution-drift")
+    apiFetch(apiUrl("/api/v1/analytics/execution-drift"))
       .then((res) => res.json())
       .then((resData: ExecutionDriftResponse) => {
         setData(resData);

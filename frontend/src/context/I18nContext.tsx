@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import enDictionary from "../locales/en.json";
 import trDictionary from "../locales/tr.json";
 import deDictionary from "../locales/de.json";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export type Locale = "en" | "tr" | "de";
 
@@ -55,7 +56,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     // Sync with backend asynchronously
-    fetch("http://127.0.0.1:8000/api/v1/settings", {
+    apiFetch(apiUrl("/api/v1/settings"), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active_locale: newLocale }),
@@ -63,7 +64,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/v1/settings")
+    apiFetch(apiUrl("/api/v1/settings"))
       .then((res) => res.json())
       .then((data) => {
         if (data && (data.active_locale === "en" || data.active_locale === "tr" || data.active_locale === "de")) {

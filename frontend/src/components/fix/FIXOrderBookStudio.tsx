@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Terminal, Shield, RefreshCw, Send, CheckCircle2, DollarSign, Layers } from "lucide-react";
+import { apiFetch, apiUrl } from "../../lib/backend";
 
 export const FIXOrderBookStudio: React.FC = () => {
   const [snapshot, setSnapshot] = useState<any>(null);
@@ -15,7 +16,7 @@ export const FIXOrderBookStudio: React.FC = () => {
 
   const fetchOrderBook = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/orderbook/l2-snapshot?depth=12");
+      const res = await apiFetch(apiUrl("/api/v1/orderbook/l2-snapshot?depth=12"));
       const data = await res.json();
       setSnapshot(data);
       if (data.best_bid && orderPrice === 65000.0) {
@@ -28,7 +29,7 @@ export const FIXOrderBookStudio: React.FC = () => {
 
   const fetchFixSession = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/fix/sessions");
+      const res = await apiFetch(apiUrl("/api/v1/fix/sessions"));
       const data = await res.json();
       setFixSession(data);
     } catch (e) {
@@ -46,7 +47,7 @@ export const FIXOrderBookStudio: React.FC = () => {
   const handleLogon = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/fix/session/logon", { method: "POST" });
+      const res = await apiFetch(apiUrl("/api/v1/fix/session/logon"), { method: "POST" });
       const data = await res.json();
       setActionMsg(`FIX Session Logged On successfully! State: ${data.session_state}`);
       fetchFixSession();
@@ -62,7 +63,7 @@ export const FIXOrderBookStudio: React.FC = () => {
     const side = overrideSide || orderSide;
     const price = overridePrice || orderPrice;
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/fix/order/submit", {
+      const res = await apiFetch(apiUrl("/api/v1/fix/order/submit"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,7 +89,7 @@ export const FIXOrderBookStudio: React.FC = () => {
 
   const handleSimulateSweep = async (side: "BUY" | "SELL") => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/orderbook/simulate-fill", {
+      const res = await apiFetch(apiUrl("/api/v1/orderbook/simulate-fill"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ side: side, size: 5.0 }),

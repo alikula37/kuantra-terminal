@@ -17,6 +17,7 @@ import { useTranslation, SUPPORTED_LOCALES, Locale } from "../context/I18nContex
 import { usePluginRegistry } from "../context/PluginRegistryContext";
 import { useMarketStore } from "../stores/marketStore";
 import { ExtensionSlot } from "./plugins/ExtensionSlot";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 interface PortfolioSummary {
   initial_balance: number;
@@ -72,13 +73,13 @@ export const Header: React.FC<HeaderProps> = ({
 
   const fetchPortfolioSummary = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/portfolio/summary");
+      const res = await apiFetch(apiUrl("/api/v1/portfolio/summary"));
       if (res.ok) {
         const data = await res.json();
         setPortfolio(data);
       }
     } catch (err) {
-      // Backend sidecar booting, keep existing state
+      // Desktop core booting, keep existing state
     }
   };
 

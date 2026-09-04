@@ -44,12 +44,12 @@
     "wizard_subtitle": "Konfigurieren Sie Ihre Handelsumgebung, Ihren Verschlüsselungstresor und Ihre Systemeinstellungen",
     "step1_title": "Handelsumgebung",
     "step1_desc": "Wählen Sie Ihr Live-Order-Routing oder Ihre simulierte Paper-Trading-Umgebung",
-    "step2_title": "Stronghold Vault Zugangsdaten",
+    "step2_title": "Zugangsdaten für den verschlüsselten lokalen Tresor",
     "step2_desc": "API-Zugangsdaten sicher im Speicher mit Argon2id + AES-256-GCM verschlüsseln",
     "step3_title": "Design & Lokalisierung",
     "step3_desc": "Passen Sie Ihre visuelle Arbeitsbereichspalette und Terminalsprache an",
     "step4_title": "Verifizierung & Handshake",
-    "step4_desc": "C++ Sidecar-Verbindung, WebSocket-Datenströme und Datenbankintegrität überprüfen",
+    "step4_desc": "Desktop-Kern-Verbindung, Live-Datenströme und Datenbankintegrität überprüfen",
     "mode": {
       "live_title": "Live-Echtzeit-Feed & Ausführung",
       "live_desc": "Direktes Marktrouting mit Binance, OKX und CME QuickFIX DMA",
@@ -77,10 +77,10 @@
       "locale_de": "Deutsch (DE)"
     },
     "verification": {
-      "checking_sidecar": "C++ Sidecar-IPC-Verbindung wird getestet...",
+      "checking_desktop_core": "Desktop-Kern-IPC-Verbindung wird getestet...",
       "checking_sqlite": "SQLite OLTP (WAL-Modus) wird verifiziert...",
       "checking_duckdb": "DuckDB OLAP spaltenbasierte Engine wird überprüft...",
-      "checking_websocket": "Lokale WebSocket-Telemetriebrücke wird eingerichtet...",
+      "checking_websocket": "Lokale Live-Datenbrücke wird eingerichtet...",
       "all_systems_go": "Alle institutionellen Engine-Komponenten verifiziert und bereit!",
       "complete_btn": "Terminal-Dashboard starten"
     },
@@ -114,9 +114,9 @@
     "expectancy": "Mathematische Erwartung (EV)"
   },
   "vault": {
-    "title": "Tauri Stronghold Tresor",
+    "title": "Verschlüsselter lokaler Tresor",
     "status_encrypted": "AES-256-GCM Verschlüsselt",
-    "saved": "{exchange}-Zugangsdaten sicher im Stronghold-Tresor gespeichert."
+    "saved": "{exchange}-Zugangsdaten sicher im verschlüsselten lokalen Tresor gespeichert."
   },
   "settings": {
     "title": "System- & Laufzeiteinstellungen",

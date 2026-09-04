@@ -1,11 +1,10 @@
 """
 In-App Remote Plugin Downloader & .kmod Package Extractor for Kuantra Terminal.
-Handles cryptographic SHA-256 verification, zip/kmod extraction, sys.path dynamic resolution,
-and live async progress streaming.
+Handles cryptographic SHA-256 verification, zip/kmod extraction, dynamic activation by file
+location, and live async progress streaming.
 """
 
 import os
-import sys
 import uuid
 import json
 import zipfile
@@ -25,7 +24,7 @@ class ModStoreDownloader:
     """Manages downloading, extracting, verifying, and dynamically mounting .kmod plugins."""
 
     def __init__(self, target_dir: Optional[Path] = None):
-        self.target_dir = target_dir or plugin_manager.plugins_dir
+        self.target_dir = target_dir or plugin_manager.user_plugins_dir
         self.target_dir.mkdir(parents=True, exist_ok=True)
         self._tasks: Dict[str, Dict[str, Any]] = {}
 
@@ -118,14 +117,10 @@ class ModStoreDownloader:
             if temp_bundle.exists():
                 temp_bundle.unlink()
 
-            # 4. Ensure directory is discoverable in sys.path
-            parent_str = str(self.target_dir.parent.parent)
-            if parent_str not in sys.path:
-                sys.path.insert(0, parent_str)
-
-            # 5. Discover & Dynamically Activate
+            # 4. Discover & Dynamically Activate
+            # (No sys.path juggling: activation loads plugin.py by file location, and the user
+            # plugin directory now lives outside the package tree entirely.)
             self._tasks[tid]["status"] = "activating"
-            plugin_manager.plugins_dir = self.target_dir
             plugin_manager.discover_plugins()
             await plugin_manager.activate_plugin(plugin_folder_name)
 

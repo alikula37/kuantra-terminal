@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch, apiUrl } from "../lib/backend";
+import { downloadFromBackend } from "../lib/desktop";
 
 export const useTelemetry = () => {
   const [isOptedIn, setIsOptedIn] = useState<boolean>(false);
@@ -6,7 +8,7 @@ export const useTelemetry = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchStatus = useCallback(() => {
-    fetch("http://127.0.0.1:8000/api/v1/telemetry/status")
+    apiFetch(apiUrl("/api/v1/telemetry/status"))
       .then((res) => res.json())
       .then((data) => {
         setIsOptedIn(data.opt_in);
@@ -25,7 +27,7 @@ export const useTelemetry = () => {
   const updateConsent = async (optIn: boolean) => {
     setIsOptedIn(optIn);
     try {
-      await fetch("http://127.0.0.1:8000/api/v1/telemetry/consent", {
+      await apiFetch(apiUrl("/api/v1/telemetry/consent"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ opt_in: optIn }),
@@ -38,7 +40,7 @@ export const useTelemetry = () => {
 
   const reportCrash = async (errorType: string, message: string, stackTrace: string) => {
     try {
-      await fetch("http://127.0.0.1:8000/api/v1/telemetry/spool-crash", {
+      await apiFetch(apiUrl("/api/v1/telemetry/spool-crash"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -54,7 +56,9 @@ export const useTelemetry = () => {
   };
 
   const exportRedactedLogs = () => {
-    window.open("http://127.0.0.1:8000/api/v1/telemetry/export-logs", "_blank");
+    downloadFromBackend("/api/v1/telemetry/export-logs", "kuantra_diagnostics_redacted.zip").then((ok) => {
+      if (!ok) console.warn("Redacted log export was cancelled or failed.");
+    });
   };
 
   return {

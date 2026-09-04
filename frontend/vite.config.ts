@@ -1,12 +1,13 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { viteSingleFile } from "vite-plugin-singlefile";
 
-// https://vitejs.dev/config/
+// base "./" + single-file output: the desktop app loads index.html over file:// with no server
+// and no module chunks to fetch.
 export default defineConfig({
-  plugins: [react()],
+  base: "./",
+  plugins: [react(), viteSingleFile()],
   clearScreen: false,
-  server: {
-    port: 5173,
-    strictPort: true,
-  },
+  build: { outDir: "dist", emptyOutDir: true },
+  server: { port: 5173, strictPort: true },
 });

@@ -14,6 +14,7 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Header, HTTPException, Request
 from app.db.sqlite_driver import sqlite_driver
+from app.core.config import settings
 
 logger = logging.getLogger("webhook_tv")
 
@@ -108,7 +109,7 @@ def get_cloudflare_tunnel_config():
     """Returns instructions and Cloudflare Worker relay script configuration."""
     return {
         "relay_mode": "CLOUDFLARE_TUNNEL_WORKER",
-        "webhook_endpoint": "http://127.0.0.1:8000/api/v1/webhook/tradingview",
+        "webhook_endpoint": f"{settings.gateway_url()}/api/v1/webhook/tradingview",
         "auth_header": "X-TradingView-Signature",
         "secret_configured": True
     }

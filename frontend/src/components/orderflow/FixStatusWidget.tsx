@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Terminal, Send, Activity, ShieldCheck, Zap } from "lucide-react";
+import { apiFetch, apiUrl } from "../../lib/backend";
 
 interface FixStatus {
   begin_string: string;
@@ -46,7 +47,7 @@ export const FixStatusWidget: React.FC = () => {
   const [lastExec, setLastExec] = useState<FixExecReport | null>(null);
 
   const fetchStatus = () => {
-    fetch("http://127.0.0.1:8000/api/v1/fix/status")
+    apiFetch(apiUrl("/api/v1/fix/status"))
       .then((res) => res.json())
       .then((data) => setStatus(data))
       .catch(() => {});
@@ -61,7 +62,7 @@ export const FixStatusWidget: React.FC = () => {
   const sendFixOrder = async () => {
     setIsSending(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/fix/order", {
+      const res = await apiFetch(apiUrl("/api/v1/fix/order"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symbol, side, qty, price }),

@@ -58,24 +58,17 @@ class TestPhase10OnboardingAndProductionBuild:
         assert sqlite_driver.get_setting("first_boot_completed") == "true"
         assert sqlite_driver.get_setting("ai_mode") == "local_gguf"
 
-    def test_production_bundle_tauri_config_structure(self):
-        tauri_conf_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-            "src-tauri", "tauri.conf.json"
-        )
-        assert os.path.exists(tauri_conf_path)
+    def test_production_bundle_version_is_single_sourced(self):
+        from app.version import __version__
+        from app.core.config import settings
 
-        with open(tauri_conf_path, "r", encoding="utf-8") as f:
-            conf = json.load(f)
+        root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-        assert conf["version"] in ("1.0.0", "1.1.0", "1.2.0", "1.3.0")
-        assert conf["productName"] == "Kuantra Terminal"
-        assert "bundle" in conf
-        bundle = conf["bundle"]
-        assert bundle["active"] is True
-        assert "externalBin" in bundle
-        assert "binaries/kuantra-backend" in bundle["externalBin"]
-        assert "windows" in bundle
-        assert "nsis" in bundle["windows"]
-        assert "macOS" in bundle
-        assert "linux" in bundle
+        # backend/app/version.py is the single source of truth for the packaged build.
+        assert __version__.count(".") == 2
+        assert settings.version == __version__
+
+        front_pkg_path = os.path.join(root_dir, "frontend", "package.json")
+        with open(front_pkg_path, "r", encoding="utf-8") as f:
+            front_pkg = json.load(f)
+        assert front_pkg["version"] == __version__

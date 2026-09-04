@@ -1,5 +1,4 @@
 import os
-import json
 import pytest
 from app.core.logging_config import redact_sensitive_text, LOG_FILE_PATH, export_logs_zip
 from app.core.telemetry import telemetry_manager
@@ -67,21 +66,15 @@ class TestPhase9HealthAndUpdater:
         assert res_flushed["status"] == "SUCCESS"
         assert telemetry_manager.get_queued_crashes_count() == 0
 
-    def test_ed25519_updater_manifest_validation(self):
-        # Verify tauri.conf.json updater config
-        tauri_conf_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-            "src-tauri", "tauri.conf.json"
-        )
-        assert os.path.exists(tauri_conf_path)
+    def test_health_endpoint_reports_running_backend(self):
+        # The Tauri updater manifest is gone with the sidecar; the in-process /health
+        # endpoint is what the pywebview shell (and its smoke test) relies on.
+        from fastapi.testclient import TestClient
+        from main import create_app
 
-        with open(tauri_conf_path, "r", encoding="utf-8") as f:
-            conf = json.load(f)
-
-        assert "plugins" in conf
-        assert "updater" in conf["plugins"]
-        updater_cfg = conf["plugins"]["updater"]
-        assert "pubkey" in updater_cfg
-        assert len(updater_cfg["pubkey"]) > 32 # Minisign Ed25519 key length check
-        assert len(updater_cfg["endpoints"]) > 0
-        assert "github.com" in updater_cfg["endpoints"][0]
+        client = TestClient(create_app())
+        res = client.get("/health")
+        assert res.status_code == 200
+        payload = res.json()
+        assert payload["status"] == "online"
+        assert payload["version"]

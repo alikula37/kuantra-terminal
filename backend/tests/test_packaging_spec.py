@@ -1,0 +1,62 @@
+"""Static checks on the desktop packaging inputs (PyInstaller spec + build/package scripts).
+
+These are cheap guards: they do not run PyInstaller, they only assert the spec still bundles
+the resources the frozen app needs at runtime and never excludes a module the app imports.
+"""
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def _excludes_block(spec: str) -> str:
+    """Return the concatenated text of every `excludes = [...]` / `excludes += [...]` literal.
+
+    The spec builds the exclude list in several steps (a base literal plus per-platform
+    `+=` additions), so a guard that only looked at the first literal would miss a module
+    excluded later on.
+    """
+    matches = re.findall(r"excludes\s*\+?=\s*\[(.*?)\]", spec, re.DOTALL)
+    assert matches, "spec has no `excludes = [...]` literal"
+    return "\n".join(matches)
+
+
+def test_spec_and_scripts_exist():
+    assert (ROOT / "packaging" / "kuantra.spec").is_file()
+    for f in ("icon.icns", "icon.ico", "icon.png"):
+        assert (ROOT / "packaging" / "icons" / f).is_file(), f
+    for f in ("build_desktop.py", "smoke_desktop.py", "package_macos.sh", "package_windows.sh", "package_linux.sh"):
+        assert (ROOT / "scripts" / f).is_file(), f
+
+
+def test_spec_bundles_frontend_alembic_and_app_data():
+    spec = (ROOT / "packaging" / "kuantra.spec").read_text()
+    for needle in ('"frontend"', "alembic.ini", '"alembic"', 'collect_data_files("app"', "console=False",
+                   "com.kuantra.terminal", "NSHighResolutionCapable"):
+        assert needle in spec, needle
+    excludes = _excludes_block(spec)
+    for forbidden in ("numpy", "pandas", "scipy", "duckdb", "unittest"):
+        assert f'"{forbidden}"' not in excludes, forbidden
+
+
+def test_spec_entry_point_is_desktop_main():
+    spec = (ROOT / "packaging" / "kuantra.spec").read_text()
+    assert "desktop_main.py" in spec
+    assert '"Kuantra Terminal"' in spec
+
+
+def test_build_and_smoke_scripts_target_host_os_outputs():
+    build = (ROOT / "scripts" / "build_desktop.py").read_text()
+    smoke = (ROOT / "scripts" / "smoke_desktop.py").read_text()
+    assert "kuantra.spec" in build
+    assert "--skip-frontend" in build
+    assert "Kuantra Terminal.app" in build and "kuantra-terminal" in build
+    assert "--smoke" in smoke and "--smoke-report" in smoke
+    assert "KUANTRA_DATA_DIR" in smoke and "KUANTRA_GATEWAY_ENABLED" in smoke
+
+
+def test_package_macos_script_builds_dmg():
+    sh = (ROOT / "scripts" / "package_macos.sh").read_text()
+    assert "hdiutil create" in sh
+    assert "codesign" in sh
+    assert ".dmg" in sh

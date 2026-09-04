@@ -1,12 +1,16 @@
 """
-Packaging & Environment Integrity Verification Utility for Kuantra Terminal.
-Validates build scripts, Tauri bundle configurations, and multi-language dictionary synchronization.
+Packaging & environment integrity verification utility for Kuantra Terminal.
+
+Validates the repository layout required by the pywebview/PyInstaller desktop shell,
+the per-platform packaging inputs, multi-language dictionary parity, and the
+documentation set that ships with a release.
 """
 
+import json
 import os
 import sys
-import json
-from typing import Set, Dict, Any
+from typing import Any, Dict, Set
+
 
 def get_leaf_keys(d: Dict[str, Any], prefix: str = "") -> Set[str]:
     """Recursively extracts all dot-notation leaf keys from a dictionary."""
@@ -19,12 +23,13 @@ def get_leaf_keys(d: Dict[str, Any], prefix: str = "") -> Set[str]:
             keys.add(p)
     return keys
 
+
 def verify_system_integrity() -> bool:
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     print(f"[*] Verifying Kuantra Terminal packaging integrity at: {root_dir}")
 
-    # 1. Check Essential Directories
-    required_dirs = ["backend", "frontend", "src-tauri", "docs", "scripts"]
+    # 1. Check essential directories
+    required_dirs = ["backend", "frontend", "packaging", "scripts", "docs"]
     for d in required_dirs:
         p = os.path.join(root_dir, d)
         if not os.path.isdir(p):
@@ -32,28 +37,22 @@ def verify_system_integrity() -> bool:
             return False
     print("[+] Core directories validated.")
 
-    # 2. Check Build Sidecar Script
-    sidecar_script = os.path.join(root_dir, "backend", "build_sidecar.py")
-    if not os.path.isfile(sidecar_script):
-        print(f"[-] Missing sidecar compilation script: {sidecar_script}")
-        return False
-    print("[+] Nuitka C++ sidecar build script verified.")
+    # 2. Check packaging & shell entry points
+    required_files = [
+        os.path.join("packaging", "kuantra.spec"),
+        os.path.join("packaging", "windows", "installer.nsi"),
+        os.path.join("packaging", "linux", "AppRun"),
+        os.path.join("backend", "desktop_main.py"),
+        os.path.join("frontend", "vite.config.ts"),
+    ]
+    for rel in required_files:
+        p = os.path.join(root_dir, rel)
+        if not os.path.isfile(p):
+            print(f"[-] Missing required packaging file: {rel}")
+            return False
+    print("[+] PyInstaller spec, platform packaging inputs and desktop entry point verified.")
 
-    # 3. Check Tauri 2.0 Manifest
-    tauri_conf = os.path.join(root_dir, "src-tauri", "tauri.conf.json")
-    if not os.path.isfile(tauri_conf):
-        print(f"[-] Missing Tauri configuration: {tauri_conf}")
-        return False
-
-    with open(tauri_conf, "r", encoding="utf-8") as f:
-        conf = json.load(f)
-
-    if not conf.get("productName") or "bundle" not in conf:
-        print("[-] Invalid Tauri configuration format.")
-        return False
-    print(f"[+] Tauri bundle config validated: {conf['productName']} v{conf.get('version', '2.0.0')}")
-
-    # 4. Check i18n Dictionary Parity
+    # 3. Check i18n dictionary parity
     locales_dir = os.path.join(root_dir, "frontend", "src", "locales")
     en_path = os.path.join(locales_dir, "en.json")
     tr_path = os.path.join(locales_dir, "tr.json")
@@ -83,7 +82,7 @@ def verify_system_integrity() -> bool:
         return False
     print(f"[+] Multi-language synchronization verified across {len(en_keys)} translation tokens.")
 
-    # 5. Check Documentation
+    # 4. Check documentation
     docs_to_check = [
         os.path.join(root_dir, "README.md"),
         os.path.join(root_dir, "CONTRIBUTING.md"),
@@ -91,7 +90,7 @@ def verify_system_integrity() -> bool:
         os.path.join(root_dir, "ARCHITECTURE.md"),
         os.path.join(root_dir, "docs", "BUILD_WINDOWS.md"),
         os.path.join(root_dir, "docs", "BUILD_MACOS.md"),
-        os.path.join(root_dir, "docs", "BUILD_LINUX.md")
+        os.path.join(root_dir, "docs", "BUILD_LINUX.md"),
     ]
 
     for doc in docs_to_check:
@@ -104,6 +103,7 @@ def verify_system_integrity() -> bool:
     print("[SUCCESS] ALL PACKAGING PRE-FLIGHT CHECKS PASSED (100%)")
     print("=======================================================")
     return True
+
 
 if __name__ == "__main__":
     success = verify_system_integrity()

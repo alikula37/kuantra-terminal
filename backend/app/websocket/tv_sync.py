@@ -63,7 +63,7 @@ class TradingViewSyncManager:
 
     async def broadcast_to_terminal(self, payload: Dict[str, Any]):
         from app.websocket.connection_manager import ws_manager
-        await ws_manager.broadcast("tv_sync", payload)
+        await ws_manager.broadcast(payload, "tv_sync")
 
     def get_sync_state(self) -> Dict[str, Any]:
         return {

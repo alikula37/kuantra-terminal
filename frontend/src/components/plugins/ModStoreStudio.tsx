@@ -13,6 +13,7 @@ import {
   RefreshCw 
 } from "lucide-react";
 import { usePluginRegistry } from "../../context/PluginRegistryContext";
+import { apiBase, apiFetch, apiUrl } from "../../lib/backend";
 
 export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = ({ onOpenPersonaSelector }) => {
   const { plugins, activePersona, loading, togglePlugin, refreshPlugins } = usePluginRegistry();
@@ -31,7 +32,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
         [moduleId]: { progress: 10, status: "İndirme Başlatılıyor..." }
       }));
 
-      const res = await fetch("http://127.0.0.1:8000/api/v1/plugins/download", {
+      const res = await apiFetch(apiUrl("/api/v1/plugins/download"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plugin_id: moduleId })
@@ -47,7 +48,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
       // Poll status
       const interval = setInterval(async () => {
         try {
-          const stRes = await fetch(`http://127.0.0.1:8000/api/v1/plugins/download-status/${taskId}`);
+          const stRes = await apiFetch(`${apiBase()}/api/v1/plugins/download-status/${taskId}`);
           if (stRes.ok) {
             const stData = await stRes.json();
             const pct = stData.progress_percent || 0;
@@ -167,7 +168,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Hot-mount, unmount, and configure modular quantitative algorithms and sidecar subsystems.
+              Hot-mount, unmount, and configure modular quantitative algorithms and desktop core subsystems.
             </p>
           </div>
         </div>
@@ -405,7 +406,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
             <div className="p-5 rounded-xl border border-surface-border bg-[#111724] space-y-4">
               <h2 className="text-sm font-bold font-mono text-white flex items-center space-x-2">
                 <Cpu className="w-4 h-4 text-accent" />
-                <span>Sidecar Dynamic Memory Footprint</span>
+                <span>Desktop Core Dynamic Memory Footprint</span>
               </h2>
 
               {/* Progress / Gauge Bar */}

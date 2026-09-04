@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { MaeMfeAnalyticsResponse, MaeMfePoint } from "../types";
 import { Crosshair, ShieldAlert, TrendingUp } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export const MaeMfeVisualizer: React.FC = () => {
   const { t } = useTranslation();
@@ -12,7 +13,7 @@ export const MaeMfeVisualizer: React.FC = () => {
 
   useEffect(() => {
     setIsLoading(true);
-    fetch("http://127.0.0.1:8000/api/v1/analytics/mae-mfe")
+    apiFetch(apiUrl("/api/v1/analytics/mae-mfe"))
       .then((res) => res.json())
       .then((resData) => {
         setData(resData);

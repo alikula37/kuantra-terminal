@@ -1,17 +1,14 @@
 """
-Live User Acceptance Testing (UAT) Suite & System Audit Runner for Kuantra Terminal v1.1.0-institutional.
-Executes 5 live end-to-end production scenarios with real process lifecycle management,
-hardware telemetry, AMM pricing, Limit Order Book matching, and FIDO2 biometric lockout.
+Live User Acceptance Testing (UAT) Suite & System Audit Runner for Kuantra Terminal.
+Executes 5 live end-to-end production scenarios against the in-process FastAPI backend:
+health boot, hardware telemetry, AMM pricing, Limit Order Book matching, and FIDO2
+biometric lockout.
 """
 
 import os
 import sys
 import time
 import json
-import socket
-import signal
-import psutil
-import subprocess
 from typing import Dict, Any, List
 
 # Add backend directory to sys.path
@@ -19,6 +16,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT_DIR, "backend"))
 
 from fastapi.testclient import TestClient
+from app.version import __version__
 from main import create_app
 from app.services.matching.order_book import global_order_book, LimitOrderBook
 from app.services.fix.fix_gateway import fix_session, FIXMessage
@@ -54,61 +52,29 @@ class KuantraLiveUATRunner:
             print(f"      * {k}: {v}")
 
     # =========================================================================
-    # SCENARIO 1: IPC Lifecycle & Zero Zombie Daemon Verification
+    # SCENARIO 1: In-Process Backend Boot & /health Verification
     # =========================================================================
-    def run_scenario_1_ipc_lifecycle(self):
+    def run_scenario_1_in_process_backend(self):
+        """The pywebview shell hosts FastAPI in-process: no sidecar, no port handshake."""
         t0 = time.perf_counter()
-        python_exe = sys.executable
-        main_script = os.path.join(ROOT_DIR, "backend", "main.py")
 
-        # Spawn backend sidecar with dynamic port --port 0
-        proc = subprocess.Popen(
-            [python_exe, main_script, "--port", "0"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1
-        )
-
-        assigned_port = None
-        handshake_captured = False
-
-        # Read stdout for dynamic port handshake with 15s timeout for CI virtualization
-        deadline = time.time() + 15.0
-        while time.time() < deadline:
-            line = proc.stdout.readline()
-            if "KUANTRA_BACKEND_PORT:" in line:
-                assigned_port = int(line.strip().split(":")[1])
-                handshake_captured = True
-                break
-            time.sleep(0.05)
-
-        assert handshake_captured is True, "Failed to capture KUANTRA_BACKEND_PORT handshake"
-        assert assigned_port is not None and assigned_port > 0, f"Invalid dynamic port: {assigned_port}"
-
-        # Terminate sidecar process
-        proc.terminate()
-        try:
-            proc.wait(timeout=2.0)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
-
-        # Check process table for lingering zombie daemons
-        is_zombie = psutil.pid_exists(proc.pid)
-        assert is_zombie is False, f"Process {proc.pid} lingered as a zombie daemon!"
+        res_health = self.client.get("/health")
+        assert res_health.status_code == 200, f"/health returned {res_health.status_code}"
+        health = res_health.json()
+        assert health["status"] == "online"
+        assert health["version"]
 
         duration_ms = (time.perf_counter() - t0) * 1000.0
         self.log_scenario(
             scenario_num=1,
-            name="IPC Lifecycle & Zero Zombie Daemon Verification",
+            name="In-Process Backend Boot & /health Verification",
             status="PASSED",
             duration_ms=duration_ms,
             metrics={
-                "dynamic_assigned_port": assigned_port,
-                "handshake_protocol": f"KUANTRA_BACKEND_PORT:{assigned_port}",
-                "termination_latency_ms": f"{duration_ms:.2f}ms",
-                "lingering_zombie_pids": 0
+                "transport": "in-process ASGI (no sidecar subprocess)",
+                "health_status": health["status"],
+                "backend_version": health["version"],
+                "boot_latency_ms": f"{duration_ms:.2f}ms"
             }
         )
 
@@ -338,11 +304,11 @@ class KuantraLiveUATRunner:
     # =========================================================================
     def execute_full_uat_suite(self):
         print("\n==================================================================================================")
-        print("                  KUANTRA TERMINAL v1.1.0 LIVE USER ACCEPTANCE TESTING (UAT) SUITE               ")
+        print(f"              KUANTRA TERMINAL v{__version__} LIVE USER ACCEPTANCE TESTING (UAT) SUITE            ")
         print("==================================================================================================")
         print(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())} | Target: Production Engine\n")
 
-        self.run_scenario_1_ipc_lifecycle()
+        self.run_scenario_1_in_process_backend()
         self.run_scenario_2_gpu_and_swarm()
         self.run_scenario_3_defai_flash_loan()
         self.run_scenario_4_orderbook_and_fix()
@@ -360,8 +326,8 @@ class KuantraLiveUATRunner:
         audit_artifact_path = os.path.join(ROOT_DIR, "UAT_AUDIT_REPORT.json")
         with open(audit_artifact_path, "w", encoding="utf-8") as f:
             json.dump({
-                "version": "1.1.0",
-                "release_tag": "v1.1.0-institutional",
+                "version": __version__,
+                "release_tag": f"v{__version__}",
                 "pass_rate_pct": pass_rate,
                 "scenarios": self.results
             }, f, indent=2)

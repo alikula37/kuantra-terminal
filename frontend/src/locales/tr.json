@@ -44,12 +44,12 @@
     "wizard_subtitle": "Ticaret ortamınızı, şifreleme kasanızı ve sistem tercihlerinizi yapılandırın",
     "step1_title": "Ticaret Ortamı",
     "step1_desc": "Canlı emir iletimi veya simüle edilmiş sanal işlem ortamınızı seçin",
-    "step2_title": "Stronghold Kasa Kimlik Bilgileri",
+    "step2_title": "Şifreli Yerel Kasa Kimlik Bilgileri",
     "step2_desc": "API anahtarlarını Argon2id + AES-256-GCM ile bellekte güvenle şifreleyin",
     "step3_title": "Tema & Yerelleştirme",
     "step3_desc": "Görsel çalışma alanı paletinizi ve arayüz dilinizi özelleştirin",
     "step4_title": "Doğrulama & El Sıkışma",
-    "step4_desc": "C++ sidecar bağlantısını, WebSocket veri akışlarını ve veritabanı bütünlüğünü doğrulayın",
+    "step4_desc": "Masaüstü çekirdeği bağlantısını, canlı veri akışlarını ve veritabanı bütünlüğünü doğrulayın",
     "mode": {
       "live_title": "Canlı Gerçek Zamanlı Veri & İletim",
       "live_desc": "Binance, OKX ve CME QuickFIX DMA ile doğrudan piyasa iletimi",
@@ -77,10 +77,10 @@
       "locale_de": "Deutsch (DE)"
     },
     "verification": {
-      "checking_sidecar": "C++ sidecar IPC bağlantısı test ediliyor...",
+      "checking_desktop_core": "Masaüstü çekirdeği IPC bağlantısı test ediliyor...",
       "checking_sqlite": "SQLite OLTP (WAL modu) doğrulanıyor...",
       "checking_duckdb": "DuckDB OLAP sütunsal motoru inceleniyor...",
-      "checking_websocket": "Yerel WebSocket telemetri köprüsü kuruluyor...",
+      "checking_websocket": "Yerel canlı veri köprüsü kuruluyor...",
       "all_systems_go": "Tüm kurumsal motor bileşenleri doğrulandı ve hazır!",
       "complete_btn": "Terminal Gösterge Panelini Başlat"
     },
@@ -114,9 +114,9 @@
     "expectancy": "Matematiksel Beklenti (EV)"
   },
   "vault": {
-    "title": "Tauri Stronghold Kasası",
+    "title": "Şifreli Yerel Kasa",
     "status_encrypted": "AES-256-GCM ile Şifrelendi",
-    "saved": "{exchange} kimlik bilgileri Stronghold Kasasına güvenle kaydedildi."
+    "saved": "{exchange} kimlik bilgileri şifreli yerel kasaya güvenle kaydedildi."
   },
   "settings": {
     "title": "Sistem & Çalışma Zamanı Ayarları",

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Layers, RefreshCw, Zap } from "lucide-react";
+import { apiBase, apiFetch } from "../../lib/backend";
 
 interface FootprintBar {
   symbol: string;
@@ -24,7 +25,7 @@ export const FootprintChart: React.FC = () => {
 
   const fetchFootprintData = () => {
     setIsLoading(true);
-    fetch(`http://127.0.0.1:8000/api/v1/orderflow/footprint?symbol=${symbol}&limit=6`)
+    apiFetch(`${apiBase()}/api/v1/orderflow/footprint?symbol=${symbol}&limit=6`)
       .then((res) => res.json())
       .then((data) => {
         if (data.bars) setBars(data.bars);
@@ -32,7 +33,7 @@ export const FootprintChart: React.FC = () => {
       .catch(() => {})
       .finally(() => setIsLoading(false));
 
-    fetch(`http://127.0.0.1:8000/api/v1/orderflow/cvd?symbol=${symbol}`)
+    apiFetch(`${apiBase()}/api/v1/orderflow/cvd?symbol=${symbol}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.divergence?.has_divergence) {

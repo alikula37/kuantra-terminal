@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Playbook } from "../types";
 import { BookOpen, CheckCircle2, XCircle, CheckSquare, Square } from "lucide-react";
+import { apiFetch, apiUrl } from "../lib/backend";
 
 export const PlaybookManager: React.FC = () => {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
@@ -12,7 +13,7 @@ export const PlaybookManager: React.FC = () => {
 
   const fetchPlaybooks = () => {
     setIsLoading(true);
-    fetch("http://127.0.0.1:8000/api/v1/playbooks")
+    apiFetch(apiUrl("/api/v1/playbooks"))
       .then((res) => res.json())
       .then((data: Playbook[]) => {
         setPlaybooks(data);
@@ -48,7 +49,7 @@ export const PlaybookManager: React.FC = () => {
   const handleAudit = async () => {
     if (!selectedPlaybook) return;
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/playbooks/audit", {
+      const res = await apiFetch(apiUrl("/api/v1/playbooks/audit"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

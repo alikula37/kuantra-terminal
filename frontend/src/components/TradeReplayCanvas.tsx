@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createChart, IChartApi, ISeriesApi } from "lightweight-charts";
 import { ReplaySessionResponse } from "../types";
 import { Play, Pause, SkipBack, SkipForward, FastForward, RotateCcw } from "lucide-react";
+import { apiBase, apiFetch } from "../lib/backend";
 
 interface TradeReplayCanvasProps {
   tradeId?: string;
@@ -20,7 +21,7 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
   // Initialize Replay Session
   useEffect(() => {
     setIsLoading(true);
-    fetch(`http://127.0.0.1:8000/api/v1/replay/session/${tradeId}`)
+    apiFetch(`${apiBase()}/api/v1/replay/session/${tradeId}`)
       .then((res) => res.json())
       .then((data: ReplaySessionResponse) => {
         setSession(data);
@@ -108,7 +109,7 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
   const handleStep = async (dir: number) => {
     if (!session) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/replay/${session.session_id}/step`, {
+      const res = await apiFetch(`${apiBase()}/api/v1/replay/${session.session_id}/step`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ direction: dir }),
@@ -124,7 +125,7 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
   const handleSeek = async (idx: number) => {
     if (!session) return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/replay/${session.session_id}/seek`, {
+      const res = await apiFetch(`${apiBase()}/api/v1/replay/${session.session_id}/seek`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target_index: idx }),

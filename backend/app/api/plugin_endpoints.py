@@ -4,7 +4,7 @@ Provides endpoints for inspecting installed plugins, runtime hot-toggling,
 persona batch switching, and ModStore marketplace discovery.
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from app.services.plugin_manager import plugin_manager, PERSONA_PROFILES
@@ -118,12 +118,13 @@ class DownloadPluginRequest(BaseModel):
     expected_sha256: Optional[str] = None
 
 @router.post("/download")
-async def download_plugin_endpoint(req: DownloadPluginRequest, background_tasks: BackgroundTasks):
+async def download_plugin_endpoint(req: DownloadPluginRequest):
     """Initiates an asynchronous download and dynamic mounting task for a remote .kmod plugin."""
     from app.services.modstore_downloader import modstore_downloader
+    from app.core.background import fire_and_forget
     import uuid
     task_id = str(uuid.uuid4())[:8]
-    background_tasks.add_task(
+    fire_and_forget(
         modstore_downloader.download_and_install,
         plugin_id=req.plugin_id,
         download_url=req.download_url,
