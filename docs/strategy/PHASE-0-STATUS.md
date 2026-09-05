@@ -20,13 +20,14 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP01 Execution/risk contract | Verified | `ab5a2cf` | Backend 243 passed, 1 skipped |
 | P0-WP02 Market-data truth contract | Verified | `c110b94` | Backend 257 passed, 1 skipped; frontend 29 passed; build pass |
 | P0-WP03 Frontend dev-toolchain security | Verified | `c72d599` | Audit 0; frontend 29 passed; build pass |
+| P0-WP04 CI truth/release gates | Remote pending | — | Local: backend 259 passed, 1 skipped; audit 0; frontend 29 passed; build pass |
 
 ## Aktif güvenlik durumu
 
-2026-09-05 GitHub Dependabot ve local `npm audit` aynı beş bulguyu raporladı. Root Vite 6.4.3
-ve esbuild 0.25.12 patched durumdadır; kalan vulnerable transitive zincir Vitest 2.1.9'un nested
-Vite/esbuild bağımlılıklarıdır. CI Node 20 kullanır. Bu nedenle en küçük uyumlu güvenli hedef
-Vitest 3.2.6'dır; Vitest 5 Node 22.12+ istediği için seçilmemiştir.
+2026-09-05 GitHub Dependabot ve local `npm audit` aynı beş bulguyu raporladı. P0-WP03 ile
+Vitest 3.2.7, Vite 6.4.3 ve esbuild 0.25.12 çözümlemesine geçildi; local audit sonucu sıfırdır.
+CI Node 20 kullandığı için Node 22.12+ isteyen Vitest 5 seçilmedi. P0-WP04, yeni bir moderate
+veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zorunlu kılar.
 
 ## Context devam protokolü
 
@@ -38,9 +39,9 @@ Vitest 3.2.6'dır; Vitest 5 Node 22.12+ istediği için seçilmemiştir.
 
 ## Sıradaki sıra
 
-1. P0-WP03 — Vitest/nested Vite güvenlik zinciri.
-2. P0-WP04 — Replay/MAE-MFE/order-flow synthetic evidence temizliği.
-3. P0-WP05 — Credentials, gateway secret ve OS keychain geçiş planı/uygulaması.
-4. P0-WP06 — Experimental yüzeylerin default UI/API'dan kaldırılması.
-5. P0-WP07 — README/release claim ve CI truth matrix.
-6. P0-WP08 — Üç platform packaging/smoke ve Faz 0 exit audit.
+1. P0-WP04 — Remote Windows/macOS/Ubuntu doğrulamasını tamamla.
+2. P0-WP05 — Replay/MAE-MFE/order-flow synthetic evidence temizliği.
+3. P0-WP06 — Credentials, gateway secret ve OS keychain geçiş planı/uygulaması.
+4. P0-WP07 — Experimental yüzeylerin default UI/API'dan kaldırılması.
+5. P0-WP08 — README/release claim ve CI truth matrix.
+6. P0-WP09 — Üç platform packaging/smoke ve Faz 0 exit audit.

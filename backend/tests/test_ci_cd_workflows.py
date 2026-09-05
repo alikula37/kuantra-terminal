@@ -46,8 +46,13 @@ class TestCICDWorkflowsAndPackaging:
         assert any("upload-artifact" in u.lower() for u in step_uses)
 
         for required_step in (
-            "Run backend tests",
-            "Frontend tests and build",
+            "Initialize isolated data directory",
+            "Compile Python sources",
+            "Run full backend test suite",
+            "Install frontend dependencies",
+            "Audit frontend dependencies",
+            "Run frontend tests",
+            "Build frontend",
             "Build desktop app",
             "Smoke test desktop app",
         ):
@@ -102,6 +107,16 @@ class TestCICDWorkflowsAndPackaging:
 
         assert any("checkout" in u.lower() for u in bp_uses)
         assert any("upload-artifact" in u.lower() for u in bp_uses)
+        for required_step in (
+            "Initialize isolated data directory",
+            "Compile Python sources",
+            "Run full backend test suite",
+            "Install frontend dependencies",
+            "Audit frontend dependencies",
+            "Run frontend tests",
+            "Build frontend",
+        ):
+            assert required_step in bp_names, f"release.yml must have a '{required_step}' step"
         assert "Build desktop app" in bp_names
         assert "Smoke test desktop app" in bp_names
         assert "Package" in bp_names
