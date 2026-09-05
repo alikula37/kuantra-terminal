@@ -6,7 +6,7 @@ status: Verified
 phase: Phase 0 - Truth & Safety Release
 strategy: KPS-001@1.0.0
 adr: ADR-0003
-baseline_commit: 92be7b3e9d42c77a013449bd5af04560fbea1b29
+baseline_commit: b88767a11993de0b53b8db5430f23d419e3d02e0
 owner: lead-agent
 implementer: gpt-5.6-terra
 verified_by: lead-agent

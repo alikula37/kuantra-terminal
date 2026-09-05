@@ -16,10 +16,10 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 
 | Paket | Durum | Commit | Son doğrulama |
 |---|---|---|---|
-| P0-WP00 Strateji/ADR tabanı | Verified | `92be7b3` | Doküman kataloğu ve immutable ADR düzeni |
-| P0-WP01 Execution/risk contract | Verified | `1d2bb53` | Backend 243 passed, 1 skipped |
-| P0-WP02 Market-data truth contract | Verified | `6bdd4d9` | Backend 257 passed, 1 skipped; frontend 29 passed; build pass |
-| P0-WP03 Frontend dev-toolchain security | Verified | pending commit | Audit 0; frontend 29 passed; build pass |
+| P0-WP00 Strateji/ADR tabanı | Verified | `b88767a` | Doküman kataloğu ve immutable ADR düzeni |
+| P0-WP01 Execution/risk contract | Verified | `ab5a2cf` | Backend 243 passed, 1 skipped |
+| P0-WP02 Market-data truth contract | Verified | `c110b94` | Backend 257 passed, 1 skipped; frontend 29 passed; build pass |
+| P0-WP03 Frontend dev-toolchain security | Verified | `c72d599` | Audit 0; frontend 29 passed; build pass |
 
 ## Aktif güvenlik durumu
 

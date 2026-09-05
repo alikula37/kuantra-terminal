@@ -5,7 +5,7 @@ work_package: P0-WP03
 status: Verified
 phase: Phase 0 - Truth & Safety Release
 strategy: KPS-001@1.0.0
-baseline_commit: 6bdd4d97e3ec809c504197b95f51226db1aaa249
+baseline_commit: c110b948e3004790e2deafe8b95f202b1c4b9234
 owner: lead-agent
 implementer: gpt-5.6-terra
 verified_by: Axiom (GPT-5.6 SOL)
