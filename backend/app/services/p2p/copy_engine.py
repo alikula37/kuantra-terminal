@@ -21,7 +21,7 @@ class ZeroKnowledgeCopyEngine:
     def __init__(self):
         self.signal_history: List[Dict[str, Any]] = []
         try:
-            init_bal = float(sqlite_driver.get_setting("user_initial_balance", default="0.0") or 0.0)
+            init_bal = float(sqlite_driver.get_setting("user_initial_balance") or 0.0)
         except Exception:
             init_bal = 0.0
         self.follower_settings = {

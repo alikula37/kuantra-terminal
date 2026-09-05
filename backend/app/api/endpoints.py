@@ -239,7 +239,25 @@ def get_exchange_balances(exchange_id: str = "binance_futures"):
 
 @router.post("/execution/order")
 def dispatch_order(order: OrderDispatchSchema):
-    """Places order via CCXT or paper trading with Pre-Execution Risk Gatekeeper."""
+    """Dispatches a paper order through the pre-execution risk gatekeeper."""
+    mode = str(order.mode or "PAPER").strip().upper()
+    if mode == "LIVE":
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "LIVE_EXECUTION_DISABLED",
+                "reason": "Live execution is disabled until the Phase 4 execution safety gates are complete.",
+            },
+        )
+    if mode != "PAPER":
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "UNSUPPORTED_EXECUTION_MODE",
+                "reason": "Only PAPER execution mode is supported.",
+            },
+        )
+
     res = ccxt_execution_engine.create_order(
         symbol=order.symbol,
         side=order.side,
@@ -249,7 +267,7 @@ def dispatch_order(order: OrderDispatchSchema):
         stop_loss=order.stop_loss,
         take_profit=order.take_profit,
         exchange_id=order.exchange or "binance_futures",
-        mode=order.mode or "PAPER",
+        mode=mode,
         notes=order.notes
     )
     if not res.get("success"):
@@ -711,21 +729,7 @@ def subscribe_to_adapter_symbols(payload: AdapterSubscribeSchema):
         return polygon_adapter.subscribe(payload.symbols)
     return {"status": "SUCCESS", "adapter": adapter_key, "symbols": payload.symbols}
 
-from app.services.execution.order_router import order_router
 from app.services.execution.risk_interceptor import risk_interceptor
-
-class LiveOrderSchema(BaseModel):
-    symbol: str
-    side: str
-    qty: float
-    price: float
-    exchange: Optional[str] = "BINANCE"
-    stop_loss: Optional[float] = None
-    take_profit: Optional[float] = None
-
-@router.post("/execution/order")
-def execute_live_order(payload: LiveOrderSchema):
-    return order_router.route_order(payload.model_dump())
 
 @router.get("/execution/status")
 def get_execution_guardrail_status():

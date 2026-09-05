@@ -6,6 +6,7 @@ Evaluates daily loss limits, maximum drawdowns, trailing rules, and alerts in re
 from datetime import datetime, timezone
 import json
 import logging
+import math
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 from app.db.sqlite_driver import sqlite_driver
@@ -13,12 +14,19 @@ from app.websocket.connection_manager import ws_manager
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_ACCOUNT_SIZE = 100000.0
+
 def get_default_account_size() -> float:
     try:
-        val = sqlite_driver.get_setting("user_initial_balance", default="100000.0")
-        return float(val) if val is not None else 100000.0
+        val = sqlite_driver.get_setting("user_initial_balance")
     except Exception:
-        return 100000.0
+        return DEFAULT_ACCOUNT_SIZE
+
+    try:
+        account_size = float(val)
+    except (TypeError, ValueError):
+        return DEFAULT_ACCOUNT_SIZE
+    return account_size if math.isfinite(account_size) and account_size > 0 else DEFAULT_ACCOUNT_SIZE
 
 class ComplianceConfig(BaseModel):
     account_size: float = Field(default_factory=get_default_account_size)
@@ -195,6 +203,9 @@ class ComplianceEngine:
             "all_time_pnl": round(all_time_realized_pnl + unrealized_pnl, 2),
             "current_drawdown_amount": round(current_drawdown_amount, 2),
             "current_drawdown_pct": round(current_drawdown_pct, 2),
+            "current_daily_loss": round(current_daily_loss, 2),
+            "daily_loss_pct_of_account": round((current_daily_loss / self.config.account_size) * 100.0, 2),
+            "daily_loss_limit_pct": self.config.daily_loss_limit_pct,
             "daily_loss_budget": round(daily_loss_budget, 2),
             "daily_loss_remaining": round(max(0.0, daily_loss_budget - current_daily_loss), 2),
             "max_dd_budget": round(max_dd_budget, 2),

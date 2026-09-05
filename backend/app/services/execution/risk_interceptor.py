@@ -75,7 +75,7 @@ class RiskGuardrailInterceptor:
 
         # 4. Prop Firm Compliance Shield Check
         compliance_status = compliance_engine.evaluate_compliance()
-        if compliance_status.get("status") == "BREACHED":
+        if compliance_status.get("overall_status") == "BREACHED":
             reason = "ORDER_BLOCKED_PROP_FIRM_BREACH: Prop Firm Compliance Shield daily/max drawdown breached."
             logger.warning(f"[RISK INTERCEPTOR] {reason}")
             return False, reason, {"compliance": compliance_status, "stage": "PROP_FIRM_GUARD"}

@@ -8,6 +8,7 @@ Validates orders prior to exchange routing:
 """
 
 import logging
+import math
 from typing import Dict, Any, Optional, Tuple
 from app.services.compliance_engine import compliance_engine
 from app.services.settings_service import settings_service
@@ -107,19 +108,39 @@ class RiskGuard:
 
         # 4. Prop Firm Compliance Drawdown Proximity Check
         compliance_eval = compliance_engine.evaluate_compliance()
-        if compliance_eval.get("status") == "BREACHED":
+        if compliance_eval.get("overall_status") == "BREACHED":
             return False, "ORDER_REJECTED_PROP_FIRM_BREACH: Prop firm maximum or daily drawdown has been breached.", {
                 "compliance": compliance_eval,
                 "stage": "PROP_FIRM_BREACH"
             }
 
-        # Check if account is within 0.5% margin of max daily drawdown breach
-        daily_loss_pct = compliance_eval.get("daily_loss_pct", 0.0)
-        daily_loss_limit = compliance_eval.get("max_daily_loss_limit_pct", 5.0)
-        if daily_loss_pct > (daily_loss_limit - 0.5):
+        # The compliance engine reports both values as percentages of account size.
+        # A missing or malformed compliance response must not silently bypass this gate.
+        try:
+            daily_loss_pct = float(compliance_eval["daily_loss_pct_of_account"])
+            daily_loss_limit = float(compliance_eval["daily_loss_limit_pct"])
+        except (KeyError, TypeError, ValueError):
+            return False, "ORDER_REJECTED_COMPLIANCE_DATA_UNAVAILABLE: Daily loss data is unavailable for risk validation.", {
+                "compliance": compliance_eval,
+                "stage": "COMPLIANCE_DATA_UNAVAILABLE",
+            }
+
+        if (
+            not math.isfinite(daily_loss_pct)
+            or not math.isfinite(daily_loss_limit)
+            or daily_loss_pct < 0
+            or daily_loss_limit <= 0
+        ):
+            return False, "ORDER_REJECTED_COMPLIANCE_DATA_UNAVAILABLE: Daily loss data is invalid for risk validation.", {
+                "compliance": compliance_eval,
+                "stage": "COMPLIANCE_DATA_UNAVAILABLE",
+            }
+
+        # Reject at or within 0.5 percentage points of the configured daily-loss limit.
+        if daily_loss_pct >= (daily_loss_limit - 0.5):
             reason = (
                 f"ORDER_REJECTED_NEAR_DRAWDOWN_LIMIT: Current daily loss ({daily_loss_pct:.2f}%) "
-                f"is within 0.5% of max daily drawdown limit ({daily_loss_limit:.1f}%)."
+                f"is within 0.5 percentage points of the daily loss limit ({daily_loss_limit:.1f}%)."
             )
             logger.warning(f"[RISK-GUARD] {reason}")
             return False, reason, {

@@ -1,14 +1,19 @@
 import pytest
+from unittest.mock import MagicMock
 from app.services.compliance_engine import ComplianceEngine, ComplianceConfig
 
 class TestComplianceEngine:
     """Test suite for Prop Firm Risk & Compliance Engine."""
 
-    def test_default_config_initialization(self):
+    def test_default_config_initialization(self, monkeypatch):
+        mock_get_setting = MagicMock(return_value=None)
+        monkeypatch.setattr("app.services.compliance_engine.sqlite_driver.get_setting", mock_get_setting)
+
         engine = ComplianceEngine()
         assert engine.config.account_size == 100000.0
         assert engine.config.daily_loss_limit_pct == 5.0  # $5,000
         assert engine.config.max_drawdown_pct == 10.0     # $10,000
+        mock_get_setting.assert_called_once_with("user_initial_balance")
 
     def test_daily_loss_and_warning_thresholds(self):
         engine = ComplianceEngine()
