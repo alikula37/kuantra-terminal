@@ -20,7 +20,7 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP01 Execution/risk contract | Verified | `ab5a2cf` | Backend 243 passed, 1 skipped |
 | P0-WP02 Market-data truth contract | Verified | `c110b94` | Backend 257 passed, 1 skipped; frontend 29 passed; build pass |
 | P0-WP03 Frontend dev-toolchain security | Verified | `c72d599` | Audit 0; frontend 29 passed; build pass |
-| P0-WP04 CI truth/release gates | Remote pending | — | Local: backend 260 passed, 1 skipped; audit 0; frontend 29 passed; build pass |
+| P0-WP04 CI truth/release gates | Verified | `a920319` + `04f168c` | 3-OS PR/push CI green; local backend 260 passed, 1 skipped |
 
 ## Aktif güvenlik durumu
 
@@ -39,9 +39,9 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Sıradaki sıra
 
-1. P0-WP04 — Remote Windows/macOS/Ubuntu doğrulamasını tamamla.
-2. P0-WP05 — Replay/MAE-MFE/order-flow synthetic evidence temizliği.
-3. P0-WP06 — Credentials, gateway secret ve OS keychain geçiş planı/uygulaması.
-4. P0-WP07 — Experimental yüzeylerin default UI/API'dan kaldırılması.
-5. P0-WP08 — README/release claim ve CI truth matrix.
-6. P0-WP09 — Üç platform packaging/smoke ve Faz 0 exit audit.
+1. P0-WP05 — Python universal lock ve reproducible CI/release install.
+2. P0-WP06 — Replay/MAE-MFE/order-flow synthetic evidence temizliği.
+3. P0-WP07 — Credentials, gateway secret ve OS keychain geçiş planı/uygulaması.
+4. P0-WP08 — Experimental yüzeylerin default UI/API'dan kaldırılması.
+5. P0-WP09 — README/release claim ve CI truth matrix.
+6. P0-WP10 — Üç platform packaging/smoke ve Faz 0 exit audit.

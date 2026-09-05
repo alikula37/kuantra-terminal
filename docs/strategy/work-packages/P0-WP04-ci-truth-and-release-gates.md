@@ -2,7 +2,7 @@
 
 ```yaml
 work_package: P0-WP04
-status: Remote validation pending
+status: Verified
 phase: Phase 0 - Truth & Safety Release
 strategy: KPS-001@1.0.0
 baseline_commit: 0b757b96df7adac6407e19fd4eea160fae6fdbee
@@ -66,7 +66,7 @@ frontend tests ve production build. Bu kapılardan biri geçmezse paketleme/rele
 - [x] Frontend: audit 0; 29 test passed; production build başarılı.
 - [x] YAML parse edilir; GitHub expression'ları bozulmaz.
 - [x] `git diff --check` hata vermeden geçer (Windows line-ending bilgilendirmesi hariç).
-- [ ] Push sonrası Windows/macOS/Ubuntu PR checks yeşildir.
+- [x] Push sonrası Windows/macOS/Ubuntu PR checks yeşildir: run `33959581021`.
 
 ## Kapsam dışı
 
@@ -79,3 +79,12 @@ frontend tests ve production build. Bu kapılardan biri geçmezse paketleme/rele
 
 Terra commit/push yapmaz. Workflow diff'i, local contract/backend/frontend sonuçları ve bilinen
 platform risklerini Axiom'a raporlar. Remote PR checks Axiom tarafından doğrulanır.
+
+## Remote kanıt
+
+- PR run: `33959581021` — Windows, macOS ve Ubuntu başarılı.
+- Aynı SHA push run: `33959578375` — başarılı.
+- Doğrulanan head: `04f168ced12d74d4d1ad540d6ec2456d0af01755`.
+- GitHub-hosted runner uyarısı: kullanılan action major sürümleri Node 20 tabanlıdır ve runner
+  bunları Node 24'e zorlamaktadır. Action major yükseltmesi dependency-lock paketiyle birlikte
+  doğrulanacaktır.
