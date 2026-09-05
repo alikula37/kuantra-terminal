@@ -10,9 +10,9 @@ RUN apt-get update && apt-get install -y software-properties-common curl git xvf
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /src
-COPY backend/requirements.txt backend/requirements-desktop.txt backend/
-RUN python3.11 -m venv /venv && /venv/bin/pip install -U pip && \
-    /venv/bin/pip install -r backend/requirements.txt -r backend/requirements-desktop.txt
+COPY backend/requirements.lock backend/
+RUN python3.11 -m venv /venv && \
+    /venv/bin/pip install --require-hashes -r backend/requirements.lock
 COPY frontend/package.json frontend/package-lock.json frontend/
 RUN cd frontend && npm ci
 # PyInstaller needs objdump on Linux (GitHub runners ship binutils; this image does not)

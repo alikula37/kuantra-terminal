@@ -21,6 +21,7 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP02 Market-data truth contract | Verified | `c110b94` | Backend 257 passed, 1 skipped; frontend 29 passed; build pass |
 | P0-WP03 Frontend dev-toolchain security | Verified | `c72d599` | Audit 0; frontend 29 passed; build pass |
 | P0-WP04 CI truth/release gates | Verified | `a920319` + `04f168c` | 3-OS PR/push CI green; local backend 260 passed, 1 skipped |
+| P0-WP05 Python universal lock | Remote pending | — | Lock venv: backend 263 passed, 1 skipped; 90 packages / 2,408 hashes |
 
 ## Aktif güvenlik durumu
 

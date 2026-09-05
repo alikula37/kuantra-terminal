@@ -1,0 +1,3 @@
+# Human-maintained source manifests; compile this file into requirements.lock.
+-r requirements.txt
+-r requirements-desktop.txt

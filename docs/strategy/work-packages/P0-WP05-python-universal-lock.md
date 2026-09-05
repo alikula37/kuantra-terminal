@@ -2,7 +2,7 @@
 
 ```yaml
 work_package: P0-WP05
-status: Ready
+status: Remote validation pending
 phase: Phase 0 - Truth & Safety Release
 strategy: KPS-001@1.0.0
 baseline_commit: 04f168ced12d74d4d1ad540d6ec2456d0af01755
@@ -56,15 +56,19 @@ mevcut pip/PyInstaller akışını koruyan universal hashed requirements çıkt�
 
 ## Acceptance criteria
 
-- [ ] Universal lock oluşturuldu ve generated header/komut kaydı var.
-- [ ] Lock'ta tüm aktif requirements exact ve hash doğrulamalı.
-- [ ] CI/release/Docker yalnız lock'tan kuruyor.
-- [ ] Lock contract testleri geçiyor.
-- [ ] Temiz local lock install başarılı.
-- [ ] Full backend suite geçiyor.
-- [ ] Frontend audit/test/build geçiyor.
+- [x] Universal lock oluşturuldu ve generated header/komut kaydı var.
+- [x] Lock'ta 90 exact package entry ve 2.408 SHA-256 hash var.
+- [x] CI/release/Docker yalnız lock'tan kuruyor; bypass contract testiyle engelleniyor.
+- [x] Lock ve source-drift contract testleri geçiyor: ilgili grup 8 passed.
+- [x] Temiz Python 3.11 venv lock install başarılı; FastAPI 0.141.1 çözümlemesi doğrulandı.
+- [x] Locked venv full backend suite: 263 passed, 1 skipped.
+- [x] Frontend: audit 0; 29 test passed; production build başarılı.
 - [ ] Remote Windows/macOS/Ubuntu CI ve desktop smoke yeşil.
 - [ ] GitHub Actions Node 20 deprecation uyarısı kalktı.
+
+Docker image'ın uçtan uca yeniden build edilmesi P0-WP10 packaging exit paketinde yapılır. Bu
+paketin kapısı Dockerfile'ın yalnız lock kurduğunu kontrat testiyle ve aynı lock'ın Ubuntu runner
+üzerinde gerçek kurulumuyla doğrulamaktır.
 
 ## Kapsam dışı
 
