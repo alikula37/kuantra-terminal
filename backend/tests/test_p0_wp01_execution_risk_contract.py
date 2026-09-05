@@ -35,7 +35,8 @@ class TestPaperExecutionRoute:
         matching_routes = [
             route
             for route in api_client.app.routes
-            if route.path == "/api/v1/execution/order" and "POST" in route.methods
+            if getattr(route, "path", None) == "/api/v1/execution/order"
+            and "POST" in (getattr(route, "methods", None) or set())
         ]
 
         assert len(matching_routes) == 1
