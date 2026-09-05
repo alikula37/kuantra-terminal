@@ -108,6 +108,9 @@ class DesktopBridge:
                 "type": "SNAPSHOT",
                 "symbol": binance_client.symbol,
                 "last_price": binance_client.last_price,
+                "event_age_ms": binance_client.event_age_ms,
+                "timestamp": int(binance_client.last_tick_time * 1000) if binance_client.last_tick_time is not None else None,
+                "status": "LIVE" if binance_client.last_price is not None else "NO_DATA",
                 "open_positions": binance_client._recalculate_open_positions(binance_client.last_price),
             }
 

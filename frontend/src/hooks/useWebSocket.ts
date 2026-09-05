@@ -14,17 +14,19 @@ export function useWebSocket() {
   const pingIntervalRef = useRef<number | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  const { setConnectionStatus, updateTick, updateCandle } = useMarketStore();
+  const { setConnectionStatus, updateTick, setMarketSnapshot, updateCandle } = useMarketStore();
   const { updatePositionPnl } = useTradeStore();
 
   const handleMessage = useCallback(
     (message: any) => {
       if (message.type === "TICK") {
+        if (!Number.isFinite(message.price) || !Number.isFinite(message.timestamp) || !Number.isFinite(message.volume)) return;
         updateTick(
           message.price,
-          message.latency_ms || 12,
-          message.timestamp || Date.now(),
-          message.volume
+          Number.isFinite(message.event_age_ms) ? message.event_age_ms : null,
+          message.timestamp,
+          message.volume,
+          message.side === "BUY" || message.side === "SELL" || message.side === "UNKNOWN" ? message.side : "UNKNOWN",
         );
         if (message.open_positions) {
           updatePositionPnl(message.open_positions);
@@ -32,15 +34,17 @@ export function useWebSocket() {
       } else if (message.type === "CANDLE_UPDATE") {
         updateCandle(message.data);
       } else if (message.type === "SNAPSHOT") {
-        if (message.last_price) {
-          updateTick(message.last_price, 12, Date.now());
-        }
+        setMarketSnapshot(
+          Number.isFinite(message.last_price) ? message.last_price : null,
+          Number.isFinite(message.event_age_ms) ? message.event_age_ms : null,
+          Number.isFinite(message.timestamp) ? message.timestamp : null,
+        );
         if (message.open_positions) {
           updatePositionPnl(message.open_positions);
         }
       }
     },
-    [updateTick, updateCandle, updatePositionPnl]
+    [updateTick, setMarketSnapshot, updateCandle, updatePositionPnl]
   );
 
   const connect = useCallback(() => {

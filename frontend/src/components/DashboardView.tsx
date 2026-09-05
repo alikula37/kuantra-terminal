@@ -15,6 +15,24 @@ interface DashboardViewProps {
   onOpenInitialBalanceModal?: () => void;
 }
 
+export function canClosePositionAtMarketPrice(currentPrice: number | null): currentPrice is number {
+  return currentPrice !== null && Number.isFinite(currentPrice) && currentPrice > 0;
+}
+
+export async function requestPositionClose(
+  tradeId: string,
+  currentPrice: number | null,
+  request: (tradeId: string, exitPrice: number) => Promise<{ ok: boolean }>,
+): Promise<{ closed: boolean; error: string | null }> {
+  if (!canClosePositionAtMarketPrice(currentPrice)) {
+    return { closed: false, error: "Canlı piyasa fiyatı olmadan pozisyon kapatılamaz." };
+  }
+  const response = await request(tradeId, currentPrice);
+  return response.ok
+    ? { closed: true, error: null }
+    : { closed: false, error: "Pozisyon kapatma isteği reddedildi; pozisyon korunuyor." };
+}
+
 export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenNewTrade,
   onOpenInitialBalanceModal
@@ -29,6 +47,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [heatmap, setHeatmap] = useState<DailyHeatmapItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -63,19 +82,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   const handleClosePosition = async (tradeId: string) => {
+    if (!canClosePositionAtMarketPrice(currentPrice)) {
+      setCloseError("Canlı piyasa fiyatı olmadan pozisyon kapatılamaz.");
+      return;
+    }
+
     try {
-      await apiFetch(`${apiBase()}/api/v1/trades/${tradeId}/close`, {
+      const result = await requestPositionClose(tradeId, currentPrice, (id, exitPrice) => apiFetch(`${apiBase()}/api/v1/trades/${id}/close`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          exit_price: currentPrice || 0.0,
+          exit_price: exitPrice,
           exit_time: new Date().toISOString(),
         }),
-      });
+      }));
+      if (!result.closed) {
+        setCloseError(result.error);
+        return;
+      }
       updatePositionPnl(openPositions.filter((p) => p.id !== tradeId));
+      setCloseError(null);
       fetchDashboardData();
     } catch {
-      updatePositionPnl(openPositions.filter((p) => p.id !== tradeId));
+      setCloseError("Pozisyon kapatma isteği gönderilemedi; pozisyon korunuyor.");
     }
   };
 
@@ -98,6 +127,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span>Yenile</span>
         </button>
       </div>
+
+      {closeError && (
+        <div role="alert" className="rounded border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+          {closeError}
+        </div>
+      )}
 
       {/* Section 1: Portfolio Key Performance Indicators (KPIs) */}
       <PortfolioKpiGrid 

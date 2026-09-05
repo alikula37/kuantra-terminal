@@ -1325,11 +1325,13 @@ def get_market_candles(
 
 @router.get("/market/ticker")
 def get_market_ticker():
+    has_market_data = binance_client.last_price is not None
     return {
         "symbol": binance_client.symbol,
         "price": binance_client.last_price,
-        "latency_ms": binance_client.latency_ms,
-        "timestamp": int(binance_client.last_tick_time * 1000)
+        "event_age_ms": binance_client.event_age_ms,
+        "timestamp": int(binance_client.last_tick_time * 1000) if binance_client.last_tick_time is not None else None,
+        "status": "LIVE" if has_market_data else "NO_DATA",
     }
 
 @router.websocket("/ws/stream")
@@ -1340,6 +1342,9 @@ async def websocket_stream_endpoint(websocket: WebSocket):
             "type": "SNAPSHOT",
             "symbol": binance_client.symbol,
             "last_price": binance_client.last_price,
+            "event_age_ms": binance_client.event_age_ms,
+            "timestamp": int(binance_client.last_tick_time * 1000) if binance_client.last_tick_time is not None else None,
+            "status": "LIVE" if binance_client.last_price is not None else "NO_DATA",
             "open_positions": binance_client._recalculate_open_positions(binance_client.last_price)
         })
         while True:

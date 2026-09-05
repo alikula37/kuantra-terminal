@@ -2,7 +2,6 @@ from app.services.compliance_engine import compliance_engine
 import asyncio
 import json
 import logging
-import random
 import time
 from typing import Optional, Dict, Any, List
 import websockets
@@ -19,10 +18,24 @@ class BinanceStreamClient:
         self.symbol = symbol.upper()
         self.is_running: bool = False
         self._task: Optional[asyncio.Task] = None
-        self.last_price: float = 65000.0
-        self.last_tick_time: float = time.time()
-        self.latency_ms: float = 12.0
+        self.last_price: Optional[float] = None
+        self.last_tick_time: Optional[float] = None
+        self.event_age_ms: Optional[float] = None
         self.candle_buffer: Dict[str, Any] = {}
+
+    def _stream_url(self) -> str:
+        stream_name = f"{self.symbol.lower()}@trade"
+        kline_name = f"{self.symbol.lower()}@kline_1m"
+        return f"wss://stream.binance.com:9443/stream?streams={stream_name}/{kline_name}"
+
+    @staticmethod
+    def _taker_side(buyer_is_market_maker: Any) -> str:
+        """Maps Binance's trade flag to the initiating (aggressor) side."""
+        if buyer_is_market_maker is True:
+            return "SELL"
+        if buyer_is_market_maker is False:
+            return "BUY"
+        return "UNKNOWN"
 
     async def start(self):
         if self.is_running:
@@ -42,9 +55,7 @@ class BinanceStreamClient:
         logger.info("BinanceStreamClient stopped.")
 
     async def _run_loop(self):
-        stream_name = f"{self.symbol.lower()}@trade"
-        kline_name = f"{self.symbol.lower()}@kline_1m"
-        url = f"wss://stream.binance.com:9443/ws/{stream_name}/{kline_name}"
+        url = self._stream_url()
 
         retry_count = 0
         while self.is_running:
@@ -58,30 +69,35 @@ class BinanceStreamClient:
                         await self._handle_message(json.loads(msg))
             except (websockets.exceptions.WebSocketException, OSError, asyncio.TimeoutError) as e:
                 retry_count += 1
-                logger.warning(f"Binance WS connection failed: {e}. Fallback to simulated live feed (attempt {retry_count}).")
-                await self._run_simulated_stream(duration_seconds=10)
+                logger.warning(f"Binance WS connection failed: {e}. Market data remains unavailable; reconnecting (attempt {retry_count}).")
+                await self._wait_to_reconnect(duration_seconds=10)
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"Unexpected stream error: {e}", exc_info=True)
                 await asyncio.sleep(2)
 
-    async def _run_simulated_stream(self, duration_seconds: int = 10):
-        """Simulate high-frequency realistic order book ticks & candles when offline."""
-        logger.warning("[BINANCE WS] Offline mode — no live data available. Waiting for reconnect...")
+    async def _wait_to_reconnect(self, duration_seconds: int = 10):
+        """Wait between reconnects without fabricating market events."""
+        logger.warning("[BINANCE WS] No live market data available. Waiting for reconnect...")
         await asyncio.sleep(duration_seconds)
 
     async def _handle_message(self, data: Dict[str, Any]):
-        event_type = data.get("e")
+        payload = data.get("data", data)
+        if not isinstance(payload, dict):
+            logger.warning("Ignoring malformed Binance stream payload.")
+            return
+
+        event_type = payload.get("e")
         if event_type == "trade":
-            price = float(data["p"])
-            qty = float(data["q"])
-            timestamp = data["E"]
-            await self._process_tick(price, timestamp, qty)
+            price = float(payload["p"])
+            qty = float(payload["q"])
+            timestamp = int(payload["E"])
+            await self._process_tick(price, timestamp, qty, self._taker_side(payload.get("m")))
         elif event_type == "kline":
-            k = data["k"]
+            k = payload["k"]
             candle = {
-                "symbol": data["s"],
+                "symbol": payload["s"],
                 "timeframe": k["i"],
                 "timestamp": time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(k["t"] / 1000)),
                 "time": int(k["t"] / 1000),
@@ -106,10 +122,10 @@ class BinanceStreamClient:
                 except Exception as e:
                     logger.error(f"Error persisting candle to DuckDB: {e}")
 
-    async def _process_tick(self, price: float, timestamp_ms: int, volume: float):
+    async def _process_tick(self, price: float, timestamp_ms: int, volume: float, taker_side: str):
         self.last_price = price
-        self.last_tick_time = time.time()
-        self.latency_ms = max(5.0, round(random.uniform(8.0, 24.0), 1))
+        self.last_tick_time = timestamp_ms / 1000.0
+        self.event_age_ms = max(0.0, round((time.time() * 1000.0) - timestamp_ms, 1))
 
         # Recalculate open trade PnL instantly
         open_positions = self._recalculate_open_positions(price)
@@ -120,11 +136,12 @@ class BinanceStreamClient:
             "symbol": self.symbol,
             "price": price,
             "volume": volume,
+            "side": taker_side if taker_side in ("BUY", "SELL", "UNKNOWN") else "UNKNOWN",
             "timestamp": timestamp_ms,
-            "latency_ms": self.latency_ms,
+            "event_age_ms": self.event_age_ms,
             "open_positions": open_positions
         }
-                # Evaluate Prop Firm Compliance Shield
+        # Evaluate Prop Firm Compliance Shield
         compliance_status = compliance_engine.evaluate_compliance(open_positions)
         payload["compliance_status"] = compliance_status
 
@@ -135,7 +152,7 @@ class BinanceStreamClient:
                 "data": compliance_status
             }, channel="system_metrics")
 
-    def _recalculate_open_positions(self, current_price: float) -> List[Dict[str, Any]]:
+    def _recalculate_open_positions(self, current_price: Optional[float]) -> List[Dict[str, Any]]:
         try:
             open_trades = sqlite_driver.get_open_trades()
             updated_trades = []
@@ -145,14 +162,17 @@ class BinanceStreamClient:
                 side = tr["side"].upper()
                 sl = float(tr["stop_loss"]) if tr.get("stop_loss") else None
 
-                if side in ("BUY", "LONG"):
+                if current_price is None:
+                    unrealized_pnl = None
+                    r_multiple = None
+                elif side in ("BUY", "LONG"):
                     unrealized_pnl = (current_price - entry) * qty
                     r_unit = (entry - sl) if sl and (entry > sl) else None
+                    r_multiple = (unrealized_pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
                 else:
                     unrealized_pnl = (entry - current_price) * qty
                     r_unit = (sl - entry) if sl and (sl > entry) else None
-
-                r_multiple = (unrealized_pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
+                    r_multiple = (unrealized_pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
 
                 updated_trades.append({
                     "id": tr["id"],
@@ -163,7 +183,7 @@ class BinanceStreamClient:
                     "qty": qty,
                     "stop_loss": sl,
                     "take_profit": tr.get("take_profit"),
-                    "unrealized_pnl": round(unrealized_pnl, 2),
+                    "unrealized_pnl": round(unrealized_pnl, 2) if unrealized_pnl is not None else None,
                     "r_multiple": round(r_multiple, 2) if r_multiple is not None else None,
                     "entry_time": tr["entry_time"]
                 })

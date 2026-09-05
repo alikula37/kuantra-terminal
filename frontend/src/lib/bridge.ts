@@ -5,7 +5,15 @@ export interface BridgeRequest {
   body: string | null; body_b64?: string | null; files: BridgeFile[]; fields: [string, string][];
 }
 export interface BridgeResponse { status: number; headers: Record<string, string>; body: string | null; body_b64: string | null; }
-export interface StreamSnapshot { type: "SNAPSHOT"; symbol: string; last_price: number; open_positions: unknown[]; }
+export interface StreamSnapshot {
+  type: "SNAPSHOT";
+  symbol: string;
+  last_price: number | null;
+  event_age_ms: number | null;
+  timestamp: number | null;
+  status: "LIVE" | "NO_DATA";
+  open_positions: unknown[];
+}
 export interface AppInfo { version: string; platform: string; gui: string | null; frozen: boolean; data_dir: string; gateway_url: string | null; }
 export interface BridgeApi {
   request(req: BridgeRequest): Promise<BridgeResponse>;

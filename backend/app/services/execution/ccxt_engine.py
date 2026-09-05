@@ -6,6 +6,7 @@ Enforces authentic credential decryption, pre-execution risk checks, and automat
 
 import time
 import logging
+import math
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -133,6 +134,19 @@ class CCXTExecutionEngine:
         order_type = order_type.upper().strip()
         symbol = symbol.upper().strip()
 
+        if mode == "PAPER":
+            try:
+                paper_price = float(price)
+            except (TypeError, ValueError):
+                paper_price = None
+            if paper_price is None or not math.isfinite(paper_price) or paper_price <= 0:
+                return {
+                    "success": False,
+                    "status": "REJECTED",
+                    "reason": "ORDER_REJECTED_PRICE_UNAVAILABLE: Paper execution requires a finite positive price.",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+
         order_payload = {
             "symbol": symbol,
             "side": side,
@@ -162,7 +176,7 @@ class CCXTExecutionEngine:
         # 2. PAPER EXECUTION SANDBOX
         if mode == "PAPER":
             order_id = f"PAPER-{exchange_id[:3].upper()}-{int(time.time()*1000)}"
-            fill_price = price if price and price > 0 else 65000.0 # fallback reference
+            fill_price = paper_price
             
             trade_record = {
                 "id": order_id,

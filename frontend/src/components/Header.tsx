@@ -43,6 +43,10 @@ interface HeaderProps {
   onOpenApiKeySettings?: () => void;
 }
 
+export function formatEventAge(eventAgeMs: number | null): string {
+  return Number.isFinite(eventAgeMs) ? `${Math.round(eventAgeMs as number)}ms` : "—";
+}
+
 export const Header: React.FC<HeaderProps> = ({ 
   onOpenNewTrade, 
   onOpenVisionUploader, 
@@ -51,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenInitialBalanceModal,
   onOpenApiKeySettings
 }) => {
-  const { latencyMs } = useMarketStore();
+  const { eventAgeMs } = useMarketStore();
   const { theme, toggleTheme } = useTheme();
   const { locale, setLocale, t } = useTranslation();
   const { activePersona, isLiteMode, isPluginActive } = usePluginRegistry();
@@ -244,11 +248,11 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Latency & Connectivity */}
+        {/* Exchange event age */}
         <div className="flex items-center space-x-1.5 bg-[#111722] px-2.5 py-1 rounded border border-surface-border text-xs font-mono">
           <Zap className="w-3.5 h-3.5 text-accent" />
-          <span className="text-slate-400">LAT:</span>
-          <span className="text-accent font-bold">{latencyMs}ms</span>
+          <span className="text-slate-400">AGE:</span>
+          <span className="text-accent font-bold">{formatEventAge(eventAgeMs)}</span>
         </div>
 
         {!isLiteMode && onOpenVisionUploader && (

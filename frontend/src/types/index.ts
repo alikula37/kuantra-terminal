@@ -19,8 +19,8 @@ export interface Trade {
   notes?: string;
   created_at?: string;
   updated_at?: string;
-  unrealized_pnl?: number;
-  current_price?: number;
+  unrealized_pnl?: number | null;
+  current_price?: number | null;
 }
 
 export interface Candle {
@@ -35,10 +35,11 @@ export interface Candle {
 
 export interface MarketTicker {
   symbol: string;
-  price: number;
+  price: number | null;
   volume?: number;
-  latency_ms: number;
-  timestamp: number;
+  event_age_ms: number | null;
+  timestamp: number | null;
+  status: "LIVE" | "NO_DATA";
 }
 
 export interface QuantScorecard {
