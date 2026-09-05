@@ -20,7 +20,7 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP01 Execution/risk contract | Verified | `ab5a2cf` | Backend 243 passed, 1 skipped |
 | P0-WP02 Market-data truth contract | Verified | `c110b94` | Backend 257 passed, 1 skipped; frontend 29 passed; build pass |
 | P0-WP03 Frontend dev-toolchain security | Verified | `c72d599` | Audit 0; frontend 29 passed; build pass |
-| P0-WP04 CI truth/release gates | Remote pending | — | Local: backend 259 passed, 1 skipped; audit 0; frontend 29 passed; build pass |
+| P0-WP04 CI truth/release gates | Remote pending | — | Local: backend 260 passed, 1 skipped; audit 0; frontend 29 passed; build pass |
 
 ## Aktif güvenlik durumu
 

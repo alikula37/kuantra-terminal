@@ -12,6 +12,48 @@ from app.services.execution.risk_interceptor import RiskGuardrailInterceptor
 from app.services.p2p.copy_engine import ZeroKnowledgeCopyEngine
 
 
+def _join_route_path(prefix, path):
+    """Join router prefixes without introducing a double slash."""
+    if not prefix:
+        return path or "/"
+    if not path:
+        return prefix or "/"
+    return f"{prefix.rstrip('/')}/{path.lstrip('/')}"
+
+
+def _effective_http_routes(router, prefix=""):
+    """Yield effective HTTP route paths and methods across FastAPI router layouts.
+
+    FastAPI < 0.137 eagerly flattens included routers into ``app.routes``.
+    Newer FastAPI versions retain included routers as lazy wrappers; their leaf
+    paths must be composed with ``include_context.prefix`` to describe the
+    routes actually exposed by the application.
+    """
+    for route in getattr(router, "routes", ()):
+        original_router = getattr(route, "original_router", None)
+        if original_router is not None:
+            include_context = getattr(route, "include_context", None)
+            included_prefix = getattr(include_context, "prefix", "")
+            yield from _effective_http_routes(
+                original_router,
+                _join_route_path(prefix, included_prefix),
+            )
+            continue
+
+        methods = getattr(route, "methods", None)
+        path = getattr(route, "path", None)
+        if methods and path is not None:
+            yield _join_route_path(prefix, path), methods
+
+
+def _count_effective_post_routes(router, path):
+    return sum(
+        1
+        for route_path, methods in _effective_http_routes(router)
+        if route_path == path and "POST" in methods
+    )
+
+
 @pytest.fixture
 def api_client():
     return TestClient(create_app())
@@ -32,14 +74,27 @@ def paper_order_payload(**overrides):
 
 class TestPaperExecutionRoute:
     def test_order_route_is_registered_once(self, api_client):
-        matching_routes = [
-            route
-            for route in api_client.app.routes
-            if getattr(route, "path", None) == "/api/v1/execution/order"
-            and "POST" in (getattr(route, "methods", None) or set())
-        ]
+        assert _count_effective_post_routes(api_client.app, "/api/v1/execution/order") == 1
 
-        assert len(matching_routes) == 1
+    def test_effective_route_count_expands_lazy_included_router_prefixes(self):
+        leaf_route = type(
+            "LeafRoute",
+            (),
+            {"path": "/order", "methods": {"POST"}},
+        )()
+        included_router = type("Router", (), {"routes": [leaf_route]})()
+        include_context = type("IncludeContext", (), {"prefix": "/api/v1/execution"})()
+        lazy_included_router = type(
+            "IncludedRouter",
+            (),
+            {
+                "original_router": included_router,
+                "include_context": include_context,
+            },
+        )()
+        app = type("App", (), {"routes": [lazy_included_router]})()
+
+        assert _count_effective_post_routes(app, "/api/v1/execution/order") == 1
 
     def test_live_execution_is_rejected_before_any_execution_engine_or_router_call(self, api_client, monkeypatch):
         engine_create_order = MagicMock()

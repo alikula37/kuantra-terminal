@@ -21,6 +21,12 @@ bir test regresyonu veya bilinen vulnerable dependency tag release'ine girebilir
 başarısız olmuştur. Test portability patch'i `a199fb1` ile hazırlanmıştır; bu paketin remote CI
 kanıtı yeni run üzerinden alınacaktır.
 
+İkinci remote run, taze kurulumun FastAPI 0.141.1 çözümlemesi nedeniyle route ağacını lazy
+`_IncludedRouter` düğümlerinde tuttuğunu gösterdi. P0-WP01 testi efektif prefix ağacını dolaşacak
+şekilde taşındı. Bu olay, yalnız alt sınır kullanan Python bağımlılıklarının ayrı bir
+reproducibility paketiyle kilitlenmesi gerektiğini de doğruladı; dependency lock bu paketin
+kapsamına sonradan gizlice eklenmeyecektir.
+
 ## İstenen sonuç
 
 Pull request ve tag release yolları aynı minimum truth/safety contract'ını uygular: temiz data
@@ -56,7 +62,7 @@ frontend tests ve production build. Bu kapılardan biri geçmezse paketleme/rele
 - [x] İki workflow'da compile, backend test, npm ci/audit/test/build gate'leri.
 - [x] CI `codex/**` push trigger'ı.
 - [x] Workflow contract regression testi: 5 passed.
-- [x] Full backend suite: 259 passed, 1 skipped.
+- [x] Full backend suite: 260 passed, 1 skipped.
 - [x] Frontend: audit 0; 29 test passed; production build başarılı.
 - [x] YAML parse edilir; GitHub expression'ları bozulmaz.
 - [x] `git diff --check` hata vermeden geçer (Windows line-ending bilgilendirmesi hariç).
