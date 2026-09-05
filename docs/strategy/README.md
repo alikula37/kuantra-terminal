@@ -1,0 +1,48 @@
+# Kuantra Strateji ve Mimari Kayıtları
+
+Bu dizin Kuantra'nın ürün stratejisi, hedef mimarisi, yol haritası ve kabul edilmiş
+mimari kararları için kalıcı kayıt sistemidir. Buradaki belgeler pazarlama metni değil;
+uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen sözleşmelerdir.
+
+## Belge kataloğu
+
+| Kimlik | Belge | Durum | Sürüm | Son güncelleme |
+|---|---|---:|---:|---:|
+| KPS-001 | [Ürün ve Mimari Stratejisi](./KUANTRA-STRATEGY-001.md) | Accepted | 1.0.0 | 2026-09-05 |
+| KDG-001 | [Geliştirme Yönetişimi](./DEVELOPMENT-GOVERNANCE.md) | Accepted | 1.0.0 | 2026-09-05 |
+| KWT-001 | [İş Paketi / Agent Prompt Şablonu](./WORK-PACKAGE-TEMPLATE.md) | Active | 1.0.0 | 2026-09-05 |
+| ADR-0001 | [Ürün kimliği ve ilk pazar](./adr/ADR-0001-product-identity-and-entry-market.md) | Accepted | — | 2026-09-05 |
+| ADR-0002 | [Evidence ledger ve veri katmanları](./adr/ADR-0002-evidence-ledger-and-storage.md) | Accepted | — | 2026-09-05 |
+| ADR-0003 | [Execution ve AI yetki sınırı](./adr/ADR-0003-execution-authority-boundary.md) | Accepted | — | 2026-09-05 |
+
+## Sürümleme kuralları
+
+1. Dosya adı kalıcı kimlik taşır; sürüm numarası dosya adına eklenmez. Böylece iç ve dış
+   bağlantılar kırılmaz.
+2. Yaşayan belgeler SemVer kullanır:
+   - `PATCH`: anlamı değiştirmeyen açıklama, kaynak veya yazım düzeltmesi.
+   - `MINOR`: mevcut karar sınırları içinde yeni ayrıntı, metrik veya faz teslimatı.
+   - `MAJOR`: hedef pazar, ürün kimliği, yetki sınırı veya temel veri mimarisi değişikliği.
+3. Her sürüm değişikliği belgenin `Değişiklik geçmişi` bölümüne ve bu kataloğa işlenir.
+4. Kabul edilmiş ADR metni geriye dönük değiştirilmez. Karar değişirse yeni ADR yazılır;
+   eski ADR `Superseded by ADR-XXXX` olarak işaretlenir.
+5. Her strateji sürümü bir Git commit SHA'sına ve incelenen ürün tag/commit'ine bağlanır.
+6. Bir faz başlamadan önce ilgili ADR'ler `Accepted`, iş paketi ise `Ready` olmalıdır.
+
+## Durum sözlüğü
+
+- `Draft`: tartışmaya açık, uygulama yetkisi vermez.
+- `Proposed`: karar için hazır, henüz onaylanmamış.
+- `Accepted`: uygulama için bağlayıcı.
+- `Active`: kullanılan şablon veya süreç.
+- `Superseded`: daha yeni belge tarafından değiştirilmiş.
+- `Retired`: artık geçerli değil; tarihsel kayıt olarak tutulur.
+
+## Değişiklik geçmişi
+
+### 2026-09-05
+
+- KPS-001 v1.0.0: v1.4.0 kod incelemesi, rekabet araştırması, hedef mimari,
+  fazlandırma, ticari model ve talep doğrulama tabanı oluşturuldu.
+- ADR-0001–0003 kabul edildi.
+- KDG-001 ve KWT-001 ile agent destekli geliştirme süreci tanımlandı.

@@ -24,7 +24,7 @@ class TestPhase9HealthAndUpdater:
         # 2. Stripe & Github tokens
         raw_gh = "Pushing commit with ghp_EXAMPLEMOCKTOKENTESTING1234567890 to remote"
         clean_gh = redact_sensitive_text(raw_gh)
-        assert "ghp_y6Ux" not in clean_gh
+        assert "ghp_EXAMPLEMOCKTOKEN" not in clean_gh
         assert "[REDACTED_GITHUB_TOKEN]" in clean_gh
 
         # 3. Bearer Auth Tokens
