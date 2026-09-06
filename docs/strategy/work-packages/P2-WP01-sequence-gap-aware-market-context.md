@@ -9,7 +9,7 @@ baseline: 89f2430
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P1-WP08 Deterministic Replay ve Market-Context Attachment, P1-WP09 Market-Data Provenance Schema, P1-WP15 Trade Evidence Pack UI
-implementation_commits: pending
+implementation_commits: 623fbda
 ```
 
 ## Problem
@@ -73,4 +73,3 @@ boundary'sini ayrı bir adapter contract'ı olarak ele almalıdır.
 
 - Sequence gap truth contract, market-context provenance alanları ve regression
   coverage uygulandı.
-
