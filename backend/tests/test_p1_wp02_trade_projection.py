@@ -227,3 +227,41 @@ def test_read_adapter_rejects_duplicate_trade_ids_across_migration_venues(tmp_pa
     ).coverage()
     assert coverage["duplicate_count"] == 1
     assert coverage["ready"] is False
+
+
+def test_full_duckdb_sync_blocks_unverified_compatibility_rows(tmp_path, monkeypatch):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    driver.insert_trade(_trade())
+    monkeypatch.setattr("app.db.sync_pipeline.sqlite_driver", driver)
+
+    class UnexpectedDuckDB:
+        is_available = True
+
+        @staticmethod
+        def sync_all_trades(_trades):
+            raise AssertionError("blocked full sync must not reach DuckDB")
+
+    monkeypatch.setattr("app.db.sync_pipeline.duckdb_driver", UnexpectedDuckDB())
+    assert SyncPipeline.full_sync() == 0
+
+
+def test_full_duckdb_sync_uses_evidence_projection_when_ready(tmp_path, monkeypatch):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    _use_driver(monkeypatch, driver)
+    SyncPipeline.record_and_sync_trade(_trade(), source="manual")
+
+    synced = []
+
+    class RecordingDuckDB:
+        is_available = True
+
+        @staticmethod
+        def sync_all_trades(trades):
+            synced.extend(trades)
+            return len(trades)
+
+    monkeypatch.setattr("app.db.sync_pipeline.duckdb_driver", RecordingDuckDB())
+    assert SyncPipeline.full_sync() == 1
+    assert synced[0]["id"] == "PROJECTION-1"

@@ -60,7 +60,20 @@ class SyncPipeline:
         if not getattr(duckdb_driver, "is_available", False):
             logger.info("DuckDB not available; skipping full sync in Lite mode.")
             return 0
-        all_trades = sqlite_driver.list_trades(limit=100000)
+        # Bulk OLAP writes must use the same evidence coverage gate as the
+        # hydrator.  Construct the adapter from the module's current driver so
+        # tests and explicit per-database maintenance jobs remain injectable.
+        from app.services.trade_read_adapter import TradeReadAdapter
+
+        reader = TradeReadAdapter(legacy_driver=sqlite_driver)
+        coverage = reader.coverage()
+        if not coverage["ready"]:
+            logger.warning(
+                "DuckDB full sync blocked: evidence projection coverage is incomplete: %s",
+                coverage,
+            )
+            return 0
+        all_trades = reader.list_trades(limit=100000)
         synced_count = duckdb_driver.sync_all_trades(all_trades)
         logger.info(f"Full OLTP -> OLAP sync completed: {synced_count} trades synchronized.")
         return synced_count
