@@ -9,7 +9,7 @@ baseline: f0a581f
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP09 Injected Binance Depth Ingestor Boundary
-implementation_commits: pending
+implementation_commits: 560b84c
 ```
 
 ## Problem
@@ -48,7 +48,7 @@ eklemek bu yarışları test edilemez hale getirir.
 - [x] Queue bounded ve event drop policy yoktur.
 - [x] REST/WSS URL'leri güvenli scheme ile deterministic üretilir.
 - [x] Focused suite: `5 passed`.
-- [ ] Full backend suite: implementation commit sonrası yeniden çalıştırılacak.
+- [x] Full backend suite: `459 passed, 1 skipped`.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı
