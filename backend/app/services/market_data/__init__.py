@@ -64,6 +64,12 @@ from .binance_depth_transport import (
     DepthTransportDecision,
     DepthTransportResult,
 )
+from .binance_depth_network import (
+    BinanceDepthEnvironment,
+    BinanceDepthNetworkAdapter,
+    BinanceDepthNetworkConfig,
+    BinanceDepthNetworkError,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -110,4 +116,8 @@ __all__ = [
     "BinanceDepthTransportConfig",
     "DepthTransportDecision",
     "DepthTransportResult",
+    "BinanceDepthEnvironment",
+    "BinanceDepthNetworkAdapter",
+    "BinanceDepthNetworkConfig",
+    "BinanceDepthNetworkError",
 ]
