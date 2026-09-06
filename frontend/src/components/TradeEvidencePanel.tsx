@@ -111,6 +111,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
 
   const source = useMemo(() => (pack ? sourceLabel(pack) : null), [pack]);
   const ledgerVerified = Boolean(pack?.ledger_integrity.valid && pack.ledger_integrity.checked_events > 0);
+  const contextSourceVerified = pack?.market_context.market_context?.source_verified === true;
 
   const downloadExport = async (format: "json" | "html") => {
     setExporting(format);
@@ -246,7 +247,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
                 <span className={pack.market_context.status === "READY" ? "text-gain" : "text-amber-300"}>Status: {pack.market_context.status}</span>
                 <span className="text-slate-400">{pack.market_context.candles?.length || 0} recorded candles</span>
-                <span className="text-slate-400">{pack.market_context.provenance?.source_verified === true ? "Source verified" : "Source unverified / descriptive"}</span>
+                <span className="text-slate-400">{contextSourceVerified ? "Source verified" : "Source unverified / descriptive"}</span>
               </div>
               {pack.market_context.message && <p className="text-[11px] text-slate-500 mt-2">{pack.market_context.message}</p>}
             </section>

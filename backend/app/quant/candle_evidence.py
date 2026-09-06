@@ -34,6 +34,7 @@ def provenance() -> dict[str, Any]:
         "r_multiple_basis": "GROSS_PRICE_MOVE_NOT_NET_PNL",
         "pnl_basis": "RECORDED_TRADE_PNL",
         "unrealized_pnl_basis": "LINEAR_PRICE_DELTA_TIMES_RECORDED_QUANTITY",
+        "sequence_gap_policy": "source_verified requires complete, strictly contiguous source_sequence values; gaps remain descriptive",
         "limitations": [
             "Full boundary-bar highs/lows may occur before entry or after exit; intrabar order is unknown.",
             "Rows without complete verified venue/feed provenance remain approximate; this is not tick or broker-fill evidence.",
@@ -84,6 +85,9 @@ def market_context_attachment(evidence: "CandleEvidence") -> dict[str, Any]:
         "venue": candle_provenance["venue"],
         "feed": candle_provenance["feed"],
         "sequence_coverage": candle_provenance["sequence_coverage"],
+        "sequence_contiguous": candle_provenance["sequence_contiguous"],
+        "sequence_gap_count": candle_provenance["sequence_gap_count"],
+        "sequence_gaps": candle_provenance["sequence_gaps"],
         "provenance_complete": candle_provenance["provenance_complete"],
         "ingested_at_start": candle_provenance["ingested_at_start"],
         "ingested_at_end": candle_provenance["ingested_at_end"],
@@ -212,6 +216,9 @@ def _provenance_summary(candles: list[dict[str, Any]]) -> dict[str, Any]:
             "feed": "UNVERIFIED",
             "source_verified": False,
             "sequence_coverage": "NONE",
+            "sequence_contiguous": None,
+            "sequence_gap_count": 0,
+            "sequence_gaps": [],
             "provenance_complete": False,
             "ingested_at_start": None,
             "ingested_at_end": None,
@@ -219,13 +226,32 @@ def _provenance_summary(candles: list[dict[str, Any]]) -> dict[str, Any]:
 
     venues = {record.get("venue", "UNVERIFIED") for record in meaningful}
     feeds = {record.get("feed", "UNVERIFIED") for record in meaningful}
-    sequences = sum("source_sequence" in record for record in records)
+    sequence_values = [record.get("source_sequence") for record in records if "source_sequence" in record]
+    sequences = len(sequence_values)
+    sequence_gaps: list[dict[str, int]] = []
+    sequence_gap_count = 0
+    sequence_contiguous: bool | None = None
     if sequences == 0:
         sequence_coverage = "NONE"
     elif sequences == len(candles):
-        sequence_coverage = "COMPLETE"
+        sequence_contiguous = True
+        for previous, current in zip(sequence_values, sequence_values[1:]):
+            delta = current - previous
+            if delta != 1:
+                sequence_contiguous = False
+                missing = max(0, delta - 1)
+                sequence_gap_count += missing if missing else 1
+                if len(sequence_gaps) < 20:
+                    sequence_gaps.append({
+                        "from": int(previous),
+                        "to": int(current),
+                        "missing": int(missing),
+                    })
+        sequence_coverage = "COMPLETE" if sequence_contiguous else "GAPPED"
     else:
         sequence_coverage = "PARTIAL"
+        sequence_contiguous = False
+        sequence_gap_count = len(candles) - sequences
     complete = len(meaningful) == len(candles) and all(
         record.get("venue") != "UNVERIFIED"
         and record.get("feed") != "UNVERIFIED"
@@ -236,8 +262,13 @@ def _provenance_summary(candles: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "venue": next(iter(venues)) if len(venues) == 1 else "MULTI_VENUE",
         "feed": next(iter(feeds)) if len(feeds) == 1 else "MULTI_FEED",
-        "source_verified": complete and all(record.get("source_verified") is True for record in records),
+        "source_verified": complete
+        and sequence_contiguous is True
+        and all(record.get("source_verified") is True for record in records),
         "sequence_coverage": sequence_coverage,
+        "sequence_contiguous": sequence_contiguous,
+        "sequence_gap_count": sequence_gap_count,
+        "sequence_gaps": sequence_gaps,
         "provenance_complete": complete,
         "ingested_at_start": min(ingestion_times) if ingestion_times else None,
         "ingested_at_end": max(ingestion_times) if ingestion_times else None,
