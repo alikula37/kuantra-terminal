@@ -105,6 +105,15 @@ from .binance_depth_attestation import (
     private_key_from_bundle,
     verify_attestation,
 )
+from .binance_depth_key_registry import (
+    KEY_REGISTRY_SCHEMA_VERSION,
+    AttestationKeyAudit,
+    BinanceDepthAttestationKeyRegistry,
+    DepthKeyRegistryError,
+    OperatorKeyRecord,
+    OperatorKeyStatus,
+    key_id_for_public_key,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -180,4 +189,11 @@ __all__ = [
     "generate_operator_key_bundle",
     "private_key_from_bundle",
     "verify_attestation",
+    "KEY_REGISTRY_SCHEMA_VERSION",
+    "AttestationKeyAudit",
+    "BinanceDepthAttestationKeyRegistry",
+    "DepthKeyRegistryError",
+    "OperatorKeyRecord",
+    "OperatorKeyStatus",
+    "key_id_for_public_key",
 ]

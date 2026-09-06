@@ -59,6 +59,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP15 | [Binance Depth Soak Report Verification Gate](./work-packages/P2-WP15-binance-depth-report-verification.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP16 | [Binance Depth Soak Report Hash Archive](./work-packages/P2-WP16-binance-depth-report-hash-archive.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP17 | [Binance Depth Soak Operator Attestation](./work-packages/P2-WP17-binance-depth-operator-attestation.md) | Active | 1.0.0 | 2026-09-07 |
+| P2-WP18 | [Binance Depth Attestation Key Registry](./work-packages/P2-WP18-binance-depth-key-registry.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -266,3 +267,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P2-WP17 ile arşivlenmiş rapor hash/metadata'sı için opsiyonel Ed25519
   operator attestation ve strict sidecar store eklendi. İmza source verification
   veya execution authority yükseltmiyor. Focused suite `5 passed`.
+- P2-WP18 ile Ed25519 public key registry/revocation append-only event log'u
+  eklendi. Revoked key tarihsel imzayı geçersiz kılmıyor; audit status'u
+  `REVOKED_KEY` oluyor. Focused suite `5 passed`, full backend regression
+  `497 passed, 1 skipped`.
