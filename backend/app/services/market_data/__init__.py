@@ -82,6 +82,12 @@ from .binance_depth_soak import (
     DepthFixtureCycle,
     DepthSoakReport,
 )
+from .binance_depth_report import (
+    REPORT_SCHEMA_VERSION,
+    DepthSoakReportVerification,
+    DepthSoakReportVerdict,
+    verify_depth_soak_report,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -140,4 +146,8 @@ __all__ = [
     "BinanceDepthSoakHarness",
     "DepthFixtureCycle",
     "DepthSoakReport",
+    "REPORT_SCHEMA_VERSION",
+    "DepthSoakReportVerification",
+    "DepthSoakReportVerdict",
+    "verify_depth_soak_report",
 ]
