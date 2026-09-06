@@ -25,6 +25,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP06B | [Order-flow/L2/FIX truth boundary](./work-packages/P0-WP06B-orderflow-fix-truth.md) | Verified | `1cfd778` + `564beed` | 2026-09-06 |
 | P0-WP07 | [Credential ve OS keychain truth boundary](./work-packages/P0-WP07-credential-keychain-boundary.md) | Verified | `a09ad80` | 2026-09-06 |
 | P0-WP08 | [Experimental capability containment](./work-packages/P0-WP08-experimental-containment.md) | Verified | 1.0.0 | 2026-09-06 |
+| P0-WP09 | [Release truth matrix ve current claims](./work-packages/P0-WP09-release-truth-matrix.md) | Verified | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -74,4 +75,5 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   ve üç-OS push/PR CI yeşil (`34025225053`, `34025227211`).
 - P0-WP09 ile current release claim'leri `KTR-001` truth matrix'e bağlandı; tarihsel release
   notları GitHub Release body'sinden ayrıldı ve exact tag/version ile forbidden-claim checker CI
-  ve release workflow'a alındı.
+  ve release workflow'a alındı. `7217610`, push CI `34027220927` ve PR CI `34027222829`
+  ile üç OS'ta doğrulandı.

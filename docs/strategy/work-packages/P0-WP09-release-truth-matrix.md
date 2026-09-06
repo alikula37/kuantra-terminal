@@ -3,7 +3,7 @@
 ```yaml
 document_id: P0-WP09
 version: 1.0.0
-status: Active
+status: Verified
 date: 2026-09-06
 baseline: 110add6
 strategy: KPS-001@1.0.0
@@ -58,7 +58,18 @@ Bu, kullanıcı beklentisi, compliance ve güvenilirlik açısından doğrudan r
 - [x] CI ve release workflow checker'ı backend/frontend/paketleme öncesi çalıştırıyor.
 - [x] Release MANIFEST.json matrix document/version/hash taşıyor.
 - [x] Yerel truth, packaging ve ilgili regression testleri geçiyor.
-- [ ] Üç OS push/PR CI kanıtı ve Phase 0 exit audit kaydı tamamlanacak.
+- [x] Üç OS push/PR CI kanıtı kaydedildi; Phase 0 exit audit P0-WP10 kapsamındadır.
+
+## Verification evidence
+
+- Local: `python scripts/check_release_truth.py --tag v1.4.0` geçti; `python scripts/verify_packaging.py`
+  geçti; backend `347 passed, 1 skipped, 2 warnings`; frontend `49 passed`; i18n `480/480`;
+  production build ve `npm audit --audit-level=moderate` geçti.
+- Push CI `34027220927`: Windows job `101470235785`, Ubuntu job `101470235928`, macOS job
+  `101470236030` — tamamı başarılı.
+- PR CI `34027222829`: Windows job `101470241179`, Ubuntu job `101470241305`, macOS job
+  `101470241135` — tamamı başarılı.
+- Commit: `7217610` (`feat(release): add truth matrix and claim gates [P0-WP09]`).
 
 ## Validation commands
 
