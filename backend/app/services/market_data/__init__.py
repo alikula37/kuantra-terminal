@@ -76,6 +76,12 @@ from .binance_depth_session import (
     DepthSessionDecision,
     DepthSessionResult,
 )
+from .binance_depth_soak import (
+    BinanceDepthFixtureRunner,
+    BinanceDepthSoakHarness,
+    DepthFixtureCycle,
+    DepthSoakReport,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -130,4 +136,8 @@ __all__ = [
     "BinanceDepthSession",
     "DepthSessionDecision",
     "DepthSessionResult",
+    "BinanceDepthFixtureRunner",
+    "BinanceDepthSoakHarness",
+    "DepthFixtureCycle",
+    "DepthSoakReport",
 ]

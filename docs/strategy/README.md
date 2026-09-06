@@ -54,6 +54,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP10 | [Injected Async Binance Depth Transport Boundary](./work-packages/P2-WP10-binance-depth-transport-boundary.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP11 | [Public Binance Depth Network Adapter](./work-packages/P2-WP11-binance-depth-network-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP12 | [Bounded Binance Depth Reconnect Session](./work-packages/P2-WP12-binance-depth-reconnect-session.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP13 | [Deterministic Binance Depth Soak Harness](./work-packages/P2-WP13-binance-depth-soak-harness.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -244,3 +245,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   backoff ve stop-event kapanışı bounded session sonucuna bağlandı; persistence,
   recovery ve snapshot rejection hataları retry edilmedi. Focused suite
   `5 passed`.
+- P2-WP13 ile disconnect fixture'ı aynı ingestor + rotated durable segment sink
+  üzerinden yeniden oynatılıyor; chain continuity, gap terminality ve reopen
+  recovery kanıtı deterministik harness'e bağlandı. Focused suite `3 passed`.
