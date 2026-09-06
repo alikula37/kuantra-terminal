@@ -9,7 +9,7 @@ baseline: 18a1c68
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP15 Binance Depth Soak Report Verification Gate
-implementation_commits: pending
+implementation_commits: 196fba4
 ```
 
 ## Problem
