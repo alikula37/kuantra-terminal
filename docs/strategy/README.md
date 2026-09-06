@@ -27,7 +27,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP08 | [Experimental capability containment](./work-packages/P0-WP08-experimental-containment.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP09 | [Release truth matrix ve current claims](./work-packages/P0-WP09-release-truth-matrix.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Verified | 1.0.0 | 2026-09-06 |
-| P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Active | 1.1.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -100,3 +100,5 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - GitHub Actions dahil dakika kotası %100 dolduğu için `Kuantra Terminal CI` ve
   `Kuantra Terminal Release` workflow'ları geçici olarak GitHub tarafında manuel disabled edildi;
   local doğrulama zorunlu kalır, kota resetinden sonra yeniden enable edilecektir.
+- P1-WP01 `2f0e7d7` ile legacy journal upsert'i `ON CONFLICT DO UPDATE` kullanacak şekilde
+  harden edildi; duplicate trade yazımı artık `trade_tags` ilişkilerini silmiyor.

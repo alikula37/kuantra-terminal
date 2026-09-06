@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P1-WP01
-version: 1.0.0
+version: 1.1.0
 status: Active
 date: 2026-09-06
 baseline: a5ae737
@@ -10,7 +10,7 @@ strategy: KPS-001@1.0.0
 adr: ADR-0002, ADR-0003
 depends_on: P0-WP10 technical exit verified; release publication separately gated
 implementation_authority: owner_phase_transition_directive_2026-09-06
-implementation_commits: 43641e1, 25e4640, db80a77
+implementation_commits: 43641e1, 25e4640, db80a77, 2f0e7d7
 last_green_ci_run: 34038244922
 ci_attempts_observed: 34038714552, 34038892057
 ```
@@ -81,8 +81,8 @@ türü kabul edilmez.
 - [x] Injected transaction failure sonrasında yeni event ve başarı ACK'i bulunmaz.
 - [x] Legacy backfill iki kez çalışır; her source trade için tek event üretir ve source satırını
   değiştirmez.
-- [x] `INSERT OR REPLACE` ledger write path'inde kullanılmaz; `trades` compatibility path'i
-  bu pakette açıkça belgelenir.
+- [x] Ledger write path'inde `INSERT OR REPLACE` kullanılmaz; legacy `trades` compatibility
+  upsert'i `ON CONFLICT DO UPDATE` ile foreign-key tag ilişkilerini korur.
 - [x] Yeni testler ephemeral `KUANTRA_DATA_DIR` ile çalışır; developer journal'ına yazmaz.
 - [ ] Latest implementation SHA için backend suite, focused ledger suite, `git diff --check`
   ve üç-OS CI yeşildir.
@@ -100,17 +100,27 @@ türü kabul edilmez.
   `python backend/app/cli.py evidence-ledger backfill --apply|--dry-run`, `verify`, `export`.
 - `backend/alembic/env.py`: explicit test/user database URL’si artık dinamik varsayılanla
   ezilmiyor; migration gerçekten hedef DB’ye uygulanıyor.
-- Focused suite: `9 passed`.
-- Full backend suite: `359 passed, 1 skipped`.
-- Code commits: `43641e1`, `25e4640`, `db80a77`; Phase 0 evidence baseline: `a5ae737`.
+- Focused suite: `10 passed`.
+- Full backend suite: `360 passed, 1 skipped`.
+- Code commits: `43641e1`, `25e4640`, `db80a77`, `2f0e7d7`; Phase 0 evidence baseline:
+  `a5ae737`.
 - Last green three-OS push CI: [34038244922](https://github.com/alikula37/kuantra-terminal/actions/runs/34038244922)
   success for `a103a06`; Windows job `101500164796`, macOS `101500164772`, Ubuntu `101500164652`.
-- Latest hardening commit `db80a77` local full suite: `359 passed, 1 skipped`; CI attempts
+- Latest hardening commit `2f0e7d7` local full suite: `360 passed, 1 skipped`; CI attempts
   [34038714552](https://github.com/alikula37/kuantra-terminal/actions/runs/34038714552) and
   [34038892057](https://github.com/alikula37/kuantra-terminal/actions/runs/34038892057) could
   not start any job because GitHub account billing/spending-limit protection blocked runner
   allocation. This is an external validation blocker, not a test failure; acceptance remains
-  open until a fresh green run covers `db80a77`.
+  open until a fresh green run covers `2f0e7d7`.
+
+## Değişiklik geçmişi
+
+### 1.1.0 — 2026-09-06
+
+- Legacy journal upsert path `INSERT OR REPLACE` yerine `ON CONFLICT DO UPDATE` kullanır;
+  aynı trade yeniden yazıldığında `trade_tags` foreign-key ilişkileri korunur.
+- Regression testi eklendi; focused suite `10 passed`, full backend suite `360 passed,
+  1 skipped`.
 
 ## Kesinlikle kapsam dışı
 
