@@ -9,7 +9,7 @@ baseline: da5da7c
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP05 Canonical Market Event Envelope ve Hash Chain, P2-WP07 Rotated Market Event Segments ve Manifest Recovery
-implementation_commits: pending
+implementation_commits: 463b847
 ```
 
 ## Problem
