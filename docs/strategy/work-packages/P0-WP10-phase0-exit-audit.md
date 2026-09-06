@@ -3,11 +3,13 @@
 ```yaml
 document_id: P0-WP10
 version: 1.0.0
-status: Active
+status: Verified
 date: 2026-09-06
-baseline: afab316
+baseline: df46f27
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0003
+candidate_run: 34035766242
+release_publication: NOT_RUN_PUBLISH_FALSE
 ```
 
 ## Karar
@@ -49,15 +51,24 @@ kılıyordu.
 
 ## Acceptance criteria
 
-- [ ] Üç OS release-candidate package job’ı final installer/DMG/AppImage’ı üretir.
-- [ ] Her final artifact kendi içinden smoke ile beş required check’i ve version/hash provenance’ını
+- [x] Üç OS release-candidate package job’ı final installer/DMG/AppImage’ı üretir.
+- [x] Her final artifact kendi içinden smoke ile beş required check’i ve version/hash provenance’ını
   başarıyla raporlar.
-- [ ] Publish audit job’ı üç farklı platform report’unu ve aynı product/matrix version’ını doğrular;
+- [x] Publish audit job’ı üç farklı platform report’unu ve aynı product/matrix version’ını doğrular;
   eksik, false veya mismatch report non-zero döner.
-- [ ] Current release notes + MANIFEST yalnız truth-gated publish adımından çıkar.
-- [ ] Residual riskler ve owner approval `P0-EXIT-AUDIT.md` içinde kayıtlıdır.
-- [ ] Push/PR CI, backend/frontend/build/unpacked smoke regression’larını yeşil tutar.
+- [x] Current release notes + MANIFEST yalnız truth-gated publish adımından çıkar.
+- [x] Residual riskler ve release-owner approval ayrımı `P0-EXIT-AUDIT.md` içinde kayıtlıdır.
+- [x] Push/PR CI, backend/frontend/build/unpacked smoke regression’larını yeşil tutar.
 - [x] Yerel full backend suite izole veri diziniyle `350 passed, 1 skipped`.
+
+## Final artifact kanıtı
+
+Release candidate [34035766242](https://github.com/alikula37/kuantra-terminal/actions/runs/34035766242)
+`df46f27afb91d80b39425a6140f8302aabb33886` commit’i için üç OS package/final smoke job’ını
+başarıyla tamamladı. Publish audit job `101495589738` `READY_FOR_HUMAN_RELEASE_APPROVAL`
+verdict’i verdi. Windows `101493428000`, Ubuntu `101493427995` ve macOS `101493427867`
+raporlarında aynı KTR-001 canonical digest’i ve `ok: true` bulundu. Workflow `publish=false`
+olduğu için bu doğrulama yeni GitHub Release/tag yayımlamadı.
 
 ## Validation commands
 

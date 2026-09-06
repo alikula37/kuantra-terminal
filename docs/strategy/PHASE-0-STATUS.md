@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: KPS-P0-STATUS
-status: Active
+status: Verified
 last_updated: 2026-09-06
 branch: codex/p0-truth-safety
 pull_request: https://github.com/alikula37/kuantra-terminal/pull/3
@@ -27,7 +27,7 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP07 Credential/OS keychain truth boundary | Verified | `a09ad80` | Isolated local backend 339 passed, 1 skipped; frontend 45 passed; i18n 480/480; build/audit pass; push `34021489108` + PR `34021491017` green on 3 OS |
 | P0-WP08 Experimental capability containment | Verified | `d0eda56` + `f8653e2` | Isolated backend 343 passed, 1 skipped; frontend 49 passed; i18n 480/480; push `34025225053` + PR `34025227211` green on 3 OS |
 | P0-WP09 Release truth matrix and current claims | Verified | `7217610` | Local backend 347 passed/1 skipped; frontend 49 passed; i18n 480/480; push `34027220927` + PR `34027222829` green on 3 OS |
-| P0-WP10 Three-OS final artifact smoke / Phase 0 exit audit | Active | `129ccfa` | Static gates/provenance implementation ready; isolated backend 350 passed/1 skipped; release-candidate final artifact evidence and owner approval pending |
+| P0-WP10 Three-OS final artifact smoke / Phase 0 exit audit | Verified | `df46f27` | Candidate run `34035766242`: macOS/Ubuntu/Windows final artifacts ve publish audit success; release publication separately gated |
 
 ## Aktif güvenlik durumu
 
@@ -46,5 +46,13 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Sıradaki sıra
 
-1. P0-WP10 — Üç platform final artifact packaging/smoke ve Faz 0 exit audit; candidate run kanıtı ve owner approval kayda alınacak.
-2. P1-WP01 — [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) hazır; Phase 0 `READY_FOR_HUMAN_RELEASE_APPROVAL` / owner approval olmadan implementation başlamaz.
+1. P1-WP01 — [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) implementation; kapsam yalnız append-only SQLite ledger foundation’dır.
+2. Release publication — `publish=true` adayını çalıştırmak ayrı bir ürün sahibi release onayı ister; bu karar canlı execution yetkisi vermez.
+
+## Phase 0 final kanıtı
+
+- Release candidate: [34035766242](https://github.com/alikula37/kuantra-terminal/actions/runs/34035766242)
+- Package jobs: macOS `101493427867`, Ubuntu `101493427995`, Windows `101493428000` — success.
+- Publish audit: `101495589738` — success; verdict `READY_FOR_HUMAN_RELEASE_APPROVAL`.
+- Normal push CI: [34035432817](https://github.com/alikula37/kuantra-terminal/actions/runs/34035432817) — üç OS success.
+- `publish=false`: yeni GitHub Release/tag yayımlanmadı; mevcut tarihsel `v1.4.0` release’i değiştirilmedi.

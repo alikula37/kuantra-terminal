@@ -11,7 +11,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | KPS-001 | [Ürün ve Mimari Stratejisi](./KUANTRA-STRATEGY-001.md) | Accepted | 1.0.0 | 2026-09-05 |
 | KDG-001 | [Geliştirme Yönetişimi](./DEVELOPMENT-GOVERNANCE.md) | Accepted | 1.0.0 | 2026-09-05 |
 | KWT-001 | [İş Paketi / Agent Prompt Şablonu](./WORK-PACKAGE-TEMPLATE.md) | Active | 1.0.0 | 2026-09-05 |
-| KPS-P0-STATUS | [Faz 0 durum panosu](./PHASE-0-STATUS.md) | Active | — | 2026-09-05 |
+| KPS-P0-STATUS | [Faz 0 durum panosu](./PHASE-0-STATUS.md) | Verified | — | 2026-09-06 |
 | ADR-0001 | [Ürün kimliği ve ilk pazar](./adr/ADR-0001-product-identity-and-entry-market.md) | Accepted | — | 2026-09-05 |
 | ADR-0002 | [Evidence ledger ve veri katmanları](./adr/ADR-0002-evidence-ledger-and-storage.md) | Accepted | — | 2026-09-05 |
 | ADR-0003 | [Execution ve AI yetki sınırı](./adr/ADR-0003-execution-authority-boundary.md) | Accepted | — | 2026-09-05 |
@@ -26,7 +26,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP07 | [Credential ve OS keychain truth boundary](./work-packages/P0-WP07-credential-keychain-boundary.md) | Verified | `a09ad80` | 2026-09-06 |
 | P0-WP08 | [Experimental capability containment](./work-packages/P0-WP08-experimental-containment.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP09 | [Release truth matrix ve current claims](./work-packages/P0-WP09-release-truth-matrix.md) | Verified | 1.0.0 | 2026-09-06 |
-| P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Active | 1.0.0 | 2026-09-06 |
+| P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Verified | 1.0.0 | 2026-09-06 |
 | P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Ready | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
@@ -80,9 +80,11 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   ve release workflow'a alındı. `7217610`, push CI `34027220927` ve PR CI `34027222829`
   ile üç OS'ta doğrulandı.
 - P0-WP10 ile smoke raporları schema v2 provenance/hash bilgisi taşıyacak ve release workflow
-  final NSIS/DMG/AppImage artefaktlarını kendi içinden doğrulayacak şekilde hazırlandı. Static
-  Phase 0 audit geçer; backend suite ephemeral test data ile 350 passed/1 skipped; üç OS final
-  artifact kanıtı ve insan release approval'ı hâlâ bekleniyor.
-- P1-WP01, Phase 0 insan onayından sonra uygulanacak ilk Phase 1 paketi olarak hazırlandı.
-  Append-only SQLite evidence ledger, idempotency ve hash-chain verifier kapsamı tanımlandı;
-  production implementation özellikle Phase 0 kapanışına kadar bloke edildi.
+  final NSIS/DMG/AppImage artefaktlarını kendi içinden doğrulayacak şekilde hazırlandı. Aday
+  workflow `34035766242` ile üç OS final smoke ve publish audit geçti; backend suite ephemeral
+  test data ile 350 passed/1 skipped. Teknik Phase 0 çıkışı Verified; gerçek release/tag
+  yayınlama `publish=true` ve ayrı ürün sahibi onayına bırakıldı.
+- P1-WP01, teknik Phase 0 çıkışı ve mevcut ürün sahibi faz-geçiş direktifinden sonra uygulanacak
+  ilk Phase 1 paketi olarak hazırlandı. Append-only SQLite evidence ledger, idempotency ve
+  hash-chain verifier kapsamı tanımlandı; gerçek release/tag yayınlama ise ayrı `publish=true`
+  onay kapısı olarak kaldı.
