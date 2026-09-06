@@ -20,7 +20,12 @@ from scripts.evaluate_binance_depth_attestation_gate import main as gate_main
 from scripts.run_binance_depth_soak import run_fixture_probe
 
 
-def _case(tmp_path, *, mode: str = "testnet", attested_at: str | None = None):
+def _case(
+    tmp_path,
+    *,
+    mode: str = "testnet",
+    attested_at: str | None = "2026-09-07T11:59:00Z",
+):
     report = asyncio.run(
         run_fixture_probe(symbol="BTCUSDT", storage_root=tmp_path / "soak", max_reconnects=1)
     )
