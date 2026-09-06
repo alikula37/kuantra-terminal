@@ -41,6 +41,11 @@ from .market_event_segment import (
     MarketEventSegmentRecoveryError,
     MarketEventSegmentWriter,
 )
+from .market_event_segments import (
+    MANIFEST_SCHEMA_VERSION,
+    MarketEventSegmentSet,
+    MarketEventSegmentSetRecoveryError,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -72,4 +77,7 @@ __all__ = [
     "validate_market_event_envelope",
     "MarketEventSegmentRecoveryError",
     "MarketEventSegmentWriter",
+    "MANIFEST_SCHEMA_VERSION",
+    "MarketEventSegmentSet",
+    "MarketEventSegmentSetRecoveryError",
 ]

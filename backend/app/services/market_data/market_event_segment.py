@@ -32,9 +32,22 @@ class MarketEventSegmentRecoveryError(MarketEventEnvelopeError):
 class MarketEventSegmentWriter:
     """Append validated envelopes to one local JSONL file with fsync."""
 
-    def __init__(self, path: str | Path, *, strict: bool = True):
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        strict: bool = True,
+        base_sequence: int = 0,
+        base_prev_hash: str = GENESIS_HASH,
+    ):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        if isinstance(base_sequence, bool) or not isinstance(base_sequence, int) or base_sequence < 0:
+            raise ValueError("base_sequence must be a non-negative integer")
+        if not isinstance(base_prev_hash, str) or len(base_prev_hash) != 64:
+            raise ValueError("base_prev_hash must be a SHA-256 digest")
+        self.base_sequence = base_sequence
+        self.base_prev_hash = base_prev_hash
         self._events: list[MarketEventEnvelope] = []
         self._by_source_identity: dict[str, MarketEventEnvelope] = {}
         self._recovery_errors: list[str] = []
@@ -48,11 +61,11 @@ class MarketEventSegmentWriter:
 
     @property
     def head_hash(self) -> str:
-        return self._events[-1].event_hash if self._events else GENESIS_HASH
+        return self._events[-1].event_hash if self._events else self.base_prev_hash
 
     @property
     def last_sequence(self) -> int:
-        return self._events[-1].chain_sequence if self._events else 0
+        return self._events[-1].chain_sequence if self._events else self.base_sequence
 
     def append(self, envelope: MarketEventEnvelope) -> MarketEventEnvelope:
         """Append one envelope only when its chain position is exactly next."""
