@@ -9,7 +9,7 @@ baseline: 4d08d98
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP06 Durable Market Event Segment Writer
-implementation_commits: pending
+implementation_commits: fa19c65
 ```
 
 ## Problem
