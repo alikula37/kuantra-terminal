@@ -4,11 +4,11 @@ import time
 import uuid
 from typing import Any
 
-from app.db.sqlite_driver import sqlite_driver
 from app.quant.candle_evidence import (
     CandleEvidence, EvidenceError, excursion_metrics, finite_number,
     load_candle_evidence, provenance,
 )
+from app.services.trade_read_adapter import trade_read_adapter
 
 
 class ReplaySession:
@@ -23,6 +23,8 @@ class ReplaySession:
         self.speed_multiplier = 1.0
         self.is_playing = False
         self.created_at = time.time()
+        self.market_context = evidence.market_context
+        self.replay_fingerprint = self.market_context["fingerprint_sha256"]
 
     def to_dict(self) -> dict[str, Any]:
         current = self.candles[self.current_index]
@@ -54,18 +56,21 @@ class ReplaySession:
             "session_id": self.session_id, "symbol": self.symbol, "total_bars": len(self.candles),
             "current_index": self.current_index, "entry_index": self.entry_index, "exit_index": self.exit_index,
             "speed_multiplier": self.speed_multiplier, "is_playing": self.is_playing,
+            "replay_fingerprint": self.replay_fingerprint,
+            "market_context": self.market_context,
             "current_candle": current, "trade": trade_state, "visible_candles": self.candles[:self.current_index + 1],
         }
 
 
 class ReplayService:
-    def __init__(self):
+    def __init__(self, trade_reader=None):
         self.sessions: dict[str, ReplaySession] = {}
+        self.trade_reader = trade_reader or trade_read_adapter
 
     def create_session_for_trade(self, trade_id: str, lookback_bars: int = 30, lookforward_bars: int = 20) -> dict[str, Any]:
         try:
             try:
-                trade = sqlite_driver.get_trade(trade_id)
+                trade = self.trade_reader.get_trade(trade_id)
             except Exception as exc:
                 raise EvidenceError("TRADE_STORE_UNAVAILABLE", "The recorded trade store could not be read.", "UNAVAILABLE") from exc
             evidence = load_candle_evidence(trade, lookback_bars=lookback_bars, lookforward_bars=lookforward_bars)

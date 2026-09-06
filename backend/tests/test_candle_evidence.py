@@ -5,7 +5,14 @@ import pytest
 from app.db.duckdb_driver import DuckDBDriver
 from app.db.sqlite_driver import SQLiteDriver
 from app.quant import candle_evidence
-from app.quant.candle_evidence import EvidenceError, load_candle_evidence, normalize_trade, trade_bar_bounds, utc_timestamp
+from app.quant.candle_evidence import (
+    EvidenceError,
+    load_candle_evidence,
+    market_context_attachment,
+    normalize_trade,
+    trade_bar_bounds,
+    utc_timestamp,
+)
 
 
 @pytest.fixture
@@ -49,6 +56,18 @@ def test_real_history_indices_offsets_and_identical_duplicates(candle_store, rec
         conn.execute("INSERT INTO market_candles SELECT * FROM market_candles WHERE timestamp = '2026-09-01 10:01:00'")
     deduped = load_candle_evidence(recorded_trade, lookback_bars=30, lookforward_bars=20)
     assert deduped == evidence
+
+
+def test_market_context_attachment_is_deterministic_and_discloses_boundaries(recorded_trade, recorded_candles):
+    first = load_candle_evidence(recorded_trade, recorded_candles, lookback_bars=1, lookforward_bars=2)
+    second = load_candle_evidence(recorded_trade, list(reversed(recorded_candles)), lookback_bars=1, lookforward_bars=2)
+
+    attachment = market_context_attachment(first)
+    assert attachment == market_context_attachment(second)
+    assert attachment["context_start"] == "2026-09-01T09:59:00Z"
+    assert attachment["context_end_exclusive"] == "2026-09-01T10:05:00Z"
+    assert attachment["source_verified"] is False
+    assert len(attachment["fingerprint_sha256"]) == 64
 
 
 def test_real_conflicting_duplicate_is_rejected(candle_store, recorded_trade):

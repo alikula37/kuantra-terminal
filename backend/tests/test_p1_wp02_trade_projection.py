@@ -290,6 +290,7 @@ def test_trade_evidence_pack_is_source_linked_and_raw_payload_free(tmp_path, mon
     assert pack["read_source"] == "typed_projection"
     assert pack["coverage"]["ready"] is True
     assert pack["ledger_integrity"]["valid"] is True
+    assert pack["market_context"]["status"] in {"READY", "NO_DATA", "UNAVAILABLE"}
     assert [event["event_type"] for event in pack["events"]] == [
         "IntentRecorded",
         "FillRecorded",

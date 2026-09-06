@@ -122,6 +122,7 @@ class TradeReadAdapter:
             venues=self.projection_venues,
         )
         integrity = self.ledger_repo.verify_chain(account_id=self.account_id)
+        market_context = self.get_market_context(trade_id)
         safe_events = []
         for event in events:
             safe_events.append({
@@ -146,6 +147,51 @@ class TradeReadAdapter:
             },
             "events": safe_events,
             "event_count": len(safe_events),
+            "market_context": market_context,
+        }
+
+    def get_market_context(
+        self,
+        trade_id: str,
+        *,
+        lookback_bars: int = 30,
+        lookforward_bars: int = 20,
+    ) -> Dict[str, Any]:
+        """Attach bounded, deterministic recorded-bar context to a trade."""
+
+        trade = self.get_trade(trade_id)
+        if trade is None:
+            return {
+                "status": "NO_DATA",
+                "reason": "TRADE_NOT_FOUND",
+                "message": "The recorded trade was not found.",
+                "trade_id": trade_id,
+                "market_context": None,
+                "candles": [],
+            }
+        from app.quant.candle_evidence import EvidenceError, load_candle_evidence, provenance
+
+        try:
+            evidence = load_candle_evidence(
+                trade,
+                lookback_bars=lookback_bars,
+                lookforward_bars=lookforward_bars,
+            )
+        except EvidenceError as error:
+            return {
+                **error.to_dict(),
+                "trade_id": trade_id,
+                "market_context": None,
+                "candles": [],
+            }
+        return {
+            "status": "READY",
+            "reason": None,
+            "message": None,
+            "trade_id": trade_id,
+            "provenance": provenance(),
+            "market_context": evidence.market_context,
+            "candles": evidence.candles,
         }
 
 

@@ -6,6 +6,8 @@ authenticated market data, broker reconciliation, or intrabar/tick replay.
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import hashlib
+import json
 import math
 from typing import Any
 
@@ -36,6 +38,62 @@ def provenance() -> dict[str, Any]:
             "R uses the recorded stop, not a verified initial-stop history; fees/slippage are not modeled.",
             "Replay unrealized PnL assumes a linear instrument and recorded base-unit quantity, not inverse or contract-multiplier valuation.",
         ],
+    }
+
+
+def _utc_bar_label(timestamp: int) -> str:
+    return datetime.fromtimestamp(timestamp, timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def market_context_attachment(evidence: "CandleEvidence") -> dict[str, Any]:
+    """Build a deterministic, explicitly approximate market-context attachment."""
+
+    candles = [dict(candle) for candle in evidence.candles]
+    fingerprint_body = {
+        "trade": {
+            "id": str(evidence.trade["id"]),
+            "symbol": evidence.trade["symbol"],
+            "side": evidence.trade["side"],
+            "entry_time": evidence.trade["entry_time"],
+            "exit_time": evidence.trade["exit_time"],
+            "entry_price": evidence.trade["entry_price"],
+            "exit_price": evidence.trade["exit_price"],
+        },
+        "entry_index": evidence.entry_index,
+        "exit_index": evidence.exit_index,
+        "candles": candles,
+    }
+    canonical = json.dumps(
+        fingerprint_body,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    fingerprint = hashlib.sha256(canonical).hexdigest()
+    first_time = int(candles[0]["time"])
+    last_time = int(candles[-1]["time"])
+    trade_candles = evidence.trade_candles
+    return {
+        "quality": "BAR_APPROXIMATION",
+        "source": "DUCKDB_CANDLES",
+        "source_verified": False,
+        "symbol": evidence.trade["symbol"],
+        "timeframe": "1m",
+        "timezone": "UTC",
+        "context_start": _utc_bar_label(first_time),
+        "context_end_exclusive": _utc_bar_label(last_time + 60),
+        "trade_start": evidence.trade["entry_time"],
+        "trade_end": evidence.trade["exit_time"],
+        "bar_count": len(candles),
+        "trade_bar_count": len(trade_candles),
+        "lookback_bars": evidence.entry_index,
+        "lookforward_bars": len(candles) - evidence.exit_index - 1,
+        "entry_index": evidence.entry_index,
+        "exit_index": evidence.exit_index,
+        "complete_trade_window": True,
+        "fingerprint_sha256": fingerprint,
+        "limitations": provenance()["limitations"],
     }
 
 
@@ -130,6 +188,10 @@ class CandleEvidence:
     @property
     def trade_candles(self) -> list[dict[str, Any]]:
         return self.candles[self.entry_index:self.exit_index + 1]
+
+    @property
+    def market_context(self) -> dict[str, Any]:
+        return market_context_attachment(self)
 
 
 def load_candle_evidence(

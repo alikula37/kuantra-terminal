@@ -4,16 +4,16 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from app.db.sqlite_driver import sqlite_driver
 from app.quant.candle_evidence import duckdb_driver
 from app.replay.replay_service import ReplayService
+from app.services.trade_read_adapter import trade_read_adapter
 
 
 @pytest.fixture
 def replay(monkeypatch, recorded_trade, recorded_candles):
-    monkeypatch.setattr(sqlite_driver, "get_trade", lambda trade_id: recorded_trade if trade_id == recorded_trade["id"] else None)
+    monkeypatch.setattr(trade_read_adapter, "get_trade", lambda trade_id: recorded_trade if trade_id == recorded_trade["id"] else None)
     monkeypatch.setattr(duckdb_driver, "get_candles_range", lambda *args, **kwargs: recorded_candles)
-    return ReplayService()
+    return ReplayService(trade_reader=trade_read_adapter)
 
 
 def test_unknown_trade_is_no_data_without_session(replay):
@@ -31,12 +31,29 @@ def test_recorded_session_uses_time_indices_and_is_deterministic(replay, recorde
     assert response["status"] == "READY"
     assert response["provenance"]["quality"] == "BAR_APPROXIMATION"
     assert response["provenance"]["source_verified"] is False
+    assert response["replay_fingerprint"] == response["market_context"]["fingerprint_sha256"]
+    assert response["market_context"]["bar_count"] == 6
+    assert response["market_context"]["trade_bar_count"] == 3
+    assert response["market_context"]["complete_trade_window"] is True
     assert response["total_bars"] == 6
     assert (response["entry_index"], response["exit_index"], response["current_index"]) == (1, 3, 1)
     assert response["visible_candles"][-1]["time"] == recorded_candles[1]["time"]
     second = replay.create_session_for_trade(recorded_trade["id"])
     assert response["session_id"] != second["session_id"]
     assert {k: v for k, v in response.items() if k != "session_id"} == {k: v for k, v in second.items() if k != "session_id"}
+
+
+def test_market_context_attachment_endpoint_is_bounded_and_replay_fingerprinted(replay, recorded_trade):
+    context = replay.trade_reader.get_market_context(
+        recorded_trade["id"],
+        lookback_bars=1,
+        lookforward_bars=2,
+    )
+    assert context["status"] == "READY"
+    assert context["market_context"]["lookback_bars"] == 1
+    assert context["market_context"]["lookforward_bars"] == 2
+    assert context["market_context"]["complete_trade_window"] is True
+    assert context["market_context"]["source_verified"] is False
 
 
 def test_seek_pre_entry_and_post_exit_freeze(replay, recorded_trade):
@@ -87,7 +104,7 @@ def test_missing_or_unrelated_history_no_session(replay, recorded_trade, monkeyp
     assert response["session_id"] is None and not replay.sessions
 
 
-@pytest.mark.parametrize("store,method", [(duckdb_driver, "get_candles_range"), (sqlite_driver, "get_trade")])
+@pytest.mark.parametrize("store,method", [(duckdb_driver, "get_candles_range"), (trade_read_adapter, "get_trade")])
 def test_store_failure_is_unavailable_and_does_not_leak(replay, recorded_trade, monkeypatch, store, method):
     def fail(*a, **kw):
         raise RuntimeError("private/path/credential")
@@ -121,6 +138,9 @@ def test_http_no_data_and_speed_validation(test_app, replay, recorded_trade, mon
     assert client.get("/api/v1/replay/session/MISSING").json()["session_id"] is None
     response = client.get(f"/api/v1/replay/session/{recorded_trade['id']}").json()
     session_id = response["session_id"]
+    context = client.get(f"/api/v1/trades/{recorded_trade['id']}/market-context")
+    assert context.status_code == 200
+    assert context.json()["market_context"]["fingerprint_sha256"] == response["replay_fingerprint"]
     assert client.post(f"/api/v1/replay/{session_id}/speed", json={"speed": "NaN"}).status_code == 422
     assert client.post("/api/v1/replay/evicted/speed", json={"speed": 1}).status_code == 404
     assert client.post(f"/api/v1/replay/{session_id}/seek", json={"target_index": 5}).json()["trade"]["realized_pnl"] == 5.5

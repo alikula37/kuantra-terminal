@@ -66,6 +66,18 @@ def get_trade_evidence(trade_id: str):
         raise HTTPException(status_code=404, detail="Trade evidence not found")
     return evidence_pack
 
+@router.get("/trades/{trade_id}/market-context")
+def get_trade_market_context(
+    trade_id: str,
+    lookback_bars: int = Query(30, ge=0, le=300),
+    lookforward_bars: int = Query(20, ge=0, le=300),
+):
+    return trade_read_adapter.get_market_context(
+        trade_id,
+        lookback_bars=lookback_bars,
+        lookforward_bars=lookforward_bars,
+    )
+
 @router.get("/trades/{trade_id}")
 def get_trade(trade_id: str):
     trade = trade_read_adapter.get_trade(trade_id)
