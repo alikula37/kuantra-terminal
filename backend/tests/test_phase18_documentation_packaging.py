@@ -27,7 +27,7 @@ class TestPhase18DocumentationAndPackaging:
         assert "KUANTRA TERMINAL" in content.upper()
 
         # Check for ASCII architecture diagrams
-        assert "KUANTRA INSTITUTIONAL DESKTOP" in content
+        assert "KUANTRA TRUTH-SAFE DESKTOP" in content
         assert "FASTAPI" in content.upper()
         assert "SQLITE" in content.upper()
         assert "DUCKDB" in content.upper()

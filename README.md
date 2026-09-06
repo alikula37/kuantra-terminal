@@ -7,8 +7,8 @@ It combines a trader's journal, recorded market context, deterministic risk
 checks, replay, analytics, and provenance-aware review in one desktop shell.
 
 The product boundary is intentionally narrow: the current release does not
-claim HFT, certified FIX/DMA, autonomous AI execution, live DEX/flash-loan
-execution, biometric safety authority, or a downloadable plugin marketplace.
+claim unvalidated venue-grade latency, certified venue transport, or AI-controlled order submission,
+chain transaction execution, biometric safety authority, or a remote extension marketplace.
 Those surfaces return an explicit unavailable/experimental state until their
 transport, source, security, and reconciliation contracts are implemented.
 
@@ -22,7 +22,7 @@ transport, source, security, and reconciliation contracts are implemented.
   observations when no recorder/feed is connected.
 - Fail-closed execution/risk boundary: missing price, compliance evidence,
   keychain, transport or reconciliation cannot become a fill.
-- OS-keychain credential storage (Windows Credential Manager, macOS Keychain or
+- OS keychain credential storage (Windows Credential Manager, macOS Keychain or
   Linux Secret Service). Plaintext SQLite credential fallback is not supported.
 - React + FastAPI + pywebview single-process desktop shell, with a browser
   development path and per-user data directory.
@@ -33,11 +33,11 @@ transport, source, security, and reconciliation contracts are implemented.
 The following are retained only as research code or read-only UI placeholders;
 they are not production capabilities:
 
-- local GGUF/GPU telemetry, AI swarm and “sub-50ms” inference;
-- DEX/RPC/DeFAI/flash-loan opportunity or execution paths;
+- local GGUF/GPU telemetry, AI swarm and unverified model inference;
+- DEX/RPC/DeFAI/loan-arbitrage opportunity or execution paths;
 - wearable biometrics, FIDO/WebAuthn and stress lockout override;
 - MT5, Polygon and TwelveData live transports;
-- generic FIX/DMA, internal matching as a venue, and HFT latency claims;
+- generic FIX/DMA, internal matching as a venue, and unvalidated venue-latency claims;
 - reverse-skill agent deployment and unverified MCP source retrieval;
 - remote ModStore download, hot-mount and arbitrary plugin execution.
 
@@ -48,7 +48,7 @@ package; a disabled surface is a deliberate truth result, not a failed demo.
 ## Runtime architecture
 
 ```text
-KUANTRA INSTITUTIONAL DESKTOP (name retained for packaging compatibility)
+KUANTRA TRUTH-SAFE DESKTOP
 ```
 
 ```text
@@ -96,9 +96,9 @@ and [`docs/BUILD_LINUX.md`](docs/BUILD_LINUX.md).
 ## Security and product truth
 
 Never put exchange secrets in source control or SQLite. Configure an OS
-credential manager before saving connector credentials. Do not interpret an
-`EXPERIMENTAL_DISABLED`, `NO_DATA` or `UNAVAILABLE` response as a quote, fill,
-model decision or broker acknowledgement.
+credential manager before saving connector credentials. AI and experimental surfaces
+have no execution authority. Do not interpret an `EXPERIMENTAL_DISABLED`, `NO_DATA`
+or `UNAVAILABLE` response as a quote, fill, model decision or broker acknowledgement.
 
 The repository is private during commercial product development. Contributions
 and review ownership are documented in [`CONTRIBUTORS.md`](CONTRIBUTORS.md).

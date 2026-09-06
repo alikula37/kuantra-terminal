@@ -15,6 +15,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | ADR-0001 | [Ürün kimliği ve ilk pazar](./adr/ADR-0001-product-identity-and-entry-market.md) | Accepted | — | 2026-09-05 |
 | ADR-0002 | [Evidence ledger ve veri katmanları](./adr/ADR-0002-evidence-ledger-and-storage.md) | Accepted | — | 2026-09-05 |
 | ADR-0003 | [Execution ve AI yetki sınırı](./adr/ADR-0003-execution-authority-boundary.md) | Accepted | — | 2026-09-05 |
+| KTR-001 | [Release truth matrix](../release/README.md) | Accepted | 1.0.0 | 2026-09-06 |
 | P0-WP01 | [Tekil paper execution rotası ve risk/compliance sözleşmesi](./work-packages/P0-WP01-execution-risk-contract.md) | Verified | — | 2026-09-05 |
 | P0-WP02 | [Market data truth contract ve fabricated fiyat/latency temizliği](./work-packages/P0-WP02-market-data-truth-contract.md) | Verified | — | 2026-09-05 |
 | P0-WP03 | [Frontend dev-toolchain güvenlik güncellemesi](./work-packages/P0-WP03-frontend-toolchain-security.md) | Verified | — | 2026-09-05 |
@@ -71,3 +72,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   adapter ve reverse deploy yüzeyleri 503/fail-closed sözleşmesine taşındı.
 - P0-WP08 `d0eda56` + `f8653e2` ile doğrulandı; packaged smoke, API/UI truth gates
   ve üç-OS push/PR CI yeşil (`34025225053`, `34025227211`).
+- P0-WP09 ile current release claim'leri `KTR-001` truth matrix'e bağlandı; tarihsel release
+  notları GitHub Release body'sinden ayrıldı ve exact tag/version ile forbidden-claim checker CI
+  ve release workflow'a alındı.

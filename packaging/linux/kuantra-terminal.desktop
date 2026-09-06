@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Kuantra Terminal
-Comment=Institutional quant trading terminal
+Comment=Local-first trade forensics and execution intelligence workstation
 Exec=kuantra-terminal
 Icon=kuantra-terminal
 Terminal=false

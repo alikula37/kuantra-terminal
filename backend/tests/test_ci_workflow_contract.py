@@ -9,6 +9,7 @@ WORKFLOW_DIR = REPO_ROOT / ".github" / "workflows"
 REQUIRED_GATES = [
     "Install Python dependencies",
     "Compile Python sources",
+    "Verify release truth contract",
     "Run full backend test suite",
     "Install frontend dependencies",
     "Audit frontend dependencies",

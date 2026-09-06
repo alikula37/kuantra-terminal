@@ -9,7 +9,11 @@ documentation set that ships with a release.
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, Set
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from check_release_truth import TruthContractError, run_checks  # noqa: E402
 
 
 def get_leaf_keys(d: Dict[str, Any], prefix: str = "") -> Set[str]:
@@ -27,6 +31,13 @@ def get_leaf_keys(d: Dict[str, Any], prefix: str = "") -> Set[str]:
 def verify_system_integrity() -> bool:
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     print(f"[*] Verifying Kuantra Terminal packaging integrity at: {root_dir}")
+
+    try:
+        run_checks(Path(root_dir))
+    except TruthContractError as exc:
+        print(f"[-] Release truth contract failed: {exc}")
+        return False
+    print("[+] Current release truth contract validated.")
 
     # 1. Check essential directories
     required_dirs = ["backend", "frontend", "packaging", "scripts", "docs"]

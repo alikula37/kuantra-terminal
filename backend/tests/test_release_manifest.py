@@ -22,16 +22,14 @@ class TestReleaseManifestAndPackaging:
         with open(notes_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        assert "v1.2.0-modular" in content, "Release tag v1.2.0-modular must be present"
-        assert "23-Phase Architectural Completion Matrix" in content
-        assert "Micro-Kernel Base & Lazy Dependency Loader" in content
-        assert "Five Architectural Persona Presets" in content
-        assert "In-App ModStore Marketplace Studio" in content
-
-        # Verify all 23 phases are listed
-        for phase_num in range(1, 24):
-            phase_tag = f"Phase {phase_num:02d}"
-            assert phase_tag in content, f"Milestone '{phase_tag}' must be in RELEASE_NOTES.md"
+        assert "Kuantra Terminal v1.4.0 — Truth & Safety Release" in content
+        assert "CURRENT_RELEASE_NOTES:START" in content
+        assert "CURRENT_RELEASE_NOTES:END" in content
+        assert "Historical release archive (non-current)" in content
+        assert "docs/release/truth-matrix.v1.4.0.json" in content
+        # Historical notes remain auditable in the repository, but they are not the current
+        # release body. The renderer/checker enforce that boundary before publishing.
+        assert "v1.2.0-modular" in content
 
     def test_manifest_generator_execution(self, root_dir, tmp_path):
         script_path = os.path.join(root_dir, "scripts", "generate_release_manifest.py")
@@ -61,6 +59,9 @@ class TestReleaseManifestAndPackaging:
         assert manifest["release_tag"] == f"v{__version__}"
         assert manifest["version"] == __version__
         assert manifest["product_name"] == "Kuantra Terminal"
+        assert manifest["truth_matrix"]["document_id"] == "KTR-001"
+        assert manifest["truth_matrix"]["version"] == "1.0.0"
+        assert len(manifest["truth_matrix"]["sha256"]) == 64
         assert manifest["total_artifacts"] == 3
         assert len(manifest["artifacts"]) == 3
         assert all(a["filename"].startswith("Kuantra-Terminal-") for a in manifest["artifacts"])

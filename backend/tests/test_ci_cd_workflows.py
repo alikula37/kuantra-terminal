@@ -48,6 +48,7 @@ class TestCICDWorkflowsAndPackaging:
         for required_step in (
             "Initialize isolated data directory",
             "Compile Python sources",
+            "Verify release truth contract",
             "Run full backend test suite",
             "Install frontend dependencies",
             "Audit frontend dependencies",
@@ -110,6 +111,7 @@ class TestCICDWorkflowsAndPackaging:
         for required_step in (
             "Initialize isolated data directory",
             "Compile Python sources",
+            "Verify release truth contract",
             "Run full backend test suite",
             "Install frontend dependencies",
             "Audit frontend dependencies",
@@ -132,6 +134,8 @@ class TestCICDWorkflowsAndPackaging:
         # Consolidated checksums live in MANIFEST.json, generated in publish-release
         assert any("manifest" in n.lower() for n in pub_names)
         assert "scripts/generate_release_manifest.py" in rel_raw
+        assert "scripts/render_current_release_notes.py" in rel_raw
+        assert "body_path: dist/CURRENT_RELEASE_NOTES.md" in rel_raw
 
         # No Rust / Tauri leftovers in the release pipeline.
         assert "rust-toolchain" not in rel_raw

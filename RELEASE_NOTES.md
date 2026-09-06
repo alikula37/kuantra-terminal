@@ -1,3 +1,35 @@
+<!-- CURRENT_RELEASE_NOTES:START -->
+# Kuantra Terminal v1.4.0 — Truth & Safety Release
+
+**Release tag:** `v1.4.0`
+**Release status:** `PHASE_0_TRUTH_SAFETY`
+**Product identity:** Local-first Execution Intelligence & Trade Forensics Workstation
+
+This release publishes the verified local core: trade journaling and forensics, deterministic
+risk checks, recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain
+credential references, and the React/FastAPI/pywebview desktop shell.
+
+`EXPERIMENTAL_DISABLED` surfaces are intentionally unavailable: live broker submission and
+reconciliation, FIX/DMA transport, venue-grade order-flow latency, local model/GPU telemetry,
+AI swarm, DEX/DeFAI, biometrics, external MCP retrieval, and remote plugin download/hot-mount.
+These surfaces have no execution authority. A disabled or `NO_DATA` response is not a quote,
+fill, model decision or broker acknowledgement.
+
+The release body is generated from this marker-delimited section. Historical notes below remain
+for repository audit only and are not included in a GitHub Release body.
+
+Verification evidence for this release is recorded in `docs/strategy/PHASE-0-STATUS.md` and the
+P0-WP09 work-package record. The exact release tag is guarded by the canonical matrix at
+`docs/release/truth-matrix.v1.4.0.json`.
+<!-- CURRENT_RELEASE_NOTES:END -->
+
+## Historical release archive (non-current)
+
+The material below is retained as an immutable product-history archive. It is not a description
+of the current v1.4.0 product and is never used as the GitHub Release body.
+
+---
+
 # 🚀 Desktop shell: Tauri → pywebview
 
 **Applies to**: `v1.3.0-production` and later &bull; **Platforms**: Windows (x64), macOS (Apple Silicon / Intel), Linux (x86_64)

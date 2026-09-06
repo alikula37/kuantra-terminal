@@ -17,9 +17,11 @@ import time
 from typing import Any, Dict, List
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT_DIR, "backend"))
 
 from app.version import __version__  # noqa: E402
+from release_truth import DEFAULT_MATRIX_PATH, load_matrix  # noqa: E402
 
 PRODUCT_NAME = "Kuantra Terminal"
 ARTIFACT_PREFIX = "Kuantra-Terminal-"
@@ -32,6 +34,19 @@ def compute_sha256(filepath: str) -> str:
         while chunk := f.read(65536):
             h.update(chunk)
     return h.hexdigest()
+
+
+def truth_matrix_metadata() -> Dict[str, str]:
+    """Return immutable truth-contract identity for the shipped manifest."""
+    matrix = load_matrix(DEFAULT_MATRIX_PATH)
+    product = matrix.get("product", {})
+    if product.get("version") != __version__:
+        raise ValueError("truth matrix product version does not match app version")
+    return {
+        "document_id": str(matrix["document_id"]),
+        "version": str(matrix["version"]),
+        "sha256": compute_sha256(str(DEFAULT_MATRIX_PATH)),
+    }
 
 
 def classify_artifact(filename: str) -> tuple[str, str]:
@@ -78,12 +93,17 @@ def generate_manifest(dist_dir: str = "dist", tag: str | None = None,
         dist_dir = os.path.join(ROOT_DIR, dist_dir)
 
     release_tag = tag or f"v{__version__}"
+    truth_metadata = truth_matrix_metadata()
+    expected_tag = f"v{__version__}"
+    if release_tag != expected_tag:
+        raise ValueError(f"release tag {release_tag!r} does not match {expected_tag!r}")
     artifacts: List[Dict[str, Any]] = [] if dry_run else collect_artifacts(dist_dir)
 
     manifest_data: Dict[str, Any] = {
         "release_tag": release_tag,
         "product_name": PRODUCT_NAME,
         "version": __version__,
+        "truth_matrix": truth_metadata,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_artifacts": len(artifacts),
         "artifacts": artifacts,

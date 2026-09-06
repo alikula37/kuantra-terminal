@@ -57,6 +57,9 @@ jobs:
         run: python -m pip install --require-hashes -r backend/requirements.lock
       - name: Compile Python sources
         run: python -m compileall -q backend
+      - name: Verify release truth contract
+        shell: bash
+        run: python scripts/check_release_truth.py --tag "${GITHUB_REF_NAME}"
       - name: Run full backend test suite
         run: python -m pytest backend/tests -q --tb=short
       - name: Install frontend dependencies
@@ -97,13 +100,17 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Verify release truth contract
+        run: python scripts/check_release_truth.py --tag "${GITHUB_REF_NAME}"
+      - name: Render current release notes
+        run: python scripts/render_current_release_notes.py --output dist/CURRENT_RELEASE_NOTES.md
       - name: Build MANIFEST.json
         run: python scripts/generate_release_manifest.py --dist dist --tag "${GITHUB_REF_NAME}"
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Kuantra Terminal ${{ github.ref_name }}
-          body_path: RELEASE_NOTES.md
+          body_path: dist/CURRENT_RELEASE_NOTES.md
           files: |
             dist/Kuantra-Terminal-*
             dist/MANIFEST.json

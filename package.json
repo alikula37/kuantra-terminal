@@ -1,7 +1,7 @@
 {
   "name": "kuantra-terminal",
   "version": "1.4.0",
-  "description": "Institutional High-Frequency Algorithmic Desktop Trading Suite & AI Swarm Ecosystem",
+  "description": "Local-first Execution Intelligence & Trade Forensics Workstation",
   "private": true,
   "scripts": {
     "dev": "npm --prefix frontend run dev",
@@ -17,8 +17,10 @@
     "pywebview",
     "react",
     "python",
-    "mcp",
-    "orderflow"
+    "trade-journal",
+    "trade-forensics",
+    "risk-management",
+    "paper-trading"
   ],
   "author": "Kuantra Quantitative Engineering",
   "license": "MIT"
