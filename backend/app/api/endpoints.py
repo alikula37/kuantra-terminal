@@ -531,6 +531,15 @@ class PlaybookAuditSchema(BaseModel):
     trade_id: str
     playbook_id: str
     checked_rule_ids: List[str]
+    playbook_version: Optional[int] = Field(default=None, ge=1)
+
+
+class PlaybookVersionCreateSchema(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    win_rate_target: Optional[float] = None
+    rr_target: Optional[float] = None
+    rules: Optional[List[Dict[str, Any]]] = None
 
 @router.get("/playbooks")
 def list_playbooks():
@@ -546,6 +555,26 @@ def create_playbook(payload: PlaybookCreateSchema):
         rules=payload.rules
     )
 
+@router.post("/playbooks/{playbook_id}/versions")
+def create_playbook_version(playbook_id: str, payload: PlaybookVersionCreateSchema):
+    try:
+        return playbook_service.create_playbook_version(
+            playbook_id=playbook_id,
+            title=payload.title,
+            description=payload.description,
+            win_rate_target=payload.win_rate_target,
+            rr_target=payload.rr_target,
+            rules=payload.rules,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+@router.get("/playbooks/{playbook_id}/versions")
+def list_playbook_versions(playbook_id: str):
+    if not playbook_service.get_playbook(playbook_id):
+        raise HTTPException(status_code=404, detail="Playbook not found")
+    return playbook_service.list_playbook_versions(playbook_id)
+
 @router.get("/playbooks/{playbook_id}")
 def get_playbook_by_id(playbook_id: str):
     pb = playbook_service.get_playbook(playbook_id)
@@ -559,7 +588,8 @@ def audit_trade_playbook(payload: PlaybookAuditSchema):
         return playbook_service.audit_trade_discipline(
             trade_id=payload.trade_id,
             playbook_id=payload.playbook_id,
-            checked_rule_ids=payload.checked_rule_ids
+            checked_rule_ids=payload.checked_rule_ids,
+            playbook_version=payload.playbook_version,
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -40,6 +40,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP11 | [Read-Only Broker Lifecycle Import ve Reconciliation](./work-packages/P1-WP11-broker-lifecycle-import-reconciliation.md) | Active | 1.0.1 | 2026-09-06 |
 | P1-WP12 | [Read-Only API Snapshot Adapter ve Credential Scope](./work-packages/P1-WP12-read-only-api-snapshot-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP13 | [Evidence Pack Export ve Backup/Restore Drill](./work-packages/P1-WP13-evidence-pack-export-restore-drill.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP14 | [Versioned Playbook ve Risk Policy Events](./work-packages/P1-WP14-versioned-playbook-risk-policy-events.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -164,3 +165,9 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   SHA-256 header'larıyla export edilebilir oldu. SQLite backup artık hash, integrity,
   evidence chain ve geçici DuckDB restore drill'i geçmeden başarılı sayılmıyor;
   focused suite `4 passed`, full backend regression `402 passed, 1 skipped`.
+- P1-WP14 ile playbook tanımları/sürüm snapshot'ları ve playbook audit review'ları
+  append-only `JournalReviewAdded` olaylarıyla, risk policy snapshot'ları ve
+  pre-execution kararları ise `RiskEvaluated` olaylarıyla aynı SQLite transaction
+  sınırına alındı. RiskGuard metadata'sı policy id/version/hash ve risk event id
+  taşıyor; eski playbook/risk davranışı korunuyor. Focused suite `3 passed`, full
+  backend regression `405 passed, 1 skipped`.
