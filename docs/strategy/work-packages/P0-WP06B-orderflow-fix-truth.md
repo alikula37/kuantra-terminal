@@ -3,7 +3,7 @@
 ```yaml
 document_id: KPS-P0-WP06B
 status: Verified
-version: 1.0.1
+version: 1.0.2
 date: 2026-09-06
 strategy: KPS-001@1.0.0
 adr:
@@ -68,15 +68,18 @@ database migration or data deletion is required.
 
 ## Verification record
 
-- Backend: locked Python compileall + isolated-data full suite `333 passed, 1 skipped`.
-- Focused WP06B/UAT truth suite: `20 passed`.
-- Frontend: `45 passed` / 10 test files; i18n 478/478; production build successful.
+- Backend: locked Python compileall + isolated-data full suite `339 passed, 1 skipped`.
+- Focused WP06B/UAT truth suite: `30 passed`.
+- Frontend: `45 passed` / 10 test files; i18n 480/480; production build successful.
 - Dependency audit: `npm audit --audit-level=moderate` found 0 vulnerabilities.
-- `git diff --check`: clean.
+- `git diff --check`: clean. Transport-unavailable FIX calls do not evaluate the shared
+  risk state; router happy-path tests use an explicit compliant test contract.
 - Remote push CI `34019988437` is green on Ubuntu, macOS and Windows, including desktop
   smoke.
 - Remote PR CI `34019990852` is green on Ubuntu, macOS and Windows, including desktop
   smoke.
+- Boundary follow-up commit `564beed` push CI `34022495908` and PR CI `34022498837`
+  are green on Ubuntu, macOS and Windows, including desktop smoke.
 - This package does not authorize live venue execution: FIX/DMA remains disabled until a
   later package supplies a real transport, reconciliation and release evidence.
 
@@ -88,8 +91,12 @@ database migration or data deletion is required.
 
 ## Değişiklik geçmişi
 
-### 1.0.1 — 2026-09-06
+### 1.0.2 — 2026-09-06
 
-- Implementation commit `1cfd778` ve push/PR CI kanıtları kayda alındı.
+- Implementation commit `1cfd778` ve boundary follow-up commit `564beed` ile push/PR CI
+  kanıtları kayda alındı.
+- Transport bulunmayan FIX yüzeyinde risk sonucu üretme sırası kaldırıldı; emir her durumda
+  `EXPERIMENTAL_DISABLED` / `NOT_SUBMITTED` kalıyor.
+- Router testleri kalıcı journal/compliance durumundan ayrıştırıldı.
 - FIX/DMA disabled boundary'nin sonraki transport/reconciliation paketlerine kadar
   yürürlükte olduğu açıkça belirtildi.

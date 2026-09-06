@@ -3,7 +3,7 @@
 ```yaml
 document_id: KPS-P0-WP07
 status: Verified
-version: 1.0.0
+version: 1.0.1
 date: 2026-09-06
 strategy: KPS-001@1.0.0
 adr:
@@ -74,13 +74,18 @@ decision; no automatic rollback is permitted.
 
 ## Verification record
 
-- Backend isolated-data suite: `338 passed, 1 skipped`.
-- Frontend: `45 passed` / 10 test files; i18n `479/479`; production build successful.
+- Backend isolated-data suite: `339 passed, 1 skipped`.
+- Frontend: `45 passed` / 10 test files; i18n `480/480`; production build successful.
 - Dependency audit: `npm audit --audit-level=moderate` found 0 vulnerabilities.
 - `uv pip compile --universal --python-version 3.11 --generate-hashes` regenerated the
   lock with `keyring==25.7.0` and its platform-specific backends.
-- Remote three-OS CI evidence is added after the implementation commit and must remain
-  green before merge.
+- Implementation commit: `a09ad80`.
+- Remote push CI `34021489108` is green on Ubuntu, macOS and Windows, including desktop
+  smoke.
+- Remote PR CI `34021491017` is green on Ubuntu, macOS and Windows, including desktop
+  smoke.
+- Subsequent truth-boundary follow-up `564beed` was also green in push CI `34022495908`
+  and PR CI `34022498837` on all three operating systems.
 
 ## Validation
 
@@ -89,3 +94,10 @@ decision; no automatic rollback is permitted.
 - Webhook default-secret regression test.
 - Full locked backend suite, frontend unit/DOM suite, production build and npm audit.
 - Three-OS GitHub CI including desktop smoke.
+
+## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-06
+
+- Implementation commit `a09ad80` ve iki remote run (toplam altı OS job) kayda alındı.
+- İzole backend sayımı `339 passed, 1 skipped`, i18n parity `480/480` olarak güncellendi.

@@ -23,8 +23,8 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP04 CI truth/release gates | Verified | `a920319` + `04f168c` | 3-OS PR/push CI green; local backend 260 passed, 1 skipped |
 | P0-WP05 Python universal lock | Verified | `1326e5e` | 3-OS CI green; backend 263 passed, 1 skipped; 90 packages / 2,408 hashes |
 | P0-WP06A Replay/MAE-MFE evidence truth | Verified | `d517c34` | 3-OS CI `34018288308` green; local backend 328 passed, 1 skipped; frontend 42 passed; build/audit pass |
-| P0-WP06B Order-flow/L2/FIX truth boundary | Verified | `1cfd778` | Isolated local backend 333 passed, 1 skipped; frontend 45 passed; build/audit pass; push `34019988437` + PR `34019990852` green on 3 OS |
-| P0-WP07 Credential/OS keychain truth boundary | Verified | `TBD` | Isolated local backend 338 passed, 1 skipped; frontend 45 passed; i18n 479/479; build/audit pass; 3-OS CI pending |
+| P0-WP06B Order-flow/L2/FIX truth boundary | Verified | `1cfd778` + `564beed` | Isolated local backend 339 passed, 1 skipped; focused truth suite 30 passed; frontend 45 passed; i18n 480/480; push `34022495908` + PR `34022498837` green on 3 OS |
+| P0-WP07 Credential/OS keychain truth boundary | Verified | `a09ad80` | Isolated local backend 339 passed, 1 skipped; frontend 45 passed; i18n 480/480; build/audit pass; push `34021489108` + PR `34021491017` green on 3 OS |
 
 ## Aktif güvenlik durumu
 
