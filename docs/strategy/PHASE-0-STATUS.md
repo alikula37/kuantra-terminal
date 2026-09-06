@@ -21,7 +21,7 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP02 Market-data truth contract | Verified | `c110b94` | Backend 257 passed, 1 skipped; frontend 29 passed; build pass |
 | P0-WP03 Frontend dev-toolchain security | Verified | `c72d599` | Audit 0; frontend 29 passed; build pass |
 | P0-WP04 CI truth/release gates | Verified | `a920319` + `04f168c` | 3-OS PR/push CI green; local backend 260 passed, 1 skipped |
-| P0-WP05 Python universal lock | Remote pending | — | Lock venv: backend 263 passed, 1 skipped; 90 packages / 2,408 hashes |
+| P0-WP05 Python universal lock | Verified | `1326e5e` | 3-OS CI green; backend 263 passed, 1 skipped; 90 packages / 2,408 hashes |
 
 ## Aktif güvenlik durumu
 
@@ -40,8 +40,8 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Sıradaki sıra
 
-1. P0-WP05 — Python universal lock ve reproducible CI/release install.
-2. P0-WP06 — Replay/MAE-MFE/order-flow synthetic evidence temizliği.
+1. P0-WP06A — Replay/MAE-MFE synthetic evidence temizliği.
+2. P0-WP06B — Order-flow/L2/FIX synthetic evidence ve yetki sınırı.
 3. P0-WP07 — Credentials, gateway secret ve OS keychain geçiş planı/uygulaması.
 4. P0-WP08 — Experimental yüzeylerin default UI/API'dan kaldırılması.
 5. P0-WP09 — README/release claim ve CI truth matrix.

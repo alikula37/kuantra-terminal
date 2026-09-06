@@ -2,7 +2,7 @@
 
 ```yaml
 work_package: P0-WP05
-status: Remote validation pending
+status: Verified
 phase: Phase 0 - Truth & Safety Release
 strategy: KPS-001@1.0.0
 baseline_commit: 04f168ced12d74d4d1ad540d6ec2456d0af01755
@@ -63,8 +63,8 @@ mevcut pip/PyInstaller akışını koruyan universal hashed requirements çıkt�
 - [x] Temiz Python 3.11 venv lock install başarılı; FastAPI 0.141.1 çözümlemesi doğrulandı.
 - [x] Locked venv full backend suite: 263 passed, 1 skipped.
 - [x] Frontend: audit 0; 29 test passed; production build başarılı.
-- [ ] Remote Windows/macOS/Ubuntu CI ve desktop smoke yeşil.
-- [ ] GitHub Actions Node 20 deprecation uyarısı kalktı.
+- [x] Remote Windows/macOS/Ubuntu CI ve desktop smoke yeşil: run `33960912844`.
+- [x] GitHub Actions Node 20 deprecation uyarısı kalktı.
 
 Docker image'ın uçtan uca yeniden build edilmesi P0-WP10 packaging exit paketinde yapılır. Bu
 paketin kapısı Dockerfile'ın yalnız lock kurduğunu kontrat testiyle ve aynı lock'ın Ubuntu runner
@@ -89,3 +89,10 @@ paketin kapısı Dockerfile'ın yalnız lock kurduğunu kontrat testiyle ve ayn�
 
 Terra lock ve install yüzeylerini uygular, commit/push yapmaz. Axiom generated diff'i, dependency
 grafiğini, üç platform marker'larını ve bütün gate sonuçlarını inceler; remote CI kanıtını kapatır.
+
+## Remote kanıt
+
+- PR run: `33960912844` — Windows, macOS ve Ubuntu başarılı.
+- Aynı SHA push run: `33960910675` — başarılı.
+- Doğrulanan head: `1326e5ecc3503cc8b08d12dc64a15a7413399213`.
+- GitHub-hosted runner çıktısında eski Node 20 action-runtime anotasyonu yoktur.
