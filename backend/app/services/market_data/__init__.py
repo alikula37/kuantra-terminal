@@ -58,6 +58,12 @@ from .binance_depth_ingestor import (
     DepthIngestResult,
     DepthIngestorState,
 )
+from .binance_depth_transport import (
+    BinanceDepthTransport,
+    BinanceDepthTransportConfig,
+    DepthTransportDecision,
+    DepthTransportResult,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -100,4 +106,8 @@ __all__ = [
     "DepthIngestDecision",
     "DepthIngestResult",
     "DepthIngestorState",
+    "BinanceDepthTransport",
+    "BinanceDepthTransportConfig",
+    "DepthTransportDecision",
+    "DepthTransportResult",
 ]

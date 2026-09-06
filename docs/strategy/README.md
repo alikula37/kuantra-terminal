@@ -51,6 +51,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP07 | [Rotated Market Event Segments ve Manifest Recovery](./work-packages/P2-WP07-market-event-segment-manifest.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP08 | [Columnar Market Event Batch Contract](./work-packages/P2-WP08-market-event-batch-contract.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP09 | [Injected Binance Depth Ingestor Boundary](./work-packages/P2-WP09-binance-depth-ingestor.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP10 | [Injected Async Binance Depth Transport Boundary](./work-packages/P2-WP10-binance-depth-transport-boundary.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -229,3 +230,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   replay event hand-off, live gap, malformed payload, restart ve sink failure
   testleri eklendi; gerçek Binance transport hâlâ kapsam dışı. Focused suite
   `5 passed`.
+- P2-WP10 ile bounded async event source/snapshot fetcher transport sözleşmesi
+  eklendi. Snapshot/source failure, stop event, queue backpressure ve güvenli
+  Binance URL üretimi test ediliyor; gerçek websocket/HTTP client hâlâ kapsam
+  dışı. Focused suite `5 passed`.
