@@ -12,7 +12,7 @@ depends_on: P0-WP10 technical exit verified; release publication separately gate
 implementation_authority: owner_phase_transition_directive_2026-09-06
 implementation_commits: 43641e1, 25e4640, db80a77
 last_green_ci_run: 34038244922
-latest_ci_attempt: 34038714552
+ci_attempts_observed: 34038714552, 34038892057
 ```
 
 ## Karar
@@ -105,8 +105,9 @@ türü kabul edilmez.
 - Code commits: `43641e1`, `25e4640`, `db80a77`; Phase 0 evidence baseline: `a5ae737`.
 - Last green three-OS push CI: [34038244922](https://github.com/alikula37/kuantra-terminal/actions/runs/34038244922)
   success for `a103a06`; Windows job `101500164796`, macOS `101500164772`, Ubuntu `101500164652`.
-- Latest hardening commit `db80a77` local full suite: `359 passed, 1 skipped`; CI attempt
-  [34038714552](https://github.com/alikula37/kuantra-terminal/actions/runs/34038714552) could
+- Latest hardening commit `db80a77` local full suite: `359 passed, 1 skipped`; CI attempts
+  [34038714552](https://github.com/alikula37/kuantra-terminal/actions/runs/34038714552) and
+  [34038892057](https://github.com/alikula37/kuantra-terminal/actions/runs/34038892057) could
   not start any job because GitHub account billing/spending-limit protection blocked runner
   allocation. This is an external validation blocker, not a test failure; acceptance remains
   open until a fresh green run covers `db80a77`.
