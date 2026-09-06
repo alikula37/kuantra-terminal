@@ -79,6 +79,19 @@ class BinanceDepthReportArchive:
     def record_count(self) -> int:
         return len(self._records)
 
+    def get_record(self, identifier: str) -> DepthSoakArchiveRecord:
+        """Resolve one archived report by full SHA-256 or short report id."""
+
+        normalized = str(identifier).strip().lower()
+        matches = [
+            record
+            for record in self._records
+            if record.report_sha256 == normalized or record.report_id == normalized
+        ]
+        if len(matches) != 1:
+            raise DepthSoakArchiveError("archived report identifier was not found or is ambiguous")
+        return matches[0]
+
     def archive(self, report: Mapping[str, Any]) -> DepthSoakArchiveRecord:
         """Verify and append one report; identical hashes are idempotent."""
 

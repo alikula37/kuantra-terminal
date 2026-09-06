@@ -94,6 +94,17 @@ from .binance_depth_report_archive import (
     DepthSoakArchiveError,
     DepthSoakArchiveRecord,
 )
+from .binance_depth_attestation import (
+    ATTESTATION_SCHEMA_VERSION,
+    KEY_BUNDLE_SCHEMA_VERSION,
+    BinanceDepthAttestationStore,
+    DepthSoakAttestation,
+    DepthSoakAttestationError,
+    attest_archive_record,
+    generate_operator_key_bundle,
+    private_key_from_bundle,
+    verify_attestation,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -160,4 +171,13 @@ __all__ = [
     "BinanceDepthReportArchive",
     "DepthSoakArchiveError",
     "DepthSoakArchiveRecord",
+    "ATTESTATION_SCHEMA_VERSION",
+    "KEY_BUNDLE_SCHEMA_VERSION",
+    "BinanceDepthAttestationStore",
+    "DepthSoakAttestation",
+    "DepthSoakAttestationError",
+    "attest_archive_record",
+    "generate_operator_key_bundle",
+    "private_key_from_bundle",
+    "verify_attestation",
 ]

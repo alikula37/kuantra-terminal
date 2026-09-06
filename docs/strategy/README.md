@@ -58,6 +58,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP14 | [Opt-in Binance Depth Testnet Soak Gate](./work-packages/P2-WP14-binance-depth-testnet-soak-gate.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP15 | [Binance Depth Soak Report Verification Gate](./work-packages/P2-WP15-binance-depth-report-verification.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP16 | [Binance Depth Soak Report Hash Archive](./work-packages/P2-WP16-binance-depth-report-hash-archive.md) | Active | 1.0.0 | 2026-09-07 |
+| P2-WP17 | [Binance Depth Soak Operator Attestation](./work-packages/P2-WP17-binance-depth-operator-attestation.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -262,3 +263,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P2-WP16 ile doğrulanmış soak raporları hash-adresli JSON + fsync manifest
   arşivine append-only/idempotent olarak alınıyor; dosya veya manifest tamper'ı
   strict recovery'de reddediliyor. Focused suite `5 passed`.
+- P2-WP17 ile arşivlenmiş rapor hash/metadata'sı için opsiyonel Ed25519
+  operator attestation ve strict sidecar store eklendi. İmza source verification
+  veya execution authority yükseltmiyor. Focused suite `5 passed`.
