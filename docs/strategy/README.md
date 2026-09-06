@@ -36,6 +36,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP07 | [Trade Evidence Pack API](./work-packages/P1-WP07-trade-evidence-pack-api.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP08 | [Deterministic Replay ve Market-Context Attachment](./work-packages/P1-WP08-deterministic-replay-market-context.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP09 | [Market-Data Provenance Schema](./work-packages/P1-WP09-market-data-provenance.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP10 | [CSV Import Evidence Provenance ve Fail-Closed Validation](./work-packages/P1-WP10-csv-import-evidence-provenance.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -141,3 +142,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   ile `UNVERIFIED` olarak açılıyor. Binance kline kimliği saklanıyor ancak sequence/gap
   doğrulaması gelene kadar `source_verified=false` kalıyor. Focused suite `46 passed`,
   full backend regression `382 passed, 1 skipped`.
+- P1-WP10 `d62db79` ile CSV importer eksik timestamp/identity/numeric alanlarda fail-closed
+  oldu; current-time, BTCUSDT, BUY veya qty=1 gibi sentetik varsayılanlar kaldırıldı.
+  File SHA-256, row SHA-256, row number ve format canonical `LegacyTradeImported`
+  provenance'ına bağlandı. Focused import suite `25 passed`, full backend regression
+  `386 passed, 1 skipped`.
