@@ -121,6 +121,23 @@ from .binance_depth_attestation_gate import (
     DepthAttestationGateResult,
     evaluate_binance_depth_attestation_gate,
 )
+from .binance_depth_key_policy import (
+    DEFAULT_MAX_ACTIVE_AGE_SECONDS,
+    DEFAULT_MAX_ACTIVE_KEYS,
+    DEFAULT_MAX_FUTURE_SKEW_SECONDS,
+    DEFAULT_REVOKED_RETENTION_SECONDS,
+    KEY_POLICY_SCHEMA_VERSION,
+    KeyRotationPolicyResult,
+    evaluate_key_rotation_policy,
+)
+from .binance_depth_review_record import (
+    REVIEW_RECORD_SCHEMA_VERSION,
+    BinanceDepthOperatorReviewStore,
+    DepthOperatorReviewRecord,
+    DepthReviewRecordError,
+    create_operator_review_record,
+    verify_operator_review_record,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -208,4 +225,17 @@ __all__ = [
     "DEFAULT_MAX_FUTURE_SKEW_SECONDS",
     "DepthAttestationGateResult",
     "evaluate_binance_depth_attestation_gate",
+    "DEFAULT_MAX_ACTIVE_AGE_SECONDS",
+    "DEFAULT_MAX_ACTIVE_KEYS",
+    "DEFAULT_MAX_FUTURE_SKEW_SECONDS",
+    "DEFAULT_REVOKED_RETENTION_SECONDS",
+    "KEY_POLICY_SCHEMA_VERSION",
+    "KeyRotationPolicyResult",
+    "evaluate_key_rotation_policy",
+    "REVIEW_RECORD_SCHEMA_VERSION",
+    "BinanceDepthOperatorReviewStore",
+    "DepthOperatorReviewRecord",
+    "DepthReviewRecordError",
+    "create_operator_review_record",
+    "verify_operator_review_record",
 ]

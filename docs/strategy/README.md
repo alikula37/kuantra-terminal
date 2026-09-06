@@ -61,6 +61,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP17 | [Binance Depth Soak Operator Attestation](./work-packages/P2-WP17-binance-depth-operator-attestation.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP18 | [Binance Depth Attestation Key Registry](./work-packages/P2-WP18-binance-depth-key-registry.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP19 | [Binance Depth Attestation Review Gate](./work-packages/P2-WP19-binance-depth-attestation-review-gate.md) | Active | 1.0.0 | 2026-09-07 |
+| P2-WP20 | [Binance Depth Operator Review ve Key Policy](./work-packages/P2-WP20-binance-depth-review-record-key-policy.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -278,3 +279,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   `execution_authority` yükseltmiyor; fixture, revoked, stale/future ve
   ambiguous multi-attestation durumlarını reddediyor. Focused suite `5 passed`,
   full backend regression `502 passed, 1 skipped`.
+- P2-WP20 ile gate çıktısını ve key-policy snapshot'ını hash'leriyle birlikte
+  imzalayan append-only operator review kaydı eklendi. Tek aktif key, yaş ve
+  revoke-retention politikası fail-closed değerlendiriliyor; review kaydı
+  `retention_until` taşıyor ve hiçbir truth/execution yetkisi üretmiyor.
+  Focused suite `5 passed`, full backend regression `507 passed, 1 skipped`.

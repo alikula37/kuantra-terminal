@@ -92,10 +92,12 @@ class BinanceDepthAttestationKeyRegistry:
         return tuple(self._records.values())
 
     def get(self, identifier: str) -> OperatorKeyRecord:
-        normalized = str(identifier).strip().lower()
+        raw_identifier = str(identifier).strip()
+        normalized = raw_identifier.lower()
         record = self._records.get(normalized)
         if record is None and not _ID_RE.fullmatch(normalized):
-            key_id = key_id_for_public_key(normalized)
+            # Base64 is case-sensitive; only the derived hex key id is lowered.
+            key_id = key_id_for_public_key(raw_identifier)
             record = self._records.get(key_id)
         if record is None:
             raise DepthKeyRegistryError("operator key was not found")
