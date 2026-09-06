@@ -30,6 +30,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Active | 1.1.0 | 2026-09-06 |
 | P1-WP02 | [Atomic Journal Evidence Write Adapter](./work-packages/P1-WP02-atomic-journal-evidence-write.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP03 | [Rebuildable Trade Projection ve Tombstone](./work-packages/P1-WP03-rebuildable-trade-projection.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP04 | [Projection Read Adapter ve Coverage Gate](./work-packages/P1-WP04-projection-read-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -110,3 +111,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P1-WP03 `ad45281` ile typed `evidence_trade_projections`, Alembic `003_trade_projection`,
   deterministic rebuild/dry-run CLI ve physical delete yerine `CANCELED` tombstone teslim edildi;
   projection suite'i `5 passed`, full backend regression `369 passed, 1 skipped`.
+- P1-WP04 `3fbc5c0` ile canlı journal yazıları typed projection'ı aynı transaction'da
+  güncelliyor; exact coverage gate kullanan `TradeReadAdapter` seçili API, portfolio ve
+  quant read path'lerine bağlandı. Eksik backfill durumunda projection/legacy veri
+  karıştırılmadan bütün istek compatibility fallback'e gider. Focused suite `18 passed`,
+  full backend regression `372 passed, 1 skipped`.
