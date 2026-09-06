@@ -3,7 +3,7 @@
 ```yaml
 document_id: KPS-P0-WP06B
 status: Verified
-version: 1.0.0
+version: 1.0.1
 date: 2026-09-06
 strategy: KPS-001@1.0.0
 adr:
@@ -73,11 +73,23 @@ database migration or data deletion is required.
 - Frontend: `45 passed` / 10 test files; i18n 478/478; production build successful.
 - Dependency audit: `npm audit --audit-level=moderate` found 0 vulnerabilities.
 - `git diff --check`: clean.
-- Remote three-OS CI evidence is added after the implementation commit and must remain
-  green before merge.
+- Remote push CI `34019988437` is green on Ubuntu, macOS and Windows, including desktop
+  smoke.
+- Remote PR CI `34019990852` is green on Ubuntu, macOS and Windows, including desktop
+  smoke.
+- This package does not authorize live venue execution: FIX/DMA remains disabled until a
+  later package supplies a real transport, reconciliation and release evidence.
 
 ## Validation
 
 - Full locked backend suite and compileall.
 - Frontend unit/DOM suite, production build and npm audit.
 - Three-OS GitHub CI including desktop smoke.
+
+## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-06
+
+- Implementation commit `1cfd778` ve push/PR CI kanıtları kayda alındı.
+- FIX/DMA disabled boundary'nin sonraki transport/reconciliation paketlerine kadar
+  yürürlükte olduğu açıkça belirtildi.
