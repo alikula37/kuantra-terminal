@@ -9,7 +9,7 @@ baseline: a7ac71c
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP02 Binance Snapshot + Delta Sequence Validator, P2-WP03 Binance Depth Snapshot/Event Recovery Coordinator
-implementation_commits: pending
+implementation_commits: 80f37e2
 ```
 
 ## Problem
