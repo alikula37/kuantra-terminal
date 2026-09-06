@@ -9,7 +9,7 @@ baseline: 8438ffa
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP03 Binance Depth Snapshot/Event Recovery Coordinator, P2-WP04 Binance Depth Payload Normalization ve Venue Projection, P2-WP07 Rotated Market Event Segments ve Manifest Recovery
-implementation_commits: pending
+implementation_commits: 57ba6e4
 ```
 
 ## Problem
