@@ -9,7 +9,7 @@ baseline: c09da6c
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP18 Binance Depth Attestation Key Registry
-implementation_commits: pending
+implementation_commits: 75b7579
 ```
 
 ## Problem
