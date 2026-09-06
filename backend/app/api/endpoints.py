@@ -119,10 +119,15 @@ def close_trade(trade_id: str, close_data: TradeCloseSchema):
 
 @router.delete("/trades/{trade_id}")
 def delete_trade(trade_id: str):
-    success = sqlite_driver.delete_trade(trade_id)
-    if not success:
+    existing = sqlite_driver.get_trade(trade_id)
+    if not existing:
         raise HTTPException(status_code=404, detail="Trade not found")
-    return {"status": "deleted", "id": trade_id}
+    canceled = sync_pipeline.record_and_sync_trade(
+        {"id": trade_id, "status": "CANCELED"},
+        source="journal_delete",
+        source_ref="api",
+    )
+    return {"status": "canceled", "id": trade_id, "trade": canceled}
 
 @router.post("/journal/import-csv")
 async def import_csv_trades(file: UploadFile = File(...)):

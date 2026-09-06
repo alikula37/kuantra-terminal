@@ -20,6 +20,7 @@ from app.services.maintenance.log_sanitizer import log_sanitizer_engine
 from app.services.maintenance.db_maintenance import db_maintenance_engine
 from app.core.security import StrongholdVault, vault as stronghold_vault
 from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("kuantra_cli")
@@ -123,8 +124,14 @@ def handle_evidence_ledger(args: argparse.Namespace):
                 chain_date_utc=args.chain_date_utc,
             ),
         }
+    elif args.ledger_command == "projection-rebuild":
+        projection = EvidenceTradeProjectionRepository(db_path=args.db_path)
+        result = projection.rebuild(
+            account_id=args.account_id,
+            dry_run=not args.apply,
+        )
     else:
-        raise ValueError("Choose evidence-ledger backfill, verify, or export")
+        raise ValueError("Choose evidence-ledger backfill, verify, export, or projection-rebuild")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return result
 
@@ -176,6 +183,19 @@ def create_parser() -> argparse.ArgumentParser:
     p_export = ledger_subparsers.add_parser("export", help="Export immutable ledger rows as JSONL")
     p_export.add_argument("--account-id", default=None)
     p_export.add_argument("--chain-date-utc", default=None)
+
+    p_projection = ledger_subparsers.add_parser(
+        "projection-rebuild",
+        help="Verify the ledger and rebuild the disposable trade projection",
+    )
+    projection_mode = p_projection.add_mutually_exclusive_group()
+    projection_mode.add_argument("--apply", action="store_true", help="Write the rebuilt projection")
+    projection_mode.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report the rebuild without changing the projection (default)",
+    )
+    p_projection.add_argument("--account-id", default=None)
 
     return parser
 

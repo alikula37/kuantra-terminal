@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from app.core.paths import get_sqlite_path
 from app.db.evidence_schema import initialize_evidence_schema
+from app.db.projection_schema import initialize_trade_projection_schema
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,7 @@ class SQLiteDriver:
             # 002 so a fresh desktop database has the ledger before any
             # explicit migration command is invoked.
             initialize_evidence_schema(conn)
+            initialize_trade_projection_schema(conn)
             conn.commit()
             logger.info("SQLite OLTP schema initialized with WAL mode and candle cache.")
 
