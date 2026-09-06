@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, PlayCircle, BookOpen, Upload } from "lucide-react";
+import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2 } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
+import { TradeEvidencePanel } from "./TradeEvidencePanel";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
@@ -15,6 +16,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const { trades, setTrades } = useTradeStore();
   const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch(apiUrl("/api/v1/trades?limit=200"))
@@ -135,7 +137,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
             <tbody className="divide-y divide-surface-border/40 text-[11px]">
               {filteredTrades.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
+                    <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
                     {t("journal.no_matching")}
                   </td>
                 </tr>
@@ -192,6 +194,14 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                         <PlayCircle className="w-3 h-3" />
                         <span>{t("journal.replay_btn")}</span>
                       </button>
+                      <button
+                        onClick={() => setEvidenceTradeId(tItem.id)}
+                        className="inline-flex items-center space-x-1 px-2 py-0.5 ml-1 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-bold rounded text-[10px] transition"
+                        title="Open source-linked Trade Evidence Pack"
+                      >
+                        <FileCheck2 className="w-3 h-3 text-accent" />
+                        <span>Evidence</span>
+                      </button>
                     </td>
                   </tr>
                 );
@@ -201,6 +211,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         </table>
       </div>
     )}
+      {evidenceTradeId && (
+        <TradeEvidencePanel tradeId={evidenceTradeId} onClose={() => setEvidenceTradeId(null)} />
+      )}
   </div>
   );
 };

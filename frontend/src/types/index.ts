@@ -242,6 +242,63 @@ export interface Playbook {
   performance: QuantScorecard;
 }
 
+export interface EvidenceLedgerIntegrity {
+  valid: boolean;
+  checked_events: number;
+  errors: string[];
+}
+
+export interface EvidenceCoverage {
+  ready: boolean;
+  legacy_trade_count?: number;
+  projection_trade_count?: number;
+  missing_trade_ids?: string[];
+  extra_trade_ids?: string[];
+  [key: string]: unknown;
+}
+
+export interface EvidenceEvent {
+  event_id: string;
+  event_type: string;
+  account_id: string;
+  venue: string;
+  occurred_at_utc: string;
+  received_at_utc?: string;
+  chain_date_utc: string;
+  chain_sequence: number;
+  schema_version: string;
+  adapter_version: string;
+  correlation_id: string;
+  causation_id?: string | null;
+  idempotency_key: string;
+  raw_payload_sha256: string;
+  normalized_payload?: Record<string, unknown>;
+  provenance?: Record<string, unknown>;
+  prev_hash: string;
+  event_hash: string;
+}
+
+export interface EvidenceMarketContext {
+  status: "READY" | "NO_DATA" | "UNAVAILABLE" | string;
+  reason?: string | null;
+  message?: string | null;
+  provenance?: (Omit<ReplayProvenance, "source_verified"> & { source_verified?: boolean }) | null;
+  market_context?: Record<string, unknown> | null;
+  candles?: Candle[];
+  [key: string]: unknown;
+}
+
+export interface TradeEvidencePack {
+  trade_id: string;
+  trade: Trade | null;
+  read_source: "typed_projection" | "compatibility_legacy" | string;
+  coverage: EvidenceCoverage;
+  ledger_integrity: EvidenceLedgerIntegrity;
+  events: EvidenceEvent[];
+  event_count: number;
+  market_context: EvidenceMarketContext;
+}
+
 export interface TradeDriftItem {
   trade_id: string;
   symbol: string;

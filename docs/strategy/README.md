@@ -41,6 +41,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP12 | [Read-Only API Snapshot Adapter ve Credential Scope](./work-packages/P1-WP12-read-only-api-snapshot-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP13 | [Evidence Pack Export ve Backup/Restore Drill](./work-packages/P1-WP13-evidence-pack-export-restore-drill.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP14 | [Versioned Playbook ve Risk Policy Events](./work-packages/P1-WP14-versioned-playbook-risk-policy-events.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP15 | [Trade Evidence Pack UI ve Provenance Review](./work-packages/P1-WP15-trade-evidence-pack-ui.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -171,3 +172,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   sınırına alındı. RiskGuard metadata'sı policy id/version/hash ve risk event id
   taşıyor; eski playbook/risk davranışı korunuyor. Focused suite `3 passed`, full
   backend regression `405 passed, 1 skipped`.
+- P1-WP15 ile Journal içinden source-linked Trade Evidence Pack paneli açılabilir
+  hale geldi. Ledger bütünlüğü, typed projection/legacy read kaynağı, policy/playbook
+  snapshot referansı, market-context provenance ve JSON/HTML export durumu tek
+  read-only ekranda gösteriliyor. Frontend suite `51 passed`, production build
+  ve tri-locale parity doğrulandı.
