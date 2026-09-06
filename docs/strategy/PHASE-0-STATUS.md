@@ -22,7 +22,7 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP03 Frontend dev-toolchain security | Verified | `c72d599` | Audit 0; frontend 29 passed; build pass |
 | P0-WP04 CI truth/release gates | Verified | `a920319` + `04f168c` | 3-OS PR/push CI green; local backend 260 passed, 1 skipped |
 | P0-WP05 Python universal lock | Verified | `1326e5e` | 3-OS CI green; backend 263 passed, 1 skipped; 90 packages / 2,408 hashes |
-| P0-WP06A Replay/MAE-MFE evidence truth | Remote validation pending | — | Local locked backend 328 passed, 1 skipped; frontend 42 passed; build/audit pass |
+| P0-WP06A Replay/MAE-MFE evidence truth | Verified | `d517c34` | 3-OS CI `34018288308` green; local backend 328 passed, 1 skipped; frontend 42 passed; build/audit pass |
 
 ## Aktif güvenlik durumu
 

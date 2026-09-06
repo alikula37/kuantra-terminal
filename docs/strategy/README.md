@@ -20,7 +20,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP03 | [Frontend dev-toolchain güvenlik güncellemesi](./work-packages/P0-WP03-frontend-toolchain-security.md) | Verified | — | 2026-09-05 |
 | P0-WP04 | [CI truth ve release güvenlik kapıları](./work-packages/P0-WP04-ci-truth-and-release-gates.md) | Verified | — | 2026-09-05 |
 | P0-WP05 | [Python universal dependency lock](./work-packages/P0-WP05-python-universal-lock.md) | Verified | — | 2026-09-05 |
-| P0-WP06A | [Replay ve excursion veri doğruluğu](./work-packages/P0-WP06A-replay-excursion-truth.md) | Remote validation pending | — | 2026-09-06 |
+| P0-WP06A | [Replay ve excursion veri doğruluğu](./work-packages/P0-WP06A-replay-excursion-truth.md) | Verified | `d517c34` | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -53,3 +53,5 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   fazlandırma, ticari model ve talep doğrulama tabanı oluşturuldu.
 - ADR-0001–0003 kabul edildi.
 - KDG-001 ve KWT-001 ile agent destekli geliştirme süreci tanımlandı.
+- P0-WP05 remote lock kanıtı `97774b2`, P0-WP06A replay/excursion truth implementation
+  `d517c34` ile doğrulandı; sonraki paket P0-WP06B'dir.

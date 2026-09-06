@@ -2,7 +2,7 @@
 
 ```yaml
 work_package: P0-WP06A
-status: Remote validation pending
+status: Verified
 phase: Phase 0 - Truth & Safety Release
 strategy: KPS-001@1.0.0
 baseline_commit: 1326e5ecc3503cc8b08d12dc64a15a7413399213
@@ -82,7 +82,7 @@ Hedef önerisi optimizasyon doğrulaması gelene kadar `null` kalır.
 - [x] Replay entry/exit zaman indeksleri ve post-exit excursion freeze; deterministic replay.
 - [x] Eksik örnekler aggregate/recommendation içine sızmaz; sayımlar doğru.
 - [x] UI null/error/provenance davranışı ve async chart kurulumu jsdom ile doğrulanır.
-- [ ] Locked backend suite, frontend test/build, audit ve 3-OS CI/smoke geçer.
+- [x] Locked backend suite, frontend test/build, audit ve 3-OS CI/smoke geçer.
 
 ## Migration / rollback / kapsam dışı
 
@@ -97,4 +97,12 @@ Yeni broker/data aboneliği, canlı order, AI otoritesi veya store rewrite bu pa
 - Frontend: `42 passed` / 9 test files; i18n 478/478; production build successful.
 - `npm audit --omit=dev --audit-level=moderate`: 0 vulnerabilities.
 - `git diff --check`: clean.
-- Remote 3-OS CI and desktop smoke remain pending for the implementation commit.
+- Remote PR CI run `34018288308` passed on Windows, macOS and Ubuntu; every OS completed
+  backend tests, frontend tests/audit/build, desktop build and smoke test.
+
+## Remote kanıt
+
+- Implementation commit: `d517c340e31a222bc00c685d6c94f16688c03054`.
+- PR run: `34018288308` — all three OS jobs successful.
+- Matching push run: `34018286678` — triggered for the same SHA.
+- This package does not authorize live execution, tick replay, or a validated target optimizer.
