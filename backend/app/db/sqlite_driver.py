@@ -129,11 +129,27 @@ class SQLiteDriver:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT OR REPLACE INTO trades (
+                INSERT INTO trades (
                     id, symbol, side, entry_price, exit_price, qty,
                     stop_loss, take_profit, entry_time, exit_time,
                     status, pnl, r_multiple, commission, notes, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    symbol = excluded.symbol,
+                    side = excluded.side,
+                    entry_price = excluded.entry_price,
+                    exit_price = excluded.exit_price,
+                    qty = excluded.qty,
+                    stop_loss = excluded.stop_loss,
+                    take_profit = excluded.take_profit,
+                    entry_time = excluded.entry_time,
+                    exit_time = excluded.exit_time,
+                    status = excluded.status,
+                    pnl = excluded.pnl,
+                    r_multiple = excluded.r_multiple,
+                    commission = excluded.commission,
+                    notes = excluded.notes,
+                    updated_at = excluded.updated_at
             """, (
                 trade_id,
                 trade["symbol"].upper(),

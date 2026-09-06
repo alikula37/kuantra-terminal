@@ -197,6 +197,50 @@ def test_legacy_backfill_is_dry_run_idempotent_and_does_not_mutate_source(tmp_pa
     assert repository.verify_chain()["valid"] is True
 
 
+def test_legacy_trade_upsert_preserves_foreign_key_tags(tmp_path):
+    driver = SQLiteDriver(str(tmp_path / "journal.sqlite"))
+    trade = {
+        "id": "TAGGED-TRADE",
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "entry_price": 100.0,
+        "qty": 1.0,
+        "entry_time": "2026-09-01T10:00:00Z",
+        "status": "OPEN",
+    }
+    driver.insert_trade(trade)
+
+    with driver.get_connection() as conn:
+        conn.execute("INSERT INTO tags (name) VALUES (?)", ("breakout",))
+        tag_id = conn.execute(
+            "SELECT id FROM tags WHERE name = ?", ("breakout",)
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO trade_tags (trade_id, tag_id) VALUES (?, ?)",
+            (trade["id"], tag_id),
+        )
+        conn.commit()
+
+    driver.insert_trade(
+        {
+            **trade,
+            "entry_price": 101.0,
+            "status": "CLOSED",
+            "exit_price": 102.0,
+        }
+    )
+
+    with driver.get_connection() as conn:
+        linked_tags = conn.execute(
+            "SELECT tag_id FROM trade_tags WHERE trade_id = ?",
+            (trade["id"],),
+        ).fetchall()
+
+    assert [row[0] for row in linked_tags] == [tag_id]
+    assert driver.get_trade(trade["id"])["entry_price"] == 101.0
+    assert driver.get_trade(trade["id"])["status"] == "CLOSED"
+
+
 def test_event_type_contract_is_explicit():
     assert len(EVENT_TYPES) == 14
     assert "LegacyTradeImported" in EVENT_TYPES
