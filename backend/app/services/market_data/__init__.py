@@ -88,6 +88,12 @@ from .binance_depth_report import (
     DepthSoakReportVerdict,
     verify_depth_soak_report,
 )
+from .binance_depth_report_archive import (
+    ARCHIVE_SCHEMA_VERSION,
+    BinanceDepthReportArchive,
+    DepthSoakArchiveError,
+    DepthSoakArchiveRecord,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -150,4 +156,8 @@ __all__ = [
     "DepthSoakReportVerification",
     "DepthSoakReportVerdict",
     "verify_depth_soak_report",
+    "ARCHIVE_SCHEMA_VERSION",
+    "BinanceDepthReportArchive",
+    "DepthSoakArchiveError",
+    "DepthSoakArchiveRecord",
 ]
