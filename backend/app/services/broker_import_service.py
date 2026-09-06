@@ -393,6 +393,56 @@ class BrokerImportService:
             return "FillRecorded"
         return "VenueReject" if record.status == "REJECTED" else "VenueAck"
 
+    @staticmethod
+    def _snapshot_provenance(snapshot_manifest: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Reduce a validated API manifest to safe, bounded ledger provenance.
+
+        The full manifest is returned to the caller, but only immutable summary
+        fields enter the evidence event.  This prevents page data or accidental
+        credential material from becoming part of the ledger payload.
+        """
+
+        if snapshot_manifest is None:
+            return None
+        if not isinstance(snapshot_manifest, dict):
+            raise BrokerImportValidationError("snapshot_manifest must be an object")
+        scope = str(snapshot_manifest.get("permission_scope") or "").strip().upper()
+        if scope != "READ_ONLY":
+            raise BrokerImportValidationError("snapshot_manifest permission_scope must be READ_ONLY")
+        digest = str(snapshot_manifest.get("snapshot_sha256") or "").strip()
+        if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
+            raise BrokerImportValidationError("snapshot_manifest snapshot_sha256 must be lowercase SHA-256")
+        version = str(snapshot_manifest.get("manifest_version") or "").strip()
+        if version != "1":
+            raise BrokerImportValidationError("unsupported snapshot_manifest version")
+        complete = snapshot_manifest.get("complete")
+        if not isinstance(complete, bool):
+            raise BrokerImportValidationError("snapshot_manifest complete must be boolean")
+        summary: Dict[str, Any] = {
+            "source": "broker_api_snapshot",
+            "snapshot_manifest_version": version,
+            "snapshot_manifest_sha256": digest,
+            "snapshot_permission_scope": scope,
+            "snapshot_complete": complete,
+        }
+        for key in (
+            "orders_page_count",
+            "fills_page_count",
+            "order_count",
+            "fill_count",
+            "request_count",
+        ):
+            value = snapshot_manifest.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise BrokerImportValidationError(f"snapshot_manifest {key} must be non-negative integer")
+            summary[f"snapshot_{key}"] = value
+        warnings = snapshot_manifest.get("warnings", [])
+        if not isinstance(warnings, list) or any(not isinstance(item, str) for item in warnings):
+            raise BrokerImportValidationError("snapshot_manifest warnings must be a string array")
+        # Warnings are bounded codes, not upstream exception text.
+        summary["snapshot_warning_count"] = len(warnings)
+        return summary
+
     def import_records(
         self,
         venue: str,
@@ -402,11 +452,13 @@ class BrokerImportService:
         account_id: str = "local-broker-import",
         source_name: str = "broker-export",
         source_bytes: Optional[bytes] = None,
+        snapshot_manifest: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         venue = self._validate_venue(venue)
         records, rejected = self.normalize_records(venue, orders=orders, fills=fills)
         source_document = source_bytes if source_bytes is not None else canonical_json({"orders": orders, "fills": fills}).encode("utf-8")
         source_file_sha256 = hashlib.sha256(source_document).hexdigest()
+        snapshot_provenance = self._snapshot_provenance(snapshot_manifest)
         commands: List[Dict[str, Any]] = []
         for record in records:
             payload = record.payload()
@@ -424,7 +476,11 @@ class BrokerImportService:
                 "normalized_payload": {"broker_lifecycle": payload},
                 "occurred_at": record.occurred_at,
                 "schema_version": "1",
-                "adapter_version": f"{venue.lower()}-export-v1",
+                "adapter_version": (
+                    f"{venue.lower()}-read-only-api-v1"
+                    if snapshot_provenance
+                    else f"{venue.lower()}-export-v1"
+                ),
                 "correlation_id": record.external_order_id,
                 "provenance": {
                     "source": "broker_export",
@@ -434,6 +490,8 @@ class BrokerImportService:
                     "record_type": record.record_type,
                 },
             })
+            if snapshot_provenance:
+                commands[-1]["provenance"].update(snapshot_provenance)
         events = self.ledger_repo.append_events(commands) if commands else []
         report = self.reconcile(records)
         if rejected:
@@ -441,6 +499,12 @@ class BrokerImportService:
             report["discrepancies"].append({
                 "type": "REJECTED_ROWS",
                 "count": len(rejected),
+            })
+        if snapshot_provenance and not snapshot_provenance["snapshot_complete"]:
+            report["status"] = "UNRECONCILED"
+            report["discrepancies"].append({
+                "type": "SNAPSHOT_INCOMPLETE",
+                "warning_count": snapshot_provenance["snapshot_warning_count"],
             })
         report.update({
             "venue": venue,
@@ -455,6 +519,12 @@ class BrokerImportService:
             "ledger_duplicate_count": sum(1 for event in events if not event.get("created")),
             "event_ids": [event["event_id"] for event in events],
         })
+        if snapshot_provenance:
+            report.update({
+                "snapshot_manifest_sha256": snapshot_provenance["snapshot_manifest_sha256"],
+                "snapshot_complete": snapshot_provenance["snapshot_complete"],
+                "snapshot_request_count": snapshot_provenance["snapshot_request_count"],
+            })
         return report
 
     def import_json_document(

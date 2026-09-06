@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P1-WP11
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-06
 baseline: a1f138a
@@ -74,10 +74,9 @@ partial fill ve fee toplamları canonical lifecycle olarak saklanmıyordu. Bu ne
 
 Bu paket broker export'undaki gözlemleri kanıt zincirine alır; export'un eksik veya
 yanlış olmasını tek başına çözmez. Pilot ölçümü `reconciliation_unexplained_delta=0`
-ve import row rejection oranını ayrı takip etmelidir. Bir sonraki teknik adım,
-gerçek Binance/OKX read-only API adapter'ını aynı normalizer'a bağlamak; önce credential
-scope, pagination, rate-limit/backoff ve snapshot manifest doğrulamasıyla başlamaktır.
-Bu kapılar geçmeden live execution açılmayacaktır.
+ve import row rejection oranını ayrı takip etmelidir. Gerçek Binance/OKX read-only
+API sınırı P1-WP12 ile aynı normalizer'a bağlandı; credential scope, pagination,
+rate-limit/backoff ve snapshot manifest kapıları geçmeden live execution açılmayacaktır.
 
 ## Değişiklik geçmişi
 
@@ -85,3 +84,8 @@ Bu kapılar geçmeden live execution açılmayacaktır.
 
 - İlk fixture/export tabanlı broker lifecycle normalizer, ledger mapping ve
   reconciliation report.
+
+### 1.0.1 — 2026-09-06
+
+- Gerçek read-only API adapter'ı ve credential/manifest sınırı P1-WP12'ye ayrıştırıldı;
+  bu paketin fixture/export kapsamı korunuyor.

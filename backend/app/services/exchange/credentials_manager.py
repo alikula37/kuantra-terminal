@@ -31,6 +31,10 @@ class ExchangeCredentialsManager:
         "binance_futures": {"name": "Binance USDⓈ-M Futures", "ccxt_id": "binanceusdm", "requires_passphrase": False},
         "okx": {"name": "OKX V5 Unified", "ccxt_id": "okx", "requires_passphrase": True},
     }
+    # Phase 1 only permits credentials to be used for evidence ingestion and
+    # connectivity checks.  A future Phase 4 write-capable credential must be
+    # an explicit, separately reviewed capability; it is not accepted here.
+    READ_ONLY_SCOPE = "READ_ONLY"
 
     @staticmethod
     def _credential_ref(exchange_id: str, field: str) -> str:
@@ -66,7 +70,8 @@ class ExchangeCredentialsManager:
         passphrase: Optional[str] = None,
         name: Optional[str] = None,
         is_testnet: bool = False,
-        is_active: bool = True
+        is_active: bool = True,
+        permission_scope: str = READ_ONLY_SCOPE,
     ) -> Dict[str, Any]:
         """Stores secret values in the OS keychain and only refs/metadata in SQLite."""
         exchange_id = exchange_id.lower().strip()
@@ -78,6 +83,12 @@ class ExchangeCredentialsManager:
         passphrase = passphrase.strip() if passphrase else None
         if not api_key or not api_secret:
             raise ValueError("API Key and API Secret are strictly required.")
+
+        permission_scope = str(permission_scope or "").strip().upper()
+        if permission_scope != self.READ_ONLY_SCOPE:
+            raise ValueError(
+                "Only READ_ONLY credential scope is available before Phase 4 execution gates."
+            )
 
         self._require_credential_store()
 
@@ -102,13 +113,14 @@ class ExchangeCredentialsManager:
                 cur.execute("""
                     INSERT INTO exchange_credential_refs (
                         exchange_id, name, api_key_ref, api_secret_ref, passphrase_ref,
-                        is_testnet, is_active, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        permission_scope, is_testnet, is_active, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(exchange_id) DO UPDATE SET
                         name = excluded.name,
                         api_key_ref = excluded.api_key_ref,
                         api_secret_ref = excluded.api_secret_ref,
                         passphrase_ref = excluded.passphrase_ref,
+                        permission_scope = excluded.permission_scope,
                         is_testnet = excluded.is_testnet,
                         is_active = excluded.is_active,
                         updated_at = excluded.updated_at
@@ -118,6 +130,7 @@ class ExchangeCredentialsManager:
                     refs["api_key"],
                     refs["api_secret"],
                     refs["passphrase"],
+                    permission_scope,
                     1 if is_testnet else 0,
                     1 if is_active else 0,
                     now_ts,
@@ -175,6 +188,7 @@ class ExchangeCredentialsManager:
                 "api_key": api_key,
                 "api_secret": api_secret,
                 "passphrase": passphrase,
+                "permission_scope": str(data.get("permission_scope") or self.READ_ONLY_SCOPE).upper(),
                 "is_testnet": bool(data["is_testnet"]),
                 "is_active": bool(data["is_active"]),
                 "created_at": data["created_at"],
@@ -221,6 +235,7 @@ class ExchangeCredentialsManager:
                     "api_key_masked": masked,
                     "requires_passphrase": meta["requires_passphrase"],
                     "has_passphrase": bool(row.get("passphrase_ref")),
+                    "permission_scope": str(row.get("permission_scope") or self.READ_ONLY_SCOPE).upper(),
                     "is_testnet": bool(row["is_testnet"]),
                     "is_active": bool(row["is_active"]),
                     "storage_backend": credential_store.status.backend,
@@ -236,6 +251,7 @@ class ExchangeCredentialsManager:
                     "api_key_masked": "",
                     "requires_passphrase": meta["requires_passphrase"],
                     "has_passphrase": False,
+                    "permission_scope": self.READ_ONLY_SCOPE,
                     "is_testnet": False,
                     "is_active": False,
                     "storage_backend": "LEGACY_SQLITE_DISABLED" if ex_id in legacy_map else "OS_KEYCHAIN_REQUIRED",

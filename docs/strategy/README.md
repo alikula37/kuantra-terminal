@@ -37,7 +37,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP08 | [Deterministic Replay ve Market-Context Attachment](./work-packages/P1-WP08-deterministic-replay-market-context.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP09 | [Market-Data Provenance Schema](./work-packages/P1-WP09-market-data-provenance.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP10 | [CSV Import Evidence Provenance ve Fail-Closed Validation](./work-packages/P1-WP10-csv-import-evidence-provenance.md) | Active | 1.0.0 | 2026-09-06 |
-| P1-WP11 | [Read-Only Broker Lifecycle Import ve Reconciliation](./work-packages/P1-WP11-broker-lifecycle-import-reconciliation.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP11 | [Read-Only Broker Lifecycle Import ve Reconciliation](./work-packages/P1-WP11-broker-lifecycle-import-reconciliation.md) | Active | 1.0.1 | 2026-09-06 |
+| P1-WP12 | [Read-Only API Snapshot Adapter ve Credential Scope](./work-packages/P1-WP12-read-only-api-snapshot-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -153,3 +154,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   bağlandı. Aynı export idempotent; eksik/çelişkili satırlar `UNRECONCILED`. Local JSON
   endpoint 10 MB ile bounded, live connector veya order write yok. Focused suite `6
   passed`, full backend regression `392 passed, 1 skipped`.
+- P1-WP12 ile gerçek exchange çağrısı execution engine'den ayrıldı: Binance/OKX için
+  keychain `READ_ONLY` scope, CCXT fetch-only proxy, bounded pagination/retry ve
+  tamper-detectable snapshot manifest eklendi. Incomplete snapshot başarı gibi
+  raporlanmıyor; focused suite `6 passed`, full backend regression `397 passed,
+  1 skipped`.

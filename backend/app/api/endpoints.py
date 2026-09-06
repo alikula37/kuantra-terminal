@@ -16,6 +16,10 @@ from app.services.portfolio_service import portfolio_service
 from app.services.trade_read_adapter import trade_read_adapter
 from app.services.csv_importer import csv_trade_importer
 from app.services.broker_import_service import broker_import_service, BrokerImportValidationError
+from app.services.exchange.read_only_broker_sync import (
+    ReadOnlyBrokerSyncError,
+    read_only_broker_sync_service,
+)
 from app.services.exchange.credentials_manager import exchange_credentials_manager
 from app.services.security.credential_store import CredentialStoreUnavailable, credential_store_status
 from app.core.availability import experimental_disabled_exception, experimental_disabled_response as build_experimental_disabled_response
@@ -213,6 +217,39 @@ async def import_broker_json(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Broker export could not be imported safely.") from exc
+
+
+@router.post("/broker/sync-read-only")
+def sync_broker_read_only(
+    exchange_id: str = Query(..., min_length=1, max_length=32),
+    account_id: str = Query("local-broker-api", min_length=1, max_length=128),
+    symbol: Optional[str] = Query(None, min_length=1, max_length=80),
+    since_ms: Optional[int] = Query(None, ge=0),
+    until_ms: Optional[int] = Query(None, ge=0),
+    max_pages: int = Query(100, ge=1, le=1000),
+    page_limit: int = Query(100, ge=1, le=1000),
+):
+    """Fetches authenticated broker observations through a read-only CCXT scope.
+
+    This endpoint never calls an order-write method.  It stores only normalized
+    order/fill observations plus a validated snapshot manifest in the ledger.
+    """
+    try:
+        return read_only_broker_sync_service.sync(
+            exchange_id=exchange_id,
+            account_id=account_id,
+            symbol=symbol,
+            since_ms=since_ms,
+            until_ms=until_ms,
+            max_pages=max_pages,
+            page_limit=page_limit,
+        )
+    except ReadOnlyBrokerSyncError as exc:
+        raise HTTPException(status_code=400, detail={"code": "READ_ONLY_SYNC_REJECTED", "message": str(exc)}) from exc
+    except BrokerImportValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Broker read-only snapshot could not be fetched safely.") from exc
 
 # --- EXCHANGE API CREDENTIALS & EXECUTION ROUTES ---
 

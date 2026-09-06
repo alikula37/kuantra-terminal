@@ -102,6 +102,7 @@ class SQLiteDriver:
                     api_key_ref TEXT NOT NULL,
                     api_secret_ref TEXT NOT NULL,
                     passphrase_ref TEXT,
+                    permission_scope TEXT NOT NULL DEFAULT 'READ_ONLY',
                     is_testnet INTEGER DEFAULT 0,
                     is_active INTEGER DEFAULT 1,
                     created_at TEXT NOT NULL,
@@ -114,6 +115,19 @@ class SQLiteDriver:
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_candles_sym_tf_time ON market_candles_cache(symbol, timeframe, timestamp);
                 CREATE INDEX IF NOT EXISTS idx_candles_lookup ON market_candles_cache(symbol, timeframe, timestamp ASC);
             """)
+            # The keychain reference table predates the read-only broker sync
+            # boundary.  Keep the migration additive so existing desktop
+            # databases become explicitly read-only without touching secrets.
+            credential_columns = {
+                row["name"] for row in cursor.execute(
+                    "PRAGMA table_info(exchange_credential_refs)"
+                ).fetchall()
+            }
+            if "permission_scope" not in credential_columns:
+                cursor.execute(
+                    "ALTER TABLE exchange_credential_refs "
+                    "ADD COLUMN permission_scope TEXT NOT NULL DEFAULT 'READ_ONLY'"
+                )
             # Use the same idempotent schema primitive as Alembic revision
             # 002 so a fresh desktop database has the ledger before any
             # explicit migration command is invoked.
