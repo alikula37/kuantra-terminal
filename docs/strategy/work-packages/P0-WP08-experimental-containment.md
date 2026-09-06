@@ -1,8 +1,8 @@
 ---
 id: P0-WP08
 title: Experimental Capability Containment
-status: Active
-version: 0.2.0
+status: Verified
+version: 1.0.0
 owner: Lead agent (GPT-5.6)
 reviewer: GPT-5.6 Terra
 phase: Phase 0 — Truth & Safety Release
@@ -39,7 +39,7 @@ uygulamaz. Bu entegrasyonlar sonraki ayrı iş paketleridir.
 6. Her kapı için backend contract testleri ve frontend no-claim/no-action testleri
    eklemek.
 
-## Mevcut implementasyon (working tree)
+## Mevcut implementasyon
 
 - `backend/app/core/availability.py` ile canonical disabled response/HTTP 503
   sözleşmesi eklendi.
@@ -53,6 +53,8 @@ uygulamaz. Bu entegrasyonlar sonraki ayrı iş paketleridir.
   ModStore sahte marketplace/download/verified iddialarını göstermiyor.
 - UAT script’i fake senaryoları `PASSED` diye raporlamak yerine `DISABLED` truth
   sonucu kaydediyor; README v1.4.0 ürün sınırına çekildi.
+- Paketlenmiş desktop smoke testi unsigned plugin toggle’ını başarı yolu olarak
+  kabul etmiyor; typed `503` containment cevabını doğruluyor.
 
 ## Sözleşme
 
@@ -100,9 +102,22 @@ edilemez.
   latency, fill, approval veya live bağlantı iddiası döndürmez.
 - Full backend/frontend/desktop smoke ve 3-OS CI yeşildir.
 
+## Doğrulama kanıtı
+
+- Local isolated backend: `343 passed, 1 skipped`.
+- Local frontend: `49 passed`; i18n `480/480`; production build başarılı.
+- Focused post-fix desktop/backend checks: `7 passed, 1 skipped`.
+- Push CI `34025225053`: Ubuntu `101464886563`, Windows `101464886625`, macOS
+  `101464886688` — backend, frontend, audit, build ve desktop smoke yeşil.
+- PR CI `34025227211`: Ubuntu `101464892547`, Windows `101464892553`, macOS
+  `101464892622` — aynı üç-OS release kapısı yeşil.
+- Implementation commit: `d0eda56`; smoke alignment follow-up: `f8653e2`.
+
 ## Değişiklik geçmişi
 
 - 0.1.0 — Paket kapsamı ve fail-closed sözleşmesi tanımlandı; implementasyon
   henüz başlamadı.
 - 0.2.0 — Working-tree containment implementation: API/UI/plugin/adapter/UAT
   truth gates eklendi; remote CI doğrulaması bekleniyor.
+- 1.0.0 — Fail-closed API/UI/adapter/plugin containment ve packaged desktop smoke
+  boundary doğrulandı; push/PR üç-OS CI yeşil.
