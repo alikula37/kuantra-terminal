@@ -39,7 +39,9 @@ def test_phase0_exit_rejects_missing_final_artifact_evidence(tmp_path):
     assert "missing audit input" in result.stderr
 
 
-def test_smoke_report_enrichment_binds_hashes_and_truth_matrix(tmp_path):
+def test_smoke_report_enrichment_binds_hashes_and_truth_matrix(tmp_path, monkeypatch):
+    monkeypatch.delenv("GITHUB_SHA", raising=False)
+    monkeypatch.delenv("KUANTRA_BUILD_COMMIT", raising=False)
     executable = tmp_path / "Kuantra Terminal"
     artifact = tmp_path / "Kuantra-Terminal-1.4.0-test.bin"
     executable.write_bytes(b"packaged executable")
