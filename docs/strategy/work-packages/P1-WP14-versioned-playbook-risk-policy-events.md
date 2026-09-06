@@ -9,7 +9,7 @@ baseline: 1665d6c
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002, ADR-0003
 depends_on: P1-WP01 Canonical Evidence Ledger, P1-WP07 Trade Evidence Pack API, P1-WP13 Evidence Pack Export ve Backup/Restore Drill
-implementation_commits: pending
+implementation_commits: 9068afb
 ```
 
 ## Problem
@@ -94,4 +94,3 @@ oluşturmayacaktır.
 
 - Playbook/risk policy snapshot, hash ve version event sözleşmesi tanımlandı ve
   mevcut evidence event type seti korunarak uygulandı.
-
