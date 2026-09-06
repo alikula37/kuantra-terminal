@@ -1,0 +1,48 @@
+{
+  "orders": [
+    {
+      "orderId": "BN-1001",
+      "symbol": "BTCUSDT",
+      "side": "BUY",
+      "status": "FILLED",
+      "origQty": "1.5",
+      "executedQty": "1.5",
+      "avgPrice": "60000",
+      "updateTime": 1788256800000
+    },
+    {
+      "orderId": "BN-1002",
+      "symbol": "ETHUSDT",
+      "side": "SELL",
+      "status": "CANCELED",
+      "origQty": "2",
+      "executedQty": "0",
+      "avgPrice": "0",
+      "updateTime": 1788256860000
+    }
+  ],
+  "fills": [
+    {
+      "id": "BN-FILL-1",
+      "orderId": "BN-1001",
+      "symbol": "BTCUSDT",
+      "side": "BUY",
+      "qty": "1.0",
+      "price": "59900",
+      "commission": "0.50",
+      "commissionAsset": "USDT",
+      "time": 1788256740000
+    },
+    {
+      "id": "BN-FILL-2",
+      "orderId": "BN-1001",
+      "symbol": "BTCUSDT",
+      "side": "BUY",
+      "qty": "0.5",
+      "price": "60200",
+      "commission": "0.25",
+      "commissionAsset": "USDT",
+      "time": 1788256800000
+    }
+  ]
+}

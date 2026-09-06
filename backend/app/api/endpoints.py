@@ -15,6 +15,7 @@ from app.services.market_data.public_fetcher import public_market_fetcher
 from app.services.portfolio_service import portfolio_service
 from app.services.trade_read_adapter import trade_read_adapter
 from app.services.csv_importer import csv_trade_importer
+from app.services.broker_import_service import broker_import_service, BrokerImportValidationError
 from app.services.exchange.credentials_manager import exchange_credentials_manager
 from app.services.security.credential_store import CredentialStoreUnavailable, credential_store_status
 from app.core.availability import experimental_disabled_exception, experimental_disabled_response as build_experimental_disabled_response
@@ -187,6 +188,31 @@ def get_template_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=kuantra_trade_template.csv"}
     )
+
+
+@router.post("/broker/import-json")
+async def import_broker_json(
+    venue: str = Query(..., min_length=1, max_length=32),
+    file: UploadFile = File(...),
+):
+    """Import a bounded local broker export; no connector or order write occurs."""
+    if not file.filename or not file.filename.lower().endswith(".json"):
+        raise HTTPException(status_code=400, detail="Broker import accepts a UTF-8 .json export only.")
+    content = await file.read(10 * 1024 * 1024 + 1)
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Broker export exceeds the 10 MB safety limit.")
+    try:
+        return broker_import_service.import_json_document(
+            venue,
+            content,
+            source_name=file.filename,
+        )
+    except BrokerImportValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Broker export could not be imported safely.") from exc
 
 # --- EXCHANGE API CREDENTIALS & EXECUTION ROUTES ---
 
