@@ -27,6 +27,13 @@ from .binance_depth_payload import (
     normalize_snapshot,
     normalize_update,
 )
+from .market_event_envelope import (
+    GENESIS_HASH,
+    MarketEventChain,
+    MarketEventEnvelope,
+    MarketEventEnvelopeError,
+    MarketEventIdentityConflict,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -48,4 +55,9 @@ __all__ = [
     "NormalizedDepthUpdate",
     "normalize_snapshot",
     "normalize_update",
+    "GENESIS_HASH",
+    "MarketEventChain",
+    "MarketEventEnvelope",
+    "MarketEventEnvelopeError",
+    "MarketEventIdentityConflict",
 ]

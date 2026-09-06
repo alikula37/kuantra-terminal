@@ -46,6 +46,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP02 | [Binance Snapshot + Delta Sequence Validator](./work-packages/P2-WP02-binance-depth-sequence-validator.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP03 | [Binance Depth Snapshot/Event Recovery Coordinator](./work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP04 | [Binance Depth Payload Normalization ve Venue Projection](./work-packages/P2-WP04-binance-depth-payload-projection.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP05 | [Canonical Market Event Envelope ve Hash Chain](./work-packages/P2-WP05-market-event-envelope.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -201,3 +202,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   Mevcut local matching engine'e bağlanılmadı; duplicate/non-finite level,
   zero-quantity silme ve atomic rejection regression'ları eklendi. Focused suite
   `6 passed`.
+- P2-WP05 ile normalize snapshot/APPLIED update payload'ları için deterministic
+  source identity, payload SHA-256 ve prev/event hash chain envelope'ı eklendi.
+  Duplicate identity idempotent, farklı içerik conflict; gap/rejected/stale
+  kararları canonical applied chain'e giremiyor. Durable market storage ve real
+  feed hâlâ kapsam dışı. Focused suite `6 passed`.
