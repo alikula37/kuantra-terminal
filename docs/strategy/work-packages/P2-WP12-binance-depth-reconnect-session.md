@@ -9,7 +9,7 @@ baseline: a58bc81
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP11 Public Binance Depth Network Adapter
-implementation_commits: pending
+implementation_commits: 9bee5f4
 ```
 
 ## Problem
@@ -51,7 +51,7 @@ yaratır.
 - [x] Persistence/recovery/snapshot rejection retry edilmiyor.
 - [x] Stop event cycle öncesinde ve backoff sırasında kapanışı kesiyor.
 - [x] Focused suite: `5 passed`.
-- [ ] Full backend suite: implementation commit sonrası yeniden çalıştırılacak.
+- [x] Full backend suite: `469 passed, 1 skipped`.
 - [ ] Testnet soak, disconnect injection ve sequence continuity ölçümü.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
