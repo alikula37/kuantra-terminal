@@ -1,7 +1,8 @@
-"""
-Institutional FIX 4.4 / 5.0 SP2 Protocol Gateway for Kuantra Terminal.
-Implements complete tag-value parsing, 3-digit checksum calculation, sequence gap handling,
-and session state machine for Direct Market Access (CME / ICE / Broker DMA).
+"""Local FIX tag/value and state-machine prototype.
+
+This module can serialize and inspect FIX-shaped messages for tests and future adapter
+work. It is not a broker transport, certified FIX gateway, or venue session and must
+not be used as evidence of logon, acknowledgement, recovery, or execution.
 """
 
 import time
@@ -48,7 +49,7 @@ class FIXMessage:
 
     @classmethod
     def parse(cls, raw_msg: str, delimiter: str = "\x01") -> "FIXMessage":
-        """Parses raw tag-value FIX message and validates checksum."""
+        """Parse raw tag-value text for local inspection; transport validation is absent."""
         # Auto-detect delimiter if pipe | is used
         if "\x01" not in raw_msg and "|" in raw_msg:
             delimiter = "|"
@@ -75,7 +76,7 @@ class FIXMessage:
 
 
 class FIXSessionStateMachine:
-    """Institutional FIX 4.4 / 5.0 SP2 Session State Machine."""
+    """Local protocol state model; it does not connect to or authenticate a venue."""
 
     def __init__(self, sender_comp_id: str = "KUANTRA_DMA", target_comp_id: str = "CME_DMA_GATEWAY", begin_string: str = "FIX.4.4"):
         self.sender_comp_id = sender_comp_id

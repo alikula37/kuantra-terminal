@@ -122,7 +122,7 @@ class MultiAccountRiskAllocator:
                     price=price
                 )
                 exec_status = fix_res.get("status", "FAILED")
-                latency = fix_res.get("round_trip_latency_us", 350.0)
+                latency = fix_res.get("round_trip_latency_us")
             else:
                 # Route via Binance / OKX Order Router
                 sub_order = {

@@ -1,20 +1,18 @@
-"""
-Institutional CME / ICE QuickFIX DMA Protocol Engine for Kuantra Terminal.
-Implements FIX 4.4 & FIX 5.0 SP2 encoding, decoding, checksum validation, and microsecond latency tracking.
+"""FIX wire-format helper with no configured transport or venue authority.
+
+Encoding and decoding are local utilities. This module must not imply a certified FIX
+session, broker acknowledgement, fill, or latency measurement.
 """
 
 import time
 from datetime import datetime, timezone
-import logging
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional
 from app.services.execution.risk_interceptor import risk_interceptor
-
-logger = logging.getLogger("fix_bridge")
 
 SOH = chr(1) # Standard FIX Field Delimiter (\x01)
 
 class QuickFixDmaClient:
-    """Institutional Direct Market Access (DMA) client for CME Globex, ICE, and Eurex."""
+    """Local FIX encoder/decoder facade; it has no Direct Market Access transport."""
 
     def __init__(
         self,
@@ -27,8 +25,9 @@ class QuickFixDmaClient:
         self.begin_string = begin_string
         self.out_seq_num = 1
         self.in_seq_num = 1
-        self.is_logged_on = True
-        self.round_trip_latency_us = 420.0 # Microseconds
+        self.is_logged_on = False
+        self.round_trip_latency_us: Optional[float] = None
+        self.transport_connected = False
 
     @staticmethod
     def calculate_checksum(raw_payload: str) -> str:
@@ -91,66 +90,45 @@ class QuickFixDmaClient:
         price: float,
         cl_ord_id: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Validates via Pre-Trade Risk Interceptor and dispatches FIX 35=D NewOrderSingle."""
-        t_start = time.perf_counter()
+        """Fail closed: no order can be submitted until a real transport is implemented."""
         ord_id = cl_ord_id or f"FIX-{int(time.time() * 1000)}"
 
-        # 1. Pre-Trade Risk Guardrail Interception
-        order_payload = {
+        approved, reason, risk_metadata = risk_interceptor.evaluate_order({
             "symbol": symbol,
             "side": side,
             "qty": qty,
             "price": price,
-            "exchange": "CME_FIX_DMA"
-        }
-        is_approved, reason, risk_meta = risk_interceptor.evaluate_order(order_payload)
-
-        if not is_approved:
-            logger.warning(f"[FIX DMA] Order {ord_id} REJECTED by Risk Interceptor: {reason}")
+            "exchange": "CME_FIX_DMA",
+        })
+        if not approved:
             return {
                 "status": "REJECTED_RISK_GUARDRAIL",
                 "cl_ord_id": ord_id,
                 "reason": reason,
-                "risk_metadata": risk_meta,
-                "timestamp": time.time()
+                "risk_metadata": risk_metadata,
+                "execution_status": "NOT_SUBMITTED",
+                "transport_connected": False,
+                "round_trip_latency_us": None,
+                "provenance": "DETERMINISTIC_RISK_GATE",
+                "caveat": "The order was rejected before the unavailable FIX transport boundary.",
+                "timestamp": time.time(),
             }
 
-        # 2. Encode FIX 35=D
-        fix_side = "1" if side.upper() in ("BUY", "LONG") else "2"
-        fields = {
-            11: ord_id,
-            55: symbol.upper(),
-            54: fix_side,
-            38: qty,
-            44: price,
-            40: "2", # Limit
-            59: "0"  # Day
-        }
-        raw_fix = self.encode_fix_message(msg_type="D", fields=fields)
-
-        # 3. Paper mode simulated microsecond gateway match & Execution Report (35=8)
-        t_end = time.perf_counter()
-        self.round_trip_latency_us = round((t_end - t_start) * 1_000_000, 1)
-
-        exec_report = {
-            "status": "FILLED",
-            "protocol": self.begin_string,
-            "msg_type": "8 (ExecutionReport)",
+        return {
+            "status": "EXPERIMENTAL_DISABLED",
             "cl_ord_id": ord_id,
-            "exec_id": f"EXEC-{int(time.time() * 1000)}",
             "symbol": symbol.upper(),
             "side": side.upper(),
-            "last_qty": qty,
-            "last_px": price,
-            "round_trip_latency_us": max(120.0, self.round_trip_latency_us),
-            "raw_fix_wire": raw_fix.replace(SOH, "|"),
-            "risk_metadata": risk_meta,
-            "simulated": True,
+            "requested_qty": qty,
+            "requested_price": price,
+            "execution_status": "NOT_SUBMITTED",
+            "transport_connected": False,
+            "round_trip_latency_us": None,
+            "provenance": "FIX_SERIALIZATION_ONLY",
+            "caveat": "No certified FIX transport, session recovery, or broker connection is configured; no order was sent.",
+            "risk_metadata": risk_metadata,
             "timestamp": time.time()
         }
-
-        logger.info(f"[FIX DMA] Order {ord_id} FILLED at CME Globex in {exec_report['round_trip_latency_us']} µs")
-        return exec_report
 
     def send_cancel_replace(
         self,
@@ -159,38 +137,37 @@ class QuickFixDmaClient:
         new_price: float,
         symbol: str = "ESM6"
     ) -> Dict[str, Any]:
-        """Encodes and dispatches FIX 35=G Order Cancel/Replace Request."""
+        """Fail closed: a local encoder cannot cancel or replace a venue order."""
         new_cl_ord_id = f"FIX-REP-{int(time.time() * 1000)}"
-        fields = {
-            41: orig_cl_ord_id,
-            11: new_cl_ord_id,
-            55: symbol.upper(),
-            38: new_qty,
-            44: new_price
-        }
-        raw_fix = self.encode_fix_message(msg_type="G", fields=fields)
         return {
-            "status": "REPLACED",
+            "status": "EXPERIMENTAL_DISABLED",
             "orig_cl_ord_id": orig_cl_ord_id,
             "new_cl_ord_id": new_cl_ord_id,
             "new_qty": new_qty,
             "new_price": new_price,
-            "raw_fix_wire": raw_fix.replace(SOH, "|"),
+            "execution_status": "NOT_SUBMITTED",
+            "transport_connected": False,
+            "provenance": "FIX_SERIALIZATION_ONLY",
+            "caveat": "No certified FIX transport is configured; no cancel/replace request was sent.",
             "timestamp": time.time()
         }
 
     def get_session_status(self) -> Dict[str, Any]:
-        """Returns institutional FIX gateway health metrics."""
+        """Return the availability of this local wire-format helper truthfully."""
         return {
+            "status": "EXPERIMENTAL_DISABLED",
+            "provenance": "FIX_SERIALIZATION_ONLY",
+            "caveat": "FIX encoding/decoding is available locally, but no broker transport or logged-on venue session exists.",
             "begin_string": self.begin_string,
             "sender_comp_id": self.sender_comp_id,
             "target_comp_id": self.target_comp_id,
             "is_logged_on": self.is_logged_on,
+            "transport_connected": self.transport_connected,
             "outbound_seq_num": self.out_seq_num,
             "inbound_seq_num": self.in_seq_num,
             "round_trip_latency_us": self.round_trip_latency_us,
-            "heartbeat_interval_sec": 30,
-            "supported_venues": ["CME_GLOBEX", "ICE_FUTURES", "EUREX_DMA"]
+            "heartbeat_interval_sec": None,
+            "supported_venues": []
         }
 
 quickfix_dma_client = QuickFixDmaClient()

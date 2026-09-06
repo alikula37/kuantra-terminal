@@ -1,11 +1,9 @@
-"""
-High-Performance L2/L3 Native Limit Order Book Engine for Kuantra Terminal.
-Implements Market-by-Order (L3 MBO) and Market-by-Price (L2 MBP) structures with sub-10 microsecond matching,
-price-time priority, O(1) order lookups, and micro-price / depth imbalance metrics.
+"""In-memory L2/L3 limit-order-book model used for explicit local/test inputs.
+
+It is not connected to a venue and does not provide a market-data or latency SLA.
 """
 
 import time
-import math
 import uuid
 import logging
 from dataclasses import dataclass, field
@@ -42,7 +40,7 @@ class PriceLevel:
         return None
 
 class LimitOrderBook:
-    """Institutional High-Frequency L2/L3 Limit Order Book."""
+    """Price-time-priority in-memory book; callers must supply every order explicitly."""
 
     def __init__(self, symbol: str = "BTCUSDT", tick_size: float = 0.10):
         self.symbol = symbol
@@ -250,7 +248,7 @@ class LimitOrderBook:
         return False
 
     def simulate_sweep(self, side: str, size: float) -> Dict[str, Any]:
-        """Calculates exact VWAP, price impact, and slippage for a simulated market sweep."""
+        """Calculate a hypothetical sweep against this explicitly populated in-memory book."""
         side = side.upper()
         remaining = size
         total_cost = 0.0
@@ -269,13 +267,33 @@ class LimitOrderBook:
             depth_levels.append({"price": p, "filled_volume": fill_vol})
 
         filled_size = size - remaining
-        vwap = round(total_cost / max(0.00001, filled_size), 2) if filled_size > 0 else 0.0
+        if filled_size <= 0:
+            return {
+                "symbol": self.symbol,
+                "status": "NO_DATA",
+                "provenance": "IN_MEMORY_EXPLICIT_ORDERS",
+                "caveat": "This in-memory book contains no executable liquidity; no venue fill was attempted.",
+                "sweep_side": side,
+                "requested_size": size,
+                "filled_size": 0.0,
+                "unfilled_size": remaining,
+                "execution_vwap": None,
+                "reference_bbo": None,
+                "slippage_bps": None,
+                "price_impact_usd": None,
+                "depth_levels_swept": 0,
+            }
+
+        vwap = round(total_cost / filled_size, 2)
         best_bid, best_ask = self.get_bbo()
         reference_price = best_ask if side == "BUY" else best_bid
         slippage_bps = round((abs(vwap - (reference_price or vwap)) / max(0.0001, reference_price or 1.0)) * 10000.0, 2)
 
         return {
             "symbol": self.symbol,
+            "status": "IN_MEMORY_NON_VENUE",
+            "provenance": "IN_MEMORY_EXPLICIT_ORDERS",
+            "caveat": "This is a local in-memory calculation, not a venue execution or market-data record.",
             "sweep_side": side,
             "requested_size": size,
             "filled_size": filled_size,
@@ -288,15 +306,15 @@ class LimitOrderBook:
         }
 
     def get_l2_snapshot(self, depth: int = 20) -> Dict[str, Any]:
-        """Generates comprehensive L2 Market-by-Price snapshot with Micro-Price & Imbalance."""
+        """Return an explicit local-book snapshot without inventing market levels."""
         sorted_bids = sorted(self.bids.keys(), reverse=True)[:depth]
         sorted_asks = sorted(self.asks.keys())[:depth]
 
         bid_levels = [{"price": p, "volume": round(self.bids[p].total_volume, 4), "orders_count": len(self.bids[p].orders)} for p in sorted_bids]
         ask_levels = [{"price": p, "volume": round(self.asks[p].total_volume, 4), "orders_count": len(self.asks[p].orders)} for p in sorted_asks]
 
-        best_bid = sorted_bids[0] if sorted_bids else 0.0
-        best_ask = sorted_asks[0] if sorted_asks else 0.0
+        best_bid = sorted_bids[0] if sorted_bids else None
+        best_ask = sorted_asks[0] if sorted_asks else None
         spread_abs = round(best_ask - best_bid, 2) if best_ask and best_bid else 0.0
         mid_price = round((best_bid + best_ask) / 2.0, 2) if best_bid and best_ask else (best_bid or best_ask)
 
@@ -310,10 +328,23 @@ class LimitOrderBook:
             micro_price = mid_price
 
         # Book Imbalance Ratio: (BidVol - AskVol) / (BidVol + AskVol) in [-1.0, +1.0]
-        imbalance = round((total_bid_vol - total_ask_vol) / max(0.0001, total_bid_vol + total_ask_vol), 4)
+        imbalance = (
+            round((total_bid_vol - total_ask_vol) / (total_bid_vol + total_ask_vol), 4)
+            if (total_bid_vol + total_ask_vol) > 0
+            else None
+        )
+
+        has_levels = bool(bid_levels or ask_levels)
 
         return {
             "symbol": self.symbol,
+            "status": "IN_MEMORY_NON_VENUE" if has_levels else "NO_DATA",
+            "provenance": "IN_MEMORY_EXPLICIT_ORDERS",
+            "caveat": (
+                "This snapshot is derived from explicitly supplied local orders, not a venue feed."
+                if has_levels
+                else "No local orders have been supplied; no L2 market-data feed is connected."
+            ),
             "best_bid": best_bid,
             "best_ask": best_ask,
             "spread_absolute": spread_abs,
@@ -328,15 +359,5 @@ class LimitOrderBook:
             "timestamp": time.time()
         }
 
-# Global matching order book preloaded with deep liquidity
+# Global book intentionally starts empty. It is not a venue-connected L2 source.
 global_order_book = LimitOrderBook(symbol="BTCUSDT")
-
-# Seed initial institutional resting liquidity
-def _seed_initial_book(ob: LimitOrderBook, base_price: float = 65000.0):
-    for i in range(1, 21):
-        bid_p = round(base_price - (i * 0.50), 2)
-        ask_p = round(base_price + (i * 0.50), 2)
-        ob.add_order(f"REST-BID-{i:03d}", "BUY", bid_p, round(1.5 + (i * 0.35), 2), "LIMIT")
-        ob.add_order(f"REST-ASK-{i:03d}", "SELL", ask_p, round(1.5 + (i * 0.35), 2), "LIMIT")
-
-_seed_initial_book(global_order_book)

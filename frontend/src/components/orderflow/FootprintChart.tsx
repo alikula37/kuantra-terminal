@@ -20,29 +20,43 @@ interface FootprintBar {
 export const FootprintChart: React.FC = () => {
   const [symbol, setSymbol] = useState<string>("BTCUSDT");
   const [bars, setBars] = useState<FootprintBar[]>([]);
-  const [cvdDivergence, setCvdDivergence] = useState<string | null>("BULLISH_ABSORPTION");
+  const [cvdDivergence, setCvdDivergence] = useState<string | null>(null);
+  const [dataStatus, setDataStatus] = useState<string>("NO_DATA");
+  const [dataCaveat, setDataCaveat] = useState<string>(
+    "No recorded trade-tick or order-book feed is connected."
+  );
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const fetchFootprintData = () => {
+  const fetchFootprintData = async () => {
     setIsLoading(true);
-    apiFetch(`${apiBase()}/api/v1/orderflow/footprint?symbol=${symbol}&limit=6`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.bars) setBars(data.bars);
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-
-    apiFetch(`${apiBase()}/api/v1/orderflow/cvd?symbol=${symbol}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.divergence?.has_divergence) {
-          setCvdDivergence(data.divergence.detail);
-        } else {
-          setCvdDivergence(null);
-        }
-      })
-      .catch(() => {});
+    setError(null);
+    try {
+      const [footprintRes, cvdRes] = await Promise.all([
+        apiFetch(`${apiBase()}/api/v1/orderflow/footprint?symbol=${encodeURIComponent(symbol)}&limit=6`),
+        apiFetch(`${apiBase()}/api/v1/orderflow/cvd?symbol=${encodeURIComponent(symbol)}`),
+      ]);
+      if (!footprintRes.ok || !cvdRes.ok) {
+        throw new Error(`Order-flow backend unavailable (${footprintRes.status}/${cvdRes.status}).`);
+      }
+      const [footprint, cvd] = await Promise.all([footprintRes.json(), cvdRes.json()]);
+      setBars(Array.isArray(footprint.bars) ? footprint.bars : []);
+      setDataStatus(footprint.status || cvd.status || "NO_DATA");
+      setDataCaveat(footprint.caveat || cvd.caveat || "No verified order-flow provenance is available.");
+      setCvdDivergence(
+        cvd.status !== "NO_DATA" && cvd.divergence?.has_divergence
+          ? cvd.divergence.detail || null
+          : null
+      );
+    } catch (requestError) {
+      setBars([]);
+      setCvdDivergence(null);
+      setDataStatus("UNAVAILABLE");
+      setDataCaveat("The order-flow service could not be reached; no chart values are shown.");
+      setError(requestError instanceof Error ? requestError.message : "Order-flow unavailable.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -88,6 +102,11 @@ export const FootprintChart: React.FC = () => {
         </div>
       </div>
 
+      <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-xs text-amber-200">
+        <span className="font-bold">{dataStatus === "NO_DATA" ? "NO RECORDED ORDER-FLOW DATA" : dataStatus}</span>
+        <span className="ml-2 text-slate-300">{error || dataCaveat}</span>
+      </div>
+
       {/* CVD Divergence Alert Banner */}
       {cvdDivergence && (
         <div className="bg-accent/10 border border-accent/30 p-3 rounded-lg flex items-center justify-between text-xs">
@@ -104,7 +123,11 @@ export const FootprintChart: React.FC = () => {
 
       {/* Footprint Bars Canvas Container */}
       <div className="flex-1 bg-[#0d121c] border border-surface-border rounded-lg p-4 overflow-x-auto overflow-y-auto flex space-x-4">
-        {bars.map((bar, idx) => {
+        {bars.length === 0 ? (
+          <div className="flex w-full items-center justify-center text-xs text-slate-500">
+            No footprint bars are rendered until explicit trade ticks are ingested.
+          </div>
+        ) : bars.map((bar, idx) => {
           const isUp = bar.close >= bar.open;
           const sortedPrices = Object.keys(bar.profile)
             .map((p) => parseFloat(p))

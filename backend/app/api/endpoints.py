@@ -1,6 +1,7 @@
 from app.api.webhook_tv import webhook_router
 from app.api.plugin_endpoints import router as plugin_router
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query, UploadFile, File, Response
+from fastapi.responses import JSONResponse
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 import json
@@ -22,6 +23,11 @@ from app.quant.quant_engine import quant_engine
 router = APIRouter(prefix="/api/v1")
 router.include_router(webhook_router)
 router.include_router(plugin_router)
+
+
+def experimental_disabled_response(payload: Dict[str, Any]) -> JSONResponse:
+    """Expose disabled execution surfaces as a structured, non-success HTTP response."""
+    return JSONResponse(status_code=503, content=payload)
 
 class TradeCreateSchema(BaseModel):
     symbol: str = "BTCUSDT"
@@ -784,10 +790,7 @@ from app.services.orderflow.footprint_engine import footprint_engine
 
 @router.get("/orderflow/footprint")
 def get_orderflow_footprint_bars(symbol: str = "BTCUSDT", limit: int = 20):
-    return {
-        "symbol": symbol.upper(),
-        "bars": footprint_engine.get_footprint_candles(symbol=symbol, limit=limit)
-    }
+    return footprint_engine.get_footprint_response(symbol=symbol, limit=limit)
 
 from app.services.orderflow.delta_heatmap import delta_heatmap_engine
 
@@ -813,12 +816,13 @@ def get_quickfix_session_status():
 
 @router.post("/fix/order")
 def execute_quickfix_dma_order(payload: FixOrderSchema):
-    return quickfix_dma_client.send_new_order_single(
+    result = quickfix_dma_client.send_new_order_single(
         symbol=payload.symbol,
         side=payload.side,
         qty=payload.qty,
         price=payload.price
     )
+    return experimental_disabled_response(result) if result["status"] == "EXPERIMENTAL_DISABLED" else result
 
 from app.services.p2p.mesh_node import p2p_mesh_node
 
@@ -1182,7 +1186,11 @@ class SimulateSweepPayload(BaseModel):
 @router.get("/fix/sessions")
 def get_fix_sessions():
     return {
-        "status": fix_session.state,
+        "status": "EXPERIMENTAL_DISABLED",
+        "provenance": "FIX_SERIALIZATION_ONLY",
+        "caveat": "The local FIX state machine is not connected to a broker transport; it cannot represent a logged-on venue session.",
+        "transport_connected": False,
+        "session_state": "DISCONNECTED",
         "sender_comp_id": fix_session.sender_comp_id,
         "target_comp_id": fix_session.target_comp_id,
         "begin_string": fix_session.begin_string,
@@ -1194,19 +1202,18 @@ def get_fix_sessions():
 
 @router.post("/fix/session/logon")
 def logon_fix_session():
-    raw_logon = fix_session.create_logon()
-    # Confirm logon
-    fix_session.process_incoming("8=FIX.4.4|9=45|35=A|49=CME_DMA_GATEWAY|56=KUANTRA_DMA|34=1|52=20260215-12:00:00.000|10=084|")
-    return {
-        "status": "LOGON_COMPLETED",
-        "session_state": fix_session.state,
-        "raw_message": raw_logon
-    }
+    return experimental_disabled_response({
+        "status": "EXPERIMENTAL_DISABLED",
+        "provenance": "FIX_SERIALIZATION_ONLY",
+        "caveat": "A FIX logon cannot be sent or acknowledged without a configured transport; no session state was changed.",
+        "session_state": "DISCONNECTED",
+        "raw_message": None,
+    })
 
 @router.post("/fix/order/submit")
 def submit_fix_order(payload: FIXOrderSubmitPayload):
     try:
-        return dma_router.submit_order(
+        result = dma_router.submit_order(
             symbol=payload.symbol or "BTCUSDT",
             side=payload.side,
             price=payload.price,
@@ -1215,17 +1222,19 @@ def submit_fix_order(payload: FIXOrderSubmitPayload):
             tif=payload.tif or "0",
             destination=payload.destination or "INTERNAL_MATCHING_ENGINE"
         )
+        return experimental_disabled_response(result) if result["status"] == "EXPERIMENTAL_DISABLED" else result
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Order submission error: {str(e)}")
 
 @router.post("/fix/order/cancel")
 def cancel_fix_order(payload: FIXOrderCancelPayload):
     try:
-        return dma_router.cancel_order(
+        result = dma_router.cancel_order(
             cl_ord_id=payload.cl_ord_id,
             symbol=payload.symbol or "BTCUSDT",
             side=payload.side or "BUY"
         )
+        return experimental_disabled_response(result) if result["status"] == "EXPERIMENTAL_DISABLED" else result
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Order cancellation error: {str(e)}")
 
@@ -1235,10 +1244,20 @@ def get_orderbook_l2_snapshot(depth: Optional[int] = 20):
 
 @router.post("/orderbook/simulate-fill")
 def simulate_orderbook_fill(payload: SimulateSweepPayload):
-    try:
-        return global_order_book.simulate_sweep(side=payload.side, size=payload.size)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Order book sweep error: {str(e)}")
+    return experimental_disabled_response({
+        "status": "EXPERIMENTAL_DISABLED",
+        "provenance": "IN_MEMORY_EXPLICIT_ORDERS",
+        "caveat": "The global L2 book is not a venue feed or execution simulator; no sweep was attempted.",
+        "sweep_side": payload.side.upper(),
+        "requested_size": payload.size,
+        "filled_size": 0.0,
+        "unfilled_size": payload.size,
+        "execution_vwap": None,
+        "reference_bbo": None,
+        "slippage_bps": None,
+        "price_impact_usd": None,
+        "depth_levels_swept": 0,
+    })
 
 from app.services.biometrics.hardware_driver import hardware_biometrics_driver
 from app.services.biometrics.stress_interceptor import stress_interceptor

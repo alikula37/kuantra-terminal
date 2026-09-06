@@ -6,7 +6,9 @@ router = APIRouter()
 @router.get("/status")
 def get_orderflow_status():
     return {
-        "status": "ONLINE",
+        "status": "NO_DATA",
+        "provenance": "RUNTIME_INGEST_ONLY",
+        "caveat": "No recorded trade-tick or order-book feed is connected; the plugin will only expose explicitly ingested in-memory observations.",
         "service": "Order Flow Footprint & CVD Engine",
         "imbalance_ratio_threshold": 3.0
     }

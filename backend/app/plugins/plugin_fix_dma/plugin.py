@@ -8,9 +8,12 @@ router = APIRouter()
 @router.get("/status")
 def get_fix_dma_status():
     return {
-        "status": "ONLINE",
-        "service": "Institutional FIX 5.0 & Limit Order Book",
-        "session_state": fix_session.state.value
+        "status": "EXPERIMENTAL_DISABLED",
+        "provenance": "FIX_SERIALIZATION_ONLY",
+        "caveat": "No certified FIX transport, recovery store, or broker connection is configured.",
+        "service": "FIX serialization and local order-book utilities",
+        "session_state": "DISCONNECTED",
+        "transport_connected": False,
     }
 
 class Plugin(BasePlugin):

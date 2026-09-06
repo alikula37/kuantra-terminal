@@ -4,7 +4,6 @@ Tracks continuous delta accumulation, institutional absorption divergences, and 
 """
 
 import time
-import math
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -63,9 +62,9 @@ class DeltaHeatmapEngine:
         if len(points) < 10:
             return {
                 "has_divergence": False,
-                "type": "NONE",
-                "confidence": 0.0,
-                "detail": "Insufficient tick history for divergence calculation."
+                "type": "UNAVAILABLE",
+                "confidence": None,
+                "detail": "At least ten explicitly ingested ticks are required for divergence analysis.",
             }
 
         p1, p2 = points[-10], points[-1]
@@ -119,84 +118,55 @@ class DeltaHeatmapEngine:
             self.depth_snapshots[sym] = self.depth_snapshots[sym][-self.depth_history_limit:]
 
     def get_cvd_series(self, symbol: str, limit: int = 100) -> Dict[str, Any]:
-        """Returns CVD time series and active divergence status."""
+        """Return only explicitly ingested CVD observations, never seed data."""
         sym = symbol.upper()
         if sym not in self.cvd_series or len(self.cvd_series[sym]) == 0:
-            return self._generate_seed_cvd(sym, limit=limit)
+            return {
+                "symbol": sym,
+                "status": "NO_DATA",
+                "provenance": "RUNTIME_INGEST_ONLY",
+                "caveat": "No recorded trade-tick feed is connected; CVD and divergence are unavailable.",
+                "current_cvd": None,
+                "series": [],
+                "divergence": {
+                    "has_divergence": False,
+                    "type": "UNAVAILABLE",
+                    "confidence": None,
+                    "detail": "No CVD observations are available.",
+                },
+            }
 
         divergence = self.detect_delta_divergence(sym)
         return {
             "symbol": sym,
+            "status": "IN_MEMORY_UNVERIFIED",
+            "provenance": "RUNTIME_INGEST_ONLY",
+            "caveat": "CVD is derived from the current in-memory tick buffer and is not a canonical market-data record.",
             "current_cvd": self.cvd_state.get(sym, 0.0),
-            "series": self.cvd_series[sym][-limit:],
+            "series": self.cvd_series[sym][-max(0, limit):],
             "divergence": divergence
         }
 
     def get_liquidity_heatmap(self, symbol: str) -> Dict[str, Any]:
-        """Returns 2D price-level liquidity density matrix."""
+        """Return only explicitly ingested depth snapshots, never seed liquidity."""
         sym = symbol.upper()
         if sym not in self.depth_snapshots or len(self.depth_snapshots[sym]) == 0:
-            return self._generate_seed_heatmap(sym)
+            return {
+                "symbol": sym,
+                "status": "NO_DATA",
+                "provenance": "RUNTIME_INGEST_ONLY",
+                "caveat": "No recorded order-book feed is connected; liquidity history is unavailable.",
+                "snapshots_count": 0,
+                "history": [],
+            }
 
         return {
             "symbol": sym,
+            "status": "IN_MEMORY_UNVERIFIED",
+            "provenance": "RUNTIME_INGEST_ONLY",
+            "caveat": "Snapshots are held only in the current process and are not a canonical market-data record.",
             "snapshots_count": len(self.depth_snapshots[sym]),
             "history": self.depth_snapshots[sym]
-        }
-
-    def _generate_seed_cvd(self, symbol: str, limit: int = 50) -> Dict[str, Any]:
-        """Provides realistic institutional CVD trajectory."""
-        base_p = 64800.0 if "BTC" in symbol else 2420.0
-        t_now = time.time()
-        series = []
-        running_cvd = 0.0
-
-        for i in range(limit):
-            t_pt = t_now - ((limit - i) * 60)
-            delta = math.sin(i * 0.2) * 12.0 + (5.0 if i % 2 == 0 else -3.0)
-            running_cvd += delta
-            p = base_p + (i * 8.0) + (math.cos(i * 0.3) * 15.0)
-
-            series.append({
-                "timestamp": t_pt,
-                "price": round(p, 2),
-                "delta": round(delta, 2),
-                "cvd": round(running_cvd, 2)
-            })
-
-        return {
-            "symbol": symbol,
-            "current_cvd": round(running_cvd, 2),
-            "series": series,
-            "divergence": {
-                "has_divergence": True,
-                "type": "BULLISH_ABSORPTION",
-                "confidence": 0.84,
-                "detail": "Aggressive seller absorption detected across support liquidity pocket."
-            }
-        }
-
-    def _generate_seed_heatmap(self, symbol: str) -> Dict[str, Any]:
-        """Generates institutional LOB depth layers."""
-        base_p = 64800.0 if "BTC" in symbol else 2420.0
-        snapshots = []
-        t_now = time.time()
-
-        for s in range(20):
-            t_pt = t_now - ((20 - s) * 30)
-            bids = [[round(base_p - (i * 10), 2), round(5.0 + (i * 3.5), 2)] for i in range(1, 12)]
-            asks = [[round(base_p + (i * 10), 2), round(4.0 + (i * 2.8), 2)] for i in range(1, 12)]
-
-            snapshots.append({
-                "timestamp": t_pt,
-                "bids": bids,
-                "asks": asks
-            })
-
-        return {
-            "symbol": symbol,
-            "snapshots_count": len(snapshots),
-            "history": snapshots
         }
 
 delta_heatmap_engine = DeltaHeatmapEngine()

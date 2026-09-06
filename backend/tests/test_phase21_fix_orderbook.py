@@ -120,10 +120,9 @@ class TestPhase21FIXAndOrderBook:
         assert exec_res["ord_status"] == "2" # Filled
         assert exec_res["cum_qty"] == 2.5
 
-    def test_dma_router_and_api_endpoints(self):
+    def test_dma_router_fails_closed_without_transport(self):
         router = DirectMarketAccessRouter()
 
-        # Submit Order
         sub = router.submit_order(
             symbol="BTCUSDT",
             side="BUY",
@@ -132,11 +131,16 @@ class TestPhase21FIXAndOrderBook:
             order_type="LIMIT",
             destination="INTERNAL_MATCHING_ENGINE"
         )
+        assert sub["status"] == "EXPERIMENTAL_DISABLED"
         assert "CLORD-" in sub["cl_ord_id"]
         assert sub["destination"] == "INTERNAL_MATCHING_ENGINE"
-        assert sub["matching_status"] in ("NEW", "FILLED", "PARTIALLY_FILLED")
+        assert sub["matching_status"] == "NOT_ATTEMPTED"
+        assert sub["filled_size"] == 0.0
+        assert sub["fills"] == []
 
         # Cancel Order
         cancel = router.cancel_order(cl_ord_id=sub["cl_ord_id"], symbol="BTCUSDT", side="BUY")
+        assert cancel["status"] == "EXPERIMENTAL_DISABLED"
         assert cancel["orig_cl_ord_id"] == sub["cl_ord_id"]
         assert "CANC-" in cancel["cancel_cl_ord_id"]
+        assert cancel["book_cancel_status"] == "NOT_ATTEMPTED"

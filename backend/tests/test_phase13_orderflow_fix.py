@@ -74,19 +74,24 @@ class TestPhase13OrderflowAndFixDma:
         assert decoded[55] == "ESM6"
         assert decoded[38] == "5"
 
-    def test_quickfix_dma_order_execution_and_risk_veto(self):
-        # 1. Normal execution when calm
-        biometric_watch_bridge.update_telemetry(bpm=58.0, hrv=85.0)
-        res = quickfix_dma_client.send_new_order_single(symbol="ESM6", side="BUY", qty=1.0, price=5600.0)
-        assert res["status"] == "FILLED"
-        assert "round_trip_latency_us" in res
-        assert res["round_trip_latency_us"] > 0
+    def test_quickfix_dma_order_is_disabled_without_transport(self):
+        client = QuickFixDmaClient(sender_comp_id="TEST_SENDER", target_comp_id="CME_TEST")
 
-        # 2. Risk Interceptor rejection on Acute Biometric Panic
-        biometric_watch_bridge.update_telemetry(bpm=140.0, hrv=15.0) # Acute panic
-        blocked = quickfix_dma_client.send_new_order_single(symbol="ESM6", side="BUY", qty=1.0, price=5600.0)
+        res = client.send_new_order_single(symbol="ESM6", side="BUY", qty=1.0, price=5600.0)
+        assert res["status"] == "EXPERIMENTAL_DISABLED"
+        assert res["execution_status"] == "NOT_SUBMITTED"
+        assert res["transport_connected"] is False
+        assert res["round_trip_latency_us"] is None
+        assert "FILLED" not in res.values()
+        assert "raw_fix_wire" not in res
+
+        session = client.get_session_status()
+        assert session["status"] == "EXPERIMENTAL_DISABLED"
+        assert session["is_logged_on"] is False
+        assert session["round_trip_latency_us"] is None
+
+        biometric_watch_bridge.update_telemetry(bpm=140.0, hrv=15.0)
+        blocked = client.send_new_order_single(symbol="ESM6", side="BUY", qty=1.0, price=5600.0)
         assert blocked["status"] == "REJECTED_RISK_GUARDRAIL"
         assert "ORDER_BLOCKED_BIOMETRIC_STRESS" in blocked["reason"]
-
-        # Reset biometrics
         biometric_watch_bridge.update_telemetry(bpm=58.0, hrv=85.0)

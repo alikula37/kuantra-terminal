@@ -194,56 +194,64 @@ class KuantraLiveUATRunner:
         )
 
     # =========================================================================
-    # SCENARIO 4: Sub-10µs Limit Order Book & FIX 5.0 DOM Ladder Audit
+    # SCENARIO 4: Order-flow/L2/FIX Truth Boundary Audit
     # =========================================================================
     def run_scenario_4_orderbook_and_fix(self):
         t0 = time.perf_counter()
 
-        # 1. Order Book Snapshot & Telemetry
+        # 1. Fresh runtime must not invent market depth.
         res_snap = self.client.get("/api/v1/orderbook/l2-snapshot?depth=10")
         assert res_snap.status_code == 200
         snap = res_snap.json()
+        assert snap["status"] == "NO_DATA"
+        assert snap["bids"] == []
+        assert snap["asks"] == []
+        assert snap["best_bid"] is None
+        assert snap["best_ask"] is None
 
-        # 2. Aggressive Market Sweep Simulation
-        sweep_t0 = time.perf_counter()
+        # 2. Sweep endpoint must refuse to imply a venue fill.
         res_sweep = self.client.post("/api/v1/orderbook/simulate-fill", json={"side": "BUY", "size": 5.0})
-        sweep_latency_us = (time.perf_counter() - sweep_t0) * 1000000.0 # Microseconds
-        assert res_sweep.status_code == 200
+        assert res_sweep.status_code == 503
         sweep_data = res_sweep.json()
+        assert sweep_data["status"] == "EXPERIMENTAL_DISABLED"
+        assert sweep_data["execution_vwap"] is None
+        assert sweep_data["filled_size"] == 0.0
 
-        # 3. FIX Session Logon Handshake
+        # 3. Local FIX wire helper cannot claim a broker logon.
         res_logon = self.client.post("/api/v1/fix/session/logon")
-        assert res_logon.status_code == 200
+        assert res_logon.status_code == 503
         logon_data = res_logon.json()
-        assert logon_data["session_state"] == "ACTIVE"
+        assert logon_data["status"] == "EXPERIMENTAL_DISABLED"
+        assert logon_data["session_state"] == "DISCONNECTED"
 
-        # 4. FIX Order Submission
+        # 4. Order submission must fail closed without a certified transport.
         res_order = self.client.post("/api/v1/fix/order/submit", json={
             "symbol": "BTCUSDT",
             "side": "BUY",
-            "price": snap["best_bid"] - 1.0,
+            "price": 65000.0,
             "qty": 1.5,
             "order_type": "LIMIT",
             "destination": "INTERNAL_MATCHING_ENGINE"
         })
-        assert res_order.status_code == 200
+        assert res_order.status_code == 503
         order_data = res_order.json()
+        assert order_data["status"] == "EXPERIMENTAL_DISABLED"
+        assert order_data["execution_status"] == "NOT_SUBMITTED"
+        assert order_data["filled_size"] == 0.0
 
         duration_ms = (time.perf_counter() - t0) * 1000.0
         self.log_scenario(
             scenario_num=4,
-            name="Sub-10us Limit Order Book & FIX 5.0 DOM Ladder Audit",
+            name="Order-flow/L2/FIX Truth Boundary Audit",
             status="PASSED",
             duration_ms=duration_ms,
             metrics={
-                "bbo_spread": f"${snap['spread_absolute']} ({snap['spread_bps']} bps)",
-                "micro_price": f"${snap['micro_price']}",
-                "book_imbalance_ratio": snap["book_imbalance_ratio"],
-                "market_sweep_vwap": f"${sweep_data['execution_vwap']}",
-                "slippage_bps": f"{sweep_data['slippage_bps']} bps",
-                "matching_duration": f"{sweep_latency_us:.1f} us (SLA < 1000 us)",
+                "l2_status": snap["status"],
+                "sweep_status": sweep_data["status"],
+                "sweep_fill": sweep_data["filled_size"],
                 "fix_session_state": logon_data["session_state"],
-                "fix_clord_id": order_data["cl_ord_id"]
+                "fix_order_status": order_data["execution_status"],
+                "provenance": order_data["provenance"],
             }
         )
 

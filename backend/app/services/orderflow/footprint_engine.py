@@ -4,7 +4,6 @@ Constructs Bid/Ask volume profile clusters per candlestick with Diagonal & Stack
 """
 
 import time
-import math
 import logging
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -160,73 +159,35 @@ class FootprintEngine:
         return False
 
     def get_footprint_candles(self, symbol: str, limit: int = 50) -> List[Dict[str, Any]]:
-        """Returns historical and live footprint bars with computed volume clusters."""
+        """Return only explicitly ingested footprint bars, never generated market data."""
         sym = symbol.upper()
         if sym not in self.bars or len(self.bars[sym]) == 0:
-            return self._generate_seed_footprints(sym, limit=min(10, limit))
+            return []
 
         # Finalize current active bar for inspection
         if len(self.bars[sym]) > 0:
             self._finalize_bar(self.bars[sym][-1])
 
-        return self.bars[sym][-limit:]
+        return self.bars[sym][-max(0, limit):]
 
-    def _generate_seed_footprints(self, symbol: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Provides realistic institutional footprint bars with imbalances."""
-        seed_bars = []
-        base_price = 64800.0 if "BTC" in symbol else (2420.0 if "XAU" in symbol else 100.0)
-        curr_t = time.time() - (limit * 60)
-
-        for bar_idx in range(limit):
-            b_open = base_price + (bar_idx * 15.0)
-            b_close = b_open + (10.0 if bar_idx % 2 == 0 else -10.0)
-            b_high = max(b_open, b_close) + 30.0
-            b_low = min(b_open, b_close) - 20.0
-
-            profile = {}
-            p_step = self.tick_size
-            curr_p = b_low
-            total_vol, bid_vol, ask_vol = 0.0, 0.0, 0.0
-
-            while curr_p <= b_high:
-                p_bucket = self.bucket_price(curr_p)
-                # Create deliberate buy imbalance at top or sell imbalance at bottom
-                is_stacked_zone = (bar_idx % 3 == 0) and (curr_p >= b_open)
-                b_val = 5.0 if is_stacked_zone else 25.0 + (bar_idx % 5) * 4
-                a_val = (b_val * 3.5) if is_stacked_zone else (15.0 + (bar_idx % 3) * 6)
-
-                profile[p_bucket] = {
-                    "bid_vol": round(b_val, 1),
-                    "ask_vol": round(a_val, 1),
-                    "total_vol": round(b_val + a_val, 1)
-                }
-                total_vol += (b_val + a_val)
-                bid_vol += b_val
-                ask_vol += a_val
-                curr_p += p_step
-
-            bar = {
-                "symbol": symbol,
-                "start_time": curr_t + (bar_idx * 60),
-                "open": b_open,
-                "high": b_high,
-                "low": b_low,
-                "close": b_close,
-                "total_volume": round(total_vol, 1),
-                "bid_volume": round(bid_vol, 1),
-                "ask_volume": round(ask_vol, 1),
-                "delta": round(ask_vol - bid_vol, 1),
-                "poc_price": b_open + 10.0,
-                "poc_volume": round(max(p["total_vol"] for p in profile.values()), 1),
-                "buy_imbalances": [self.bucket_price(p) for p in profile.keys() if profile[p]["ask_vol"] > profile[p]["bid_vol"] * 2.5],
-                "sell_imbalances": [],
-                "stacked_buy_imbalances": (bar_idx % 3 == 0),
-                "stacked_sell_imbalances": False,
-                "profile": profile
+    def get_footprint_response(self, symbol: str, limit: int = 50) -> Dict[str, Any]:
+        """Expose the truth-state contract used by API consumers."""
+        sym = symbol.upper()
+        bars = self.get_footprint_candles(sym, limit)
+        if not bars:
+            return {
+                "symbol": sym,
+                "status": "NO_DATA",
+                "provenance": "RUNTIME_INGEST_ONLY",
+                "caveat": "No recorded trade-tick feed is connected; footprint bars are unavailable.",
+                "bars": [],
             }
-            seed_bars.append(bar)
-            base_price = b_close
-
-        return seed_bars
+        return {
+            "symbol": sym,
+            "status": "IN_MEMORY_UNVERIFIED",
+            "provenance": "RUNTIME_INGEST_ONLY",
+            "caveat": "Bars are derived from the current in-memory tick buffer and are not a canonical market-data record.",
+            "bars": bars,
+        }
 
 footprint_engine = FootprintEngine()

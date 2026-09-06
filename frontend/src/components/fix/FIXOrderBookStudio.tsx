@@ -12,7 +12,7 @@ export const FIXOrderBookStudio: React.FC = () => {
   const [destination, setDestination] = useState<string>("INTERNAL_MATCHING_ENGINE");
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [sweepResult, setSweepResult] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const executionUnavailable = true;
 
   const fetchOrderBook = async () => {
     try {
@@ -45,66 +45,27 @@ export const FIXOrderBookStudio: React.FC = () => {
   }, []);
 
   const handleLogon = async () => {
-    setIsLoading(true);
-    try {
-      const res = await apiFetch(apiUrl("/api/v1/fix/session/logon"), { method: "POST" });
-      const data = await res.json();
-      setActionMsg(`FIX Session Logged On successfully! State: ${data.session_state}`);
-      fetchFixSession();
-      setTimeout(() => setActionMsg(null), 4000);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
+    setActionMsg("FIX logon is disabled: no certified broker transport is configured.");
   };
 
-  const handleSubmitOrder = async (overrideSide?: "BUY" | "SELL", overridePrice?: number) => {
-    const side = overrideSide || orderSide;
-    const price = overridePrice || orderPrice;
-    try {
-      const res = await apiFetch(apiUrl("/api/v1/fix/order/submit"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          symbol: "BTCUSDT",
-          side: side,
-          price: price,
-          qty: orderQty,
-          order_type: orderType,
-          destination: destination,
-        }),
-      });
-      const data = await res.json();
-      setActionMsg(
-        `Order ${data.cl_ord_id} [${side} ${orderQty} @ ${price}] -> ${data.matching_status} (Filled: ${data.filled_size})`
-      );
-      fetchOrderBook();
-      fetchFixSession();
-      setTimeout(() => setActionMsg(null), 5000);
-    } catch (e) {
-      console.error(e);
-    }
+  const handleSubmitOrder = async () => {
+    setActionMsg("Order submission is disabled: no venue transport or reconciliation path is configured.");
   };
 
-  const handleSimulateSweep = async (side: "BUY" | "SELL") => {
-    try {
-      const res = await apiFetch(apiUrl("/api/v1/orderbook/simulate-fill"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ side: side, size: 5.0 }),
-      });
-      const data = await res.json();
-      setSweepResult(data);
-    } catch (e) {
-      console.error(e);
-    }
+  const handleSimulateSweep = async () => {
+    setSweepResult({
+      status: "EXPERIMENTAL_DISABLED",
+      execution_vwap: null,
+      slippage_bps: null,
+      depth_levels_swept: 0,
+      caveat: "The global book is not a venue feed or execution simulator.",
+    });
   };
 
   const maxVolume = snapshot
     ? Math.max(
-        ...snapshot.bids.map((b: any) => b.volume),
-        ...snapshot.asks.map((a: any) => a.volume),
+        ...(snapshot.bids || []).map((b: any) => b.volume),
+        ...(snapshot.asks || []).map((a: any) => a.volume),
         10.0
       )
     : 10.0;
@@ -121,18 +82,19 @@ export const FIXOrderBookStudio: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs text-slate-400">
-            Sub-10μs Native Matching Engine &bull; CME/ICE DMA Smart Router &bull; Real-Time DOM Ladder
+            FIX/L2 wire-format and local-book prototype; no live venue feed, certified DMA transport or HFT SLA
           </p>
         </div>
 
         <div className="flex items-center space-x-3">
           <button
             onClick={handleLogon}
-            disabled={isLoading}
-            className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-3 py-1.5 rounded text-xs transition shadow"
+            disabled={executionUnavailable}
+            title="Disabled until a certified FIX transport is configured"
+            className="flex items-center space-x-1.5 bg-slate-700 text-slate-400 font-bold px-3 py-1.5 rounded text-xs transition shadow disabled:cursor-not-allowed"
           >
             <Shield className="w-3.5 h-3.5" />
-            <span>FIX 35=A LOGON</span>
+            <span>FIX LOGON DISABLED</span>
           </button>
 
           <button
@@ -147,10 +109,17 @@ export const FIXOrderBookStudio: React.FC = () => {
         </div>
       </div>
 
+      <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-xs text-amber-200">
+        <span className="font-bold">EXPERIMENTAL / NO VENUE CONNECTION</span>
+        <span className="ml-2 text-slate-300">
+          L2, FIX and sweep controls are intentionally disabled. Empty state is not a market-data failure to be filled with demo liquidity.
+        </span>
+      </div>
+
       {/* Action Banner */}
       {actionMsg && (
-        <div className="bg-gain/10 border border-gain/30 p-3 rounded-lg flex items-center space-x-2 text-gain text-xs">
-          <CheckCircle2 className="w-4 h-4 text-gain" />
+        <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg flex items-center space-x-2 text-amber-200 text-xs">
+          <CheckCircle2 className="w-4 h-4 text-amber-400" />
           <span>{actionMsg}</span>
         </div>
       )}
@@ -171,7 +140,11 @@ export const FIXOrderBookStudio: React.FC = () => {
             )}
           </div>
 
-          {snapshot && (
+          {snapshot?.status === "NO_DATA" ? (
+            <div className="flex min-h-40 items-center justify-center text-xs text-slate-500 text-center">
+              No recorded L2 feed is connected. No synthetic levels are rendered.
+            </div>
+          ) : snapshot && (
             <div className="space-y-1 text-xs">
               {/* Asks (Desc - Top to Bottom) */}
               <div className="space-y-0.5">
@@ -234,7 +207,7 @@ export const FIXOrderBookStudio: React.FC = () => {
         <div className="bg-[#0d121c] p-4 rounded-lg border border-surface-border space-y-4">
           <span className="text-xs font-bold text-white flex items-center space-x-1.5 border-b border-surface-border pb-2">
             <DollarSign className="w-4 h-4 text-gain" />
-            <span>DMA SMART ORDER ROUTER & ORDER ENTRY</span>
+            <span>ORDER ENTRY (DISABLED — NO VENUE)</span>
           </span>
 
           <div className="space-y-3 text-xs">
@@ -264,9 +237,9 @@ export const FIXOrderBookStudio: React.FC = () => {
                 onChange={(e) => setDestination(e.target.value)}
                 className="w-full bg-[#111722] border border-surface-border text-white px-3 py-2 rounded text-xs focus:outline-none focus:border-accent"
               >
-                <option value="INTERNAL_MATCHING_ENGINE">Internal Matching Engine (Sub-10μs L3 Book)</option>
-                <option value="CME_DMA_FIX">CME Group FIX 4.4 DMA Gateway</option>
-                <option value="ICE_DMA_FIX">ICE Direct Market Access FIX 5.0 SP2</option>
+                <option value="INTERNAL_MATCHING_ENGINE">Local in-memory book (experimental)</option>
+                <option value="CME_DMA_FIX">CME FIX transport (not configured)</option>
+                <option value="ICE_DMA_FIX">ICE FIX transport (not configured)</option>
               </select>
             </div>
 
@@ -311,28 +284,30 @@ export const FIXOrderBookStudio: React.FC = () => {
 
             <button
               onClick={() => handleSubmitOrder()}
-              className={`w-full py-2.5 rounded font-bold text-xs transition shadow flex items-center justify-center space-x-1.5 ${
-                orderSide === "BUY" ? "bg-gain hover:bg-emerald-400 text-black" : "bg-loss hover:bg-rose-500 text-white"
-              }`}
+              disabled={executionUnavailable}
+              title="Disabled until a certified venue transport is configured"
+              className="w-full py-2.5 rounded font-bold text-xs transition shadow flex items-center justify-center space-x-1.5 bg-slate-700 text-slate-400 disabled:cursor-not-allowed"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>SUBMIT {orderSide} ORDER VIA {destination}</span>
+              <span>ORDER SUBMISSION DISABLED</span>
             </button>
           </div>
 
           {/* Sweep Simulator */}
           <div className="bg-[#111722] p-3 rounded-lg border border-surface-border space-y-2 text-xs">
-            <span className="font-bold text-white text-[11px] block">AGGRESSIVE 5.0 LOT MARKET SWEEP</span>
+            <span className="font-bold text-white text-[11px] block">HYPOTHETICAL SWEEP (DISABLED)</span>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => handleSimulateSweep("BUY")}
-                className="bg-accent/20 hover:bg-accent text-accent hover:text-black font-bold py-1.5 rounded text-[10px] transition"
+                onClick={handleSimulateSweep}
+                disabled={executionUnavailable}
+                className="bg-slate-700 text-slate-400 font-bold py-1.5 rounded text-[10px] transition disabled:cursor-not-allowed"
               >
                 SWEEP ASKS (BUY)
               </button>
               <button
-                onClick={() => handleSimulateSweep("SELL")}
-                className="bg-loss/20 hover:bg-loss text-loss hover:text-white font-bold py-1.5 rounded text-[10px] transition"
+                onClick={handleSimulateSweep}
+                disabled={executionUnavailable}
+                className="bg-slate-700 text-slate-400 font-bold py-1.5 rounded text-[10px] transition disabled:cursor-not-allowed"
               >
                 SWEEP BIDS (SELL)
               </button>
@@ -342,11 +317,11 @@ export const FIXOrderBookStudio: React.FC = () => {
               <div className="space-y-1 text-[10px] font-mono text-slate-300 pt-1 border-t border-surface-border">
                 <div className="flex justify-between">
                   <span>Execution VWAP:</span>
-                  <span className="text-accent font-bold">${sweepResult.execution_vwap}</span>
+                  <span className="text-accent font-bold">{sweepResult.execution_vwap == null ? "—" : `$${sweepResult.execution_vwap}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Slippage:</span>
-                  <span className="text-amber-400 font-bold">{sweepResult.slippage_bps} bps</span>
+                  <span className="text-amber-400 font-bold">{sweepResult.slippage_bps == null ? "—" : `${sweepResult.slippage_bps} bps`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Levels Swept:</span>
@@ -397,7 +372,7 @@ export const FIXOrderBookStudio: React.FC = () => {
           {/* Raw Message Log */}
           <div className="flex-1 bg-[#090d14] p-2.5 rounded border border-surface-border overflow-y-auto space-y-2 text-[10px] font-mono">
             <span className="text-slate-500 block text-[9px] border-b border-surface-border pb-1">
-              LIVE TAG-VALUE FIX PROTOCOL STREAM
+              LOCAL TAG-VALUE FIX PARSER STREAM (NO TRANSPORT)
             </span>
             {fixSession?.message_history?.length > 0 ? (
               fixSession.message_history.slice().reverse().map((msg: any, idx: number) => (
@@ -414,7 +389,7 @@ export const FIXOrderBookStudio: React.FC = () => {
                 </div>
               ))
             ) : (
-              <p className="text-slate-500">No FIX messages recorded yet. Click 'FIX 35=A LOGON' to initialize connection.</p>
+              <p className="text-slate-500">No broker FIX messages are recorded. Logon and order dispatch are disabled until a certified transport is configured.</p>
             )}
           </div>
         </div>
