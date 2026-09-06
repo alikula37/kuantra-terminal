@@ -10,6 +10,24 @@ from app.core.config import settings
 class TestPhase15MobileAndFinalRelease:
     """Test suite for Mobile Companion, Emergency Panic Kill-Switch, WebAuthn Passkeys, and v2.0 Production Release."""
 
+    @pytest.fixture
+    def compliant_account(self, monkeypatch):
+        """Keep the happy-path router test independent from persistent journal state."""
+        compliant = {
+            "overall_status": "COMPLIANT",
+            "daily_loss_pct_of_account": 0.0,
+            "daily_loss_limit_pct": 5.0,
+            "rules": [{"rule": "Daily Max Loss", "utilization_pct": 0.0}],
+        }
+        monkeypatch.setattr(
+            "app.services.execution.risk_interceptor.compliance_engine.evaluate_compliance",
+            lambda *args, **kwargs: compliant,
+        )
+        monkeypatch.setattr(
+            "app.quant.risk_guard.compliance_engine.evaluate_compliance",
+            lambda *args, **kwargs: compliant,
+        )
+
     def test_mobile_companion_pairing_and_revocation(self):
         bridge = MobileCompanionBridge()
         # 1. Generate QR
@@ -86,7 +104,7 @@ class TestPhase15MobileAndFinalRelease:
         assert vault.is_passkey_required_for_order(qty=1.0, price=65000.0) is True
         assert vault.is_passkey_required_for_order(qty=0.5, price=65000.0) is False
 
-    def test_end_to_end_institutional_order_routing_pipeline(self):
+    def test_end_to_end_institutional_order_routing_pipeline(self, compliant_account):
         # Ensure calm biometrics and psychology tilt
         biometric_watch_bridge.update_telemetry(bpm=58.0, hrv=85.0)
         orig_tilt_limit = risk_interceptor.max_allowed_tilt_score

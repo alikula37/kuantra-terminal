@@ -7,6 +7,24 @@ from app.services.execution.risk_interceptor import risk_interceptor
 class TestPhase12SwarmAndBiometrics:
     """Test suite for Multi-Agent Swarm Debate Consensus and Bluetooth LE Biometric Stress Interceptor."""
 
+    @pytest.fixture
+    def compliant_account(self, monkeypatch):
+        """Keep router behavior tests independent from persistent journal state."""
+        compliant = {
+            "overall_status": "COMPLIANT",
+            "daily_loss_pct_of_account": 0.0,
+            "daily_loss_limit_pct": 5.0,
+            "rules": [{"rule": "Daily Max Loss", "utilization_pct": 0.0}],
+        }
+        monkeypatch.setattr(
+            "app.services.execution.risk_interceptor.compliance_engine.evaluate_compliance",
+            lambda *args, **kwargs: compliant,
+        )
+        monkeypatch.setattr(
+            "app.quant.risk_guard.compliance_engine.evaluate_compliance",
+            lambda *args, **kwargs: compliant,
+        )
+
     def test_swarm_debate_consensus_approval(self):
         trade_proposal = {
             "symbol": "BTCUSDT",
@@ -60,7 +78,7 @@ class TestPhase12SwarmAndBiometrics:
         assert panic_st["is_stress_critical"] is True
         assert biometric_watch_bridge.is_stress_critical() is True
 
-    def test_pre_trade_interceptor_biometric_and_swarm_blocking(self):
+    def test_pre_trade_interceptor_biometric_and_swarm_blocking(self, compliant_account):
         # 1. Normal order execution when calm
         biometric_watch_bridge.update_telemetry(bpm=58.0, hrv=85.0)
         risk_interceptor.guardrails_active = True

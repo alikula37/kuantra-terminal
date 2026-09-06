@@ -7,6 +7,24 @@ from app.services.biometrics.watch_bridge import biometric_watch_bridge
 class TestPhase14P2PCopyAndMultiAccount:
     """Test suite for Encrypted P2P Mesh Network, Zero-Knowledge Copy Trading, and Multi-Account Risk Routing."""
 
+    @pytest.fixture
+    def compliant_account(self, monkeypatch):
+        """Keep multi-account routing tests independent from persistent journal state."""
+        compliant = {
+            "overall_status": "COMPLIANT",
+            "daily_loss_pct_of_account": 0.0,
+            "daily_loss_limit_pct": 5.0,
+            "rules": [{"rule": "Daily Max Loss", "utilization_pct": 0.0}],
+        }
+        monkeypatch.setattr(
+            "app.services.execution.risk_interceptor.compliance_engine.evaluate_compliance",
+            lambda *args, **kwargs: compliant,
+        )
+        monkeypatch.setattr(
+            "app.quant.risk_guard.compliance_engine.evaluate_compliance",
+            lambda *args, **kwargs: compliant,
+        )
+
     def test_p2p_mesh_identity_and_noise_packet_encryption(self):
         node = P2PMeshNode(node_name="TestNode-01")
         assert node.node_id.startswith("12D3KooW")
@@ -103,7 +121,7 @@ class TestPhase14P2PCopyAndMultiAccount:
         size_c = engine.calculate_follower_lot_size(signal, follower_equity=250000.0)
         assert size_c == 2.50
 
-    def test_multi_account_fanout_routing_and_drawdown_gating(self):
+    def test_multi_account_fanout_routing_and_drawdown_gating(self, compliant_account):
         allocator = MultiAccountRiskAllocator()
         biometric_watch_bridge.update_telemetry(bpm=58.0, hrv=85.0) # Calm state
 

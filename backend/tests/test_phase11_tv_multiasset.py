@@ -15,6 +15,24 @@ from app.services.execution.risk_interceptor import risk_interceptor
 class TestPhase11TradingViewAndMultiAsset:
     """Test suite for TradingView Chrome Extension sync, Webhook HMAC, Multi-Asset Adapters, and Risk Routing."""
 
+    @pytest.fixture
+    def compliant_account(self, monkeypatch):
+        """Keep router behavior tests independent from persistent journal state."""
+        compliant = {
+            "overall_status": "COMPLIANT",
+            "daily_loss_pct_of_account": 0.0,
+            "daily_loss_limit_pct": 5.0,
+            "rules": [{"rule": "Daily Max Loss", "utilization_pct": 0.0}],
+        }
+        monkeypatch.setattr(
+            "app.services.execution.risk_interceptor.compliance_engine.evaluate_compliance",
+            lambda *args, **kwargs: compliant,
+        )
+        monkeypatch.setattr(
+            "app.quant.risk_guard.compliance_engine.evaluate_compliance",
+            lambda *args, **kwargs: compliant,
+        )
+
     @pytest.mark.asyncio
     async def test_tv_companion_websocket_sync(self):
         # Update symbol via simulated extension message
@@ -74,7 +92,7 @@ class TestPhase11TradingViewAndMultiAsset:
         assert "polygon" in statuses
         assert "mt5" in statuses
 
-    def test_order_routing_and_execution(self):
+    def test_order_routing_and_execution(self, compliant_account):
         # Route order to Binance
         bin_order = order_router.route_order({
             "symbol": "BTCUSDT",
@@ -100,7 +118,7 @@ class TestPhase11TradingViewAndMultiAsset:
         assert okx_order["status"] == "EXECUTED"
         assert okx_order["order"]["exchange"] == "OKX"
 
-    def test_behavioral_tilt_and_prop_shield_guardrail_blocking(self):
+    def test_behavioral_tilt_and_prop_shield_guardrail_blocking(self, compliant_account):
         # 1. Normal execution with calm tilt
         risk_interceptor.max_allowed_tilt_score = 75.0
         approved_order = order_router.route_order({

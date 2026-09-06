@@ -90,8 +90,30 @@ class QuickFixDmaClient:
         price: float,
         cl_ord_id: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Fail closed: no order can be submitted until a real transport is implemented."""
+        """Fail closed at the transport boundary until a real FIX session exists.
+
+        A local serializer cannot produce an order-level risk decision or venue
+        acknowledgement.  Returning the unavailable state before evaluating the
+        shared risk interceptor also keeps this experimental surface deterministic
+        when the rest of the terminal has unrelated account state.
+        """
         ord_id = cl_ord_id or f"FIX-{int(time.time() * 1000)}"
+
+        if not self.transport_connected or not self.is_logged_on:
+            return {
+                "status": "EXPERIMENTAL_DISABLED",
+                "cl_ord_id": ord_id,
+                "symbol": symbol.upper(),
+                "side": side.upper(),
+                "requested_qty": qty,
+                "requested_price": price,
+                "execution_status": "NOT_SUBMITTED",
+                "transport_connected": self.transport_connected,
+                "round_trip_latency_us": None,
+                "provenance": "FIX_SERIALIZATION_ONLY",
+                "caveat": "No certified FIX transport or logged-on venue session is configured; no order was sent.",
+                "timestamp": time.time()
+            }
 
         approved, reason, risk_metadata = risk_interceptor.evaluate_order({
             "symbol": symbol,

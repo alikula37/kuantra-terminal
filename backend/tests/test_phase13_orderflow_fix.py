@@ -74,8 +74,13 @@ class TestPhase13OrderflowAndFixDma:
         assert decoded[55] == "ESM6"
         assert decoded[38] == "5"
 
-    def test_quickfix_dma_order_is_disabled_without_transport(self):
+    def test_quickfix_dma_order_is_disabled_without_transport(self, monkeypatch):
         client = QuickFixDmaClient(sender_comp_id="TEST_SENDER", target_comp_id="CME_TEST")
+
+        monkeypatch.setattr(
+            "app.services.execution.fix_bridge.risk_interceptor.evaluate_order",
+            lambda _order: pytest.fail("Unavailable FIX transport must not evaluate an order"),
+        )
 
         res = client.send_new_order_single(symbol="ESM6", side="BUY", qty=1.0, price=5600.0)
         assert res["status"] == "EXPERIMENTAL_DISABLED"
@@ -92,6 +97,7 @@ class TestPhase13OrderflowAndFixDma:
 
         biometric_watch_bridge.update_telemetry(bpm=140.0, hrv=15.0)
         blocked = client.send_new_order_single(symbol="ESM6", side="BUY", qty=1.0, price=5600.0)
-        assert blocked["status"] == "REJECTED_RISK_GUARDRAIL"
-        assert "ORDER_BLOCKED_BIOMETRIC_STRESS" in blocked["reason"]
+        assert blocked["status"] == "EXPERIMENTAL_DISABLED"
+        assert blocked["execution_status"] == "NOT_SUBMITTED"
+        assert blocked["round_trip_latency_us"] is None
         biometric_watch_bridge.update_telemetry(bpm=58.0, hrv=85.0)
