@@ -4,7 +4,7 @@
 document_id: KPS-P0-STATUS
 status: Verified
 last_updated: 2026-09-06
-branch: codex/p0-truth-safety
+branch: codex/p1-wp01-evidence-ledger
 pull_request: https://github.com/alikula37/kuantra-terminal/pull/3
 strategy: KPS-001@1.0.0
 ```
@@ -46,7 +46,7 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Sıradaki sıra
 
-1. P1-WP01 — [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) implementation; kapsam yalnız append-only SQLite ledger foundation’dır.
+1. P1-WP01 — [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) Active; implementation commit `43641e1`, üç-OS CI ve PR validation bekleniyor.
 2. Release publication — `publish=true` adayını çalıştırmak ayrı bir ürün sahibi release onayı ister; bu karar canlı execution yetkisi vermez.
 
 ## Phase 0 final kanıtı

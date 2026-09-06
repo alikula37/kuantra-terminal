@@ -3,20 +3,21 @@
 ```yaml
 document_id: P1-WP01
 version: 1.0.0
-status: Ready
+status: Active
 date: 2026-09-06
-baseline: 129ccfa
+baseline: a5ae737
 strategy: KPS-001@1.0.0
 adr: ADR-0002, ADR-0003
-depends_on: P0-WP10 human release approval
-implementation_authority: blocked_until_phase0_exit
+depends_on: P0-WP10 technical exit verified; release publication separately gated
+implementation_authority: owner_phase_transition_directive_2026-09-06
+implementation_commits: 43641e1, 25e4640
 ```
 
 ## Karar
 
-Phase 0 insan release approval'ı verilmeden bu work package için production kodu
-değiştirilmeyecek. Onaydan sonra ilk Phase 1 implementation paketi, mevcut `trades`
-CRUD'ünü bir anda kaldırmak yerine SQLite içinde ayrı ve append-only bir canonical
+Phase 0 teknik exit audit’i `READY_FOR_HUMAN_RELEASE_APPROVAL` verdict’i ile doğrulandı;
+gerçek GitHub release yayınlama hâlâ ayrı `publish=true` onay kapısıdır. Bu work package,
+mevcut `trades` CRUD'ünü bir anda kaldırmak yerine SQLite içinde ayrı ve append-only bir canonical
 `evidence_events` ledger'ı kuracak. Journal compatibility projection'ı korunacak; ledger
 source-of-record olur, mevcut journal tablosu bu pakette yalnız geriye dönük okuma ve
 uyumluluk yüzeyi olarak kalır.
@@ -71,17 +72,34 @@ türü kabul edilmez.
 
 ## Acceptance criteria
 
-- [ ] Migration iki kez çalıştırıldığında aynı şema ve index'leri güvenle korur.
-- [ ] 10.000 ardışık event append/recompute testinde zincir doğrulaması %100 başarılıdır.
-- [ ] Duplicate identity aynı canonical event'i döndürür; çakışan payload fail-closed olur.
-- [ ] Payload veya `prev_hash` mutation'ı verifier tarafından tespit edilir.
-- [ ] Injected transaction failure sonrasında yeni event ve başarı ACK'i bulunmaz.
-- [ ] Legacy backfill iki kez çalışır; her source trade için tek event üretir ve source satırını
+- [x] Migration iki kez çalıştırıldığında aynı şema ve index'leri güvenle korur.
+- [x] 10.000 ardışık event append/recompute testinde zincir doğrulaması %100 başarılıdır.
+- [x] Duplicate identity aynı canonical event'i döndürür; çakışan payload fail-closed olur.
+- [x] Payload veya `prev_hash` mutation'ı verifier tarafından tespit edilir.
+- [x] Injected transaction failure sonrasında yeni event ve başarı ACK'i bulunmaz.
+- [x] Legacy backfill iki kez çalışır; her source trade için tek event üretir ve source satırını
   değiştirmez.
-- [ ] `INSERT OR REPLACE` ledger write path'inde kullanılmaz; `trades` compatibility path'i
+- [x] `INSERT OR REPLACE` ledger write path'inde kullanılmaz; `trades` compatibility path'i
   bu pakette açıkça belgelenir.
-- [ ] Yeni testler ephemeral `KUANTRA_DATA_DIR` ile çalışır; developer journal'ına yazmaz.
+- [x] Yeni testler ephemeral `KUANTRA_DATA_DIR` ile çalışır; developer journal'ına yazmaz.
 - [ ] Backend suite, focused ledger suite, `git diff --check` ve üç-OS CI yeşildir.
+
+## Implementation record
+
+- `backend/app/db/evidence_schema.py`: runtime/Alembic ortak DDL, unique identity/chain
+  index'leri ve append-only update/delete trigger'ları.
+- `backend/alembic/versions/002_evidence_ledger.py`: idempotent head migration; destructive
+  downgrade bilerek desteklenmiyor.
+- `backend/app/db/repositories/evidence_ledger_repo.py`: canonical JSON, secret-bearing field
+  rejection, `BEGIN IMMEDIATE` + write-only `synchronous=FULL`, hash-chain append/verifier,
+  deterministic duplicate no-op, conflict/failure rollback, JSONL export ve legacy backfill.
+- `backend/app/cli.py`: yalnız explicit local komutlar:
+  `python backend/app/cli.py evidence-ledger backfill --apply|--dry-run`, `verify`, `export`.
+- `backend/alembic/env.py`: explicit test/user database URL’si artık dinamik varsayılanla
+  ezilmiyor; migration gerçekten hedef DB’ye uygulanıyor.
+- Focused suite: `8 passed`.
+- Full backend suite: `359 passed, 1 skipped`.
+- Code commits: `43641e1`, `25e4640`; Phase 0 evidence baseline: `a5ae737`.
 
 ## Kesinlikle kapsam dışı
 
@@ -95,8 +113,8 @@ türü kabul edilmez.
 
 ## Migration path
 
-1. Phase 0 exit approval ve baseline SHA doğrulanır.
-2. Migration + repository + verifier önce bağımsız testlerle eklenir.
+1. Phase 0 technical exit ve baseline SHA doğrulanır; release publication ayrıca gated kalır.
+2. Migration + repository + verifier bağımsız testlerle eklendi ve `43641e1` ile kaydedildi.
 3. `LegacyTradeImported` backfill dry-run/export ile ölçülür; yazma ayrı explicit komuttur.
 4. Journal/import akışları compatibility adapter üzerinden event append etmeye alınır; eski
    projection aynı commit içinde kaldırılmaz.
@@ -114,10 +132,9 @@ türü kabul edilmez.
 Bu metrikler iki ardışık pilot veri setinde sağlanmadan WP `Verified` yapılmaz. Phase 1'in
 projection/replay paketleri bu çıkıştan önce başlamaz.
 
-## Terra uygulama promptu (Phase 0 sonrası)
+## Terra uygulama promptu (uygulandı)
 
-`docs/strategy/WORK-PACKAGE-TEMPLATE.md` kullanılarak yeni bir implementation promptu
-oluşturulmalıdır. Prompt baseline olarak Phase 0'da onaylanan tam commit SHA'sını taşımalı,
-bu dosyadaki kapsam dışı maddeleri aynen korumalı ve ilk adımda yalnız migration/repository
-test planı sunmalıdır. Kodlama, Phase 0 approval kanıtı olmadan başlatılamaz.
-
+`docs/strategy/WORK-PACKAGE-TEMPLATE.md` sınırlarıyla Terra bounded review alındı; review,
+normal desktop startup’ta migration/bootstrap drift riskini ve ledger’ın bağımsız repository
+olması gerektiğini doğruladı. Kod yalnız bu work package kapsamındaki dosyalara dokundu;
+DuckDB, connector, UI, AI, broker/FIX ve live execution kapsam dışı kaldı.

@@ -27,7 +27,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP08 | [Experimental capability containment](./work-packages/P0-WP08-experimental-containment.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP09 | [Release truth matrix ve current claims](./work-packages/P0-WP09-release-truth-matrix.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Verified | 1.0.0 | 2026-09-06 |
-| P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Ready | 1.0.0 | 2026-09-06 |
+| P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -88,3 +88,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   ilk Phase 1 paketi olarak hazırlandı. Append-only SQLite evidence ledger, idempotency ve
   hash-chain verifier kapsamı tanımlandı; gerçek release/tag yayınlama ise ayrı `publish=true`
   onay kapısı olarak kaldı.
+- P1-WP01 implementation `43641e1` + CLI düzeltmesi `25e4640` ile canonical SQLite `evidence_events` ledger, ortak
+  runtime/Alembic schema, hash-chain verifier, duplicate/conflict kapısı, explicit legacy
+  backfill/export CLI ve focused test suite eklendi. Full backend regression `359 passed,
+  1 skipped`; broker, DuckDB, UI ve AI akışlarına dokunulmadı.
