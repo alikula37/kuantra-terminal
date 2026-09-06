@@ -9,7 +9,7 @@ baseline: be0d49d
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP19 Binance Depth Attestation Review Gate
-implementation_commits: pending
+implementation_commits: 0fcd1cc
 ```
 
 ## Problem
