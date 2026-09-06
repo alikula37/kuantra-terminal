@@ -35,6 +35,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP06 | [Bulk OLAP Sync Evidence Gate](./work-packages/P1-WP06-bulk-olap-sync-gate.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP07 | [Trade Evidence Pack API](./work-packages/P1-WP07-trade-evidence-pack-api.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP08 | [Deterministic Replay ve Market-Context Attachment](./work-packages/P1-WP08-deterministic-replay-market-context.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP09 | [Market-Data Provenance Schema](./work-packages/P1-WP09-market-data-provenance.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -135,3 +136,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   deterministic `replay_fingerprint`, UTC boundaries ve `source_verified=false`
   provenance'ı API/Evidence Pack'e eklendi. Focused replay/candle/evidence suite `68
   passed`, full backend regression `379 passed, 1 skipped`.
+- P1-WP09 `811cb6c` ile `market_candles` venue/feed/source-event/sequence/ingestion
+  provenance alanlarına taşındı; dokuz kolonlu legacy DuckDB dosyaları additive migration
+  ile `UNVERIFIED` olarak açılıyor. Binance kline kimliği saklanıyor ancak sequence/gap
+  doğrulaması gelene kadar `source_verified=false` kalıyor. Focused suite `46 passed`,
+  full backend regression `382 passed, 1 skipped`.
