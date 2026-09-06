@@ -19,6 +19,7 @@ if ROOT_DIR not in sys.path:
 from app.services.maintenance.log_sanitizer import log_sanitizer_engine
 from app.services.maintenance.db_maintenance import db_maintenance_engine
 from app.core.security import StrongholdVault, vault as stronghold_vault
+from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("kuantra_cli")
@@ -97,6 +98,36 @@ def handle_storage_stats(args: argparse.Namespace):
     print("==========================================================================\n")
     return stats
 
+
+def handle_evidence_ledger(args: argparse.Namespace):
+    """Run explicit, local-only evidence ledger operations."""
+    repository = EvidenceLedgerRepository(db_path=args.db_path)
+    if args.ledger_command == "backfill":
+        result = repository.backfill_legacy_trades(
+            dry_run=not args.apply,
+            account_id=args.account_id,
+            venue=args.venue,
+            limit=args.limit,
+        )
+    elif args.ledger_command == "verify":
+        result = repository.verify_chain(
+            account_id=args.account_id,
+            chain_date_utc=args.chain_date_utc,
+        )
+    elif args.ledger_command == "export":
+        result = {
+            "account_id": args.account_id,
+            "chain_date_utc": args.chain_date_utc,
+            "jsonl": repository.export_jsonl(
+                account_id=args.account_id,
+                chain_date_utc=args.chain_date_utc,
+            ),
+        }
+    else:
+        raise ValueError("Choose evidence-ledger backfill, verify, or export")
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return result
+
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kuantra-cli",
@@ -123,6 +154,27 @@ def create_parser() -> argparse.ArgumentParser:
     # Command: storage-stats
     subparsers.add_parser("storage-stats", help="Display storage and memory telemetry")
 
+    # Command: evidence-ledger
+    p_ledger = subparsers.add_parser(
+        "evidence-ledger", help="Verify, export, or explicitly backfill the local evidence ledger"
+    )
+    p_ledger.add_argument("--db-path", default=None, help="SQLite path (defaults to Kuantra data directory)")
+    ledger_subparsers = p_ledger.add_subparsers(dest="ledger_command", required=True)
+
+    p_backfill = ledger_subparsers.add_parser("backfill", help="Snapshot legacy trades into the append-only ledger")
+    p_backfill.add_argument("--apply", action="store_true", help="Write events; without this flag the command is dry-run")
+    p_backfill.add_argument("--account-id", default="local-journal")
+    p_backfill.add_argument("--venue", default="legacy")
+    p_backfill.add_argument("--limit", type=int, default=None)
+
+    p_verify = ledger_subparsers.add_parser("verify", help="Verify hash chains and immutable event fields")
+    p_verify.add_argument("--account-id", default=None)
+    p_verify.add_argument("--chain-date-utc", default=None)
+
+    p_export = ledger_subparsers.add_parser("export", help="Export immutable ledger rows as JSONL")
+    p_export.add_argument("--account-id", default=None)
+    p_export.add_argument("--chain-date-utc", default=None)
+
     return parser
 
 def main():
@@ -137,6 +189,8 @@ def main():
         handle_vault_audit(args)
     elif args.command == "storage-stats":
         handle_storage_stats(args)
+    elif args.command == "evidence-ledger":
+        handle_evidence_ledger(args)
     else:
         parser.print_help()
 

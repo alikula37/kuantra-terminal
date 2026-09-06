@@ -11,8 +11,13 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set dynamic SQLite URL to Kuantra data directory
-config.set_main_option("sqlalchemy.url", f"sqlite:///{get_sqlite_path()}")
+# The application runner injects an explicit database URL for isolated tests
+# and per-user desktop data.  Only fall back to the configured Kuantra data
+# directory when Alembic is invoked without one; silently overwriting an
+# explicit URL would migrate the wrong database.
+configured_url = config.get_main_option("sqlalchemy.url")
+if not configured_url or configured_url == "sqlite:///../data/kuantra_trades.db":
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{get_sqlite_path()}")
 
 target_metadata = None
 

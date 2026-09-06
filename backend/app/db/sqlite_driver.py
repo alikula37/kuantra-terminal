@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from app.core.paths import get_sqlite_path
+from app.db.evidence_schema import initialize_evidence_schema
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,10 @@ class SQLiteDriver:
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_candles_sym_tf_time ON market_candles_cache(symbol, timeframe, timestamp);
                 CREATE INDEX IF NOT EXISTS idx_candles_lookup ON market_candles_cache(symbol, timeframe, timestamp ASC);
             """)
+            # Use the same idempotent schema primitive as Alembic revision
+            # 002 so a fresh desktop database has the ledger before any
+            # explicit migration command is invoked.
+            initialize_evidence_schema(conn)
             conn.commit()
             logger.info("SQLite OLTP schema initialized with WAL mode and candle cache.")
 
