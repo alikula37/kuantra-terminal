@@ -1,7 +1,7 @@
 import pytest
 
 from app.cli import create_parser
-from app.api.endpoints import delete_trade
+from app.api.endpoints import delete_trade, get_trade_evidence
 from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
 from app.db.repositories.evidence_projection_repo import (
     EvidenceProjectionError,
@@ -265,3 +265,37 @@ def test_full_duckdb_sync_uses_evidence_projection_when_ready(tmp_path, monkeypa
     monkeypatch.setattr("app.db.sync_pipeline.duckdb_driver", RecordingDuckDB())
     assert SyncPipeline.full_sync() == 1
     assert synced[0]["id"] == "PROJECTION-1"
+
+
+def test_trade_evidence_pack_is_source_linked_and_raw_payload_free(tmp_path, monkeypatch):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    _use_driver(monkeypatch, driver)
+    SyncPipeline.record_and_sync_trade(_trade(), source="manual")
+    SyncPipeline.record_and_sync_trade(
+        _trade(
+            status="CLOSED",
+            exit_price=105.0,
+            exit_time="2026-09-06T10:05:00Z",
+            pnl=5.0,
+        ),
+        source="manual",
+    )
+    adapter = TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=EvidenceTradeProjectionRepository(str(db_path)),
+    )
+
+    pack = adapter.get_evidence_pack("PROJECTION-1")
+    assert pack["read_source"] == "typed_projection"
+    assert pack["coverage"]["ready"] is True
+    assert pack["ledger_integrity"]["valid"] is True
+    assert [event["event_type"] for event in pack["events"]] == [
+        "IntentRecorded",
+        "FillRecorded",
+    ]
+    assert all("raw_payload" not in event for event in pack["events"])
+
+    monkeypatch.setattr("app.api.endpoints.trade_read_adapter", adapter)
+    endpoint_pack = get_trade_evidence("PROJECTION-1")
+    assert endpoint_pack["event_count"] == 2

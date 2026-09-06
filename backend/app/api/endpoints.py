@@ -59,6 +59,13 @@ def list_trades(
 def get_open_trades():
     return trade_read_adapter.get_open_trades()
 
+@router.get("/trades/{trade_id}/evidence")
+def get_trade_evidence(trade_id: str):
+    evidence_pack = trade_read_adapter.get_evidence_pack(trade_id)
+    if evidence_pack["trade"] is None and evidence_pack["event_count"] == 0:
+        raise HTTPException(status_code=404, detail="Trade evidence not found")
+    return evidence_pack
+
 @router.get("/trades/{trade_id}")
 def get_trade(trade_id: str):
     trade = trade_read_adapter.get_trade(trade_id)

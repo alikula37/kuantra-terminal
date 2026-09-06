@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
+from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
 from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 from app.db.sqlite_driver import SQLiteDriver, sqlite_driver
 
@@ -34,6 +35,7 @@ class TradeReadAdapter:
         self.projection_repo = projection_repo or EvidenceTradeProjectionRepository(
             self.legacy_driver.db_path
         )
+        self.ledger_repo = EvidenceLedgerRepository(self.legacy_driver.db_path)
         self.account_id = account_id
         self.venue = venue
         # ``legacy`` is the explicit venue used by the P1-WP01 backfill.  It is
@@ -108,6 +110,43 @@ class TradeReadAdapter:
             venue=self.venue,
             venues=self.projection_venues,
         )
+
+    def get_evidence_pack(self, trade_id: str) -> Dict[str, Any]:
+        """Build a read-only, source-linked evidence pack for one trade."""
+
+        coverage = self.coverage()
+        trade = self.get_trade(trade_id)
+        events = self.ledger_repo.list_events_for_trade(
+            trade_id,
+            account_id=self.account_id,
+            venues=self.projection_venues,
+        )
+        integrity = self.ledger_repo.verify_chain(account_id=self.account_id)
+        safe_events = []
+        for event in events:
+            safe_events.append({
+                key: event.get(key)
+                for key in (
+                    "event_id", "event_type", "account_id", "venue", "occurred_at_utc",
+                    "received_at_utc", "chain_date_utc", "chain_sequence", "schema_version",
+                    "adapter_version", "correlation_id", "causation_id", "idempotency_key",
+                    "raw_payload_sha256", "normalized_payload", "provenance", "prev_hash",
+                    "event_hash",
+                )
+            })
+        return {
+            "trade_id": trade_id,
+            "trade": trade,
+            "read_source": "typed_projection" if coverage["ready"] else "compatibility_legacy",
+            "coverage": coverage,
+            "ledger_integrity": {
+                "valid": integrity["valid"],
+                "checked_events": integrity["checked_events"],
+                "errors": integrity["errors"],
+            },
+            "events": safe_events,
+            "event_count": len(safe_events),
+        }
 
 
 trade_read_adapter = TradeReadAdapter()

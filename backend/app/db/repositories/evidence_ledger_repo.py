@@ -525,6 +525,41 @@ class EvidenceLedgerRepository:
         finally:
             conn.close()
 
+    def list_events_for_trade(
+        self,
+        trade_id: str,
+        *,
+        account_id: str = "local-journal",
+        venue: Optional[str] = None,
+        venues: Optional[Iterable[str]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Return immutable lifecycle events associated with one trade.
+
+        Correlation IDs cover production journal writes.  Legacy backfill events
+        carry the source trade ID inside their normalized snapshot, so both forms
+        are matched without exposing raw payload bytes.
+        """
+
+        allowed_venues = list(venues) if venues is not None else ([venue] if venue else None)
+        if allowed_venues is not None:
+            allowed_venues = list(dict.fromkeys(str(value) for value in allowed_venues))
+        result: List[Dict[str, Any]] = []
+        for event in self.export_events(account_id=account_id):
+            if allowed_venues is not None and event.get("venue") not in allowed_venues:
+                continue
+            if event.get("correlation_id") == trade_id:
+                result.append(event)
+                continue
+            payload = event.get("normalized_payload")
+            if not isinstance(payload, dict):
+                continue
+            trade = payload.get("trade")
+            payload_trade_id = trade.get("id") if isinstance(trade, dict) else None
+            payload_trade_id = payload_trade_id or payload.get("source_id")
+            if str(payload_trade_id or "") == str(trade_id):
+                result.append(event)
+        return result
+
     def count_events(self) -> int:
         conn = self._connect(write=False)
         try:
