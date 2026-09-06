@@ -45,6 +45,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP01 | [Sequence Gap-Aware Market Context](./work-packages/P2-WP01-sequence-gap-aware-market-context.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP02 | [Binance Snapshot + Delta Sequence Validator](./work-packages/P2-WP02-binance-depth-sequence-validator.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP03 | [Binance Depth Snapshot/Event Recovery Coordinator](./work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP04 | [Binance Depth Payload Normalization ve Venue Projection](./work-packages/P2-WP04-binance-depth-payload-projection.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -194,4 +195,9 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   recovery coordinator sözleşmesi eklendi. Bounded buffer overflow, snapshot-behind
   retry, stale replay filtering ve açık `start_buffering()` recovery cycle'ı
   test ediliyor; network/order-book mutation hâlâ kapsam dışı. Focused suite
+  `6 passed`.
+- P2-WP04 ile Binance depth payload'ı Decimal tabanlı normalize eden ve yalnızca
+  sequence `APPLIED` ise venue L2 projection'a yazan ayrı adapter eklendi.
+  Mevcut local matching engine'e bağlanılmadı; duplicate/non-finite level,
+  zero-quantity silme ve atomic rejection regression'ları eklendi. Focused suite
   `6 passed`.

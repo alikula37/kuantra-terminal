@@ -16,6 +16,17 @@ from .binance_depth_recovery import (
     DepthRecoveryResult,
     DepthRecoveryState,
 )
+from .binance_depth_payload import (
+    BinanceDepthBook,
+    DepthBookDecision,
+    DepthBookResult,
+    DepthLevel,
+    DepthPayloadError,
+    NormalizedDepthSnapshot,
+    NormalizedDepthUpdate,
+    normalize_snapshot,
+    normalize_update,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -28,4 +39,13 @@ __all__ = [
     "DepthRecoveryDecision",
     "DepthRecoveryResult",
     "DepthRecoveryState",
+    "BinanceDepthBook",
+    "DepthBookDecision",
+    "DepthBookResult",
+    "DepthLevel",
+    "DepthPayloadError",
+    "NormalizedDepthSnapshot",
+    "NormalizedDepthUpdate",
+    "normalize_snapshot",
+    "normalize_update",
 ]

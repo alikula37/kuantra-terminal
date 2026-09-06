@@ -18,7 +18,6 @@ from .binance_depth_sequence import (
     BinanceDepthSequenceValidator,
     DepthSequenceDecision,
     DepthSequenceResult,
-    DepthSequenceState,
 )
 
 
