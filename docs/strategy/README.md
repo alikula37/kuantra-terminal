@@ -55,6 +55,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP11 | [Public Binance Depth Network Adapter](./work-packages/P2-WP11-binance-depth-network-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP12 | [Bounded Binance Depth Reconnect Session](./work-packages/P2-WP12-binance-depth-reconnect-session.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP13 | [Deterministic Binance Depth Soak Harness](./work-packages/P2-WP13-binance-depth-soak-harness.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP14 | [Opt-in Binance Depth Testnet Soak Gate](./work-packages/P2-WP14-binance-depth-testnet-soak-gate.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -248,3 +249,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P2-WP13 ile disconnect fixture'ı aynı ingestor + rotated durable segment sink
   üzerinden yeniden oynatılıyor; chain continuity, gap terminality ve reopen
   recovery kanıtı deterministik harness'e bağlandı. Focused suite `3 passed`.
+- P2-WP14 ile fixture-default soak CLI ve explicit `--allow-network` testnet
+  kapısı eklendi. Rapor schema'sı chain/sink/session ölçümlerini taşır;
+  `source_verified` ve execution authority false kalır. Focused suite
+  `5 passed`.

@@ -175,7 +175,7 @@ class BinanceDepthNetworkAdapter:
             raise BinanceDepthNetworkError("SNAPSHOT_NOT_OBJECT", "snapshot response must be a JSON object")
         return dict(payload)
 
-    async def event_source(self) -> AsyncIterator[Mapping[str, Any]]:
+    async def event_source(self, *, stop_event: Optional[asyncio.Event] = None) -> AsyncIterator[Mapping[str, Any]]:
         """Yield validated depth updates until the public socket closes."""
 
         try:
@@ -186,12 +186,9 @@ class BinanceDepthNetworkAdapter:
             )
             async with websocket_context as websocket:
                 while True:
-                    try:
-                        raw_message = await asyncio.wait_for(
-                            websocket.recv(), timeout=self.config.recv_timeout_seconds
-                        )
-                    except asyncio.TimeoutError as exc:
-                        raise BinanceDepthNetworkError("EVENT_RECV_TIMEOUT", "websocket receive timed out") from exc
+                    raw_message = await self._recv_with_stop(websocket, stop_event)
+                    if raw_message is None:
+                        return
                     yield self.decode_depth_message(raw_message)
         except asyncio.CancelledError:
             raise
@@ -199,6 +196,35 @@ class BinanceDepthNetworkAdapter:
             raise
         except Exception as exc:
             raise BinanceDepthNetworkError("EVENT_STREAM_FAILED", str(exc)) from exc
+
+    async def _recv_with_stop(self, websocket: Any, stop_event: Optional[asyncio.Event]) -> Any:
+        """Bound one recv and let an operator stop a quiet socket promptly."""
+
+        if stop_event is None:
+            try:
+                return await asyncio.wait_for(websocket.recv(), timeout=self.config.recv_timeout_seconds)
+            except asyncio.TimeoutError as exc:
+                raise BinanceDepthNetworkError("EVENT_RECV_TIMEOUT", "websocket receive timed out") from exc
+        if stop_event.is_set():
+            return None
+        recv_task = asyncio.create_task(websocket.recv())
+        stop_task = asyncio.create_task(stop_event.wait())
+        timeout_task = asyncio.create_task(asyncio.sleep(self.config.recv_timeout_seconds))
+        try:
+            done, _ = await asyncio.wait(
+                {recv_task, stop_task, timeout_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if stop_task in done:
+                return None
+            if timeout_task in done:
+                raise BinanceDepthNetworkError("EVENT_RECV_TIMEOUT", "websocket receive timed out")
+            return recv_task.result()
+        finally:
+            for task in (recv_task, stop_task, timeout_task):
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(recv_task, stop_task, timeout_task, return_exceptions=True)
 
     def decode_depth_message(self, raw_message: Any) -> Mapping[str, Any]:
         """Decode raw WS JSON and reject non-depth/cross-symbol messages."""
@@ -239,7 +265,7 @@ class BinanceDepthNetworkAdapter:
         """Run one network cycle through the existing bounded transport."""
 
         return await self.transport.run_once(
-            event_source=self.event_source(),
+            event_source=self.event_source(stop_event=stop_event),
             snapshot_fetcher=self.fetch_snapshot,
             stop_event=stop_event,
             max_source_events=max_source_events,
