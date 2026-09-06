@@ -75,10 +75,13 @@ class TestCICDWorkflowsAndPackaging:
         assert "permissions" in rel_data
         assert rel_data["permissions"].get("contents") == "write"
 
-        # Triggers: tag pushes only
+        # Triggers: tag pushes plus an explicit, non-publishing candidate run.
         triggers = rel_data.get("on", rel_data.get(True, {}))
         assert "push" in triggers
         assert triggers["push"]["tags"] == ["v*"]
+        assert "workflow_dispatch" in triggers
+        assert triggers["workflow_dispatch"]["inputs"]["release_tag"]["default"] == "v1.4.0"
+        assert triggers["workflow_dispatch"]["inputs"]["publish"]["default"] is False
 
         # Jobs
         assert "jobs" in rel_data
@@ -122,6 +125,8 @@ class TestCICDWorkflowsAndPackaging:
         assert "Build desktop app" in bp_names
         assert "Smoke test desktop app" in bp_names
         assert "Package" in bp_names
+        assert "Smoke test final packaged artifact" in bp_names
+        assert "dist/final-smoke-*.json" in rel_raw
 
         # Check publish-release job
         pub_job = rel_data["jobs"]["publish-release"]
@@ -133,9 +138,13 @@ class TestCICDWorkflowsAndPackaging:
         assert any("softprops/action-gh-release" in u.lower() for u in pub_uses)
         # Consolidated checksums live in MANIFEST.json, generated in publish-release
         assert any("manifest" in n.lower() for n in pub_names)
+        assert "Audit Phase 0 exit evidence" in pub_names
+        assert "scripts/audit_phase0_exit.py" in rel_raw
+        assert "PHASE0_EXIT_AUDIT.json" in rel_raw
         assert "scripts/generate_release_manifest.py" in rel_raw
         assert "scripts/render_current_release_notes.py" in rel_raw
         assert "body_path: dist/CURRENT_RELEASE_NOTES.md" in rel_raw
+        assert "inputs.publish == true" in rel_raw
 
         # No Rust / Tauri leftovers in the release pipeline.
         assert "rust-toolchain" not in rel_raw

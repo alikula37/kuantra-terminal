@@ -5,6 +5,7 @@ Ensures seamless test execution across all legacy test suites and dynamic plugin
 
 import sys
 import os
+import tempfile
 import pytest
 from typing import Generator
 
@@ -13,6 +14,18 @@ from typing import Generator
 # Windows/macOS credential manager.
 os.environ.setdefault("KUANTRA_TEST_MODE", "1")
 os.environ.setdefault("KUANTRA_CREDENTIAL_STORE", "memory")
+
+# Never let a pytest invocation read or mutate the developer's journal.  CI
+# supplies its own runner-temp directory; local runs get an ephemeral one
+# before any application module (and therefore the SQLite singleton) imports.
+_TEST_DATA_DIR = None
+if not os.environ.get("KUANTRA_DATA_DIR"):
+    # Windows keeps the rotating log file open until interpreter shutdown;
+    # ignore cleanup races rather than emitting a traceback after a green run.
+    _TEST_DATA_DIR = tempfile.TemporaryDirectory(
+        prefix="kuantra-pytest-", ignore_cleanup_errors=True
+    )
+    os.environ["KUANTRA_DATA_DIR"] = _TEST_DATA_DIR.name
 
 # Ensure root and backend directories are in sys.path
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,6 +53,22 @@ def test_app():
     app = create_app()
     plugin_manager.set_app(app)
     return app
+
+
+@pytest.fixture(autouse=True)
+def restore_execution_risk_singletons():
+    """Keep singleton guardrail configuration from leaking between tests."""
+    from app.services.execution.risk_interceptor import risk_interceptor
+
+    snapshot = {
+        "max_allowed_tilt_score": risk_interceptor.max_allowed_tilt_score,
+        "guardrails_active": risk_interceptor.guardrails_active,
+        "biometrics_gate_active": risk_interceptor.biometrics_gate_active,
+        "swarm_debate_gate_active": risk_interceptor.swarm_debate_gate_active,
+    }
+    yield
+    for key, value in snapshot.items():
+        setattr(risk_interceptor, key, value)
 
 
 @pytest.fixture

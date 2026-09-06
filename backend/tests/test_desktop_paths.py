@@ -4,6 +4,9 @@ import sys
 from pathlib import Path
 
 
+_ORIGINAL_TEST_DATA_DIR = os.environ.get("KUANTRA_DATA_DIR")
+
+
 def _reload_paths(monkeypatch, **env):
     for k in ("KUANTRA_DATA_DIR",):
         monkeypatch.delenv(k, raising=False)
@@ -48,7 +51,9 @@ def test_version_single_source():
 
 def teardown_module(module):
     # restore module state for the rest of the suite
-    for k in ("KUANTRA_DATA_DIR",):
-        os.environ.pop(k, None)
+    if _ORIGINAL_TEST_DATA_DIR is None:
+        os.environ.pop("KUANTRA_DATA_DIR", None)
+    else:
+        os.environ["KUANTRA_DATA_DIR"] = _ORIGINAL_TEST_DATA_DIR
     import app.core.paths as paths
     importlib.reload(paths)

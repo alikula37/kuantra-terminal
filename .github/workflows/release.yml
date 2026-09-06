@@ -3,9 +3,26 @@ name: Kuantra Terminal Release
 on:
   push:
     tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Exact release tag validated by the truth matrix"
+        required: true
+        default: "v1.4.0"
+        type: string
+      publish:
+        description: "Publish a GitHub Release after all final-artifact gates pass"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
+
+env:
+  # Manual runs are release candidates by default. The truth checker still
+  # rejects any tag that is not the currently accepted product tag.
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
 
 concurrency:
   group: release-${{ github.ref }}
@@ -59,7 +76,7 @@ jobs:
         run: python -m compileall -q backend
       - name: Verify release truth contract
         shell: bash
-        run: python scripts/check_release_truth.py --tag "${GITHUB_REF_NAME}"
+        run: python scripts/check_release_truth.py --tag "${RELEASE_TAG}"
       - name: Run full backend test suite
         run: python -m pytest backend/tests -q --tb=short
       - name: Install frontend dependencies
@@ -81,10 +98,50 @@ jobs:
       - name: Package
         shell: bash
         run: ${{ matrix.package }}
+      - name: Smoke test final packaged artifact
+        shell: bash
+        env:
+          QTWEBENGINE_CHROMIUM_FLAGS: "--no-sandbox --disable-gpu"
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          case "$RUNNER_OS" in
+            Windows)
+              installer="dist/Kuantra-Terminal-${VERSION}-Setup.exe"
+              install_dir="$RUNNER_TEMP/kuantra-installed"
+              rm -rf "$install_dir"
+              # NSIS /D must be the final command-line argument.
+              export K_INSTALLER_PS="$(cygpath -w "$installer")"
+              export K_INSTALL_DIR_PS="$(cygpath -w "$install_dir")"
+              powershell.exe -NoProfile -NonInteractive -Command '$p = Start-Process -FilePath $env:K_INSTALLER_PS -ArgumentList @("/S", "/D=$env:K_INSTALL_DIR_PS") -Wait -PassThru; if ($p.ExitCode -ne 0) { exit $p.ExitCode }'
+              exe="$install_dir/Kuantra Terminal/Kuantra Terminal.exe"
+              python scripts/smoke_desktop.py --executable "$exe" --artifact "$installer" --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-windows.json
+              ;;
+            macOS)
+              dmg="dist/Kuantra-Terminal-${VERSION}-aarch64.dmg"
+              if [ ! -f "$dmg" ]; then dmg="dist/Kuantra-Terminal-${VERSION}-x64.dmg"; fi
+              mountpoint="$RUNNER_TEMP/kuantra-dmg"
+              mkdir -p "$mountpoint"
+              hdiutil attach -nobrowse -readonly -mountpoint "$mountpoint" "$dmg"
+              trap 'hdiutil detach "$mountpoint" -force >/dev/null 2>&1 || true' EXIT
+              exe="$mountpoint/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal"
+              python scripts/smoke_desktop.py --executable "$exe" --artifact "$dmg" --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-macos.json
+              ;;
+            Linux)
+              appimage="dist/Kuantra-Terminal-${VERSION}-x86_64.AppImage"
+              xvfb-run -a python scripts/smoke_desktop.py --executable "$appimage" --artifact "$appimage" --appimage --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-linux.json
+              ;;
+            *)
+              echo "unsupported runner OS: $RUNNER_OS" >&2
+              exit 1
+              ;;
+          esac
       - uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.os }}
-          path: dist/Kuantra-Terminal-*
+          path: |
+            dist/Kuantra-Terminal-*
+            dist/final-smoke-*.json
           if-no-files-found: error
 
   publish-release:
@@ -101,15 +158,32 @@ jobs:
           path: dist
           merge-multiple: true
       - name: Verify release truth contract
-        run: python scripts/check_release_truth.py --tag "${GITHUB_REF_NAME}"
+        run: python scripts/check_release_truth.py --tag "${RELEASE_TAG}"
       - name: Render current release notes
         run: python scripts/render_current_release_notes.py --output dist/CURRENT_RELEASE_NOTES.md
+      - name: Audit Phase 0 exit evidence
+        run: |
+          set -euo pipefail
+          python scripts/audit_phase0_exit.py \
+            --smoke-report dist/final-smoke-windows.json \
+            --smoke-report dist/final-smoke-macos.json \
+            --smoke-report dist/final-smoke-linux.json \
+            --json | tee dist/PHASE0_EXIT_AUDIT.json
       - name: Build MANIFEST.json
-        run: python scripts/generate_release_manifest.py --dist dist --tag "${GITHUB_REF_NAME}"
-      - uses: softprops/action-gh-release@v2
+        run: python scripts/generate_release_manifest.py --dist dist --tag "${RELEASE_TAG}"
+      - uses: actions/upload-artifact@v7
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Kuantra Terminal ${{ github.ref_name }}
+          name: phase0-exit-evidence
+          path: |
+            dist/PHASE0_EXIT_AUDIT.json
+            dist/final-smoke-*.json
+            dist/MANIFEST.json
+          if-no-files-found: error
+      - uses: softprops/action-gh-release@v2
+        if: github.event_name == 'push' || inputs.publish == true
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: Kuantra Terminal ${{ env.RELEASE_TAG }}
           body_path: dist/CURRENT_RELEASE_NOTES.md
           files: |
             dist/Kuantra-Terminal-*

@@ -91,8 +91,14 @@ def test_release_workflow_gates_packaging_and_publish_on_all_matrix_jobs():
     assert_frontend_commands_are_ordered(package_job)
     names = step_names(package_job)
     assert names.index("Smoke test desktop app") < names.index("Package")
+    assert names.index("Package") < names.index("Smoke test final packaged artifact")
+    assert "final-smoke-windows.json" in package_job
+    assert "final-smoke-macos.json" in package_job
+    assert "final-smoke-linux.json" in package_job
     publish_job = job_block(raw, "publish-release")
     assert re.search(r"^    needs:\s*build-and-package$", publish_job, flags=re.MULTILINE)
+    assert "Audit Phase 0 exit evidence" in publish_job
+    assert "scripts/audit_phase0_exit.py" in publish_job
     assert "npm --prefix frontend audit --audit-level=moderate" in raw
     assert "--force" not in raw
     assert "audit ignore" not in raw.lower()

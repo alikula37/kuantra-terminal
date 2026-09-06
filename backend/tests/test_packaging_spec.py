@@ -52,6 +52,8 @@ def test_build_and_smoke_scripts_target_host_os_outputs():
     assert "--skip-frontend" in build
     assert "Kuantra Terminal.app" in build and "kuantra-terminal" in build
     assert "--smoke" in smoke and "--smoke-report" in smoke
+    assert "--executable" in smoke and "--artifact" in smoke and "--appimage" in smoke and "--data-dir" in smoke
+    assert "smoke_schema_version" in smoke and "executable_sha256" in smoke
     assert "KUANTRA_DATA_DIR" in smoke and "KUANTRA_GATEWAY_ENABLED" in smoke
 
 

@@ -26,6 +26,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP07 | [Credential ve OS keychain truth boundary](./work-packages/P0-WP07-credential-keychain-boundary.md) | Verified | `a09ad80` | 2026-09-06 |
 | P0-WP08 | [Experimental capability containment](./work-packages/P0-WP08-experimental-containment.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP09 | [Release truth matrix ve current claims](./work-packages/P0-WP09-release-truth-matrix.md) | Verified | 1.0.0 | 2026-09-06 |
+| P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -77,3 +78,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   notları GitHub Release body'sinden ayrıldı ve exact tag/version ile forbidden-claim checker CI
   ve release workflow'a alındı. `7217610`, push CI `34027220927` ve PR CI `34027222829`
   ile üç OS'ta doğrulandı.
+- P0-WP10 ile smoke raporları schema v2 provenance/hash bilgisi taşıyacak ve release workflow
+  final NSIS/DMG/AppImage artefaktlarını kendi içinden doğrulayacak şekilde hazırlandı. Static
+  Phase 0 audit geçer; backend suite ephemeral test data ile 350 passed/1 skipped; üç OS final
+  artifact kanıtı ve insan release approval'ı hâlâ bekleniyor.

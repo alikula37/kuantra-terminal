@@ -1,0 +1,178 @@
+"""Dependency-free Phase 0 exit audit.
+
+The audit is deliberately conservative: it can say that the evidence bundle is ready for human
+release approval, but it never changes product availability or calls a broker.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from check_release_truth import TruthContractError, run_checks  # noqa: E402
+from release_truth import load_matrix  # noqa: E402
+
+
+# WP06 is intentionally split into two separately accepted contracts.  Keep the
+# split explicit here so the exit audit cannot accidentally treat replay/data
+# truth and order-flow/FIX truth as one unverified umbrella package.
+REQUIRED_WORK_PACKAGES = [
+    *(f"P0-WP{i:02d}" for i in range(6)),
+    "P0-WP06A",
+    "P0-WP06B",
+    "P0-WP07",
+    "P0-WP08",
+    "P0-WP09",
+]
+REQUIRED_SMOKE_CHECKS = {"react_mounted", "bridge_roundtrip", "health", "push_sink", "plugin_boundary"}
+REQUIRED_OS = {"windows", "darwin", "linux"}
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+UTC_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+
+
+def _fail(message: str) -> None:
+    raise ValueError(message)
+
+
+def _read(path: Path) -> str:
+    if not path.is_file():
+        _fail(f"missing audit input: {path}")
+    return path.read_text(encoding="utf-8")
+
+
+def _check_work_packages(status_text: str) -> None:
+    for work_package in REQUIRED_WORK_PACKAGES:
+        pattern = rf"^\|\s*{re.escape(work_package)}\b[^|]*\|\s*Verified\s*\|"
+        if not re.search(pattern, status_text, re.MULTILINE):
+            _fail(f"{work_package} is not recorded as Verified in PHASE-0-STATUS.md")
+
+
+def _check_workflows(root: Path) -> None:
+    ci = _read(root / ".github" / "workflows" / "ci.yml")
+    release = _read(root / ".github" / "workflows" / "release.yml")
+    for label, workflow in (("ci", ci), ("release", release)):
+        for required in ("Verify release truth contract", "Smoke test desktop app"):
+            if required not in workflow:
+                _fail(f"{label} workflow is missing {required!r}")
+    if "windows-latest" not in ci or "macos-latest" not in ci or "ubuntu-22.04" not in ci:
+        _fail("CI workflow does not cover all three operating systems")
+    for script in ("scripts/package_windows.sh", "scripts/package_macos.sh", "scripts/package_linux.sh"):
+        if script not in release:
+            _fail(f"release workflow does not run {script}")
+    for required in (
+        "workflow_dispatch",
+        "Smoke test final packaged artifact",
+        "scripts/audit_phase0_exit.py",
+        "final-smoke-windows.json",
+        "final-smoke-macos.json",
+        "final-smoke-linux.json",
+    ):
+        if required not in release:
+            _fail(f"release workflow is missing {required!r}")
+    if "CURRENT_RELEASE_NOTES.md" not in release or "MANIFEST.json" not in release:
+        _fail("release workflow does not bind current notes and manifest")
+
+
+def _validate_smoke_report(path: Path, matrix: dict[str, Any]) -> dict[str, Any]:
+    try:
+        report = json.loads(_read(path))
+    except json.JSONDecodeError as exc:
+        _fail(f"invalid smoke report {path}: {exc}")
+    if not isinstance(report, dict):
+        _fail(f"smoke report {path} must be a JSON object")
+    if report.get("smoke_schema_version") != 2:
+        _fail(f"smoke report {path} has unsupported schema")
+    if report.get("ok") is not True:
+        _fail(f"smoke report {path} is not successful")
+    if report.get("version") != report.get("version_expected"):
+        _fail(f"smoke report {path} has a version mismatch")
+    checks = report.get("checks")
+    if not isinstance(checks, dict) or not REQUIRED_SMOKE_CHECKS.issubset(checks):
+        _fail(f"smoke report {path} is missing required checks")
+    if not all(checks.get(name) is True for name in REQUIRED_SMOKE_CHECKS):
+        _fail(f"smoke report {path} contains a false required check")
+    truth = report.get("truth_matrix")
+    if not isinstance(truth, dict) or truth.get("document_id") != "KTR-001":
+        _fail(f"smoke report {path} has no KTR-001 provenance")
+    if truth.get("version") != matrix.get("version") or not SHA256_RE.fullmatch(str(truth.get("sha256", ""))):
+        _fail(f"smoke report {path} has invalid truth-matrix provenance")
+    if truth.get("product_version") != report.get("version"):
+        _fail(f"smoke report {path} disagrees with its truth-matrix product version")
+    for field in ("executable_sha256", "artifact_sha256"):
+        if not SHA256_RE.fullmatch(str(report.get(field, ""))):
+            _fail(f"smoke report {path} has invalid {field}")
+    if not report.get("build_commit") or report.get("build_commit") == "UNKNOWN":
+        _fail(f"smoke report {path} has no build commit provenance")
+    if not UTC_TIMESTAMP_RE.fullmatch(str(report.get("recorded_at_utc", ""))):
+        _fail(f"smoke report {path} has no UTC recording timestamp")
+    return report
+
+
+def audit(root: Path, smoke_reports: list[Path] | None = None) -> dict[str, Any]:
+    """Run the static and optional final-artifact evidence checks."""
+    status = _read(root / "docs" / "strategy" / "PHASE-0-STATUS.md")
+    _check_work_packages(status)
+    _check_workflows(root)
+    matrix_path = root / "docs" / "release" / "truth-matrix.v1.4.0.json"
+    matrix = load_matrix(matrix_path)
+    run_checks(root, matrix_path=matrix_path)
+
+    reports = [_validate_smoke_report(path, matrix) for path in (smoke_reports or [])]
+    if reports:
+        platforms = {str(report.get("platform")) for report in reports}
+        if platforms != REQUIRED_OS:
+            _fail(f"final artifact smoke must cover {sorted(REQUIRED_OS)}, got {sorted(platforms)}")
+        versions = {str(report.get("version")) for report in reports}
+        if len(versions) != 1:
+            _fail("final artifact smoke reports disagree on product version")
+        matrix_provenance = {
+            (
+                report["truth_matrix"]["document_id"],
+                report["truth_matrix"]["version"],
+                report["truth_matrix"]["sha256"],
+            )
+            for report in reports
+        }
+        if len(matrix_provenance) != 1:
+            _fail("final artifact smoke reports disagree on truth-matrix provenance")
+
+    return {
+        "audit": "PHASE_0_EXIT",
+        "verdict": "READY_FOR_HUMAN_RELEASE_APPROVAL" if reports else "STATIC_GATES_PASS_REPORTS_PENDING",
+        "work_packages": REQUIRED_WORK_PACKAGES,
+        "final_artifact_smoke_reports": [str(path) for path in smoke_reports or []],
+        "report_count": len(reports),
+        "external_execution_enabled": False,
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Audit Kuantra Phase 0 exit evidence")
+    parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--smoke-report", action="append", type=Path, default=[])
+    parser.add_argument("--json", action="store_true", dest="as_json")
+    args = parser.parse_args(argv)
+    root = args.root.resolve()
+    reports = [path if path.is_absolute() else root / path for path in args.smoke_report]
+    try:
+        result = audit(root, reports)
+    except (TruthContractError, ValueError) as exc:
+        print(f"[phase0-exit] FAIL: {exc}", file=sys.stderr)
+        return 1
+    if args.as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(f"[phase0-exit] PASS: {result['verdict']}")
+        print(f"[phase0-exit] Work packages: {', '.join(REQUIRED_WORK_PACKAGES)}")
+        print(f"[phase0-exit] Final artifact reports: {result['report_count']}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -27,6 +27,7 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP07 Credential/OS keychain truth boundary | Verified | `a09ad80` | Isolated local backend 339 passed, 1 skipped; frontend 45 passed; i18n 480/480; build/audit pass; push `34021489108` + PR `34021491017` green on 3 OS |
 | P0-WP08 Experimental capability containment | Verified | `d0eda56` + `f8653e2` | Isolated backend 343 passed, 1 skipped; frontend 49 passed; i18n 480/480; push `34025225053` + PR `34025227211` green on 3 OS |
 | P0-WP09 Release truth matrix and current claims | Verified | `7217610` | Local backend 347 passed/1 skipped; frontend 49 passed; i18n 480/480; push `34027220927` + PR `34027222829` green on 3 OS |
+| P0-WP10 Three-OS final artifact smoke / Phase 0 exit audit | Active | — | Static gates/provenance implementation ready; isolated backend 350 passed/1 skipped; release-candidate NSIS/DMG/AppImage evidence pending |
 
 ## Aktif güvenlik durumu
 
@@ -45,4 +46,4 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Sıradaki sıra
 
-1. P0-WP10 — Üç platform packaging/smoke ve Faz 0 exit audit.
+1. P0-WP10 — Üç platform final artifact packaging/smoke ve Faz 0 exit audit; static implementation hazır, candidate run bekliyor.
