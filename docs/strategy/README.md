@@ -97,3 +97,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - GitHub Actions maliyet koruması: tam üç-OS CI matrisi yalnızca `main` push'u ve PR→`main`
   için otomatik; feature branch push'u duplicate çalıştırma üretmiyor, manuel
   `workflow_dispatch` korunuyor. Release workflow'u değişmedi.
+- GitHub Actions dahil dakika kotası %100 dolduğu için `Kuantra Terminal CI` ve
+  `Kuantra Terminal Release` workflow'ları geçici olarak GitHub tarafında manuel disabled edildi;
+  local doğrulama zorunlu kalır, kota resetinden sonra yeniden enable edilecektir.
