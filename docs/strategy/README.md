@@ -47,6 +47,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP03 | [Binance Depth Snapshot/Event Recovery Coordinator](./work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP04 | [Binance Depth Payload Normalization ve Venue Projection](./work-packages/P2-WP04-binance-depth-payload-projection.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP05 | [Canonical Market Event Envelope ve Hash Chain](./work-packages/P2-WP05-market-event-envelope.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP06 | [Durable Market Event Segment Writer](./work-packages/P2-WP06-market-event-segment-writer.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -207,3 +208,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   Duplicate identity idempotent, farklı içerik conflict; gap/rejected/stale
   kararları canonical applied chain'e giremiyor. Durable market storage ve real
   feed hâlâ kapsam dışı. Focused suite `6 passed`.
+- P2-WP06 ile canonical envelope'ların tek-yazarlı fsync-backed JSONL segment'e
+  append edilmesi ve restart recovery drill'i eklendi. Bozuk hash veya yarım
+  final line otomatik onarılmıyor; strict mod açılışı fail-closed yapıyor.
+  Parquet/Arrow/DuckDB ve multi-process writer kapsam dışı. Focused suite
+  `5 passed`.

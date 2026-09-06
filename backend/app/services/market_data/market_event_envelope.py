@@ -19,6 +19,7 @@ from .binance_depth_sequence import DepthSequenceDecision, DepthSequenceResult
 
 
 GENESIS_HASH = "0" * 64
+MARKET_EVENT_SCHEMA_VERSION = "MARKET_EVENT_V1"
 
 
 class MarketEventEnvelopeError(ValueError):
@@ -154,6 +155,10 @@ class MarketEventChain:
         expected_sequence = 1
         expected_previous = GENESIS_HASH
         for event in self._events:
+            try:
+                validate_market_event_envelope(event)
+            except MarketEventEnvelopeError as exc:
+                errors.append(f"envelope validation failed at {event.event_id}: {exc}")
             if event.chain_sequence != expected_sequence:
                 errors.append(f"chain_sequence mismatch at {event.event_id}")
             if event.prev_hash != expected_previous:
@@ -198,7 +203,7 @@ class MarketEventChain:
 
         chain_sequence = len(self._events) + 1
         draft = MarketEventEnvelope(
-            schema_version="MARKET_EVENT_V1",
+            schema_version=MARKET_EVENT_SCHEMA_VERSION,
             event_type=event_type,
             source_identity=source_identity,
             event_id=event_id,
@@ -219,6 +224,89 @@ class MarketEventChain:
         self._events.append(envelope)
         self._by_source_identity[source_identity] = envelope
         return envelope
+
+
+def envelope_from_dict(payload: Any) -> MarketEventEnvelope:
+    """Decode and validate one persisted JSON envelope without repairing it."""
+
+    if not isinstance(payload, dict):
+        raise MarketEventEnvelopeError("envelope must be an object")
+    required = {
+        "schema_version",
+        "event_type",
+        "source_identity",
+        "event_id",
+        "symbol",
+        "venue",
+        "feed",
+        "first_update_id",
+        "final_update_id",
+        "previous_update_id",
+        "normalized_payload",
+        "provenance",
+        "chain_sequence",
+        "prev_hash",
+        "payload_sha256",
+        "event_hash",
+    }
+    missing = sorted(required.difference(payload))
+    if missing:
+        raise MarketEventEnvelopeError(f"envelope is missing fields: {', '.join(missing)}")
+    try:
+        envelope = MarketEventEnvelope(
+            schema_version=payload["schema_version"],
+            event_type=payload["event_type"],
+            source_identity=payload["source_identity"],
+            event_id=payload["event_id"],
+            symbol=payload["symbol"],
+            venue=payload["venue"],
+            feed=payload["feed"],
+            first_update_id=payload["first_update_id"],
+            final_update_id=payload["final_update_id"],
+            previous_update_id=payload["previous_update_id"],
+            normalized_payload=payload["normalized_payload"],
+            provenance=payload["provenance"],
+            chain_sequence=payload["chain_sequence"],
+            prev_hash=payload["prev_hash"],
+            payload_sha256=payload["payload_sha256"],
+            event_hash=payload["event_hash"],
+        )
+    except (KeyError, TypeError) as exc:
+        raise MarketEventEnvelopeError("envelope fields have invalid types") from exc
+    validate_market_event_envelope(envelope)
+    return envelope
+
+
+def validate_market_event_envelope(envelope: MarketEventEnvelope) -> None:
+    """Validate content and hashes of one envelope without changing it."""
+
+    if not isinstance(envelope, MarketEventEnvelope):
+        raise MarketEventEnvelopeError("value is not a MarketEventEnvelope")
+    if envelope.schema_version != MARKET_EVENT_SCHEMA_VERSION:
+        raise MarketEventEnvelopeError("unsupported market event schema version")
+    for field_name in ("event_type", "source_identity", "event_id", "symbol", "venue", "feed", "prev_hash", "payload_sha256", "event_hash"):
+        if not isinstance(getattr(envelope, field_name), str) or not getattr(envelope, field_name):
+            raise MarketEventEnvelopeError(f"{field_name} must be a non-empty string")
+    for field_name in ("chain_sequence", "final_update_id"):
+        value = getattr(envelope, field_name)
+        if isinstance(value, bool) or not isinstance(value, int) or value < (1 if field_name == "chain_sequence" else 0):
+            raise MarketEventEnvelopeError(f"{field_name} must be a non-negative integer")
+    for field_name in ("first_update_id", "previous_update_id"):
+        value = getattr(envelope, field_name)
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
+            raise MarketEventEnvelopeError(f"{field_name} must be null or a non-negative integer")
+    if not isinstance(envelope.normalized_payload, dict) or not isinstance(envelope.provenance, dict):
+        raise MarketEventEnvelopeError("normalized_payload and provenance must be objects")
+    for field_name in ("prev_hash", "payload_sha256", "event_hash"):
+        value = getattr(envelope, field_name)
+        if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+            raise MarketEventEnvelopeError(f"{field_name} must be a lowercase SHA-256 digest")
+    expected_payload = _payload_hash(envelope.normalized_payload)
+    if envelope.payload_sha256 != expected_payload:
+        raise MarketEventEnvelopeError("payload_sha256 does not match normalized_payload")
+    expected_event = _event_hash(envelope)
+    if envelope.event_hash != expected_event:
+        raise MarketEventEnvelopeError("event_hash does not match envelope content")
 
 
 def _payload_hash(payload: Dict[str, Any]) -> str:
@@ -248,8 +336,11 @@ def _event_hash(event: MarketEventEnvelope) -> str:
 
 __all__ = [
     "GENESIS_HASH",
+    "MARKET_EVENT_SCHEMA_VERSION",
     "MarketEventChain",
     "MarketEventEnvelope",
     "MarketEventEnvelopeError",
     "MarketEventIdentityConflict",
+    "envelope_from_dict",
+    "validate_market_event_envelope",
 ]

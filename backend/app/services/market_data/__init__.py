@@ -29,10 +29,17 @@ from .binance_depth_payload import (
 )
 from .market_event_envelope import (
     GENESIS_HASH,
+    MARKET_EVENT_SCHEMA_VERSION,
     MarketEventChain,
     MarketEventEnvelope,
     MarketEventEnvelopeError,
     MarketEventIdentityConflict,
+    envelope_from_dict,
+    validate_market_event_envelope,
+)
+from .market_event_segment import (
+    MarketEventSegmentRecoveryError,
+    MarketEventSegmentWriter,
 )
 
 __all__ = [
@@ -56,8 +63,13 @@ __all__ = [
     "normalize_snapshot",
     "normalize_update",
     "GENESIS_HASH",
+    "MARKET_EVENT_SCHEMA_VERSION",
     "MarketEventChain",
     "MarketEventEnvelope",
     "MarketEventEnvelopeError",
     "MarketEventIdentityConflict",
+    "envelope_from_dict",
+    "validate_market_event_envelope",
+    "MarketEventSegmentRecoveryError",
+    "MarketEventSegmentWriter",
 ]
