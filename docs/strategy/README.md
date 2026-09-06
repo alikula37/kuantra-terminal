@@ -27,6 +27,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP08 | [Experimental capability containment](./work-packages/P0-WP08-experimental-containment.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP09 | [Release truth matrix ve current claims](./work-packages/P0-WP09-release-truth-matrix.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Ready | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -82,3 +83,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   final NSIS/DMG/AppImage artefaktlarını kendi içinden doğrulayacak şekilde hazırlandı. Static
   Phase 0 audit geçer; backend suite ephemeral test data ile 350 passed/1 skipped; üç OS final
   artifact kanıtı ve insan release approval'ı hâlâ bekleniyor.
+- P1-WP01, Phase 0 insan onayından sonra uygulanacak ilk Phase 1 paketi olarak hazırlandı.
+  Append-only SQLite evidence ledger, idempotency ve hash-chain verifier kapsamı tanımlandı;
+  production implementation özellikle Phase 0 kapanışına kadar bloke edildi.
