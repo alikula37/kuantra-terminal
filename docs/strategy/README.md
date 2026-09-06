@@ -29,6 +29,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Verified | 1.0.0 | 2026-09-06 |
 | P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Active | 1.1.0 | 2026-09-06 |
 | P1-WP02 | [Atomic Journal Evidence Write Adapter](./work-packages/P1-WP02-atomic-journal-evidence-write.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP03 | [Rebuildable Trade Projection ve Tombstone](./work-packages/P1-WP03-rebuildable-trade-projection.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -106,3 +107,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P1-WP02 `4dc7c22` ile production journal, CSV ve TradingView yazıları canonical evidence
   event'iyle aynı SQLite transaction'ına alındı; rollback/idempotency suite'i `14 passed`,
   full backend regression `364 passed, 1 skipped`.
+- P1-WP03 `ad45281` ile typed `evidence_trade_projections`, Alembic `003_trade_projection`,
+  deterministic rebuild/dry-run CLI ve physical delete yerine `CANCELED` tombstone teslim edildi;
+  projection suite'i `5 passed`, full backend regression `369 passed, 1 skipped`.
