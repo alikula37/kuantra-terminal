@@ -43,6 +43,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP14 | [Versioned Playbook ve Risk Policy Events](./work-packages/P1-WP14-versioned-playbook-risk-policy-events.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP15 | [Trade Evidence Pack UI ve Provenance Review](./work-packages/P1-WP15-trade-evidence-pack-ui.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP01 | [Sequence Gap-Aware Market Context](./work-packages/P2-WP01-sequence-gap-aware-market-context.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP02 | [Binance Snapshot + Delta Sequence Validator](./work-packages/P2-WP02-binance-depth-sequence-validator.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -183,3 +184,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   `sequence_gap_count` eklendi. Gap veya eksik sequence hiçbir zaman
   `source_verified=true` olarak yükseltilmiyor; mevcut bar-approximation replay
   akışı fail-closed açıklama ile korunuyor. Focused suite `49 passed`.
+- P2-WP02 ile Binance snapshot + diff-depth sequence state machine'i eklendi.
+  `U/u` snapshot bridge, stale event, gap/recovery ve futures `pu` previous-ID
+  kuralları saf ve network'süz bir validator olarak test ediliyor. Hatalı veya
+  yanlış sembollü event'ler local book'a uygulanmadan `GAP` durumuna geçiyor;
+  sentetik recovery yapılmıyor. Focused suite `7 passed`.
