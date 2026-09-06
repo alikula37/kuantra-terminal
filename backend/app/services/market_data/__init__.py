@@ -70,6 +70,12 @@ from .binance_depth_network import (
     BinanceDepthNetworkConfig,
     BinanceDepthNetworkError,
 )
+from .binance_depth_session import (
+    BinanceDepthReconnectPolicy,
+    BinanceDepthSession,
+    DepthSessionDecision,
+    DepthSessionResult,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -120,4 +126,8 @@ __all__ = [
     "BinanceDepthNetworkAdapter",
     "BinanceDepthNetworkConfig",
     "BinanceDepthNetworkError",
+    "BinanceDepthReconnectPolicy",
+    "BinanceDepthSession",
+    "DepthSessionDecision",
+    "DepthSessionResult",
 ]

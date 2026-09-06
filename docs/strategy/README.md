@@ -53,6 +53,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP09 | [Injected Binance Depth Ingestor Boundary](./work-packages/P2-WP09-binance-depth-ingestor.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP10 | [Injected Async Binance Depth Transport Boundary](./work-packages/P2-WP10-binance-depth-transport-boundary.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP11 | [Public Binance Depth Network Adapter](./work-packages/P2-WP11-binance-depth-network-adapter.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP12 | [Bounded Binance Depth Reconnect Session](./work-packages/P2-WP12-binance-depth-reconnect-session.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -238,4 +239,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P2-WP11 ile testnet varsayılanlı, TLS-only public REST snapshot + websocket
   depth adapter'ı transport boundary'ye bağlandı; credential, execution,
   reconnect ve source verification terfisi kapsam dışı tutuldu. Focused suite
+  `5 passed`.
+- P2-WP12 ile source/snapshot failure sonrası reconnect budget, exponential
+  backoff ve stop-event kapanışı bounded session sonucuna bağlandı; persistence,
+  recovery ve snapshot rejection hataları retry edilmedi. Focused suite
   `5 passed`.
