@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import time
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 import websockets
 from app.websocket.connection_manager import ws_manager
@@ -107,7 +108,16 @@ class BinanceStreamClient:
                 "close": float(k["c"]),
                 "volume": float(k["v"]),
                 "trades_count": int(k["n"]),
-                "is_closed": bool(k["x"])
+                "is_closed": bool(k["x"]),
+                # Binance's public kline payload has no monotonic feed
+                # sequence.  Preserve the stable kline identity, but keep
+                # source_verified false until a gap-aware data plane exists.
+                "venue": "BINANCE",
+                "feed": "BINANCE_WS_KLINE",
+                "source_event_id": f"{payload['s']}:{k['i']}:{k['t']}",
+                "source_sequence": None,
+                "ingested_at": datetime.now(timezone.utc).isoformat(),
+                "source_verified": False,
             }
             # Broadcast live candle update
             await ws_manager.broadcast({

@@ -1,7 +1,9 @@
 """Shared, read-only evidence boundary for historical *bar approximation*.
 
-This legacy store has no venue/feed identity. Validated OHLC coverage is not
-authenticated market data, broker reconciliation, or intrabar/tick replay.
+Validated OHLC coverage is not authenticated market data, broker reconciliation,
+or intrabar/tick replay.  Legacy rows may still have no venue/feed identity;
+newly ingested rows carry that identity without being promoted to verified
+market truth unless the source explicitly opts in.
 """
 
 from dataclasses import dataclass
@@ -34,7 +36,7 @@ def provenance() -> dict[str, Any]:
         "unrealized_pnl_basis": "LINEAR_PRICE_DELTA_TIMES_RECORDED_QUANTITY",
         "limitations": [
             "Full boundary-bar highs/lows may occur before entry or after exit; intrabar order is unknown.",
-            "Legacy candles have no verified venue/feed provenance; this is not tick or broker-fill evidence.",
+            "Rows without complete verified venue/feed provenance remain approximate; this is not tick or broker-fill evidence.",
             "R uses the recorded stop, not a verified initial-stop history; fees/slippage are not modeled.",
             "Replay unrealized PnL assumes a linear instrument and recorded base-unit quantity, not inverse or contract-multiplier valuation.",
         ],
@@ -74,10 +76,17 @@ def market_context_attachment(evidence: "CandleEvidence") -> dict[str, Any]:
     first_time = int(candles[0]["time"])
     last_time = int(candles[-1]["time"])
     trade_candles = evidence.trade_candles
+    candle_provenance = _provenance_summary(candles)
     return {
         "quality": "BAR_APPROXIMATION",
         "source": "DUCKDB_CANDLES",
-        "source_verified": False,
+        "source_verified": candle_provenance["source_verified"],
+        "venue": candle_provenance["venue"],
+        "feed": candle_provenance["feed"],
+        "sequence_coverage": candle_provenance["sequence_coverage"],
+        "provenance_complete": candle_provenance["provenance_complete"],
+        "ingested_at_start": candle_provenance["ingested_at_start"],
+        "ingested_at_end": candle_provenance["ingested_at_end"],
         "symbol": evidence.trade["symbol"],
         "timeframe": "1m",
         "timezone": "UTC",
@@ -134,6 +143,105 @@ def utc_timestamp(value: Any) -> float:
         return result
     except (TypeError, ValueError, OverflowError, OSError) as exc:
         raise EvidenceError("INVALID_TIMESTAMP", "A valid UTC-compatible timestamp is required.") from exc
+
+
+def _candle_provenance(raw: dict[str, Any]) -> dict[str, Any]:
+    """Return meaningful provenance fields while ignoring legacy defaults."""
+    venue = str(raw.get("venue") or "UNVERIFIED").strip().upper()
+    feed = str(raw.get("feed") or raw.get("source") or "UNVERIFIED").strip().upper()
+    event_id = raw.get("source_event_id")
+    event_id = str(event_id).strip() if event_id is not None and str(event_id).strip() else None
+
+    sequence = raw.get("source_sequence")
+    if sequence is not None and sequence != "":
+        if isinstance(sequence, bool):
+            raise EvidenceError("INVALID_CANDLE_PROVENANCE", "Candle source sequence must be a non-negative integer.")
+        try:
+            sequence = int(sequence)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise EvidenceError("INVALID_CANDLE_PROVENANCE", "Candle source sequence must be a non-negative integer.") from exc
+        if sequence < 0:
+            raise EvidenceError("INVALID_CANDLE_PROVENANCE", "Candle source sequence must be a non-negative integer.")
+    else:
+        sequence = None
+
+    verified = raw.get("source_verified") is True or raw.get("source_verified") == 1
+    meaningful = bool(
+        event_id is not None
+        or sequence is not None
+        or verified
+        or venue != "UNVERIFIED"
+        or feed != "UNVERIFIED"
+    )
+    if not meaningful:
+        return {}
+    if verified and (venue == "UNVERIFIED" or feed == "UNVERIFIED"):
+        raise EvidenceError(
+            "INVALID_CANDLE_PROVENANCE",
+            "Verified candles require explicit venue and feed provenance.",
+        )
+
+    result: dict[str, Any] = {
+        "venue": venue,
+        "feed": feed,
+        "source_verified": verified,
+    }
+    if event_id is not None:
+        result["source_event_id"] = event_id
+    if sequence is not None:
+        result["source_sequence"] = sequence
+    if raw.get("ingested_at") is not None:
+        try:
+            result["ingested_at"] = datetime.fromtimestamp(
+                utc_timestamp(raw["ingested_at"]), timezone.utc
+            ).isoformat()
+        except EvidenceError as exc:
+            raise EvidenceError(
+                "INVALID_CANDLE_PROVENANCE",
+                "Candle ingestion timestamp must be valid.",
+            ) from exc
+    return result
+
+
+def _provenance_summary(candles: list[dict[str, Any]]) -> dict[str, Any]:
+    records = [_candle_provenance(candle) for candle in candles]
+    meaningful = [record for record in records if record]
+    if not meaningful:
+        return {
+            "venue": "UNVERIFIED",
+            "feed": "UNVERIFIED",
+            "source_verified": False,
+            "sequence_coverage": "NONE",
+            "provenance_complete": False,
+            "ingested_at_start": None,
+            "ingested_at_end": None,
+        }
+
+    venues = {record.get("venue", "UNVERIFIED") for record in meaningful}
+    feeds = {record.get("feed", "UNVERIFIED") for record in meaningful}
+    sequences = sum("source_sequence" in record for record in records)
+    if sequences == 0:
+        sequence_coverage = "NONE"
+    elif sequences == len(candles):
+        sequence_coverage = "COMPLETE"
+    else:
+        sequence_coverage = "PARTIAL"
+    complete = len(meaningful) == len(candles) and all(
+        record.get("venue") != "UNVERIFIED"
+        and record.get("feed") != "UNVERIFIED"
+        and "ingested_at" in record
+        for record in records
+    )
+    ingestion_times = [record["ingested_at"] for record in records if "ingested_at" in record]
+    return {
+        "venue": next(iter(venues)) if len(venues) == 1 else "MULTI_VENUE",
+        "feed": next(iter(feeds)) if len(feeds) == 1 else "MULTI_FEED",
+        "source_verified": complete and all(record.get("source_verified") is True for record in records),
+        "sequence_coverage": sequence_coverage,
+        "provenance_complete": complete,
+        "ingested_at_start": min(ingestion_times) if ingestion_times else None,
+        "ingested_at_end": max(ingestion_times) if ingestion_times else None,
+    }
 
 
 def normalize_trade(trade: dict[str, Any]) -> dict[str, Any]:
@@ -243,9 +351,10 @@ def load_candle_evidence(
         bar["volume"] = finite_number(raw.get("volume"))
         if raw.get("volume") is not None and (bar["volume"] is None or bar["volume"] < 0):
             raise EvidenceError("INVALID_VOLUME", "Candle volume must be finite and nonnegative when recorded.")
+        bar.update(_candle_provenance(raw))
         existing = by_time.get(bar["time"])
         if existing is not None and existing != bar:
-            raise EvidenceError("CONFLICTING_CANDLES", "Conflicting OHLCV rows exist for the same minute.")
+            raise EvidenceError("CONFLICTING_CANDLES", "Conflicting OHLCV or provenance rows exist for the same minute.")
         by_time[bar["time"]] = bar
     if not by_time:
         raise EvidenceError("NO_CANDLE_HISTORY", "No recorded one-minute history covers this trade.")

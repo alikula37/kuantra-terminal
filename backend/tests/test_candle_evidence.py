@@ -72,7 +72,18 @@ def test_market_context_attachment_is_deterministic_and_discloses_boundaries(rec
 
 def test_real_conflicting_duplicate_is_rejected(candle_store, recorded_trade):
     with candle_store.get_connection() as conn:
-        conn.execute("INSERT INTO market_candles SELECT symbol, timeframe, timestamp, open, high + 1, low, close, volume, trades_count FROM market_candles WHERE timestamp = '2026-09-01 10:01:00'")
+        conn.execute("""
+            INSERT INTO market_candles (
+                symbol, timeframe, timestamp, open, high, low, close, volume,
+                trades_count, venue, feed, source_event_id, source_sequence,
+                ingested_at, source_verified
+            )
+            SELECT symbol, timeframe, timestamp, open, high + 1, low, close, volume,
+                   trades_count, venue, feed, source_event_id, source_sequence,
+                   ingested_at, source_verified
+            FROM market_candles
+            WHERE timestamp = '2026-09-01 10:01:00'
+        """)
     with pytest.raises(EvidenceError, match="Conflicting") as error:
         load_candle_evidence(recorded_trade)
     assert error.value.reason == "CONFLICTING_CANDLES"

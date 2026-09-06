@@ -12,6 +12,7 @@ import pandas as pd
 from typing import Dict, Any, List, Optional
 from app.core.paths import get_sqlite_path, get_duckdb_path
 from app.db.sqlite_driver import SQLiteDriver
+from app.db.market_candle_schema import ensure_market_candle_schema
 from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 from app.services.trade_read_adapter import TradeReadAdapter
 
@@ -172,19 +173,8 @@ class DuckDBHydrator:
     @staticmethod
     def _ensure_schema(conn: duckdb.DuckDBPyConnection):
         """Creates OLAP tables matching DuckDBDriver schema."""
+        ensure_market_candle_schema(conn)
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS market_candles (
-                symbol VARCHAR,
-                timeframe VARCHAR,
-                timestamp TIMESTAMP,
-                open DOUBLE,
-                high DOUBLE,
-                low DOUBLE,
-                close DOUBLE,
-                volume DOUBLE,
-                trades_count BIGINT
-            );
-
             CREATE TABLE IF NOT EXISTS olap_trades (
                 id VARCHAR PRIMARY KEY,
                 symbol VARCHAR,

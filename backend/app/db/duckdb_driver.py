@@ -13,6 +13,7 @@ except ImportError:
     pd = None
 
 from app.core.paths import get_duckdb_path
+from app.db.market_candle_schema import ensure_market_candle_schema
 
 logger = logging.getLogger(__name__)
 
@@ -35,19 +36,8 @@ class DuckDBDriver:
     def _init_db(self):
         conn = self.get_connection()
         try:
+            ensure_market_candle_schema(conn)
             conn.execute("""
-                CREATE TABLE IF NOT EXISTS market_candles (
-                    symbol VARCHAR,
-                    timeframe VARCHAR,
-                    timestamp TIMESTAMP,
-                    open DOUBLE,
-                    high DOUBLE,
-                    low DOUBLE,
-                    close DOUBLE,
-                    volume DOUBLE,
-                    trades_count BIGINT
-                );
-
                 CREATE TABLE IF NOT EXISTS olap_trades (
                     id VARCHAR PRIMARY KEY,
                     symbol VARCHAR,
@@ -73,28 +63,158 @@ class DuckDBDriver:
         finally:
             conn.close()
 
+    @staticmethod
+    def _utc_naive_timestamp(value: Any) -> datetime:
+        """Normalize an incoming timestamp to a naive UTC datetime."""
+        if value is None:
+            return datetime.now(timezone.utc).replace(tzinfo=None)
+        parsed = pd.to_datetime(value, utc=True, errors="raise")
+        if hasattr(parsed, "to_pydatetime"):
+            parsed = parsed.to_pydatetime()
+        return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+
+    @staticmethod
+    def _normalize_identifier(value: Any, default: str) -> str:
+        if value is None or not str(value).strip():
+            return default
+        return str(value).strip().upper()
+
+    @staticmethod
+    def _normalize_source_sequence(value: Any) -> Optional[int]:
+        if value is None or value == "":
+            return None
+        if isinstance(value, bool):
+            raise ValueError("source_sequence must be a non-negative integer")
+        try:
+            sequence = int(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("source_sequence must be a non-negative integer") from exc
+        if sequence < 0:
+            raise ValueError("source_sequence must be a non-negative integer")
+        return sequence
+
+    @staticmethod
+    def _normalize_verified(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        if value in (0, 1):
+            return bool(value)
+        raise ValueError("source_verified must be a boolean")
+
+    @classmethod
+    def _normalize_candle(cls, raw: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(raw, dict):
+            raise ValueError("Each candle must be a mapping")
+
+        venue = cls._normalize_identifier(raw.get("venue"), "UNVERIFIED")
+        feed = cls._normalize_identifier(raw.get("feed") or raw.get("source"), "UNVERIFIED")
+        source_verified = cls._normalize_verified(raw.get("source_verified"))
+        if source_verified and (venue == "UNVERIFIED" or feed == "UNVERIFIED"):
+            raise ValueError("Verified candles require explicit venue and feed provenance")
+
+        timestamp = raw.get("timestamp")
+        if timestamp is None and raw.get("time") is not None:
+            timestamp = datetime.fromtimestamp(float(raw["time"]), timezone.utc)
+        if timestamp is None:
+            raise ValueError("A source candle timestamp is required")
+
+        event_id = raw.get("source_event_id")
+        event_id = str(event_id).strip() if event_id is not None and str(event_id).strip() else None
+        trades_count = raw.get("trades_count")
+        if trades_count is not None:
+            try:
+                trades_count = int(trades_count)
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError("trades_count must be an integer when supplied") from exc
+
+        return {
+            "symbol": str(raw.get("symbol") or "").strip().upper(),
+            "timeframe": str(raw.get("timeframe") or "1m").strip(),
+            "timestamp": cls._utc_naive_timestamp(timestamp),
+            "open": raw.get("open"),
+            "high": raw.get("high"),
+            "low": raw.get("low"),
+            "close": raw.get("close"),
+            "volume": raw.get("volume"),
+            "trades_count": trades_count,
+            "venue": venue,
+            "feed": feed,
+            "source_event_id": event_id,
+            "source_sequence": cls._normalize_source_sequence(raw.get("source_sequence")),
+            "ingested_at": cls._utc_naive_timestamp(raw.get("ingested_at")),
+            "source_verified": source_verified,
+        }
+
     def insert_candles(self, candles: List[Dict[str, Any]]) -> int:
         if not candles:
             return 0
-        df = pd.DataFrame(candles)
-        if "timestamp" in df.columns:
-            df["timestamp"] = pd.to_datetime(df["timestamp"])
+        records = [self._normalize_candle(candle) for candle in candles]
+        df = pd.DataFrame(records)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_localize(None)
+        df["ingested_at"] = pd.to_datetime(df["ingested_at"], utc=True).dt.tz_localize(None)
 
         conn = self.get_connection()
         try:
             conn.register("incoming_candles", df)
             conn.execute("""
-                INSERT INTO market_candles
+                INSERT INTO market_candles (
+                    symbol, timeframe, timestamp,
+                    open, high, low, close, volume, trades_count,
+                    venue, feed, source_event_id, source_sequence,
+                    ingested_at, source_verified
+                )
                 SELECT 
                     symbol, timeframe, timestamp,
                     CAST(open AS DOUBLE), CAST(high AS DOUBLE),
                     CAST(low AS DOUBLE), CAST(close AS DOUBLE),
-                    CAST(volume AS DOUBLE), CAST(trades_count AS BIGINT)
+                    CAST(volume AS DOUBLE), CAST(trades_count AS BIGINT),
+                    venue, feed, source_event_id, CAST(source_sequence AS BIGINT),
+                    ingested_at, CAST(source_verified AS BOOLEAN)
                 FROM incoming_candles
             """)
             return len(df)
         finally:
             conn.close()
+
+    def insert_market_candle(
+        self,
+        *,
+        symbol: str,
+        timeframe: str,
+        timestamp: Any,
+        open_p: float,
+        high_p: float,
+        low_p: float,
+        close_p: float,
+        volume: float,
+        trades_count: Optional[int] = None,
+        venue: str = "UNVERIFIED",
+        feed: str = "UNVERIFIED",
+        source_event_id: Optional[str] = None,
+        source_sequence: Optional[int] = None,
+        ingested_at: Any = None,
+        source_verified: bool = False,
+    ) -> int:
+        """Compatibility entry point for adapter-managed candle ingestion."""
+        return self.insert_candles([{
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "timestamp": timestamp,
+            "open": open_p,
+            "high": high_p,
+            "low": low_p,
+            "close": close_p,
+            "volume": volume,
+            "trades_count": trades_count,
+            "venue": venue,
+            "feed": feed,
+            "source_event_id": source_event_id,
+            "source_sequence": source_sequence,
+            "ingested_at": ingested_at,
+            "source_verified": source_verified,
+        }])
 
     def get_candles(self, symbol: str, timeframe: str = "1m", limit: int = 500) -> List[Dict[str, Any]]:
         conn = self.get_connection()
@@ -103,14 +223,20 @@ class DuckDBDriver:
                 SELECT 
                     symbol, timeframe, 
                     epoch(timestamp) as time,
-                    open, high, low, close, volume, trades_count
+                    open, high, low, close, volume, trades_count,
+                    venue, feed, source_event_id, source_sequence,
+                    ingested_at, source_verified
                 FROM market_candles
                 WHERE symbol = ? AND timeframe = ?
                 ORDER BY timestamp DESC
                 LIMIT ?
             """
             result = conn.execute(query, [symbol.upper(), timeframe, limit]).fetchall()
-            cols = ["symbol", "timeframe", "time", "open", "high", "low", "close", "volume", "trades_count"]
+            cols = [
+                "symbol", "timeframe", "time", "open", "high", "low", "close", "volume",
+                "trades_count", "venue", "feed", "source_event_id", "source_sequence",
+                "ingested_at", "source_verified",
+            ]
             candles = [dict(zip(cols, row)) for row in reversed(result)]
             return candles
         finally:
@@ -143,13 +269,19 @@ class DuckDBDriver:
         try:
             rows = conn.execute("""
                 SELECT symbol, timeframe, epoch(timestamp) AS time,
-                       open, high, low, close, volume, trades_count
+                       open, high, low, close, volume, trades_count,
+                       venue, feed, source_event_id, source_sequence,
+                       ingested_at, source_verified
                 FROM market_candles
                 WHERE symbol = ? AND timeframe = ? AND timestamp >= ? AND timestamp < ?
                 ORDER BY timestamp ASC
                 LIMIT ?
             """, [symbol.upper(), timeframe, start_utc, end_utc, limit]).fetchall()
-            columns = ["symbol", "timeframe", "time", "open", "high", "low", "close", "volume", "trades_count"]
+            columns = [
+                "symbol", "timeframe", "time", "open", "high", "low", "close", "volume",
+                "trades_count", "venue", "feed", "source_event_id", "source_sequence",
+                "ingested_at", "source_verified",
+            ]
             return [dict(zip(columns, row)) for row in rows]
         finally:
             conn.close()

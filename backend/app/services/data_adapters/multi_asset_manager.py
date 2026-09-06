@@ -56,11 +56,22 @@ class MultiAssetManager:
         close_p: float,
         volume: float,
         timeframe: str = "1m",
-        timestamp: float = 0.0
+        timestamp: float = 0.0,
+        venue: str = "UNVERIFIED",
+        feed: str = "UNVERIFIED",
+        source_event_id: str | None = None,
+        source_sequence: int | None = None,
+        source_verified: bool = False,
     ):
-        """Streams normalized candle into DuckDB OLAP table."""
-        ts_str = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(timestamp or time.time()))
-        duckdb_driver.insert_market_candle(
+        """Streams a normalized candle with explicit feed provenance.
+
+        The legacy adapter surface remains experimental; omitted provenance is
+        persisted as ``UNVERIFIED`` and is never promoted to replay evidence.
+        """
+        if not timestamp:
+            raise ValueError("A source candle timestamp is required")
+        ts_str = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(timestamp))
+        return duckdb_driver.insert_market_candle(
             symbol=symbol.upper(),
             timeframe=timeframe,
             timestamp=ts_str,
@@ -68,7 +79,12 @@ class MultiAssetManager:
             high_p=high_p,
             low_p=low_p,
             close_p=close_p,
-            volume=volume
+            volume=volume,
+            venue=venue,
+            feed=feed,
+            source_event_id=source_event_id,
+            source_sequence=source_sequence,
+            source_verified=source_verified,
         )
 
 multi_asset_manager = MultiAssetManager()

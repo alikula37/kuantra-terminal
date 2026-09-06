@@ -111,7 +111,9 @@ class TestOperationalMaintenanceAndSanitizer:
         conn = duckdb_driver.get_connection()
         try:
             conn.execute("""
-                INSERT INTO market_candles VALUES 
+                INSERT INTO market_candles (
+                    symbol, timeframe, timestamp, open, high, low, close, volume, trades_count
+                ) VALUES
                 ('BTCUSDT', '1m', '2020-01-01 10:00:00', 7000.0, 7050.0, 6990.0, 7020.0, 10.5, 100),
                 ('BTCUSDT', '1m', '2020-01-01 10:01:00', 7020.0, 7080.0, 7010.0, 7075.0, 12.0, 120);
             """)
