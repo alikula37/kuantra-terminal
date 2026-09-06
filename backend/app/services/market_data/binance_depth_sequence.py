@@ -137,6 +137,19 @@ class BinanceDepthSequenceValidator:
             last_update_id=self._last_update_id,
         )
 
+    def snapshot_update_id(self, snapshot: Mapping[str, Any]) -> int:
+        """Inspect a snapshot ID without changing validator state."""
+
+        if not isinstance(snapshot, Mapping):
+            raise ValueError("snapshot must be an object")
+        return self._require_update_id(snapshot, "lastUpdateId")
+
+    def event_range(self, event: Mapping[str, Any]) -> tuple[int, int]:
+        """Inspect ``U``/``u`` without changing validator state."""
+
+        first_update_id, final_update_id, _ = self._parse_event(event)
+        return first_update_id, final_update_id
+
     def accept_delta(self, event: Mapping[str, Any]) -> DepthSequenceResult:
         """Validate one diff-depth event without mutating a local order book."""
 

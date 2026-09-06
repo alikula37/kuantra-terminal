@@ -10,6 +10,12 @@ from .binance_depth_sequence import (
     DepthSequenceResult,
     DepthSequenceState,
 )
+from .binance_depth_recovery import (
+    BinanceDepthRecoveryCoordinator,
+    DepthRecoveryDecision,
+    DepthRecoveryResult,
+    DepthRecoveryState,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -18,4 +24,8 @@ __all__ = [
     "DepthSequenceDecision",
     "DepthSequenceResult",
     "DepthSequenceState",
+    "BinanceDepthRecoveryCoordinator",
+    "DepthRecoveryDecision",
+    "DepthRecoveryResult",
+    "DepthRecoveryState",
 ]

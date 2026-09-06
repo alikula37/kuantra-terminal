@@ -44,6 +44,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP15 | [Trade Evidence Pack UI ve Provenance Review](./work-packages/P1-WP15-trade-evidence-pack-ui.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP01 | [Sequence Gap-Aware Market Context](./work-packages/P2-WP01-sequence-gap-aware-market-context.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP02 | [Binance Snapshot + Delta Sequence Validator](./work-packages/P2-WP02-binance-depth-sequence-validator.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP03 | [Binance Depth Snapshot/Event Recovery Coordinator](./work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -189,3 +190,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   kuralları saf ve network'süz bir validator olarak test ediliyor. Hatalı veya
   yanlış sembollü event'ler local book'a uygulanmadan `GAP` durumuna geçiyor;
   sentetik recovery yapılmıyor. Focused suite `7 passed`.
+- P2-WP03 ile websocket event buffer'ı ve REST snapshot yarışının transport-free
+  recovery coordinator sözleşmesi eklendi. Bounded buffer overflow, snapshot-behind
+  retry, stale replay filtering ve açık `start_buffering()` recovery cycle'ı
+  test ediliyor; network/order-book mutation hâlâ kapsam dışı. Focused suite
+  `6 passed`.
