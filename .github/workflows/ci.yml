@@ -2,9 +2,12 @@ name: Kuantra Terminal CI
 
 on:
   push:
-    branches: [ main, 'codex/**', 'feat/**' ]
+    # Full matrix CI is a merge gate. Feature branches use PR checks or
+    # workflow_dispatch to avoid paying for duplicate push + PR runs.
+    branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

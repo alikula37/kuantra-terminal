@@ -94,3 +94,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   1 skipped`; `a103a06` için three-OS push CI `34038244922` green. `db80a77` sonrası CI
   denemesi GitHub billing/spending-limit koruması nedeniyle job başlatamadı; broker, DuckDB,
   UI ve AI akışlarına dokunulmadı.
+- GitHub Actions maliyet koruması: tam üç-OS CI matrisi yalnızca `main` push'u ve PR→`main`
+  için otomatik; feature branch push'u duplicate çalıştırma üretmiyor, manuel
+  `workflow_dispatch` korunuyor. Release workflow'u değişmedi.

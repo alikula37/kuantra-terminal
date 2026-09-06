@@ -43,7 +43,9 @@ frontend tests ve production build. Bu kapılardan biri geçmezse paketleme/rele
 
 ## Davranış sözleşmesi
 
-1. CI push filtresi `main`, `codex/**` ve mevcut `feat/**` branch'lerini kapsar; PR→main kalır.
+1. CI tam matrisi yalnızca `main` push'unda ve PR→`main` yolunda otomatik çalışır. Feature
+   branch push'ları duplicate dakika tüketimini önlemek için otomatik tetiklenmez; gerektiğinde
+   `workflow_dispatch` ile manuel çalıştırılabilir.
 2. Her matrix job'ı, step bağlamında kullanılabilen `${{ runner.temp }}` değerinden
    `GITHUB_ENV` aracılığıyla `KUANTRA_DATA_DIR` üretir. `runner` bağlamı job-level `env`
    değerlendirmesinde kullanılamaz.
@@ -60,7 +62,8 @@ frontend tests ve production build. Bu kapılardan biri geçmezse paketleme/rele
 
 - [x] CI ve release workflow'larında izole `KUANTRA_DATA_DIR`.
 - [x] İki workflow'da compile, backend test, npm ci/audit/test/build gate'leri.
-- [x] CI `codex/**` push trigger'ı.
+- [x] CI feature-branch duplicate push trigger'ı kaldırıldı; `main` push, PR→`main` ve
+  `workflow_dispatch` yolları korunuyor.
 - [x] Workflow contract regression testi: 5 passed.
 - [x] Full backend suite: 260 passed, 1 skipped.
 - [x] Frontend: audit 0; 29 test passed; production build başarılı.

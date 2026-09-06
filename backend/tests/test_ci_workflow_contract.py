@@ -71,8 +71,9 @@ def assert_frontend_commands_are_ordered(job: str) -> None:
 
 def test_ci_workflow_enforces_portable_truth_and_safety_gates():
     raw = load_workflow("ci.yml")
-    assert "branches: [ main, 'codex/**', 'feat/**' ]" in raw
-    assert "pull_request:\n    branches: [ main ]" in raw
+    assert "branches: [ main, 'codex/**', 'feat/**' ]" not in raw
+    assert raw.count("branches: [ main ]") == 2
+    assert "workflow_dispatch:" in raw
 
     job = job_block(raw, "test-and-build")
     assert_isolated_data_dir(job)
