@@ -34,6 +34,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP05 | [Evidence-Gated DuckDB OLAP Hydration](./work-packages/P1-WP05-evidence-gated-olap-hydration.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP06 | [Bulk OLAP Sync Evidence Gate](./work-packages/P1-WP06-bulk-olap-sync-gate.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP07 | [Trade Evidence Pack API](./work-packages/P1-WP07-trade-evidence-pack-api.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP08 | [Deterministic Replay ve Market-Context Attachment](./work-packages/P1-WP08-deterministic-replay-market-context.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -130,3 +131,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P1-WP07 `65e4b71` ile `GET /trades/{trade_id}/evidence` kaynak-linked snapshot,
   ledger integrity, hash/provenance ve coverage bilgisini raw payload sızdırmadan tek
   read-only pakette sunuyor. Full backend regression `377 passed, 1 skipped`.
+- P1-WP08 `de93a48` ile replay projection-aware oldu; bounded market-context attachment,
+  deterministic `replay_fingerprint`, UTC boundaries ve `source_verified=false`
+  provenance'ı API/Evidence Pack'e eklendi. Focused replay/candle/evidence suite `68
+  passed`, full backend regression `379 passed, 1 skipped`.
