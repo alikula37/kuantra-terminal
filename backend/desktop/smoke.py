@@ -31,23 +31,34 @@ def _toggle_plugin(ctx, enable: bool):
     )
 
 
-def _check_plugin_toggle(ctx) -> bool:
-    """Activating a bundled plugin proves the plugin tree survived packaging (manifest + plugin.py)."""
+def _check_plugin_boundary(ctx) -> bool:
+    """Prove the packaged app rejects unsigned experimental runtime activation.
+
+    The old smoke check activated ``plugin_orderflow`` and therefore encoded a
+    prototype capability as a required production success path.  WP08 makes
+    that route fail closed; the smoke test must verify the typed 503 boundary
+    instead of trying to undo it after activation.
+    """
     resp = _toggle_plugin(ctx, True)
-    if resp.status != 200:
+    if resp.status != 503:
         return False
-    payload = json.loads(resp.content)
-    ok = payload.get("plugin_id") == SMOKE_PLUGIN_ID and payload.get("status") in ("ACTIVATED", "ALREADY_ACTIVE")
-    try:  # leave the app in the state we found it; a failure here must not fail the smoke test
-        _toggle_plugin(ctx, False)
-    except Exception:  # noqa: BLE001
-        pass
-    return ok
+    try:
+        payload = json.loads(resp.content)
+        detail = payload.get("detail", payload)
+    except (TypeError, ValueError):
+        return False
+    return (
+        detail.get("status") == "EXPERIMENTAL_DISABLED"
+        and detail.get("capability") == "plugin_runtime"
+        and detail.get("execution_authority") is False
+        and detail.get("data_connected") is False
+        and detail.get("transport_connected") is False
+    )
 
 
 def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
     checks = {"react_mounted": False, "bridge_roundtrip": False, "health": False, "push_sink": False,
-              "plugin_toggle": False}
+              "plugin_boundary": False}
     deadline = time.time() + timeout
     reason = "timeout"
     while time.time() < deadline:
@@ -61,8 +72,8 @@ def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
                 checks["push_sink"] = bool(window.evaluate_js("typeof window.__kuantraPush === 'function'"))
                 resp = ctx.runtime.call("GET", "/health")
                 checks["health"] = resp.status == 200 and json.loads(resp.content).get("status") == "online"
-                if checks["health"] and not checks["plugin_toggle"]:
-                    checks["plugin_toggle"] = _check_plugin_toggle(ctx)
+                if checks["health"] and not checks["plugin_boundary"]:
+                    checks["plugin_boundary"] = _check_plugin_boundary(ctx)
             if all(checks.values()):
                 return {"ok": True, "reason": "", "checks": checks}
         except Exception as exc:  # noqa: BLE001
