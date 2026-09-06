@@ -95,6 +95,8 @@ def test_release_workflow_gates_packaging_and_publish_on_all_matrix_jobs():
     assert "final-smoke-windows.json" in package_job
     assert "final-smoke-macos.json" in package_job
     assert "final-smoke-linux.json" in package_job
+    assert 'exe="$install_dir/Kuantra Terminal.exe"' in package_job
+    assert 'expected DMG missing' in package_job
     publish_job = job_block(raw, "publish-release")
     assert re.search(r"^    needs:\s*build-and-package$", publish_job, flags=re.MULTILINE)
     assert "Audit Phase 0 exit evidence" in publish_job

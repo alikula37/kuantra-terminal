@@ -114,12 +114,13 @@ jobs:
               export K_INSTALLER_PS="$(cygpath -w "$installer")"
               export K_INSTALL_DIR_PS="$(cygpath -w "$install_dir")"
               powershell.exe -NoProfile -NonInteractive -Command '$p = Start-Process -FilePath $env:K_INSTALLER_PS -ArgumentList @("/S", "/D=$env:K_INSTALL_DIR_PS") -Wait -PassThru; if ($p.ExitCode -ne 0) { exit $p.ExitCode }'
-              exe="$install_dir/Kuantra Terminal/Kuantra Terminal.exe"
+              exe="$install_dir/Kuantra Terminal.exe"
               python scripts/smoke_desktop.py --executable "$exe" --artifact "$installer" --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-windows.json
               ;;
             macOS)
               dmg="dist/Kuantra-Terminal-${VERSION}-aarch64.dmg"
               if [ ! -f "$dmg" ]; then dmg="dist/Kuantra-Terminal-${VERSION}-x64.dmg"; fi
+              [ -f "$dmg" ] || { echo "expected DMG missing: $dmg" >&2; exit 1; }
               mountpoint="$RUNNER_TEMP/kuantra-dmg"
               mkdir -p "$mountpoint"
               hdiutil attach -nobrowse -readonly -mountpoint "$mountpoint" "$dmg"
