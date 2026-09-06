@@ -88,7 +88,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   ilk Phase 1 paketi olarak hazırlandı. Append-only SQLite evidence ledger, idempotency ve
   hash-chain verifier kapsamı tanımlandı; gerçek release/tag yayınlama ise ayrı `publish=true`
   onay kapısı olarak kaldı.
-- P1-WP01 implementation `43641e1` + CLI düzeltmesi `25e4640` ile canonical SQLite `evidence_events` ledger, ortak
+- P1-WP01 implementation `43641e1` + CLI düzeltmesi `25e4640` + verifier hardening `db80a77` ile canonical SQLite `evidence_events` ledger, ortak
   runtime/Alembic schema, hash-chain verifier, duplicate/conflict kapısı, explicit legacy
   backfill/export CLI ve focused test suite eklendi. Full backend regression `359 passed,
   1 skipped`; three-OS push CI `34037798578` green; broker, DuckDB, UI ve AI akışlarına dokunulmadı.

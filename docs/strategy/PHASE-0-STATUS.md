@@ -46,7 +46,7 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Sıradaki sıra
 
-1. P1-WP01 — [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) Active; implementation commits `43641e1`/`25e4640`, push CI `34037798578` green; pilot metrikleri bekleniyor.
+1. P1-WP01 — [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) Active; implementation commits `43641e1`/`25e4640`/`db80a77`, push CI `34037798578` green; pilot metrikleri bekleniyor.
 2. Release publication — `publish=true` adayını çalıştırmak ayrı bir ürün sahibi release onayı ister; bu karar canlı execution yetkisi vermez.
 
 ## Phase 0 final kanıtı

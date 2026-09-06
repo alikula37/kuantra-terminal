@@ -10,7 +10,7 @@ strategy: KPS-001@1.0.0
 adr: ADR-0002, ADR-0003
 depends_on: P0-WP10 technical exit verified; release publication separately gated
 implementation_authority: owner_phase_transition_directive_2026-09-06
-implementation_commits: 43641e1, 25e4640
+implementation_commits: 43641e1, 25e4640, db80a77
 ci_run: 34037798578
 ```
 
@@ -100,7 +100,7 @@ türü kabul edilmez.
   ezilmiyor; migration gerçekten hedef DB’ye uygulanıyor.
 - Focused suite: `9 passed`.
 - Full backend suite: `359 passed, 1 skipped`.
-- Code commits: `43641e1`, `25e4640`; Phase 0 evidence baseline: `a5ae737`.
+- Code commits: `43641e1`, `25e4640`, `db80a77`; Phase 0 evidence baseline: `a5ae737`.
 - Three-OS push CI: [34037798578](https://github.com/alikula37/kuantra-terminal/actions/runs/34037798578)
   success; Windows job `101498954602`, macOS `101498954771`, Ubuntu `101498954772`.
 
