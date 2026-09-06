@@ -9,7 +9,7 @@ baseline: e5a756e
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002, ADR-0003
 depends_on: P1-WP07 Trade Evidence Pack API, P1-WP13 Evidence Pack Export ve Backup/Restore Drill, P1-WP14 Versioned Playbook ve Risk Policy Events
-implementation_commits: pending
+implementation_commits: 40d5c6c
 ```
 
 ## Problem
@@ -77,4 +77,3 @@ eklenmeyecektir.
 
 - Trade Evidence Pack'in Journal'dan erişilebilir, provenance-aware ve deterministic
   export kontrollü read-only UI yüzeyi tanımlandı ve uygulandı.
-
