@@ -120,15 +120,40 @@ class SQLiteDriver:
             conn.commit()
             logger.info("SQLite OLTP schema initialized with WAL mode and candle cache.")
 
-    def insert_trade(self, trade: Dict[str, Any]) -> Dict[str, Any]:
-        now = datetime.utcnow().isoformat()
-        trade_id = str(trade.get("id") or f"TRD-{int(datetime.utcnow().timestamp()*1000)}")
-        status = trade.get("status", "OPEN").upper()
-        side = trade.get("side", "BUY").upper()
-        
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
+    _TRADE_SNAPSHOT_FIELDS = (
+        "id", "symbol", "side", "entry_price", "exit_price", "qty",
+        "stop_loss", "take_profit", "entry_time", "exit_time", "status", "pnl",
+        "r_multiple", "commission", "notes",
+    )
+
+    @staticmethod
+    def _prepare_trade(trade: Dict[str, Any], *, trade_id: Optional[str] = None,
+                       now: Optional[str] = None) -> Dict[str, Any]:
+        now = now or datetime.utcnow().isoformat()
+        resolved_id = str(trade.get("id") or trade_id or f"TRD-{int(datetime.utcnow().timestamp()*1000)}")
+        return {
+            "id": resolved_id,
+            "symbol": str(trade["symbol"]).upper(),
+            "side": str(trade.get("side", "BUY")).upper(),
+            "entry_price": float(trade["entry_price"]),
+            "exit_price": float(trade["exit_price"]) if trade.get("exit_price") is not None else None,
+            "qty": float(trade["qty"]),
+            "stop_loss": float(trade["stop_loss"]) if trade.get("stop_loss") is not None else None,
+            "take_profit": float(trade["take_profit"]) if trade.get("take_profit") is not None else None,
+            "entry_time": trade.get("entry_time") or now,
+            "exit_time": trade.get("exit_time"),
+            "status": str(trade.get("status", "OPEN")).upper(),
+            "pnl": float(trade.get("pnl", 0.0)),
+            "r_multiple": float(trade["r_multiple"]) if trade.get("r_multiple") is not None else None,
+            "commission": float(trade.get("commission", 0.0)),
+            "notes": trade.get("notes", ""),
+            "created_at": trade.get("created_at") or now,
+            "updated_at": trade.get("updated_at") or now,
+        }
+
+    @classmethod
+    def _upsert_trade_on_connection(cls, conn: sqlite3.Connection, trade: Dict[str, Any]) -> None:
+        conn.execute("""
                 INSERT INTO trades (
                     id, symbol, side, entry_price, exit_price, qty,
                     stop_loss, take_profit, entry_time, exit_time,
@@ -150,27 +175,94 @@ class SQLiteDriver:
                     commission = excluded.commission,
                     notes = excluded.notes,
                     updated_at = excluded.updated_at
-            """, (
-                trade_id,
-                trade["symbol"].upper(),
-                side,
-                float(trade["entry_price"]),
-                float(trade["exit_price"]) if trade.get("exit_price") is not None else None,
-                float(trade["qty"]),
-                float(trade["stop_loss"]) if trade.get("stop_loss") is not None else None,
-                float(trade["take_profit"]) if trade.get("take_profit") is not None else None,
-                trade.get("entry_time") or now,
-                trade.get("exit_time"),
-                status,
-                float(trade.get("pnl", 0.0)),
-                float(trade["r_multiple"]) if trade.get("r_multiple") is not None else None,
-                float(trade.get("commission", 0.0)),
-                trade.get("notes", ""),
-                trade.get("created_at") or now,
-                trade.get("updated_at") or now
-            ))
+            """, tuple(trade[field] for field in (
+                "id", "symbol", "side", "entry_price", "exit_price", "qty",
+                "stop_loss", "take_profit", "entry_time", "exit_time", "status",
+                "pnl", "r_multiple", "commission", "notes", "created_at", "updated_at",
+            )))
+
+    def insert_trade(self, trade: Dict[str, Any]) -> Dict[str, Any]:
+        prepared = self._prepare_trade(trade)
+        with self.get_connection() as conn:
+            self._upsert_trade_on_connection(conn, prepared)
             conn.commit()
-        return self.get_trade(trade_id)
+        return self.get_trade(prepared["id"])
+
+    def record_trade_with_evidence(
+        self,
+        trade: Dict[str, Any],
+        *,
+        event_type: str,
+        idempotency_key: str,
+        account_id: str = "local-journal",
+        venue: str = "local-journal",
+        occurred_at: Optional[str] = None,
+        provenance: Optional[Dict[str, Any]] = None,
+        raw_payload: Any = None,
+    ) -> Dict[str, Any]:
+        """Persist a journal mutation and its evidence event atomically.
+
+        The compatibility ``trades`` row is retained for existing analytics, but
+        its write acknowledgement is coupled to the append-only ledger.  If the
+        event is invalid, conflicting, or cannot be appended, the trade mutation
+        is rolled back and the caller receives an error.
+        """
+
+        from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+
+        resolved_id = str(trade.get("id") or f"TRD-{int(datetime.utcnow().timestamp()*1000)}")
+        ledger = EvidenceLedgerRepository(self.db_path)
+        conn = self.get_connection()
+        try:
+            conn.execute("PRAGMA synchronous=FULL")
+            conn.execute("BEGIN IMMEDIATE")
+            existing = conn.execute(
+                "SELECT * FROM trades WHERE id = ?", (resolved_id,)
+            ).fetchone()
+            if existing is not None:
+                merged = dict(existing)
+                merged.update({key: value for key, value in trade.items() if key != "id"})
+                merged["id"] = resolved_id
+                merged["created_at"] = existing["created_at"]
+                merged["updated_at"] = datetime.utcnow().isoformat()
+                prepared = self._prepare_trade(
+                    merged, trade_id=resolved_id, now=merged["updated_at"]
+                )
+            else:
+                prepared = self._prepare_trade({**trade, "id": resolved_id}, trade_id=resolved_id)
+
+            self._upsert_trade_on_connection(conn, prepared)
+            stored = conn.execute(
+                "SELECT * FROM trades WHERE id = ?", (resolved_id,)
+            ).fetchone()
+            if stored is None:
+                raise RuntimeError("Trade write is not readable inside its transaction")
+
+            snapshot = {
+                field: stored[field] for field in self._TRADE_SNAPSHOT_FIELDS
+            }
+            ledger.append_event_in_transaction(
+                conn,
+                event_type=event_type,
+                account_id=account_id,
+                venue=venue,
+                idempotency_key=idempotency_key,
+                normalized_payload={"trade": snapshot},
+                raw_payload=raw_payload if raw_payload is not None else {"trade": snapshot},
+                occurred_at=occurred_at or snapshot["exit_time"] or snapshot["entry_time"],
+                schema_version="1",
+                adapter_version="journal-write-v1",
+                correlation_id=resolved_id,
+                provenance=provenance or {"source": "journal"},
+            )
+            conn.commit()
+            return dict(stored)
+        except Exception:
+            if conn.in_transaction:
+                conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def update_trade(self, trade_id: str, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         existing = self.get_trade(trade_id)

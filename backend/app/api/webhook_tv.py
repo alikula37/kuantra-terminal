@@ -14,7 +14,7 @@ import secrets
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Header, HTTPException, Request
-from app.db.sqlite_driver import sqlite_driver
+from app.db.sync_pipeline import sync_pipeline
 from app.core.config import settings
 
 logger = logging.getLogger("webhook_tv")
@@ -98,7 +98,11 @@ async def receive_tradingview_webhook(
         "pnl": 0.0,
         "notes": f"Ingested from TV Webhook: {strategy}"
     }
-    sqlite_driver.insert_trade(trade_record)
+    sync_pipeline.record_and_sync_trade(
+        trade_record,
+        source="tradingview_webhook",
+        source_ref=strategy,
+    )
 
     return {
         "status": "RECEIVED",

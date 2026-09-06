@@ -406,6 +406,27 @@ class EvidenceLedgerRepository:
             raise EvidenceLedgerError("Ledger insert is not readable inside its transaction")
         return stored, True
 
+    def append_event_in_transaction(
+        self,
+        conn: sqlite3.Connection,
+        **command: Any,
+    ) -> Dict[str, Any]:
+        """Append one event without opening, committing, or closing ``conn``.
+
+        Callers that mutate a compatibility projection and the canonical ledger
+        together use this boundary to keep both writes in one ``BEGIN IMMEDIATE``
+        transaction.  The caller owns rollback/commit and must already have an
+        active transaction; no partial journal/evidence acknowledgement is allowed.
+        """
+
+        if not conn.in_transaction:
+            raise EvidenceLedgerError(
+                "append_event_in_transaction requires an active transaction"
+            )
+        candidate = self._build_candidate(**command)
+        stored, created = self._append_candidate(conn, candidate)
+        return self._row_to_dict(stored, created=created)
+
     def append_event(
         self,
         *,
@@ -424,30 +445,30 @@ class EvidenceLedgerRepository:
         provenance: Any = None,
         event_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        candidate = self._build_candidate(
-            event_type=event_type,
-            account_id=account_id,
-            venue=venue,
-            idempotency_key=idempotency_key,
-            normalized_payload=normalized_payload,
-            raw_payload=raw_payload,
-            occurred_at=occurred_at,
-            received_at=received_at,
-            schema_version=schema_version,
-            adapter_version=adapter_version,
-            correlation_id=correlation_id,
-            causation_id=causation_id,
-            provenance=provenance,
-            event_id=event_id,
-        )
         conn = self._connect(write=True)
         try:
             conn.execute("BEGIN IMMEDIATE")
-            stored, created = self._append_candidate(conn, candidate)
+            stored_result = self.append_event_in_transaction(conn, **{
+                "event_type": event_type,
+                "account_id": account_id,
+                "venue": venue,
+                "idempotency_key": idempotency_key,
+                "normalized_payload": normalized_payload,
+                "raw_payload": raw_payload,
+                "occurred_at": occurred_at,
+                "received_at": received_at,
+                "schema_version": schema_version,
+                "adapter_version": adapter_version,
+                "correlation_id": correlation_id,
+                "causation_id": causation_id,
+                "provenance": provenance,
+                "event_id": event_id,
+            })
+            created = bool(stored_result["created"])
             if self._failure_injector is not None and created:
                 self._failure_injector(conn)
             conn.commit()
-            return self._row_to_dict(stored, created=created)
+            return stored_result
         except Exception:
             if conn.in_transaction:
                 conn.rollback()

@@ -441,7 +441,11 @@ class CsvTradeImporterService:
                 "notes": t["notes"]
             }
 
-            saved = sync_pipeline.record_and_sync_trade(trade_payload)
+            saved = sync_pipeline.record_and_sync_trade(
+                trade_payload,
+                source="csv",
+                source_ref=filename,
+            )
             existing_fingerprints.add(fp)
             imported_records.append(saved)
 

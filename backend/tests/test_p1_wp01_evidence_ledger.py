@@ -12,6 +12,7 @@ from app.db.repositories.evidence_ledger_repo import (
 )
 from app.db.sqlite_driver import SQLiteDriver
 from app.cli import create_parser
+from app.db.sync_pipeline import SyncPipeline
 
 
 def _command(index: int, *, account_id: str = "acct-1"):
@@ -239,6 +240,107 @@ def test_legacy_trade_upsert_preserves_foreign_key_tags(tmp_path):
     assert [row[0] for row in linked_tags] == [tag_id]
     assert driver.get_trade(trade["id"])["entry_price"] == 101.0
     assert driver.get_trade(trade["id"])["status"] == "CLOSED"
+
+
+def _journal_trade(**overrides):
+    trade = {
+        "id": "JOURNAL-1",
+        "symbol": "BTCUSDT",
+        "side": "BUY",
+        "entry_price": 100.0,
+        "qty": 1.0,
+        "entry_time": "2026-09-06T10:00:00Z",
+        "status": "OPEN",
+        "notes": "manual journal",
+    }
+    trade.update(overrides)
+    return trade
+
+
+def test_journal_write_and_evidence_event_commit_atomically(tmp_path):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    command = {
+        "event_type": "IntentRecorded",
+        "idempotency_key": "journal:JOURNAL-1:intent",
+        "occurred_at": "2026-09-06T10:00:00Z",
+        "provenance": {"source": "manual"},
+    }
+
+    saved = driver.record_trade_with_evidence(_journal_trade(), **command)
+    repeated = driver.record_trade_with_evidence(_journal_trade(), **command)
+    repository = EvidenceLedgerRepository(str(db_path))
+
+    assert saved["id"] == "JOURNAL-1"
+    assert repeated["id"] == "JOURNAL-1"
+    assert repository.count_events() == 1
+    assert repository.verify_chain()["valid"] is True
+
+
+def test_journal_evidence_conflict_rolls_back_trade_mutation(tmp_path):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    command = {
+        "event_type": "IntentRecorded",
+        "idempotency_key": "journal:JOURNAL-1:conflict",
+        "occurred_at": "2026-09-06T10:00:00Z",
+        "provenance": {"source": "manual"},
+    }
+    driver.record_trade_with_evidence(_journal_trade(), **command)
+
+    with pytest.raises(EvidenceIdentityConflict):
+        driver.record_trade_with_evidence(
+            _journal_trade(entry_price=101.0),
+            **command,
+        )
+
+    assert driver.get_trade("JOURNAL-1")["entry_price"] == 100.0
+    assert EvidenceLedgerRepository(str(db_path)).count_events() == 1
+
+
+def test_journal_evidence_failure_rolls_back_trade_mutation(tmp_path, monkeypatch):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+
+    def fail_append(self, conn, **command):
+        raise RuntimeError("injected ledger failure")
+
+    monkeypatch.setattr(
+        EvidenceLedgerRepository,
+        "append_event_in_transaction",
+        fail_append,
+    )
+    with pytest.raises(RuntimeError, match="injected ledger failure"):
+        driver.record_trade_with_evidence(
+            _journal_trade(),
+            event_type="IntentRecorded",
+            idempotency_key="journal:JOURNAL-1:failure",
+            occurred_at="2026-09-06T10:00:00Z",
+        )
+
+    assert driver.get_trade("JOURNAL-1") is None
+    assert EvidenceLedgerRepository(str(db_path)).count_events() == 0
+
+
+def test_sync_pipeline_classifies_csv_write_as_legacy_import(tmp_path, monkeypatch):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    monkeypatch.setattr("app.db.sync_pipeline.sqlite_driver", driver)
+    monkeypatch.setattr(
+        "app.db.sync_pipeline.duckdb_driver",
+        type("DuckDBDisabled", (), {"is_available": False})(),
+    )
+
+    saved = SyncPipeline.record_and_sync_trade(
+        _journal_trade(id="CSV-1"),
+        source="csv",
+        source_ref="broker.csv",
+    )
+    event = next(EvidenceLedgerRepository(str(db_path)).export_events())
+
+    assert saved["id"] == "CSV-1"
+    assert event["event_type"] == "LegacyTradeImported"
+    assert event["provenance"] == {"source": "csv", "source_ref": "broker.csv"}
 
 
 def test_event_type_contract_is_explicit():

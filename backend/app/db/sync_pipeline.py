@@ -1,7 +1,10 @@
 import logging
+import hashlib
+from datetime import datetime
 from typing import Dict, Any, List
 from app.db.sqlite_driver import sqlite_driver
 from app.db.duckdb_driver import duckdb_driver
+from app.db.repositories.evidence_ledger_repo import canonical_json
 
 logger = logging.getLogger(__name__)
 
@@ -9,16 +12,44 @@ class SyncPipeline:
     """Sync bridge that replicates OLTP SQLite mutations into DuckDB OLAP columnar tables."""
 
     @staticmethod
-    def record_and_sync_trade(trade_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Insert or update trade in SQLite and instantly synchronize to DuckDB."""
-        if trade_data.get("id") and sqlite_driver.get_trade(trade_data["id"]):
-            updated = sqlite_driver.update_trade(trade_data["id"], trade_data)
-            if updated:
-                if getattr(duckdb_driver, "is_available", False):
-                    duckdb_driver.sync_trade(updated)
-                return updated
-        
-        saved = sqlite_driver.insert_trade(trade_data)
+    def record_and_sync_trade(
+        trade_data: Dict[str, Any],
+        *,
+        source: str = "journal",
+        source_ref: str = "",
+    ) -> Dict[str, Any]:
+        """Persist a journal mutation and evidence event before OLAP projection."""
+        payload = dict(trade_data)
+        existing = sqlite_driver.get_trade(payload["id"]) if payload.get("id") else None
+        if existing is None and not payload.get("id"):
+            payload["id"] = f"TRD-{int(datetime.utcnow().timestamp() * 1000)}"
+
+        requested_status = str(payload.get("status", existing["status"] if existing else "OPEN")).upper()
+        if existing is None:
+            event_type = "LegacyTradeImported" if source == "csv" else "IntentRecorded"
+        elif existing.get("status") != "CLOSED" and requested_status == "CLOSED":
+            event_type = "FillRecorded"
+        else:
+            event_type = "TradeCorrected"
+
+        identity_body = {
+            key: value for key, value in payload.items()
+            if key not in {"created_at", "updated_at"}
+        }
+        digest = hashlib.sha256(canonical_json(identity_body).encode("utf-8")).hexdigest()[:24]
+        idempotency_key = f"journal:{payload['id']}:{event_type}:{digest}"
+        provenance = {"source": source}
+        if source_ref:
+            provenance["source_ref"] = source_ref
+
+        occurred_at = payload.get("exit_time") or payload.get("entry_time")
+        saved = sqlite_driver.record_trade_with_evidence(
+            payload,
+            event_type=event_type,
+            idempotency_key=idempotency_key,
+            occurred_at=occurred_at,
+            provenance=provenance,
+        )
         if getattr(duckdb_driver, "is_available", False):
             duckdb_driver.sync_trade(saved)
         return saved
