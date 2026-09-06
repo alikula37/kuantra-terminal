@@ -9,7 +9,7 @@ baseline: f5f17fd
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP02 Binance Snapshot + Delta Sequence Validator
-implementation_commits: pending
+implementation_commits: c45bef8
 ```
 
 ## Problem
