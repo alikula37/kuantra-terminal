@@ -8,6 +8,10 @@ import os
 import sys
 import time
 import sqlite3
+import hashlib
+import shutil
+import tempfile
+import gc
 import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -85,35 +89,166 @@ class DatabaseMaintenanceEngine:
 
     def create_sqlite_shadow_backup(self, max_retention_days: int = 30) -> Dict[str, Any]:
         """
-        Executes non-blocking online VACUUM INTO snapshot and cleans up backups older than 30 days.
+        Executes non-blocking online VACUUM INTO snapshot, verifies that the
+        snapshot can be restored, and cleans up backups older than 30 days.
         """
-        timestamp_str = time.strftime("%Y%m%d_%H%M%S", time.gmtime())
+        timestamp_str = f"{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_{int(time.time() * 1000) % 1000:03d}"
         backup_filename = f"kuantra_user_data_{timestamp_str}.db"
         target_backup_path = self.backup_dir / backup_filename
 
         try:
-            with sqlite_driver.get_connection() as conn:
+            self.backup_dir.mkdir(parents=True, exist_ok=True)
+            if not self.sqlite_path.exists():
+                return {
+                    "status": "ERROR",
+                    "error": "SQLITE_SOURCE_NOT_FOUND",
+                    "sqlite_path": str(self.sqlite_path),
+                }
+            with sqlite3.connect(str(self.sqlite_path)) as conn:
+                conn.execute("PRAGMA busy_timeout=5000")
                 # Online non-blocking shadow copy
-                conn.execute(f"VACUUM INTO '{target_backup_path.as_posix()}';")
+                escaped_target = target_backup_path.as_posix().replace("'", "''")
+                conn.execute(f"VACUUM INTO '{escaped_target}';")
 
             size_bytes = target_backup_path.stat().st_size
+            backup_sha256 = self._sha256_file(target_backup_path)
             logger.info(f"[SQLITE-BACKUP] Created shadow backup: {backup_filename} ({size_bytes} bytes)")
+
+            restore_verification = self.verify_sqlite_restore(
+                target_backup_path,
+                expected_sha256=backup_sha256,
+            )
 
             # Prune old backups
             pruned_backups = self._prune_old_backups(max_retention_days)
 
-            return {
-                "status": "SUCCESS",
+            result = {
+                "status": "SUCCESS" if restore_verification["status"] == "VERIFIED" else "ERROR",
                 "backup_file": backup_filename,
                 "backup_path": str(target_backup_path),
                 "size_bytes": size_bytes,
                 "size_mb": round(size_bytes / (1024 * 1024), 3),
+                "backup_sha256": backup_sha256,
+                "restore_verification": restore_verification,
                 "pruned_backups": pruned_backups,
                 "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             }
+            if result["status"] != "SUCCESS":
+                result["error"] = "RESTORE_VERIFICATION_FAILED"
+            return result
         except Exception as e:
             logger.error(f"[SQLITE-BACKUP] Shadow backup failed: {e}")
             return {"status": "ERROR", "error": str(e)}
+
+    @staticmethod
+    def _sha256_file(path: Path, *, chunk_size: int = 1024 * 1024) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as source:
+            while True:
+                chunk = source.read(chunk_size)
+                if not chunk:
+                    break
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    def verify_sqlite_restore(
+        self,
+        backup_path: str | Path,
+        *,
+        expected_sha256: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Verify a backup's hash, SQLite integrity, ledger chain and OLAP rebuild.
+
+        The original backup is never opened for writes by the hydrator. A
+        temporary copy is used as the restore target, and the temporary DuckDB
+        projection is rebuilt from that copy. This is a drill, not a live
+        database replacement operation.
+        """
+
+        candidate = Path(backup_path)
+        try:
+            candidate = candidate.resolve()
+            backup_root = self.backup_dir.resolve()
+            candidate.relative_to(backup_root)
+        except (OSError, ValueError) as exc:
+            return {"status": "FAILED", "reason": "BACKUP_PATH_OUTSIDE_BACKUP_DIR", "error": str(exc)}
+        if not candidate.is_file() or candidate.suffix.lower() != ".db":
+            return {"status": "FAILED", "reason": "BACKUP_FILE_NOT_FOUND"}
+
+        try:
+            actual_sha256 = self._sha256_file(candidate)
+            if expected_sha256 and actual_sha256 != expected_sha256:
+                return {
+                    "status": "FAILED",
+                    "reason": "BACKUP_HASH_MISMATCH",
+                    "expected_sha256": expected_sha256,
+                    "actual_sha256": actual_sha256,
+                }
+
+            with sqlite3.connect(str(candidate)) as conn:
+                integrity_rows = [row[0] for row in conn.execute("PRAGMA integrity_check").fetchall()]
+                if integrity_rows != ["ok"]:
+                    return {
+                        "status": "FAILED",
+                        "reason": "SQLITE_INTEGRITY_FAILED",
+                        "integrity_output": integrity_rows,
+                    }
+                event_count = int(conn.execute("SELECT COUNT(*) FROM evidence_events").fetchone()[0])
+
+            from app.db.duckdb_hydrator import DuckDBHydrator
+            from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+
+            ledger = EvidenceLedgerRepository(str(candidate))
+            chain = ledger.verify_chain()
+            if not chain["valid"]:
+                return {
+                    "status": "FAILED",
+                    "reason": "EVIDENCE_CHAIN_INVALID",
+                    "event_count": event_count,
+                    "ledger_integrity": chain,
+                    "backup_sha256": actual_sha256,
+                }
+
+            with tempfile.TemporaryDirectory(prefix="kuantra-restore-") as restore_dir:
+                restore_sqlite = Path(restore_dir) / "restored.sqlite"
+                restore_duckdb = Path(restore_dir) / "restored.duckdb"
+                shutil.copy2(candidate, restore_sqlite)
+                hydration = DuckDBHydrator(
+                    duckdb_path=str(restore_duckdb),
+                    sqlite_path=str(restore_sqlite),
+                ).hydrate_from_sqlite(force_rebuild=True)
+                # The hydrator owns short-lived SQLite/DuckDB objects through
+                # nested adapters.  Release them before Windows removes the
+                # temporary restore directory.
+                gc.collect()
+
+            if hydration.get("status") != "HYDRATED":
+                return {
+                    "status": "FAILED",
+                    "reason": "DUCKDB_RESTORE_FAILED",
+                    "event_count": event_count,
+                    "ledger_integrity": chain,
+                    "hydration": hydration,
+                    "backup_sha256": actual_sha256,
+                }
+            return {
+                "status": "VERIFIED",
+                "backup_sha256": actual_sha256,
+                "event_count": event_count,
+                "ledger_integrity": {
+                    "valid": chain["valid"],
+                    "checked_events": chain["checked_events"],
+                    "errors": chain["errors"],
+                },
+                "hydration": {
+                    "status": hydration.get("status"),
+                    "recovered_trades_count": hydration.get("recovered_trades_count", 0),
+                    "source": hydration.get("source"),
+                },
+            }
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[SQLITE-RESTORE] Restore verification failed: %s", exc)
+            return {"status": "FAILED", "reason": "RESTORE_VERIFICATION_ERROR", "error": str(exc)}
 
     def _prune_old_backups(self, max_days: int) -> List[str]:
         """Deletes database backups older than max_days."""

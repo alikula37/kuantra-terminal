@@ -14,6 +14,11 @@ from app.db.repositories.candles_repo import candles_repo
 from app.services.market_data.public_fetcher import public_market_fetcher
 from app.services.portfolio_service import portfolio_service
 from app.services.trade_read_adapter import trade_read_adapter
+from app.services.evidence_pack_export import (
+    EvidencePackExportError,
+    EvidencePackNotFoundError,
+    evidence_pack_export_service,
+)
 from app.services.csv_importer import csv_trade_importer
 from app.services.broker_import_service import broker_import_service, BrokerImportValidationError
 from app.services.exchange.read_only_broker_sync import (
@@ -70,6 +75,32 @@ def get_trade_evidence(trade_id: str):
     if evidence_pack["trade"] is None and evidence_pack["event_count"] == 0:
         raise HTTPException(status_code=404, detail="Trade evidence not found")
     return evidence_pack
+
+
+@router.get("/trades/{trade_id}/evidence/export")
+def export_trade_evidence(
+    trade_id: str,
+    format: str = Query("json", min_length=1, max_length=8),
+):
+    """Download a deterministic JSON or static HTML Evidence Pack artifact."""
+    try:
+        artifact = evidence_pack_export_service.export(trade_id, format)
+    except EvidencePackNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except EvidencePackExportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail="Evidence Pack export failed safely.") from exc
+    return Response(
+        content=artifact.content,
+        media_type=artifact.media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{artifact.filename}"',
+            "X-Kuantra-Evidence-Payload-SHA256": artifact.payload_sha256,
+            "X-Kuantra-Evidence-Artifact-SHA256": artifact.artifact_sha256,
+            "X-Kuantra-Evidence-Artifact-Version": artifact.artifact_version,
+        },
+    )
 
 @router.get("/trades/{trade_id}/market-context")
 def get_trade_market_context(

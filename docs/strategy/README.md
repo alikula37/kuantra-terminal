@@ -39,6 +39,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP10 | [CSV Import Evidence Provenance ve Fail-Closed Validation](./work-packages/P1-WP10-csv-import-evidence-provenance.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP11 | [Read-Only Broker Lifecycle Import ve Reconciliation](./work-packages/P1-WP11-broker-lifecycle-import-reconciliation.md) | Active | 1.0.1 | 2026-09-06 |
 | P1-WP12 | [Read-Only API Snapshot Adapter ve Credential Scope](./work-packages/P1-WP12-read-only-api-snapshot-adapter.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP13 | [Evidence Pack Export ve Backup/Restore Drill](./work-packages/P1-WP13-evidence-pack-export-restore-drill.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -157,5 +158,9 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P1-WP12 ile gerçek exchange çağrısı execution engine'den ayrıldı: Binance/OKX için
   keychain `READ_ONLY` scope, CCXT fetch-only proxy, bounded pagination/retry ve
   tamper-detectable snapshot manifest eklendi. Incomplete snapshot başarı gibi
-  raporlanmıyor; focused suite `6 passed`, full backend regression `397 passed,
+  raporlanmıyor; focused suite `6 passed`, full backend regression `398 passed,
   1 skipped`.
+- P1-WP13 ile Trade Evidence Pack deterministic JSON/HTML artifact ve payload/artifact
+  SHA-256 header'larıyla export edilebilir oldu. SQLite backup artık hash, integrity,
+  evidence chain ve geçici DuckDB restore drill'i geçmeden başarılı sayılmıyor;
+  focused suite `4 passed`, full backend regression `402 passed, 1 skipped`.
