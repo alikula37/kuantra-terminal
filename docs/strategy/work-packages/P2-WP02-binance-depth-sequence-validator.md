@@ -9,7 +9,7 @@ baseline: f89f653
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP01 Sequence Gap-Aware Market Context
-implementation_commits: pending
+implementation_commits: e5c047a
 ```
 
 ## Problem
