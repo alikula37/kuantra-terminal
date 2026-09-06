@@ -3,8 +3,11 @@ import os
 import sys
 import pytest
 from app.core.security import StrongholdVault, vault
-from app.db.sqlite_driver import sqlite_driver
+from app.db.sqlite_driver import SQLiteDriver, sqlite_driver
 from app.db.duckdb_hydrator import DuckDBHydrator, duckdb_hydrator
+from app.db.sync_pipeline import SyncPipeline
+from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 
 class TestPhase7SecurityAndDbHydration:
     """Test suite for Stronghold Vault, Alembic SQLite migrations, and DuckDB Shadow Hydration."""
@@ -68,12 +71,48 @@ class TestPhase7SecurityAndDbHydration:
             "r_multiple": 2.0,
             "notes": "Hydration integrity test"
         }
-        sqlite_driver.insert_trade(test_trade)
+        # Hydration is intentionally evidence-gated; direct compatibility CRUD
+        # rows are not accepted as an OLAP source without explicit backfill.
+        SyncPipeline.record_and_sync_trade(test_trade, source="manual")
 
         res = duckdb_hydrator.hydrate_from_sqlite(force_rebuild=False)
         assert res["status"] == "HYDRATED"
         assert res["recovered_trades_count"] >= 1
         assert duckdb_hydrator.check_integrity() is True
+
+    def test_duckdb_hydrator_blocks_unverified_legacy_rows(self, tmp_path):
+        sqlite_path = tmp_path / "legacy.sqlite"
+        duckdb_path = tmp_path / "legacy.duckdb"
+        legacy_driver = SQLiteDriver(str(sqlite_path))
+        legacy_driver.insert_trade({
+            "id": "UNVERIFIED-1",
+            "symbol": "BTCUSDT",
+            "side": "BUY",
+            "entry_price": 100.0,
+            "qty": 1.0,
+            "entry_time": "2026-08-30T14:00:00Z",
+            "status": "OPEN",
+        })
+
+        hydrator = DuckDBHydrator(
+            duckdb_path=str(duckdb_path),
+            sqlite_path=str(sqlite_path),
+        )
+        result = hydrator.hydrate_from_sqlite(force_rebuild=True)
+
+        assert result["status"] == "BLOCKED"
+        assert result["reason"] == "PROJECTION_COVERAGE_INCOMPLETE"
+        assert result["coverage"]["missing_count"] == 1
+        assert not duckdb_path.exists()
+
+        EvidenceLedgerRepository(str(sqlite_path)).backfill_legacy_trades(
+            dry_run=False,
+            venue="local-journal",
+        )
+        EvidenceTradeProjectionRepository(str(sqlite_path)).rebuild(dry_run=False)
+        hydrated = hydrator.hydrate_from_sqlite(force_rebuild=True)
+        assert hydrated["status"] == "HYDRATED"
+        assert hydrated["source"] == "evidence_trade_projection"
 
     def test_duckdb_hydrator_corrupted_file_recovery(self):
         duck_path = duckdb_hydrator.duckdb_path

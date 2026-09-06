@@ -10,7 +10,7 @@ silently incomplete.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 from app.db.sqlite_driver import SQLiteDriver, sqlite_driver
@@ -28,6 +28,7 @@ class TradeReadAdapter:
         projection_repo: Optional[EvidenceTradeProjectionRepository] = None,
         account_id: str = "local-journal",
         venue: str = "local-journal",
+        projection_venues: Optional[Sequence[str]] = None,
     ) -> None:
         self.legacy_driver = legacy_driver or sqlite_driver
         self.projection_repo = projection_repo or EvidenceTradeProjectionRepository(
@@ -35,11 +36,20 @@ class TradeReadAdapter:
         )
         self.account_id = account_id
         self.venue = venue
+        # ``legacy`` is the explicit venue used by the P1-WP01 backfill.  It is
+        # still the same local journal account, so migration reads may accept
+        # both venues while requiring exact one-to-one trade ID coverage.
+        self.projection_venues = tuple(
+            projection_venues
+            if projection_venues is not None
+            else ((venue, "legacy") if venue == "local-journal" else (venue,))
+        )
 
     def coverage(self) -> Dict[str, Any]:
         return self.projection_repo.coverage(
             account_id=self.account_id,
             venue=self.venue,
+            venues=self.projection_venues,
         )
 
     def _projection_ready(self) -> bool:
@@ -75,6 +85,7 @@ class TradeReadAdapter:
             order_by_utc=order_by_utc,
             account_id=self.account_id,
             venue=self.venue,
+            venues=self.projection_venues,
         )
 
     def get_trade(self, trade_id: str) -> Optional[Dict[str, Any]]:
@@ -84,6 +95,7 @@ class TradeReadAdapter:
             trade_id,
             account_id=self.account_id,
             venue=self.venue,
+            venues=self.projection_venues,
         )
 
     def get_open_trades(self) -> List[Dict[str, Any]]:
@@ -94,8 +106,8 @@ class TradeReadAdapter:
             status="OPEN",
             account_id=self.account_id,
             venue=self.venue,
+            venues=self.projection_venues,
         )
 
 
 trade_read_adapter = TradeReadAdapter()
-

@@ -6,7 +6,7 @@ import json
 import math
 import sqlite3
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from app.core.paths import get_sqlite_path
 from app.db.projection_schema import initialize_trade_projection_schema
@@ -161,6 +161,18 @@ class EvidenceTradeProjectionRepository:
     def _sort_key(event: Dict[str, Any]) -> Tuple[str, str]:
         return (str(event.get("received_at_utc") or ""), str(event.get("event_id") or ""))
 
+    @staticmethod
+    def _venue_scope(
+        venue: str,
+        venues: Optional[Sequence[str]],
+    ) -> Tuple[str, List[str]]:
+        values = list(venues) if venues is not None else [venue]
+        values = list(dict.fromkeys(str(value).strip() for value in values if str(value).strip()))
+        if not values:
+            raise ValueError("At least one projection venue is required")
+        placeholders = ", ".join("?" for _ in values)
+        return f"venue IN ({placeholders})", values
+
     _PROJECTION_COLUMNS = (
         "account_id", "venue", "trade_id", "symbol", "side", "entry_price",
         "exit_price", "qty", "stop_loss", "take_profit", "entry_time", "exit_time",
@@ -310,6 +322,7 @@ class EvidenceTradeProjectionRepository:
         *,
         account_id: str = "local-journal",
         venue: str = "local-journal",
+        venues: Optional[Sequence[str]] = None,
     ) -> Dict[str, Any]:
         """Return whether the typed projection covers every compatibility trade.
 
@@ -317,37 +330,51 @@ class EvidenceTradeProjectionRepository:
         ID coverage is therefore the gate for switching a read path to this model.
         """
 
+        venue_clause, venue_params = self._venue_scope(venue, venues)
         conn = self._connect(write=False)
         try:
             trade_count = int(conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0])
             projected_count = int(conn.execute(
-                """SELECT COUNT(*) FROM evidence_trade_projections
-                   WHERE account_id = ? AND venue = ?""",
-                (account_id, venue),
+                f"""SELECT COUNT(*) FROM evidence_trade_projections
+                   WHERE account_id = ? AND {venue_clause}""",
+                [account_id, *venue_params],
             ).fetchone()[0])
             missing_count = int(conn.execute(
-                """SELECT COUNT(*)
+                f"""SELECT COUNT(*)
                    FROM trades AS t
                    LEFT JOIN evidence_trade_projections AS p
-                     ON p.account_id = ? AND p.venue = ? AND p.trade_id = t.id
+                     ON p.account_id = ? AND p.{venue_clause} AND p.trade_id = t.id
                    WHERE p.trade_id IS NULL""",
-                (account_id, venue),
+                [account_id, *venue_params],
             ).fetchone()[0])
             extra_count = int(conn.execute(
-                """SELECT COUNT(*)
+                f"""SELECT COUNT(*)
                    FROM evidence_trade_projections AS p
                    LEFT JOIN trades AS t ON t.id = p.trade_id
-                   WHERE p.account_id = ? AND p.venue = ? AND t.id IS NULL""",
-                (account_id, venue),
+                   WHERE p.account_id = ? AND p.{venue_clause} AND t.id IS NULL""",
+                [account_id, *venue_params],
+            ).fetchone()[0])
+            duplicate_count = int(conn.execute(
+                f"""SELECT COUNT(*) - COUNT(DISTINCT trade_id)
+                   FROM evidence_trade_projections
+                   WHERE account_id = ? AND {venue_clause}""",
+                [account_id, *venue_params],
             ).fetchone()[0])
             return {
                 "account_id": account_id,
                 "venue": venue,
+                "venues": list(venues) if venues is not None else [venue],
                 "trade_count": trade_count,
                 "projected_count": projected_count,
                 "missing_count": missing_count,
                 "extra_count": extra_count,
-                "ready": missing_count == 0 and extra_count == 0,
+                "duplicate_count": duplicate_count,
+                "ready": (
+                    missing_count == 0
+                    and extra_count == 0
+                    and duplicate_count == 0
+                    and projected_count == trade_count
+                ),
             }
         finally:
             conn.close()
@@ -362,13 +389,15 @@ class EvidenceTradeProjectionRepository:
         *,
         account_id: str = "local-journal",
         venue: str = "local-journal",
+        venues: Optional[Sequence[str]] = None,
     ) -> Optional[Dict[str, Any]]:
+        venue_clause, venue_params = self._venue_scope(venue, venues)
         conn = self._connect(write=False)
         try:
             row = conn.execute(
-                """SELECT snapshot_json FROM evidence_trade_projections
-                   WHERE account_id = ? AND venue = ? AND trade_id = ?""",
-                (account_id, venue, trade_id),
+                f"""SELECT snapshot_json FROM evidence_trade_projections
+                   WHERE account_id = ? AND {venue_clause} AND trade_id = ?""",
+                [account_id, *venue_params, trade_id],
             ).fetchone()
             return self._row_to_snapshot(row) if row is not None else None
         finally:
@@ -384,11 +413,13 @@ class EvidenceTradeProjectionRepository:
         order_by_utc: bool = False,
         account_id: str = "local-journal",
         venue: str = "local-journal",
+        venues: Optional[Sequence[str]] = None,
         include_tombstones: bool = True,
     ) -> List[Dict[str, Any]]:
-        query = """SELECT snapshot_json FROM evidence_trade_projections
-                   WHERE account_id = ? AND venue = ?"""
-        params: List[Any] = [account_id, venue]
+        venue_clause, venue_params = self._venue_scope(venue, venues)
+        query = f"""SELECT snapshot_json FROM evidence_trade_projections
+                   WHERE account_id = ? AND {venue_clause}"""
+        params: List[Any] = [account_id, *venue_params]
         if symbol:
             query += " AND symbol = ?"
             params.append(symbol.upper())

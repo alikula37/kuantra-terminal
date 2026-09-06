@@ -192,7 +192,7 @@ def test_read_adapter_falls_back_until_projection_coverage_is_complete(tmp_path)
     EvidenceLedgerRepository(str(db_path)).append_event(
         event_type="LegacyTradeImported",
         account_id="local-journal",
-        venue="local-journal",
+        venue="legacy",
         idempotency_key="legacy-projection-1",
         normalized_payload={"trade": _trade()},
         occurred_at="2026-09-06T10:00:00Z",
@@ -201,3 +201,29 @@ def test_read_adapter_falls_back_until_projection_coverage_is_complete(tmp_path)
     projection.rebuild(dry_run=False)
     assert adapter.coverage()["ready"] is True
     assert adapter.get_trade("PROJECTION-1")["id"] == "PROJECTION-1"
+
+
+def test_read_adapter_rejects_duplicate_trade_ids_across_migration_venues(tmp_path):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    driver.insert_trade(_trade())
+    ledger = EvidenceLedgerRepository(str(db_path))
+    for venue in ("local-journal", "legacy"):
+        ledger.append_event(
+            event_type="LegacyTradeImported",
+            account_id="local-journal",
+            venue=venue,
+            idempotency_key=f"duplicate-{venue}",
+            normalized_payload={"trade": _trade()},
+            occurred_at="2026-09-06T10:00:00Z",
+            provenance={"source": "test"},
+        )
+
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    projection.rebuild(dry_run=False)
+    coverage = TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=projection,
+    ).coverage()
+    assert coverage["duplicate_count"] == 1
+    assert coverage["ready"] is False

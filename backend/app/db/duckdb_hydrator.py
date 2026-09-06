@@ -11,7 +11,9 @@ import duckdb
 import pandas as pd
 from typing import Dict, Any, List, Optional
 from app.core.paths import get_sqlite_path, get_duckdb_path
-from app.db.sqlite_driver import sqlite_driver
+from app.db.sqlite_driver import SQLiteDriver
+from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
+from app.services.trade_read_adapter import TradeReadAdapter
 
 logger = logging.getLogger("duckdb_hydrator")
 
@@ -30,9 +32,18 @@ def safe_parse_dt(val: Any) -> Optional[pd.Timestamp]:
 class DuckDBHydrator:
     """Detects missing/corrupted OLAP DuckDB stores and rebuilds from SQLite source of truth."""
 
-    def __init__(self, duckdb_path: Optional[str] = None, sqlite_path: Optional[str] = None):
+    def __init__(
+        self,
+        duckdb_path: Optional[str] = None,
+        sqlite_path: Optional[str] = None,
+        trade_reader: Optional[TradeReadAdapter] = None,
+    ):
         self.duckdb_path = duckdb_path or get_duckdb_path()
         self.sqlite_path = sqlite_path or get_sqlite_path()
+        self.trade_reader = trade_reader or TradeReadAdapter(
+            legacy_driver=SQLiteDriver(self.sqlite_path),
+            projection_repo=EvidenceTradeProjectionRepository(self.sqlite_path),
+        )
 
     def check_integrity(self) -> bool:
         """Verifies if DuckDB file exists and can execute OLAP aggregations without error."""
@@ -54,6 +65,20 @@ class DuckDBHydrator:
         """
         start_time = time.perf_counter()
         reconstituted = False
+        coverage = self.trade_reader.coverage()
+        if not coverage["ready"]:
+            logger.warning(
+                "DuckDB hydration blocked: evidence projection coverage is incomplete: %s",
+                coverage,
+            )
+            return {
+                "status": "BLOCKED",
+                "reason": "PROJECTION_COVERAGE_INCOMPLETE",
+                "coverage": coverage,
+                "recovered_trades_count": 0,
+                "duration_ms": round((time.perf_counter() - start_time) * 1000, 2),
+                "is_reconstituted": False,
+            }
 
         if force_rebuild or not self.check_integrity():
             reconstituted = True
@@ -67,7 +92,7 @@ class DuckDBHydrator:
             self._ensure_schema(conn)
 
             # 2. Extract canonical trades from SQLite
-            canonical_trades = sqlite_driver.list_trades(limit=100000)
+            canonical_trades = self.trade_reader.list_trades(limit=100000)
             recovered_count = len(canonical_trades)
 
             if recovered_count > 0:
@@ -115,7 +140,9 @@ class DuckDBHydrator:
                 "status": "HYDRATED",
                 "recovered_trades_count": recovered_count,
                 "duration_ms": duration_ms,
-                "is_reconstituted": reconstituted
+                "is_reconstituted": reconstituted,
+                "source": "evidence_trade_projection",
+                "coverage": coverage,
             }
         except Exception as e:
             logger.error(f"[-] Shadow Hydration error: {e}")
