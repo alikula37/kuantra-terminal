@@ -28,6 +28,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP09 | [Release truth matrix ve current claims](./work-packages/P0-WP09-release-truth-matrix.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Verified | 1.0.0 | 2026-09-06 |
 | P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Active | 1.1.0 | 2026-09-06 |
+| P1-WP02 | [Atomic Journal Evidence Write Adapter](./work-packages/P1-WP02-atomic-journal-evidence-write.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -102,3 +103,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   local doğrulama zorunlu kalır, kota resetinden sonra yeniden enable edilecektir.
 - P1-WP01 `2f0e7d7` ile legacy journal upsert'i `ON CONFLICT DO UPDATE` kullanacak şekilde
   harden edildi; duplicate trade yazımı artık `trade_tags` ilişkilerini silmiyor.
+- P1-WP02 `4dc7c22` ile production journal, CSV ve TradingView yazıları canonical evidence
+  event'iyle aynı SQLite transaction'ına alındı; rollback/idempotency suite'i `14 passed`,
+  full backend regression `364 passed, 1 skipped`.
