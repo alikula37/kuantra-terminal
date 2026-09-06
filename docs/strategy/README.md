@@ -32,6 +32,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP03 | [Rebuildable Trade Projection ve Tombstone](./work-packages/P1-WP03-rebuildable-trade-projection.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP04 | [Projection Read Adapter ve Coverage Gate](./work-packages/P1-WP04-projection-read-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP05 | [Evidence-Gated DuckDB OLAP Hydration](./work-packages/P1-WP05-evidence-gated-olap-hydration.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP06 | [Bulk OLAP Sync Evidence Gate](./work-packages/P1-WP06-bulk-olap-sync-gate.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -122,3 +123,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   dönüyor. Legacy migration venue'ları için duplicate-safe exact coverage eklendi.
   Focused hydration/projection suite `15 passed`, full backend regression `374 passed,
   1 skipped`.
+- P1-WP06 `99d6ad2` ile `SyncPipeline.full_sync()` de aynı evidence coverage gate'ine
+  bağlandı; unverified bulk sync `0` ile fail-closed oluyor. Full backend regression
+  `376 passed, 1 skipped`.
