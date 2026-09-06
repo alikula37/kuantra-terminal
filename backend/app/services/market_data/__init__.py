@@ -52,6 +52,12 @@ from .market_event_batch import (
     MarketEventBatchError,
     MarketEventBatchProjector,
 )
+from .binance_depth_ingestor import (
+    BinanceDepthIngestor,
+    DepthIngestDecision,
+    DepthIngestResult,
+    DepthIngestorState,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -90,4 +96,8 @@ __all__ = [
     "MarketEventBatch",
     "MarketEventBatchError",
     "MarketEventBatchProjector",
+    "BinanceDepthIngestor",
+    "DepthIngestDecision",
+    "DepthIngestResult",
+    "DepthIngestorState",
 ]

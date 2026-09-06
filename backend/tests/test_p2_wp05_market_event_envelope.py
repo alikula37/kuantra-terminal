@@ -114,3 +114,15 @@ def test_update_identity_requires_matching_sequence_final_id():
 
     with pytest.raises(MarketEventEnvelopeError, match="does not match"):
         chain.append_update(update, bad)
+
+
+def test_chain_can_rehydrate_from_valid_durable_events():
+    original = MarketEventChain()
+    snapshot = original.append_snapshot(_snapshot())
+    update, decision = _update()
+    delta = original.append_update(update, decision)
+
+    restored = MarketEventChain.from_events((snapshot, delta))
+
+    assert restored.events == (snapshot, delta)
+    assert restored.verify()["valid"] is True

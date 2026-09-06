@@ -50,6 +50,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP06 | [Durable Market Event Segment Writer](./work-packages/P2-WP06-market-event-segment-writer.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP07 | [Rotated Market Event Segments ve Manifest Recovery](./work-packages/P2-WP07-market-event-segment-manifest.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP08 | [Columnar Market Event Batch Contract](./work-packages/P2-WP08-market-event-batch-contract.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP09 | [Injected Binance Depth Ingestor Boundary](./work-packages/P2-WP09-binance-depth-ingestor.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -223,3 +224,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   eklendi. Decimal değerler canonical string, chain slice contiguous, bounds
   aşımı truncation'sız fail-closed; mevcut runtime'da pyarrow/DuckDB yokluğu
   nedeniyle gerçek sink yazılmadı. Focused suite `5 passed`.
+- P2-WP09 ile coordinator → Decimal venue book → canonical chain → optional
+  durable segment akışı injected bir ingestor sınırında birleştirildi. Snapshot
+  replay event hand-off, live gap, malformed payload, restart ve sink failure
+  testleri eklendi; gerçek Binance transport hâlâ kapsam dışı. Focused suite
+  `5 passed`.

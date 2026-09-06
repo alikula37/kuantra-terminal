@@ -56,6 +56,8 @@ class DepthRecoveryResult:
     dropped_stale_events: int = 0
     requires_snapshot: bool = False
     sequence: Optional[DepthSequenceResult] = None
+    applied_events: tuple[Mapping[str, Any], ...] = ()
+    applied_sequences: tuple[DepthSequenceResult, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -68,6 +70,8 @@ class DepthRecoveryResult:
             "dropped_stale_events": self.dropped_stale_events,
             "requires_snapshot": self.requires_snapshot,
             "sequence": self.sequence.as_dict() if self.sequence else None,
+            "applied_event_count": len(self.applied_events),
+            "applied_sequence_count": len(self.applied_sequences),
         }
 
 
@@ -128,6 +132,8 @@ class BinanceDepthRecoveryCoordinator:
                     DepthRecoveryDecision.LIVE_APPLIED,
                     sequence.reason_code,
                     sequence=sequence,
+                    applied_events=(event,),
+                    applied_sequences=(sequence,),
                 )
             if sequence.decision is DepthSequenceDecision.STALE_IGNORED:
                 return self._result(
@@ -213,6 +219,8 @@ class BinanceDepthRecoveryCoordinator:
 
         replayed = 0
         dropped_stale = 0
+        applied_events: list[Mapping[str, Any]] = []
+        applied_sequences: list[DepthSequenceResult] = []
         buffered_events = list(self._buffer)
         self._buffer.clear()
         for event in buffered_events:
@@ -233,6 +241,8 @@ class BinanceDepthRecoveryCoordinator:
                     sequence=sequence,
                 )
             replayed += 1
+            applied_events.append(event)
+            applied_sequences.append(sequence)
 
         self._state = DepthRecoveryState.LIVE
         return self._result(
@@ -241,6 +251,8 @@ class BinanceDepthRecoveryCoordinator:
             replayed_events=replayed,
             dropped_stale_events=dropped_stale,
             sequence=snapshot_result,
+            applied_events=tuple(applied_events),
+            applied_sequences=tuple(applied_sequences),
         )
 
     def _result(
@@ -252,6 +264,8 @@ class BinanceDepthRecoveryCoordinator:
         dropped_stale_events: int = 0,
         requires_snapshot: bool = False,
         sequence: Optional[DepthSequenceResult] = None,
+        applied_events: tuple[Mapping[str, Any], ...] = (),
+        applied_sequences: tuple[DepthSequenceResult, ...] = (),
     ) -> DepthRecoveryResult:
         return DepthRecoveryResult(
             decision=decision,
@@ -263,6 +277,8 @@ class BinanceDepthRecoveryCoordinator:
             dropped_stale_events=dropped_stale_events,
             requires_snapshot=requires_snapshot,
             sequence=sequence,
+            applied_events=applied_events,
+            applied_sequences=applied_sequences,
         )
 
 

@@ -88,6 +88,35 @@ class MarketEventChain:
         self._events: list[MarketEventEnvelope] = []
         self._by_source_identity: dict[str, MarketEventEnvelope] = {}
 
+    @classmethod
+    def from_events(
+        cls,
+        events: list[MarketEventEnvelope] | tuple[MarketEventEnvelope, ...],
+        *,
+        venue: str = "BINANCE",
+    ) -> "MarketEventChain":
+        """Rehydrate a chain from a validated durable segment history."""
+
+        chain = cls(venue=venue)
+        for event in events:
+            validate_market_event_envelope(event)
+            if event.venue != chain.venue:
+                raise MarketEventEnvelopeError("event venue does not match chain venue")
+            if event.chain_sequence != len(chain._events) + 1:
+                raise MarketEventEnvelopeError("rehydrated chain sequence is not contiguous")
+            if event.prev_hash != chain.head_hash:
+                raise MarketEventEnvelopeError("rehydrated event prev_hash does not match chain head")
+            existing = chain._by_source_identity.get(event.source_identity)
+            if existing is not None:
+                if existing.payload_sha256 == event.payload_sha256:
+                    continue
+                raise MarketEventIdentityConflict(
+                    f"source identity {event.source_identity} was reused with different content"
+                )
+            chain._events.append(event)
+            chain._by_source_identity[event.source_identity] = event
+        return chain
+
     @property
     def events(self) -> tuple[MarketEventEnvelope, ...]:
         return tuple(self._events)
