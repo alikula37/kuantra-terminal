@@ -9,7 +9,7 @@ baseline: 3d3ff67
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP16 Binance Depth Soak Report Hash Archive
-implementation_commits: pending
+implementation_commits: 1dc6be2
 ```
 
 ## Problem
