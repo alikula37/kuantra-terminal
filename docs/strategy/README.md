@@ -91,4 +91,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P1-WP01 implementation `43641e1` + CLI düzeltmesi `25e4640` + verifier hardening `db80a77` ile canonical SQLite `evidence_events` ledger, ortak
   runtime/Alembic schema, hash-chain verifier, duplicate/conflict kapısı, explicit legacy
   backfill/export CLI ve focused test suite eklendi. Full backend regression `359 passed,
-  1 skipped`; three-OS push CI `34037798578` green; broker, DuckDB, UI ve AI akışlarına dokunulmadı.
+  1 skipped`; `a103a06` için three-OS push CI `34038244922` green. `db80a77` sonrası CI
+  denemesi GitHub billing/spending-limit koruması nedeniyle job başlatamadı; broker, DuckDB,
+  UI ve AI akışlarına dokunulmadı.

@@ -11,7 +11,8 @@ adr: ADR-0002, ADR-0003
 depends_on: P0-WP10 technical exit verified; release publication separately gated
 implementation_authority: owner_phase_transition_directive_2026-09-06
 implementation_commits: 43641e1, 25e4640, db80a77
-ci_run: 34037798578
+last_green_ci_run: 34038244922
+latest_ci_attempt: 34038714552
 ```
 
 ## Karar
@@ -83,7 +84,8 @@ türü kabul edilmez.
 - [x] `INSERT OR REPLACE` ledger write path'inde kullanılmaz; `trades` compatibility path'i
   bu pakette açıkça belgelenir.
 - [x] Yeni testler ephemeral `KUANTRA_DATA_DIR` ile çalışır; developer journal'ına yazmaz.
-- [x] Backend suite, focused ledger suite, `git diff --check` ve üç-OS CI yeşildir.
+- [ ] Latest implementation SHA için backend suite, focused ledger suite, `git diff --check`
+  ve üç-OS CI yeşildir.
 
 ## Implementation record
 
@@ -101,8 +103,13 @@ türü kabul edilmez.
 - Focused suite: `9 passed`.
 - Full backend suite: `359 passed, 1 skipped`.
 - Code commits: `43641e1`, `25e4640`, `db80a77`; Phase 0 evidence baseline: `a5ae737`.
-- Three-OS push CI: [34037798578](https://github.com/alikula37/kuantra-terminal/actions/runs/34037798578)
-  success; Windows job `101498954602`, macOS `101498954771`, Ubuntu `101498954772`.
+- Last green three-OS push CI: [34038244922](https://github.com/alikula37/kuantra-terminal/actions/runs/34038244922)
+  success for `a103a06`; Windows job `101500164796`, macOS `101500164772`, Ubuntu `101500164652`.
+- Latest hardening commit `db80a77` local full suite: `359 passed, 1 skipped`; CI attempt
+  [34038714552](https://github.com/alikula37/kuantra-terminal/actions/runs/34038714552) could
+  not start any job because GitHub account billing/spending-limit protection blocked runner
+  allocation. This is an external validation blocker, not a test failure; acceptance remains
+  open until a fresh green run covers `db80a77`.
 
 ## Kesinlikle kapsam dışı
 
