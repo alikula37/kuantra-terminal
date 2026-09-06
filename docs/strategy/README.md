@@ -37,6 +37,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP08 | [Deterministic Replay ve Market-Context Attachment](./work-packages/P1-WP08-deterministic-replay-market-context.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP09 | [Market-Data Provenance Schema](./work-packages/P1-WP09-market-data-provenance.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP10 | [CSV Import Evidence Provenance ve Fail-Closed Validation](./work-packages/P1-WP10-csv-import-evidence-provenance.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP11 | [Read-Only Broker Lifecycle Import ve Reconciliation](./work-packages/P1-WP11-broker-lifecycle-import-reconciliation.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -147,3 +148,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   File SHA-256, row SHA-256, row number ve format canonical `LegacyTradeImported`
   provenance'ına bağlandı. Focused import suite `25 passed`, full backend regression
   `386 passed, 1 skipped`.
+- P1-WP11 `4b23405` ile Binance/OKX fixture/export envelope'ı normalized order/fill
+  lifecycle event'lerine ve explicit quantity/price/fee/orphan reconciliation raporuna
+  bağlandı. Aynı export idempotent; eksik/çelişkili satırlar `UNRECONCILED`. Local JSON
+  endpoint 10 MB ile bounded, live connector veya order write yok. Focused suite `6
+  passed`, full backend regression `392 passed, 1 skipped`.
