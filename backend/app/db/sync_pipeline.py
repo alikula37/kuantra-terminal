@@ -1,7 +1,7 @@
 import logging
 import hashlib
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from app.db.sqlite_driver import sqlite_driver
 from app.db.duckdb_driver import duckdb_driver
 from app.db.repositories.evidence_ledger_repo import canonical_json
@@ -17,6 +17,7 @@ class SyncPipeline:
         *,
         source: str = "journal",
         source_ref: str = "",
+        provenance_extra: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Persist a journal mutation and evidence event before OLAP projection."""
         payload = dict(trade_data)
@@ -41,6 +42,10 @@ class SyncPipeline:
         provenance = {"source": source}
         if source_ref:
             provenance["source_ref"] = source_ref
+        if provenance_extra:
+            for key, value in provenance_extra.items():
+                if value is not None:
+                    provenance[str(key)] = value
 
         occurred_at = payload.get("exit_time") or payload.get("entry_time")
         saved = sqlite_driver.record_trade_with_evidence(

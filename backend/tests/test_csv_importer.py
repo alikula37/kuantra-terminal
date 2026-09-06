@@ -120,10 +120,10 @@ class TestCsvTradeImporterEngine:
 
     def test_malformed_csv_error_handling(self):
         corrupt_csv = (
-            "symbol,side,entry_price,qty\n"
+            "symbol,side,entry_price,qty,entry_time\n"
             "BTCUSDT,BUY,invalid_number,1.0\n"
             "ETHUSDT,SELL,3200.0,0.0\n"
-            "NEARUSDT,BUY,4.50,20.0\n"
+            "NEARUSDT,BUY,4.50,20.0,2026-08-30T10:00:00Z\n"
         )
 
         res = csv_trade_importer.parse_and_import_csv(corrupt_csv.encode("utf-8"), "corrupt.csv")

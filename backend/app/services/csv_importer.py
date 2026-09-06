@@ -13,6 +13,8 @@ import csv
 import io
 import re
 import hashlib
+import json
+import math
 import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
@@ -72,21 +74,36 @@ class CsvTradeImporterService:
 
     @classmethod
     def parse_timestamp(cls, raw_val: Any) -> str:
-        """Standardizes diverse broker date/time strings into ISO8601 UTC string."""
-        if not raw_val:
-            return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        """Standardize a broker timestamp; never invent receipt time.
 
-        val_str = str(raw_val).strip()
-        
+        Broker exports without an offset are interpreted as UTC and emitted as
+        normalized UTC. Missing or unrecognized timestamps reject the row so an
+        import cannot turn an unknown trade date into a fabricated current date.
+        """
+        if raw_val is None or not str(raw_val).strip():
+            raise ValueError("Timestamp is required")
+
+        val_str = str(raw_val).replace('"', '').replace("'", "").strip()
+
         # Numeric epoch timestamp check
-        if val_str.replace(".", "", 1).isdigit():
+        try:
             epoch_num = float(val_str)
-            if epoch_num > 1e11: # milliseconds
-                epoch_num /= 1000.0
-            return datetime.fromtimestamp(epoch_num, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            if math.isfinite(epoch_num) and epoch_num >= 0:
+                if epoch_num > 1e11:  # milliseconds
+                    epoch_num /= 1000.0
+                parsed = datetime.fromtimestamp(epoch_num, tz=timezone.utc)
+                return parsed.strftime("%Y-%m-%dT%H:%M:%SZ")
+        except (TypeError, ValueError, OverflowError, OSError):
+            pass
 
-        # Strip extra quotes
-        val_str = val_str.replace('"', '').replace("'", "").strip()
+        # ISO-8601, including explicit offsets and the common trailing Z.
+        try:
+            parsed = datetime.fromisoformat(val_str.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            pass
 
         date_formats = [
             "%Y-%m-%d %H:%M:%S",
@@ -106,7 +123,7 @@ class CsvTradeImporterService:
         for fmt in date_formats:
             try:
                 dt = datetime.strptime(val_str, fmt)
-                return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+                return dt.replace(tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             except ValueError:
                 pass
 
@@ -117,31 +134,36 @@ class CsvTradeImporterService:
             time_part = match.group(2)
             if len(time_part) == 5:
                 time_part += ":00"
-            return f"{date_part}T{time_part}Z"
+            parsed = datetime.strptime(f"{date_part} {time_part}", "%Y-%m-%d %H:%M:%S")
+            return parsed.replace(tzinfo=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        raise ValueError(f"Unrecognized timestamp: {val_str}")
 
     @classmethod
     def clean_symbol(cls, raw_symbol: str) -> str:
         """Sanitizes ticker symbols into canonical format (e.g. BTCUSDT, EURUSD, XAUUSD)."""
-        if not raw_symbol:
-            return "BTCUSDT"
+        if raw_symbol is None or not str(raw_symbol).strip():
+            return ""
         cleaned = str(raw_symbol).upper().replace("/", "").replace("_", "").replace("-", "").strip()
         # Remove broker prefixes/suffixes like EURUSD.pro or BTCUSDT.p
         cleaned = re.sub(r"\.(PRO|ECN|M|P|STD|RAW)$", "", cleaned, flags=re.I)
         return cleaned
 
     @classmethod
-    def clean_float(cls, raw_val: Any, default: float = 0.0) -> float:
+    def clean_float(cls, raw_val: Any, default: Optional[float] = None) -> Optional[float]:
         """Safely parses numeric values handling currency signs, commas, and percentage symbols."""
-        if raw_val is None:
+        if raw_val is None or not str(raw_val).strip():
+            return default
+        if isinstance(raw_val, bool):
             return default
         if isinstance(raw_val, (int, float)):
-            return float(raw_val)
+            value = float(raw_val)
+            return value if math.isfinite(value) else default
         val_str = str(raw_val).replace("$", "").replace("€", "").replace("£", "").replace(" ", "").replace(",", "").strip()
         try:
-            return float(val_str)
-        except ValueError:
+            value = float(val_str)
+            return value if math.isfinite(value) else default
+        except (TypeError, ValueError, OverflowError):
             return default
 
     @classmethod
@@ -152,7 +174,7 @@ class CsvTradeImporterService:
             return "BUY"
         if any(keyword in s for keyword in ["SELL", "SHORT", "SELL_SHORT", "CLOSE LONG"]):
             return "SELL"
-        return "BUY"
+        return ""
 
     @classmethod
     def parse_rows(cls, content_str: str) -> Tuple[str, List[Dict[str, Any]], List[str]]:
@@ -172,10 +194,10 @@ class CsvTradeImporterService:
             try:
                 if format_type == "BINANCE":
                     # Binance Spot or Futures CSV
-                    symbol = cls.clean_symbol(row.get("pair") or row.get("market") or row.get("symbol") or "BTCUSDT")
-                    side = cls.normalize_side(row.get("side") or row.get("type") or "BUY")
-                    entry_price = cls.clean_float(row.get("price") or row.get("avgprice") or row.get("order price"), 0.0)
-                    qty = cls.clean_float(row.get("executed") or row.get("amount") or row.get("qty") or row.get("filled"), 0.0)
+                    symbol = cls.clean_symbol(row.get("pair") or row.get("market") or row.get("symbol"))
+                    side = cls.normalize_side(row.get("side") or row.get("type"))
+                    entry_price = cls.clean_float(row.get("price") or row.get("avgprice") or row.get("order price"))
+                    qty = cls.clean_float(row.get("executed") or row.get("amount") or row.get("qty") or row.get("filled"))
                     pnl = cls.clean_float(row.get("realized profit") or row.get("realized pnl") or row.get("profit"), 0.0)
                     commission = abs(cls.clean_float(row.get("fee"), 0.0))
                     entry_time = cls.parse_timestamp(row.get("date(utc)") or row.get("time(utc)") or row.get("date") or row.get("time"))
@@ -202,12 +224,12 @@ class CsvTradeImporterService:
 
                 elif format_type == "BYBIT":
                     # Bybit Closed PnL CSV
-                    symbol = cls.clean_symbol(row.get("contracts") or row.get("symbol") or row.get("contract") or "BTCUSDT")
-                    raw_dir = row.get("closing direction") or row.get("side") or row.get("direction") or "Buy"
-                    side = "SELL" if "sell" in str(raw_dir).lower() or "close long" in str(raw_dir).lower() else "BUY"
-                    entry_price = cls.clean_float(row.get("entry price") or row.get("avg entry price"), 0.0)
-                    exit_price = cls.clean_float(row.get("exit price") or row.get("avg exit price"), entry_price)
-                    qty = cls.clean_float(row.get("qty") or row.get("quantity") or row.get("closed size") or row.get("size"), 0.0)
+                    symbol = cls.clean_symbol(row.get("contracts") or row.get("symbol") or row.get("contract"))
+                    raw_dir = row.get("closing direction") or row.get("side") or row.get("direction")
+                    side = cls.normalize_side(raw_dir)
+                    entry_price = cls.clean_float(row.get("entry price") or row.get("avg entry price"))
+                    exit_price = cls.clean_float(row.get("exit price") or row.get("avg exit price"))
+                    qty = cls.clean_float(row.get("qty") or row.get("quantity") or row.get("closed size") or row.get("size"))
                     pnl = cls.clean_float(row.get("closed p&l") or row.get("closed pnl") or row.get("realized pnl"), 0.0)
                     commission = abs(cls.clean_float(row.get("fee") or row.get("trading fee"), 0.0))
                     
@@ -235,14 +257,19 @@ class CsvTradeImporterService:
 
                 elif format_type == "METATRADER":
                     # MT4 / MT5 Statement Report
-                    symbol = cls.clean_symbol(row.get("item") or row.get("symbol") or row.get("asset") or "EURUSD")
-                    raw_type = row.get("type") or row.get("action") or "buy"
+                    symbol = cls.clean_symbol(row.get("item") or row.get("symbol") or row.get("asset"))
+                    raw_type = row.get("type") or row.get("action")
                     side = cls.normalize_side(raw_type)
-                    qty = cls.clean_float(row.get("size") or row.get("volume") or row.get("lots"), 0.0)
+                    qty = cls.clean_float(row.get("size") or row.get("volume") or row.get("lots"))
                     
                     # In MT reports, there can be 2 price columns or open/close price keys
-                    entry_price = cls.clean_float(row.get("open price") or row.get("price"), 0.0)
-                    exit_price = cls.clean_float(row.get("close price"), None)
+                    entry_price = cls.clean_float(row.get("open price") or row.get("price"))
+                    # Some MT4/MT5 exports repeat the ``Price`` header for the
+                    # close column; DictReader retains the last occurrence.
+                    exit_price = cls.clean_float(
+                        row.get("close price") or row.get("exit price") or row.get("price"),
+                        None,
+                    )
                     
                     sl = cls.clean_float(row.get("s / l") or row.get("s/l") or row.get("stop loss") or row.get("sl"), None)
                     tp = cls.clean_float(row.get("t / p") or row.get("t/p") or row.get("take profit") or row.get("tp"), None)
@@ -283,11 +310,11 @@ class CsvTradeImporterService:
 
                 else:
                     # Standard Generic Kuantra CSV
-                    symbol = cls.clean_symbol(row.get("symbol") or "BTCUSDT")
-                    side = cls.normalize_side(row.get("side") or "BUY")
-                    entry_price = cls.clean_float(row.get("entry_price") or row.get("entry") or row.get("price"), 0.0)
+                    symbol = cls.clean_symbol(row.get("symbol"))
+                    side = cls.normalize_side(row.get("side"))
+                    entry_price = cls.clean_float(row.get("entry_price") or row.get("entry") or row.get("price"))
                     exit_price = cls.clean_float(row.get("exit_price") or row.get("exit"), None)
-                    qty = cls.clean_float(row.get("qty") or row.get("quantity") or row.get("amount") or row.get("size"), 1.0)
+                    qty = cls.clean_float(row.get("qty") or row.get("quantity") or row.get("amount") or row.get("size"))
                     sl = cls.clean_float(row.get("stop_loss") or row.get("sl"), None)
                     tp = cls.clean_float(row.get("take_profit") or row.get("tp"), None)
                     pnl = cls.clean_float(row.get("pnl") or row.get("profit"), 0.0)
@@ -325,13 +352,28 @@ class CsvTradeImporterService:
                     }
 
                 # Validation checks
-                if trade_dict["entry_price"] <= 0:
-                    parsing_errors.append(f"Row {idx}: Invalid or zero entry_price ({trade_dict['entry_price']}). Skipped.")
+                if not trade_dict.get("symbol"):
+                    parsing_errors.append(f"Row {idx}: Symbol is required. Skipped.")
                     continue
-                if trade_dict["qty"] <= 0:
-                    parsing_errors.append(f"Row {idx}: Invalid or zero qty ({trade_dict['qty']}). Skipped.")
+                if trade_dict.get("side") not in ("BUY", "SELL"):
+                    parsing_errors.append(f"Row {idx}: Side must be BUY or SELL. Skipped.")
+                    continue
+                if trade_dict.get("entry_price") is None or trade_dict["entry_price"] <= 0:
+                    parsing_errors.append(f"Row {idx}: Invalid or missing entry_price ({trade_dict.get('entry_price')}). Skipped.")
+                    continue
+                if trade_dict.get("qty") is None or trade_dict["qty"] <= 0:
+                    parsing_errors.append(f"Row {idx}: Invalid or missing qty ({trade_dict.get('qty')}). Skipped.")
+                    continue
+                if trade_dict.get("status") == "CLOSED" and (
+                    trade_dict.get("exit_price") is None or trade_dict["exit_price"] <= 0
+                ):
+                    parsing_errors.append(f"Row {idx}: Closed trade requires a valid exit_price. Skipped.")
                     continue
 
+                trade_dict["source_row_number"] = idx
+                trade_dict["source_row_sha256"] = hashlib.sha256(
+                    json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                ).hexdigest()
                 normalized_trades.append(trade_dict)
 
             except Exception as e:
@@ -353,9 +395,11 @@ class CsvTradeImporterService:
                 raise ValueError(f"Unable to decode CSV file '{filename}': {str(e)}")
 
         format_type, trades, errors = cls.parse_rows(content_str)
+        source_file_sha256 = hashlib.sha256(file_bytes).hexdigest()
         return {
             "detected_format": format_type,
             "filename": filename,
+            "source_file_sha256": source_file_sha256,
             "total_rows_parsed": len(trades),
             "errors_count": len(errors),
             "errors": errors[:10],
@@ -376,12 +420,14 @@ class CsvTradeImporterService:
                 raise ValueError(f"Unable to decode CSV file '{filename}': {str(e)}")
 
         format_type, trades, errors = cls.parse_rows(content_str)
+        source_file_sha256 = hashlib.sha256(file_bytes).hexdigest()
         
         if not trades and errors:
             return {
                 "success": False,
                 "detected_format": format_type,
                 "filename": filename,
+                "source_file_sha256": source_file_sha256,
                 "total_rows": len(trades) + len(errors),
                 "imported": 0,
                 "duplicates_skipped": 0,
@@ -445,6 +491,12 @@ class CsvTradeImporterService:
                 trade_payload,
                 source="csv",
                 source_ref=filename,
+                provenance_extra={
+                    "format": format_type,
+                    "source_file_sha256": source_file_sha256,
+                    "source_row_number": t["source_row_number"],
+                    "source_row_sha256": t["source_row_sha256"],
+                },
             )
             existing_fingerprints.add(fp)
             imported_records.append(saved)
@@ -458,10 +510,16 @@ class CsvTradeImporterService:
             "success": True,
             "detected_format": format_type,
             "filename": filename,
+            "source_file_sha256": source_file_sha256,
             "total_rows": len(trades) + len(errors),
             "imported": len(imported_records),
             "duplicates_skipped": duplicates_skipped,
             "errors": errors,
+            "provenance": {
+                "source": "csv",
+                "source_file_sha256": source_file_sha256,
+                "source_rows_hashed": len(trades),
+            },
             "trades": imported_records[:10],
             "message": f"Successfully imported {len(imported_records)} trades from {format_type} export."
         }
