@@ -41,11 +41,11 @@
   },
   "onboarding": {
     "wizard_title": "Kuantra Kurumsal Terminal Kurulumu",
-    "wizard_subtitle": "Ticaret ortamınızı, şifreleme kasanızı ve sistem tercihlerinizi yapılandırın",
+    "wizard_subtitle": "Ticaret ortamınızı, işletim sistemi keychain'ini ve sistem tercihlerinizi yapılandırın",
     "step1_title": "Ticaret Ortamı",
     "step1_desc": "Canlı emir iletimi veya simüle edilmiş sanal işlem ortamınızı seçin",
-    "step2_title": "Şifreli Yerel Kasa Kimlik Bilgileri",
-    "step2_desc": "API anahtarlarını Argon2id + AES-256-GCM ile bellekte güvenle şifreleyin",
+    "step2_title": "İşletim Sistemi Keychain Kimlik Bilgileri",
+    "step2_desc": "Entegrasyon kimlik bilgilerini işletim sistemi keychain'inde saklayın; düz metni SQLite'a yazmayın",
     "step3_title": "Tema & Yerelleştirme",
     "step3_desc": "Görsel çalışma alanı paletinizi ve arayüz dilinizi özelleştirin",
     "step4_title": "Doğrulama & El Sıkışma",
@@ -65,7 +65,7 @@
       "okx_key_label": "OKX API Anahtarı",
       "okx_secret_label": "OKX API Gizli Anahtarı",
       "okx_passphrase_label": "OKX Parolası (Passphrase)",
-      "optional_notice": "Kimlik bilgileri düz metin içermez ve bellekte sıkı şekilde şifrelenir"
+      "optional_notice": "Kimlik bilgileri yalnızca işletim sistemi keychain'i varsa saklanır; düz metin SQLite'a yazılmaz"
     },
     "preferences": {
       "theme_label": "Görsel Tema",
@@ -114,9 +114,9 @@
     "expectancy": "Matematiksel Beklenti (EV)"
   },
   "vault": {
-    "title": "Şifreli Yerel Kasa",
-    "status_encrypted": "AES-256-GCM ile Şifrelendi",
-    "saved": "{exchange} kimlik bilgileri şifreli yerel kasaya güvenle kaydedildi."
+    "title": "İşletim Sistemi Keychain'i",
+    "status_encrypted": "İşletim Sistemi Keychain'i Hazır",
+    "saved": "{exchange} kimlik bilgileri işletim sistemi keychain'ine güvenle kaydedildi."
   },
   "settings": {
     "title": "Sistem & Çalışma Zamanı Ayarları",
@@ -296,25 +296,27 @@
   },
   "exchange": {
     "modal_title": "Borsa API Kimlik Bilgileri",
-    "modal_subtitle": "Canlı CCXT borsa iletimi için API anahtarlarını yapılandırın ve güvenle şifreleyin",
+    "modal_subtitle": "Borsa kimlik bilgilerini işletim sistemi keychain'inde saklayın",
     "header_btn": "API Anahtarları",
     "status_label": "Bağlantı Durumu",
     "configured_badge": "Yapılandırıldı",
     "unconfigured_badge": "Yapılandırılmadı",
+    "legacy_badge": "Eski sır yeniden girilmeli",
     "last_updated": "Son Güncelleme",
     "delete_btn": "Anahtarları Sil",
     "api_key_label": "API Anahtarı (Key)",
     "api_secret_label": "API Gizli Anahtarı (Secret)",
     "passphrase_label": "API Parolası (Passphrase)",
     "testnet_checkbox": "Testnet / Demo Ortamına Bağlan",
-    "security_notice": "Tüm API anahtarları ve parolalar kaydedilmeden önce SQLite içinde AES-256-GCM ile şifrelenir. Açık metin kimlik bilgileri asla günlüklere yazılmaz veya paylaşılmaz.",
+    "security_notice": "Kimlik bilgileri yalnızca işletim sistemi keychain'inde tutulur. SQLite yalnızca metadata ve referansları saklar; açık metin kimlik bilgileri günlüğe veya SQLite'a yazılmaz.",
+    "keychain_unavailable": "İşletim sistemi keychain'i kullanılamıyor. Windows Credential Manager, macOS Keychain veya Linux Secret Service hazır olana kadar kayıt devre dışıdır.",
     "test_btn": "Bağlantıyı Test Et",
     "testing_btn": "Bağlanıyor...",
-    "save_btn": "Kaydet ve Şifrele",
-    "saving_btn": "Şifreleniyor...",
+    "save_btn": "Keychain'e Kaydet",
+    "saving_btn": "Kaydediliyor...",
     "test_success": "Borsa bağlantısı ve kimlik doğrulama başarılı!",
     "test_failed": "Bağlantı veya kimlik doğrulama başarısız",
-    "save_success": "Borsa kimlik bilgileri başarıyla şifrelendi ve kaydedildi!",
+    "save_success": "Borsa kimlik bilgileri işletim sistemi keychain'ine kaydedildi!",
     "save_failed": "Borsa kimlik bilgileri kaydedilemedi",
     "delete_success": "Kimlik bilgileri başarıyla silindi.",
     "delete_failed": "Kimlik bilgileri silinemedi.",

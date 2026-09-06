@@ -41,11 +41,11 @@
   },
   "onboarding": {
     "wizard_title": "Kuantra Institutional Terminal Setup",
-    "wizard_subtitle": "Configure your trading environment, encryption vault, and system preferences",
+    "wizard_subtitle": "Configure your trading environment, OS keychain, and system preferences",
     "step1_title": "Trading Environment",
     "step1_desc": "Select your live order routing or simulated paper trading execution environment",
-    "step2_title": "Encrypted Local Vault Credentials",
-    "step2_desc": "Securely encrypt API credentials in-memory using Argon2id + AES-256-GCM",
+    "step2_title": "OS Keychain Credentials",
+    "step2_desc": "Store integration credentials in the operating system keychain; never persist plaintext in SQLite",
     "step3_title": "Theme & Localization",
     "step3_desc": "Customize your visual workspace palette and internationalized terminal language",
     "step4_title": "Verification & Handshake",
@@ -65,7 +65,7 @@
       "okx_key_label": "OKX API Key",
       "okx_secret_label": "OKX API Secret",
       "okx_passphrase_label": "OKX Passphrase",
-      "optional_notice": "Credentials are zero-plaintext and strictly encrypted in memory"
+      "optional_notice": "Credentials are stored only when an OS keychain is available; plaintext is never persisted in SQLite"
     },
     "preferences": {
       "theme_label": "Visual Theme",
@@ -114,9 +114,9 @@
     "expectancy": "Mathematical Expectancy (EV)"
   },
   "vault": {
-    "title": "Encrypted Local Vault",
-    "status_encrypted": "AES-256-GCM Encrypted",
-    "saved": "{exchange} credentials securely saved to the encrypted local vault."
+    "title": "OS Keychain",
+    "status_encrypted": "OS Keychain Configured",
+    "saved": "{exchange} credentials securely saved to the operating system keychain."
   },
   "settings": {
     "title": "System & Runtime Settings",
@@ -296,25 +296,27 @@
   },
   "exchange": {
     "modal_title": "Exchange API Credentials",
-    "modal_subtitle": "Configure and securely encrypt API keys for live CCXT exchange execution",
+    "modal_subtitle": "Store exchange credentials in the operating system keychain",
     "header_btn": "API Keys",
     "status_label": "Connection Status",
     "configured_badge": "Configured",
     "unconfigured_badge": "Not Configured",
+    "legacy_badge": "Legacy secret requires re-entry",
     "last_updated": "Last Updated",
     "delete_btn": "Delete Credentials",
     "api_key_label": "API Key",
     "api_secret_label": "API Secret",
     "passphrase_label": "API Passphrase",
     "testnet_checkbox": "Connect to Testnet / Demo Sandbox",
-    "security_notice": "All API keys and secrets are AES-256-GCM encrypted locally in SQLite before being stored. Plaintext credentials are never logged or exposed.",
+    "security_notice": "Credentials are stored only in the operating system keychain. SQLite keeps metadata and references; plaintext credentials are never logged or persisted there.",
+    "keychain_unavailable": "OS keychain unavailable. Saving credentials is disabled until Windows Credential Manager, macOS Keychain, or Linux Secret Service is available.",
     "test_btn": "Test Connection",
     "testing_btn": "Connecting...",
-    "save_btn": "Save & Encrypt",
-    "saving_btn": "Encrypting...",
+    "save_btn": "Save to Keychain",
+    "saving_btn": "Saving...",
     "test_success": "Connected and authenticated successfully!",
     "test_failed": "Connection or authentication failed",
-    "save_success": "Exchange credentials encrypted and saved successfully!",
+    "save_success": "Exchange credentials saved to the OS keychain successfully!",
     "save_failed": "Failed to save exchange credentials",
     "delete_success": "Credentials purged successfully.",
     "delete_failed": "Failed to delete credentials.",

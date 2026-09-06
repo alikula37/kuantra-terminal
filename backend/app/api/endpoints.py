@@ -15,6 +15,7 @@ from app.services.market_data.public_fetcher import public_market_fetcher
 from app.services.portfolio_service import portfolio_service
 from app.services.csv_importer import csv_trade_importer
 from app.services.exchange.credentials_manager import exchange_credentials_manager
+from app.services.security.credential_store import CredentialStoreUnavailable, credential_store_status
 from app.services.execution.ccxt_engine import ccxt_execution_engine
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
@@ -196,9 +197,15 @@ def list_exchange_credentials():
     """Lists configured exchange API accounts with masked secrets."""
     return exchange_credentials_manager.list_configured_exchanges()
 
+@router.get("/exchange/credentials/status")
+def get_exchange_credential_store_status():
+    """Reports keychain availability without exposing any credential material."""
+
+    return credential_store_status()
+
 @router.post("/exchange/credentials")
 def save_exchange_credentials(payload: ExchangeCredentialsSaveSchema):
-    """Encrypts and securely stores exchange API credentials."""
+    """Stores exchange API credentials in the operating system keychain."""
     try:
         return exchange_credentials_manager.save_credentials(
             exchange_id=payload.exchange_id,
@@ -211,13 +218,27 @@ def save_exchange_credentials(payload: ExchangeCredentialsSaveSchema):
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except CredentialStoreUnavailable as e:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "CREDENTIAL_STORE_UNAVAILABLE",
+                "message": str(e),
+            },
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to encrypt credentials: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to store credentials: {str(e)}")
 
 @router.delete("/exchange/credentials/{exchange_id}")
 def delete_exchange_credentials(exchange_id: str):
     """Purges exchange credentials from vault and database."""
-    deleted = exchange_credentials_manager.delete_credentials(exchange_id)
+    try:
+        deleted = exchange_credentials_manager.delete_credentials(exchange_id)
+    except CredentialStoreUnavailable as e:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "CREDENTIAL_STORE_UNAVAILABLE", "message": str(e)},
+        )
     if not deleted:
         raise HTTPException(status_code=404, detail=f"No credentials found for '{exchange_id}'")
     return {"status": "deleted", "exchange_id": exchange_id}
@@ -654,7 +675,13 @@ def store_vault_credential(payload: VaultStoreSchema):
     val = payload.value or payload.secret
     if not key or not val:
         raise HTTPException(status_code=400, detail="Both 'key' (or 'exchange') and 'value' are required.")
-    settings_service.store_vault_secret(key, val)
+    try:
+        settings_service.store_vault_secret(key, val)
+    except CredentialStoreUnavailable as e:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "CREDENTIAL_STORE_UNAVAILABLE", "message": str(e)},
+        )
     return {"status": "STORED", "key": key.upper()}
 
 @router.get("/onboarding/status")
@@ -670,6 +697,16 @@ def get_onboarding_status():
 
 @router.post("/onboarding/complete")
 def complete_onboarding(payload: OnboardingCompleteSchema):
+    if payload.api_key or payload.api_keys:
+        store_status = credential_store_status()
+        if not store_status.get("available"):
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": "CREDENTIAL_STORE_UNAVAILABLE",
+                    "message": store_status.get("reason") or "An OS credential manager is required.",
+                },
+            )
     initial_bal = payload.paper_balance
     if initial_bal is None:
         try:
@@ -686,16 +723,22 @@ def complete_onboarding(payload: OnboardingCompleteSchema):
     }
     cfg = settings_service.update_settings(updates)
 
-    # Store individual api_keys dict if provided
-    if payload.api_keys:
-        for k, v in payload.api_keys.items():
-            if k and v:
-                settings_service.store_vault_secret(k, v)
+    try:
+        # Store individual api_keys dict if provided.
+        if payload.api_keys:
+            for k, v in payload.api_keys.items():
+                if k and v:
+                    settings_service.store_vault_secret(k, v)
 
-    # Backward compatibility with single api_key
-    if payload.api_key:
-        provider_name = payload.provider or "OPENAI"
-        settings_service.store_vault_secret(f"{provider_name.upper()}_API_KEY", payload.api_key)
+        # Backward compatibility with single api_key.
+        if payload.api_key:
+            provider_name = payload.provider or "OPENAI"
+            settings_service.store_vault_secret(f"{provider_name.upper()}_API_KEY", payload.api_key)
+    except CredentialStoreUnavailable as e:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "CREDENTIAL_STORE_UNAVAILABLE", "message": str(e)},
+        )
 
     if payload.ai_mode == "local_gguf":
         model_downloader.start_download(mock_mode=True)

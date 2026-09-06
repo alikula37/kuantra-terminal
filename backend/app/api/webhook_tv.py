@@ -10,6 +10,7 @@ import time
 import re
 import logging
 import os
+import secrets
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Header, HTTPException, Request
@@ -20,7 +21,11 @@ logger = logging.getLogger("webhook_tv")
 
 webhook_router = APIRouter(tags=["Webhook"])
 
-WEBHOOK_SECRET_KEY = os.environ.get("KUANTRA_WEBHOOK_SECRET", "change_me_in_production")
+# Never ship a shared/default secret. In development without explicit configuration,
+# use a process-random value so requests fail across restarts; production deployments
+# must provide KUANTRA_WEBHOOK_SECRET through an external secret store.
+WEBHOOK_SECRET_CONFIGURED = bool(os.environ.get("KUANTRA_WEBHOOK_SECRET"))
+WEBHOOK_SECRET_KEY = os.environ.get("KUANTRA_WEBHOOK_SECRET") or secrets.token_urlsafe(32)
 
 class TradingViewSignalPayload(BaseModel):
     symbol: str
@@ -111,5 +116,6 @@ def get_cloudflare_tunnel_config():
         "relay_mode": "CLOUDFLARE_TUNNEL_WORKER",
         "webhook_endpoint": f"{settings.gateway_url()}/api/v1/webhook/tradingview",
         "auth_header": "X-TradingView-Signature",
-        "secret_configured": True
+        "secret_configured": WEBHOOK_SECRET_CONFIGURED,
+        "auth_required": True,
     }

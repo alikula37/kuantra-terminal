@@ -4,9 +4,7 @@ Provides zero-plaintext, AES-256-GCM authenticated encryption for API keys and i
 """
 
 import os
-import sys
 import base64
-import hashlib
 import secrets
 from typing import Dict, Any, Optional, List
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -14,19 +12,29 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 
 class StrongholdVault:
-    """In-memory encrypted secret vault using AES-256-GCM & PBKDF2-HMAC-SHA256."""
+    """In-memory encrypted secret vault using AES-256-GCM.
+
+    This class is a process-local compatibility helper, not a persistence mechanism.
+    When no explicit passphrase is supplied a random ephemeral key is generated; the
+    previous deterministic default key was unsafe for production credentials.
+    """
 
     def __init__(self, master_password: Optional[str] = None):
-        self._master_key = self._derive_master_key(master_password or os.environ.get("KUANTRA_MASTER_KEY", "kuantra-default-sec-vault-key-32b"))
+        explicit_password = master_password or os.environ.get("KUANTRA_MASTER_KEY")
+        self._master_key = (
+            self._derive_master_key(explicit_password)
+            if explicit_password
+            else AESGCM.generate_key(bit_length=256)
+        )
         self._secrets: Dict[str, bytes] = {} # Store ciphertext in memory
         self._nonce_map: Dict[str, bytes] = {}
 
-    def _derive_master_key(self, passphrase: str, salt: bytes = b"kuantra_salt_9876543210") -> bytes:
-        """Derives 256-bit AES key from passphrase using PBKDF2-HMAC-SHA256 (100,000 iterations)."""
+    def _derive_master_key(self, passphrase: str, salt: Optional[bytes] = None) -> bytes:
+        """Derives 256-bit AES key from passphrase using PBKDF2-HMAC-SHA256."""
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=salt,
+            salt=salt or secrets.token_bytes(16),
             iterations=100000,
         )
         return kdf.derive(passphrase.encode("utf-8"))

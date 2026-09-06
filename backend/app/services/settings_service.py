@@ -8,6 +8,7 @@ import logging
 from typing import Dict, Any, Optional
 from app.db.sqlite_driver import sqlite_driver
 from app.core.security import vault
+from app.services.security.credential_store import credential_store
 
 logger = logging.getLogger("settings_service")
 
@@ -68,9 +69,23 @@ class SettingsService:
         return self.get_settings()
 
     def store_vault_secret(self, key: str, value: str) -> None:
-        """Encrypts API key with Argon2id / AES-256-GCM and stores in Stronghold Vault."""
+        """Stores a generic integration secret in OS keychain plus transient memory.
+
+        No secret is persisted in ``user_settings``. The in-memory copy exists only for
+        the current process and is cleared on shutdown; persistence is delegated to the
+        OS credential manager.
+        """
         normalized_key = key.strip().upper()
-        vault.store_secret(normalized_key, value.strip())
-        logger.info(f"[VAULT] Securely stored credential for {normalized_key}")
+        secret_value = value.strip()
+        if not normalized_key or not secret_value:
+            raise ValueError("Credential key and value are required.")
+        if not credential_store.status.available:
+            from app.services.security.credential_store import CredentialStoreUnavailable
+            raise CredentialStoreUnavailable(
+                credential_store.status.reason or "An OS credential manager is required."
+            )
+        credential_store.set_secret(f"generic/{normalized_key}", secret_value)
+        vault.store_secret(normalized_key, secret_value)
+        logger.info("[VAULT] OS-keychain credential stored for %s", normalized_key)
 
 settings_service = SettingsService()

@@ -22,6 +22,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP05 | [Python universal dependency lock](./work-packages/P0-WP05-python-universal-lock.md) | Verified | — | 2026-09-05 |
 | P0-WP06A | [Replay ve excursion veri doğruluğu](./work-packages/P0-WP06A-replay-excursion-truth.md) | Verified | `d517c34` | 2026-09-06 |
 | P0-WP06B | [Order-flow/L2/FIX truth boundary](./work-packages/P0-WP06B-orderflow-fix-truth.md) | Verified | `1cfd778` | 2026-09-06 |
+| P0-WP07 | [Credential ve OS keychain truth boundary](./work-packages/P0-WP07-credential-keychain-boundary.md) | Verified | `TBD` | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -61,3 +62,5 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 
 - P0-WP06B ile seed order-flow/L2 verisi ve simulated FIX/DMA success yolları kaldırıldı;
   no-data/experimental-disabled sözleşmesi ve UI regression kanıtı eklendi.
+- P0-WP07 ile exchange/generic secret'lar OS keychain'e taşındı; SQLite yalnızca referans
+  ve metadata tutuyor, keychain yoksa credential yazma fail-closed oluyor.

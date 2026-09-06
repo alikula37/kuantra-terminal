@@ -92,6 +92,20 @@ class SQLiteDriver:
                     updated_at TEXT NOT NULL
                 );
 
+                -- Secret values live in the OS credential manager. This table contains
+                -- only stable keychain account references and non-secret metadata.
+                CREATE TABLE IF NOT EXISTS exchange_credential_refs (
+                    exchange_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    api_key_ref TEXT NOT NULL,
+                    api_secret_ref TEXT NOT NULL,
+                    passphrase_ref TEXT,
+                    is_testnet INTEGER DEFAULT 0,
+                    is_active INTEGER DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol);
                 CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status);
                 CREATE INDEX IF NOT EXISTS idx_trades_entry_time ON trades(entry_time);

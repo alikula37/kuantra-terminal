@@ -17,13 +17,24 @@ interface ExchangeConfig {
   has_passphrase: boolean;
   is_testnet: boolean;
   is_active: boolean;
+  legacy_detected?: boolean;
+  credentials_available?: boolean;
+  storage_backend?: string;
   updated_at: string | null;
+}
+
+interface CredentialStoreStatus {
+  backend: string;
+  available: boolean;
+  persistent: boolean;
+  reason?: string | null;
 }
 
 export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
 
   const [configs, setConfigs] = useState<ExchangeConfig[]>([]);
+  const [credentialStoreStatus, setCredentialStoreStatus] = useState<CredentialStoreStatus | null>(null);
   const [activeTab, setActiveTab] = useState<string>("binance_futures");
   const [apiKey, setApiKey] = useState<string>("");
   const [apiSecret, setApiSecret] = useState<string>("");
@@ -59,9 +70,23 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
     }
   };
 
+  const fetchCredentialStoreStatus = async () => {
+    try {
+      const res = await apiFetch(apiUrl("/api/v1/exchange/credentials/status"));
+      if (res.ok) {
+        setCredentialStoreStatus(await res.json());
+      } else {
+        setCredentialStoreStatus(null);
+      }
+    } catch {
+      setCredentialStoreStatus(null);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchConfigs();
+      fetchCredentialStoreStatus();
       setStatusMessage(null);
       setTestResult(null);
       setApiKey("");
@@ -74,6 +99,7 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
 
   const currentConfig = configs.find((c) => c.exchange_id === activeTab);
   const requiresPassphrase = activeTab === "okx";
+  const canPersistCredentials = credentialStoreStatus?.available === true;
 
   const handleTestConnection = async () => {
     setIsTesting(true);
@@ -262,6 +288,13 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
             </div>
           )}
 
+          {credentialStoreStatus && !credentialStoreStatus.available && (
+            <div className="p-3 rounded-lg flex items-start space-x-2 border bg-loss/15 border-loss/30 text-loss">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{t("exchange.keychain_unavailable")}</span>
+            </div>
+          )}
+
           {/* Current Config State Card */}
           <div className="p-4 bg-[#0d121c] rounded-lg border border-surface-border space-y-2">
             <div className="flex items-center justify-between">
@@ -270,6 +303,10 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
                 <span className="px-2 py-0.5 rounded bg-gain/15 border border-gain/30 text-gain font-bold text-[10px]">
                   {t("exchange.configured_badge")} ({currentConfig.api_key_masked})
                 </span>
+              ) : currentConfig?.legacy_detected ? (
+                <span className="px-2 py-0.5 rounded bg-loss/15 border border-loss/30 text-loss font-bold text-[10px]">
+                  {t("exchange.legacy_badge")}
+                </span>
               ) : (
                 <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-400 font-bold text-[10px]">
                   {t("exchange.unconfigured_badge")}
@@ -277,14 +314,14 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
               )}
             </div>
 
-            {currentConfig?.is_configured && (
+            {(currentConfig?.is_configured || currentConfig?.legacy_detected) && (
               <div className="flex items-center justify-between pt-2 border-t border-surface-border/50">
                 <span className="text-[10px] text-slate-500">
                   {t("exchange.last_updated")}: {currentConfig.updated_at ? new Date(currentConfig.updated_at).toLocaleString() : "-"}
                 </span>
                 <button
                   onClick={handleDeleteCredentials}
-                  disabled={isDeleting}
+                  disabled={isDeleting || (!!currentConfig?.is_configured && !canPersistCredentials)}
                   className="text-loss hover:text-rose-400 font-bold flex items-center space-x-1 cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -408,7 +445,7 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
 
               <button
                 type="submit"
-                disabled={isSaving || !apiKey || !apiSecret}
+                disabled={isSaving || !canPersistCredentials || !apiKey || !apiSecret}
                 className="px-5 py-2 bg-accent hover:bg-sky-400 text-black font-bold rounded-lg transition shadow-md disabled:opacity-40 cursor-pointer"
               >
                 {isSaving ? t("exchange.saving_btn") : t("exchange.save_btn")}

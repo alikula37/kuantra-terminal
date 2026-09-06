@@ -8,6 +8,12 @@ import os
 import pytest
 from typing import Generator
 
+# Credential persistence is deliberately OS-keychain-only in the application. Tests use
+# an explicit ephemeral provider so CI does not depend on a desktop Secret Service or
+# Windows/macOS credential manager.
+os.environ.setdefault("KUANTRA_TEST_MODE", "1")
+os.environ.setdefault("KUANTRA_CREDENTIAL_STORE", "memory")
+
 # Ensure root and backend directories are in sys.path
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = os.path.dirname(BACKEND_DIR)

@@ -14,15 +14,12 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI
 
-from app.api.webhook_tv import WEBHOOK_SECRET_KEY, webhook_router
+from app.api.webhook_tv import WEBHOOK_SECRET_CONFIGURED, WEBHOOK_SECRET_KEY, webhook_router
 from app.api.tv_sync_ws import tv_sync_websocket
 from app.core.config import settings
 from app.version import __version__
 
 logger = logging.getLogger("desktop.gateway")
-
-DEFAULT_WEBHOOK_SECRET = "change_me_in_production"  # mirrors app.api.webhook_tv's fallback
-
 
 def build_gateway_app() -> FastAPI:
     app = FastAPI(title="Kuantra Integrations Gateway", version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
@@ -47,17 +44,17 @@ class IntegrationsGateway:
         self._task = None
         self._sock: Optional[socket.socket] = None
 
-    def _warn_on_default_webhook_secret(self) -> None:
+    def _warn_on_missing_webhook_secret(self) -> None:
         """The webhook route is the one thing here reachable by any other program on the machine."""
-        if WEBHOOK_SECRET_KEY == DEFAULT_WEBHOOK_SECRET:
+        if not WEBHOOK_SECRET_CONFIGURED:
             logger.warning(
-                "TradingView webhook secret is still the built-in default; set KUANTRA_WEBHOOK_SECRET "
+                "TradingView webhook secret is process-random and not configured; set KUANTRA_WEBHOOK_SECRET "
                 "so that any local process cannot post alerts to %s:%s/api/v1/webhook/tradingview",
                 self.host, self.port,
             )
 
     def start(self) -> bool:
-        self._warn_on_default_webhook_secret()
+        self._warn_on_missing_webhook_secret()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if sys.platform.startswith("win"):
             # On Windows SO_REUSEADDR lets a second process steal a port another one is already

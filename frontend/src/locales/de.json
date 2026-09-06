@@ -41,11 +41,11 @@
   },
   "onboarding": {
     "wizard_title": "Kuantra Institutionelle Terminal-Einrichtung",
-    "wizard_subtitle": "Konfigurieren Sie Ihre Handelsumgebung, Ihren Verschlüsselungstresor und Ihre Systemeinstellungen",
+    "wizard_subtitle": "Konfigurieren Sie Handelsumgebung, Betriebssystem-Schlüsselbund und Systemeinstellungen",
     "step1_title": "Handelsumgebung",
     "step1_desc": "Wählen Sie Ihr Live-Order-Routing oder Ihre simulierte Paper-Trading-Umgebung",
-    "step2_title": "Zugangsdaten für den verschlüsselten lokalen Tresor",
-    "step2_desc": "API-Zugangsdaten sicher im Speicher mit Argon2id + AES-256-GCM verschlüsseln",
+    "step2_title": "Zugangsdaten im Betriebssystem-Schlüsselbund",
+    "step2_desc": "Integrations-Zugangsdaten ausschließlich im Betriebssystem-Schlüsselbund speichern; nicht als Klartext in SQLite",
     "step3_title": "Design & Lokalisierung",
     "step3_desc": "Passen Sie Ihre visuelle Arbeitsbereichspalette und Terminalsprache an",
     "step4_title": "Verifizierung & Handshake",
@@ -65,7 +65,7 @@
       "okx_key_label": "OKX API-Schlüssel",
       "okx_secret_label": "OKX API-Geheimnis",
       "okx_passphrase_label": "OKX Passphrase",
-      "optional_notice": "Zugangsdaten enthalten keinen Klartext und werden im Speicher verschlüsselt"
+      "optional_notice": "Zugangsdaten werden nur bei verfügbarem Betriebssystem-Schlüsselbund gespeichert; kein Klartext in SQLite"
     },
     "preferences": {
       "theme_label": "Visuelles Design",
@@ -114,9 +114,9 @@
     "expectancy": "Mathematische Erwartung (EV)"
   },
   "vault": {
-    "title": "Verschlüsselter lokaler Tresor",
-    "status_encrypted": "AES-256-GCM Verschlüsselt",
-    "saved": "{exchange}-Zugangsdaten sicher im verschlüsselten lokalen Tresor gespeichert."
+    "title": "Betriebssystem-Schlüsselbund",
+    "status_encrypted": "Betriebssystem-Schlüsselbund konfiguriert",
+    "saved": "{exchange}-Zugangsdaten sicher im Betriebssystem-Schlüsselbund gespeichert."
   },
   "settings": {
     "title": "System- & Laufzeiteinstellungen",
@@ -296,25 +296,27 @@
   },
   "exchange": {
     "modal_title": "Börsen-API-Zugangsdaten",
-    "modal_subtitle": "Konfigurieren und verschlüsseln Sie API-Schlüssel für die CCXT-Live-Ausführung",
+    "modal_subtitle": "Börsen-Zugangsdaten im Betriebssystem-Schlüsselbund speichern",
     "header_btn": "API-Schlüssel",
     "status_label": "Verbindungsstatus",
     "configured_badge": "Konfiguriert",
     "unconfigured_badge": "Nicht konfiguriert",
+    "legacy_badge": "Altes Secret muss neu eingegeben werden",
     "last_updated": "Zuletzt aktualisiert",
     "delete_btn": "Zugangsdaten löschen",
     "api_key_label": "API-Schlüssel",
     "api_secret_label": "API-Secret",
     "passphrase_label": "API-Passphrase",
     "testnet_checkbox": "Mit Testnet / Demo-Sandbox verbinden",
-    "security_notice": "Alle API-Schlüssel und Secrets werden lokal mit AES-256-GCM verschlüsselt, bevor sie in SQLite gespeichert werden. Klartext-Zugangsdaten werden niemals protokolliert.",
+    "security_notice": "Zugangsdaten werden ausschließlich im Betriebssystem-Schlüsselbund gespeichert. SQLite enthält nur Metadaten und Verweise; Klartext-Zugangsdaten werden dort nicht gespeichert oder protokolliert.",
+    "keychain_unavailable": "Der Betriebssystem-Schlüsselbund ist nicht verfügbar. Das Speichern bleibt deaktiviert, bis Windows Credential Manager, macOS Keychain oder Linux Secret Service verfügbar ist.",
     "test_btn": "Verbindung testen",
     "testing_btn": "Verbinde...",
-    "save_btn": "Speichern & Verschlüsseln",
-    "saving_btn": "Verschlüsseln...",
+    "save_btn": "Im Schlüsselbund speichern",
+    "saving_btn": "Speichern...",
     "test_success": "Erfolgreich verbunden und authentifiziert!",
     "test_failed": "Verbindung oder Authentifizierung fehlgeschlagen",
-    "save_success": "Börsen-Zugangsdaten erfolgreich verschlüsselt und gespeichert!",
+    "save_success": "Börsen-Zugangsdaten erfolgreich im Betriebssystem-Schlüsselbund gespeichert!",
     "save_failed": "Fehler beim Speichern der Zugangsdaten",
     "delete_success": "Zugangsdaten erfolgreich gelöscht.",
     "delete_failed": "Fehler beim Löschen der Zugangsdaten.",
