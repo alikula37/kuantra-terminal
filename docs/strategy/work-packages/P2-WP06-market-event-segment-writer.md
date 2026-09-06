@@ -9,7 +9,7 @@ baseline: 62a21d2
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP05 Canonical Market Event Envelope ve Hash Chain
-implementation_commits: pending
+implementation_commits: 3696fae
 ```
 
 ## Problem
