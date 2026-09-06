@@ -4,7 +4,7 @@ except ImportError:
     duckdb = None
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 try:
@@ -113,6 +113,44 @@ class DuckDBDriver:
             cols = ["symbol", "timeframe", "time", "open", "high", "low", "close", "volume", "trades_count"]
             candles = [dict(zip(cols, row)) for row in reversed(result)]
             return candles
+        finally:
+            conn.close()
+
+    def get_candles_range(
+        self, symbol: str, start: datetime, end: datetime,
+        timeframe: str = "1m", limit: int = 20602,
+    ) -> List[Dict[str, Any]]:
+        """Read a bounded historical [start, end) window, never the latest N bars.
+
+        The existing TIMESTAMP column is interpreted as UTC. Naive legacy inputs
+        use that same convention; aware inputs are converted before comparison.
+        Duplicate rows are intentionally retained for evidence validation upstream.
+        """
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 20602:
+            raise ValueError("Candle query limit must be an integer between 1 and 20602")
+
+        def utc_naive(value: datetime) -> datetime:
+            if not isinstance(value, datetime):
+                raise ValueError("Candle range requires datetime boundaries")
+            if value.tzinfo is None:
+                return value
+            return value.astimezone(timezone.utc).replace(tzinfo=None)
+
+        start_utc, end_utc = utc_naive(start), utc_naive(end)
+        if end_utc <= start_utc:
+            raise ValueError("Candle range end must be after start")
+        conn = self.get_connection()
+        try:
+            rows = conn.execute("""
+                SELECT symbol, timeframe, epoch(timestamp) AS time,
+                       open, high, low, close, volume, trades_count
+                FROM market_candles
+                WHERE symbol = ? AND timeframe = ? AND timestamp >= ? AND timestamp < ?
+                ORDER BY timestamp ASC
+                LIMIT ?
+            """, [symbol.upper(), timeframe, start_utc, end_utc, limit]).fetchall()
+            columns = ["symbol", "timeframe", "time", "open", "high", "low", "close", "volume", "trades_count"]
+            return [dict(zip(columns, row)) for row in rows]
         finally:
             conn.close()
 

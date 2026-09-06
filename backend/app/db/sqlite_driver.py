@@ -167,7 +167,7 @@ class SQLiteDriver:
                 return dict(row)
         return None
 
-    def list_trades(self, limit: int = 100, offset: int = 0, symbol: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_trades(self, limit: int = 100, offset: int = 0, symbol: Optional[str] = None, status: Optional[str] = None, order_by_utc: bool = False) -> List[Dict[str, Any]]:
         query = "SELECT * FROM trades WHERE 1=1"
         params: List[Any] = []
         if symbol:
@@ -176,7 +176,9 @@ class SQLiteDriver:
         if status:
             query += " AND status = ?"
             params.append(status.upper())
-        query += " ORDER BY entry_time DESC LIMIT ? OFFSET ?"
+        # Evidence sampling must not rank offset ISO timestamps lexically.
+        # Preserve legacy ordering for other callers; no stored data is changed.
+        query += " ORDER BY julianday(entry_time) DESC, id DESC LIMIT ? OFFSET ?" if order_by_utc else " ORDER BY entry_time DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
 
         with self.get_connection() as conn:

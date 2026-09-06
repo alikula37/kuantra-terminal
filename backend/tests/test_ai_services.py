@@ -75,6 +75,21 @@ class TestAiAndVisionServices:
         assert len(report["critical_risks"]) > 0
         assert len(report["actionable_directives"]) > 0
 
+    def test_ai_report_preserves_missing_excursion_without_target_directive(self, monkeypatch):
+        from app.ai.ai_auditor import mae_mfe_analyzer
+        monkeypatch.setattr(mae_mfe_analyzer, "get_mae_mfe_scatter_data", lambda: {
+            "status": "NO_DATA", "reason": "NO_ELIGIBLE_TRADES", "provenance": {"source_verified": False},
+            "average_exit_efficiency_pct": None, "recommended_target_r": None,
+            "total_candidates": 1, "total_analyzed": 0, "total_r_analyzed": 0,
+        })
+        report = ai_auditor.generate_audit_report()
+        ctx = report["deterministic_context"]
+        assert ctx["avg_exit_efficiency_pct"] is None and ctx["recommended_target_r"] is None
+        assert ctx["excursion_evidence"]["status"] == "NO_DATA"
+        assert ctx["excursion_evidence"]["total_analyzed"] == 0
+        assert not any("minimum +" in directive or "NoneR" in directive for directive in report["actionable_directives"])
+        assert not any("exit efficiency" in strength.lower() for strength in report["strengths"])
+
     def test_natural_language_ai_query_sql_generation(self):
         # Query 1: Worst trades
         res1 = ai_query_engine.execute_natural_query("Show worst trades on BTCUSDT")

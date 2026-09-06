@@ -75,17 +75,19 @@ export interface MaeMfePoint {
   exit_price: number;
   stop_loss?: number | null;
   take_profit?: number | null;
-  risk_unit: number;
-  mae_price: number;
-  mfe_price: number;
-  mae_r: number;
-  mfe_r: number;
-  exit_efficiency: number;
-  pnl: number;
-  r_multiple: number;
+  risk_unit: number | null;
+  mae_price: number | null;
+  mfe_price: number | null;
+  mae_r: number | null;
+  mfe_r: number | null;
+  exit_efficiency: number | null;
+  pnl: number | null;
+  r_multiple: number | null;
   status: string;
   entry_time?: string;
   exit_time?: string;
+  provenance?: ReplayProvenance | null;
+  risk_reason?: string | null;
 }
 
 export interface StopSensitivity {
@@ -94,12 +96,19 @@ export interface StopSensitivity {
 }
 
 export interface MaeMfeAnalyticsResponse {
+  status: "READY" | "NO_DATA" | "UNAVAILABLE";
+  reason: string | null;
+  message: string | null;
+  provenance: ReplayProvenance | null;
+  total_candidates: number;
   total_analyzed: number;
-  average_mae_r: number;
-  average_mfe_r: number;
-  average_exit_efficiency_pct: number;
+  total_r_analyzed: number;
+  excluded_trades: Array<{ trade_id: string; reason: string; message: string }>;
+  average_mae_r: number | null;
+  average_mfe_r: number | null;
+  average_exit_efficiency_pct: number | null;
   trades_left_money_on_table: number;
-  recommended_target_r: number;
+  recommended_target_r: number | null;
   stop_loss_sensitivities: StopSensitivity[];
   points: MaeMfePoint[];
 }
@@ -169,30 +178,45 @@ export interface ReplayTradeState {
   symbol: string;
   side: string;
   entry_price: number;
-  current_price: number;
+  current_price: number | null;
   qty: number;
   stop_loss?: number | null;
   take_profit?: number | null;
   is_active: boolean;
   is_past_exit: boolean;
-  unrealized_pnl: number;
-  r_multiple: number;
-  mae_r: number;
-  mfe_r: number;
-  entry_index: number;
-  exit_index: number;
+  phase: "PRE_ENTRY" | "ACTIVE" | "CLOSED";
+  risk_unit: number | null;
+  unrealized_pnl: number | null;
+  realized_pnl: number | null;
+  r_multiple: number | null;
+  mae_r: number | null;
+  mfe_r: number | null;
+  entry_index: number | null;
+  exit_index: number | null;
+}
+
+export interface ReplayProvenance {
+  quality: "BAR_APPROXIMATION";
+  source: "DUCKDB_CANDLES";
+  source_verified: false;
+  timeframe: "1m";
+  [key: string]: unknown;
 }
 
 export interface ReplaySessionResponse {
-  session_id: string;
-  symbol: string;
+  status: "READY" | "NO_DATA" | "UNAVAILABLE";
+  reason: string | null;
+  message: string | null;
+  provenance: ReplayProvenance | null;
+  session_id: string | null;
+  symbol: string | null;
   total_bars: number;
-  current_index: number;
-  entry_index: number;
-  exit_index: number;
+  current_index: number | null;
+  entry_index: number | null;
+  exit_index: number | null;
   speed_multiplier: number;
   is_playing: boolean;
-  current_candle: Candle;
+  current_candle: Candle | null;
   trade: ReplayTradeState | null;
   visible_candles: Candle[];
 }

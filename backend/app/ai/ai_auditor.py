@@ -1,6 +1,6 @@
 """
-Deterministic AI Trade Auditor & Executive Coach for Kuantra Terminal.
-Compiles 100% verified mathematical snapshots and generates non-hallucinated institutional directives.
+Legacy rule-based coaching prototype for Kuantra Terminal.
+This is not a source-verified AI auditor. Full hardening belongs to P0-WP08.
 """
 
 from typing import Dict, Any, List, Optional
@@ -57,8 +57,12 @@ class AiTradeAuditor:
             "sortino_ratio": scorecard.get("sortino_ratio", 0.0),
             "expectancy": scorecard.get("expectancy", 0.0),
             "profit_factor": scorecard.get("profit_factor", 0.0),
-            "avg_exit_efficiency_pct": mae_mfe_data.get("average_exit_efficiency_pct", 0.0),
-            "recommended_target_r": mae_mfe_data.get("recommended_target_r", 2.0),
+            "avg_exit_efficiency_pct": mae_mfe_data.get("average_exit_efficiency_pct"),
+            "recommended_target_r": None,
+            "excursion_evidence": {key: mae_mfe_data.get(key) for key in (
+                "status", "reason", "message", "provenance", "total_candidates",
+                "total_analyzed", "total_r_analyzed", "excluded_trades", "recommendation_status",
+            )},
             "trades_left_money_on_table": mae_mfe_data.get("trades_left_money_on_table", 0),
             "total_panic_exit_leakage_dollars": drift_data.get("total_panic_exit_leakage", 0.0),
             "execution_fidelity_pct": drift_data.get("execution_fidelity_pct", 100.0),
@@ -100,8 +104,8 @@ class AiTradeAuditor:
         strengths = []
         if ctx["sqn"] >= 1.5:
             strengths.append(f"Statistically robust System Quality Number (SQN = {ctx['sqn']}), indicating high edge reproducibility.")
-        if ctx["avg_exit_efficiency_pct"] >= 65.0:
-            strengths.append(f"Solid exit efficiency of {ctx['avg_exit_efficiency_pct']}%, capturing majority of potential MFE price moves.")
+        if ctx["avg_exit_efficiency_pct"] is not None and ctx["avg_exit_efficiency_pct"] >= 65.0:
+            strengths.append(f"Recorded-bar approximate exit efficiency is {ctx['avg_exit_efficiency_pct']}%; source and intrabar timing remain unverified.")
         if ctx["profit_factor"] >= 2.0:
             strengths.append(f"Exceptional gross profit-to-loss factor of {ctx['profit_factor']}.")
         if ctx["session_tilt_score"] < 30:
@@ -125,7 +129,7 @@ class AiTradeAuditor:
         # Formulate Actionable Directives
         directives = [
             f"Cap maximum trades per session to {ctx['fatigue_inflection_point']} to avoid the {ctx['performance_decay_pct']}% late-session win rate drop.",
-            f"Enforce minimum +{ctx['recommended_target_r']}R take-profit orders based on 75th percentile MFE distribution clusters.",
+            "No validated target recommendation is available; review recorded evidence before selecting a target.",
             "Implement mandatory 180-second cool-off lock after any stop loss hit to eliminate revenge execution."
         ]
 

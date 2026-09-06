@@ -1,165 +1,83 @@
-"""
-MAE / MFE and Best-Exit Analytics Module for Kuantra Terminal.
-Analyzes intraday price excursion distribution and exit efficiency for closed trades.
-"""
+"""Descriptive MAE/MFE on complete recorded bars, with explicit evidence limits."""
 
-from typing import List, Dict, Any, Optional
-import numpy as np
-import pandas as pd
+from typing import Any
+
 from app.db.sqlite_driver import sqlite_driver
-from app.db.duckdb_driver import duckdb_driver
+from app.quant.candle_evidence import (
+    EvidenceError, excursion_metrics, finite_number, load_candle_evidence, provenance,
+)
+
 
 class MaeMfeAnalyzer:
-    """Computes trade-by-trade excursion metrics, exit efficiency, and stop/target recommendations."""
-
     @staticmethod
-    def analyze_trade_excursion(
-        trade: Dict[str, Any],
-        candles: Optional[List[Dict[str, Any]]] = None
-    ) -> Dict[str, Any]:
-        """Analyze MAE, MFE, and Best-Exit efficiency for an individual trade."""
-        entry_price = float(trade["entry_price"])
-        exit_price = float(trade.get("exit_price") or entry_price)
-        side = str(trade.get("side", "BUY")).upper()
-        is_long = side in ("BUY", "LONG")
-        sl = float(trade["stop_loss"]) if trade.get("stop_loss") else None
-        tp = float(trade["take_profit"]) if trade.get("take_profit") else None
-
-        # Determine 1R Risk Unit
-        if sl is not None and abs(entry_price - sl) > 1e-6:
-            risk_unit = abs(entry_price - sl)
-        else:
-            risk_unit = entry_price * 0.01
-
-        # Determine highest and lowest price reached during trade
-        if candles and len(candles) > 0:
-            highs = [float(c.get("high", c.get("close", entry_price))) for c in candles]
-            lows = [float(c.get("low", c.get("close", entry_price))) for c in candles]
-            highest_price = max(highs + [entry_price, exit_price])
-            lowest_price = min(lows + [entry_price, exit_price])
-        else:
-            # Fallback estimation if intraday tick history is unavailable
-            pnl = float(trade.get("pnl") or 0.0)
-            if is_long:
-                highest_price = max(entry_price, exit_price, tp if (tp and pnl > 0) else entry_price * 1.015)
-                lowest_price = min(entry_price, exit_price, sl if (sl and pnl < 0) else entry_price * 0.99)
-            else:
-                highest_price = max(entry_price, exit_price, sl if (sl and pnl < 0) else entry_price * 1.01)
-                lowest_price = min(entry_price, exit_price, tp if (tp and pnl > 0) else entry_price * 0.985)
-
-        # Calculate MAE & MFE in R-multiples
-        if is_long:
-            mae_price = lowest_price
-            mfe_price = highest_price
-            mae_r = (mae_price - entry_price) / risk_unit  # negative or zero
-            mfe_r = (mfe_price - entry_price) / risk_unit  # positive or zero
-            actual_move = exit_price - entry_price
-            potential_move = mfe_price - entry_price
-        else:
-            mae_price = highest_price
-            mfe_price = lowest_price
-            mae_r = (entry_price - mae_price) / risk_unit  # negative or zero
-            mfe_r = (entry_price - mfe_price) / risk_unit  # positive or zero
-            actual_move = entry_price - exit_price
-            potential_move = entry_price - mfe_price
-
-        # Best-Exit Efficiency Ratio: actual_move / potential_move
-        if abs(potential_move) < 1e-9:
-            exit_efficiency = 1.0 if abs(actual_move) < 1e-9 else 0.0
-        else:
-            exit_efficiency = actual_move / potential_move
-        exit_efficiency = max(-5.0, min(5.0, exit_efficiency))
-
+    def analyze_trade_excursion(trade: dict[str, Any], candles: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        try:
+            evidence = load_candle_evidence(trade, candles)
+        except EvidenceError as error:
+            return {
+                **error.to_dict(), "trade_id": str(trade.get("id", "")),
+                "risk_unit": None, "mae_price": None, "mfe_price": None,
+                "mae_r": None, "mfe_r": None, "exit_efficiency": None, "r_multiple": None,
+            }
+        normalized = evidence.trade
         return {
-            "trade_id": str(trade["id"]),
-            "symbol": str(trade["symbol"]),
-            "side": side,
-            "entry_price": round(entry_price, 2),
-            "exit_price": round(exit_price, 2),
-            "stop_loss": round(sl, 2) if sl else None,
-            "take_profit": round(tp, 2) if tp else None,
-            "risk_unit": round(risk_unit, 2),
-            "mae_price": round(mae_price, 2),
-            "mfe_price": round(mfe_price, 2),
-            "mae_r": round(float(mae_r), 2),
-            "mfe_r": round(float(mfe_r), 2),
-            "exit_efficiency": round(float(exit_efficiency), 4),
-            "pnl": round(float(trade.get("pnl") or 0.0), 2),
-            "r_multiple": round(float(trade.get("r_multiple") or (actual_move / risk_unit)), 2),
-            "status": trade.get("status", "CLOSED"),
-            "entry_time": trade.get("entry_time"),
-            "exit_time": trade.get("exit_time")
+            "status": "READY", "reason": None, "message": None, "provenance": provenance(),
+            "trade_id": str(normalized["id"]), "trade_status": normalized["status"],
+            **{key: normalized[key] for key in (
+                "symbol", "side", "entry_price", "exit_price", "stop_loss", "take_profit",
+                "risk_unit", "risk_reason", "pnl", "entry_time", "exit_time",
+            )},
+            "bar_count": len(evidence.trade_candles),
+            **excursion_metrics(normalized, evidence.trade_candles, closed=True),
         }
 
     @classmethod
-    def get_mae_mfe_scatter_data(cls, symbol: Optional[str] = None) -> Dict[str, Any]:
-        """Aggregate MAE vs MFE scatter plot points and overall exit efficiency analytics."""
-        closed_trades = sqlite_driver.list_trades(limit=1000, symbol=symbol, status="CLOSED")
-        
-        # If no real closed trades in SQLite yet, return zero-state schema
-        if not closed_trades:
-            return {
-                "status": "NO_DATA",
-                "message": "No closed trades available for MAE/MFE analysis.",
-                "total_analyzed": 0,
-                "average_mae_r": 0.0,
-                "average_mfe_r": 0.0,
-                "average_exit_efficiency_pct": 0.0,
-                "trades_left_money_on_table": 0,
-                "recommended_target_r": 2.0,
-                "stop_loss_sensitivities": [
-                    {"stop_distance_r": m, "survival_rate_pct": 0.0}
-                    for m in [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
-                ],
-                "points": [],
-                "scatter_data": [],
-                "trades": []
-            }
+    def get_mae_mfe_scatter_data(cls, symbol: str | None = None) -> dict[str, Any]:
+        """Analyze at most the 1,000 latest closed trades; never fill missing history.
 
-        scatter_points = []
-        for t in closed_trades:
-            # Query DuckDB candles if available for the symbol
-            pt = cls.analyze_trade_excursion(t)
-            scatter_points.append(pt)
+        Stop distances describe the observed bar distribution only. They are
+        neither counterfactual stop simulations nor optimized recommendations.
+        """
+        store_error = None
+        try:
+            candidates = sqlite_driver.list_trades(limit=1000, symbol=symbol, status="CLOSED", order_by_utc=True)
+        except Exception:
+            candidates = []
+            store_error = EvidenceError("TRADE_STORE_UNAVAILABLE", "The recorded trade store could not be read.", "UNAVAILABLE")
+        points, excluded = [], []
+        for trade in candidates:
+            point = cls.analyze_trade_excursion(trade)
+            if point["status"] == "READY":
+                points.append(point)
+            else:
+                excluded.append({key: point[key] for key in ("trade_id", "status", "reason", "message")})
+        r_points = [p for p in points if all(p[key] is not None for key in ("mae_r", "mfe_r", "r_multiple"))]
 
-        # Calculate cluster statistics
-        mae_values = [p["mae_r"] for p in scatter_points]
-        mfe_values = [p["mfe_r"] for p in scatter_points]
-        efficiencies = [p["exit_efficiency"] for p in scatter_points]
-        pnls = [p["pnl"] for p in scatter_points]
+        def average(key: str, values: list[dict[str, Any]], multiplier: float = 1.0) -> float | None:
+            numbers = [p[key] for p in values if p[key] is not None]
+            # Divide before adding to avoid overflow for finite extreme inputs.
+            return finite_number(sum(n / len(numbers) for n in numbers) * multiplier) if numbers else None
 
-        avg_mae = float(np.mean(mae_values)) if mae_values else 0.0
-        avg_mfe = float(np.mean(mfe_values)) if mfe_values else 0.0
-        avg_eff = float(np.mean(efficiencies)) if efficiencies else 0.0
-
-        # High MFE with poor exit (MFE >= 2.0R but R-multiple <= 0.5R)
-        left_on_table = sum(1 for p in scatter_points if p["mfe_r"] >= 2.0 and p["r_multiple"] <= 0.5)
-
-        # Stop-loss sensitivity: % of trades surviving at varying SL distances
-        stop_sensitivities = []
-        for multiplier in [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]:
-            survived = sum(1 for p in scatter_points if abs(p["mae_r"]) <= multiplier)
-            pct = (survived / len(scatter_points)) * 100 if scatter_points else 0.0
-            stop_sensitivities.append({
-                "stop_distance_r": multiplier,
-                "survival_rate_pct": round(pct, 1)
-            })
-
-        # Optimal target recommendation: 75th percentile of MFE for winners
-        winning_mfes = [p["mfe_r"] for p in scatter_points if p["pnl"] > 0]
-        rec_target_r = float(np.percentile(winning_mfes, 75)) if len(winning_mfes) >= 3 else 2.5
-
+        status = "READY" if points else "UNAVAILABLE" if store_error or any(p["status"] == "UNAVAILABLE" for p in excluded) else "NO_DATA"
         return {
-            "total_analyzed": len(scatter_points),
-            "average_mae_r": round(avg_mae, 2),
-            "average_mfe_r": round(avg_mfe, 2),
-            "average_exit_efficiency_pct": round(avg_eff * 100, 1),
-            "trades_left_money_on_table": left_on_table,
-            "recommended_target_r": round(rec_target_r, 2),
-            "stop_loss_sensitivities": stop_sensitivities,
-            "points": scatter_points
+            "status": status,
+            "reason": store_error.reason if store_error else None if points else "NO_ELIGIBLE_TRADES",
+            "message": store_error.message if store_error else None if points else "No closed trades have complete, valid recorded candle history.",
+            "provenance": {**provenance(), "stop_sensitivity_basis": "DESCRIPTIVE_BAR_DISTRIBUTION_NOT_STOP_SIMULATION"},
+            "candidate_limit": 1000, "candidate_selection": "LATEST_CLOSED_BY_UTC_ENTRY_TIME",
+            "total_candidates": len(candidates), "total_analyzed": len(points), "total_r_analyzed": len(r_points),
+            "excluded_trades": excluded,
+            "average_mae_r": average("mae_r", r_points), "average_mfe_r": average("mfe_r", r_points),
+            "average_exit_efficiency_pct": average("exit_efficiency", points, 100),
+            "trades_left_money_on_table": sum(1 for p in r_points if p["mfe_r"] >= 2 and p["r_multiple"] <= 0.5),
+            "recommended_target_r": None,
+            "recommendation_status": "UNAVAILABLE_NOT_VALIDATED",
+            "stop_loss_sensitivities": [
+                {"stop_distance_r": distance, "survival_rate_pct": round(100 * sum(abs(p["mae_r"]) < distance for p in r_points) / len(r_points), 1), "sample_size": len(r_points)}
+                for distance in (0.5, 0.75, 1.0, 1.25, 1.5, 2.0)
+            ] if r_points else [],
+            "points": points,
         }
-
 
 
 mae_mfe_analyzer = MaeMfeAnalyzer()

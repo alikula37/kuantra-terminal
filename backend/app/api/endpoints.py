@@ -3,6 +3,7 @@ from app.api.plugin_endpoints import router as plugin_router
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query, UploadFile, File, Response
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
+import json
 import time
 from datetime import datetime
 from app.db.sqlite_driver import sqlite_driver
@@ -304,7 +305,7 @@ class ReplaySeekSchema(BaseModel):
     target_index: int
 
 class ReplaySpeedSchema(BaseModel):
-    speed: float
+    speed: float = Field(allow_inf_nan=False)
 
 @router.get("/replay/session/{trade_id}")
 def get_replay_session_for_trade(trade_id: str):
@@ -338,29 +339,36 @@ async def websocket_replay_stream(websocket: WebSocket):
     try:
         while True:
             raw_msg = await websocket.receive_text()
-            data = json.loads(raw_msg)
-            action = data.get("action")
-            
-            if action == "INIT":
-                trade_id = data.get("trade_id", "TRD-DEFAULT")
-                session_dict = replay_service.create_session_for_trade(trade_id)
-                session_id = session_dict["session_id"]
-                await websocket.send_json({"type": "REPLAY_STATE", "data": session_dict})
-            elif action == "STEP" and session_id:
-                step_dir = data.get("direction", 1)
-                res = replay_service.step(session_id, direction=step_dir)
+            try:
+                data = json.loads(raw_msg)
+                if not isinstance(data, dict):
+                    raise ValueError("Invalid replay request")
+                action = data.get("action")
+                if action == "INIT":
+                    # Clear prior state before a new trade, including failed INIT.
+                    session_id = None
+                    trade_id = data.get("trade_id")
+                    if not isinstance(trade_id, str) or not trade_id.strip():
+                        raise ValueError("A recorded trade ID is required")
+                    res = replay_service.create_session_for_trade(trade_id)
+                    session_id = res["session_id"]
+                elif not session_id:
+                    raise ValueError("No active replay session")
+                elif action == "STEP":
+                    payload = ReplayStepSchema.model_validate(data)
+                    res = replay_service.step(session_id, direction=payload.direction)
+                elif action == "SEEK":
+                    payload = ReplaySeekSchema.model_validate({"target_index": data.get("index", 0)})
+                    res = replay_service.seek(session_id, target_index=payload.target_index)
+                elif action == "SPEED":
+                    payload = ReplaySpeedSchema.model_validate({"speed": data.get("speed", 1.0)})
+                    res = replay_service.set_speed(session_id, speed=payload.speed)
+                else:
+                    raise ValueError("Unsupported replay action")
                 await websocket.send_json({"type": "REPLAY_STATE", "data": res})
-            elif action == "SEEK" and session_id:
-                idx = data.get("index", 0)
-                res = replay_service.seek(session_id, target_index=idx)
-                await websocket.send_json({"type": "REPLAY_STATE", "data": res})
-            elif action == "SPEED" and session_id:
-                speed_val = data.get("speed", 1.0)
-                res = replay_service.set_speed(session_id, speed=speed_val)
-                await websocket.send_json({"type": "REPLAY_STATE", "data": res})
+            except (ValueError, TypeError):
+                await websocket.send_json({"type": "REPLAY_ERROR", "reason": "INVALID_REPLAY_REQUEST", "message": "Invalid request or no active recorded replay session."})
     except WebSocketDisconnect:
-        pass
-    except Exception:
         pass
 
 from app.playbook.playbook_service import playbook_service
@@ -1296,12 +1304,8 @@ def get_mae_mfe_analytics(symbol: Optional[str] = None):
 @router.get("/analytics/optimal-exits")
 def get_optimal_exits_analytics(symbol: Optional[str] = None):
     data = mae_mfe_analyzer.get_mae_mfe_scatter_data(symbol=symbol)
-    return {
-        "recommended_target_r": data["recommended_target_r"],
-        "average_exit_efficiency_pct": data["average_exit_efficiency_pct"],
-        "trades_left_money_on_table": data["trades_left_money_on_table"],
-        "stop_loss_sensitivities": data["stop_loss_sensitivities"]
-    }
+    # Keep the legacy route, not its false implication of a validated optimizer.
+    return {key: value for key, value in data.items() if key != "points"}
 
 @router.get("/analytics/equity")
 def get_analytics_equity():
