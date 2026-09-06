@@ -60,6 +60,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP16 | [Binance Depth Soak Report Hash Archive](./work-packages/P2-WP16-binance-depth-report-hash-archive.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP17 | [Binance Depth Soak Operator Attestation](./work-packages/P2-WP17-binance-depth-operator-attestation.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP18 | [Binance Depth Attestation Key Registry](./work-packages/P2-WP18-binance-depth-key-registry.md) | Active | 1.0.0 | 2026-09-07 |
+| P2-WP19 | [Binance Depth Attestation Review Gate](./work-packages/P2-WP19-binance-depth-attestation-review-gate.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -271,3 +272,9 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   eklendi. Revoked key tarihsel imzayı geçersiz kılmıyor; audit status'u
   `REVOKED_KEY` oluyor. Focused suite `5 passed`, full backend regression
   `497 passed, 1 skipped`.
+- P2-WP19 ile archived depth attestation için aktif kayıtlı anahtar, geçerli
+  imza, testnet verdict'i ve freshness'i birlikte kontrol eden fail-closed
+  `ELIGIBLE_FOR_REVIEW` gate'i eklendi. Gate `source_verified` veya
+  `execution_authority` yükseltmiyor; fixture, revoked, stale/future ve
+  ambiguous multi-attestation durumlarını reddediyor. Focused suite `5 passed`,
+  full backend regression `502 passed, 1 skipped`.

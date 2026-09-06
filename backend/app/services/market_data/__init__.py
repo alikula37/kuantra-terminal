@@ -114,6 +114,13 @@ from .binance_depth_key_registry import (
     OperatorKeyStatus,
     key_id_for_public_key,
 )
+from .binance_depth_attestation_gate import (
+    ATTESTATION_GATE_SCHEMA_VERSION,
+    DEFAULT_MAX_AGE_SECONDS,
+    DEFAULT_MAX_FUTURE_SKEW_SECONDS,
+    DepthAttestationGateResult,
+    evaluate_binance_depth_attestation_gate,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -196,4 +203,9 @@ __all__ = [
     "OperatorKeyRecord",
     "OperatorKeyStatus",
     "key_id_for_public_key",
+    "ATTESTATION_GATE_SCHEMA_VERSION",
+    "DEFAULT_MAX_AGE_SECONDS",
+    "DEFAULT_MAX_FUTURE_SKEW_SECONDS",
+    "DepthAttestationGateResult",
+    "evaluate_binance_depth_attestation_gate",
 ]
