@@ -161,6 +161,59 @@ class EvidenceTradeProjectionRepository:
     def _sort_key(event: Dict[str, Any]) -> Tuple[str, str]:
         return (str(event.get("received_at_utc") or ""), str(event.get("event_id") or ""))
 
+    _PROJECTION_COLUMNS = (
+        "account_id", "venue", "trade_id", "symbol", "side", "entry_price",
+        "exit_price", "qty", "stop_loss", "take_profit", "entry_time", "exit_time",
+        "status", "pnl", "r_multiple", "commission", "notes", "source_event_id",
+        "source_event_type", "source_event_hash", "occurred_at_utc", "received_at_utc",
+        "is_tombstone", "snapshot_json", "projected_at_utc",
+    )
+
+    @classmethod
+    def _insert_projection_record(
+        cls,
+        conn: sqlite3.Connection,
+        record: Dict[str, Any],
+    ) -> None:
+        columns = cls._PROJECTION_COLUMNS
+        placeholders = ", ".join("?" for _ in columns)
+        update_columns = tuple(column for column in columns if column not in {"account_id", "venue", "trade_id"})
+        update_clause = ", ".join(
+            f"{column} = excluded.{column}" for column in update_columns
+        )
+        conn.execute(
+            f"""INSERT INTO evidence_trade_projections ({', '.join(columns)})
+                VALUES ({placeholders})
+                ON CONFLICT(account_id, venue, trade_id) DO UPDATE SET
+                {update_clause}""",
+            tuple(record[column] for column in columns),
+        )
+
+    def upsert_event_in_transaction(
+        self,
+        conn: sqlite3.Connection,
+        event: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Materialize one accepted ledger event without owning the transaction.
+
+        Journal writes use this boundary immediately after appending the canonical
+        event.  The caller owns commit/rollback, so a projection validation or
+        SQLite failure rolls back the compatibility row and ledger event together.
+        Non-trade lifecycle events are deliberately ignored until their own typed
+        projection semantics exist.
+        """
+
+        if not conn.in_transaction:
+            raise EvidenceProjectionError(
+                "upsert_event_in_transaction requires an active transaction"
+            )
+        if event.get("event_type") not in PROJECTABLE_EVENT_TYPES:
+            return None
+        projected_at = _now_utc()
+        record = self._projection_from_event(event, projected_at)
+        self._insert_projection_record(conn, record)
+        return record
+
     def rebuild(
         self,
         *,
@@ -219,19 +272,8 @@ class EvidenceTradeProjectionRepository:
                     "DELETE FROM evidence_trade_projections WHERE account_id = ?",
                     (account_id,),
                 )
-            columns = (
-                "account_id", "venue", "trade_id", "symbol", "side", "entry_price",
-                "exit_price", "qty", "stop_loss", "take_profit", "entry_time", "exit_time",
-                "status", "pnl", "r_multiple", "commission", "notes", "source_event_id",
-                "source_event_type", "source_event_hash", "occurred_at_utc", "received_at_utc",
-                "is_tombstone", "snapshot_json", "projected_at_utc",
-            )
-            placeholders = ", ".join("?" for _ in columns)
             for record in latest.values():
-                conn.execute(
-                    f"INSERT INTO evidence_trade_projections ({', '.join(columns)}) VALUES ({placeholders})",
-                    tuple(record[column] for column in columns),
-                )
+                self._insert_projection_record(conn, record)
             conn.commit()
         except Exception:
             if conn.in_transaction:
@@ -260,6 +302,111 @@ class EvidenceTradeProjectionRepository:
             result = dict(row)
             result["snapshot"] = json.loads(result.pop("snapshot_json"))
             return result
+        finally:
+            conn.close()
+
+    def coverage(
+        self,
+        *,
+        account_id: str = "local-journal",
+        venue: str = "local-journal",
+    ) -> Dict[str, Any]:
+        """Return whether the typed projection covers every compatibility trade.
+
+        A read adapter must not mix a partial projection with legacy rows.  Exact
+        ID coverage is therefore the gate for switching a read path to this model.
+        """
+
+        conn = self._connect(write=False)
+        try:
+            trade_count = int(conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0])
+            projected_count = int(conn.execute(
+                """SELECT COUNT(*) FROM evidence_trade_projections
+                   WHERE account_id = ? AND venue = ?""",
+                (account_id, venue),
+            ).fetchone()[0])
+            missing_count = int(conn.execute(
+                """SELECT COUNT(*)
+                   FROM trades AS t
+                   LEFT JOIN evidence_trade_projections AS p
+                     ON p.account_id = ? AND p.venue = ? AND p.trade_id = t.id
+                   WHERE p.trade_id IS NULL""",
+                (account_id, venue),
+            ).fetchone()[0])
+            extra_count = int(conn.execute(
+                """SELECT COUNT(*)
+                   FROM evidence_trade_projections AS p
+                   LEFT JOIN trades AS t ON t.id = p.trade_id
+                   WHERE p.account_id = ? AND p.venue = ? AND t.id IS NULL""",
+                (account_id, venue),
+            ).fetchone()[0])
+            return {
+                "account_id": account_id,
+                "venue": venue,
+                "trade_count": trade_count,
+                "projected_count": projected_count,
+                "missing_count": missing_count,
+                "extra_count": extra_count,
+                "ready": missing_count == 0 and extra_count == 0,
+            }
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _row_to_snapshot(row: sqlite3.Row) -> Dict[str, Any]:
+        return json.loads(row["snapshot_json"])
+
+    def get_trade_snapshot(
+        self,
+        trade_id: str,
+        *,
+        account_id: str = "local-journal",
+        venue: str = "local-journal",
+    ) -> Optional[Dict[str, Any]]:
+        conn = self._connect(write=False)
+        try:
+            row = conn.execute(
+                """SELECT snapshot_json FROM evidence_trade_projections
+                   WHERE account_id = ? AND venue = ? AND trade_id = ?""",
+                (account_id, venue, trade_id),
+            ).fetchone()
+            return self._row_to_snapshot(row) if row is not None else None
+        finally:
+            conn.close()
+
+    def list_trade_snapshots(
+        self,
+        *,
+        limit: int = 100,
+        offset: int = 0,
+        symbol: Optional[str] = None,
+        status: Optional[str] = None,
+        order_by_utc: bool = False,
+        account_id: str = "local-journal",
+        venue: str = "local-journal",
+        include_tombstones: bool = True,
+    ) -> List[Dict[str, Any]]:
+        query = """SELECT snapshot_json FROM evidence_trade_projections
+                   WHERE account_id = ? AND venue = ?"""
+        params: List[Any] = [account_id, venue]
+        if symbol:
+            query += " AND symbol = ?"
+            params.append(symbol.upper())
+        if status:
+            query += " AND status = ?"
+            params.append(status.upper())
+        if not include_tombstones:
+            query += " AND is_tombstone = 0"
+        if order_by_utc:
+            query += " ORDER BY julianday(entry_time) DESC, trade_id DESC"
+        else:
+            query += " ORDER BY entry_time DESC, trade_id DESC"
+        query += " LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+
+        conn = self._connect(write=False)
+        try:
+            return [self._row_to_snapshot(row) for row in conn.execute(query, params)]
         finally:
             conn.close()
 

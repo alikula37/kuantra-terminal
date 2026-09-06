@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from app.db.sqlite_driver import sqlite_driver
+from app.services.trade_read_adapter import trade_read_adapter
 
 logger = logging.getLogger("portfolio_service")
 
@@ -84,7 +85,7 @@ class PortfolioAnalyticsService:
         Guarantees zero divide-by-zero errors even on empty or initial states.
         """
         balance = initial_balance if initial_balance is not None else self.get_configured_initial_balance()
-        trades = sqlite_driver.list_trades(limit=100000)
+        trades = trade_read_adapter.list_trades(limit=100000)
 
         closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
         open_trades = [t for t in trades if str(t.get("status", "")).upper() == "OPEN"]
@@ -215,7 +216,7 @@ class PortfolioAnalyticsService:
         Aggregates performance, volume, and trade metrics grouped by asset symbol.
         Supports heterogeneous assets (Crypto, Forex, Commodities, Equities).
         """
-        trades = sqlite_driver.list_trades(limit=100000)
+        trades = trade_read_adapter.list_trades(limit=100000)
         grouped: Dict[str, Dict[str, Any]] = {}
 
         total_portfolio_pnl = sum(
@@ -291,7 +292,7 @@ class PortfolioAnalyticsService:
         Ideal for rendering continuous equity growth charts in the frontend.
         """
         balance = initial_balance if initial_balance is not None else self.get_configured_initial_balance()
-        trades = sqlite_driver.list_trades(limit=100000)
+        trades = trade_read_adapter.list_trades(limit=100000)
         closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
 
         today_utc = datetime.now(timezone.utc)
@@ -355,7 +356,7 @@ class PortfolioAnalyticsService:
         """
         Aggregates daily performance into calendar heatmap data with normalized intensity.
         """
-        trades = sqlite_driver.list_trades(limit=100000)
+        trades = trade_read_adapter.list_trades(limit=100000)
         closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
 
         if not closed_trades:

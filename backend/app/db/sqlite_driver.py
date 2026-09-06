@@ -211,9 +211,11 @@ class SQLiteDriver:
         """
 
         from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+        from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 
         resolved_id = str(trade.get("id") or f"TRD-{int(datetime.utcnow().timestamp()*1000)}")
         ledger = EvidenceLedgerRepository(self.db_path)
+        projection = EvidenceTradeProjectionRepository(self.db_path)
         conn = self.get_connection()
         try:
             conn.execute("PRAGMA synchronous=FULL")
@@ -243,7 +245,7 @@ class SQLiteDriver:
             snapshot = {
                 field: stored[field] for field in self._TRADE_SNAPSHOT_FIELDS
             }
-            ledger.append_event_in_transaction(
+            event = ledger.append_event_in_transaction(
                 conn,
                 event_type=event_type,
                 account_id=account_id,
@@ -257,6 +259,10 @@ class SQLiteDriver:
                 correlation_id=resolved_id,
                 provenance=provenance or {"source": "journal"},
             )
+            # Keep the typed read model current in the same transaction as the
+            # compatibility row and canonical ledger event.  A projection
+            # validation/constraint error must roll back the whole journal write.
+            projection.upsert_event_in_transaction(conn, event)
             conn.commit()
             return dict(stored)
         except Exception:

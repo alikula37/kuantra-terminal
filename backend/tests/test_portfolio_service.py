@@ -14,6 +14,7 @@ from app.services.portfolio_service import (
     classify_asset_class
 )
 from app.db.sqlite_driver import sqlite_driver
+from app.services.trade_read_adapter import trade_read_adapter
 
 
 class TestPortfolioAnalyticsService:
@@ -38,7 +39,7 @@ class TestPortfolioAnalyticsService:
     def test_empty_portfolio_summary_defaults(self):
         """Validates that an empty portfolio summary returns stable default metrics without division errors."""
         service = PortfolioAnalyticsService(default_initial_balance=50000.0)
-        with patch.object(sqlite_driver, "list_trades", return_value=[]):
+        with patch.object(trade_read_adapter, "list_trades", return_value=[]):
             summary = service.get_portfolio_summary()
             assert summary["initial_balance"] == 50000.0
             assert summary["total_equity"] == 50000.0
@@ -71,7 +72,7 @@ class TestPortfolioAnalyticsService:
             {"symbol": "SPY", "status": "CLOSED", "pnl": 300.0, "entry_price": 550.0, "qty": 100.0}
         ]
 
-        with patch.object(sqlite_driver, "list_trades", return_value=mock_trades):
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
             breakdown = service.get_multi_asset_breakdown()
             assert len(breakdown) == 4
 
@@ -109,7 +110,7 @@ class TestPortfolioAnalyticsService:
             {"symbol": "SOLUSDT", "status": "OPEN", "side": "BUY", "entry_price": 150.0, "stop_loss": None, "qty": 10.0}
         ]
 
-        with patch.object(sqlite_driver, "list_trades", return_value=mock_trades):
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
             summary = service.get_portfolio_summary()
             assert summary["active_positions_count"] == 3
             assert summary["open_risk_r"] == 3.0
@@ -125,7 +126,7 @@ class TestPortfolioAnalyticsService:
             {"symbol": "BTCUSDT", "status": "CLOSED", "pnl": 15000.0, "r_multiple": 3.0, "exit_time": "2026-08-28T16:00:00Z"}   # Eq: 112k, Peak: 112k, DD: 0%
         ]
 
-        with patch.object(sqlite_driver, "list_trades", return_value=mock_trades):
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
             summary = service.get_portfolio_summary()
             assert summary["net_pnl"] == 12000.0  # 5000 - 10000 + 2000 + 15000
             assert summary["total_equity"] == 112000.0
@@ -157,7 +158,7 @@ class TestPortfolioAnalyticsService:
             {"status": "CLOSED", "pnl": -500.0, "exit_time": "2026-08-30T15:00:00Z"}
         ]
 
-        with patch.object(sqlite_driver, "list_trades", return_value=mock_trades):
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
             heatmap = service.get_daily_pnl_heatmap()
             assert len(heatmap) == 3
 
@@ -214,7 +215,7 @@ class TestPortfolioAnalyticsService:
     def test_clean_startup_zero_state(self):
         """Validates that a fresh installation with 0 trades returns exact zero-state metrics."""
         service = PortfolioAnalyticsService(default_initial_balance=0.0)
-        with patch.object(sqlite_driver, "list_trades", return_value=[]):
+        with patch.object(trade_read_adapter, "list_trades", return_value=[]):
             summary = service.get_portfolio_summary()
             assert summary["initial_balance"] == 0.0
             assert summary["total_equity"] == 0.0
@@ -242,7 +243,7 @@ class TestPortfolioAnalyticsService:
     def test_set_user_initial_balance(self):
         """Verifies setting custom balance accurately updates total_equity and persists across service reloads."""
         service = PortfolioAnalyticsService()
-        with patch.object(sqlite_driver, "list_trades", return_value=[]):
+        with patch.object(trade_read_adapter, "list_trades", return_value=[]):
             res = service.set_initial_balance(12500.0)
             assert res["initial_balance"] == 12500.0
             assert res["total_equity"] == 12500.0
@@ -256,6 +257,6 @@ class TestPortfolioAnalyticsService:
     def test_zero_division_guard_all_metrics(self):
         """Validates that Win Rate, Profit Factor, Max Drawdown, and Avg R never produce NaN or inf with zero closed trades."""
         service = PortfolioAnalyticsService(default_initial_balance=0.0)
-        with patch.object(sqlite_driver, "list_trades", return_value=[]):
+        with patch.object(trade_read_adapter, "list_trades", return_value=[]):
             summary = service.get_portfolio_summary()
             assert not any(str(v).lower() in ("nan", "inf", "-inf") for v in summary.values() if isinstance(v, (int, float)))

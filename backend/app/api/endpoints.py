@@ -13,6 +13,7 @@ from app.db.sync_pipeline import sync_pipeline
 from app.db.repositories.candles_repo import candles_repo
 from app.services.market_data.public_fetcher import public_market_fetcher
 from app.services.portfolio_service import portfolio_service
+from app.services.trade_read_adapter import trade_read_adapter
 from app.services.csv_importer import csv_trade_importer
 from app.services.exchange.credentials_manager import exchange_credentials_manager
 from app.services.security.credential_store import CredentialStoreUnavailable, credential_store_status
@@ -52,15 +53,15 @@ def list_trades(
     symbol: Optional[str] = None,
     status: Optional[str] = None
 ):
-    return sqlite_driver.list_trades(limit=limit, offset=offset, symbol=symbol, status=status)
+    return trade_read_adapter.list_trades(limit=limit, offset=offset, symbol=symbol, status=status)
 
 @router.get("/trades/open")
 def get_open_trades():
-    return sqlite_driver.get_open_trades()
+    return trade_read_adapter.get_open_trades()
 
 @router.get("/trades/{trade_id}")
 def get_trade(trade_id: str):
-    trade = sqlite_driver.get_trade(trade_id)
+    trade = trade_read_adapter.get_trade(trade_id)
     if not trade:
         raise HTTPException(status_code=404, detail="Trade not found")
     return trade
@@ -1394,7 +1395,7 @@ def get_analytics_equity():
 
 @router.get("/analytics/quant")
 def get_analytics_quant():
-    all_closed = [t for t in sqlite_driver.list_trades(limit=10000, status="CLOSED") if t.get("pnl") is not None]
+    all_closed = [t for t in trade_read_adapter.list_trades(limit=10000, status="CLOSED") if t.get("pnl") is not None]
     pnls = [float(t["pnl"]) for t in all_closed]
     r_mults = [float(t["r_multiple"]) for t in all_closed if t.get("r_multiple") is not None]
     return quant_engine.calculate_full_performance_suite(pnls, r_multiples=r_mults if len(r_mults) == len(pnls) else None)

@@ -9,6 +9,7 @@ from app.db.repositories.evidence_projection_repo import (
 )
 from app.db.sqlite_driver import SQLiteDriver
 from app.db.sync_pipeline import SyncPipeline
+from app.services.trade_read_adapter import TradeReadAdapter
 
 
 def _trade(**overrides):
@@ -60,7 +61,9 @@ def test_projection_rebuild_replays_fill_and_tombstone(tmp_path, monkeypatch):
     assert dry_run["events_seen"] == 3
     assert dry_run["projectable_events"] == 3
     assert dry_run["tombstones"] == 1
-    assert repository.list_projections() == []
+    # Production journal writes keep the typed read model current.  The dry run
+    # must not clear or mutate that already-available projection.
+    assert repository.get_projection("PROJECTION-1")["status"] == "CANCELED"
 
     applied = repository.rebuild(dry_run=False)
     projection = repository.get_projection("PROJECTION-1")
@@ -137,3 +140,64 @@ def test_projection_rebuild_cli_parser_is_explicit_and_safe_by_default():
     apply = parser.parse_args(["evidence-ledger", "projection-rebuild", "--apply"])
     assert dry_run.apply is False
     assert apply.apply is True
+
+
+def test_pipeline_write_updates_projection_without_explicit_rebuild(tmp_path, monkeypatch):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    _use_driver(monkeypatch, driver)
+
+    SyncPipeline.record_and_sync_trade(_trade(), source="manual")
+
+    repository = EvidenceTradeProjectionRepository(str(db_path))
+    projection = repository.get_projection("PROJECTION-1")
+    assert projection is not None
+    assert projection["status"] == "OPEN"
+    assert repository.coverage()["ready"] is True
+
+
+def test_projection_failure_rolls_back_trade_and_ledger(tmp_path, monkeypatch):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    monkeypatch.setattr(
+        "app.db.repositories.evidence_projection_repo.EvidenceTradeProjectionRepository.upsert_event_in_transaction",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("projection failure")),
+    )
+
+    with pytest.raises(RuntimeError, match="projection failure"):
+        driver.record_trade_with_evidence(
+            _trade(),
+            event_type="IntentRecorded",
+            idempotency_key="projection-rollback",
+            occurred_at="2026-09-06T10:00:00Z",
+            provenance={"source": "test"},
+        )
+
+    assert driver.get_trade("PROJECTION-1") is None
+    assert EvidenceLedgerRepository(str(db_path)).count_events() == 0
+
+
+def test_read_adapter_falls_back_until_projection_coverage_is_complete(tmp_path):
+    db_path = tmp_path / "journal.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    adapter = TradeReadAdapter(legacy_driver=driver, projection_repo=projection)
+
+    # Compatibility-only rows from older versions remain visible while the
+    # explicit ledger backfill has not covered them.
+    driver.insert_trade(_trade())
+    assert adapter.coverage()["ready"] is False
+    assert adapter.get_trade("PROJECTION-1")["id"] == "PROJECTION-1"
+
+    EvidenceLedgerRepository(str(db_path)).append_event(
+        event_type="LegacyTradeImported",
+        account_id="local-journal",
+        venue="local-journal",
+        idempotency_key="legacy-projection-1",
+        normalized_payload={"trade": _trade()},
+        occurred_at="2026-09-06T10:00:00Z",
+        provenance={"source": "test"},
+    )
+    projection.rebuild(dry_run=False)
+    assert adapter.coverage()["ready"] is True
+    assert adapter.get_trade("PROJECTION-1")["id"] == "PROJECTION-1"
