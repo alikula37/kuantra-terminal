@@ -46,6 +46,12 @@ from .market_event_segments import (
     MarketEventSegmentSet,
     MarketEventSegmentSetRecoveryError,
 )
+from .market_event_batch import (
+    BATCH_SCHEMA_VERSION,
+    MarketEventBatch,
+    MarketEventBatchError,
+    MarketEventBatchProjector,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -80,4 +86,8 @@ __all__ = [
     "MANIFEST_SCHEMA_VERSION",
     "MarketEventSegmentSet",
     "MarketEventSegmentSetRecoveryError",
+    "BATCH_SCHEMA_VERSION",
+    "MarketEventBatch",
+    "MarketEventBatchError",
+    "MarketEventBatchProjector",
 ]

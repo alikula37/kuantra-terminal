@@ -49,6 +49,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP05 | [Canonical Market Event Envelope ve Hash Chain](./work-packages/P2-WP05-market-event-envelope.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP06 | [Durable Market Event Segment Writer](./work-packages/P2-WP06-market-event-segment-writer.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP07 | [Rotated Market Event Segments ve Manifest Recovery](./work-packages/P2-WP07-market-event-segment-manifest.md) | Active | 1.0.0 | 2026-09-06 |
+| P2-WP08 | [Columnar Market Event Batch Contract](./work-packages/P2-WP08-market-event-batch-contract.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -218,3 +219,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   manifest eklendi. Missing segment, manifest tamper ve cross-segment duplicate
   identity recovery testleri fail-closed; Parquet/Arrow/DuckDB compaction hâlâ
   kapsam dışı. Focused suite `5 passed`.
+- P2-WP08 ile Arrow/Parquet öncesi bounded event/level row batch sözleşmesi
+  eklendi. Decimal değerler canonical string, chain slice contiguous, bounds
+  aşımı truncation'sız fail-closed; mevcut runtime'da pyarrow/DuckDB yokluğu
+  nedeniyle gerçek sink yazılmadı. Focused suite `5 passed`.
