@@ -1,11 +1,14 @@
 {
   "plugin_id": "plugin_biometrics",
-  "name": "Hardware Wearable Biometrics & Stress Interceptor",
+  "name": "Wearable Biometrics (Experimental — disabled)",
   "version": "1.1.0",
   "category": "Hardware Biometrics",
-  "description": "Bluetooth LE Polar H10, Garmin, and Empatica E4 telemetry with real-time HRV/EDA S_bio trading circuit-breaker.",
+  "description": "Prototype hardware surface; no verified BLE/HID telemetry or execution circuit-breaker.",
   "heavy_dependencies": ["bleak"],
   "router_prefix": "/api/v1/plugins/biometrics",
   "ram_footprint_mb": 16.0,
-  "persona_tags": ["institutional", "full"]
+  "persona_tags": ["experimental"],
+  "lifecycle": "EXPERIMENTAL_DISABLED",
+  "execution_authority": false,
+  "provenance": "UNVERIFIED_HARDWARE"
 }

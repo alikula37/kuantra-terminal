@@ -126,14 +126,15 @@ class TestHFTStressAndMemoryBenchmarks:
 
         async def tick_sink(batch: list[MarketTick]):
             nonlocal toggles_done
-            # Alternate persona every 5 batches
+            # Exercise only the verified persona state transitions. Prototype
+            # personas are intentionally unavailable in the production path.
             if len(batch) > 0 and toggles_done < 4:
                 if toggles_done == 0:
                     await manager.apply_persona("kuantra_quant")
                 elif toggles_done == 1:
-                    await manager.apply_persona("kuantra_defai")
+                    await manager.apply_persona("kuantra_lite")
                 elif toggles_done == 2:
-                    await manager.apply_persona("kuantra_institutional")
+                    await manager.apply_persona("kuantra_quant")
                 elif toggles_done == 3:
                     await manager.apply_persona("kuantra_lite")
                 toggles_done += 1

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Check, Cpu, Zap, Sparkles, Shield, Layers, Sliders, CheckCircle2 } from "lucide-react";
+import { X, Check, Zap, Layers, Sliders, CheckCircle2 } from "lucide-react";
 import { usePluginRegistry } from "../../context/PluginRegistryContext";
 
 interface PersonaSelectorModalProps {
@@ -32,59 +32,30 @@ export const PERSONA_DETAILS: Record<
   },
   kuantra_quant: {
     title: "Kuantra Quant",
-    ram: "~140 MB RAM",
-    boot: "~550ms boot",
-    description: "High-frequency quant engine with order flow footprint and columnar DuckDB OLAP.",
+    ram: "On-demand profile",
+    boot: "Capability-verified",
+    description: "Journal analytics and deterministic risk workflow beyond Lite. It does not enable order-flow, execution, or AI features.",
     icon: Layers,
     color: "text-sky-400 border-sky-500/40 bg-sky-950/20",
-    badge: "POPULAR",
-    included: ["Lite Features", "Order Flow Footprint", "Prop Firm Drawdown Shield", "DuckDB Shadow Engine"]
-  },
-  kuantra_defai: {
-    title: "Kuantra DeFAI",
-    ram: "~480 MB RAM",
-    boot: "~950ms boot",
-    description: "Autonomous AI Swarm orchestrator, cross-DEX flash loan arbitrage, and financial MCP.",
-    icon: Sparkles,
-    color: "text-purple-400 border-purple-500/40 bg-purple-950/20",
-    badge: "AI & DEFI",
-    included: ["Lite Features", "Multi-Agent AI Swarm", "Cross-DEX Arbitrage & Flash Loans", "Financial MCP Gateway"]
-  },
-  kuantra_institutional: {
-    title: "Kuantra Institutional",
-    ram: "~320 MB RAM",
-    boot: "~750ms boot",
-    description: "Institutional execution suite with CME FIX 5.0 DMA, L2/L3 DOM Ladder, and BLE Biometrics.",
-    icon: Shield,
-    color: "text-emerald-400 border-emerald-500/40 bg-emerald-950/20",
-    badge: "INSTITUTIONAL",
-    included: ["Lite Features", "Order Flow Footprint", "CME FIX 5.0 DMA & DOM Ladder", "Wearable Biometrics & Lockout", "Reverse-Skill Transpiler"]
-  },
-  full: {
-    title: "Kuantra Full Suite",
-    ram: "~1.8 GB Max",
-    boot: "~1200ms boot",
-    description: "Complete professional workstation with all 8 modular plugin subsystems activated.",
-    icon: Cpu,
-    color: "text-accent border-cyan-500/40 bg-cyan-950/20",
-    badge: "ALL MODULES",
-    included: ["All 8 Modular Subsystems", "Full Hardware Acceleration", "Max Capability Matrix"]
+    badge: "VERIFIED SURFACE",
+    included: ["Lite Features", "MAE / MFE Analytics", "Deterministic Risk Workflow", "DuckDB Analytics Projection"]
   }
 };
 
 export const PersonaSelectorModal: React.FC<PersonaSelectorModalProps> = ({ isOpen, onClose }) => {
   const { activePersona, applyPersona } = usePluginRegistry();
-  const [selectedPersona, setSelectedPersona] = useState<string>(activePersona || "full");
+  const [selectedPersona, setSelectedPersona] = useState<string>(
+    activePersona === "kuantra_quant" ? "kuantra_quant" : "kuantra_lite"
+  );
   const [applying, setApplying] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
   const handleApply = async () => {
     setApplying(true);
-    localStorage.setItem("kuantra_selected_persona", selectedPersona);
-    await applyPersona(selectedPersona);
+    const applied = await applyPersona(selectedPersona);
     setApplying(false);
-    onClose();
+    if (applied) onClose();
   };
 
   const handleCancelOrClose = () => {

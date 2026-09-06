@@ -16,12 +16,12 @@ class TestLiveUserAcceptanceTesting:
     def test_live_uat_scenario_2_hardware_gpu_swarm(self):
         runner = KuantraLiveUATRunner()
         runner.run_scenario_2_gpu_and_swarm()
-        assert runner.results[0]["status"] == "PASSED"
+        assert runner.results[0]["status"] == "DISABLED"
 
     def test_live_uat_scenario_3_defai_flash_loan(self):
         runner = KuantraLiveUATRunner()
         runner.run_scenario_3_defai_flash_loan()
-        assert runner.results[0]["status"] == "PASSED"
+        assert runner.results[0]["status"] == "DISABLED"
 
     def test_live_uat_scenario_4_orderbook_and_fix(self):
         runner = KuantraLiveUATRunner()
@@ -31,4 +31,4 @@ class TestLiveUserAcceptanceTesting:
     def test_live_uat_scenario_5_biometrics_and_lockout(self):
         runner = KuantraLiveUATRunner()
         runner.run_scenario_5_biometrics_and_lockout()
-        assert runner.results[0]["status"] == "PASSED"
+        assert runner.results[0]["status"] == "DISABLED"

@@ -18,14 +18,24 @@ from starlette.routing import BaseRoute
 from app.core.plugins import BasePlugin, PluginMetadata
 from app.core.lazy_loader import lazy_loader
 from app.db.sqlite_driver import sqlite_driver
+from app.core.availability import is_explicit_experimental_mode
 
 logger = logging.getLogger("plugin_manager")
 
+"""Production-safe personas.  Prototype profiles stay documented separately
+so an explicit local research session can still inspect legacy code without
+making those capabilities part of the normal API/UI contract.
+"""
 PERSONA_PROFILES: Dict[str, List[str]] = {
     "kuantra_lite": [],
     "lite": [],
-    "kuantra_quant": ["plugin_quant_shield", "plugin_orderflow"],
-    "quant": ["plugin_quant_shield", "plugin_orderflow"],
+    # Quant analytics are core endpoints in this release; no plugin is needed
+    # to claim the journal/research workflow.
+    "kuantra_quant": [],
+    "quant": [],
+}
+
+EXPERIMENTAL_PERSONA_PROFILES: Dict[str, List[str]] = {
     "kuantra_defai": ["plugin_ai_swarm", "plugin_dex_arbitrage", "plugin_mcp_gateway"],
     "defai": ["plugin_ai_swarm", "plugin_dex_arbitrage", "plugin_mcp_gateway"],
     "kuantra_institutional": [
@@ -66,6 +76,22 @@ PERSONA_PROFILES: Dict[str, List[str]] = {
     ]
 }
 
+EXPERIMENTAL_PLUGIN_IDS = frozenset(
+    plugin_id for profile in EXPERIMENTAL_PERSONA_PROFILES.values() for plugin_id in profile
+)
+# No dynamic plugin is part of the verified v1.4.0 core.  Keeping this allowlist
+# explicit prevents an arbitrary directory dropped into the user plugin path
+# from becoming executable merely because it has a manifest.
+PRODUCTION_PLUGIN_IDS = frozenset()
+
+
+class ExperimentalPluginDisabledError(RuntimeError):
+    """Raised when an unsigned/prototype plugin is requested in production."""
+
+
+class ExperimentalPersonaDisabledError(RuntimeError):
+    """Raised when a prototype persona is requested in production."""
+
 class DynamicPluginManager:
     """Micro-Kernel Core Dynamic Plugin & Route Mutation Controller."""
 
@@ -87,7 +113,7 @@ class DynamicPluginManager:
         self._active_plugins: Dict[str, BasePlugin] = {}
         self._mounted_routes: Dict[str, List[BaseRoute]] = {}
         self._lock = asyncio.Lock()
-        self._active_persona: str = "full"
+        self._active_persona: str = "kuantra_lite"
 
         self._init_sqlite_table()
         self.discover_plugins()
@@ -169,6 +195,11 @@ class DynamicPluginManager:
         Dynamically activates a plugin, executes on_startup, attaches routes to Starlette routing table,
         and invalidates OpenAPI cache.
         """
+        if plugin_id not in PRODUCTION_PLUGIN_IDS and not is_explicit_experimental_mode():
+            raise ExperimentalPluginDisabledError(
+                f"Plugin '{plugin_id}' is not in the verified production allowlist; signed sandbox support is required."
+            )
+
         if plugin_id in self._active_plugins and plugin_id in self._mounted_routes:
             return {"status": "ALREADY_ACTIVE", "plugin_id": plugin_id}
 
@@ -289,10 +320,18 @@ class DynamicPluginManager:
         - full: All plugins active.
         """
         target_persona = persona_name.lower().strip()
-        if target_persona not in PERSONA_PROFILES:
+        allowed_profiles = {
+            **PERSONA_PROFILES,
+            **(EXPERIMENTAL_PERSONA_PROFILES if is_explicit_experimental_mode() else {}),
+        }
+        if target_persona in EXPERIMENTAL_PERSONA_PROFILES and not is_explicit_experimental_mode():
+            raise ExperimentalPersonaDisabledError(
+                f"Persona '{target_persona}' is experimental and disabled until its integrations are verified."
+            )
+        if target_persona not in allowed_profiles:
             raise ValueError(f"Unknown persona '{persona_name}'. Available: {list(PERSONA_PROFILES.keys())}")
 
-        target_plugins = set(PERSONA_PROFILES[target_persona])
+        target_plugins = set(allowed_profiles[target_persona])
         activated = []
         deactivated = []
 
@@ -322,7 +361,11 @@ class DynamicPluginManager:
         results = []
         for p_id, meta in self._plugins_metadata.items():
             info = meta.to_dict()
-            info["is_active"] = p_id in self._active_plugins
+            info["is_active"] = p_id in self._active_plugins and (
+                p_id not in EXPERIMENTAL_PLUGIN_IDS or is_explicit_experimental_mode()
+            )
+            info["lifecycle"] = "CORE" if p_id in PRODUCTION_PLUGIN_IDS else "EXPERIMENTAL_DISABLED"
+            info["execution_authority"] = False
             results.append(info)
         return results
 

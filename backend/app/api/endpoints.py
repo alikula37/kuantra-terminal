@@ -16,6 +16,7 @@ from app.services.portfolio_service import portfolio_service
 from app.services.csv_importer import csv_trade_importer
 from app.services.exchange.credentials_manager import exchange_credentials_manager
 from app.services.security.credential_store import CredentialStoreUnavailable, credential_store_status
+from app.core.availability import experimental_disabled_exception, experimental_disabled_response as build_experimental_disabled_response
 from app.services.execution.ccxt_engine import ccxt_execution_engine
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
@@ -651,7 +652,7 @@ class SettingsUpdateSchema(BaseModel):
     ai_mode: Optional[str] = None
 
 class OnboardingCompleteSchema(BaseModel):
-    ai_mode: Optional[str] = "local_gguf"
+    ai_mode: Optional[str] = "disabled"
     api_key: Optional[str] = None
     provider: Optional[str] = "openai"
     trading_mode: Optional[str] = "paper"
@@ -691,7 +692,7 @@ def get_onboarding_status():
     return {
         "first_boot_completed": cfg["first_boot_completed"],
         "config": cfg,
-        "ai_mode": cfg.get("ai_mode", "local_gguf"),
+        "ai_mode": cfg.get("ai_mode", "disabled"),
         "hardware": hw
     }
 
@@ -713,13 +714,17 @@ def complete_onboarding(payload: OnboardingCompleteSchema):
             initial_bal = float(settings_service.get_setting("user_initial_balance", default="0.0") or 0.0)
         except Exception:
             initial_bal = 0.0
+    requested_ai_mode = payload.ai_mode or "disabled"
+    # The legacy local_gguf value represented a downloader/mock path.  Keep the
+    # setting truthful until a real sidecar contract exists.
+    configured_ai_mode = "disabled" if requested_ai_mode == "local_gguf" else requested_ai_mode
     updates = {
         "first_boot_completed": True,
         "trading_mode": payload.trading_mode or "paper",
         "paper_balance": initial_bal,
         "active_theme": payload.active_theme or "dark",
         "active_locale": payload.active_locale or "en",
-        "ai_mode": payload.ai_mode or "local_gguf"
+        "ai_mode": configured_ai_mode
     }
     cfg = settings_service.update_settings(updates)
 
@@ -740,10 +745,17 @@ def complete_onboarding(payload: OnboardingCompleteSchema):
             detail={"code": "CREDENTIAL_STORE_UNAVAILABLE", "message": str(e)},
         )
 
-    if payload.ai_mode == "local_gguf":
-        model_downloader.start_download(mock_mode=True)
-
-    return {"status": "SUCCESS", "first_boot_completed": True, "ai_mode": cfg.get("ai_mode"), "config": cfg}
+    return {
+        "status": "SUCCESS",
+        "first_boot_completed": True,
+        "ai_mode": cfg.get("ai_mode"),
+        "ai_capability": build_experimental_disabled_response(
+            "local_llm_inference",
+            reason="REAL_MODEL_SIDECAR_NOT_CONFIGURED",
+            message="Local LLM inference remains disabled until a verified sidecar is configured.",
+        ),
+        "config": cfg,
+    }
 
 from app.websocket.tv_sync import tv_sync_manager
 
@@ -778,13 +790,14 @@ def get_multi_asset_adapters_status():
 @router.post("/adapters/subscribe")
 def subscribe_to_adapter_symbols(payload: AdapterSubscribeSchema):
     adapter_key = payload.adapter.lower()
-    if adapter_key == "twelvedata":
-        from app.services.data_adapters.twelvedata_adapter import twelvedata_adapter
-        return twelvedata_adapter.subscribe(payload.symbols)
-    elif adapter_key == "polygon":
-        from app.services.data_adapters.polygon_adapter import polygon_adapter
-        return polygon_adapter.subscribe(payload.symbols)
-    return {"status": "SUCCESS", "adapter": adapter_key, "symbols": payload.symbols}
+    if adapter_key in {"twelvedata", "polygon", "mt5"}:
+        raise experimental_disabled_exception(
+            f"{adapter_key}_connector",
+            reason="REAL_TRANSPORT_NOT_CONFIGURED",
+            message=f"{adapter_key} subscription is disabled until a verified session transport exists.",
+            provenance="UNVERIFIED_ADAPTER",
+        )
+    raise HTTPException(status_code=404, detail=f"Unknown adapter '{payload.adapter}'.")
 
 from app.services.execution.risk_interceptor import risk_interceptor
 
@@ -793,10 +806,11 @@ def get_execution_guardrail_status():
     return {
         "guardrails_active": risk_interceptor.guardrails_active,
         "max_tilt_score": risk_interceptor.max_allowed_tilt_score,
-        "supported_venues": ["BINANCE_FUTURES", "OKX_V5"]
+        "supported_venues": [],
+        "live_execution_available": False,
+        "paper_execution_available": True,
+        "reason": "LIVE_EXECUTION_DISABLED_UNTIL_PHASE_4_GATES",
     }
-
-from app.services.ai.agent_swarm import swarm_consensus_engine
 
 class SwarmDebateSchema(BaseModel):
     symbol: str = "BTCUSDT"
@@ -808,9 +822,11 @@ class SwarmDebateSchema(BaseModel):
 
 @router.post("/ai/swarm/debate")
 def trigger_multi_agent_swarm_debate(payload: SwarmDebateSchema):
-    return swarm_consensus_engine.conduct_debate(payload.model_dump())
-
-from app.services.biometrics.watch_bridge import biometric_watch_bridge
+    raise experimental_disabled_exception(
+        "ai_swarm_debate",
+        reason="REAL_MODEL_SIDECAR_NOT_CONFIGURED",
+        message="The local AI Auditor sidecar is not configured; no synthetic consensus is exposed.",
+    )
 
 class BiometricTelemetrySchema(BaseModel):
     bpm: float
@@ -819,14 +835,20 @@ class BiometricTelemetrySchema(BaseModel):
 
 @router.get("/biometrics/status")
 def get_biometric_telemetry_status():
-    return biometric_watch_bridge.get_biometric_state()
+    raise experimental_disabled_exception(
+        "biometric_telemetry",
+        reason="REAL_HARDWARE_NOT_CONFIGURED",
+        message="Biometric telemetry is not connected and cannot influence execution.",
+        provenance="UNVERIFIED_HARDWARE",
+    )
 
 @router.post("/biometrics/telemetry")
 def update_biometric_telemetry(payload: BiometricTelemetrySchema):
-    return biometric_watch_bridge.update_telemetry(
-        bpm=payload.bpm,
-        hrv=payload.hrv,
-        device_name=payload.device_name
+    raise experimental_disabled_exception(
+        "biometric_telemetry",
+        reason="REAL_HARDWARE_NOT_CONFIGURED",
+        message="Manual or synthetic biometric telemetry is not accepted by the production API.",
+        provenance="UNVERIFIED_HARDWARE",
     )
 
 from app.services.orderflow.footprint_engine import footprint_engine
@@ -1012,8 +1034,6 @@ def disarm_panic_kill_switch(payload: PanicDisarmSchema):
 def get_panic_kill_switch_status():
     return panic_kill_switch.get_lockdown_status()
 
-from app.services.security.passkey_vault import webauthn_passkey_vault
-
 class PasskeyVerifySchema(BaseModel):
     challenge: str
     credential_id: str
@@ -1021,24 +1041,30 @@ class PasskeyVerifySchema(BaseModel):
 
 @router.get("/security/passkey/challenge")
 def get_passkey_auth_challenge(action: Optional[str] = "HIGH_VALUE_ORDER"):
-    return webauthn_passkey_vault.generate_auth_challenge(action=action or "HIGH_VALUE_ORDER")
+    raise experimental_disabled_exception(
+        "webauthn_passkey",
+        reason="REAL_WEBAUTHN_VERIFIER_NOT_CONFIGURED",
+        message="Passkey challenge is disabled until authenticatorData and signature verification are implemented.",
+        provenance="UNVERIFIED_HARDWARE",
+    )
 
 @router.post("/security/passkey/verify")
 def verify_passkey_assertion_endpoint(payload: PasskeyVerifySchema):
-    is_valid = webauthn_passkey_vault.verify_passkey_assertion(
-        challenge=payload.challenge,
-        credential_id=payload.credential_id,
-        assertion_signature=payload.assertion_signature
+    raise experimental_disabled_exception(
+        "webauthn_passkey",
+        reason="REAL_WEBAUTHN_VERIFIER_NOT_CONFIGURED",
+        message="A length-only signature is never accepted as a production passkey assertion.",
+        provenance="UNVERIFIED_HARDWARE",
     )
-    if not is_valid:
-        raise HTTPException(status_code=401, detail="Hardware Passkey verification failed.")
-    return {"status": "PASSED", "message": "FIDO2 Hardware Challenge Cleared."}
 
 @router.get("/security/passkey/list")
 def list_hardware_passkeys():
-    return {"passkeys": webauthn_passkey_vault.list_passkeys()}
-
-from app.services.mcp.client_gateway import mcp_gateway
+    raise experimental_disabled_exception(
+        "webauthn_passkey",
+        reason="REAL_WEBAUTHN_VERIFIER_NOT_CONFIGURED",
+        message="Registered passkeys are hidden until a verified WebAuthn store exists.",
+        provenance="UNVERIFIED_HARDWARE",
+    )
 
 class MCPQuerySchema(BaseModel):
     source: str
@@ -1047,23 +1073,30 @@ class MCPQuerySchema(BaseModel):
 
 @router.get("/mcp/sources")
 def get_mcp_sources():
-    return mcp_gateway.list_sources()
+    raise experimental_disabled_exception(
+        "mcp_external_sources",
+        reason="SOURCE_PROVENANCE_NOT_CONFIGURED",
+        message="External MCP sources are disabled until source-linked retrieval is implemented.",
+        provenance="UNVERIFIED_SOURCE",
+    )
 
 @router.post("/mcp/query")
 def query_mcp_gateway(payload: MCPQuerySchema):
-    try:
-        res = mcp_gateway.dispatch_query(
-            source=payload.source,
-            query_type=payload.query_type or "default",
-            params=payload.params or {}
-        )
-        return {"status": "SUCCESS", "source": payload.source, "data": res}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    raise experimental_disabled_exception(
+        "mcp_external_sources",
+        reason="SOURCE_PROVENANCE_NOT_CONFIGURED",
+        message="MCP query results are disabled until each response has verifiable source provenance.",
+        provenance="UNVERIFIED_SOURCE",
+    )
 
 @router.get("/mcp/sentiment/stream")
 def get_mcp_sentiment_stream():
-    return mcp_gateway.get_sentiment_stream()
+    raise experimental_disabled_exception(
+        "mcp_sentiment_stream",
+        reason="SOURCE_PROVENANCE_NOT_CONFIGURED",
+        message="Sentiment streaming is disabled until a real source transport exists.",
+        provenance="UNVERIFIED_SOURCE",
+    )
 
 from app.services.ai.reverse_skill import reverse_skill_engine
 
@@ -1096,17 +1129,12 @@ def analyze_csv_trades_endpoint(payload: CSVAnalyzePayload):
 
 @router.post("/reverse-skill/deploy-agent")
 def deploy_reverse_skill_agent(payload: DeployAgentPayload):
-    try:
-        return reverse_skill_engine.deploy_agent(
-            agent_name=payload.agent_name,
-            strategy_config=payload.strategy_config,
-            initial_capital=payload.initial_capital if payload.initial_capital is not None else 50000.0
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Agent deployment error: {str(e)}")
-
-from app.services.ai.hardware_engine import hardware_engine, gguf_inference_engine
-from app.services.ai.accelerated_swarm import accelerated_swarm
+    raise experimental_disabled_exception(
+        "reverse_skill_deploy",
+        reason="EXECUTION_AUTHORITY_NOT_AVAILABLE",
+        message="Strategy transpilation is export-only; deploying an active agent is disabled.",
+        provenance="SYNTHETIC_STRATEGY",
+    )
 
 class HardwareConfigurePayload(BaseModel):
     engine: str
@@ -1124,30 +1152,27 @@ class SwarmFastEvalPayload(BaseModel):
 
 @router.get("/hardware/gpu-status")
 def get_hardware_gpu_status():
-    return hardware_engine.get_realtime_metrics()
+    raise experimental_disabled_exception(
+        "local_llm_hardware",
+        reason="REAL_MODEL_SIDECAR_NOT_CONFIGURED",
+        message="GPU telemetry is not a verified inference signal in this release.",
+    )
 
 @router.post("/hardware/configure")
 def configure_hardware_endpoint(payload: HardwareConfigurePayload):
-    try:
-        return hardware_engine.configure_hardware(
-            engine=payload.engine,
-            n_gpu_layers=payload.n_gpu_layers,
-            threads=payload.threads,
-            context_length=payload.context_length
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    raise experimental_disabled_exception(
+        "local_llm_hardware",
+        reason="REAL_MODEL_SIDECAR_NOT_CONFIGURED",
+        message="Hardware configuration is disabled until a real sidecar is installed and health-checked.",
+    )
 
 @router.post("/swarm/fast-eval")
 def fast_eval_swarm_endpoint(payload: SwarmFastEvalPayload):
-    try:
-        return accelerated_swarm.evaluate_market_state(payload.model_dump())
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Accelerated Swarm evaluation error: {str(e)}")
-
-from app.services.dex.rpc_gateway import rpc_gateway
-from app.services.dex.arbitrage_engine import arbitrage_engine
-from app.services.dex.defai_agent import defai_agent
+    raise experimental_disabled_exception(
+        "local_llm_swarm",
+        reason="REAL_MODEL_SIDECAR_NOT_CONFIGURED",
+        message="Synthetic swarm evaluation cannot produce approval or execution guidance.",
+    )
 
 class ScanOpportunitiesPayload(BaseModel):
     chain: Optional[str] = "ethereum"
@@ -1166,43 +1191,39 @@ class DeFAIEvalPayload(BaseModel):
 
 @router.get("/dex/chains")
 def get_dex_chains():
-    return rpc_gateway.list_chains()
+    raise experimental_disabled_exception(
+        "dex_rpc",
+        reason="REAL_RPC_TRANSPORT_NOT_CONFIGURED",
+        message="No live chain/RPC state is exposed by the desktop product.",
+        provenance="UNVERIFIED_CHAIN_DATA",
+    )
 
 @router.post("/dex/scan-opportunities")
 def scan_dex_opportunities(payload: ScanOpportunitiesPayload):
-    try:
-        chain = payload.chain or "ethereum"
-        spatial_opps = arbitrage_engine.scan_spatial_opportunities(chain=chain)
-        tri_opps = arbitrage_engine.scan_triangular_opportunities(chain=chain) if payload.include_triangular else []
-        all_opps = spatial_opps + tri_opps
-        return {
-            "chain": chain.upper(),
-            "total_opportunities": len(all_opps),
-            "opportunities": all_opps,
-            "timestamp": time.time()
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"DEX scan error: {str(e)}")
+    raise experimental_disabled_exception(
+        "dex_opportunity_scan",
+        reason="REAL_RPC_TRANSPORT_NOT_CONFIGURED",
+        message="No actionable DEX opportunity is reported without verified pool state.",
+        provenance="UNVERIFIED_CHAIN_DATA",
+    )
 
 @router.post("/dex/simulate-flash-loan")
 def simulate_flash_loan_endpoint(payload: FlashLoanSimPayload):
-    try:
-        return arbitrage_engine.simulate_flash_loan(
-            chain=payload.chain or "ethereum",
-            protocol=payload.protocol or "BALANCER_VAULT",
-            borrow_asset=payload.borrow_asset or "WETH",
-            amount_usd=payload.amount_usd or 100000.0,
-            route_spread_pct=payload.route_spread_pct or 0.58
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Flash loan simulation error: {str(e)}")
+    raise experimental_disabled_exception(
+        "dex_flash_loan",
+        reason="EXPERIMENTAL_DEFI_OUT_OF_SCOPE",
+        message="Flash-loan simulation and execution are outside the production product boundary.",
+        provenance="UNVERIFIED_CHAIN_DATA",
+    )
 
 @router.post("/dex/defai-evaluate")
 def defai_evaluate_endpoint(payload: DeFAIEvalPayload):
-    try:
-        return defai_agent.evaluate_opportunity(opportunity=payload.opportunity)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"DeFAI evaluation error: {str(e)}")
+    raise experimental_disabled_exception(
+        "defai_execution_advisor",
+        reason="EXPERIMENTAL_DEFI_OUT_OF_SCOPE",
+        message="DeFAI must not produce an actionable execution decision.",
+        provenance="UNVERIFIED_CHAIN_DATA",
+    )
 
 from app.services.matching.order_book import global_order_book
 from app.services.fix.fix_gateway import fix_session
@@ -1302,9 +1323,6 @@ def simulate_orderbook_fill(payload: SimulateSweepPayload):
         "depth_levels_swept": 0,
     })
 
-from app.services.biometrics.hardware_driver import hardware_biometrics_driver
-from app.services.biometrics.stress_interceptor import stress_interceptor
-
 class BiometricConnectPayload(BaseModel):
     device_id: str
     protocol: Optional[str] = "BLE"
@@ -1315,43 +1333,39 @@ class BiometricOverridePayload(BaseModel):
 
 @router.get("/biometrics/devices")
 def get_biometric_devices():
-    return {
-        "devices": hardware_biometrics_driver.scan_devices(),
-        "active_device_id": hardware_biometrics_driver.active_device_id,
-        "is_connected": hardware_biometrics_driver.is_connected
-    }
+    raise experimental_disabled_exception(
+        "biometric_hardware",
+        reason="REAL_HARDWARE_NOT_CONFIGURED",
+        message="No wearable device inventory is asserted without a verified hardware transport.",
+        provenance="UNVERIFIED_HARDWARE",
+    )
 
 @router.post("/biometrics/connect")
 def connect_biometric_device(payload: BiometricConnectPayload):
-    try:
-        return hardware_biometrics_driver.connect_device(
-            device_id=payload.device_id,
-            protocol=payload.protocol or "BLE"
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Biometric connect error: {str(e)}")
+    raise experimental_disabled_exception(
+        "biometric_hardware",
+        reason="REAL_HARDWARE_NOT_CONFIGURED",
+        message="Wearable connection is disabled until BLE/HID discovery and session verification exist.",
+        provenance="UNVERIFIED_HARDWARE",
+    )
 
 @router.get("/biometrics/live-telemetry")
 def get_biometric_live_telemetry(bpm: Optional[float] = None, eda: Optional[float] = None):
-    try:
-        return stress_interceptor.evaluate_live_state(manual_bpm=bpm, manual_eda=eda)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Biometric telemetry error: {str(e)}")
+    raise experimental_disabled_exception(
+        "biometric_telemetry",
+        reason="REAL_HARDWARE_NOT_CONFIGURED",
+        message="Manual query parameters cannot create live biometric evidence.",
+        provenance="UNVERIFIED_HARDWARE",
+    )
 
 @router.post("/biometrics/override-lockout")
 def override_biometric_lockout(payload: BiometricOverridePayload):
-    try:
-        res = stress_interceptor.override_lockout_fido2(
-            challenge_signature=payload.challenge_signature,
-            passkey_user_id=payload.passkey_user_id or "TRADER_ADMIN"
-        )
-        if res.get("status") == "OVERRIDE_REJECTED":
-            raise HTTPException(status_code=403, detail=res.get("reason"))
-        return res
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Override error: {str(e)}")
+    raise experimental_disabled_exception(
+        "biometric_lockout_override",
+        reason="REAL_WEBAUTHN_VERIFIER_NOT_CONFIGURED",
+        message="Biometric lockout cannot be overridden through an unverified signature.",
+        provenance="UNVERIFIED_HARDWARE",
+    )
 
 @router.get("/analytics/symbols")
 def get_analytics_symbols():

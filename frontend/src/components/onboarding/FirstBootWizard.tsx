@@ -75,7 +75,9 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
         paper_balance: paperBalance,
         active_theme: theme,
         active_locale: locale,
-        ai_mode: "local_gguf",
+        // Local model inference is not enabled until a verified sidecar is
+        // configured; onboarding must not request the retired mock downloader.
+        ai_mode: "disabled",
         api_keys: apiKeys,
       };
 

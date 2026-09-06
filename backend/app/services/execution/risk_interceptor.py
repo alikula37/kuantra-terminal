@@ -4,6 +4,7 @@ Validates orders across Biometric Wearable Stress, Multi-Agent Swarm Debate, Ses
 """
 
 import logging
+import os
 from typing import Dict, Any, Tuple
 from app.psychology.psychology_engine import psychology_engine
 from app.services.compliance_engine import compliance_engine
@@ -19,8 +20,13 @@ class RiskGuardrailInterceptor:
     def __init__(self):
         self.max_allowed_tilt_score: float = 75.0
         self.guardrails_active: bool = True
-        self.biometrics_gate_active: bool = True
-        self.swarm_debate_gate_active: bool = True
+        # Biometrics and swarm implementations are prototypes, not verified
+        # risk authorities.  They may be exercised only by isolated tests or an
+        # explicit developer experiment; production execution must not depend
+        # on their synthetic state.
+        experimental_opt_in = os.getenv("KUANTRA_ALLOW_EXPERIMENTAL", "0") == "1"
+        self.biometrics_gate_active: bool = experimental_opt_in
+        self.swarm_debate_gate_active: bool = experimental_opt_in
 
     def evaluate_order(self, order: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any]]:
         """
@@ -80,9 +86,13 @@ class RiskGuardrailInterceptor:
             logger.warning(f"[RISK INTERCEPTOR] {reason}")
             return False, reason, {"compliance": compliance_status, "stage": "PROP_FIRM_GUARD"}
 
-        logger.info(f"[RISK INTERCEPTOR] Order APPROVED: {side} {qty} {symbol} (Biometric Tilt: {bio_state['biometric_tilt_score']}, Swarm: {swarm_res['consensus_status']})")
+        logger.info(
+            f"[RISK INTERCEPTOR] Order APPROVED: {side} {qty} {symbol} "
+            f"(Biometric gate: {self.biometrics_gate_active}, "
+            f"Swarm gate: {self.swarm_debate_gate_active})"
+        )
         return True, "APPROVED_ALL_GUARDRAILS_PASSED", {
-            "biometric_tilt": bio_state["biometric_tilt_score"],
+            "biometric_tilt": bio_state["biometric_tilt_score"] if self.biometrics_gate_active else None,
             "swarm_consensus": swarm_res["consensus_status"],
             "session_tilt": tilt_score,
             "stage": "CLEARED"

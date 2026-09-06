@@ -1,98 +1,19 @@
 import React, { useState } from "react";
 import { 
   Puzzle, 
-  Download, 
   CheckCircle, 
   Sliders, 
   Activity, 
   HardDrive, 
-  Cpu, 
   Search, 
-  ShieldCheck, 
-  Power, 
   RefreshCw 
 } from "lucide-react";
 import { usePluginRegistry } from "../../context/PluginRegistryContext";
-import { apiBase, apiFetch, apiUrl } from "../../lib/backend";
 
 export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = ({ onOpenPersonaSelector }) => {
-  const { plugins, activePersona, loading, togglePlugin, refreshPlugins } = usePluginRegistry();
-  const [activeTab, setActiveTab] = useState<"installed" | "marketplace" | "telemetry">("installed");
+  const { plugins, activePersona, loading, error, refreshPlugins } = usePluginRegistry();
+  const [activeTab, setActiveTab] = useState<"installed" | "telemetry">("installed");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [togglingId, setTogglingId] = useState<string | null>(null);
-
-  const [downloadingModules, setDownloadingModules] = useState<
-    Record<string, { progress: number; status: string; taskId?: string }>
-  >({});
-
-  const handleInstallModule = async (moduleId: string) => {
-    try {
-      setDownloadingModules((prev) => ({
-        ...prev,
-        [moduleId]: { progress: 10, status: "İndirme Başlatılıyor..." }
-      }));
-
-      const res = await apiFetch(apiUrl("/api/v1/plugins/download"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plugin_id: moduleId })
-      });
-
-      if (!res.ok) {
-        throw new Error("Download request failed");
-      }
-
-      const data = await res.json();
-      const taskId = data.task_id;
-
-      // Poll status
-      const interval = setInterval(async () => {
-        try {
-          const stRes = await apiFetch(`${apiBase()}/api/v1/plugins/download-status/${taskId}`);
-          if (stRes.ok) {
-            const stData = await stRes.json();
-            const pct = stData.progress_percent || 0;
-            let statusText = `Modül İndiriliyor: 18 MB / %${pct}...`;
-            if (stData.status === "verifying") statusText = "SHA-256 İmzası Doğrulanıyor...";
-            if (stData.status === "extracting") statusText = ".kmod Paketi Çıkarılıyor...";
-            if (stData.status === "activating") statusText = "Dinamik Router Bağlanıyor...";
-            if (stData.status === "completed") statusText = "Yüklendi & Aktif Edildi!";
-
-            setDownloadingModules((prev) => ({
-              ...prev,
-              [moduleId]: { progress: pct, status: statusText, taskId }
-            }));
-
-            if (stData.status === "completed" || stData.status === "failed") {
-              clearInterval(interval);
-              await refreshPlugins();
-            }
-          }
-        } catch (err) {
-          clearInterval(interval);
-        }
-      }, 250);
-    } catch (err: any) {
-      console.error("Failed to install module:", err);
-      setDownloadingModules((prev) => ({
-        ...prev,
-        [moduleId]: { progress: 0, status: "İndirme Hatası" }
-      }));
-    }
-  };
-
-  // Compute live memory stats
-  const baseCoreRamMb = 22.0;
-  const activePluginsRamMb = plugins
-    .filter((p) => p.is_active)
-    .reduce((acc, curr) => acc + curr.ram_footprint_mb, 0);
-  const totalEstimatedRamMb = Math.round((baseCoreRamMb + activePluginsRamMb) * 10) / 10;
-
-  const handleToggle = async (pluginId: string, currentStatus: boolean) => {
-    setTogglingId(pluginId);
-    await togglePlugin(pluginId, !currentStatus);
-    setTogglingId(null);
-  };
 
   const filteredPlugins = plugins.filter(
     (p) =>
@@ -100,57 +21,6 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
       p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const marketplaceModules = [
-    {
-      id: "mod_options_greeks",
-      name: "Options Analytics & Live Black-Scholes Greeks",
-      category: "Derivatives",
-      version: "1.0.4",
-      author: "Kuantra Institutional",
-      description: "Real-time volatility smile, Delta/Gamma/Vega/Theta surface visualizer with CME options DMA.",
-      rating: 4.9,
-      downloads: "12.4k",
-      verified: true,
-      ram: 24.5
-    },
-    {
-      id: "mod_macro_nowcasting",
-      name: "Global Macro Nowcasting & Central Bank Sentiment",
-      category: "Macro & NLP",
-      version: "2.1.0",
-      author: "Kuantra Research",
-      description: "Scrapes FOMC, ECB, and BOJ minutes using fine-tuned transformer models for macro bias scoring.",
-      rating: 4.8,
-      downloads: "8.9k",
-      verified: true,
-      ram: 32.0
-    },
-    {
-      id: "mod_binance_liquidation_radar",
-      name: "High-Density Liquidation Heatmap & Cascade Hunter",
-      category: "Order Flow",
-      version: "1.3.2",
-      author: "Community Verified",
-      description: "Live visual liquidation levels and high-conviction cascading squeeze entry alerts.",
-      rating: 4.95,
-      downloads: "24.1k",
-      verified: true,
-      ram: 18.0
-    },
-    {
-      id: "mod_hft_tick_compressor",
-      name: "ZSTD High-Frequency Tick Database Compressor",
-      category: "Storage",
-      version: "1.0.1",
-      author: "Kuantra Infrastructure",
-      description: "Lossless column-oriented tick archival achieving 85%+ storage footprint reduction.",
-      rating: 4.75,
-      downloads: "6.2k",
-      verified: true,
-      ram: 15.0
-    }
-  ];
 
   return (
     <div className="flex-1 bg-[#0b0e14] text-slate-100 flex flex-col overflow-hidden select-none font-sans">
@@ -162,13 +32,13 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
           </div>
           <div>
             <div className="flex items-center space-x-2.5">
-              <h1 className="text-xl font-bold text-white tracking-wide font-mono">ModStore & Extension Hub</h1>
+              <h1 className="text-xl font-bold text-white tracking-wide font-mono">Component Registry</h1>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-accent/20 text-accent font-bold border border-accent/30">
                 MICRO-KERNEL v1.1.0
               </span>
             </div>
             <p className="text-xs text-slate-400 font-mono mt-0.5">
-              Hot-mount, unmount, and configure modular quantitative algorithms and desktop core subsystems.
+              Installed components are reported by the local backend. Remote extension installation is unavailable in this release.
             </p>
           </div>
         </div>
@@ -211,18 +81,6 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
           </button>
 
           <button
-            onClick={() => setActiveTab("marketplace")}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-medium font-mono transition flex items-center space-x-2 ${
-              activeTab === "marketplace"
-                ? "bg-accent text-black font-bold"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-            }`}
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>ModStore Catalog ({marketplaceModules.length})</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab("telemetry")}
             className={`px-3.5 py-1.5 rounded-md text-xs font-medium font-mono transition flex items-center space-x-2 ${
               activeTab === "telemetry"
@@ -231,7 +89,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
-            <span>Resource Telemetry</span>
+            <span>Component Availability</span>
           </button>
         </div>
 
@@ -251,11 +109,25 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
 
       {/* Main Content Body */}
       <div className="flex-1 overflow-y-auto p-6">
-        {/* Tab 1: Installed Plugins */}
+        {error && (
+          <div role="alert" className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-100">
+            {error}
+          </div>
+        )}
+
+        <div className="mb-4 rounded-lg border border-slate-700 bg-slate-900/50 p-3 text-xs text-slate-300">
+          Extension downloads, remote registries, and runtime mounting are disabled pending signed-package and capability-isolation controls.
+        </div>
+
+        {/* Backend-reported installed components */}
         {activeTab === "installed" && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {!loading && filteredPlugins.length === 0 && (
+              <div className="col-span-full rounded-lg border border-slate-800 bg-[#0d121c] p-5 text-center text-xs text-slate-400">
+                No installed component capability is available to display.
+              </div>
+            )}
             {filteredPlugins.map((plugin) => {
-              const isToggling = togglingId === plugin.plugin_id;
               return (
                 <div
                   key={plugin.plugin_id}
@@ -295,21 +167,16 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
                   <div className="pt-4 mt-4 border-t border-surface-border/50 flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-[11px] font-mono text-slate-400">
                       <HardDrive className="w-3 h-3 text-slate-500" />
-                      <span>~{plugin.ram_footprint_mb} MB RAM</span>
+                      <span>Installed metadata</span>
                     </div>
 
-                    <button
-                      onClick={() => handleToggle(plugin.plugin_id, plugin.is_active)}
-                      disabled={isToggling}
-                      className={`flex items-center space-x-1.5 px-3 py-1 rounded text-xs font-mono font-bold transition ${
-                        plugin.is_active
-                          ? "bg-gain/20 text-gain border border-gain/40 hover:bg-gain/30"
-                          : "bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 hover:text-white"
-                      }`}
-                    >
-                      <Power className={`w-3 h-3 ${plugin.is_active ? "text-gain" : "text-slate-500"}`} />
-                      <span>{isToggling ? "Switching..." : plugin.is_active ? "ACTIVE" : "MOUNT"}</span>
-                    </button>
+                    <span className={`px-3 py-1 rounded text-xs font-mono font-bold border ${
+                      plugin.is_active
+                        ? "bg-gain/20 text-gain border-gain/40"
+                        : "bg-slate-800 text-slate-400 border-slate-700"
+                    }`}>
+                      {plugin.is_active ? "BACKEND-REPORTED ACTIVE" : "NOT ACTIVE"}
+                    </span>
                   </div>
                 </div>
               );
@@ -317,135 +184,18 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
           </div>
         )}
 
-        {/* Tab 2: ModStore Marketplace Catalog */}
-        {activeTab === "marketplace" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {marketplaceModules.map((mod) => {
-              const installedPlugin = plugins.find(
-                (p) => p.plugin_id === mod.id || p.plugin_id === `plugin_${mod.id}`
-              );
-              const isInstalled = !!installedPlugin;
-              const downloadState = downloadingModules[mod.id];
-              const isDownloading = !!downloadState && downloadState.progress < 100 && downloadState.status !== "İndirme Hatası";
-
-              return (
-                <div
-                  key={mod.id}
-                  className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 transition ${
-                    isInstalled
-                      ? "border-gain/30 bg-[#111c24]/90 shadow-md"
-                      : "border-surface-border bg-[#111724]/80 hover:border-slate-700"
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center space-x-1.5">
-                          <h3 className="font-bold text-sm text-white font-mono">{mod.name}</h3>
-                          {mod.verified && <ShieldCheck className="w-3.5 h-3.5 text-accent shrink-0" />}
-                        </div>
-                        <span className="text-[10px] font-mono text-slate-400">{mod.author}</span>
-                      </div>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                        v{mod.version}
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-slate-300">{mod.description}</p>
-                  </div>
-
-                  {/* Live Download Progress Bar */}
-                  {downloadState && (
-                    <div className="space-y-1.5 bg-[#090d14] p-2.5 rounded-lg border border-surface-border">
-                      <div className="flex justify-between text-[10px] font-mono">
-                        <span className="text-accent font-semibold">{downloadState.status}</span>
-                        <span className="text-white font-bold">{downloadState.progress}%</span>
-                      </div>
-                      <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                        <div
-                          style={{ width: `${downloadState.progress}%` }}
-                          className={`h-full transition-all duration-300 ${
-                            downloadState.progress === 100 ? "bg-gain" : "bg-accent animate-pulse"
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="pt-3 border-t border-surface-border/50 flex items-center justify-between">
-                    <div className="text-[11px] font-mono text-slate-400 space-x-2">
-                      <span>★ {mod.rating}</span>
-                      <span>• {mod.downloads} DLs</span>
-                    </div>
-
-                    {isInstalled ? (
-                      <div className="flex items-center space-x-1.5 px-3 py-1 rounded text-xs font-mono font-bold bg-gain/20 text-gain border border-gain/40">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        <span>INSTALLED</span>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleInstallModule(mod.id)}
-                        disabled={isDownloading}
-                        className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded text-xs font-mono font-bold bg-accent hover:bg-sky-400 text-black transition shadow-md active:scale-95 disabled:opacity-50"
-                      >
-                        <Download className={`w-3.5 h-3.5 ${isDownloading ? "animate-bounce" : ""}`} />
-                        <span>{isDownloading ? "İNDİRİLİYOR..." : "AKTİF ET / İNDİR"}</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Tab 3: Resource Telemetry & Footprint Gauge */}
+        {/* Reported metadata, not a measured runtime telemetry source. */}
         {activeTab === "telemetry" && (
-          <div className="space-y-6 max-w-4xl">
-            <div className="p-5 rounded-xl border border-surface-border bg-[#111724] space-y-4">
+          <div className="max-w-4xl">
+            <div className="p-5 rounded-xl border border-surface-border bg-[#111724] space-y-3">
               <h2 className="text-sm font-bold font-mono text-white flex items-center space-x-2">
-                <Cpu className="w-4 h-4 text-accent" />
-                <span>Desktop Core Dynamic Memory Footprint</span>
+                <Activity className="w-4 h-4 text-accent" />
+                <span>Component Availability</span>
               </h2>
-
-              {/* Progress / Gauge Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-400">Total Allocated Dynamic RAM</span>
-                  <span className="text-accent font-bold">{totalEstimatedRamMb} MB / 2048 MB Limit</span>
-                </div>
-                <div className="w-full bg-[#0a0d14] h-4 rounded-full overflow-hidden border border-surface-border flex">
-                  <div
-                    style={{ width: `${(baseCoreRamMb / 2048) * 100}%` }}
-                    className="bg-purple-500 h-full"
-                    title={`Base Core: ${baseCoreRamMb} MB`}
-                  />
-                  <div
-                    style={{ width: `${(activePluginsRamMb / 2048) * 100}%` }}
-                    className="bg-accent h-full"
-                    title={`Active Plugins: ${activePluginsRamMb} MB`}
-                  />
-                </div>
-                <div className="flex items-center space-x-4 text-[10px] font-mono text-slate-400 pt-1">
-                  <div className="flex items-center space-x-1.5">
-                    <div className="w-2.5 h-2.5 rounded bg-purple-500" />
-                    <span>Base Micro-Kernel ({baseCoreRamMb} MB)</span>
-                  </div>
-                  <div className="flex items-center space-x-1.5">
-                    <div className="w-2.5 h-2.5 rounded bg-accent" />
-                    <span>Active Subsystems (+{activePluginsRamMb} MB)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Plugin Memory Breakdown Table */}
-            <div className="rounded-xl border border-surface-border overflow-hidden bg-[#111724]">
-              <div className="p-4 border-b border-surface-border font-mono text-xs font-bold text-white">
-                Subsystem Allocation Breakdown
-              </div>
-              <div className="divide-y divide-surface-border">
+              <p className="text-xs text-slate-400">
+                Status below is supplied by the local backend. Memory footprints are not measured telemetry and are intentionally not displayed.
+              </p>
+              <div className="divide-y divide-surface-border rounded border border-surface-border overflow-hidden">
                 {plugins.map((p) => (
                   <div key={p.plugin_id} className="p-3 flex items-center justify-between text-xs font-mono">
                     <div className="flex items-center space-x-2.5">
@@ -455,13 +205,12 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
                       </span>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <span className="text-slate-400">~{p.ram_footprint_mb} MB</span>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded font-bold ${
                           p.is_active ? "bg-gain/20 text-gain" : "bg-slate-800 text-slate-500"
                         }`}
                       >
-                        {p.is_active ? "LOADED" : "UNLOADED"}
+                        {p.is_active ? "BACKEND-REPORTED ACTIVE" : "NOT ACTIVE"}
                       </span>
                     </div>
                   </div>

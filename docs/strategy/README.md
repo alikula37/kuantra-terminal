@@ -23,6 +23,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP06A | [Replay ve excursion veri doğruluğu](./work-packages/P0-WP06A-replay-excursion-truth.md) | Verified | `d517c34` | 2026-09-06 |
 | P0-WP06B | [Order-flow/L2/FIX truth boundary](./work-packages/P0-WP06B-orderflow-fix-truth.md) | Verified | `1cfd778` + `564beed` | 2026-09-06 |
 | P0-WP07 | [Credential ve OS keychain truth boundary](./work-packages/P0-WP07-credential-keychain-boundary.md) | Verified | `a09ad80` | 2026-09-06 |
+| P0-WP08 | [Experimental capability containment](./work-packages/P0-WP08-experimental-containment.md) | Active | Working tree | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -66,3 +67,5 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   ve metadata tutuyor, keychain yoksa credential yazma fail-closed oluyor.
 - P0-WP06B follow-up `564beed` ile transport'suz FIX çağrıları risk state'inden önce
   disabled oluyor ve router testleri kalıcı compliance verisinden ayrıştırılıyor.
+- P0-WP08 ile unsigned plugin download/runtime mount kapatıldı; AI/DEX/biometric/MCP,
+  adapter ve reverse deploy yüzeyleri 503/fail-closed sözleşmesine taşınıyor.

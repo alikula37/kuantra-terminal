@@ -22,21 +22,29 @@ class MultiAssetManager:
             "polygon": polygon_adapter,
             "mt5": mt5_adapter
         }
-        # Initialize MT5
-        mt5_adapter.initialize()
+        # Never initialize a mock-connected adapter at import time.  A future
+        # connector owns its explicit session lifecycle.
 
     def get_all_statuses(self) -> Dict[str, Any]:
         return {
             "twelvedata": {
-                "active_subscriptions": twelvedata_adapter.active_subscriptions,
-                "supported": twelvedata_adapter.SUPPORTED_PAIRS
+                "status": "EXPERIMENTAL_DISABLED",
+                "capability": "twelvedata_connector",
+                "provenance": "UNVERIFIED_ADAPTER",
+                "active_subscriptions": [],
+                "supported": twelvedata_adapter.SUPPORTED_PAIRS,
+                "transport_connected": False,
             },
             "polygon": {
-                "active_subscriptions": polygon_adapter.active_subscriptions,
-                "supported": polygon_adapter.SUPPORTED_TICKERS
+                "status": "EXPERIMENTAL_DISABLED",
+                "capability": "polygon_connector",
+                "provenance": "UNVERIFIED_ADAPTER",
+                "active_subscriptions": [],
+                "supported": polygon_adapter.SUPPORTED_TICKERS,
+                "transport_connected": False,
             },
             "mt5": mt5_adapter.get_account_summary(),
-            "total_supported_assets": len(twelvedata_adapter.SUPPORTED_PAIRS) + len(polygon_adapter.SUPPORTED_TICKERS)
+            "total_supported_assets": 0,
         }
 
     def ingest_candle_to_duckdb(

@@ -23,7 +23,7 @@ class SettingsService:
         "user_initial_balance": 0.0,
         "initial_balance": 0.0,
         "paper_balance": 0.0,
-        "ai_mode": "local_gguf"
+        "ai_mode": "disabled"
     }
 
     def get_settings(self) -> Dict[str, Any]:
@@ -48,6 +48,12 @@ class SettingsService:
                     settings[k] = v
             else:
                 settings[k] = v
+
+        # Do not surface the retired downloader/mock mode as an available AI
+        # capability.  Existing local profiles migrate to an honest disabled
+        # state on read; no data loss is involved because no model was loaded.
+        if settings.get("ai_mode") == "local_gguf":
+            settings["ai_mode"] = "disabled"
 
         return settings
 

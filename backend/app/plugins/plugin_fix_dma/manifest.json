@@ -1,11 +1,14 @@
 {
   "plugin_id": "plugin_fix_dma",
-  "name": "Institutional FIX 4.4 / 5.0 SP2 & Limit Order Book",
+  "name": "FIX/DMA Wire Research (Experimental — disabled)",
   "version": "1.1.0",
   "category": "Institutional FIX & DMA",
-  "description": "Sub-10µs Limit Order Book (MBO/MBP) with institutional FIX 4.4 / 5.0 SP2 Direct Market Access gateway.",
+  "description": "Wire-format and order-book research only; no certified transport, venue logon, or latency SLA.",
   "heavy_dependencies": ["quickfix"],
   "router_prefix": "/api/v1/plugins/fix-dma",
   "ram_footprint_mb": 28.0,
-  "persona_tags": ["institutional", "full"]
+  "persona_tags": ["experimental"],
+  "lifecycle": "EXPERIMENTAL_DISABLED",
+  "execution_authority": false,
+  "provenance": "FIX_SERIALIZATION_ONLY"
 }

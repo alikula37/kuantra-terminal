@@ -24,19 +24,14 @@ class TestModStoreFrontendSync:
         assert "personas" in data
         personas = data["personas"]
 
-        # 2. Verify all 5 personas match frontend specifications
+        # 2. Only production-safe personas are exposed.
         assert "kuantra_lite" in personas
         assert "kuantra_quant" in personas
-        assert "kuantra_defai" in personas
-        assert "kuantra_institutional" in personas
-        assert "full" in personas
+        assert set(personas) == {"kuantra_lite", "lite", "kuantra_quant", "quant"}
 
         # 3. Assert plugin mapping integrity
         assert len(personas["kuantra_lite"]) == 0
-        assert "plugin_quant_shield" in personas["kuantra_quant"]
-        assert "plugin_ai_swarm" in personas["kuantra_defai"]
-        assert "plugin_fix_dma" in personas["kuantra_institutional"]
-        assert len(personas["full"]) >= 8
+        assert personas["kuantra_quant"] == []
 
     def test_plugin_hot_toggle_and_manifest_integrity(self, client_and_manager):
         client, manager, app = client_and_manager
@@ -55,29 +50,15 @@ class TestModStoreFrontendSync:
             assert isinstance(p["heavy_dependencies"], list)
             assert p["ram_footprint_mb"] > 0
 
-        # 2. Test hot toggle via REST endpoint
-        # Mount plugin_ai_swarm
+        # 2. Runtime mounting remains unavailable until signed sandbox support.
         res_enable = client.post("/api/v1/plugins/toggle", json={
             "plugin_id": "plugin_ai_swarm",
             "enable": True
         })
-        assert res_enable.status_code == 200
-        assert res_enable.json()["status"] in ("ACTIVATED", "ALREADY_ACTIVE")
+        assert res_enable.status_code == 503
+        assert res_enable.json()["detail"]["status"] == "EXPERIMENTAL_DISABLED"
 
-        # Query mounted status endpoint
-        res_status = client.get("/api/v1/plugins/ai-swarm/status")
-        assert res_status.status_code == 200
-        assert res_status.json()["status"] == "ONLINE"
-
-        # Unmount plugin_ai_swarm
-        res_disable = client.post("/api/v1/plugins/toggle", json={
-            "plugin_id": "plugin_ai_swarm",
-            "enable": False
-        })
-        assert res_disable.status_code == 200
-        assert res_disable.json()["status"] in ("DEACTIVATED", "NOT_ACTIVE")
-
-        # Verify plugin is marked inactive in installed catalog
+        # Verify all installed experimental components are inactive.
         installed = client.get("/api/v1/plugins/installed").json()["plugins"]
         ai_plugin = next((p for p in installed if p["plugin_id"] == "plugin_ai_swarm"), None)
         assert ai_plugin is not None
@@ -89,10 +70,6 @@ class TestModStoreFrontendSync:
         res = client.get("/api/v1/plugins/modstore-catalog")
         assert res.status_code == 200
         data = res.json()
-        assert data["catalog_version"] in ("1.1.0", "1.2.0", "1.3.0", "1.4.0")
-        assert len(data["modules"]) >= 3
-
-        module_ids = [m["id"] for m in data["modules"]]
-        assert "mod_options_greeks" in module_ids
-        assert "mod_macro_nowcasting" in module_ids
-        assert "mod_binance_liquidation_radar" in module_ids
+        assert data["catalog_version"] == "DISABLED"
+        assert data["status"] == "EXPERIMENTAL_DISABLED"
+        assert data["modules"] == []

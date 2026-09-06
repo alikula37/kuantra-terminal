@@ -25,6 +25,7 @@ commit SHA buraya yazılır. Ayrıntılı acceptance kaydı ilgili work-package 
 | P0-WP06A Replay/MAE-MFE evidence truth | Verified | `d517c34` | 3-OS CI `34018288308` green; local backend 328 passed, 1 skipped; frontend 42 passed; build/audit pass |
 | P0-WP06B Order-flow/L2/FIX truth boundary | Verified | `1cfd778` + `564beed` | Isolated local backend 339 passed, 1 skipped; focused truth suite 30 passed; frontend 45 passed; i18n 480/480; push `34022495908` + PR `34022498837` green on 3 OS |
 | P0-WP07 Credential/OS keychain truth boundary | Verified | `a09ad80` | Isolated local backend 339 passed, 1 skipped; frontend 45 passed; i18n 480/480; build/audit pass; push `34021489108` + PR `34021491017` green on 3 OS |
+| P0-WP08 Experimental capability containment | Active | Working tree | Isolated backend 343 passed, 1 skipped; frontend 49 passed; i18n 480/480; build pass; CI pending |
 
 ## Aktif güvenlik durumu
 
@@ -43,6 +44,6 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Sıradaki sıra
 
-1. P0-WP08 — Experimental yüzeylerin default UI/API'dan kaldırılması.
+1. P0-WP08 — Experimental yüzeylerin default UI/API'dan kaldırılması (aktif).
 2. P0-WP09 — README/release claim ve CI truth matrix.
 3. P0-WP10 — Üç platform packaging/smoke ve Faz 0 exit audit.

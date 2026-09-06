@@ -26,7 +26,7 @@ def temp_plugins_dir(tmp_path):
 async def test_modstore_downloader_offline_registry_and_verification(temp_plugins_dir, tmp_path):
     downloader = ModStoreDownloader(target_dir=temp_plugins_dir)
     
-    # 1. Unconfigured / offline registry returns honest REGISTRY_OFFLINE status
+    # 1. Production runtime is closed before any remote URL is touched.
     res = await downloader.download_and_install(
         plugin_id="mod_test_analytics",
         download_url=None,
@@ -36,11 +36,12 @@ async def test_modstore_downloader_offline_registry_and_verification(temp_plugin
 
     assert res["success"] is False
     assert res["task_id"] == "test_task_1"
-    assert res["status"] == "REGISTRY_OFFLINE"
+    assert res["status"] == "EXPERIMENTAL_DISABLED"
+    assert res["execution_authority"] is False
 
     status = downloader.get_task_status("test_task_1")
     assert status is not None
-    assert status["status"] == "offline_registry"
+    assert status["status"] == "experimental_disabled"
 
     # 2. Authentic SHA-256 verification test
     dummy_bundle = tmp_path / "bundle.kmod"
@@ -57,21 +58,13 @@ def test_modstore_catalog_and_download_endpoints():
     assert cat_res.status_code == 200
     data = cat_res.json()
     assert "modules" in data
-    assert len(data["modules"]) >= 4
+    assert data["status"] == "EXPERIMENTAL_DISABLED"
+    assert data["modules"] == []
 
-    # 2. Test queueing download
+    # 2. Remote download is fail-closed until signed registry support exists.
     dl_res = client.post(
         "/api/v1/plugins/download",
         json={"plugin_id": "mod_options_greeks"}
     )
-    assert dl_res.status_code == 200
-    dl_data = dl_res.json()
-    assert dl_data["status"] == "QUEUED"
-    assert "task_id" in dl_data
-
-    task_id = dl_data["task_id"]
-    status_res = client.get(f"/api/v1/plugins/download-status/{task_id}")
-    assert status_res.status_code == 200
-    status_data = status_res.json()
-    assert "status" in status_data
-    assert "progress_percent" in status_data
+    assert dl_res.status_code == 503
+    assert dl_res.json()["detail"]["status"] == "EXPERIMENTAL_DISABLED"

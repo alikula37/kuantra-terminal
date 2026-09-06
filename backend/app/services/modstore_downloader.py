@@ -16,6 +16,7 @@ from typing import Dict, Any, Optional, Callable
 from pathlib import Path
 
 from app.core.paths import BACKEND_ROOT
+from app.core.availability import experimental_disabled_response, is_explicit_experimental_mode
 from app.services.plugin_manager import plugin_manager
 
 logger = logging.getLogger("modstore_downloader")
@@ -52,6 +53,29 @@ class ModStoreDownloader:
         Asynchronously downloads, verifies, extracts, and mounts a remote plugin from a verified registry.
         """
         tid = task_id or str(uuid.uuid4())[:8]
+        if not is_explicit_experimental_mode():
+            disabled = experimental_disabled_response(
+                "plugin_marketplace_download",
+                reason="SIGNED_REGISTRY_NOT_AVAILABLE",
+                message="Remote plugin download and in-process activation are disabled in this release.",
+                provenance="UNVERIFIED_PLUGIN",
+            )
+            self._tasks[tid] = {
+                "task_id": tid,
+                "plugin_id": plugin_id,
+                "status": "experimental_disabled",
+                "progress_percent": 0,
+                "bytes_downloaded": 0,
+                "total_bytes": 0,
+                "error": disabled["reason"],
+            }
+            return {
+                "success": False,
+                "task_id": tid,
+                "plugin_id": plugin_id,
+                **disabled,
+            }
+
         self._tasks[tid] = {
             "task_id": tid,
             "plugin_id": plugin_id,

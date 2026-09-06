@@ -20,7 +20,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.version,
-        description="High-frequency Quant Analytics & Real-time Trading Terminal Backend",
+        description="Local-first Trade Forensics & Execution Intelligence Backend (live execution experimental/disabled)",
         lifespan=lifespan
     )
 

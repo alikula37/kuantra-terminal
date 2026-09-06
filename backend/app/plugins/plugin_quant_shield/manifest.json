@@ -1,11 +1,14 @@
 {
   "plugin_id": "plugin_quant_shield",
-  "name": "Quantitative Risk & Prop Firm Drawdown Shield",
+  "name": "Quant Risk Research (Experimental — disabled)",
   "version": "1.1.0",
   "category": "Quant & Risk",
-  "description": "Calculates real-time MAE/MFE, SQN, Sharpe/Sortino, and enforces multi-stage Prop Firm Drawdown protection.",
+  "description": "Research analytics surface; core journal analytics remain available without dynamic plugin activation.",
   "heavy_dependencies": ["duckdb", "numpy"],
   "router_prefix": "/api/v1/plugins/quant-shield",
   "ram_footprint_mb": 18.5,
-  "persona_tags": ["quant", "institutional", "full"]
+  "persona_tags": ["experimental"],
+  "lifecycle": "EXPERIMENTAL_DISABLED",
+  "execution_authority": false,
+  "provenance": "RECORDED_JOURNAL_ONLY"
 }

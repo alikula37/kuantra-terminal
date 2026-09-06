@@ -1,11 +1,14 @@
 {
   "plugin_id": "plugin_mcp_gateway",
-  "name": "Financial Model Context Protocol (MCP) Gateway",
+  "name": "MCP Source Research (Experimental — disabled)",
   "version": "1.1.0",
   "category": "Financial MCP",
-  "description": "Institutional MCP gateway integrating SEC 10-K filings, CryptoPanic sentiment NLP, and Treasury macro feeds.",
+  "description": "Prototype source adapter; no verified external retrieval or citation provenance.",
   "heavy_dependencies": ["httpx"],
   "router_prefix": "/api/v1/plugins/mcp",
   "ram_footprint_mb": 12.0,
-  "persona_tags": ["defai", "full"]
+  "persona_tags": ["experimental"],
+  "lifecycle": "EXPERIMENTAL_DISABLED",
+  "execution_authority": false,
+  "provenance": "UNVERIFIED_SOURCE"
 }

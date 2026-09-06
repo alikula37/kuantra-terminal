@@ -7,7 +7,13 @@ persona batch switching, and ModStore marketplace discovery.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from app.services.plugin_manager import plugin_manager, PERSONA_PROFILES
+from app.core.availability import experimental_disabled_exception
+from app.services.plugin_manager import (
+    plugin_manager,
+    PERSONA_PROFILES,
+    ExperimentalPersonaDisabledError,
+    ExperimentalPluginDisabledError,
+)
 
 router = APIRouter(prefix="/plugins", tags=["Plugins & ModStore"])
 
@@ -35,6 +41,13 @@ async def toggle_plugin_endpoint(payload: PluginTogglePayload):
         return res
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ExperimentalPluginDisabledError as e:
+        raise experimental_disabled_exception(
+            "plugin_runtime",
+            reason="UNSIGNED_PLUGIN_REGISTRY_NOT_AVAILABLE",
+            message=str(e),
+            provenance="UNVERIFIED_PLUGIN",
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to toggle plugin: {str(e)}")
 
@@ -46,12 +59,19 @@ async def apply_persona_endpoint(payload: PersonaApplyPayload):
         return res
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except ExperimentalPersonaDisabledError as e:
+        raise experimental_disabled_exception(
+            "experimental_persona",
+            reason="EXPERIMENTAL_PERSONA_DISABLED",
+            message=str(e),
+            provenance="UNVERIFIED_PLUGIN",
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to apply persona: {str(e)}")
 
 @router.get("/personas")
 def list_available_personas():
-    """Returns all supported persona profiles and their corresponding plugin IDs."""
+    """Returns production-safe persona profiles only."""
     return {
         "current_persona": plugin_manager._active_persona,
         "personas": PERSONA_PROFILES
@@ -59,57 +79,16 @@ def list_available_personas():
 
 @router.get("/modstore-catalog")
 def get_modstore_catalog():
-    """Returns curated ModStore marketplace catalog of verified institutional modules and remote extensions."""
-    catalog = [
-        {
-            "id": "mod_options_greeks",
-            "name": "Options Analytics & Live Black-Scholes Greeks",
-            "category": "Derivatives",
-            "version": "1.0.0",
-            "author": "Kuantra Institutional",
-            "description": "Volatility smile, Delta/Gamma/Vega/Theta surface visualizer with options calculation models.",
-            "status": "Available on-demand / Remote Registry",
-            "verified": True,
-            "installed": False
-        },
-        {
-            "id": "mod_macro_nowcasting",
-            "name": "Global Macro Nowcasting & Central Bank Sentiment",
-            "category": "Macro & NLP",
-            "version": "1.0.0",
-            "author": "Kuantra Research",
-            "description": "Automated central bank speech parser and economic indicator nowcasting engine.",
-            "status": "Available on-demand / Remote Registry",
-            "verified": True,
-            "installed": False
-        },
-        {
-            "id": "mod_binance_liquidation_radar",
-            "name": "High-Density Liquidation Heatmap & Cascade Hunter",
-            "category": "Order Flow",
-            "version": "1.0.0",
-            "author": "Community Verified",
-            "description": "Liquidation volume cluster detector and cascading squeeze event monitor.",
-            "status": "Available on-demand / Remote Registry",
-            "verified": True,
-            "installed": False
-        },
-        {
-            "id": "mod_hft_tick_compressor",
-            "name": "ZSTD High-Frequency Tick Database Compressor",
-            "category": "Storage",
-            "version": "1.0.0",
-            "author": "Kuantra Infrastructure",
-            "description": "Lossless column-oriented tick archival achieving high-density storage compression.",
-            "status": "Available on-demand / Remote Registry",
-            "verified": True,
-            "installed": False
-        }
-    ]
+    """Returns an explicit empty catalog until signed registry support exists."""
     return {
-        "catalog_version": "1.4.0",
-        "total_available": len(catalog),
-        "modules": catalog
+        "catalog_version": "DISABLED",
+        "status": "EXPERIMENTAL_DISABLED",
+        "capability": "plugin_marketplace",
+        "provenance": "UNVERIFIED_PLUGIN",
+        "reason": "SIGNED_REGISTRY_NOT_AVAILABLE",
+        "execution_authority": False,
+        "total_available": 0,
+        "modules": []
     }
 
 class DownloadPluginRequest(BaseModel):
@@ -119,24 +98,13 @@ class DownloadPluginRequest(BaseModel):
 
 @router.post("/download")
 async def download_plugin_endpoint(req: DownloadPluginRequest):
-    """Initiates an asynchronous download and dynamic mounting task for a remote .kmod plugin."""
-    from app.services.modstore_downloader import modstore_downloader
-    from app.core.background import fire_and_forget
-    import uuid
-    task_id = str(uuid.uuid4())[:8]
-    fire_and_forget(
-        modstore_downloader.download_and_install,
-        plugin_id=req.plugin_id,
-        download_url=req.download_url,
-        expected_sha256=req.expected_sha256,
-        task_id=task_id
+    """Remote plugin download is closed until a signed sandbox registry exists."""
+    raise experimental_disabled_exception(
+        "plugin_marketplace_download",
+        reason="SIGNED_REGISTRY_NOT_AVAILABLE",
+        message="Remote plugin download and in-process activation are disabled in this release.",
+        provenance="UNVERIFIED_PLUGIN",
     )
-    return {
-        "status": "QUEUED",
-        "task_id": task_id,
-        "plugin_id": req.plugin_id,
-        "message": f"Plugin download task '{task_id}' queued successfully."
-    }
 
 @router.get("/download-status/{task_id}")
 def get_download_status_endpoint(task_id: str):

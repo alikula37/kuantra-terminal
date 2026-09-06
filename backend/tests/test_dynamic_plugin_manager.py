@@ -4,7 +4,12 @@ from fastapi.testclient import TestClient
 from main import create_app
 from app.core.plugins import PluginMetadata, BasePlugin
 from app.core.lazy_loader import lazy_loader
-from app.services.plugin_manager import plugin_manager, DynamicPluginManager, PERSONA_PROFILES
+from app.services.plugin_manager import (
+    plugin_manager,
+    DynamicPluginManager,
+    ExperimentalPersonaDisabledError,
+    ExperimentalPluginDisabledError,
+)
 
 class TestDynamicPluginManagerAndMicroKernel:
     """Test suite for Micro-Kernel Core, Dynamic Route Mutation, Lazy Loader, and ModStore."""
@@ -19,28 +24,11 @@ class TestDynamicPluginManagerAndMicroKernel:
     def test_plugin_dynamic_mount_and_unmount(self, client_and_manager):
         client, manager, app = client_and_manager
 
-        # Verify initial state of plugin_quant_shield
-        initial_routes_count = len(app.router.routes)
-        
-        # 1. Activate plugin
-        act_res = asyncio.run(manager.activate_plugin("plugin_quant_shield"))
-        assert act_res["status"] in ("ACTIVATED", "ALREADY_ACTIVE")
-        assert len(app.router.routes) > initial_routes_count
-
-        # 2. Test mounted endpoint
-        res = client.get("/api/v1/plugins/quant-shield/status")
-        assert res.status_code == 200
-        data = res.json()
-        assert data["status"] == "ONLINE"
-        assert data["shield_active"] is True
-
-        # 3. Deactivate plugin
-        deact_res = asyncio.run(manager.deactivate_plugin("plugin_quant_shield"))
-        assert deact_res["status"] == "DEACTIVATED"
-
-        # 4. Verify route is removed (returns 404)
-        res_after = client.get("/api/v1/plugins/quant-shield/status")
-        assert res_after.status_code == 404
+        # Dynamic plugin execution is closed until signed registry and sandbox
+        # controls exist; no route may be mounted from a bundled plugin.
+        with pytest.raises(ExperimentalPluginDisabledError):
+            asyncio.run(manager.activate_plugin("plugin_quant_shield"))
+        assert client.get("/api/v1/plugins/quant-shield/status").status_code == 404
 
     def test_lazy_dependency_loading_and_cleanup(self):
         # 1. Lazy load a plugin module
@@ -65,16 +53,11 @@ class TestDynamicPluginManagerAndMicroKernel:
         assert res_lite["persona"] == "kuantra_lite"
         assert len(res_lite["active_plugins"]) == 0
 
-        # 2. Apply kuantra_defai
-        res_defai = asyncio.run(manager.apply_persona("kuantra_defai"))
-        assert res_defai["status"] == "PERSONA_APPLIED"
-        assert "plugin_ai_swarm" in res_defai["active_plugins"]
-        assert "plugin_dex_arbitrage" in res_defai["active_plugins"]
-
-        # 3. Apply full persona
-        res_full = asyncio.run(manager.apply_persona("full"))
-        assert res_full["status"] == "PERSONA_APPLIED"
-        assert len(res_full["active_plugins"]) >= 6
+        # Prototype personas never become a normal success path.
+        with pytest.raises(ExperimentalPersonaDisabledError):
+            asyncio.run(manager.apply_persona("kuantra_defai"))
+        with pytest.raises(ExperimentalPersonaDisabledError):
+            asyncio.run(manager.apply_persona("full"))
 
     def test_modstore_and_plugin_api_endpoints(self, client_and_manager):
         client, manager, app = client_and_manager
@@ -86,24 +69,24 @@ class TestDynamicPluginManagerAndMicroKernel:
         assert inst_data["total_plugins"] >= 8
         assert "plugins" in inst_data
 
-        # 2. POST /api/v1/plugins/toggle
+        # 2. POST /api/v1/plugins/toggle — unsigned runtime mounting is closed.
         res_tog = client.post("/api/v1/plugins/toggle", json={
             "plugin_id": "plugin_orderflow",
             "enable": True
         })
-        assert res_tog.status_code == 200
+        assert res_tog.status_code == 503
+        assert res_tog.json()["detail"]["status"] == "EXPERIMENTAL_DISABLED"
 
-        # 3. POST /api/v1/plugins/apply-persona
+        # 3. POST /api/v1/plugins/apply-persona — only core personas are listed.
         res_pers = client.post("/api/v1/plugins/apply-persona", json={
             "persona": "kuantra_institutional"
         })
-        assert res_pers.status_code == 200
-        pers_data = res_pers.json()
-        assert pers_data["persona"] == "kuantra_institutional"
+        assert res_pers.status_code == 503
+        assert res_pers.json()["detail"]["status"] == "EXPERIMENTAL_DISABLED"
 
         # 4. GET /api/v1/plugins/modstore-catalog
         res_cat = client.get("/api/v1/plugins/modstore-catalog")
         assert res_cat.status_code == 200
         cat_data = res_cat.json()
-        assert cat_data["total_available"] >= 3
-        assert len(cat_data["modules"]) >= 3
+        assert cat_data["total_available"] == 0
+        assert cat_data["modules"] == []

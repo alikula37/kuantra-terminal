@@ -1,11 +1,14 @@
 {
   "plugin_id": "plugin_ai_swarm",
-  "name": "Multi-Agent AI Swarm & Local GPU Inference",
+  "name": "AI Swarm (Experimental — disabled)",
   "version": "1.1.0",
   "category": "AI & Swarm",
-  "description": "Sub-50ms Multi-Agent Quant Swarm consensus with CUDA/Metal VRAM layer offloading.",
+  "description": "Prototype research surface; no verified model sidecar, telemetry, or execution authority.",
   "heavy_dependencies": ["torch", "llama_cpp"],
   "router_prefix": "/api/v1/plugins/ai-swarm",
   "ram_footprint_mb": 45.0,
-  "persona_tags": ["defai", "institutional", "full"]
+  "persona_tags": ["experimental"],
+  "lifecycle": "EXPERIMENTAL_DISABLED",
+  "execution_authority": false,
+  "provenance": "SYNTHETIC_MODEL"
 }

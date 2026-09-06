@@ -72,20 +72,21 @@ class TestPhase11TradingViewAndMultiAsset:
         tick = twelvedata_adapter.parse_tick({"symbol": "EUR/USD", "price": 1.0875, "bid": 1.0874, "ask": 1.0876})
         assert tick["symbol"] == "EURUSD"
         assert tick["price"] == 1.0875
-        assert tick["source"] == "TWELVEDATA"
+        assert tick["source"] == "UNVERIFIED_ADAPTER"
 
         # 2. Polygon.io
         trade = polygon_adapter.parse_trade({"sym": "NVDA", "p": 129.20, "s": 250})
         assert trade["symbol"] == "NVDA"
         assert trade["price"] == 129.20
         assert trade["size"] == 250
-        assert trade["source"] == "POLYGON_IO"
+        assert trade["source"] == "UNVERIFIED_ADAPTER"
 
         # 3. MetaTrader 5
         quote = mt5_adapter.get_symbol_quote("XAUUSD")
         assert quote["symbol"] == "XAUUSD"
-        assert quote["bid"] > 0
-        assert quote["source"] == "METATRADER_5"
+        assert quote["bid"] is None
+        assert quote["source"] == "UNVERIFIED_ADAPTER"
+        assert quote["status"] == "EXPERIMENTAL_DISABLED"
 
         statuses = multi_asset_manager.get_all_statuses()
         assert "twelvedata" in statuses

@@ -31,33 +31,20 @@ export interface PluginContribution {
 export const PERSONA_PLUGIN_MAP: Record<string, string[]> = {
   lite: [],
   kuantra_lite: [],
-  quant: ["plugin_quant_shield", "plugin_orderflow", "plugin_duckdb", "plugin_backtester"],
-  kuantra_quant: ["plugin_quant_shield", "plugin_orderflow", "plugin_duckdb", "plugin_backtester"],
-  defai: ["plugin_dex_arbitrage", "plugin_ai_swarm", "plugin_mcp_gateway", "plugin_reverse_skill"],
-  kuantra_defai: ["plugin_dex_arbitrage", "plugin_ai_swarm", "plugin_mcp_gateway", "plugin_reverse_skill"],
-  institutional: ["plugin_fix_dma", "plugin_biometrics", "plugin_orderflow", "plugin_p2p_copy", "plugin_quant_shield", "plugin_ai_swarm", "plugin_reverse_skill"],
-  kuantra_institutional: ["plugin_fix_dma", "plugin_biometrics", "plugin_orderflow", "plugin_p2p_copy", "plugin_quant_shield", "plugin_ai_swarm", "plugin_reverse_skill"],
-  full: [
-    "plugin_quant_shield",
-    "plugin_orderflow",
-    "plugin_ai_swarm",
-    "plugin_mcp_gateway",
-    "plugin_reverse_skill",
-    "plugin_dex_arbitrage",
-    "plugin_fix_dma",
-    "plugin_biometrics"
-  ],
-  kuantra_full: [
-    "plugin_quant_shield",
-    "plugin_orderflow",
-    "plugin_ai_swarm",
-    "plugin_mcp_gateway",
-    "plugin_reverse_skill",
-    "plugin_dex_arbitrage",
-    "plugin_fix_dma",
-    "plugin_biometrics"
-  ]
+  // Quant is intentionally limited to the deterministic risk/journal extension.
+  // Order flow and every execution/AI extension remain experimental until the
+  // backend can prove data provenance and availability.
+  quant: ["plugin_quant_shield"],
+  kuantra_quant: ["plugin_quant_shield"]
 };
+
+export const SAFE_PERSONAS = new Set(["kuantra_lite", "kuantra_quant"]);
+// Dynamic plugin activation remains closed until signed packages and process
+// isolation exist. Quant analytics are served by core endpoints in this release.
+const PRODUCTION_PLUGIN_IDS = new Set<string>();
+
+const normalizePersona = (persona?: string | null): string =>
+  SAFE_PERSONAS.has(persona || "") ? persona! : "kuantra_lite";
 
 interface PluginRegistryContextType {
   plugins: PluginMetadata[];
@@ -84,7 +71,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [plugins, setPlugins] = useState<PluginMetadata[]>([]);
   const [activePersona, setActivePersona] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("kuantra_selected_persona") || "kuantra_lite";
+      return normalizePersona(localStorage.getItem("kuantra_selected_persona"));
     }
     return "kuantra_lite";
   });
@@ -99,127 +86,22 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
     try {
       setLoading(true);
       const res = await apiFetch(`${API_BASE()}/plugins/installed`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.plugins) {
-          setPlugins(data.plugins);
-          const persona = data.active_persona || localStorage.getItem("kuantra_selected_persona") || "kuantra_lite";
-          setActivePersona(persona);
-        }
+      if (!res.ok) {
+        throw new Error(`Plugin registry returned HTTP ${res.status}`);
       }
+
+      const data = await res.json();
+      if (!data || !Array.isArray(data.plugins)) {
+        throw new Error("Plugin registry did not return an installed-component list");
+      }
+
+      setPlugins(data.plugins);
+      setActivePersona(normalizePersona(data.active_persona || localStorage.getItem("kuantra_selected_persona")));
       setError(null);
     } catch (err: any) {
-      console.warn("[PluginRegistry] Backend unavailable, initializing fallback local plugins:", err.message);
-      const currentPersona = localStorage.getItem("kuantra_selected_persona") || "kuantra_lite";
-      const targetActiveSet = new Set(PERSONA_PLUGIN_MAP[currentPersona] || []);
-
-      // Fallback local plugins if the desktop core is still booting
-      setPlugins([
-        {
-          plugin_id: "plugin_quant_shield",
-          name: "Quantitative Risk & Prop Firm Drawdown Shield",
-          version: "1.1.0",
-          category: "Quant & Risk",
-          description: "MAE/MFE analytics, SQN, Sharpe/Sortino, and Prop Firm drawdowns.",
-          author: "Kuantra Core Team",
-          heavy_dependencies: ["duckdb", "numpy"],
-          router_prefix: "/api/v1/plugins/quant-shield",
-          is_active: targetActiveSet.has("plugin_quant_shield"),
-          ram_footprint_mb: 18.5,
-          persona_tags: ["quant", "institutional", "full"]
-        },
-        {
-          plugin_id: "plugin_orderflow",
-          name: "Order Flow Footprint & Cumulative Volume Delta",
-          version: "1.1.0",
-          category: "Order Flow",
-          description: "Real-time Order Flow Footprint with bid/ask imbalance detection.",
-          author: "Kuantra Core Team",
-          heavy_dependencies: ["numpy"],
-          router_prefix: "/api/v1/plugins/orderflow",
-          is_active: targetActiveSet.has("plugin_orderflow"),
-          ram_footprint_mb: 14.2,
-          persona_tags: ["quant", "institutional", "full"]
-        },
-        {
-          plugin_id: "plugin_ai_swarm",
-          name: "Multi-Agent AI Swarm & Local GPU Inference",
-          version: "1.1.0",
-          category: "AI & Swarm",
-          description: "Sub-50ms Multi-Agent Quant Swarm consensus with GPU acceleration.",
-          author: "Kuantra Core Team",
-          heavy_dependencies: ["torch", "llama_cpp"],
-          router_prefix: "/api/v1/plugins/ai-swarm",
-          is_active: targetActiveSet.has("plugin_ai_swarm"),
-          ram_footprint_mb: 45.0,
-          persona_tags: ["defai", "institutional", "full"]
-        },
-        {
-          plugin_id: "plugin_mcp_gateway",
-          name: "Financial Model Context Protocol (MCP) Gateway",
-          version: "1.1.0",
-          category: "Financial MCP",
-          description: "SEC 10-K filings, CryptoPanic sentiment NLP, and Treasury macro feeds.",
-          author: "Kuantra Core Team",
-          heavy_dependencies: ["httpx"],
-          router_prefix: "/api/v1/plugins/mcp",
-          is_active: targetActiveSet.has("plugin_mcp_gateway"),
-          ram_footprint_mb: 12.0,
-          persona_tags: ["defai", "full"]
-        },
-        {
-          plugin_id: "plugin_reverse_skill",
-          name: "Reverse-Skill Strategy & Pine Script AST Transpiler",
-          version: "1.1.0",
-          category: "Transpiler & Strategy",
-          description: "Transpiles Pine Script v4/v5 into Python Swarm Agents.",
-          author: "Kuantra Core Team",
-          heavy_dependencies: [],
-          router_prefix: "/api/v1/plugins/reverse-skill",
-          is_active: targetActiveSet.has("plugin_reverse_skill"),
-          ram_footprint_mb: 8.5,
-          persona_tags: ["institutional", "full"]
-        },
-        {
-          plugin_id: "plugin_dex_arbitrage",
-          name: "Cross-DEX Flash Loan Arbitrage & MEV Protection",
-          version: "1.1.0",
-          category: "DeFi & MEV",
-          description: "Multi-chain RPC gateway, Bellman-Ford negative cycle pathfinding.",
-          author: "Kuantra Core Team",
-          heavy_dependencies: ["web3"],
-          router_prefix: "/api/v1/plugins/dex-arbitrage",
-          is_active: targetActiveSet.has("plugin_dex_arbitrage"),
-          ram_footprint_mb: 22.0,
-          persona_tags: ["defai", "full"]
-        },
-        {
-          plugin_id: "plugin_fix_dma",
-          name: "Institutional FIX 4.4 / 5.0 SP2 & Limit Order Book",
-          version: "1.1.0",
-          category: "Institutional FIX & DMA",
-          description: "Sub-10µs Limit Order Book with CME FIX gateway.",
-          author: "Kuantra Core Team",
-          heavy_dependencies: ["quickfix"],
-          router_prefix: "/api/v1/plugins/fix-dma",
-          is_active: targetActiveSet.has("plugin_fix_dma"),
-          ram_footprint_mb: 28.0,
-          persona_tags: ["institutional", "full"]
-        },
-        {
-          plugin_id: "plugin_biometrics",
-          name: "Hardware Wearable Biometrics & Stress Interceptor",
-          version: "1.1.0",
-          category: "Hardware Biometrics",
-          description: "Polar H10, Garmin, and Empatica E4 BLE telemetry with S_bio lockout.",
-          author: "Kuantra Core Team",
-          heavy_dependencies: ["bleak"],
-          router_prefix: "/api/v1/plugins/biometrics",
-          is_active: targetActiveSet.has("plugin_biometrics"),
-          ram_footprint_mb: 16.0,
-          persona_tags: ["institutional", "full"]
-        }
-      ]);
+      console.warn("[PluginRegistry] Backend unavailable; no plugin capability is asserted:", err.message);
+      setPlugins([]);
+      setError("Installed component registry is unavailable. No plugin capability is asserted.");
     } finally {
       setLoading(false);
     }
@@ -231,7 +113,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
 
   const isPluginActive = useCallback(
     (pluginId: string) => {
-      if (isLiteMode) return false;
+      if (isLiteMode || !PRODUCTION_PLUGIN_IDS.has(pluginId)) return false;
       const p = plugins.find((item) => item.plugin_id === pluginId);
       return p ? p.is_active : false;
     },
@@ -240,53 +122,48 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
 
   const togglePlugin = useCallback(
     async (pluginId: string, enable: boolean): Promise<boolean> => {
+      if (!PRODUCTION_PLUGIN_IDS.has(pluginId)) {
+        setError("Runtime extension changes are unavailable for experimental components.");
+        return false;
+      }
       try {
-        await apiFetch(`${API_BASE()}/plugins/toggle`, {
+        const res = await apiFetch(`${API_BASE()}/plugins/toggle`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plugin_id: pluginId, enable })
         });
-        setPlugins((prev) =>
-          prev.map((p) => (p.plugin_id === pluginId ? { ...p, is_active: enable } : p))
-        );
+        if (!res.ok) throw new Error(`Plugin toggle returned HTTP ${res.status}`);
+        await fetchPlugins();
         return true;
       } catch (err) {
         console.error(`Failed to toggle plugin ${pluginId}:`, err);
-        // Optimistic toggle fallback
-        setPlugins((prev) =>
-          prev.map((p) => (p.plugin_id === pluginId ? { ...p, is_active: enable } : p))
-        );
-        return true;
+        setError("Plugin state could not be verified; no local state was changed.");
+        return false;
       }
     },
-    []
+    [fetchPlugins]
   );
 
   const applyPersona = useCallback(
     async (persona: string): Promise<boolean> => {
+      if (!SAFE_PERSONAS.has(persona)) {
+        setError("This persona is experimental and unavailable in the current release.");
+        return false;
+      }
       try {
-        localStorage.setItem("kuantra_selected_persona", persona);
-        setActivePersona(persona);
-
-        // Immediate optimistic synchronization of all plugin states
-        const targetActiveSet = new Set(PERSONA_PLUGIN_MAP[persona] || []);
-        setPlugins((prev) =>
-          prev.map((p) => ({
-            ...p,
-            is_active: targetActiveSet.has(p.plugin_id)
-          }))
-        );
-
-        await apiFetch(`${API_BASE()}/plugins/apply-persona`, {
+        const res = await apiFetch(`${API_BASE()}/plugins/apply-persona`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ persona })
         });
-        
+        if (!res.ok) throw new Error(`Persona update returned HTTP ${res.status}`);
+        localStorage.setItem("kuantra_selected_persona", persona);
+        setActivePersona(persona);
         await fetchPlugins();
         return true;
       } catch (err) {
         console.error(`Failed to apply persona ${persona}:`, err);
+        setError("Persona change could not be verified; the previous capability state was kept.");
         return false;
       }
     },
