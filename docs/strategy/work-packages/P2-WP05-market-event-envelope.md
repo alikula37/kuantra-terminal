@@ -9,7 +9,7 @@ baseline: d2a68e6
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP02 Binance Snapshot + Delta Sequence Validator, P2-WP04 Binance Depth Payload Normalization ve Venue Projection
-implementation_commits: pending
+implementation_commits: 12b27cc
 ```
 
 ## Problem
