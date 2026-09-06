@@ -565,16 +565,41 @@ class EvidenceLedgerRepository:
             expected_sequence = 1
             expected_prev_hash = GENESIS_HASH
             for row in chain_rows:
-                prefix = f"{row_account}/{row_date}/{row.get('chain_sequence')}"
+                raw_sequence = row.get("chain_sequence")
+                prefix = f"{row_account}/{row_date}/{raw_sequence}"
+                try:
+                    sequence = int(raw_sequence)
+                except (TypeError, ValueError):
+                    sequence = None
+                    errors.append(f"{prefix}: chain sequence is not an integer")
                 if row["event_type"] not in EVENT_TYPES:
                     errors.append(f"{prefix}: unsupported event type")
                 if row["chain_date_utc"] != row_date:
                     errors.append(f"{prefix}: chain date scope mismatch")
-                if row["chain_sequence"] != expected_sequence:
+                if sequence != expected_sequence:
                     errors.append(
-                        f"{prefix}: expected sequence {expected_sequence}, got {row['chain_sequence']}"
+                        f"{prefix}: expected sequence {expected_sequence}, got {raw_sequence}"
                     )
-                expected_sequence = int(row["chain_sequence"]) + 1
+                if sequence is not None:
+                    expected_sequence = sequence + 1
+                try:
+                    occurred_normalized, occurred_date = _utc_iso(
+                        row["occurred_at_utc"], "occurred_at_utc"
+                    )
+                    if occurred_normalized != row["occurred_at_utc"]:
+                        errors.append(f"{prefix}: occurred_at_utc is not normalized UTC")
+                    if occurred_date != row["chain_date_utc"]:
+                        errors.append(f"{prefix}: occurred_at_utc/day scope mismatch")
+                except EvidenceValidationError as exc:
+                    errors.append(f"{prefix}: invalid occurred_at_utc ({exc})")
+                try:
+                    received_normalized, _ = _utc_iso(
+                        row["received_at_utc"], "received_at_utc"
+                    )
+                    if received_normalized != row["received_at_utc"]:
+                        errors.append(f"{prefix}: received_at_utc is not normalized UTC")
+                except EvidenceValidationError as exc:
+                    errors.append(f"{prefix}: invalid received_at_utc ({exc})")
                 if row["prev_hash"] != expected_prev_hash:
                     errors.append(f"{prefix}: prev_hash mismatch")
                 if not _SHA256_RE.fullmatch(row["prev_hash"] or ""):
