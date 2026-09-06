@@ -9,7 +9,7 @@ baseline: 21b07ad
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP10 Injected Async Binance Depth Transport Boundary
-implementation_commits: pending
+implementation_commits: 325819a
 ```
 
 ## Problem
@@ -54,7 +54,7 @@ chain'ine bağlı değil.
 - [x] Malformed/cross-symbol/non-depth/oversized mesajlar açık hata üretiyor.
 - [x] Gerçek ağ çağrısı unit testte yok; client factory'leri inject ediliyor.
 - [x] Focused suite: `5 passed`.
-- [ ] Full backend suite: implementation commit sonrası yeniden çalıştırılacak.
+- [x] Full backend suite: `464 passed, 1 skipped`.
 - [ ] Testnet soak/reconnect/source verification promotion.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
