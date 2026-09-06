@@ -162,7 +162,9 @@ def create_parser() -> argparse.ArgumentParser:
     ledger_subparsers = p_ledger.add_subparsers(dest="ledger_command", required=True)
 
     p_backfill = ledger_subparsers.add_parser("backfill", help="Snapshot legacy trades into the append-only ledger")
-    p_backfill.add_argument("--apply", action="store_true", help="Write events; without this flag the command is dry-run")
+    backfill_mode = p_backfill.add_mutually_exclusive_group()
+    backfill_mode.add_argument("--apply", action="store_true", help="Write events")
+    backfill_mode.add_argument("--dry-run", action="store_true", help="Report planned writes without changing SQLite (default)")
     p_backfill.add_argument("--account-id", default="local-journal")
     p_backfill.add_argument("--venue", default="legacy")
     p_backfill.add_argument("--limit", type=int, default=None)

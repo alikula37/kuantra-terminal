@@ -11,6 +11,7 @@ from app.db.repositories.evidence_ledger_repo import (
     EvidenceValidationError,
 )
 from app.db.sqlite_driver import SQLiteDriver
+from app.cli import create_parser
 
 
 def _command(index: int, *, account_id: str = "acct-1"):
@@ -200,3 +201,12 @@ def test_event_type_contract_is_explicit():
     assert len(EVENT_TYPES) == 14
     assert "LegacyTradeImported" in EVENT_TYPES
     assert "SyntheticTick" not in EVENT_TYPES
+
+
+def test_explicit_backfill_cli_supports_dry_run_and_apply():
+    parser = create_parser()
+    dry_run = parser.parse_args(["evidence-ledger", "backfill", "--dry-run"])
+    apply = parser.parse_args(["evidence-ledger", "backfill", "--apply"])
+    assert dry_run.dry_run is True
+    assert dry_run.apply is False
+    assert apply.apply is True
