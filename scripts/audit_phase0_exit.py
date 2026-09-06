@@ -16,7 +16,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from check_release_truth import TruthContractError, run_checks  # noqa: E402
-from release_truth import load_matrix  # noqa: E402
+from release_truth import canonical_matrix_digest, load_matrix  # noqa: E402
 
 
 # WP06 is intentionally split into two separately accepted contracts.  Keep the
@@ -102,6 +102,8 @@ def _validate_smoke_report(path: Path, matrix: dict[str, Any]) -> dict[str, Any]
         _fail(f"smoke report {path} has no KTR-001 provenance")
     if truth.get("version") != matrix.get("version") or not SHA256_RE.fullmatch(str(truth.get("sha256", ""))):
         _fail(f"smoke report {path} has invalid truth-matrix provenance")
+    if truth.get("sha256") != canonical_matrix_digest(matrix):
+        _fail(f"smoke report {path} has a truth-matrix digest mismatch")
     if truth.get("product_version") != report.get("version"):
         _fail(f"smoke report {path} disagrees with its truth-matrix product version")
     for field in ("executable_sha256", "artifact_sha256"):

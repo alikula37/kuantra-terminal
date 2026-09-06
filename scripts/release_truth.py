@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,22 @@ def load_matrix(path: Path = DEFAULT_MATRIX_PATH) -> dict[str, Any]:
     if not isinstance(matrix, dict):
         raise TruthContractError("truth matrix root must be an object")
     return matrix
+
+
+def canonical_matrix_digest(matrix: dict[str, Any]) -> str:
+    """Return a platform-independent digest for the parsed truth matrix.
+
+    Hashing the checked-out file bytes is not stable across Git clients that apply
+    different line-ending policies.  The release contract is semantic JSON, so its
+    provenance digest must be derived from a deterministic serialization instead.
+    """
+    canonical = json.dumps(
+        matrix,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def extract_current_release_notes(

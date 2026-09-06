@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app.version import __version__  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "scripts"))
-from release_truth import DEFAULT_MATRIX_PATH, load_matrix  # noqa: E402
+from release_truth import DEFAULT_MATRIX_PATH, canonical_matrix_digest, load_matrix  # noqa: E402
 
 
 def executable() -> Path:
@@ -53,7 +53,7 @@ def enrich_report(report: dict, executable_path: Path, artifact_path: Path | Non
         "document_id": matrix["document_id"],
         "version": matrix["version"],
         "product_version": product["version"],
-        "sha256": sha256(DEFAULT_MATRIX_PATH),
+        "sha256": canonical_matrix_digest(matrix),
     }
     report["recorded_at_utc"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     return report

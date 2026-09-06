@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from scripts.release_truth import canonical_matrix_digest, load_matrix
 from scripts.smoke_desktop import enrich_report
 
 
@@ -64,4 +65,5 @@ def test_smoke_report_enrichment_binds_hashes_and_truth_matrix(tmp_path, monkeyp
     assert len(report["artifact_sha256"]) == 64
     assert report["truth_matrix"]["document_id"] == "KTR-001"
     assert report["truth_matrix"]["product_version"] == "1.4.0"
+    assert report["truth_matrix"]["sha256"] == canonical_matrix_digest(load_matrix())
     assert report["build_commit"] == "UNKNOWN"
