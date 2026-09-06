@@ -11,6 +11,7 @@ adr: ADR-0002, ADR-0003
 depends_on: P0-WP10 technical exit verified; release publication separately gated
 implementation_authority: owner_phase_transition_directive_2026-09-06
 implementation_commits: 43641e1, 25e4640
+ci_run: 34037798578
 ```
 
 ## Karar
@@ -82,7 +83,7 @@ türü kabul edilmez.
 - [x] `INSERT OR REPLACE` ledger write path'inde kullanılmaz; `trades` compatibility path'i
   bu pakette açıkça belgelenir.
 - [x] Yeni testler ephemeral `KUANTRA_DATA_DIR` ile çalışır; developer journal'ına yazmaz.
-- [ ] Backend suite, focused ledger suite, `git diff --check` ve üç-OS CI yeşildir.
+- [x] Backend suite, focused ledger suite, `git diff --check` ve üç-OS CI yeşildir.
 
 ## Implementation record
 
@@ -97,9 +98,11 @@ türü kabul edilmez.
   `python backend/app/cli.py evidence-ledger backfill --apply|--dry-run`, `verify`, `export`.
 - `backend/alembic/env.py`: explicit test/user database URL’si artık dinamik varsayılanla
   ezilmiyor; migration gerçekten hedef DB’ye uygulanıyor.
-- Focused suite: `8 passed`.
+- Focused suite: `9 passed`.
 - Full backend suite: `359 passed, 1 skipped`.
 - Code commits: `43641e1`, `25e4640`; Phase 0 evidence baseline: `a5ae737`.
+- Three-OS push CI: [34037798578](https://github.com/alikula37/kuantra-terminal/actions/runs/34037798578)
+  success; Windows job `101498954602`, macOS `101498954771`, Ubuntu `101498954772`.
 
 ## Kesinlikle kapsam dışı
 

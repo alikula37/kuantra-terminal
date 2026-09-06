@@ -91,4 +91,4 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P1-WP01 implementation `43641e1` + CLI düzeltmesi `25e4640` ile canonical SQLite `evidence_events` ledger, ortak
   runtime/Alembic schema, hash-chain verifier, duplicate/conflict kapısı, explicit legacy
   backfill/export CLI ve focused test suite eklendi. Full backend regression `359 passed,
-  1 skipped`; broker, DuckDB, UI ve AI akışlarına dokunulmadı.
+  1 skipped`; three-OS push CI `34037798578` green; broker, DuckDB, UI ve AI akışlarına dokunulmadı.
