@@ -9,7 +9,7 @@ baseline: 0f96f5b
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP07 Rotated Market Event Segments ve Manifest Recovery, P2-WP12 Bounded Binance Depth Reconnect Session
-implementation_commits: pending
+implementation_commits: c33c7ee
 ```
 
 ## Problem
