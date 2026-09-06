@@ -9,7 +9,7 @@ baseline: 9a19f61
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP14 Opt-in Binance Depth Testnet Soak Gate
-implementation_commits: pending
+implementation_commits: 845a0b4
 ```
 
 ## Problem
