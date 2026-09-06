@@ -31,6 +31,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P1-WP02 | [Atomic Journal Evidence Write Adapter](./work-packages/P1-WP02-atomic-journal-evidence-write.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP03 | [Rebuildable Trade Projection ve Tombstone](./work-packages/P1-WP03-rebuildable-trade-projection.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP04 | [Projection Read Adapter ve Coverage Gate](./work-packages/P1-WP04-projection-read-adapter.md) | Active | 1.0.0 | 2026-09-06 |
+| P1-WP05 | [Evidence-Gated DuckDB OLAP Hydration](./work-packages/P1-WP05-evidence-gated-olap-hydration.md) | Active | 1.0.0 | 2026-09-06 |
 
 ## Sürümleme kuralları
 
@@ -116,3 +117,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   quant read path'lerine bağlandı. Eksik backfill durumunda projection/legacy veri
   karıştırılmadan bütün istek compatibility fallback'e gider. Focused suite `18 passed`,
   full backend regression `372 passed, 1 skipped`.
+- P1-WP05 `7a5b596` ile DuckDB hydrator kanıtsız compatibility satırlarını OLAP'a
+  taşımayı reddediyor; eksik coverage durumunda destructive rebuild yapmadan `BLOCKED`
+  dönüyor. Legacy migration venue'ları için duplicate-safe exact coverage eklendi.
+  Focused hydration/projection suite `15 passed`, full backend regression `374 passed,
+  1 skipped`.
