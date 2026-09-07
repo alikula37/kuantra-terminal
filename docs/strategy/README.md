@@ -62,6 +62,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP18 | [Binance Depth Attestation Key Registry](./work-packages/P2-WP18-binance-depth-key-registry.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP19 | [Binance Depth Attestation Review Gate](./work-packages/P2-WP19-binance-depth-attestation-review-gate.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP20 | [Binance Depth Operator Review ve Key Policy](./work-packages/P2-WP20-binance-depth-review-record-key-policy.md) | Active | 1.0.0 | 2026-09-07 |
+| P2-WP21 | [Binance Depth Evidence Bundle ve Restore Drill](./work-packages/P2-WP21-binance-depth-evidence-bundle.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -284,3 +285,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   revoke-retention politikası fail-closed değerlendiriliyor; review kaydı
   `retention_until` taşıyor ve hiçbir truth/execution yetkisi üretmiyor.
   Focused suite `5 passed`, full backend regression `507 passed, 1 skipped`.
+- P2-WP21 ile archive, attestation, registry ve review kayıtlarını private key
+  içermeden deterministic ZIP evidence bundle'a alan, manifest/hash doğrulayan
+  ve strict restore recovery yapan akış eklendi. Focused suite `5 passed`, full
+  backend regression `512 passed, 1 skipped`.

@@ -138,6 +138,17 @@ from .binance_depth_review_record import (
     create_operator_review_record,
     verify_operator_review_record,
 )
+from .binance_depth_evidence_bundle import (
+    BUNDLE_MANIFEST_NAME,
+    EVIDENCE_BUNDLE_SCHEMA_VERSION,
+    DepthEvidenceBundleError,
+    DepthEvidenceBundleManifest,
+    DepthEvidenceBundleVerification,
+    EvidenceBundleFile,
+    create_evidence_bundle,
+    restore_evidence_bundle,
+    verify_evidence_bundle,
+)
 
 __all__ = [
     "PublicMarketDataFetcher",
@@ -238,4 +249,13 @@ __all__ = [
     "DepthReviewRecordError",
     "create_operator_review_record",
     "verify_operator_review_record",
+    "BUNDLE_MANIFEST_NAME",
+    "EVIDENCE_BUNDLE_SCHEMA_VERSION",
+    "DepthEvidenceBundleError",
+    "DepthEvidenceBundleManifest",
+    "DepthEvidenceBundleVerification",
+    "EvidenceBundleFile",
+    "create_evidence_bundle",
+    "restore_evidence_bundle",
+    "verify_evidence_bundle",
 ]
