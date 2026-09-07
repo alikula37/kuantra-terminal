@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP15
-version: 1.1.2
+version: 1.1.3
 status: Active
 date: 2026-09-07
 baseline: 9a19f61
@@ -86,6 +86,9 @@ riskini bırakıyordu.
 - 120 saniyelik V2 public testnet raporu 159 event, 0 gap ve 0 recovery cycle
   ile `VALID_TESTNET_OBSERVATION_UNVERIFIED` olarak doğrulandı; raw rapor
   SHA-256 `6A990BA2FDE2260BE357DAB8DAC2838C84696EB57BB072D3662765F6018C91B1`.
+- 300 saniyelik V2 uzun soak 401 event, 1 gap ve 1 recovery cycle sonrası
+  `STOP_EVENT_SET_DURING_BACKOFF` ile `INVALID` / non-zero reddedildi; raw rapor
+  SHA-256 `EB717B90B77BE58DAA946BFE8320FC56482354C1EB51ACFB4411059303D27994`.
 
 ## Kesinlikle kapsam dışı
 
@@ -101,6 +104,10 @@ kapı, gerçek testnet raporlarını operatör imzası/retention politikasıyla 
 ve disconnect/gap/reconnect metriklerini ürün kararına bağlamaktır.
 
 ## Değişiklik geçmişi
+
+### 1.1.3 — 2026-09-07
+
+- 300 saniyelik V2 negatif uzun-soak kanıtı ve continuity metrikleri kaydedildi.
 
 ### 1.1.2 — 2026-09-07
 
