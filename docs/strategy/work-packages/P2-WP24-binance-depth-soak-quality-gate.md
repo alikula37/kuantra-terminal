@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP24
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-07
 baseline: 2a45956
@@ -74,8 +74,18 @@ yapılmadan kalite gate'inden geçirildi:
 | Default: minimum 3, minimum 300 s, minimum 100 event | `REJECTED`, exit `1` | `valid=1 < 3`; elapsed `125441.41 ms < 300000 ms` |
 | Explicit kısa-probe override: minimum 1, minimum 120 s, minimum 100 event | `ELIGIBLE_FOR_REVIEW`, exit `0` | Gap/recovery/source-failure oranları `0`; truth/execution false |
 
-İkinci karar yalnız review eligibility'dir. Üç ayrı default-compliant valid
-observation mevcut değildir; live/source verification kapısı kapalıdır.
+İkinci karar yalnız review eligibility'dir. Bu 2026-09-07 kanıtında üç ayrı
+default-compliant valid observation mevcut değildi; live/source verification
+kapısı kapalı kaldı.
+
+## Operasyon kanıtı — 2026-09-08 (Mac mini)
+
+Üç bağımsız `BTCUSDT` public testnet gözlemi default quality policy ile
+değerlendirildi. Aggregate `1,092` processed event ve `920,714.54 ms` toplam
+elapsed taşıyor; gap, recovery ve source-failure oranlarının üçü de `0.0`.
+Quality gate sonucu `ELIGIBLE_FOR_REVIEW`, canonical series SHA-256
+`81d0466e380b248ea061d64118af8c61d67376becf0c153b107293ad2a4735bb` oldu.
+`source_verified=false` ve `execution_authority=false` değişmeden kaldı.
 
 ## Acceptance criteria
 
@@ -87,7 +97,8 @@ observation mevcut değildir; live/source verification kapısı kapalıdır.
 - [x] `source_verified=false`, `execution_authority=false` korunuyor.
 - [x] Focused suite: `4 passed`.
 - [x] Full backend suite: `540 passed, 1 skipped, 2 warnings`.
-- [ ] Default policy'yi karşılayan üç ayrı valid testnet observation.
+- [x] Default policy'yi karşılayan üç ayrı valid testnet observation (Mac mini,
+  2026-09-08; quality series SHA-256 `81d0466e380b248ea061d64118af8c61d67376becf0c153b107293ad2a4735bb`).
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı
@@ -111,3 +122,9 @@ aynı policy ile tekrarlanabilir review bundle üretmektir.
 
 - Observation series için süre, event hacmi, gap/recovery ve invalid-rate
   quality gate'i eklendi.
+
+### 1.0.1 — 2026-09-08
+
+- Mac mini üzerinde default üç gözlem, 5 dakika, 100 event ve sıfır gap/
+  recovery/source-failure rate politikası `ELIGIBLE_FOR_REVIEW` olarak geçti;
+  production/source verification terfisi yapılmadı.

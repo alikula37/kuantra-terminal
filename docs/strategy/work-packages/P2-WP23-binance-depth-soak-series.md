@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP23
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-07
 baseline: 4942f4d
@@ -72,8 +72,25 @@ katmanından geçirildi:
 | 120 s valid + 30 s invalid + 300 s invalid, minimum `3` | `INVALID_TESTNET_SERIES`, exit `1` | `valid=1`, `invalid=2`; yalnız valid gözlemde 159 event, 0 gap, 0 recovery cycle | `5D27D161415301B41F56A1B9ED6B703D7A7BAA34B4C663162098FA0BDF3F6557` |
 | Yalnız 120 s valid, minimum `1` | `VALID_TESTNET_SERIES_UNVERIFIED`, exit `0` | 159 event, gap rate `0`, recovery rate `0`; production/source terfisi yok | `59C6566089C96C747A9C5A22D22130E5E2B196E609AFD01CE66869CCB4D0A3EB` |
 
-Bu kanıt üç geçerli uzun gözlem bulunduğunu göstermiyor; default minimum `3`
-kapısı bu nedenle açık kalıyor.
+Bu 2026-09-07 kanıtı üç geçerli uzun gözlem bulunduğunu göstermiyor; o tarihte
+default minimum `3` kapısı açık kaldı.
+
+## Operasyon kanıtı — 2026-09-08 (Mac mini)
+
+Aynı `BTCUSDT` sembolü için üç bağımsız public testnet gözlemi, her biri
+`300` saniye, `--allow-network --retry-recovery` ve reconnect budget `3` ile
+çalıştırıldı. Her rapor bağımsız verifier'dan
+`VALID_TESTNET_OBSERVATION_UNVERIFIED` olarak geçti:
+
+| Gözlem | Süre (ms) | Depth event | Gap | Recovery/source failure | Canonical report SHA-256 |
+|---|---:|---:|---:|---:|---|
+| 1 | 308345.45 | 436 | 0 | 0 / 0 | `9a669a38f7b7f4442bd551457dbaaf0c5a0df062a13ffb16f1bbf1a94132fd37` |
+| 2 | 305556.56 | 338 | 0 | 0 / 0 | `47eac6f7537503372f65740aba39f08c92b2132254094d8dce48e0806505f1e1` |
+| 3 | 306812.53 | 318 | 0 | 0 / 0 | `0b9367cc3a77e241a06a7efce0c9fc79cd82884078cf2aeb0b43fa1074735aa6` |
+
+Default minimum `3` ile aggregate sonucu
+`VALID_TESTNET_SERIES_UNVERIFIED` oldu; seri dosyası SHA-256
+`181454dd10dde872576a516fe05612699dd65a1ab413d70b9779c38402f90759`.
 
 ## Acceptance criteria
 
@@ -87,7 +104,8 @@ kapısı bu nedenle açık kalıyor.
   korunuyor.
 - [x] Focused suite: `3 passed`.
 - [x] Full backend suite: `536 passed, 1 skipped, 2 warnings`.
-- [ ] Default minimumu karşılayan üç ayrı valid testnet observation.
+- [x] Default minimumu karşılayan üç ayrı valid testnet observation (Mac mini,
+  2026-09-08; seri SHA-256 `181454dd10dde872576a516fe05612699dd65a1ab413d70b9779c38402f90759`).
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı
@@ -111,3 +129,9 @@ yatırımı ilerletilmemelidir.
 
 - Tekil soak raporlarını fail-closed doğrulayan ve gap/recovery oranlarını
   aggregate eden observation series sözleşmesi eklendi.
+
+### 1.0.1 — 2026-09-08
+
+- Mac mini üzerinde üç ayrı 5 dakikalık public testnet gözlemi default minimum
+  `3` seri kapısından geçirildi; tüm gözlemler valid ve gap/recovery/source
+  failure oranları sıfır kaldı.

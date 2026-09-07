@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP01
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-06
 baseline: 89f2430

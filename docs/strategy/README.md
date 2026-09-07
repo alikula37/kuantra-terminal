@@ -305,8 +305,9 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - P2-WP23 ile tekil testnet soak raporlarını yeniden doğrulayan fail-closed
   observation series eklendi. Invalid raporlar aggregate'e sessizce girmiyor;
   default minimum `3`, gap/recovery/source-failure oranları ve observation
-  SHA'ları raporlanıyor. Focused suite `3 passed`; üç valid testnet gözlemi
-  henüz mevcut değil. Full backend regression `536 passed, 1 skipped`.
+  SHA'ları raporlanıyor. Focused suite `3 passed`; ilk uygulama anında üç valid
+  testnet gözlemi henüz mevcut değildi. Full backend regression
+  `536 passed, 1 skipped`.
 - P2-WP24 ile observation series için default 3 gözlem/5 dakika/100 event ve
   sıfır gap-recovery-source-failure toleranslı quality gate eklendi. Gate yalnız
   `ELIGIBLE_FOR_REVIEW` üretebilir; kısa probe override'ı bile source veya
@@ -353,3 +354,15 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   same-host bundle restore zinciri tekrarlandı. Truth/execution bayrakları false.
 - 300 saniyelik V2 uzun soak 401 event sonrası gap/recovery ve backoff stop ile
   `INVALID` kaldı; uzun süreli continuity kapısı bu nedenle açık tutuluyor.
+
+### 2026-09-08
+
+- Mac mini üzerinde aynı `BTCUSDT` sembolüyle üç bağımsız, 5 dakikalık public
+  testnet observation `VALID_TESTNET_OBSERVATION_UNVERIFIED` olarak doğrulandı.
+  Toplam `1,092` depth event, `0` gap, `0` recovery ve `0` source-failure ile
+  P2-WP23 default minimum-3 seri kapısı geçildi.
+- P2-WP24 default quality gate sonucu `ELIGIBLE_FOR_REVIEW` oldu. Bu sonuç
+  `source_verified=false` ve `execution_authority=false` invariant'larını
+  korur; live order veya production market-data yetkisi vermez. Canonical
+  quality series SHA-256:
+  `81d0466e380b248ea061d64118af8c61d67376becf0c153b107293ad2a4735bb`.
