@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP14
-version: 1.1.2
+version: 1.2.0
 status: Active
 date: 2026-09-07
 baseline: 257e881
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP11 Public Binance Depth Network Adapter, P2-WP13 Deterministic Binance Depth Soak Harness
-implementation_commits: 17dc616, 078dc02, 070998a, 0aa0dfd
+implementation_commits: 17dc616, 078dc02, 070998a, 0aa0dfd, 950f607
 ```
 
 ## Problem
@@ -27,9 +27,11 @@ varsayılan açılması, unit/CI çalıştırmalarında istemsiz dış çağrı 
 2. Testnet probe yalnızca public REST snapshot + public websocket depth kullanır;
    credential, order submission ve execution authority yoktur. Duration 1–86400
    saniye, reconnect 0–100 aralığında bounded'dır.
-3. Rapor `BINANCE_DEPTH_SOAK_REPORT_V1` schema'sı ile session kararını, chain
-   verification'ı, durable segment recovery'yi, run root'u ve elapsed ölçümünü
-   taşır. `source_verified=false` invariant'ı raporda sabittir.
+3. Yeni raporlar `BINANCE_DEPTH_SOAK_REPORT_V2` schema'sı ile session kararını,
+   cycle/reconnect/gap continuity metriklerini, chain verification'ı, durable
+   segment recovery'yi, run root'u ve elapsed ölçümünü taşır. V1 raporları
+   geriye dönük okunur; yeni arşivler V2 üretmelidir. `source_verified=false`
+   invariant'ı raporda sabittir.
 4. Network adapter stop event'i sessiz websocket `recv()` beklemesini keser;
    probe süresi dolduğunda transport `STOPPED` sonucu üretebilir. Timeout veya
    source failure başarıya çevrilmez.
@@ -46,6 +48,8 @@ varsayılan açılması, unit/CI çalıştırmalarında istemsiz dış çağrı 
 - Fixture/testnet modlu soak CLI.
 - Explicit network opt-in ve bounded CLI validation.
 - JSON report schema: session, chain, persistence ve truth flags.
+- V2 continuity metrikleri: cycle, reconnect, processed event ve gap sayıları.
+- V1 legacy report read compatibility.
 - Stop-aware websocket receive boundary.
 - CLI'nin verifier ile fail-closed exit gate'i.
 - CLI serialization, refusal, fixture report ve quiet-socket stop tests.
@@ -108,8 +112,8 @@ Bundle verify ve boş hedefe restore zero exit verdi; bundle SHA-256
 - [x] Duration ve reconnect budget bounded validation'dan geçiyor.
 - [x] Rapor chain/sink/session kanıtlarını ve false truth flags'ini taşıyor.
 - [x] Sessiz socket stop event ile timeout beklemeden kapanabiliyor.
-- [x] Focused suite: `8 passed`.
-- [x] Full backend suite: `527 passed, 1 skipped`.
+- [x] Focused suite: `7 passed`.
+- [x] Full backend suite: `530 passed, 1 skipped`.
 - [x] Bounded gerçek testnet raporu verifier'dan geçti ve operator archive/attestation/review akışına bağlandı.
 - [ ] Uzun süreli soak, kontrollü disconnect sonrası recovery continuity ve 24 saatlik gap metriği.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
@@ -128,6 +132,11 @@ disconnect sayısı, `last_update_id` sürekliliği, gap/recovery oranı ve dura
 segment reopen sonucu incelenmeden canlı varsayılanı açılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.2.0 — 2026-09-07
+
+- Soak raporu V2'ye cycle/reconnect/gap continuity metrikleri eklendi; V1
+  raporları read-only legacy uyumluluğuyla korunuyor.
 
 ### 1.1.2 — 2026-09-07
 

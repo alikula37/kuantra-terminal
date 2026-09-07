@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP13
-version: 1.0.0
+version: 1.0.1
 status: Active
-date: 2026-09-06
+date: 2026-09-07
 baseline: 0f96f5b
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP07 Rotated Market Event Segments ve Manifest Recovery, P2-WP12 Bounded Binance Depth Reconnect Session
-implementation_commits: c33c7ee
+implementation_commits: c33c7ee, 950f607
 ```
 
 ## Problem
@@ -36,6 +36,7 @@ gösterebilirdi.
 
 - Fixture cycle/runner abstraction.
 - Reconnect + rotated JSONL sink continuity report.
+- Sequence-gap count derived from ingestor decisions.
 - Segment reopen/recovery proof.
 - Disconnect success, gap terminality ve fixture exhaustion tests.
 
@@ -46,7 +47,7 @@ gösterebilirdi.
 - [x] Reconnect sonrası sequence gap açık `RECOVERY_REQUIRED` olarak terminal kalıyor.
 - [x] Fixture cycle bütçesi bitince `EXHAUSTED` sonucu dönüyor.
 - [x] Focused suite: `3 passed`.
-- [x] Full backend suite: `472 passed, 1 skipped`.
+- [x] Full backend suite: `530 passed, 1 skipped`.
 - [ ] Gerçek testnet soak ve disconnect injection scheduled validation.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
@@ -65,6 +66,11 @@ sequence continuity metriklerini toplamaktır. Bu kanıt olmadan live varsayıla
 ve `source_verified=true` açılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-07
+
+- Reconnect sonrası gap event sayısı aynı transport/session sonuçlarından türetilip
+  test kontratına bağlandı; synthetic gap doldurma yapılmadı.
 
 ### 1.0.0 — 2026-09-06
 

@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP15
-version: 1.0.5
+version: 1.1.0
 status: Active
 date: 2026-09-07
 baseline: 9a19f61
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP14 Opt-in Binance Depth Testnet Soak Gate
-implementation_commits: 845a0b4, 070998a, 0aa0dfd, e27762b
+implementation_commits: 845a0b4, 070998a, 0aa0dfd, e27762b, 950f607
 ```
 
 ## Problem
@@ -36,6 +36,9 @@ riskini bırakıyordu.
 5. `STOP_EVENT_SET_DURING_BACKOFF` gibi başarılı session kararları, son cycle
    başarısız/recovery terminali ise geçerli gözlem sayılmaz; başarılı bir terminal
    cycle (`COMPLETED` veya `STOPPED`) zorunludur.
+6. V2 raporlarda continuity aggregate'leri cycle kararları, reconnect sayısı,
+   processed event ve sequence gap sayısıyla cross-field eşleşmelidir. V1
+   raporlar legacy warning ile okunur; V2 alanları geriye dönük uydurulmaz.
 
 ## Teknik teslimatlar
 
@@ -43,6 +46,7 @@ riskini bırakıyordu.
 - Chain/sink/session cross-field consistency checks.
 - Truth-flag tamper detection.
 - JSON/terminal output veren report verifier CLI.
+- V2 continuity aggregate cross-field doğrulaması ve V1 legacy read path.
 - Valid fixture, tamper, mismatch, duration ve mode regression testleri.
 
 ## Acceptance criteria
@@ -52,10 +56,10 @@ riskini bırakıyordu.
 - [x] Chain invalid veya persistence event-count mismatch reddediliyor.
 - [x] Mode ve minimum duration gate'leri çalışıyor.
 - [x] CLI valid raporda zero, tamper raporunda non-zero exit veriyor.
-- [x] Focused suite: `6 passed`.
+- [x] Focused suite: `9 passed`.
 - [x] Soak CLI doğrudan aynı verifier'dan geçiyor; incomplete stop raporu non-zero.
 - [x] Session toplam event sayısı cycle başına `events_processed` toplamıyla eşleşiyor.
-- [x] Full backend suite: `528 passed, 1 skipped`.
+- [x] Full backend suite: `530 passed, 1 skipped`.
 - [x] Gerçek testnet raporu operator-run ile `VALID_TESTNET_OBSERVATION_UNVERIFIED`
   olarak doğrulandı; source verification açılmadı.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
@@ -91,6 +95,11 @@ kapı, gerçek testnet raporlarını operatör imzası/retention politikasıyla 
 ve disconnect/gap/reconnect metriklerini ürün kararına bağlamaktır.
 
 ## Değişiklik geçmişi
+
+### 1.1.0 — 2026-09-07
+
+- V2 continuity aggregate'leri fail-closed doğrulanıyor; V1 raporları yeni alanlar
+  eklenmeden legacy warning ile okunabiliyor.
 
 ### 1.0.5 — 2026-09-07
 
