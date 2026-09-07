@@ -151,6 +151,7 @@ async def run_testnet_probe(
     storage_root: Path,
     duration_seconds: float,
     max_reconnects: int,
+    retry_recovery: bool = False,
 ) -> dict[str, Any]:
     normalized_symbol = str(symbol).strip().upper()
     run_root = _run_root(storage_root, "testnet")
@@ -163,7 +164,11 @@ async def run_testnet_probe(
     adapter = BinanceDepthNetworkAdapter(ingestor, config)
     session = BinanceDepthSession(
         adapter,
-        BinanceDepthReconnectPolicy(max_reconnects=max_reconnects, backoff_initial_seconds=1),
+        BinanceDepthReconnectPolicy(
+            max_reconnects=max_reconnects,
+            backoff_initial_seconds=1,
+            retry_recovery=retry_recovery,
+        ),
     )
     stop_event = asyncio.Event()
     started_at = _timestamp()
@@ -197,6 +202,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--storage-root", type=Path, default=DEFAULT_STORAGE_ROOT)
     parser.add_argument("--duration-seconds", type=float, default=30.0)
     parser.add_argument("--max-reconnects", type=int, default=3)
+    parser.add_argument(
+        "--retry-recovery",
+        action="store_true",
+        help="retry a sequence-gap cycle with a fresh snapshot within the reconnect budget",
+    )
     parser.add_argument("--allow-network", action="store_true")
     parser.add_argument("--output", type=Path, default=None)
     return parser
@@ -205,6 +215,8 @@ def build_parser() -> argparse.ArgumentParser:
 def _validate_args(args: argparse.Namespace) -> None:
     if args.mode == "testnet" and not args.allow_network:
         raise ValueError("testnet mode requires explicit --allow-network")
+    if args.retry_recovery and args.mode != "testnet":
+        raise ValueError("retry-recovery is only available in testnet mode")
     if not str(args.symbol).strip():
         raise ValueError("symbol must be non-empty")
     if isinstance(args.duration_seconds, bool) or args.duration_seconds <= 0 or args.duration_seconds > 86_400:
@@ -235,6 +247,7 @@ def main(argv: list[str] | None = None) -> int:
                     storage_root=args.storage_root,
                     duration_seconds=args.duration_seconds,
                     max_reconnects=args.max_reconnects,
+                    retry_recovery=args.retry_recovery,
                 )
             )
         else:

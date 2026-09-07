@@ -31,10 +31,13 @@ class BinanceDepthReconnectPolicy:
     backoff_initial_seconds: float = 1.0
     backoff_max_seconds: float = 30.0
     max_source_events_per_cycle: Optional[int] = None
+    retry_recovery: bool = False
 
     def __post_init__(self) -> None:
         if isinstance(self.max_reconnects, bool) or not isinstance(self.max_reconnects, int) or self.max_reconnects < 0:
             raise ValueError("max_reconnects must be a non-negative integer")
+        if not isinstance(self.retry_recovery, bool):
+            raise ValueError("retry_recovery must be a boolean")
         for name, value in (
             ("backoff_initial_seconds", self.backoff_initial_seconds),
             ("backoff_max_seconds", self.backoff_max_seconds),
@@ -87,7 +90,7 @@ class DepthSessionResult:
 
 
 class BinanceDepthSession:
-    """Retry only transport/source failures under an explicit reconnect budget."""
+    """Retry bounded source failures and optional sequence recovery cycles."""
 
     def __init__(
         self,
@@ -154,7 +157,7 @@ class BinanceDepthSession:
                     reconnects,
                     cycles,
                 )
-            if cycle.decision is DepthTransportDecision.RECOVERY_REQUIRED:
+            if cycle.decision is DepthTransportDecision.RECOVERY_REQUIRED and not self.policy.retry_recovery:
                 return self._result(
                     DepthSessionDecision.RECOVERY_REQUIRED,
                     cycle.reason_code,
@@ -171,10 +174,13 @@ class BinanceDepthSession:
                     cycles,
                 )
 
-            if cycle.decision not in {
+            retryable_decisions = {
                 DepthTransportDecision.SOURCE_FAILED,
                 DepthTransportDecision.SNAPSHOT_RETRY_REQUIRED,
-            }:
+            }
+            if self.policy.retry_recovery:
+                retryable_decisions.add(DepthTransportDecision.RECOVERY_REQUIRED)
+            if cycle.decision not in retryable_decisions:
                 return self._result(
                     DepthSessionDecision.EXHAUSTED,
                     f"UNHANDLED_CYCLE_DECISION:{cycle.decision.value}",

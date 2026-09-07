@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP15
-version: 1.0.1
+version: 1.0.2
 status: Active
 date: 2026-09-07
 baseline: 9a19f61
@@ -50,8 +50,9 @@ riskini bırakıyordu.
 - [x] Mode ve minimum duration gate'leri çalışıyor.
 - [x] CLI valid raporda zero, tamper raporunda non-zero exit veriyor.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `482 passed, 1 skipped`.
-- [ ] Gerçek testnet raporunun operator-run ile doğrulanması.
+- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Gerçek testnet raporu operator-run ile `VALID_TESTNET_OBSERVATION_UNVERIFIED`
+  olarak doğrulandı; source verification açılmadı.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Operasyon kanıtı — 2026-09-07
@@ -61,9 +62,12 @@ riskini bırakıyordu.
 - Public testnet denemesi `FAILED_OBSERVATION` olarak, non-zero exit ile
   fail-closed reddedildi: `EXHAUSTED` / `RECONNECT_BUDGET_EXHAUSTED`,
   `SNAPSHOT_FETCH_FAILED`, `event_count=0`.
-- Bu negatif sonuç, “gerçek testnet raporu doğrulandı” kabul maddesini
-  karşılamaz; valid bir `VALID_TESTNET_OBSERVATION_UNVERIFIED` raporu ve
-  source verification hâlâ yoktur.
+- Bu ilk negatif sonuç kendi başına “gerçek testnet raporu doğrulandı” kabulünü
+  karşılamadı; sonraki proxy'siz bounded run geçerli
+  `VALID_TESTNET_OBSERVATION_UNVERIFIED` olarak doğrulandı. Source verification
+  hâlâ yoktur.
+- Geçerli operator raporu SHA-256:
+  `9182585DBCCB58D3FF115CD27F67FF28D17F5F0C8AA8881B86C5FB50E6AF4D0A`.
 
 ## Kesinlikle kapsam dışı
 
@@ -79,6 +83,11 @@ kapı, gerçek testnet raporlarını operatör imzası/retention politikasıyla 
 ve disconnect/gap/reconnect metriklerini ürün kararına bağlamaktır.
 
 ## Değişiklik geçmişi
+
+### 1.0.2 — 2026-09-07
+
+- Doğrudan public testnet operator raporunun verifier sonucu ve SHA-256 kanıtı
+  kaydedildi; truth/execution bayrakları false kaldı.
 
 ### 1.0.1 — 2026-09-07
 

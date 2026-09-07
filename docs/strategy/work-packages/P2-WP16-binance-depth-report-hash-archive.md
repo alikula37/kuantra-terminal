@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP16
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-07
 baseline: 18a1c68
@@ -56,8 +56,9 @@ uv run python scripts/archive_binance_depth_soak_report.py `
 - [x] Archive reopen sonrası hash/metadata/recovery geçiyor.
 - [x] Report byte veya manifest truth flag tamper'ı strict recovery'de reddediliyor.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `487 passed, 1 skipped`.
-- [ ] Gerçek testnet raporunun operator-run archive retention'ı.
+- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Gerçek testnet raporu operator-run archive retention'a alındı:
+  report id `1c467ec04d264349`.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı
@@ -65,6 +66,12 @@ uv run python scripts/archive_binance_depth_soak_report.py `
 - Private key, digital signature, cloud upload veya team sharing.
 - Archive'dan `source_verified`/execution authority yükseltmesi.
 - Multi-process distributed writer veya Parquet/DuckDB compaction.
+
+## Operasyon kanıtı — 2026-09-07
+
+`VALID_TESTNET_OBSERVATION_UNVERIFIED` raporu hash-adresli archive'a yazıldı,
+reopen/recovery geçişi korundu. Archive report SHA-256
+`1c467ec04d2643495e9cec43e9544446b4bf8855b7d3d8c818313d64fadba5fe`.
 
 ## Risk ve sonraki sınır
 
@@ -74,6 +81,10 @@ kapı operator identity/attestation ve retention policy olabilir; bu kapı gelme
 archive kaydı product release approval olarak kullanılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-07
+
+- Geçerli public testnet raporunun local hash archive retention kanıtı eklendi.
 
 ### 1.0.0 — 2026-09-07
 

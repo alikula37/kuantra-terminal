@@ -68,6 +68,12 @@ def test_cli_serializes_fixture_report_without_enabling_network(tmp_path):
 def test_cli_rejects_invalid_duration_and_reconnect_bounds(tmp_path):
     assert main(["--duration-seconds", "0", "--storage-root", str(tmp_path)]) == 2
     assert main(["--max-reconnects", "101", "--storage-root", str(tmp_path)]) == 2
+    assert main(["--retry-recovery", "--storage-root", str(tmp_path)]) == 2
+
+
+def test_cli_exposes_recovery_retry_only_as_an_opt_in_testnet_flag():
+    args = build_parser().parse_args(["--mode", "testnet", "--allow-network", "--retry-recovery"])
+    assert args.retry_recovery is True
 
 
 class _BlockingWebsocket:

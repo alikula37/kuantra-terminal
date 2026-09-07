@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP19
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-07
 baseline: c09da6c
@@ -67,9 +67,9 @@ Birden fazla attestation varsa `--attestation-id <id>` zorunludur. Başarılı
 - [x] CLI JSON/human output ve non-zero rejection exit code.
 - [x] `source_verified` ve `execution_authority` false kalıyor.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `502 passed, 1 skipped`.
-- [ ] Gerçek operatör testnet runbook'unda gate çıktısının imzalı review kaydına
-      bağlanması.
+- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Gerçek operatör testnet runbook'unda gate çıktısı imzalı review kaydına
+      bağlandı: gate `ELIGIBLE_FOR_REVIEW`, review `da5d4a9b329ecbc9`.
 - [ ] Remote CI doğrulaması (şu an bilinçli olarak disabled).
 
 ## Kapsam dışı ve sonraki risk
@@ -79,3 +79,15 @@ execution'ı veya insan review kararını kanıtlamaz. HSM/KMS, distributed poli
 otomatik release promotion, source verification terfisi ve AI kararı kapsam
 dışıdır. Sonraki sınır, gerçek testnet operator runbook'unda bu sonucu insan
 imzalı review kaydına bağlamak ve key rotation/retention SLA'sını ölçmektir.
+
+## Operasyon kanıtı — 2026-09-07
+
+Gate çıktısı `50925819189b9d60` attestation'ı, aktif key registry ve
+`VALID_TESTNET_OBSERVATION_UNVERIFIED` verdict'i ile değerlendirildi. Sonuç
+`ELIGIBLE_FOR_REVIEW` olsa da source verification ve emir yetkisi false kaldı.
+
+## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-07
+
+- Gerçek public testnet operator gate ve imzalı review bağlantısı belgelendi.

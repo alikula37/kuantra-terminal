@@ -2,9 +2,9 @@
 
 ```yaml
 document_id: P2-WP12
-version: 1.0.0
+version: 1.1.0
 status: Active
-date: 2026-09-06
+date: 2026-09-07
 baseline: a58bc81
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
@@ -22,15 +22,17 @@ yaratır.
 
 ## Karar
 
-1. `BinanceDepthSession` yalnızca `SOURCE_FAILED` ve
-   `SNAPSHOT_RETRY_REQUIRED` cycle kararlarını retry eder. Her retry yeni bir
-   bounded cycle'dır; ingestor snapshot cycle'ını yeniden başlatır.
+1. Varsayılan olarak `BinanceDepthSession` yalnızca `SOURCE_FAILED` ve
+   `SNAPSHOT_RETRY_REQUIRED` cycle kararlarını retry eder. `retry_recovery=true`
+   açıkça seçilirse `RECOVERY_REQUIRED` da aynı bounded reconnect bütçesi içinde
+   yeni snapshot cycle'ı olarak denenir; varsayılan sessizce değişmez.
 2. `max_reconnects`, initial/max exponential backoff ve cycle başına event
    budget policy'de zorunlu ölçülebilir sınırlardır. Bütçe bitince sonuç
    `EXHAUSTED/RECONNECT_BUDGET_EXHAUSTED` olur; `COMPLETED` üretilmez.
-3. `PERSISTENCE_FAILED`, `RECOVERY_REQUIRED` ve `SNAPSHOT_REJECTED` terminaldir;
-   bunlar retry ile örtülmez. Stop event hem cycle öncesinde hem backoff
-   sırasında hızlı kapanış sağlar.
+3. `PERSISTENCE_FAILED` ve `SNAPSHOT_REJECTED` her zaman terminaldir.
+   `RECOVERY_REQUIRED`, `retry_recovery=false` iken terminal; açıkken aynı
+   reconnect bütçesine tabi bounded retry'dır. Stop event hem cycle öncesinde
+   hem backoff sırasında hızlı kapanış sağlar.
 4. Cycle runner protocol'ü injectable'dır. Unit testlerde gerçek network yoktur;
    P2-WP11 adapter production wiring'i aynı sonucu kullanır.
 5. Session ve cycle `source_verified=false` kalır; reconnect sayısı kaynak
@@ -40,6 +42,7 @@ yaratır.
 
 - `BinanceDepthReconnectPolicy` bounded validation.
 - Retry/backoff/reconnect budget coordinator.
+- Sequence-gap sonrası yalnızca explicit `retry_recovery` ile bounded resnapshot.
 - Stop-event interruptible backoff.
 - Cycle-level result history ve aggregate metrics.
 - Source, persistence, recovery, rejection ve exhaustion regression testleri.
@@ -48,10 +51,11 @@ yaratır.
 
 - [x] Source failure sonrası policy bütçesi içinde yeniden cycle çalışıyor.
 - [x] Bütçe bitince açık `EXHAUSTED` sonucu dönüyor.
-- [x] Persistence/recovery/snapshot rejection retry edilmiyor.
+- [x] Persistence ve snapshot rejection retry edilmiyor; recovery varsayılanı terminal.
+- [x] Explicit recovery retry aynı reconnect budget içinde çalışıyor ve bounded kalıyor.
 - [x] Stop event cycle öncesinde ve backoff sırasında kapanışı kesiyor.
-- [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `469 passed, 1 skipped`.
+- [x] Focused suite: `6 passed`.
+- [x] Full backend suite: `525 passed, 1 skipped`.
 - [ ] Testnet soak, disconnect injection ve sequence continuity ölçümü.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
@@ -64,13 +68,17 @@ yaratır.
 
 ## Risk ve sonraki sınır
 
-Bu paket retry politikasının deterministik sözleşmesini kanıtlar; gerçek Binance
-testnet'te uzun süreli socket soak, gap sonrası snapshot continuity ve rate-limit
-davranışı henüz ölçülmez. Sonraki paket testnet fixture/soak harness'i, disconnect
-enjeksiyonu, reconnect sonrası `last_update_id` ve durable segment continuity
-metriklerini üretmelidir.
+Bu paket retry politikasının deterministik sözleşmesini ve gap sonrası explicit
+resnapshot seçeneğini kanıtlar; gerçek Binance testnet'te uzun süreli socket soak,
+gap sonrası continuity ve rate-limit davranışı hâlâ ayrı operatör kanıtıdır.
 
 ## Değişiklik geçmişi
+
+### 1.1.0 — 2026-09-07
+
+- `retry_recovery` policy bayrağı eklendi. Varsayılan terminal recovery davranışı
+  korunurken testnet soak için aynı reconnect bütçesine bağlı explicit resnapshot
+  retry mümkün oldu.
 
 ### 1.0.0 — 2026-09-06
 

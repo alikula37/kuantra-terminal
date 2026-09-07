@@ -96,6 +96,31 @@ async def test_persistence_or_recovery_failure_is_terminal_and_not_retried():
 
 
 @pytest.mark.asyncio
+async def test_recovery_retry_is_explicit_and_bounded():
+    runner = _Runner(
+        [
+            _cycle(DepthTransportDecision.RECOVERY_REQUIRED, "INGESTOR_REQUIRES_RECOVERY"),
+            _cycle(DepthTransportDecision.COMPLETED, "SOURCE_CYCLE_COMPLETED"),
+        ]
+    )
+    session = BinanceDepthSession(
+        runner,
+        BinanceDepthReconnectPolicy(
+            max_reconnects=1,
+            backoff_initial_seconds=0,
+            retry_recovery=True,
+        ),
+    )
+
+    result = await session.run()
+
+    assert result.decision is DepthSessionDecision.COMPLETED
+    assert result.attempts == 2
+    assert result.reconnects == 1
+    assert result.cycles[0].decision is DepthTransportDecision.RECOVERY_REQUIRED
+
+
+@pytest.mark.asyncio
 async def test_stop_event_interrupts_before_cycle_and_during_backoff():
     stop_before = asyncio.Event()
     stop_before.set()

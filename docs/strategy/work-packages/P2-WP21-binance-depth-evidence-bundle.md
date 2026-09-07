@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP21
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-07
 baseline: 94bd412
@@ -71,7 +71,9 @@ uv run python scripts/bundle_binance_depth_evidence.py restore `
 - [x] Archive, attestation, review ve registry strict restore recovery.
 - [x] Dolu hedefin overwrite edilmemesi.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `512 passed, 1 skipped`.
+- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Gerçek testnet operator bundle'ı aynı host'ta create/verify/strict restore
+  drill'inden geçti; bundle id `f7f31d856b1492f99ab8e41a058da36ffab19ac2a1b584ac13befe9abcfe983b`.
 - [ ] Gerçek operator testnet bundle'ının farklı makinede restore edilmesi.
 - [ ] Remote CI doğrulaması (şu an bilinçli olarak disabled).
 
@@ -81,3 +83,18 @@ Cloud backup, KMS/HSM, encrypted-at-rest transport, remote object storage,
 automatic retention deletion ve live broker execution kapsam dışıdır. Sonraki
 sınır, gerçek testnet operator run'ının bu bundle ile iki ayrı makinede restore
 drill'ine bağlanmasıdır.
+
+## Operasyon kanıtı — 2026-09-07
+
+Bundle `contains_private_keys=false`, `source_verified=false` ve
+`execution_authority=false` ile üretildi; verify ve boş hedefe strict restore
+zero exit verdi. ZIP SHA-256:
+`09FE8B7D9857A0CAC8C510480489A5AFC7E655CA3F8DEE767AC863D5E488CB08`.
+Farklı makine restore kapısı, bu hostta ikinci cihaz bulunmadığı için açık kaldı.
+
+## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-07
+
+- Geçerli public testnet run'ı için same-host bundle verify/restore kanıtı eklendi;
+  cross-machine kabul maddesi açık bırakıldı.
