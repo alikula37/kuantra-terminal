@@ -9,7 +9,7 @@ baseline: 4b23405
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002, ADR-0003
 depends_on: P0-WP07 OS keychain boundary, P1-WP11 broker lifecycle import
-implementation_commits: pending
+implementation_commits: 5aa2723
 ```
 
 ## Problem

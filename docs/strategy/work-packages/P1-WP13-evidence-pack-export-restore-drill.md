@@ -9,7 +9,7 @@ baseline: 5aa2723
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P1-WP07 Trade Evidence Pack API, P1-WP12 read-only snapshot adapter
-implementation_commits: pending
+implementation_commits: 1665d6c
 ```
 
 ## Problem
