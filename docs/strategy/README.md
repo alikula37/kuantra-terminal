@@ -378,3 +378,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   Kontrollü gerçek disconnect injection ve 24 saatlik gap metriği bu kanıtın
   kapsamı dışındadır. Rapor SHA-256:
   `74d0cbc9c47df163b5f2c4093e7967712ad7aea03845be0381a4673e9580caa4`.
+- P2-WP14 için explicit bounded `--disconnect-after-seconds` sınırı eklendi.
+  Mac public testnet koşullarında websocket injection görünür oldu; reconnect
+  sonrası gap `RECOVERY_REQUIRED` olarak kaldı ve verifier raporları `INVALID`
+  tuttu. Bu, recovery gap'inin fail-closed kaldığını kanıtlar; başarılı recovery
+  veya source verification terfisi değildir.

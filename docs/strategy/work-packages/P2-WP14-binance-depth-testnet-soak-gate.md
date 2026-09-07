@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP14
-version: 1.2.4
+version: 1.2.5
 status: Active
 date: 2026-09-07
 baseline: 257e881
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP11 Public Binance Depth Network Adapter, P2-WP13 Deterministic Binance Depth Soak Harness
-implementation_commits: 17dc616, 078dc02, 070998a, 0aa0dfd, 950f607
+implementation_commits: 17dc616, 078dc02, 070998a, 0aa0dfd, 950f607, b1ceba6
 ```
 
 ## Problem
@@ -38,9 +38,13 @@ varsayılan açılması, unit/CI çalıştırmalarında istemsiz dış çağrı 
 5. Sequence gap sonrası resnapshot retry varsayılan değildir. Testnet operatörü
    aynı bounded reconnect bütçesi içinde `--retry-recovery` seçerse recovery
    yeniden denenir; persistence/rejection hataları yine terminaldir.
-6. Unit testler gerçek ağa bağlanmaz. Gerçek testnet çalışması operatörün açık
+6. `--disconnect-after-seconds` yalnız `testnet + --allow-network` ile
+   kullanılabilir, `duration-seconds` değerinden küçük ve pozitif olmak zorundadır;
+   adapter bir kez gerçek websocket'i kapatır ve injection'ı source failure olarak
+   raporlar. Bu seçenek default değildir.
+7. Unit testler gerçek ağa bağlanmaz. Gerçek testnet çalışması operatörün açık
    komutuyla, ayrı storage root ve rapor dosyasıyla yapılır.
-7. CLI, raporu aynı fail-closed verifier'dan geçirir; session kararı `STOPPED`
+8. CLI, raporu aynı fail-closed verifier'dan geçirir; session kararı `STOPPED`
    olsa bile cycle tamamlanmamışsa exit code `1` döner.
 
 ## Teknik teslimatlar
@@ -51,6 +55,7 @@ varsayılan açılması, unit/CI çalıştırmalarında istemsiz dış çağrı 
 - V2 continuity metrikleri: cycle, reconnect, processed event ve gap sayıları.
 - V1 legacy report read compatibility.
 - Stop-aware websocket receive boundary.
+- Explicit one-shot operator disconnect boundary for testnet recovery validation.
 - CLI'nin verifier ile fail-closed exit gate'i.
 - CLI serialization, refusal, fixture report ve quiet-socket stop tests.
 
@@ -72,6 +77,7 @@ uv run python scripts/run_binance_depth_soak.py `
   --mode testnet `
   --allow-network `
   --retry-recovery `
+  --disconnect-after-seconds 60 `
   --symbol BTCUSDT `
   --duration-seconds 300 `
   --storage-root "$PWD/.local-testnet-soak" `
@@ -113,6 +119,19 @@ chain/persistence içinde `1284` event. Elapsed `905921.1 ms`; rapor SHA-256:
 Bu koşu kontrollü gerçek bağlantı kesintisi injection'ı içermediği ve 24 saatlik
 gap metriğini karşılamadığı için ilgili uzun-soak acceptance maddesi açık kalır.
 
+## Mac controlled-disconnect validation — 2026-09-08
+
+Yeni explicit `--disconnect-after-seconds` sınırı gerçek public testnet'te
+doğrulandı. `60` saniyede bir websocket kapatıldı; her iki koşuda da injection
+`OPERATOR_DISCONNECT_INJECTED` olarak source error'a yansıdı. `180` saniyelik
+rapor (`68dbfc162368f8bd0eb9f810ec5be25545a4f02c54340620af93b44361ed6c75`)
+ve `300` saniyelik rapor
+(`967a066617ba07e1feead23a34e996bec32cdfcb7a7e2f6babe69d129b37715d`)
+reconnect sonrası `RECOVERY_REQUIRED` ile stop-backoff'a girdi; verifier her
+ikisini de `INVALID` tuttu. Bu negatif kanıt recovery gap'inin görünür ve
+fail-closed kaldığını gösterir; başarılı recovery promotion veya source
+verification yapılmadı.
+
 Geçerli rapor aynı host'ta P2-WP16–21 akışından geçirildi: archive report id
 `1c467ec04d264349`, attestation `50925819189b9d60`, gate
 `ELIGIBLE_FOR_REVIEW`, review `da5d4a9b329ecbc9`, evidence bundle id
@@ -127,8 +146,8 @@ Bundle verify ve boş hedefe restore zero exit verdi; bundle SHA-256
 - [x] Duration ve reconnect budget bounded validation'dan geçiyor.
 - [x] Rapor chain/sink/session kanıtlarını ve false truth flags'ini taşıyor.
 - [x] Sessiz socket stop event ile timeout beklemeden kapanabiliyor.
-- [x] Focused suite: `7 passed`.
-- [x] Full backend suite: `530 passed, 1 skipped`.
+- [x] Focused suite: `8 passed`.
+- [x] Full backend suite: `550 passed, 2 warnings` (Mac local CI, 2026-09-08).
 - [x] Bounded gerçek testnet raporu verifier'dan geçti ve operator archive/attestation/review akışına bağlandı.
 - [ ] Uzun süreli soak, kontrollü disconnect sonrası recovery continuity ve 24 saatlik gap metriği.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
@@ -158,6 +177,11 @@ segment reopen sonucu incelenmeden canlı varsayılanı açılmamalıdır.
 - Mac mini üzerinde 900 saniyelik public testnet soak gap/recovery/source-failure
   olmadan doğrulandı; kontrollü disconnect ve 24 saatlik gap metriği ayrı kapı
   olarak açık bırakıldı.
+
+### 1.2.5 — 2026-09-08
+
+- Bounded `--disconnect-after-seconds` operator injection sınırı eklendi ve
+  gerçek testnet'te fail-closed recovery gap davranışı ile doğrulandı.
 
 ### 1.2.2 — 2026-09-07
 

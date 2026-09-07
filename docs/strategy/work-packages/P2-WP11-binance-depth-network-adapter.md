@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP11
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-06
 baseline: 21b07ad
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP10 Injected Async Binance Depth Transport Boundary
-implementation_commits: 325819a
+implementation_commits: 325819a, b1ceba6
 ```
 
 ## Problem
@@ -43,6 +43,8 @@ chain'ine bağlı değil.
 - `httpx.AsyncClient` ve `websockets.connect` için injectable factory boundary.
 - Public snapshot fetch + raw depth websocket decoder.
 - P2-WP10 transport/ingestor'a tek cycle adapter wiring'i.
+- Yalnız explicit testnet soak opt-in altında tek-seferlik bounded websocket
+  disconnect injection sınırı.
 - Cross-symbol, non-depth, invalid JSON, UTF-8 ve oversized message fail-closed
   testleri.
 
@@ -53,8 +55,8 @@ chain'ine bağlı değil.
 - [x] HTTP failure `SOURCE_FAILED`; source success gibi raporlanmıyor.
 - [x] Malformed/cross-symbol/non-depth/oversized mesajlar açık hata üretiyor.
 - [x] Gerçek ağ çağrısı unit testte yok; client factory'leri inject ediliyor.
-- [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `464 passed, 1 skipped`.
+- [x] Focused suite: `6 passed`.
+- [x] Full backend suite: `550 passed, 2 warnings` (Mac local CI, 2026-09-08).
 - [ ] Testnet soak/reconnect/source verification promotion.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
@@ -79,3 +81,8 @@ Canlı market-data varsayılanı bu kanıtlar olmadan açılmamalıdır.
 
 - Public Binance REST snapshot ve websocket depth kaynaklarını mevcut injected
   transport/ingestor boundary'sine bağlayan network adapter eklendi.
+
+### 1.0.1 — 2026-09-08
+
+- Testnet soak operatörü için default davranışı değiştirmeyen, bounded ve
+  one-shot `disconnect-after` websocket injection sınırı eklendi.
