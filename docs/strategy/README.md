@@ -68,6 +68,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP21 | [Binance Depth Evidence Bundle ve Restore Drill](./work-packages/P2-WP21-binance-depth-evidence-bundle.md) | Active | 1.0.2 | 2026-09-07 |
 | P2-WP22 | [Binance Depth Fault-Injection ve Recovery Matrix](./work-packages/P2-WP22-binance-depth-fault-matrix.md) | Active | 1.0.0 | 2026-09-07 |
 | P2-WP23 | [Binance Depth Soak Observation Series](./work-packages/P2-WP23-binance-depth-soak-series.md) | Active | 1.0.0 | 2026-09-07 |
+| P2-WP24 | [Binance Depth Soak Series Quality Gate](./work-packages/P2-WP24-binance-depth-soak-quality-gate.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -305,6 +306,11 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   default minimum `3`, gap/recovery/source-failure oranları ve observation
   SHA'ları raporlanıyor. Focused suite `3 passed`; üç valid testnet gözlemi
   henüz mevcut değil. Full backend regression `536 passed, 1 skipped`.
+- P2-WP24 ile observation series için default 3 gözlem/5 dakika/100 event ve
+  sıfır gap-recovery-source-failure toleranslı quality gate eklendi. Gate yalnız
+  `ELIGIBLE_FOR_REVIEW` üretebilir; kısa probe override'ı bile source veya
+  execution truth'ına yükselmez. Focused suite `4 passed`, full backend
+  regression `540 passed, 1 skipped`.
 
 ### 2026-09-07
 
