@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP14
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-07
 baseline: 257e881
@@ -67,6 +67,24 @@ uv run python scripts/run_binance_depth_soak.py `
   --output "$PWD/.local-testnet-soak/report.json"
 ```
 
+## Operasyon kanıtı — 2026-09-07
+
+Bu kanıtlar aynı Windows host'ta, `uv run --offline` ile kilitli backend
+bağımlılıkları kullanılarak üretildi. Geçici storage/report kökleri repoya
+alınmadı; SHA-256 değerleri rapor dosyasının değişmediğini takip etmek için
+verilmiştir.
+
+| Çalışma | Sonuç | Önemli alanlar | Rapor SHA-256 |
+|---|---|---|---|
+| Offline fixture, `BTCUSDT`, reconnect budget `1` | `COMPLETED`; verifier `VALID_OFFLINE_FIXTURE` | 4 chain event'i, 2 durable segment, chain/persistence valid; `source_verified=false`, `execution_authority=false` | `238095970798F52B976D33BAD2A2587378356BA5AC19A185C408147BBD76A932` |
+| Public Binance testnet, 5 s, `--allow-network`, reconnect budget `0` | **Başarısız gözlem; terfi edilmedi** | `EXHAUSTED` / `RECONNECT_BUDGET_EXHAUSTED`, `SNAPSHOT_FETCH_FAILED`, 0 event; verifier `FAILED_OBSERVATION`; truth flags false | `A21FF7CE4D94A4983AC2DAEE046B712A48EA29CC0B5100FD136E0BCE6A0B1D70` |
+
+Testnet çalışması credential, private endpoint veya emir yetkisi kullanmadı.
+Host'taki dış ağ erişimi snapshot fetch aşamasında başarısız olduğu için bu
+çalışma gerçek feed gözlemi sayılmaz; `source_verified` ve canlı/production
+terfi kapıları kapalı kalır. Aynı ağ/host koşulları değişmeden tekrarlı soak
+çalıştırmak yeni kanıt üretmez.
+
 ## Acceptance criteria
 
 - [x] Default CLI network açmadan fixture çalıştırıyor.
@@ -93,6 +111,12 @@ disconnect sayısı, `last_update_id` sürekliliği, gap/recovery oranı ve dura
 segment reopen sonucu incelenmeden canlı varsayılanı açılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-07
+
+- Offline fixture doğrulaması ve fail-closed public testnet operatör denemesi
+  kaydedildi. Testnet snapshot fetch başarısızlığı başarıya çevrilmedi;
+  gerçek testnet kabul maddesi açık kaldı.
 
 ### 1.0.0 — 2026-09-07
 

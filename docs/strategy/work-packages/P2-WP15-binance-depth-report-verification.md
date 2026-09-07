@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP15
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-07
 baseline: 9a19f61
@@ -54,6 +54,17 @@ riskini bırakıyordu.
 - [ ] Gerçek testnet raporunun operator-run ile doğrulanması.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
+## Operasyon kanıtı — 2026-09-07
+
+- P2-WP14 offline fixture raporu CLI verifier ile `VALID_OFFLINE_FIXTURE`
+  olarak, zero exit ile doğrulandı.
+- Public testnet denemesi `FAILED_OBSERVATION` olarak, non-zero exit ile
+  fail-closed reddedildi: `EXHAUSTED` / `RECONNECT_BUDGET_EXHAUSTED`,
+  `SNAPSHOT_FETCH_FAILED`, `event_count=0`.
+- Bu negatif sonuç, “gerçek testnet raporu doğrulandı” kabul maddesini
+  karşılamaz; valid bir `VALID_TESTNET_OBSERVATION_UNVERIFIED` raporu ve
+  source verification hâlâ yoktur.
+
 ## Kesinlikle kapsam dışı
 
 - Raporu düzeltmek, eksik alan doldurmak veya hash chain'i yeniden üretmek.
@@ -68,6 +79,11 @@ kapı, gerçek testnet raporlarını operatör imzası/retention politikasıyla 
 ve disconnect/gap/reconnect metriklerini ürün kararına bağlamaktır.
 
 ## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-07
+
+- Fixture ve public testnet operatör denemelerinin verifier sonuçları kaydedildi;
+  başarısız testnet gözlemi non-zero ile korundu.
 
 ### 1.0.0 — 2026-09-07
 
