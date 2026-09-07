@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP14
-version: 1.2.3
+version: 1.2.4
 status: Active
 date: 2026-09-07
 baseline: 257e881
@@ -101,6 +101,18 @@ başarısız oldu. 20 saniyelik geçerli raporda proxy yalnızca probe prosesind
 çıkarıldı; bu kalıcı sistem ayarı değişikliği değildir. Rapor verifier'ı geçse de
 `source_verified` ve canlı/production terfi kapıları kapalı kalır.
 
+## Mac local long-soak revalidation — 2026-09-08
+
+Mac mini üzerinde `BTCUSDT` için `900` saniyelik public testnet soak,
+`--allow-network --retry-recovery` ve reconnect budget `3` ile çalıştırıldı.
+Rapor `VALID_TESTNET_OBSERVATION_UNVERIFIED` olarak bağımsız verifier'dan geçti:
+`1283` depth event, `0` gap, `0` recovery/source-failure cycle ve valid
+chain/persistence içinde `1284` event. Elapsed `905921.1 ms`; rapor SHA-256:
+`74d0cbc9c47df163b5f2c4093e7967712ad7aea03845be0381a4673e9580caa4`.
+
+Bu koşu kontrollü gerçek bağlantı kesintisi injection'ı içermediği ve 24 saatlik
+gap metriğini karşılamadığı için ilgili uzun-soak acceptance maddesi açık kalır.
+
 Geçerli rapor aynı host'ta P2-WP16–21 akışından geçirildi: archive report id
 `1c467ec04d264349`, attestation `50925819189b9d60`, gate
 `ELIGIBLE_FOR_REVIEW`, review `da5d4a9b329ecbc9`, evidence bundle id
@@ -140,6 +152,12 @@ segment reopen sonucu incelenmeden canlı varsayılanı açılmamalıdır.
 
 - 300 saniyelik V2 uzun soak'ta 401 event sonrası gap/recovery ve backoff stop
   görüldü; verifier bunu geçersiz gözlem olarak tuttu.
+
+### 1.2.4 — 2026-09-08
+
+- Mac mini üzerinde 900 saniyelik public testnet soak gap/recovery/source-failure
+  olmadan doğrulandı; kontrollü disconnect ve 24 saatlik gap metriği ayrı kapı
+  olarak açık bırakıldı.
 
 ### 1.2.2 — 2026-09-07
 

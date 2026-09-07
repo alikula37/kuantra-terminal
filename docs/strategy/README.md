@@ -372,3 +372,9 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   kaldı. Gerçek public testnet disconnect injection ve 24 saatlik gap metriği
   hâlâ açık operasyon kapısıdır. Rapor SHA-256:
   `c2c4eb9f92ab5533a03ff419be2d3568ea45f855fb0c399fbd401e6896846102`.
+- P2-WP14 için Mac mini üzerinde 900 saniyelik ek public testnet soak
+  `VALID_TESTNET_OBSERVATION_UNVERIFIED` olarak doğrulandı: `1283` depth event,
+  `0` gap/recovery/source-failure, `1284` valid chain/persistence event.
+  Kontrollü gerçek disconnect injection ve 24 saatlik gap metriği bu kanıtın
+  kapsamı dışındadır. Rapor SHA-256:
+  `74d0cbc9c47df163b5f2c4093e7967712ad7aea03845be0381a4673e9580caa4`.
