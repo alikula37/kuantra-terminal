@@ -9,7 +9,7 @@ baseline: d508ff9
 strategy: KPS-001@1.0.0
 adr: ADR-0004
 depends_on: P0-WP10 Phase 0 exit audit, ADR-0004 Windows WebView2 renderer
-implementation_commits: pending
+implementation_commits: eda6f4b
 ```
 
 ## Problem
