@@ -52,6 +52,10 @@ kanıt zincirinde kalmasını sağlamak. Hız, yalnız test ve acceptance criter
 6. Her work package ayrı commit olur. Commit edilmemiş kullanıcı değişiklikleri asla ezilmez.
 7. Push/PR ancak local gate'ler geçince yapılır.
 
+Local gate'in resmi sözleşmesi ve tek komutu KDG-002
+([Yerel CI ve merge gate politikası](./LOCAL-CI-POLICY.md)) içindedir. GitHub Actions kotası
+doluyken remote workflow sonucu beklenmez; KDG-002 raporu olmadan `main` merge edilmez.
+
 Kullanıcının ayrı chat'te Terra kullanması mümkündür; bu durumda KWT-001 şablonuyla tam prompt
 taşınmalı, Terra'nın commit SHA'sı bu chat'e geri verilmelidir. Tercih edilen yol aynı chat içindeki
 subagent'tır; bağlam ve entegrasyon kaybı daha düşüktür.

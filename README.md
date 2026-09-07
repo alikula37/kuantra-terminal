@@ -1,6 +1,6 @@
 # Kuantra Terminal v1.4.0
 
-[![CI truth gates](https://img.shields.io/badge/CI-truth%20gates%20required-0ea5e9)](https://github.com/alikula37/kuantra-terminal/actions)
+[![Local merge gate](https://img.shields.io/badge/merge%20gate-local%20CI%20required-0ea5e9)](docs/strategy/LOCAL-CI-POLICY.md)
 
 Kuantra is a **local-first Trade Forensics & Execution Intelligence workstation**.
 It combines a trader's journal, recorded market context, deterministic risk
@@ -26,7 +26,8 @@ transport, source, security, and reconciliation contracts are implemented.
   Linux Secret Service). Plaintext SQLite credential fallback is not supported.
 - React + FastAPI + pywebview single-process desktop shell, with a browser
   development path and per-user data directory.
-- EN/TR/DE i18n parity and a 3-OS build/smoke CI gate.
+- EN/TR/DE i18n parity and a reproducible local build/smoke merge gate; cross-OS evidence is
+  required before a release claim.
 
 ## Explicitly experimental/disabled
 
@@ -92,6 +93,17 @@ For a desktop build, use `scripts/build_desktop.py` followed by
 `scripts/smoke_desktop.py`. Platform runbooks live in
 [`docs/BUILD_WINDOWS.md`](docs/BUILD_WINDOWS.md), [`docs/BUILD_MACOS.md`](docs/BUILD_MACOS.md)
 and [`docs/BUILD_LINUX.md`](docs/BUILD_LINUX.md).
+
+Before merging to `main`, run the full local gate (the canonical CI source while GitHub
+Actions quota is unavailable):
+
+```bash
+uv run --offline --no-project --with-requirements backend/requirements.lock python scripts/run_local_ci.py
+```
+
+The command writes `dist/local-ci-report.json` and must end with `MERGE READY`. A packaged
+smoke report can be green while the frozen Qt renderer falls back; the gate rejects that
+condition explicitly.
 
 ## Security and product truth
 

@@ -1,8 +1,8 @@
 {
   "document_id": "KTR-001",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "status": "Accepted",
-  "last_updated": "2026-09-06",
+  "last_updated": "2026-09-07",
   "product": {
     "name": "Kuantra Terminal",
     "version": "1.4.0",
@@ -115,8 +115,8 @@
     {
       "id": "local_desktop_shell",
       "status": "VERIFIED_CORE",
-      "claim": "React, FastAPI and pywebview run as the supported local desktop shell with a 3-OS CI smoke gate.",
-      "provenance": "CI_BUILD_AND_SMOKE_EVIDENCE",
+      "claim": "React, FastAPI and pywebview run as the supported local desktop shell with a reproducible host-OS build/smoke gate; cross-OS release evidence is required separately.",
+      "provenance": "LOCAL_BUILD_AND_SMOKE_EVIDENCE",
       "external_execution_authority": false
     },
     {

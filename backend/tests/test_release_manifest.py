@@ -60,7 +60,7 @@ class TestReleaseManifestAndPackaging:
         assert manifest["version"] == __version__
         assert manifest["product_name"] == "Kuantra Terminal"
         assert manifest["truth_matrix"]["document_id"] == "KTR-001"
-        assert manifest["truth_matrix"]["version"] == "1.0.0"
+        assert manifest["truth_matrix"]["version"] == "1.0.1"
         assert len(manifest["truth_matrix"]["sha256"]) == 64
         assert manifest["total_artifacts"] == 3
         assert len(manifest["artifacts"]) == 3

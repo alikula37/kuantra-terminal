@@ -5,6 +5,10 @@ Release-facing claims are governed by the versioned matrix in
 marketing inventory: it records what the current product can prove, what remains disabled,
 and which files are scanned before a build or GitHub Release.
 
+The current matrix revision is `KTR-001@1.0.1`. It records the 2026-09-07 decision that the
+local KDG-002 gate is canonical while GitHub Actions quota is unavailable; same-product wording
+revisions are kept as a matrix version increment rather than overwriting the historical decision.
+
 ## Naming and versioning
 
 - `truth-matrix.<product-version>.json` is immutable for that product version. A new product

@@ -8,7 +8,8 @@ To maintain our strict standards of execution reliability, security isolation, a
 
 ## 🌿 Git Branching Strategy
 
-- **`main`**: Production-ready branch. Every commit on `main` must pass 100% of automated test suites and compile cleanly across Windows, macOS, and Linux.
+- **`main`**: Release-bound branch. Every merge must pass the local KDG-002 gate; a release
+  additionally needs independently recorded Windows, macOS and Linux artifact evidence.
 - **`feat/<feature-name>`**: Development of new features or phase extensions.
 - **`fix/<bug-description>`**: Targeted bug fixes and security patches.
 - **`perf/<optimization>`**: Quantitative latency and memory optimizations.
@@ -99,30 +100,14 @@ from there.
 
 ## 🧪 Testing Protocol
 
-Before submitting a Pull Request or pushing changes:
+Before merging to `main`, run the single canonical local gate from the repository root:
 
-1. Run the complete backend Pytest suite against a throwaway data directory:
-   ```bash
-   KUANTRA_DATA_DIR="$(mktemp -d)" python -m pytest backend/tests -q
-   ```
-   **Requirement**: 100% pass rate across all existing test files.
+```bash
+uv run --offline --no-project --with-requirements backend/requirements.lock python scripts/run_local_ci.py
+```
 
-2. Run the frontend unit tests and i18n parity check:
-   ```bash
-   npm --prefix frontend test
-   npm run check:i18n
-   ```
-   **Requirement**: all vitest specs pass and `tr.json` / `en.json` / `de.json` stay in full parity.
-
-3. Run the frontend TypeScript compilation check:
-   ```bash
-   cd frontend
-   npm run build
-   ```
-   **Requirement**: 0 TypeScript compiler errors and clean Vite chunk generation.
-
-4. For changes that touch the desktop shell or packaging, build and smoke the frozen app:
-   ```bash
-   python scripts/build_desktop.py && python scripts/smoke_desktop.py
-   ```
-   **Requirement**: exit code 0 and a passing `dist/smoke.json` report.
+The gate runs compileall, release-truth and packaging checks, the isolated full backend
+suite, frontend tests/build, a locked PyInstaller build, packaged smoke, and the frozen Qt
+preflight. It writes `dist/local-ci-report.json`; `MERGE READY` is required. A green smoke
+payload does not override a failed renderer preflight. The policy and merge rules are recorded
+in [`docs/strategy/LOCAL-CI-POLICY.md`](docs/strategy/LOCAL-CI-POLICY.md).

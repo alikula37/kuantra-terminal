@@ -8,6 +8,7 @@
     "check:i18n": "npm --prefix frontend run check:i18n",
     "build": "npm --prefix frontend run build",
     "test": "npm --prefix frontend test",
+    "check:local": "python scripts/run_local_ci.py",
     "desktop": "python backend/desktop_main.py --dev-url http://localhost:5173",
     "desktop:build": "python scripts/build_desktop.py"
   },

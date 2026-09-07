@@ -1,0 +1,277 @@
+"""Run Kuantra's reproducible local merge gate.
+
+GitHub Actions is an optional remote evidence source. This command is the canonical
+merge gate when remote Actions are unavailable or disabled. It deliberately runs the
+same product-truth, backend, frontend, freeze and packaged smoke boundaries in one
+ordered process and writes a provenance report to ``dist/local-ci-report.json``.
+
+Usage (from the repository root)::
+
+    python scripts/run_local_ci.py
+
+For a locked environment, invoke the command through uv, for example::
+
+    uv run --offline --no-project --with-requirements backend/requirements.lock \
+        python scripts/run_local_ci.py
+
+The gate is fail-closed. A packaged smoke report can be green while the supported
+Qt runtime silently falls back to another renderer; the Windows/Linux preflight
+check rejects that condition instead of treating it as a passing desktop build.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import platform
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REPORT_DEFAULT = ROOT / "dist" / "local-ci-report.json"
+REQUIRED_SMOKE_CHECKS = {
+    "react_mounted",
+    "bridge_roundtrip",
+    "health",
+    "push_sink",
+    "plugin_boundary",
+}
+QT_FAILURE_MARKERS = (
+    "Frozen Qt runtime preflight failed",
+    "QT cannot be loaded",
+)
+QT_READY_MARKER = "Frozen Qt runtime ready"
+
+
+def _python_command(*args: str) -> list[str]:
+    return [sys.executable, *args]
+
+
+def _npm_command() -> str:
+    candidate = "npm.cmd" if os.name == "nt" else "npm"
+    return shutil.which(candidate) or candidate
+
+
+def _run_step(
+    name: str,
+    command: list[str],
+    env: dict[str, str],
+    timeout: float,
+) -> dict[str, Any]:
+    started = time.monotonic()
+    print(f"\n[local-ci] {name}: {' '.join(command)}", flush=True)
+    result: dict[str, Any] = {
+        "name": name,
+        "command": command,
+        "status": "FAIL",
+        "returncode": None,
+        "duration_seconds": None,
+    }
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=str(ROOT),
+            env=env,
+            check=False,
+            timeout=timeout,
+        )
+        result["returncode"] = completed.returncode
+        result["status"] = "PASS" if completed.returncode == 0 else "FAIL"
+    except subprocess.TimeoutExpired:
+        result["status"] = "TIMEOUT"
+        print(f"[local-ci] {name}: timeout after {timeout:g}s", file=sys.stderr, flush=True)
+    except OSError as exc:
+        result["status"] = "ERROR"
+        result["error"] = str(exc)
+        print(f"[local-ci] {name}: {exc}", file=sys.stderr, flush=True)
+    result["duration_seconds"] = round(time.monotonic() - started, 3)
+    print(f"[local-ci] {name}: {result['status']}", flush=True)
+    return result
+
+
+def _read_desktop_logs(data_dir: Path) -> str:
+    chunks: list[str] = []
+    for path in sorted(data_dir.rglob("*.log")):
+        try:
+            chunks.append(path.read_text(encoding="utf-8", errors="replace"))
+        except OSError:
+            continue
+    return "\n".join(chunks)
+
+
+def _desktop_preflight(data_dir: Path) -> tuple[str, dict[str, Any]]:
+    """Validate the renderer actually loaded by the frozen desktop process."""
+    if sys.platform == "darwin":
+        return "PASS", {"required": False, "reason": "macOS uses native WKWebView"}
+
+    logs = _read_desktop_logs(data_dir)
+    failures = [marker for marker in QT_FAILURE_MARKERS if marker in logs]
+    if failures:
+        return "FAIL", {
+            "required": True,
+            "renderer": "qt",
+            "failure_markers": failures,
+            "reason": "supported Qt renderer failed to load; fallback is not merge-safe",
+        }
+    if QT_READY_MARKER not in logs:
+        return "FAIL", {
+            "required": True,
+            "renderer": "qt",
+            "reason": "no frozen Qt preflight success marker was recorded",
+        }
+    return "PASS", {"required": True, "renderer": "qt", "ready": True}
+
+
+def _validate_smoke_report(path: Path) -> tuple[str, dict[str, Any]]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return "FAIL", {"reason": f"smoke report unavailable or invalid: {exc}"}
+    checks = payload.get("checks")
+    missing = sorted(REQUIRED_SMOKE_CHECKS - set(checks or {}))
+    failed = sorted(name for name in REQUIRED_SMOKE_CHECKS if (checks or {}).get(name) is not True)
+    if payload.get("ok") is not True or missing or failed:
+        return "FAIL", {"reason": "required packaged smoke checks did not pass", "missing": missing, "failed": failed}
+    return "PASS", {
+        "version": payload.get("version"),
+        "checks": {name: checks[name] for name in sorted(REQUIRED_SMOKE_CHECKS)},
+        "executable_sha256": payload.get("executable_sha256"),
+        "truth_matrix": payload.get("truth_matrix"),
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Run the Kuantra local merge gate")
+    parser.add_argument("--report", type=Path, default=REPORT_DEFAULT)
+    parser.add_argument("--smoke-timeout", type=float, default=90.0)
+    parser.add_argument("--keep-data", action="store_true", help="keep isolated test/smoke data directories")
+    args = parser.parse_args(argv)
+
+    report_path = args.report if args.report.is_absolute() else ROOT / args.report
+    report_path = report_path.resolve()
+    test_data = Path(tempfile.mkdtemp(prefix="kuantra-local-ci-tests-"))
+    smoke_data = Path(tempfile.mkdtemp(prefix="kuantra-local-ci-smoke-"))
+    smoke_report = ROOT / "dist" / "local-ci-smoke.json"
+    env = os.environ.copy()
+    env.update(
+        {
+            "KUANTRA_DATA_DIR": str(test_data),
+            "PYTHONUNBUFFERED": "1",
+        }
+    )
+
+    started = time.monotonic()
+    steps: list[dict[str, Any]] = []
+    steps.append(_run_step("diff-check", ["git", "diff", "--check"], env, 60))
+    steps.append(_run_step("compileall", _python_command("-m", "compileall", "-q", "backend"), env, 180))
+    steps.append(_run_step("release-truth", _python_command("scripts/check_release_truth.py"), env, 120))
+    steps.append(_run_step("packaging-integrity", _python_command("scripts/verify_packaging.py"), env, 120))
+    steps.append(_run_step("backend-tests", _python_command("-m", "pytest", "backend/tests", "-q", "--tb=short"), env, 900))
+
+    npm = _npm_command()
+    steps.append(_run_step("frontend-tests", [npm, "--prefix", str(ROOT / "frontend"), "test"], env, 600))
+    steps.append(_run_step("frontend-build", [npm, "--prefix", str(ROOT / "frontend"), "run", "build"], env, 600))
+
+    build_step = _run_step(
+        "desktop-build",
+        _python_command("scripts/build_desktop.py", "--skip-frontend"),
+        env,
+        1200,
+    )
+    steps.append(build_step)
+
+    if build_step["status"] == "PASS":
+        smoke_env = env.copy()
+        smoke_env["KUANTRA_DATA_DIR"] = str(smoke_data)
+        smoke_env["KUANTRA_GATEWAY_ENABLED"] = "0"
+        smoke_step = _run_step(
+            "desktop-smoke",
+            _python_command(
+                "scripts/smoke_desktop.py",
+                "--report",
+                str(smoke_report),
+                "--data-dir",
+                str(smoke_data),
+                "--timeout",
+                str(args.smoke_timeout),
+            ),
+            smoke_env,
+            args.smoke_timeout + 90,
+        )
+        steps.append(smoke_step)
+        smoke_status, smoke_details = _validate_smoke_report(smoke_report)
+        if smoke_step["status"] != "PASS":
+            smoke_status = "FAIL"
+            smoke_details = {
+                **smoke_details,
+                "reason": "packaged smoke process did not exit successfully",
+                "process_status": smoke_step["status"],
+            }
+        steps.append({
+            "name": "desktop-smoke-contract",
+            "status": smoke_status,
+            "returncode": 0 if smoke_status == "PASS" else 1,
+            "duration_seconds": 0,
+            "details": smoke_details,
+        })
+        qt_status, qt_details = _desktop_preflight(smoke_data)
+        steps.append({
+            "name": "desktop-qt-preflight",
+            "status": qt_status,
+            "returncode": 0 if qt_status == "PASS" else 1,
+            "duration_seconds": 0,
+            "details": qt_details,
+        })
+    else:
+        steps.append({
+            "name": "desktop-smoke",
+            "status": "BLOCKED",
+            "returncode": None,
+            "duration_seconds": 0,
+            "details": {"reason": "desktop build failed"},
+        })
+
+    failed = [step["name"] for step in steps if step["status"] not in {"PASS"}]
+    report = {
+        "local_ci_schema_version": 1,
+        "policy": "KDG-002@1.0.0",
+        "started_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "duration_seconds": round(time.monotonic() - started, 3),
+        "product_version": _product_version(),
+        "platform": platform.system().lower(),
+        "architecture": platform.machine(),
+        "python": sys.version.split()[0],
+        "test_data_dir": str(test_data),
+        "smoke_data_dir": str(smoke_data),
+        "merge_ready": not failed,
+        "failed_steps": failed,
+        "steps": steps,
+    }
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(f"\n[local-ci] report: {report_path}")
+    print("[local-ci] " + ("MERGE READY" if not failed else "MERGE BLOCKED: " + ", ".join(failed)))
+
+    if not args.keep_data and not failed:
+        shutil.rmtree(test_data, ignore_errors=True)
+        shutil.rmtree(smoke_data, ignore_errors=True)
+    return 0 if not failed else 1
+
+
+def _product_version() -> str:
+    version_path = ROOT / "backend" / "app" / "version.py"
+    for line in version_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("__version__"):
+            return line.split("=", 1)[1].strip().strip("\"'")
+    return "UNKNOWN"
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
