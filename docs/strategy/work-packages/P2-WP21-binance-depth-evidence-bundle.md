@@ -9,7 +9,7 @@ baseline: 94bd412
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP20 Binance Depth Operator Review ve Key Policy
-implementation_commits: pending
+implementation_commits: 768cffc
 ```
 
 ## Problem
