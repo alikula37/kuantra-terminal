@@ -9,7 +9,7 @@ baseline: 257e881
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP11 Public Binance Depth Network Adapter, P2-WP13 Deterministic Binance Depth Soak Harness
-implementation_commits: 17dc616
+implementation_commits: 17dc616, 078dc02
 ```
 
 ## Problem

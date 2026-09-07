@@ -9,7 +9,7 @@ baseline: a58bc81
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP11 Public Binance Depth Network Adapter
-implementation_commits: 9bee5f4
+implementation_commits: 9bee5f4, 078dc02
 ```
 
 ## Problem
