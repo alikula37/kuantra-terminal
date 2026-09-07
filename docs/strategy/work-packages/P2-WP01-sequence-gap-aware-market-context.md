@@ -50,7 +50,7 @@ oluşturuyordu.
 - [x] Gap raporu sınırsız büyümez; en fazla 20 aralık ve bounded count taşır.
 - [x] Mevcut candle timestamp gap rejection ve replay fingerprint davranışı korunur.
 - [x] Focused suite: `49 passed`.
-- [ ] Full backend suite: P2-WP01 sonrası yeniden çalıştırılacak.
+- [x] Full backend suite: `548 passed, 1 skipped` (Mac local CI, 2026-09-08).
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı
@@ -73,3 +73,10 @@ boundary'sini ayrı bir adapter contract'ı olarak ele almalıdır.
 
 - Sequence gap truth contract, market-context provenance alanları ve regression
   coverage uygulandı.
+
+### 1.0.1 — 2026-09-08
+
+- Mac temiz ortamında sequence-gap, candle provenance ve deterministic replay
+  ilişkili focused suite `62 passed` olarak yeniden doğrulandı.
+- P2-WP01 sonrası tam local CI `548 passed, 1 skipped` ile merge-ready oldu;
+  remote CI kanıtı GitHub Actions kota/bütçe kısıtı nedeniyle hâlâ beklemede.
