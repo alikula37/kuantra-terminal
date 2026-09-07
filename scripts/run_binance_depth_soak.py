@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.services.market_data.binance_depth_ingestor import BinanceDepthIngestor  # noqa: E402
+from app.services.market_data.binance_depth_report import verify_depth_soak_report  # noqa: E402
 from app.services.market_data.binance_depth_network import (  # noqa: E402
     BinanceDepthEnvironment,
     BinanceDepthNetworkAdapter,
@@ -262,8 +263,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[binance-depth-soak] REFUSED/FAIL: {exc}", file=sys.stderr)
         return 2
     _write_or_print(report, args.output)
-    decision = report["session"]["decision"]
-    return 0 if decision in {"COMPLETED", "STOPPED"} else 1
+    verification = verify_depth_soak_report(report, expected_mode=args.mode)
+    if not verification.ok:
+        print(
+            "[binance-depth-soak] verification="
+            f"{verification.verdict.value} errors={'; '.join(verification.errors)}",
+            file=sys.stderr,
+        )
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

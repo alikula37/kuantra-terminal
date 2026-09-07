@@ -71,6 +71,51 @@ def test_cli_rejects_invalid_duration_and_reconnect_bounds(tmp_path):
     assert main(["--retry-recovery", "--storage-root", str(tmp_path)]) == 2
 
 
+def test_cli_rejects_stop_during_recovery_backoff(monkeypatch, tmp_path):
+    async def fake_testnet_probe(**kwargs):
+        report = await run_fixture_probe(
+            symbol="BTCUSDT",
+            storage_root=tmp_path / "storage",
+            max_reconnects=1,
+        )
+        report["mode"] = "testnet"
+        report["environment"] = "testnet"
+        report["session"] = {
+            "decision": "STOPPED",
+            "reason_code": "STOP_EVENT_SET_DURING_BACKOFF",
+            "attempts": 1,
+            "reconnects": 1,
+            "processed_event_count": 2,
+            "source_verified": False,
+            "cycles": [
+                {
+                    "decision": "RECOVERY_REQUIRED",
+                    "reason_code": "INGESTOR_REQUIRES_RECOVERY",
+                    "source_verified": False,
+                }
+            ],
+        }
+        return report
+
+    monkeypatch.setattr(
+        "scripts.run_binance_depth_soak.run_testnet_probe",
+        fake_testnet_probe,
+    )
+
+    assert (
+        main(
+            [
+                "--mode",
+                "testnet",
+                "--allow-network",
+                "--storage-root",
+                str(tmp_path / "cli-storage"),
+            ]
+        )
+        == 1
+    )
+
+
 def test_cli_exposes_recovery_retry_only_as_an_opt_in_testnet_flag():
     args = build_parser().parse_args(["--mode", "testnet", "--allow-network", "--retry-recovery"])
     assert args.retry_recovery is True
