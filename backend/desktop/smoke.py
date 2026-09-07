@@ -1,4 +1,8 @@
-"""Headless self-test used by CI: proves the packaged app can render the UI and reach Python."""
+"""Packaged self-test: proves the app can render the UI and reach Python.
+
+Windows WebView2 uses a visible host because hidden WinForms controllers are not reliable on
+all supported Windows builds; the host is closed after the checks complete.
+"""
 from __future__ import annotations
 
 import json
@@ -59,6 +63,12 @@ def _check_plugin_boundary(ctx) -> bool:
 def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
     checks = {"react_mounted": False, "bridge_roundtrip": False, "health": False, "push_sink": False,
               "plugin_boundary": False}
+    # pywebview's evaluate_js waits 20 seconds per call when the native controller never became
+    # ready. Check the readiness event once so a renderer failure produces a bounded diagnostic
+    # instead of multiplying that wait across every smoke assertion.
+    ready_event = getattr(getattr(window, "events", None), "_pywebviewready", None)
+    if ready_event is not None and not ready_event.wait(timeout):
+        return {"ok": False, "reason": "renderer controller did not become ready", "checks": checks}
     deadline = time.time() + timeout
     reason = "timeout"
     while time.time() < deadline:

@@ -102,8 +102,11 @@ uv run --offline --no-project --with-requirements backend/requirements.lock pyth
 ```
 
 The command writes `dist/local-ci-report.json` and must end with `MERGE READY`. A packaged
-smoke report can be green while the frozen Qt renderer falls back; the gate rejects that
-condition explicitly.
+smoke report can be green while the frozen renderer falls back; the gate rejects that
+condition explicitly. Windows defaults to the Evergreen WebView2 host; Linux defaults to Qt
+WebEngine. The production Windows payload intentionally excludes Qt; `PYWEBVIEW_GUI=qt` is
+supported only by a source or separately-built diagnostic package and is not a production
+fallback.
 
 ## Security and product truth
 

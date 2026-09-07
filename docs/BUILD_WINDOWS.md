@@ -5,16 +5,21 @@ Kuantra Terminal ships as a **single-process Python desktop application**: a
 backend running in the same process and dispatched in-process over ASGI. There is no local HTTP
 port between the UI and the backend, and no Rust/Node runtime in the shipped app.
 
-On Windows pywebview uses the **Qt** GUI backend (PyQt6 + PyQt6-WebEngine). The browser engine is
-bundled inside the installer, so **the WebView2 runtime is not required** on the target machine.
-The app tree is frozen with **PyInstaller** (`--onedir`, `--windowed`) and wrapped in a per-user
-NSIS installer.
+On Windows pywebview uses the **Evergreen WebView2** GUI backend. Windows 10/11 normally ships
+the runtime through Microsoft Edge; the installer checks that prerequisite and aborts with a
+clear remediation message if it is absent. The production Windows payload intentionally excludes
+PyQt6 and Qt WebEngine because Qt's Chromium child-process sandbox can be rejected by hardened
+Windows builds. `PYWEBVIEW_GUI=qt` is available only to a source or separately-built diagnostic
+package; it is not a production fallback. The app tree is frozen with **PyInstaller**
+(`--onedir`, `--windowed`) and wrapped in a per-user NSIS installer.
 
 ---
 
 ## 1. Prerequisites
 
 - **Windows 10 / 11 (x64)**
+- **Microsoft Edge WebView2 Evergreen Runtime** (normally installed with Edge; verify with the
+  WebView2 bootstrapper on clean images)
 - **Python 3.11+ (x64)**
 - **Node.js 20+ & npm**
 - **NSIS (Nullsoft Scriptable Install System)** with `makensis` on `PATH`
@@ -37,7 +42,8 @@ npm --prefix frontend install
 ```
 
 `backend/requirements-desktop.txt` pulls in `pywebview`, `PyInstaller`, `PyQt6` and
-`PyQt6-WebEngine` (pure-pip wheels, so the freeze is reproducible).
+`PyQt6-WebEngine`. PyQt6 remains in the lock for Linux and separately-built diagnostics; the
+Windows production host uses the installed WebView2 runtime and does not embed Qt.
 
 ---
 
@@ -61,7 +67,8 @@ Output: `dist\Kuantra Terminal\Kuantra Terminal.exe` (plus its onedir payload)
 python scripts/smoke_desktop.py
 ```
 
-Runs the frozen executable with `--smoke`: it opens a hidden window, waits for React to mount,
+Runs the frozen executable with `--smoke`: on Windows it opens a visible WebView2 window (then
+closes it after checks); other platforms use their normal hidden smoke host. It waits for React to mount,
 performs a JS → Python bridge roundtrip and an in-process `/health` call, writes `dist/smoke.json`
 and exits non-zero on failure. Because a `--windowed` build has no stdout on Windows, the JSON
 report is the authoritative result. CI fails the build if this fails.

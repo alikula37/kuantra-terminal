@@ -30,7 +30,7 @@ datas += collect_data_files("app", includes=["**/*.json", "**/*.yaml", "**/*.yml
 datas += [(os.path.join(BACKEND, "app", "plugins"), os.path.join("app", "plugins"))]
 
 hiddenimports = []
-for pkg in ["app", "starlette", "fastapi", "uvicorn", "pydantic", "cryptography", "webview", "httpx", "anyio",
+for pkg in ["app", "starlette", "fastapi", "uvicorn", "pydantic", "cryptography", "httpx", "anyio",
             "alembic", "sqlalchemy.dialects.sqlite"]:
     hiddenimports += collect_submodules(pkg)
 # Imported only through string/plugin indirection, so the analysis never sees them:
@@ -51,6 +51,8 @@ hiddenimports += [
 # pywebview picks its GUI backend by importing a platform module by name at runtime.
 if IS_MAC:
     hiddenimports += ["webview.platforms.cocoa"]
+elif IS_WIN:
+    hiddenimports += ["webview.platforms.edgechromium"]
 else:
     hiddenimports += [
         "webview.platforms.qt",
@@ -65,8 +67,12 @@ if not IS_WIN:
 if IS_MAC:
     # macOS uses the native cocoa (pywebview/WebKit) backend; Qt would only bloat the bundle.
     excludes += ["PyQt6", "PyQt5", "PySide6", "PySide2", "qtpy"]
+elif IS_WIN:
+    # Windows production uses WebView2. Keep the Qt diagnostic override out of the production
+    # payload; a separate diagnostic build can re-enable it explicitly when needed.
+    excludes += ["PyQt6", "PyQt5", "PySide6", "PySide2", "qtpy"]
 else:
-    # Windows and Linux use the Qt backend (PyQt6 + PyQt6-WebEngine); drop the other Qt bindings.
+    # Linux uses the Qt backend (PyQt6 + PyQt6-WebEngine).
     excludes += ["PyQt5", "PySide6", "PySide2"]
 
 a = Analysis(  # noqa: F821

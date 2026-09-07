@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: KDG-002
-version: 1.0.0
+version: 1.1.0
 status: Accepted
 date: 2026-09-07
 strategy: KPS-001@1.0.0
@@ -38,11 +38,12 @@ uv run --offline --no-project --with-requirements backend/requirements.lock pyth
 7. kilitli ortamla PyInstaller desktop build
 8. paketlenmiş uygulama smoke raporu (`react_mounted`, `bridge_roundtrip`, `health`,
    `push_sink`, `plugin_boundary`)
-9. Windows/Linux'ta frozen Qt preflight; Qt yüklenemeyip başka renderer'a fallback edilmesi
+9. Platform renderer preflight; Windows WebView2 veya Linux Qt yüklenemeyip başka renderer'a
+   fallback edilmesi
    smoke kontrolleri yeşil olsa bile merge'i bloklar. macOS native WKWebView olduğu için bu
    kapı uygulanmaz.
 
-Her komutun sonucu `dist/local-ci-report.json` içinde `KDG-002@1.0.0` policy kimliği,
+Her komutun sonucu `dist/local-ci-report.json` içinde `KDG-002@1.1.0` policy kimliği,
 platform, Python sürümü, süre, smoke hash/provenance ve başarısız adımlarla birlikte tutulur.
 Başarılı koşuda geçici test/smoke verisi silinir; başarısız koşuda tanı için korunur.
 
@@ -62,12 +63,15 @@ Başarılı koşuda geçici test/smoke verisi silinir; başarısız koşuda tan�
 
 - GitHub Actions kotasını artırmak veya billing/spending limit değiştirmek.
 - Branch protection kuralı olmayan özel repository'de bunu varmış gibi göstermek.
-- Qt preflight hatasını WebView2 fallback'i ile gizlemek.
+- Renderer preflight hatasını başka bir backend fallback'i ile gizlemek.
 - Local gate'i bypass etmek için `--skip-*` benzeri sessiz seçenek eklemek.
 
 ## Değişiklik geçmişi
 
-### 1.0.0 — 2026-09-07
+### 1.1.0 — 2026-09-07
 
 - Actions kapalı/kota dolu dönemde yerel merge gate, rapor şeması ve frozen renderer
   fail-closed kontrolü kabul edildi.
+- Windows production smoke'u görünür WebView2 host'u ile doğrular; Qt WebEngine yalnızca Linux
+  production payload'ında veya ayrı bir Windows diagnostic build'inde kullanılabilir. Renderer
+  seçimi başarısız olduğunda pywebview fallback'i başarılı smoke kanıtı sayılmaz.

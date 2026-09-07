@@ -1,4 +1,4 @@
-"""Run the packaged app's headless self-test. Exit code = smoke result.
+"""Run the packaged app's renderer smoke self-test. Exit code = smoke result.
 
 Usage: python scripts/smoke_desktop.py [--report PATH] [--timeout SECONDS]
 """
@@ -82,14 +82,39 @@ def main() -> int:
     if args.appimage:
         env["APPIMAGE_EXTRACT_AND_RUN"] = "1"
     hard_timeout = args.timeout + 60
-    try:
-        proc = subprocess.run(
-            [str(exe), "--smoke", "--smoke-report", args.report, "--smoke-timeout", str(args.timeout)],
-            env=env, timeout=hard_timeout,
-        )
-    except subprocess.TimeoutExpired:
-        print(f"SMOKE FAIL (timeout after {hard_timeout:g} s)")
-        return 1
+    proc = subprocess.Popen(
+        [str(exe), "--smoke", "--smoke-report", args.report, "--smoke-timeout", str(args.timeout)],
+        env=env,
+    )
+    deadline = time.monotonic() + hard_timeout
+    terminated_for_renderer_failure = False
+    while proc.poll() is None:
+        if Path(args.report).exists():
+            try:
+                early_payload = json.loads(Path(args.report).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                early_payload = {}
+            if early_payload.get("renderer_controller_ready") is False:
+                terminated_for_renderer_failure = True
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait(timeout=5)
+                break
+        if time.monotonic() >= deadline:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait(timeout=5)
+            print(f"SMOKE FAIL (timeout after {hard_timeout:g} s)")
+            return 1
+        time.sleep(0.25)
+    if terminated_for_renderer_failure:
+        print("SMOKE FAIL (renderer controller did not become ready)")
     report = Path(args.report)
     if report.exists():
         try:

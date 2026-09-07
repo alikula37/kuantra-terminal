@@ -15,8 +15,8 @@ For a locked environment, invoke the command through uv, for example::
         python scripts/run_local_ci.py
 
 The gate is fail-closed. A packaged smoke report can be green while the supported
-Qt runtime silently falls back to another renderer; the Windows/Linux preflight
-check rejects that condition instead of treating it as a passing desktop build.
+platform renderer silently falls back to another renderer; the preflight check rejects
+that condition instead of treating it as a passing desktop build.
 """
 
 from __future__ import annotations
@@ -47,7 +47,11 @@ QT_FAILURE_MARKERS = (
     "Frozen Qt runtime preflight failed",
     "QT cannot be loaded",
 )
-QT_READY_MARKER = "Frozen Qt runtime ready"
+QT_READY_MARKER = "Frozen Qt runtime bindings ready"
+WEBVIEW2_FAILURE_MARKER = "Frozen WebView2 renderer preflight failed"
+WEBVIEW2_READY_MARKER = "Frozen WebView2 renderer bindings ready"
+RENDERER_INIT_MARKER = "Frozen renderer initialized:"
+RENDERER_READY_MARKER = "Frozen renderer controller ready:"
 
 
 def _python_command(*args: str) -> list[str]:
@@ -112,21 +116,48 @@ def _desktop_preflight(data_dir: Path) -> tuple[str, dict[str, Any]]:
         return "PASS", {"required": False, "reason": "macOS uses native WKWebView"}
 
     logs = _read_desktop_logs(data_dir)
-    failures = [marker for marker in QT_FAILURE_MARKERS if marker in logs]
+    renderer = "edgechromium" if sys.platform.startswith("win") else "qt"
+    failure_markers = QT_FAILURE_MARKERS if renderer == "qt" else (WEBVIEW2_FAILURE_MARKER,)
+    ready_marker = QT_READY_MARKER if renderer == "qt" else WEBVIEW2_READY_MARKER
+    failures = [marker for marker in failure_markers if marker in logs]
     if failures:
         return "FAIL", {
             "required": True,
-            "renderer": "qt",
+            "renderer": renderer,
             "failure_markers": failures,
-            "reason": "supported Qt renderer failed to load; fallback is not merge-safe",
+            "reason": f"supported {renderer} renderer failed to load; fallback is not merge-safe",
         }
-    if QT_READY_MARKER not in logs:
+    if ready_marker not in logs:
         return "FAIL", {
             "required": True,
-            "renderer": "qt",
-            "reason": "no frozen Qt preflight success marker was recorded",
+            "renderer": renderer,
+            "reason": f"no frozen {renderer} preflight success marker was recorded",
         }
-    return "PASS", {"required": True, "renderer": "qt", "ready": True}
+    initialized = [line for line in logs.splitlines() if RENDERER_INIT_MARKER in line]
+    expected_init = f"{RENDERER_INIT_MARKER} {renderer}"
+    if not any(expected_init in line for line in initialized):
+        return "FAIL", {
+            "required": True,
+            "renderer": renderer,
+            "reason": f"frozen renderer identity was not attested as {renderer}",
+            "initialization_lines": initialized[-5:],
+        }
+    ready_lines = [line for line in logs.splitlines() if RENDERER_READY_MARKER in line]
+    expected_ready = f"{RENDERER_READY_MARKER} {renderer}"
+    if not any(expected_ready in line for line in ready_lines):
+        return "FAIL", {
+            "required": True,
+            "renderer": renderer,
+            "reason": f"frozen renderer controller did not become ready as {renderer}",
+            "ready_lines": ready_lines[-5:],
+        }
+    return "PASS", {
+        "required": True,
+        "renderer": renderer,
+        "ready": True,
+        "initialized": expected_init,
+        "controller_ready": expected_ready,
+    }
 
 
 def _validate_smoke_report(path: Path) -> tuple[str, dict[str, Any]]:
@@ -139,11 +170,28 @@ def _validate_smoke_report(path: Path) -> tuple[str, dict[str, Any]]:
     failed = sorted(name for name in REQUIRED_SMOKE_CHECKS if (checks or {}).get(name) is not True)
     if payload.get("ok") is not True or missing or failed:
         return "FAIL", {"reason": "required packaged smoke checks did not pass", "missing": missing, "failed": failed}
+    expected_renderer = "edgechromium" if sys.platform.startswith("win") else "qt" if sys.platform.startswith("linux") else None
+    renderer_expected = payload.get("renderer_expected")
+    renderer_actual = payload.get("renderer_actual")
+    if expected_renderer and (
+        renderer_expected != expected_renderer
+        or renderer_actual != expected_renderer
+        or payload.get("renderer_controller_ready") is not True
+    ):
+        return "FAIL", {
+            "reason": "packaged smoke did not attest the supported renderer",
+            "renderer_expected": renderer_expected,
+            "renderer_actual": renderer_actual,
+            "renderer_controller_ready": payload.get("renderer_controller_ready"),
+        }
     return "PASS", {
         "version": payload.get("version"),
         "checks": {name: checks[name] for name in sorted(REQUIRED_SMOKE_CHECKS)},
         "executable_sha256": payload.get("executable_sha256"),
         "truth_matrix": payload.get("truth_matrix"),
+        "renderer_expected": renderer_expected,
+        "renderer_actual": renderer_actual,
+        "renderer_controller_ready": payload.get("renderer_controller_ready"),
     }
 
 
@@ -221,13 +269,13 @@ def main(argv: list[str] | None = None) -> int:
             "duration_seconds": 0,
             "details": smoke_details,
         })
-        qt_status, qt_details = _desktop_preflight(smoke_data)
+        renderer_status, renderer_details = _desktop_preflight(smoke_data)
         steps.append({
-            "name": "desktop-qt-preflight",
-            "status": qt_status,
-            "returncode": 0 if qt_status == "PASS" else 1,
+            "name": "desktop-renderer-preflight",
+            "status": renderer_status,
+            "returncode": 0 if renderer_status == "PASS" else 1,
             "duration_seconds": 0,
-            "details": qt_details,
+            "details": renderer_details,
         })
     else:
         steps.append({
@@ -241,7 +289,7 @@ def main(argv: list[str] | None = None) -> int:
     failed = [step["name"] for step in steps if step["status"] not in {"PASS"}]
     report = {
         "local_ci_schema_version": 1,
-        "policy": "KDG-002@1.0.0",
+        "policy": "KDG-002@1.1.0",
         "started_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "duration_seconds": round(time.monotonic() - started, 3),
         "product_version": _product_version(),

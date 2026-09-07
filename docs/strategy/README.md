@@ -10,12 +10,13 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 |---|---|---:|---:|---:|
 | KPS-001 | [Ürün ve Mimari Stratejisi](./KUANTRA-STRATEGY-001.md) | Accepted | 1.0.0 | 2026-09-05 |
 | KDG-001 | [Geliştirme Yönetişimi](./DEVELOPMENT-GOVERNANCE.md) | Accepted | 1.0.0 | 2026-09-05 |
-| KDG-002 | [Yerel CI ve merge gate politikası](./LOCAL-CI-POLICY.md) | Accepted | 1.0.0 | 2026-09-07 |
+| KDG-002 | [Yerel CI ve merge gate politikası](./LOCAL-CI-POLICY.md) | Accepted | 1.1.0 | 2026-09-07 |
 | KWT-001 | [İş Paketi / Agent Prompt Şablonu](./WORK-PACKAGE-TEMPLATE.md) | Active | 1.0.0 | 2026-09-05 |
 | KPS-P0-STATUS | [Faz 0 durum panosu](./PHASE-0-STATUS.md) | Verified | — | 2026-09-06 |
 | ADR-0001 | [Ürün kimliği ve ilk pazar](./adr/ADR-0001-product-identity-and-entry-market.md) | Accepted | — | 2026-09-05 |
 | ADR-0002 | [Evidence ledger ve veri katmanları](./adr/ADR-0002-evidence-ledger-and-storage.md) | Accepted | — | 2026-09-05 |
 | ADR-0003 | [Execution ve AI yetki sınırı](./adr/ADR-0003-execution-authority-boundary.md) | Accepted | — | 2026-09-05 |
+| ADR-0004 | [Windows WebView2 renderer sınırı](./adr/ADR-0004-windows-webview2-renderer.md) | Accepted | — | 2026-09-07 |
 | KTR-001 | [Release truth matrix](../release/README.md) | Accepted | 1.0.1 | 2026-09-07 |
 | P0-WP01 | [Tekil paper execution rotası ve risk/compliance sözleşmesi](./work-packages/P0-WP01-execution-risk-contract.md) | Verified | — | 2026-09-05 |
 | P0-WP02 | [Market data truth contract ve fabricated fiyat/latency temizliği](./work-packages/P0-WP02-market-data-truth-contract.md) | Verified | — | 2026-09-05 |
@@ -296,3 +297,5 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - KDG-002 v1.0.0 ile GitHub Actions kotası kullanılamazken yerel CI merge gate'i canonical
   süreç olarak kabul edildi; packaged smoke'un Qt fallback'i yeşil UI kontrollerine rağmen
   merge'i bloklayan fail-closed kanıt kapısına bağlandı.
+- ADR-0004 ile Windows production renderer'ı Evergreen WebView2 olarak sabitlendi; PyQt6/Qt
+  WebEngine payload'dan çıkarıldı ve Windows smoke görünür WebView2 controller'ı ile doğrulanır.

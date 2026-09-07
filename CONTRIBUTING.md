@@ -107,7 +107,7 @@ uv run --offline --no-project --with-requirements backend/requirements.lock pyth
 ```
 
 The gate runs compileall, release-truth and packaging checks, the isolated full backend
-suite, frontend tests/build, a locked PyInstaller build, packaged smoke, and the frozen Qt
+suite, frontend tests/build, a locked PyInstaller build, packaged smoke, and the frozen platform
 preflight. It writes `dist/local-ci-report.json`; `MERGE READY` is required. A green smoke
 payload does not override a failed renderer preflight. The policy and merge rules are recorded
 in [`docs/strategy/LOCAL-CI-POLICY.md`](docs/strategy/LOCAL-CI-POLICY.md).

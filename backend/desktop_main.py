@@ -120,17 +120,108 @@ def shutdown(ctx: AppContext) -> None:
 
 
 def _default_gui() -> str | None:
-    # macOS uses its native WKWebView; Windows and Linux both use Qt WebEngine, which ships as a
-    # plain pip wheel and needs neither pythonnet nor the WebView2 runtime on the target machine.
+    # macOS uses its native WKWebView. Windows uses the Evergreen WebView2 runtime: the Qt
+    # WebEngine wheel is available only to source/diagnostic builds; its Chromium child-process
+    # sandbox can be rejected by hardened Windows builds and it is not shipped in the production
+    # Windows payload. Linux continues to use the self-contained Qt WebEngine wheel.
     if sys.platform == "darwin":
         return os.environ.get("PYWEBVIEW_GUI")
+    if sys.platform.startswith("win"):
+        return os.environ.get("PYWEBVIEW_GUI", "edgechromium")
     return os.environ.get("PYWEBVIEW_GUI", "qt")
+
+
+def _preflight_renderer(renderer: str | None, log: logging.Logger) -> None:
+    """Fail closed when the selected frozen renderer cannot load its native bindings.
+
+    pywebview can silently fall back to another backend after a Qt import failure. That makes a
+    green UI smoke test meaningless: it proves a window rendered, not that the renderer shipped
+    and supported by this build did. Development runs keep pywebview's normal discovery behavior.
+    """
+    if not is_frozen() or renderer is None:
+        return
+
+    if sys.platform.startswith("win") and renderer != "edgechromium":
+        log.error("Frozen Windows renderer is unsupported: %s", renderer)
+        raise RuntimeError("frozen Windows builds require the edgechromium renderer")
+
+    if renderer == "edgechromium":
+        if sys.platform.startswith("win") and not _webview2_runtime_available():
+            log.error("Frozen WebView2 renderer preflight failed: Evergreen Runtime is unavailable")
+            raise RuntimeError("frozen WebView2 runtime is not installed")
+        try:
+            # This validates that pythonnet and the WebView2 interop assemblies are present in the
+            # frozen payload. Runtime availability is then proven by packaged smoke, which creates
+            # the actual controller rather than trusting a registry probe.
+            import webview.platforms.edgechromium  # noqa: F401
+        except Exception as exc:  # noqa: BLE001 - native loader failures are opaque
+            log.error("Frozen WebView2 renderer preflight failed: %s", exc)
+            raise RuntimeError("frozen WebView2 renderer could not be loaded") from exc
+        log.info("Frozen WebView2 renderer bindings ready")
+        return
+
+    if renderer != "qt":
+        return
+
+    try:
+        from PyQt6.QtCore import QT_VERSION_STR, qVersion
+        qt_version = qVersion() or QT_VERSION_STR
+    except Exception as exc:  # noqa: BLE001 - native loader failures are opaque
+        log.error("Frozen Qt runtime preflight failed: %s", exc)
+        raise RuntimeError("frozen Qt runtime could not be loaded") from exc
+    log.info("Frozen Qt runtime bindings ready (Qt %s)", qt_version)
+
+
+def _version_at_least(version: str, minimum: str) -> bool:
+    """Compare dotted WebView2 versions without importing packaging at startup."""
+    try:
+        current_parts = tuple(int(part) for part in version.split(".")[:4])
+        minimum_parts = tuple(int(part) for part in minimum.split(".")[:4])
+    except (AttributeError, TypeError, ValueError):
+        return False
+    return current_parts >= minimum_parts
+
+
+def _webview2_runtime_available() -> bool:
+    """Return whether an Evergreen WebView2 runtime is registered for this user/machine."""
+    if not sys.platform.startswith("win"):
+        return True
+
+    try:
+        import winreg
+    except ImportError:
+        return False
+
+    runtime_guid = "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+    registry_paths = (
+        rf"SOFTWARE\Microsoft\EdgeUpdate\Clients\{runtime_guid}",
+        rf"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{runtime_guid}",
+    )
+    for view in (getattr(winreg, "KEY_WOW64_64KEY", 0), getattr(winreg, "KEY_WOW64_32KEY", 0), 0):
+        access = winreg.KEY_READ | view
+        for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+            for registry_path in registry_paths:
+                try:
+                    with winreg.OpenKey(hive, registry_path, 0, access) as key:
+                        version, _ = winreg.QueryValueEx(key, "pv")
+                    if _version_at_least(str(version), "86.0.622.0"):
+                        return True
+                except OSError:
+                    continue
+    return False
+
+
+def _window_hidden_for_smoke(smoke: bool, renderer: str | None) -> bool:
+    """Qt/GTK smoke can stay hidden; WebView2 needs a visible WinForms controller."""
+    return smoke and renderer != "edgechromium"
 
 
 def main(argv=None) -> int:
     args = parse_args(argv)
     _configure_logging(args.debug)
     log = logging.getLogger("desktop")
+    renderer = args.gui or _default_gui()
+    _preflight_renderer(renderer, log)
     import webview
 
     ctx = build_app(args)
@@ -138,15 +229,55 @@ def main(argv=None) -> int:
 
     window = webview.create_window(
         APP_TITLE, url=ctx.index_url, js_api=ctx.bridge, width=WINDOW["width"], height=WINDOW["height"],
-        min_size=WINDOW["min_size"], text_select=True, background_color="#0b0e14", hidden=args.smoke,
+        min_size=WINDOW["min_size"], text_select=True, background_color="#0b0e14",
+        # WebView2 does not complete controller initialization for a hidden WinForms host on
+        # some Windows builds. A visible smoke window is still closed immediately after checks.
+        hidden=_window_hidden_for_smoke(args.smoke, renderer),
     )
 
     def on_start():
+        actual_renderer = None
+        try:
+            actual_renderer = getattr(webview, "renderer", None)
+        except Exception:  # noqa: BLE001 - renderer identity is diagnostic only
+            pass
+        if is_frozen() and renderer and actual_renderer != renderer:
+            reason = f"renderer mismatch: expected {renderer}, initialized {actual_renderer or 'unknown'}"
+            log.error("Frozen renderer initialization failed: %s", reason)
+            exit_code["code"] = 1
+            if args.smoke:
+                result = {
+                    "ok": False,
+                    "reason": reason,
+                    "checks": {
+                        "react_mounted": False,
+                        "bridge_roundtrip": False,
+                        "health": False,
+                        "push_sink": False,
+                        "plugin_boundary": False,
+                    },
+                }
+                result["version"] = ctx.bridge.get_app_info()["version"]
+                result["renderer_expected"] = renderer
+                result["renderer_actual"] = actual_renderer
+                result["renderer_controller_ready"] = False
+                if args.smoke_report:
+                    Path(args.smoke_report).write_text(json.dumps(result, indent=2))
+            window.destroy()
+            return
+        log.info("Frozen renderer initialized: %s", actual_renderer or renderer or "auto")
         if not args.smoke:
             return
         from desktop.smoke import run_smoke
         result = run_smoke(window, ctx, timeout=args.smoke_timeout)
         result["version"] = ctx.bridge.get_app_info()["version"]
+        result["renderer_expected"] = renderer
+        result["renderer_actual"] = actual_renderer
+        result["renderer_controller_ready"] = bool(result["ok"])
+        if result["ok"]:
+            log.info("Frozen renderer controller ready: %s", actual_renderer or renderer or "auto")
+        else:
+            log.error("Frozen renderer controller failed: %s", result.get("reason", "unknown"))
         if args.smoke_report:
             Path(args.smoke_report).write_text(json.dumps(result, indent=2))
         print(("SMOKE_OK " if result["ok"] else "SMOKE_FAIL ") + json.dumps(result), flush=True)
@@ -159,7 +290,7 @@ def main(argv=None) -> int:
 
     window.events.closed += on_closed
     log.info("Starting %s (frozen=%s, data=%s, gateway=%s)", APP_TITLE, is_frozen(), DATA_DIR, getattr(ctx.gateway, "url", None))
-    webview.start(on_start, private_mode=False, storage_path=str(DATA_DIR / "webview"), debug=args.debug, gui=args.gui or _default_gui())
+    webview.start(on_start, private_mode=False, storage_path=str(DATA_DIR / "webview"), debug=args.debug, gui=renderer)
     shutdown(ctx)
     return exit_code["code"]
 
