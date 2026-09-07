@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP15
-version: 1.1.0
+version: 1.1.1
 status: Active
 date: 2026-09-07
 baseline: 9a19f61
@@ -80,6 +80,9 @@ riskini bırakıyordu.
 - 60 saniyelik soak raporu `RECOVERY_REQUIRED` cycle'ından backoff stop'a
   geçiş nedeniyle verifier tarafından `INVALID` / non-zero reddedildi; rapor
   SHA-256 `31327613A973CF8960F155C92F2BEA28D2C0E66FE443846035E7F5CADBA52967`.
+- İlk V2 public testnet koşusu 52 event, 1 gap ve 1 recovery cycle ile
+  `STOP_EVENT_SET_DURING_BACKOFF` sonucunda `INVALID` / non-zero reddedildi;
+  rapor SHA-256 `AADF17DD20F8D9D2B6F963087C01847E230BD403406EC42A6DF7DF20181F5F0C`.
 
 ## Kesinlikle kapsam dışı
 
@@ -95,6 +98,10 @@ kapı, gerçek testnet raporlarını operatör imzası/retention politikasıyla 
 ve disconnect/gap/reconnect metriklerini ürün kararına bağlamaktır.
 
 ## Değişiklik geçmişi
+
+### 1.1.1 — 2026-09-07
+
+- V2 continuity metrikli gerçek testnet negatif gözlemi ve SHA-256 kanıtı eklendi.
 
 ### 1.1.0 — 2026-09-07
 

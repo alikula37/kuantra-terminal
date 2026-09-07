@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP14
-version: 1.2.0
+version: 1.2.1
 status: Active
 date: 2026-09-07
 baseline: 257e881
@@ -91,6 +91,7 @@ verilmiştir.
 | Public Binance testnet, 5 s, `--allow-network`, reconnect budget `0` | **Başarısız gözlem; terfi edilmedi** | `EXHAUSTED` / `RECONNECT_BUDGET_EXHAUSTED`, `SNAPSHOT_FETCH_FAILED`, 0 event; verifier `FAILED_OBSERVATION`; truth flags false | `A21FF7CE4D94A4983AC2DAEE046B712A48EA29CC0B5100FD136E0BCE6A0B1D70` |
 | Public Binance testnet, 20 s, `--allow-network --retry-recovery`, reconnect budget `3` | `STOPPED`; verifier `VALID_TESTNET_OBSERVATION_UNVERIFIED` | 38 depth event'i işlendi, 39 chain/persistence event'i, chain/persistence valid; `source_verified=false`, `execution_authority=false` | `9182585DBCCB58D3FF115CD27F67FF28D17F5F0C8AA8881B86C5FB50E6AF4D0A` |
 | Public Binance testnet, 60 s, `--allow-network --retry-recovery`, reconnect budget `3` | **Geçersiz gözlem; terfi edilmedi** | 110 event alındı; sequence gap sonrası `RECOVERY_REQUIRED`, stop backoff sırasında geldi; 1 chain/persistence event'i; verifier `INVALID` / non-zero | `31327613A973CF8960F155C92F2BEA28D2C0E66FE443846035E7F5CADBA52967` |
+| Public Binance testnet, 30 s, `--allow-network --retry-recovery`, reconnect budget `3` | **Geçersiz V2 gözlemi; terfi edilmedi** | `STOPPED` / `STOP_EVENT_SET_DURING_BACKOFF`; 52 event, 1 gap, 1 recovery cycle, 1 durable chain event; verifier `INVALID` / non-zero; truth flags false | `AADF17DD20F8D9D2B6F963087C01847E230BD403406EC42A6DF7DF20181F5F0C` |
 
 Tüm testnet çalışmaları credential, private endpoint veya emir yetkisi kullanmadı.
 İlk 5 saniyelik deneme host proxy'si (`127.0.0.1:9`) yüzünden snapshot fetch'te
@@ -132,6 +133,12 @@ disconnect sayısı, `last_update_id` sürekliliği, gap/recovery oranı ve dura
 segment reopen sonucu incelenmeden canlı varsayılanı açılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.2.1 — 2026-09-07
+
+- İlk V2 public testnet koşusu kaydedildi. Continuity metrikleri gap/recovery
+  davranışını görünür kıldı; backoff sırasında duran session verifier tarafından
+  geçersiz tutuldu.
 
 ### 1.2.0 — 2026-09-07
 
