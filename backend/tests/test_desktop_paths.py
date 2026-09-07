@@ -39,6 +39,14 @@ def test_frozen_mode_uses_user_dir(monkeypatch, tmp_path):
     assert paths.USER_PLUGINS_DIR == paths.DATA_DIR / "plugins"
 
 
+def test_frozen_macos_uses_application_support(monkeypatch, tmp_path):
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "platform", "darwin")
+    monkeypatch.setattr(Path, "home", staticmethod(lambda: tmp_path))
+    paths = _reload_paths(monkeypatch)
+    assert paths.DATA_DIR == tmp_path / "Library" / "Application Support" / "Kuantra Terminal"
+
+
 def test_version_single_source():
     from app.version import __version__
     from app.core.config import settings

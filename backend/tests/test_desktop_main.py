@@ -23,6 +23,16 @@ def test_cli_parser_defaults():
     assert args.smoke and args.smoke_report == "r.json" and args.smoke_timeout == 5.0
 
 
+def test_macos_uses_native_cocoa_renderer(monkeypatch):
+    import desktop_main
+
+    monkeypatch.setattr(desktop_main.sys, "platform", "darwin")
+    monkeypatch.delenv("PYWEBVIEW_GUI", raising=False)
+    assert desktop_main._default_gui() is None
+    monkeypatch.setenv("PYWEBVIEW_GUI", "cocoa")
+    assert desktop_main._default_gui() == "cocoa"
+
+
 def test_main_py_has_no_sidecar_handshake():
     src = (BACKEND / "main.py").read_text()
     assert "KUANTRA_BACKEND_PORT" not in src and "parent-pid" not in src
