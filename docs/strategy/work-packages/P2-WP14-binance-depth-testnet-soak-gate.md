@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP14
-version: 1.1.1
+version: 1.1.2
 status: Active
 date: 2026-09-07
 baseline: 257e881
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP11 Public Binance Depth Network Adapter, P2-WP13 Deterministic Binance Depth Soak Harness
-implementation_commits: 17dc616, 078dc02, 070998a
+implementation_commits: 17dc616, 078dc02, 070998a, 0aa0dfd
 ```
 
 ## Problem
@@ -38,6 +38,8 @@ varsayılan açılması, unit/CI çalıştırmalarında istemsiz dış çağrı 
    yeniden denenir; persistence/rejection hataları yine terminaldir.
 6. Unit testler gerçek ağa bağlanmaz. Gerçek testnet çalışması operatörün açık
    komutuyla, ayrı storage root ve rapor dosyasıyla yapılır.
+7. CLI, raporu aynı fail-closed verifier'dan geçirir; session kararı `STOPPED`
+   olsa bile cycle tamamlanmamışsa exit code `1` döner.
 
 ## Teknik teslimatlar
 
@@ -45,6 +47,7 @@ varsayılan açılması, unit/CI çalıştırmalarında istemsiz dış çağrı 
 - Explicit network opt-in ve bounded CLI validation.
 - JSON report schema: session, chain, persistence ve truth flags.
 - Stop-aware websocket receive boundary.
+- CLI'nin verifier ile fail-closed exit gate'i.
 - CLI serialization, refusal, fixture report ve quiet-socket stop tests.
 
 ## Kullanım
@@ -105,8 +108,8 @@ Bundle verify ve boş hedefe restore zero exit verdi; bundle SHA-256
 - [x] Duration ve reconnect budget bounded validation'dan geçiyor.
 - [x] Rapor chain/sink/session kanıtlarını ve false truth flags'ini taşıyor.
 - [x] Sessiz socket stop event ile timeout beklemeden kapanabiliyor.
-- [x] Focused suite: `7 passed`.
-- [x] Full backend suite: `526 passed, 1 skipped`.
+- [x] Focused suite: `8 passed`.
+- [x] Full backend suite: `527 passed, 1 skipped`.
 - [x] Bounded gerçek testnet raporu verifier'dan geçti ve operator archive/attestation/review akışına bağlandı.
 - [ ] Uzun süreli soak, kontrollü disconnect sonrası recovery continuity ve 24 saatlik gap metriği.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
@@ -125,6 +128,12 @@ disconnect sayısı, `last_update_id` sürekliliği, gap/recovery oranı ve dura
 segment reopen sonucu incelenmeden canlı varsayılanı açılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.1.2 — 2026-09-07
+
+- Soak CLI, `verify_depth_soak_report()` ile aynı fail-closed sözleşmeye bağlandı;
+  recovery backoff sırasında duran ve terminal cycle üretmeyen raporlar artık
+  doğrudan non-zero exit ile reddediliyor.
 
 ### 1.1.1 — 2026-09-07
 
