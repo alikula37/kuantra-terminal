@@ -181,6 +181,15 @@ tarihsel olup bu denetimde mevcut hesap/billing durumu yeniden sorgulanmamışt�
 
 ## Bu doküman değişikliğinin doğrulaması
 
+Push sonrası güvenlik kontrolü (2026-09-08): GitHub varsayılan branch için 5 açık
+Dependabot uyarısı bildirdi. Read-only alerts API, frontend dev dependencies için
+Vitest `<3.2.6` critical, Vite `<=6.4.2` high/medium, Vite `<=6.4.1` medium ve
+esbuild `<=0.24.2` medium aralıklarını döndürdü. Bu feature branch lock'u Vitest
+`3.2.7`, Vite `6.4.3`, esbuild `0.25.12` içeriyor; listelenen beş aralığa girmiyor.
+Bu, yeni kapsamlı dependency/security audit'i değildir. Default branch uyarıları
+silinmedi/kapatılmadı; main'e otomatik merge yapılmadı. Release öncesi default branch
+ve yayınlanacak lock için güvenlik durumu yeniden doğrulanmalıdır.
+
 - `git diff --check`: PASS.
 - `python3.11 scripts/check_release_truth.py`: PASS.
 - `python3.11 scripts/verify_packaging.py`: PASS; 480 locale token parity korunuyor.
