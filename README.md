@@ -94,6 +94,11 @@ For a desktop build, use `scripts/build_desktop.py` followed by
 [`docs/BUILD_WINDOWS.md`](docs/BUILD_WINDOWS.md), [`docs/BUILD_MACOS.md`](docs/BUILD_MACOS.md)
 and [`docs/BUILD_LINUX.md`](docs/BUILD_LINUX.md).
 
+For a Windows-to-macOS move, use the credential-safe, hash-verified migration
+bundle documented in [`docs/MACOS_MIGRATION.md`](docs/MACOS_MIGRATION.md). The
+bundle carries the canonical SQLite ledger and Parquet cold storage; DuckDB is
+rebuilt locally and OS keychain credentials are re-entered on the destination.
+
 Before merging to `main`, run the full local gate (the canonical CI source while GitHub
 Actions quota is unavailable):
 

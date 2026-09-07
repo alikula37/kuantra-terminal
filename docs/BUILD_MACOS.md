@@ -139,3 +139,13 @@ Tests:
 KUANTRA_DATA_DIR="$(mktemp -d)" python -m pytest backend/tests -q
 npm --prefix frontend test
 ```
+
+## 10. Windows-to-macOS data migration
+
+Use the credential-safe, hash-verified migration tool before restoring a real
+user directory on the Mac. It carries the canonical SQLite ledger and Parquet
+cold storage, excludes DuckDB so the projection can be rebuilt locally, and
+requires exchange credentials to be re-entered into macOS Keychain.
+
+See [`docs/MACOS_MIGRATION.md`](MACOS_MIGRATION.md) for the create, verify and
+restore commands and the migration acceptance checklist.

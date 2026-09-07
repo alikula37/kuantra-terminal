@@ -1,0 +1,154 @@
+# Windows-to-macOS migration runbook
+
+Document ID: KMP-001
+Version: 1.0.0
+Status: Accepted
+Last updated: 2026-09-07
+
+This runbook moves the local Kuantra journal to a Mac without copying API
+secrets or treating DuckDB as a second source of truth. The migration bundle is
+created on Windows, verified before transport, and restored only into a clean
+macOS data directory.
+
+## What is migrated
+
+- A compact SQLite snapshot of the canonical journal/evidence ledger.
+- SQLite integrity evidence and SHA-256 hashes.
+- `cold_storage/**/*.parquet` historical market files.
+
+## What is deliberately not migrated
+
+- Exchange secrets, legacy encrypted credential rows, or keychain contents.
+- DuckDB and its WAL sidecar; it is rebuilt from SQLite after restore.
+- Logs, telemetry queues, plugins, experimental local models, and SQLite WAL/SHM sidecars.
+
+Credentials must be entered again into macOS Keychain. Never copy Windows
+Credential Manager material or raw `.env` secrets to the Mac.
+
+## 1. Create the bundle on Windows
+
+Stop the desktop app first. Use the frozen data directory if the app was
+installed, or `backend/data` for a development checkout:
+
+```powershell
+python scripts/macos_migration.py create `
+  --source-data-dir "$env:LOCALAPPDATA\Kuantra Terminal" `
+  --output "$env:USERPROFILE\Desktop\kuantra-macos-migration.zip"
+```
+
+For a development checkout:
+
+```powershell
+python scripts/macos_migration.py create `
+  --source-data-dir ".\backend\data" `
+  --output "$env:USERPROFILE\Desktop\kuantra-macos-migration.zip"
+```
+
+The command never modifies the source database. It creates a sanitized SQLite
+snapshot, removes legacy `exchange_credentials` rows, and reports the bundle
+SHA-256. It also records whether the disposable trade projection has exact
+coverage. Keep the bundle encrypted at rest while transporting it.
+
+If `migration_ready` is `false`, run the explicit evidence migration on the
+Windows source first, then recreate the bundle:
+
+```powershell
+python backend/app/cli.py evidence-ledger backfill --dry-run
+python backend/app/cli.py evidence-ledger backfill --apply
+python backend/app/cli.py evidence-ledger projection-rebuild --dry-run
+python backend/app/cli.py evidence-ledger projection-rebuild --apply
+```
+
+Review each report before using `--apply`; these commands mutate the local
+SQLite ledger/projection but never transmit credentials.
+
+## 2. Verify before transport
+
+```powershell
+python scripts/macos_migration.py verify `
+  --bundle "$env:USERPROFILE\Desktop\kuantra-macos-migration.zip" `
+  --json
+```
+
+Continue only when `valid` is `true`, `migration_ready` is `true`, and `errors`
+is empty. Record the printed `bundle_sha256` next to the backup. A changed hash
+means the bundle must be recreated or transported again.
+
+## 3. Prepare the Mac
+
+Clone the private repository and use the same product branch. Install Python
+3.11, Node.js 20, npm, `uv`, GitHub CLI and Xcode Command Line Tools. Run the
+frontend/backend tests and the local merge gate with a fresh staging data
+directory before restoring user data:
+
+```bash
+xcode-select --install
+gh auth login
+git clone -b codex/p1-wp01-evidence-ledger https://github.com/alikula37/kuantra-terminal.git
+cd kuantra-terminal
+npm --prefix frontend ci
+npm --prefix frontend test
+npm --prefix frontend run build
+uv run --offline --no-project --with-requirements backend/requirements.lock \
+  python scripts/run_local_ci.py
+```
+
+The first dependency installation may require network access if the local `uv`
+cache is empty. Do not label that first run as offline evidence.
+
+Build and smoke the native macOS bundle before restoring the real data:
+
+```bash
+python scripts/build_desktop.py --skip-frontend
+python scripts/smoke_desktop.py
+bash scripts/package_macos.sh
+```
+
+macOS uses Cocoa/WKWebView. Windows WebView2 diagnostics are a separate release
+gate and are not proven by this Mac smoke.
+
+## 4. Restore into a clean data directory
+
+Copy the ZIP to the Mac and verify it again. Restore to the frozen app path only
+after staging smoke is green:
+
+```bash
+python scripts/macos_migration.py verify \
+  --bundle "$HOME/Desktop/kuantra-macos-migration.zip" --json
+
+python scripts/macos_migration.py restore \
+  --bundle "$HOME/Desktop/kuantra-macos-migration.zip" \
+  --target-data-dir "$HOME/Library/Application Support/Kuantra Terminal"
+```
+
+Rebuild the analytical projection from the restored canonical ledger:
+
+```bash
+python scripts/macos_migration.py rebuild-projection \
+  --data-dir "$HOME/Library/Application Support/Kuantra Terminal"
+```
+
+This command fails closed when the evidence projection is incomplete. Do not
+copy an old DuckDB file to bypass that gate.
+
+Restore refuses a non-empty target. If an explicit replacement is necessary,
+use `--force`; the existing target is moved to a timestamped
+`.pre-migration-*` sibling instead of being deleted.
+
+After restore:
+
+1. Re-enter exchange credentials into macOS Keychain.
+2. Rebuild the DuckDB projection from the restored SQLite ledger.
+3. Run SQLite integrity, evidence-chain verification, and the backup/restore drill.
+4. Compare journal/evidence counts and Evidence Pack hashes with the Windows export.
+5. Test a read-only broker import only. Do not submit live orders during migration.
+
+## Migration acceptance
+
+- Bundle verification is green on both machines, `migration_ready` is `true`, and the SHA-256 matches.
+- SQLite integrity and evidence-chain verification are green.
+- No `exchange_credentials` rows or sensitive settings remain in the bundle.
+- DuckDB is rebuilt successfully; no old DuckDB file is copied as canonical data.
+- macOS packaged smoke reports `ok=true` with Cocoa/WKWebView.
+- Keychain credentials are recreated; no plaintext secret is in the repository or data bundle.
+- Windows data remains read-only until all checks pass.

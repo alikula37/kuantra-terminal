@@ -62,3 +62,26 @@ def test_package_macos_script_builds_dmg():
     assert "hdiutil create" in sh
     assert "codesign" in sh
     assert ".dmg" in sh
+
+
+def test_macos_migration_contract_is_checked_in():
+    script = (ROOT / "scripts" / "macos_migration.py").read_text()
+    service = (ROOT / "backend" / "app" / "services" / "macos_migration.py").read_text()
+    docs = (ROOT / "docs" / "MACOS_MIGRATION.md").read_text()
+    for needle in (
+        "create",
+        "verify",
+        "restore",
+        "rebuild-projection",
+        "--source-data-dir",
+        "--target-data-dir",
+    ):
+        assert needle in script
+    for needle in (
+        "os_keychain_not_exported",
+        "duckdb_excluded_rebuild_from_sqlite",
+        "exchange_credentials",
+        "rebuild_duckdb_projection",
+    ):
+        assert needle in service
+    assert "Windows-to-macOS" in docs

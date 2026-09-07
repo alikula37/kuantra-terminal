@@ -18,6 +18,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | ADR-0003 | [Execution ve AI yetki sınırı](./adr/ADR-0003-execution-authority-boundary.md) | Accepted | — | 2026-09-05 |
 | ADR-0004 | [Windows WebView2 renderer sınırı](./adr/ADR-0004-windows-webview2-renderer.md) | Accepted | — | 2026-09-07 |
 | KTR-001 | [Release truth matrix](../release/README.md) | Accepted | 1.0.1 | 2026-09-07 |
+| KMP-001 | [Windows-to-macOS migration contract](../MACOS_MIGRATION.md) | Accepted | 1.0.0 | 2026-09-07 |
 | P0-WP01 | [Tekil paper execution rotası ve risk/compliance sözleşmesi](./work-packages/P0-WP01-execution-risk-contract.md) | Verified | — | 2026-09-05 |
 | P0-WP02 | [Market data truth contract ve fabricated fiyat/latency temizliği](./work-packages/P0-WP02-market-data-truth-contract.md) | Verified | — | 2026-09-05 |
 | P0-WP03 | [Frontend dev-toolchain güvenlik güncellemesi](./work-packages/P0-WP03-frontend-toolchain-security.md) | Verified | — | 2026-09-05 |
