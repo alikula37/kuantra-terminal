@@ -69,6 +69,26 @@ class _FakeWebsocket:
         return self.messages.pop(0)
 
 
+class _DisconnectableWebsocket:
+    def __init__(self):
+        self.closed = asyncio.Event()
+        self.close_calls = 0
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+    async def recv(self):
+        await self.closed.wait()
+        raise ConnectionError("operator closed fixture socket")
+
+    async def close(self):
+        self.close_calls += 1
+        self.closed.set()
+
+
 def _adapter(http_response, websocket_messages):
     config = BinanceDepthNetworkConfig("BTCUSDT")
 
@@ -138,6 +158,33 @@ async def test_http_failure_is_explicit_and_never_promoted_to_transport_success(
     assert "SNAPSHOT_REQUEST_FAILED" in (result.source_error or "")
 
 
+@pytest.mark.asyncio
+async def test_explicit_disconnect_after_closes_socket_and_surfaces_source_failure():
+    config = BinanceDepthNetworkConfig("BTCUSDT")
+    socket = _DisconnectableWebsocket()
+
+    def http_factory(*, timeout):
+        return _FakeHttpClient(_FakeResponse(_snapshot()))
+
+    def websocket_connect(url, **kwargs):
+        return socket
+
+    adapter = BinanceDepthNetworkAdapter(
+        BinanceDepthIngestor("BTCUSDT"),
+        config,
+        http_client_factory=http_factory,
+        websocket_connect=websocket_connect,
+        disconnect_after_seconds=0.01,
+    )
+
+    result = await adapter.run_once()
+
+    assert result.decision is DepthTransportDecision.SOURCE_FAILED
+    assert "OPERATOR_DISCONNECT_INJECTED" in (result.source_error or "")
+    assert socket.close_calls == 1
+    assert adapter.disconnect_injected is True
+
+
 def test_config_rejects_non_tls_custom_endpoints_and_invalid_bounds():
     with pytest.raises(ValueError, match="https"):
         BinanceDepthNetworkConfig("BTCUSDT", rest_base_url="http://example.test")
@@ -145,3 +192,10 @@ def test_config_rejects_non_tls_custom_endpoints_and_invalid_bounds():
         BinanceDepthNetworkConfig("BTCUSDT", websocket_base_url="ws://example.test")
     with pytest.raises(ValueError, match="positive finite"):
         BinanceDepthNetworkConfig("BTCUSDT", recv_timeout_seconds=0)
+
+    with pytest.raises(ValueError, match="disconnect_after_seconds"):
+        BinanceDepthNetworkAdapter(
+            BinanceDepthIngestor("BTCUSDT"),
+            BinanceDepthNetworkConfig("BTCUSDT"),
+            disconnect_after_seconds=0,
+        )

@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import math
 import sys
 import tempfile
 import time
@@ -155,6 +156,7 @@ async def run_testnet_probe(
     duration_seconds: float,
     max_reconnects: int,
     retry_recovery: bool = False,
+    disconnect_after_seconds: Optional[float] = None,
 ) -> dict[str, Any]:
     normalized_symbol = str(symbol).strip().upper()
     run_root = _run_root(storage_root, "testnet")
@@ -164,7 +166,11 @@ async def run_testnet_probe(
         normalized_symbol,
         environment=BinanceDepthEnvironment.TESTNET,
     )
-    adapter = BinanceDepthNetworkAdapter(ingestor, config)
+    adapter = BinanceDepthNetworkAdapter(
+        ingestor,
+        config,
+        disconnect_after_seconds=disconnect_after_seconds,
+    )
     session = BinanceDepthSession(
         adapter,
         BinanceDepthReconnectPolicy(
@@ -210,6 +216,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="retry a sequence-gap cycle with a fresh snapshot within the reconnect budget",
     )
+    parser.add_argument(
+        "--disconnect-after-seconds",
+        type=float,
+        default=None,
+        help="inject one explicit websocket disconnect after this delay (testnet only)",
+    )
     parser.add_argument("--allow-network", action="store_true")
     parser.add_argument("--output", type=Path, default=None)
     return parser
@@ -220,6 +232,16 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("testnet mode requires explicit --allow-network")
     if args.retry_recovery and args.mode != "testnet":
         raise ValueError("retry-recovery is only available in testnet mode")
+    if args.disconnect_after_seconds is not None:
+        if args.mode != "testnet" or not args.allow_network:
+            raise ValueError("disconnect-after-seconds requires testnet mode with --allow-network")
+        if (
+            isinstance(args.disconnect_after_seconds, bool)
+            or not math.isfinite(args.disconnect_after_seconds)
+            or args.disconnect_after_seconds <= 0
+            or args.disconnect_after_seconds >= args.duration_seconds
+        ):
+            raise ValueError("disconnect-after-seconds must be > 0 and less than duration-seconds")
     if not str(args.symbol).strip():
         raise ValueError("symbol must be non-empty")
     if isinstance(args.duration_seconds, bool) or args.duration_seconds <= 0 or args.duration_seconds > 86_400:
@@ -251,6 +273,7 @@ def main(argv: list[str] | None = None) -> int:
                     duration_seconds=args.duration_seconds,
                     max_reconnects=args.max_reconnects,
                     retry_recovery=args.retry_recovery,
+                    disconnect_after_seconds=args.disconnect_after_seconds,
                 )
             )
         else:

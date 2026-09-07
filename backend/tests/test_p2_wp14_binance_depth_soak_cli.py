@@ -134,6 +134,44 @@ def test_cli_exposes_recovery_retry_only_as_an_opt_in_testnet_flag():
     assert args.retry_recovery is True
 
 
+def test_cli_disconnect_injection_is_explicitly_bounded_to_testnet(tmp_path):
+    args = build_parser().parse_args(
+        [
+            "--mode",
+            "testnet",
+            "--allow-network",
+            "--duration-seconds",
+            "30",
+            "--disconnect-after-seconds",
+            "10",
+        ]
+    )
+    assert args.disconnect_after_seconds == 10
+    assert main(
+        [
+            "--mode",
+            "fixture",
+            "--disconnect-after-seconds",
+            "1",
+            "--storage-root",
+            str(tmp_path),
+        ]
+    ) == 2
+    assert main(
+        [
+            "--mode",
+            "testnet",
+            "--allow-network",
+            "--duration-seconds",
+            "10",
+            "--disconnect-after-seconds",
+            "10",
+            "--storage-root",
+            str(tmp_path / "equal-duration"),
+        ]
+    ) == 2
+
+
 class _BlockingWebsocket:
     def __init__(self):
         self.block = asyncio.Event()

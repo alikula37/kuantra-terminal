@@ -11,6 +11,7 @@ an explicit endpoint choice.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import math
 from dataclasses import dataclass
@@ -150,11 +151,27 @@ class BinanceDepthNetworkAdapter:
         *,
         http_client_factory: Optional[HttpClientFactory] = None,
         websocket_connect: Optional[WebsocketConnect] = None,
+        disconnect_after_seconds: Optional[float] = None,
     ) -> None:
+        if disconnect_after_seconds is not None and (
+            isinstance(disconnect_after_seconds, bool)
+            or not isinstance(disconnect_after_seconds, (int, float))
+            or not math.isfinite(disconnect_after_seconds)
+            or disconnect_after_seconds <= 0
+        ):
+            raise ValueError("disconnect_after_seconds must be a positive finite number")
         self.config = config
         self.transport = BinanceDepthTransport(ingestor, config.transport_config)
         self._http_client_factory = http_client_factory or _default_http_client_factory
         self._websocket_connect = websocket_connect or _default_websocket_connect
+        self._disconnect_after_seconds = disconnect_after_seconds
+        self._disconnect_injected = False
+
+    @property
+    def disconnect_injected(self) -> bool:
+        """Whether the explicit one-shot operator disconnect has fired."""
+
+        return self._disconnect_injected
 
     async def fetch_snapshot(self) -> Mapping[str, Any]:
         """Fetch one public snapshot; HTTP/status/JSON failures stay explicit."""
@@ -185,11 +202,24 @@ class BinanceDepthNetworkAdapter:
                 max_size=self.config.max_message_bytes,
             )
             async with websocket_context as websocket:
-                while True:
-                    raw_message = await self._recv_with_stop(websocket, stop_event)
-                    if raw_message is None:
-                        return
-                    yield self.decode_depth_message(raw_message)
+                disconnect_task = None
+                if self._disconnect_after_seconds is not None and not self._disconnect_injected:
+                    disconnect_task = asyncio.create_task(asyncio.sleep(self._disconnect_after_seconds))
+                try:
+                    while True:
+                        raw_message = await self._recv_with_stop(
+                            websocket,
+                            stop_event,
+                            disconnect_task=disconnect_task,
+                        )
+                        if raw_message is None:
+                            return
+                        yield self.decode_depth_message(raw_message)
+                finally:
+                    if disconnect_task is not None and not disconnect_task.done():
+                        disconnect_task.cancel()
+                    if disconnect_task is not None:
+                        await asyncio.gather(disconnect_task, return_exceptions=True)
         except asyncio.CancelledError:
             raise
         except BinanceDepthNetworkError:
@@ -197,34 +227,73 @@ class BinanceDepthNetworkAdapter:
         except Exception as exc:
             raise BinanceDepthNetworkError("EVENT_STREAM_FAILED", str(exc)) from exc
 
-    async def _recv_with_stop(self, websocket: Any, stop_event: Optional[asyncio.Event]) -> Any:
+    async def _recv_with_stop(
+        self,
+        websocket: Any,
+        stop_event: Optional[asyncio.Event],
+        *,
+        disconnect_task: Optional[asyncio.Task[Any]] = None,
+    ) -> Any:
         """Bound one recv and let an operator stop a quiet socket promptly."""
 
-        if stop_event is None:
+        if stop_event is None and disconnect_task is None:
             try:
                 return await asyncio.wait_for(websocket.recv(), timeout=self.config.recv_timeout_seconds)
             except asyncio.TimeoutError as exc:
                 raise BinanceDepthNetworkError("EVENT_RECV_TIMEOUT", "websocket receive timed out") from exc
-        if stop_event.is_set():
+        if stop_event is not None and stop_event.is_set():
             return None
         recv_task = asyncio.create_task(websocket.recv())
-        stop_task = asyncio.create_task(stop_event.wait())
+        stop_task = asyncio.create_task(stop_event.wait()) if stop_event is not None else None
         timeout_task = asyncio.create_task(asyncio.sleep(self.config.recv_timeout_seconds))
+        wait_tasks = {recv_task, timeout_task}
+        if stop_task is not None:
+            wait_tasks.add(stop_task)
+        if disconnect_task is not None:
+            wait_tasks.add(disconnect_task)
         try:
             done, _ = await asyncio.wait(
-                {recv_task, stop_task, timeout_task},
+                wait_tasks,
                 return_when=asyncio.FIRST_COMPLETED,
             )
-            if stop_task in done:
+            if disconnect_task is not None and disconnect_task in done:
+                await self._inject_disconnect(websocket)
+                raise BinanceDepthNetworkError(
+                    "OPERATOR_DISCONNECT_INJECTED",
+                    "operator disconnect-after boundary closed the websocket",
+                )
+            if stop_task is not None and stop_task in done:
                 return None
             if timeout_task in done:
                 raise BinanceDepthNetworkError("EVENT_RECV_TIMEOUT", "websocket receive timed out")
             return recv_task.result()
         finally:
             for task in (recv_task, stop_task, timeout_task):
+                if task is None:
+                    continue
                 if not task.done():
                     task.cancel()
-            await asyncio.gather(recv_task, stop_task, timeout_task, return_exceptions=True)
+            await asyncio.gather(
+                *(task for task in (recv_task, stop_task, timeout_task) if task is not None),
+                return_exceptions=True,
+            )
+
+    async def _inject_disconnect(self, websocket: Any) -> None:
+        close = getattr(websocket, "close", None)
+        if not callable(close):
+            raise BinanceDepthNetworkError(
+                "DISCONNECT_INJECTION_UNSUPPORTED",
+                "websocket client does not expose close()",
+            )
+        self._disconnect_injected = True
+        try:
+            result = close()
+            if inspect.isawaitable(result):
+                await result
+        except BinanceDepthNetworkError:
+            raise
+        except Exception as exc:
+            raise BinanceDepthNetworkError("DISCONNECT_INJECTION_FAILED", str(exc)) from exc
 
     def decode_depth_message(self, raw_message: Any) -> Mapping[str, Any]:
         """Decode raw WS JSON and reject non-depth/cross-symbol messages."""
