@@ -67,6 +67,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP20 | [Binance Depth Operator Review ve Key Policy](./work-packages/P2-WP20-binance-depth-review-record-key-policy.md) | Active | 1.0.2 | 2026-09-07 |
 | P2-WP21 | [Binance Depth Evidence Bundle ve Restore Drill](./work-packages/P2-WP21-binance-depth-evidence-bundle.md) | Active | 1.0.2 | 2026-09-07 |
 | P2-WP22 | [Binance Depth Fault-Injection ve Recovery Matrix](./work-packages/P2-WP22-binance-depth-fault-matrix.md) | Active | 1.0.0 | 2026-09-07 |
+| P2-WP23 | [Binance Depth Soak Observation Series](./work-packages/P2-WP23-binance-depth-soak-series.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -299,6 +300,11 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   continuity/persistence metrikleriyle karşılaştırılıyor; truth/execution
   bayrakları false kalıyor. Focused suite `3 passed`, full backend regression
   `533 passed, 1 skipped`.
+- P2-WP23 ile tekil testnet soak raporlarını yeniden doğrulayan fail-closed
+  observation series eklendi. Invalid raporlar aggregate'e sessizce girmiyor;
+  default minimum `3`, gap/recovery/source-failure oranları ve observation
+  SHA'ları raporlanıyor. Focused suite `3 passed`; üç valid testnet gözlemi
+  henüz mevcut değil. Full backend regression `536 passed, 1 skipped`.
 
 ### 2026-09-07
 
