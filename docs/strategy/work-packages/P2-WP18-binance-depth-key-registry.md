@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP18
-version: 1.0.1
+version: 1.0.2
 status: Active
 date: 2026-09-07
 baseline: a8ec989
@@ -74,9 +74,10 @@ operasyon politikasında revoked key ile rapor kabulünü başarısız kılar.
 - [x] Revoked status imza geçerliliğinden ayrıştırılıyor.
 - [x] CLI register/revoke/audit kapıları.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Full backend suite: `530 passed, 1 skipped`.
 - [x] Gerçek operatör testnet registry/attestation runbook'u çalıştırıldı;
   key `7096d87adc82d5be` aktif olarak kaydedildi.
+- [x] V2 120 saniyelik runbook için key `15ed4419f7aea8d3` aktif olarak kaydedildi.
 - [ ] Remote CI doğrulaması (şu an bilinçli olarak disabled).
 
 ## Kapsam dışı ve sonraki risk
@@ -91,8 +92,13 @@ operatör testnet çalışması ile key rotation/retention runbook'unun kanıtla
 Public testnet attestation key'i registry'ye append-only olarak kaydedildi;
 registry audit geçerli, tek aktif key politikası sağlandı ve private key bundle
 archive/evidence bundle içine alınmadı.
+V2 runbook'ta da tek aktif key policy geçerli kaldı; private key bundle'a girmedi.
 
 ## Değişiklik geçmişi
+
+### 1.0.2 — 2026-09-07
+
+- V2 120 saniyelik valid run için yeni aktif key registry/audit kanıtı eklendi.
 
 ### 1.0.1 — 2026-09-07
 

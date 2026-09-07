@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP16
-version: 1.0.1
+version: 1.0.2
 status: Active
 date: 2026-09-07
 baseline: 18a1c68
@@ -56,9 +56,11 @@ uv run python scripts/archive_binance_depth_soak_report.py `
 - [x] Archive reopen sonrası hash/metadata/recovery geçiyor.
 - [x] Report byte veya manifest truth flag tamper'ı strict recovery'de reddediliyor.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Full backend suite: `530 passed, 1 skipped`.
 - [x] Gerçek testnet raporu operator-run archive retention'a alındı:
   report id `1c467ec04d264349`.
+- [x] V2 120 saniyelik testnet raporu archive retention'a alındı:
+  report id `3cd73ae62f978eaa`.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı
@@ -72,6 +74,8 @@ uv run python scripts/archive_binance_depth_soak_report.py `
 `VALID_TESTNET_OBSERVATION_UNVERIFIED` raporu hash-adresli archive'a yazıldı,
 reopen/recovery geçişi korundu. Archive report SHA-256
 `1c467ec04d2643495e9cec43e9544446b4bf8855b7d3d8c818313d64fadba5fe`.
+V2 raporunun canonical archive SHA-256 değeri
+`3cd73ae62f978eaa09bdb633b1aa98b2fd2cb373f0f9bbef3b18399115cd3624`.
 
 ## Risk ve sonraki sınır
 
@@ -81,6 +85,10 @@ kapı operator identity/attestation ve retention policy olabilir; bu kapı gelme
 archive kaydı product release approval olarak kullanılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.0.2 — 2026-09-07
+
+- V2 120 saniyelik valid testnet raporunun archive/reopen kanıtı eklendi.
 
 ### 1.0.1 — 2026-09-07
 

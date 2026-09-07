@@ -58,14 +58,14 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP11 | [Public Binance Depth Network Adapter](./work-packages/P2-WP11-binance-depth-network-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP12 | [Bounded Binance Depth Reconnect Session](./work-packages/P2-WP12-binance-depth-reconnect-session.md) | Active | 1.1.0 | 2026-09-07 |
 | P2-WP13 | [Deterministic Binance Depth Soak Harness](./work-packages/P2-WP13-binance-depth-soak-harness.md) | Active | 1.0.1 | 2026-09-07 |
-| P2-WP14 | [Opt-in Binance Depth Testnet Soak Gate](./work-packages/P2-WP14-binance-depth-testnet-soak-gate.md) | Active | 1.2.1 | 2026-09-07 |
-| P2-WP15 | [Binance Depth Soak Report Verification Gate](./work-packages/P2-WP15-binance-depth-report-verification.md) | Active | 1.1.1 | 2026-09-07 |
-| P2-WP16 | [Binance Depth Soak Report Hash Archive](./work-packages/P2-WP16-binance-depth-report-hash-archive.md) | Active | 1.0.1 | 2026-09-07 |
-| P2-WP17 | [Binance Depth Soak Operator Attestation](./work-packages/P2-WP17-binance-depth-operator-attestation.md) | Active | 1.0.1 | 2026-09-07 |
-| P2-WP18 | [Binance Depth Attestation Key Registry](./work-packages/P2-WP18-binance-depth-key-registry.md) | Active | 1.0.1 | 2026-09-07 |
-| P2-WP19 | [Binance Depth Attestation Review Gate](./work-packages/P2-WP19-binance-depth-attestation-review-gate.md) | Active | 1.0.1 | 2026-09-07 |
-| P2-WP20 | [Binance Depth Operator Review ve Key Policy](./work-packages/P2-WP20-binance-depth-review-record-key-policy.md) | Active | 1.0.1 | 2026-09-07 |
-| P2-WP21 | [Binance Depth Evidence Bundle ve Restore Drill](./work-packages/P2-WP21-binance-depth-evidence-bundle.md) | Active | 1.0.1 | 2026-09-07 |
+| P2-WP14 | [Opt-in Binance Depth Testnet Soak Gate](./work-packages/P2-WP14-binance-depth-testnet-soak-gate.md) | Active | 1.2.2 | 2026-09-07 |
+| P2-WP15 | [Binance Depth Soak Report Verification Gate](./work-packages/P2-WP15-binance-depth-report-verification.md) | Active | 1.1.2 | 2026-09-07 |
+| P2-WP16 | [Binance Depth Soak Report Hash Archive](./work-packages/P2-WP16-binance-depth-report-hash-archive.md) | Active | 1.0.2 | 2026-09-07 |
+| P2-WP17 | [Binance Depth Soak Operator Attestation](./work-packages/P2-WP17-binance-depth-operator-attestation.md) | Active | 1.0.2 | 2026-09-07 |
+| P2-WP18 | [Binance Depth Attestation Key Registry](./work-packages/P2-WP18-binance-depth-key-registry.md) | Active | 1.0.2 | 2026-09-07 |
+| P2-WP19 | [Binance Depth Attestation Review Gate](./work-packages/P2-WP19-binance-depth-attestation-review-gate.md) | Active | 1.0.2 | 2026-09-07 |
+| P2-WP20 | [Binance Depth Operator Review ve Key Policy](./work-packages/P2-WP20-binance-depth-review-record-key-policy.md) | Active | 1.0.2 | 2026-09-07 |
+| P2-WP21 | [Binance Depth Evidence Bundle ve Restore Drill](./work-packages/P2-WP21-binance-depth-evidence-bundle.md) | Active | 1.0.2 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -328,3 +328,6 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   taşıyor; V1 raporları yalnız legacy warning ile okunuyor.
 - İlk V2 public testnet koşusu 52 event, 1 gap ve recovery backoff stop ile
   `INVALID` kaldı; bu nedenle live/source verification terfisi yapılmadı.
+- 120 saniyelik V2 public testnet koşusu 159 event, 0 gap ve 0 recovery ile
+  `VALID_TESTNET_OBSERVATION_UNVERIFIED` oldu; archive, attestation, review ve
+  same-host bundle restore zinciri tekrarlandı. Truth/execution bayrakları false.

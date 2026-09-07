@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP21
-version: 1.0.1
+version: 1.0.2
 status: Active
 date: 2026-09-07
 baseline: 94bd412
@@ -71,9 +71,11 @@ uv run python scripts/bundle_binance_depth_evidence.py restore `
 - [x] Archive, attestation, review ve registry strict restore recovery.
 - [x] Dolu hedefin overwrite edilmemesi.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Full backend suite: `530 passed, 1 skipped`.
 - [x] Gerçek testnet operator bundle'ı aynı host'ta create/verify/strict restore
   drill'inden geçti; bundle id `f7f31d856b1492f99ab8e41a058da36ffab19ac2a1b584ac13befe9abcfe983b`.
+- [x] V2 120 saniyelik operator bundle'ı aynı host'ta create/verify/strict restore
+  drill'inden geçti; bundle id `3bf32c21bb028315fa55722f5d3529a434e1a15778814f94855f3fd9c5abe947`.
 - [ ] Gerçek operator testnet bundle'ının farklı makinede restore edilmesi.
 - [ ] Remote CI doğrulaması (şu an bilinçli olarak disabled).
 
@@ -90,9 +92,16 @@ Bundle `contains_private_keys=false`, `source_verified=false` ve
 `execution_authority=false` ile üretildi; verify ve boş hedefe strict restore
 zero exit verdi. ZIP SHA-256:
 `09FE8B7D9857A0CAC8C510480489A5AFC7E655CA3F8DEE767AC863D5E488CB08`.
+V2 bundle ZIP SHA-256:
+`663DFDC4B07777AFACE46C12E34548CA0404B88E3D5580AE6601C5161E62475D`.
 Farklı makine restore kapısı, bu hostta ikinci cihaz bulunmadığı için açık kaldı.
 
 ## Değişiklik geçmişi
+
+### 1.0.2 — 2026-09-07
+
+- V2 120 saniyelik valid testnet evidence bundle create/verify/strict restore
+  kanıtı eklendi; cross-machine kapısı açık tutuldu.
 
 ### 1.0.1 — 2026-09-07
 

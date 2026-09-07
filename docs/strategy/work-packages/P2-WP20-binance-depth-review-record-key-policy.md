@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP20
-version: 1.0.1
+version: 1.0.2
 status: Active
 date: 2026-09-07
 baseline: be0d49d
@@ -71,9 +71,11 @@ kanıtlanmaz.
 - [x] Ineligible gate, overlap, stale key ve revoked reviewer reddediliyor.
 - [x] Review kaydı truth/execution flag'lerini false tutuyor.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Full backend suite: `530 passed, 1 skipped`.
 - [x] Gerçek testnet operator run'ı review kaydına bağlandı:
   review `da5d4a9b329ecbc9`, retention `2027-09-07T14:51:00Z`.
+- [x] V2 120 saniyelik operator run'ı review kaydına bağlandı:
+  review `da47fc62c67c0bf4`, retention `2027-09-08T16:00:00Z`.
 - [ ] Remote CI doğrulaması (şu an bilinçli olarak disabled).
 
 ## Kapsam dışı ve sonraki risk
@@ -88,8 +90,13 @@ bu kayıtla ilişkilendiren manuel runbook ve retention backup drill'idir.
 Review kaydı gate snapshot hash'ini, key policy snapshot hash'ini ve bir yıllık
 retention taahhüdünü imzaladı. `source_verified=false` ve
 `execution_authority=false` korunmuştur.
+V2 review kaydı da aynı truth/execution sınırlarını korudu.
 
 ## Değişiklik geçmişi
+
+### 1.0.2 — 2026-09-07
+
+- V2 120 saniyelik valid testnet run için signed review/retention kanıtı eklendi.
 
 ### 1.0.1 — 2026-09-07
 

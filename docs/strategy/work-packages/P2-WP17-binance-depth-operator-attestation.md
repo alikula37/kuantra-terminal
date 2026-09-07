@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP17
-version: 1.0.1
+version: 1.0.2
 status: Active
 date: 2026-09-07
 baseline: 3d3ff67
@@ -67,9 +67,11 @@ uv run python scripts/attest_binance_depth_soak_report.py `
 - [x] Aynı attestation idempotent, farklı operator attestations ayrı kayıt.
 - [x] Key ve attestation CLI'ları explicit ve overwrite-safe.
 - [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Full backend suite: `530 passed, 1 skipped`.
 - [x] Gerçek testnet raporu operator attestation ile imzalandı:
   attestation `50925819189b9d60`.
+- [x] V2 120 saniyelik testnet raporu operator attestation ile imzalandı:
+  attestation `ff9900f9fe89d518`.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı
@@ -84,6 +86,8 @@ uv run python scripts/attest_binance_depth_soak_report.py `
 Attestation report SHA-256 `1c467ec04d2643495e9cec43e9544446b4bf8855b7d3d8c818313d64fadba5fe`
 ile eşleşiyor; imza doğrulandı ve `source_verified=false`,
 `execution_authority=false` korundu.
+V2 attestation archive report `3cd73ae62f978eaa` ile eşleşiyor; truth flag'leri
+false kaldı.
 
 ## Risk ve sonraki sınır
 
@@ -93,6 +97,10 @@ kapı key rotation/revocation ve retention policy olabilir; bunlar oluşmadan
 attestation product release approval sayılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.0.2 — 2026-09-07
+
+- V2 120 saniyelik valid testnet raporu için operator attestation kanıtı eklendi.
 
 ### 1.0.1 — 2026-09-07
 
