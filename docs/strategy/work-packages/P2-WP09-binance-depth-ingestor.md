@@ -49,7 +49,7 @@ canlı iddia riski taşır.
 - [x] Segment restart sonrası chain sequence devam eder.
 - [x] Sink error sonrası ingest başarı gibi raporlanmaz.
 - [x] Focused suite: `5 passed`.
-- [ ] Full backend suite: implementation commit sonrası yeniden çalıştırılacak.
+- [x] Full backend suite: `548 passed, 1 skipped` (Mac local CI, 2026-09-08).
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı

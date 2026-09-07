@@ -59,7 +59,7 @@ belgesinin güncel sürümü ayrıca doğrulanmalıdır.
 - [x] Validator yanlış veya sentetik event uygulamaz.
 - [x] Network, live websocket, REST snapshot fetch ve book mutation kapsam dışıdır.
 - [x] Focused suite: `7 passed`.
-- [ ] Full backend suite: implementation commit sonrası yeniden çalıştırılacak.
+- [x] Full backend suite: `548 passed, 1 skipped` (Mac local CI, 2026-09-08).
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı

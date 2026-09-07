@@ -54,7 +54,7 @@ eksik local book riski yaratır.
 - [x] Gap, malformed event ve buffer overflow sentetik veri üretmeden recovery ister.
 - [x] Recovery cycle açık `start_buffering()` çağrısı gerektirir.
 - [x] Focused suite: `6 passed`.
-- [ ] Full backend suite: implementation commit sonrası yeniden çalıştırılacak.
+- [x] Full backend suite: `548 passed, 1 skipped` (Mac local CI, 2026-09-08).
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı

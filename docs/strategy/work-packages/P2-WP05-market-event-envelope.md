@@ -52,7 +52,7 @@ proses yazıcıya bağlamaz.
 - [x] Payload/prev/event hash mutasyonu verifier tarafından görünür.
 - [x] `source_verified=false` offline kapsamda zorunludur.
 - [x] Focused suite: `6 passed`.
-- [ ] Full backend suite: implementation commit sonrası yeniden çalıştırılacak.
+- [x] Full backend suite: `548 passed, 1 skipped` (Mac local CI, 2026-09-08).
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
 
 ## Kesinlikle kapsam dışı
