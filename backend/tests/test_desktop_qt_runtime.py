@@ -29,6 +29,7 @@ def test_webview2_version_comparison_is_fail_closed():
 
 def test_frozen_webview2_preflight_rejects_missing_runtime(monkeypatch):
     monkeypatch.setattr(desktop_main, "is_frozen", lambda: True)
+    monkeypatch.setattr(desktop_main.sys, "platform", "win32")
     monkeypatch.setattr(desktop_main, "_webview2_runtime_available", lambda: False)
     with pytest.raises(RuntimeError, match="runtime is not installed"):
         desktop_main._preflight_renderer("edgechromium", logging.getLogger("test"))
@@ -36,6 +37,7 @@ def test_frozen_webview2_preflight_rejects_missing_runtime(monkeypatch):
 
 def test_frozen_windows_rejects_explicit_mshtml_fallback(monkeypatch):
     monkeypatch.setattr(desktop_main, "is_frozen", lambda: True)
+    monkeypatch.setattr(desktop_main.sys, "platform", "win32")
     with pytest.raises(RuntimeError, match="require the edgechromium renderer"):
         desktop_main._preflight_renderer("mshtml", logging.getLogger("test"))
 
