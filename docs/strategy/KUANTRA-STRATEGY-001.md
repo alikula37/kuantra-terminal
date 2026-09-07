@@ -2,9 +2,9 @@
 
 ```yaml
 document_id: KPS-001
-version: 1.0.0
+version: 1.1.0
 status: Accepted
-date: 2026-09-05
+date: 2026-09-08
 product_baseline: v1.4.0
 commit: 2420ff9b299b69e57166f5ca7df681bc49e2f31c
 requested_tag: v1.4.0-production
@@ -15,16 +15,28 @@ decision_owner: Kuantra product/architecture leadership
 
 > Bu belge pazarlama iddialarını değil, incelenen kodun davranışını ve dış kaynakların
 > doğrulanabilir kapsamını esas alır. Rakip özellikleri bağımsız performans kanıtı değil,
-> ilgili şirketlerin güncel ürün beyanıdır.
+> 2026-09-05 tarihinde incelenen şirket beyanlarıdır; bu sürümde yeniden web doğrulaması
+> yapılmadı. Bölüm 2'deki kod audit'i `2420ff9` tarihsel baseline'ıdır, güncel açık
+> hata listesi değildir. Güncel kod bulguları, kanıt sınırları ve kalan iş sırası
+> [KRR-001](ROADMAP-REVIEW-2026-09-08.md) içindedir. Rekabet yüzdeleri öznel mimari
+> karşılaştırma puanlarıdır; ölçülmüş pazar payı veya istatistiksel ürün yakınlığı değildir.
+
+Faz süreleri mühendislik tahminidir, takvim taahhüdü değildir. Uygulanmış WP sayısı
+faz çıkışını kanıtlamaz: bugün gerçek kullanıcı/pilot verisi yoktur; Faz 1 ve Faz 2'nin
+kullanıcı exit kriterleri açık kalır. İlk değer akışı AI ve live execution olmadan
+import, reconciliation, Evidence Pack ve haftalık review ile tamamlanmalıdır.
 
 ## 1. Yönetici kararı
 
 ### Tek cümlelik konumlandırma
 
 **Kuantra, discretionary crypto/perps traderının her işlemini broker lifecycle'ı, piyasa
-bağlamı, risk kararı, playbook disiplini ve kaynak bağlı AI incelemesiyle yeniden üretilebilir
+bağlamı, risk kararı, playbook disiplini ve kullanıcı review'u ile yeniden üretilebilir
 bir Trade Evidence Pack'e dönüştüren local-first Execution Intelligence & Trade Forensics
 Workstation'dır.**
+
+Kaynak bağlı read-only AI incelemesi koşullu sonraki fazdır; ürünün ilk değer önerisi
+veya güvenilirlik otoritesi değildir.
 
 ### İlk giriş pazarı
 
@@ -136,7 +148,7 @@ erişimi olmadan tutulabilir.
 | 30 | Polygon/TwelveData subscribe network bağlantısı kurmuyor. | [`polygon_adapter.py:41`](../../backend/app/services/data_adapters/polygon_adapter.py#L41), [`twelvedata_adapter.py:42`](../../backend/app/services/data_adapters/twelvedata_adapter.py#L42) | Connector iddiası kaldırılmalı. |
 | 31 | Multi-asset manager var olmayan DuckDB metodunu çağırıyor. | [`multi_asset_manager.py:42`](../../backend/app/services/data_adapters/multi_asset_manager.py#L42) | Yol çalışır değil; compile bunu yakalamaz. |
 | 32 | Push queue dolunca en eski olayı audit gap üretmeden düşürüyor. | [`push.py:19`](../../backend/desktop/push.py#L19) | UI telemetry kaybı olabilir. Ledger ayrı; UI drop counter/gap bildirimi zorunlu. |
-| 33 | Credential passphrase hostname/platform bilgisinden türetiliyor. | [`credentials_manager.py:32`](../../backend/app/services/credentials_manager.py#L32) | OS keychain güvencesi yok. Secret migration gerekir. |
+| 33 | Credential passphrase hostname/platform bilgisinden türetiliyor. | Tarihsel `2420ff9` credential implementation; güncel modül: [`exchange/credentials_manager.py`](../../backend/app/services/exchange/credentials_manager.py) | Tarihsel bulgu: OS keychain güvencesi yoktu. Güncel durum P0-WP07 kaydıyla okunur. |
 | 34 | Vault default key ve fixed salt içeriyor; “zero” denilen delete yalnız `del`. | [`security.py:20`](../../backend/app/core/security.py#L20), [`security.py:55`](../../backend/app/core/security.py#L55) | Güvenlik iddiası yanlış. Kaldır/OS keychain kullan. |
 | 35 | Gateway default webhook secret ile başlıyor, yalnız uyarıyor. | [`gateway.py:24`](../../backend/desktop/gateway.py#L24), [`gateway.py:50`](../../backend/desktop/gateway.py#L50) | Entegrasyon aktifse fail-closed secret zorunlu. |
 | 36 | README üretim/HFT ve test iddiaları kod gerçekliğiyle uyumsuz. | [`README.md:16`](../../README.md#L16), [`README.md:68`](../../README.md#L68), [`README.md:135`](../../README.md#L135) | Truth release öncesi dağıtım yapılmamalı. |
@@ -183,7 +195,7 @@ aynı satış kategorisi yapmaz; local/reproducible research ekseninde mimari ya
 - SQLite: settings, metadata, küçük projection ve canonical evidence ledger.
 - DuckDB: yalnız read-heavy analytical projection/query.
 - Local-first veri dizini, açık export ve backup yaklaşımı.
-- Mevcut pywebview shell Faz 0–2'de; ölçüm WebView2 geçişini doğrulayana kadar.
+- Mevcut pywebview shell; Windows WebView2 için Accepted ADR-0004, macOS WKWebView.
 
 ### Radikal yeniden yazılacaklar
 
@@ -204,7 +216,9 @@ aynı satış kategorisi yapmaz; local/reproducible research ekseninde mimari ya
 
 ### Proses sınırı
 
-Faz 0–1 **tek mantıksal uygulama prosesi** olarak kalır. Faz 2'de sorumluluklar üçe ayrılır:
+Mevcut uygulama **tek mantıksal uygulama prosesi** olarak kalır. Faz 2 tek başına
+rewrite yetkisi değildir. Profiler gerçek kullanıcı workload'unda darboğaz gösterirse
+ayrı bounded karar ile aşağıdaki proses ayrımı değerlendirilebilir:
 
 1. Thin desktop host + React UI.
 2. Python control/research/analytics prosesi.
@@ -226,22 +240,23 @@ tarafından izlenir; recorder veya AI sidecar düşerse journal read-only çalı
 | Arrow Flight'i ertele | Gelecekte remote migration | Şimdi 0 | Yalnız remote/multi-host ve auth/service discovery gerektiğinde Flight | Faz 5 öncesi Flight dependency 0 |
 | llama.cpp/OpenAI-compatible sidecar | Model variability, hallucination | 6–8 hf | Fake engine'i kaldır; health/capability discovery; versioned prompt/tool contracts | schema valid ≥99%; source coverage %100; p95 local response <8 s |
 | AI Auditor read-only | Kullanıcı AI önerisini emir sanabilir | Dahil | Execution tool hiç tanımlama; UI'da evidence/confidence/counterexample | unsupported numeric <1%; source trace %100; risk bypass 0 |
-| WebView2/Tauri 2'yi ertele | Qt paketi ağır ve patch surface geniş | Geçiş 6–10 hf | Önce install funnel ölç; gerekirse Windows thin host, macOS WKWebView; Evergreen only | installer <100 MB; crash-free ≥99.5%; activation +≥3 yüzde puan |
+| WebView2 ADR-0004; Tauri 2 ertelenmiş | Renderer/host uyumsuzluğu | Ayrı ölçüm gerekir | Mevcut pywebview Windows Evergreen host; macOS WKWebView; Tauri ancak ölçümle | Exact-artifact renderer smoke; boyut/activation hedefleri henüz kanıt değil |
 | Native canlı venue adapter | Venue API değişimi ve para kaybı | 12–16 hf/venue | CCXT read-only; Binance USD-M shadow → testnet → canary | 30 gün fark 0; recon p99 <60 s; duplicate/risk bypass 0 |
 
 ### Arrow Flight kararı
 
-Başlangıçta **Arrow IPC yeterlidir**. Flight, uzak endpoint, auth, discovery, network backpressure
+Proses ayrımı gerekirse önce **Arrow IPC değerlendirilir**; bugün zorunlu dependency değildir.
+Flight, uzak endpoint, auth, discovery, network backpressure
 ve multi-host teams gerektirdiğinde değerlendirilir. Tek makinede Flight sunucusu çalıştırmak ürün
 değeri üretmeden deployment yüzeyi ekler.
 
 ### WebView2 kararı
 
-Windows'ta WebView2 Evergreen ortak ve otomatik güncellenen runtime avantajı sağlar; fakat Fixed
-Version dağıtımı 250 MB'dan büyük olabilir. Bu geçiş basit backend seçimi değildir; host/IPC,
-window lifecycle, signing ve üç platform QA yeniden yapılır. Bu nedenle **şimdi geçilmez**.
-Installer boyutu veya crash verisi activation'ı ölçülebilir biçimde engellerse Tauri 2 thin shell
-ile yapılır; Fixed Version bundle kullanılmaz.
+Windows renderer kararı [ADR-0004](adr/ADR-0004-windows-webview2-renderer.md) ile
+WebView2 Evergreen olarak kabul edilmiştir; önceki “şimdi geçilmez” ifadesi geçersizdir.
+Bu, Tauri veya multi-process rewrite kararı değildir. Windows host blocker'ı kendi
+host'unda doğrulanmalıdır. Tauri ancak ölçülmüş install/crash sorunu ve ayrı kapsam
+kararıyla değerlendirilir; macOS mevcut WKWebView kullanır.
 
 ## 5. Fazlandırılmış yol haritası
 
@@ -338,9 +353,16 @@ ile yapılır; Fixed Version bundle kullanılmaz.
 
 ## 6. Ticari model
 
+Bu bölümün fiyatları ve paket içerikleri **teklif hipotezidir**, satışa hazır veya
+uygulanmış capability listesi değildir. MIT lisansı private repo'yu otomatik olarak
+public yapmaz; yayınlama ve ticari paket kararı ürün sahibinindir. Güvenilir import ve
+AI'sız review doğrulanmadan ücretli AI/connector vaadi verilmez.
+
 ### Karar: açık çekirdek + ücretli automation/operasyon
 
-MIT local core korunur. Audit bütünlüğü, veri taşınabilirliği veya basic risk doğruluğu paywall
+MIT local core stratejik niyettir; `package.json` MIT dese de bu checkout'ta `LICENSE`
+dosyası yoktur. Lisans metni/third-party notices dağıtım öncesi ürün sahibince çözülmelidir.
+Audit bütünlüğü, veri taşınabilirliği veya basic risk doğruluğu paywall
 arkasına konmaz. Ücret, tekrarlanan connector operasyonu, gelişmiş workflow, destek ve team
 yönetişiminden alınır.
 
@@ -370,7 +392,10 @@ olmayan ve trade verisinin buluta gitmesine hassas trader.
 ### 40 kullanıcılık, 8 haftalık pilot
 
 - 15 Türkiye, 15 Avrupa, 10 global İngilizce kullanıcı.
-- 20 yüksek frekanslı discretionary, 10 prop trader, 10 mevcut ücretli journal kullanıcısı.
+- Tamamı ilk crypto/perps personasına uygun olmalı; farklı journal deneyimleriyle
+  çeşitlendirilir. Geleneksel futures/prop kitlesi için hedef pazar genişletilmez.
+- Önce 5–8 nitelikli kullanıcıyla formative uçtan uca kullanım; R1–R6 kapıları sonrası
+  40 kişilik pilot. Kullanıcı bulma/iletişim ve veri paylaşımı ayrı ürün sahibi sürecidir.
 - Ücretsiz kalabalık beta yerine depozito veya zaman taahhüdü olan design partner seçimi.
 - Her kullanıcı için baseline: mevcut import süresi, haftalık review, rule breach ve kullandığı araç maliyeti.
 
@@ -396,7 +421,7 @@ olmayan ve trade verisinin buluta gitmesine hassas trader.
 | Trade Evidence Pack | qualified visit → waitlist ≥%12 |
 | Local auto-reconciliation | waitlist → interview ≥%30 |
 | Source-linked Local AI Review | fake-door CTR ≥%8 ve interview'da kaynak talebi |
-| Deterministic Prop Rule Stop | pilot invite → install ≥%60 |
+| Deterministic Rule Review (emir durdurma vaadi yok) | pilot invite → install ≥%60 |
 | Ücretli connector rezervasyonu | refundable deposit ≥%15 |
 
 Execution butonuna tıklama tek başına talep kanıtı değildir; kullanıcı güvenilir import/review
@@ -410,7 +435,7 @@ workflow'unu tekrar kullanmıyorsa execution yatırımı yanlış olur.
 - Week-1 weekly review: ≥%55; Week-4: ≥%40; Week-8 aktif: ≥%35.
 - En az bir deterministic rule yapılandırma: ≥%60.
 - Weekly rule-adherence workflow kullanımı: ≥%45.
-- 21 günlük trial → paid: global ≥%15; Türkiye ≥%10.
+- 14 günlük trial → paid: global ≥%15; Türkiye ≥%10 (fiyatlandırmayla aynı süre hipotezi).
 - 90 günlük paid retention: ≥%80.
 
 ### Yatırımı durdurma kuralları
@@ -431,8 +456,10 @@ AI yatırımı şu durumda durur:
 - kullanıcıların >%20'si AI cümlesinin kaynağını bulamıyor;
 - inference maliyeti Pro brüt marjının >%20'si.
 
-Pilot go/no-go: 40 kullanıcının en az 16'sı sekizinci haftada weekly active, en az 6'sı ücretli
-ve açıklanamayan fill farkı sıfır değilse ürün Faz 3/4'e geçmez.
+Pilot go/no-go için üç koşul birlikte gerekir: 40 kullanıcının en az 16'sı sekizinci
+haftada weekly active, en az 6'sı ücretli ve açıklanamayan fill farkı sıfır. Herhangi
+biri sağlanmazsa veya ölçüm yoksa Faz 3/4'e geçilmez. AI numeric hedefi <%1;
+>%2 yatırım durdurma eşiğidir, %1–2 aralığı kabul/production izni değildir.
 
 ## 8. Dış kaynaklar ve karar dayanakları
 
@@ -472,6 +499,12 @@ ve açıklanamayan fill farkı sıfır değilse ürün Faz 3/4'e geçmez.
 - [AmiBroker editions/pricing](https://www.amibroker.com/products.html)
 
 ## Değişiklik geçmişi
+
+### 1.1.0 — 2026-09-08
+
+- KRR-001 ile güncel backlog/kanıt sınırı ayrıldı; P1 değer zinciri önceliklendirildi.
+- WebView2 ADR çelişkisi, zorunlu Rust/proses yorumu, pilot persona ve trial süresi düzeltildi.
+- Tarihsel audit/rekabet ve ticari hipotezler güncel production iddiasından ayrıldı.
 
 ### 1.0.0 — 2026-09-05
 

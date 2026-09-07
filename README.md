@@ -12,7 +12,13 @@ chain transaction execution, biometric safety authority, or a remote extension m
 Those surfaces return an explicit unavailable/experimental state until their
 transport, source, security, and reconciliation contracts are implemented.
 
-## Verified core in this release
+## Implemented core and validation boundaries
+
+Implementation is not proof of complete perpetual-account reconciliation or improved
+trading outcomes. There is no real-user pilot evidence yet. The current branch is not
+automatically a new release of the version in this heading. See the
+[current roadmap audit](docs/strategy/ROADMAP-REVIEW-2026-09-08.md) for open correctness
+risks, evidence limits and the remaining P1 delivery order.
 
 - SQLite WAL journal and transactional settings/metadata.
 - DuckDB analytical projection for recorded candles/trades.
@@ -66,9 +72,10 @@ FastAPI control plane + deterministic risk boundary
 ModStore and REVERSE-SKILL remain visible only as experimental, disabled
 surfaces; neither can download, hot-mount, deploy, or execute arbitrary code.
 
-The long-term target is an append-only evidence ledger (`Intent -> RiskDecision
--> OrderSubmitted -> Ack -> Fill -> Position -> JournalReview`) with canonical
-event hashes, Parquet history and a read-only local AI Auditor. A real data
+Append-only evidence ledger foundations, projections and Evidence Pack APIs/UI are
+implemented. The complete future lifecycle (`Intent -> RiskDecision
+-> OrderSubmitted -> Ack -> Fill -> Position -> JournalReview`), scaled Parquet
+history and a read-only local AI Auditor are not implied by those foundations. A real data
 plane or model sidecar is not implied by the current Python desktop build.
 
 ## Development
@@ -78,13 +85,15 @@ for tests so local journal state cannot affect results.
 
 ```bash
 # backend dependencies
-pip install -r backend/requirements.txt -r backend/requirements-desktop.txt
+uv venv --python python3.11 .venv
+source .venv/bin/activate
+uv pip install -r backend/requirements.lock
 
 # isolated backend suite
 KUANTRA_DATA_DIR="$(mktemp -d)" python -m pytest backend/tests -q
 
 # frontend
-npm --prefix frontend install
+npm --prefix frontend ci
 npm --prefix frontend test -- --run
 npm --prefix frontend run build
 ```
@@ -94,7 +103,9 @@ For a desktop build, use `scripts/build_desktop.py` followed by
 [`docs/BUILD_WINDOWS.md`](docs/BUILD_WINDOWS.md), [`docs/BUILD_MACOS.md`](docs/BUILD_MACOS.md)
 and [`docs/BUILD_LINUX.md`](docs/BUILD_LINUX.md).
 
-For a Windows-to-macOS move, use the credential-safe, hash-verified migration
+For the current Mac move there is no real user data: start with a clean data directory,
+let Kuantra create its SQLite schema, and do not copy Windows data, credentials or bundles.
+Only when real user data exists, use the credential-safe, hash-verified migration
 bundle documented in [`docs/MACOS_MIGRATION.md`](docs/MACOS_MIGRATION.md). The
 bundle carries the canonical SQLite ledger and Parquet cold storage; DuckDB is
 rebuilt locally and OS keychain credentials are re-entered on the destination.
@@ -106,7 +117,10 @@ Actions quota is unavailable):
 uv run --offline --no-project --with-requirements backend/requirements.lock python scripts/run_local_ci.py
 ```
 
-The command writes `dist/local-ci-report.json` and must end with `MERGE READY`. A packaged
+The command writes `dist/local-ci-report.json` and must end with `MERGE READY`.
+`uv --offline` run restricts dependency resolution, not runtime network: current startup
+can connect to public market data. Initial dependency installation may require network
+and is not offline proof. A packaged
 smoke report can be green while the frozen renderer falls back; the gate rejects that
 condition explicitly. Windows defaults to the Evergreen WebView2 host; Linux defaults to Qt
 WebEngine. The production Windows payload intentionally excludes Qt; `PYWEBVIEW_GUI=qt` is
@@ -125,4 +139,6 @@ and review ownership are documented in [`CONTRIBUTORS.md`](CONTRIBUTORS.md).
 
 ## License
 
-This repository currently retains the MIT license in [`LICENSE`](LICENSE).
+`package.json` declares MIT, but this checkout has no repository `LICENSE` file.
+The owner must resolve the intended license text and third-party notices before
+public/commercial distribution; this documentation audit does not grant a license.

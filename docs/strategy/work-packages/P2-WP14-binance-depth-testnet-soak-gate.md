@@ -2,9 +2,9 @@
 
 ```yaml
 document_id: P2-WP14
-version: 1.2.5
+version: 1.2.6
 status: Active
-date: 2026-09-07
+date: 2026-09-08
 baseline: 257e881
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
@@ -77,12 +77,14 @@ uv run python scripts/run_binance_depth_soak.py `
   --mode testnet `
   --allow-network `
   --retry-recovery `
-  --disconnect-after-seconds 60 `
   --symbol BTCUSDT `
   --duration-seconds 300 `
   --storage-root "$PWD/.local-testnet-soak" `
   --output "$PWD/.local-testnet-soak/report.json"
 ```
+
+Kontrollü disconnect ayrı deneydir: yalnız ilgili bounded recovery testleri sonrası
+testnet komutuna `--disconnect-after-seconds 60` eklenir; normal soak varsayılanı değildir.
 
 ## Operasyon kanıtı — 2026-09-07
 
@@ -122,7 +124,8 @@ gap metriğini karşılamadığı için ilgili uzun-soak acceptance maddesi aç�
 ## Mac controlled-disconnect validation — 2026-09-08
 
 Yeni explicit `--disconnect-after-seconds` sınırı gerçek public testnet'te
-doğrulandı. `60` saniyede bir websocket kapatıldı; her iki koşuda da injection
+doğrulandı. Her koşuda ilk bağlantı açıldıktan `60` saniye sonra bir kez websocket
+kapatıldı (periyodik injection değildir); her iki koşuda da injection
 `OPERATOR_DISCONNECT_INJECTED` olarak source error'a yansıdı. `180` saniyelik
 rapor (`68dbfc162368f8bd0eb9f810ec5be25545a4f02c54340620af93b44361ed6c75`)
 ve `300` saniyelik rapor
@@ -132,7 +135,11 @@ ikisini de `INVALID` tuttu. Bu negatif kanıt recovery gap'inin görünür ve
 fail-closed kaldığını gösterir; başarılı recovery promotion veya source
 verification yapılmadı.
 
-Geçerli rapor aynı host'ta P2-WP16–21 akışından geçirildi: archive report id
+### Tarihsel Windows archive kanıtı — Mac INVALID koşularından ayrı
+
+Aşağıdaki kayıt önceki geçerli Windows raporuna aittir; yukarıdaki Mac disconnect
+raporlarının terfi ettiği anlamına gelmez. Geçerli Windows raporu aynı Windows
+host'ta P2-WP16–21 akışından geçirildi: archive report id
 `1c467ec04d264349`, attestation `50925819189b9d60`, gate
 `ELIGIBLE_FOR_REVIEW`, review `da5d4a9b329ecbc9`, evidence bundle id
 `f7f31d856b1492f99ab8e41a058da36ffab19ac2a1b584ac13befe9abcfe983b`.
@@ -140,6 +147,15 @@ Bundle verify ve boş hedefe restore zero exit verdi; bundle SHA-256
 `09FE8B7D9857A0CAC8C510480489A5AFC7E655CA3F8DEE767AC863D5E488CB08`.
 
 ## Acceptance criteria
+
+2026-09-08 kod denetimi: transport, recovery kararını producer/consumer bitişinden
+sonra değerlendiriyor. Açık akıştaki gap için prompt recovery kanıtı eksiktir;
+sadece süreyi uzatmak çözüm kabul edilmez. Önce bitmeyen fixture source ile bounded
+retry/cancellation/persistence testleri gerekir. Bkz. [KRR-001 B3/M1](../ROADMAP-REVIEW-2026-09-08.md).
+Yeni uzun/24 saat soak bu bounded bakım ve disk/rapor/takip planından önce başlatılmaz.
+
+Doküman 1.2.6 düzeltmesi: injection periyodu ve Windows/Mac archive ayrımı düzeltildi;
+runtime değişikliği veya yeni başarılı recovery kanıtı eklenmedi.
 
 - [x] Default CLI network açmadan fixture çalıştırıyor.
 - [x] Testnet mode `--allow-network` olmadan fail-closed reddediliyor.

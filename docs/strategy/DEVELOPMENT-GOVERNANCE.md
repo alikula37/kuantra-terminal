@@ -2,10 +2,10 @@
 
 ```yaml
 document_id: KDG-001
-version: 1.0.0
+version: 1.0.1
 status: Accepted
-date: 2026-09-05
-strategy: KPS-001@1.0.0
+date: 2026-09-08
+strategy: KPS-001@1.1.0
 ```
 
 ## Amaç
@@ -15,7 +15,13 @@ kanıt zincirinde kalmasını sağlamak. Hız, yalnız test ve acceptance criter
 
 ## Roller
 
-### Lead agent — ürün/mimari ve entegrasyon otoritesi
+2026-09-08 açıklaması: aşağıdaki model adları tarihsel görev dağılımıdır; kullanıcının
+güncel direktifi önceliklidir (Mac devamında istenen subagent: GPT-5.6 Luna). Subagent
+zorunlu değildir. Lead agent entegrasyon/review yürütür; nihai ürün/mimari kararı
+ürün sahibinindir. Güncel kalan iş sırası [KRR-001](ROADMAP-REVIEW-2026-09-08.md)
+ile okunur; eski `Active` paket sayısı faz çıkışı veya sonraki iş sırası değildir.
+
+### Lead agent — ürün/mimari sınırlarının korunması ve entegrasyon
 
 - Faz sırasını, ürün sınırını ve ADR'leri korur.
 - Her değişikliği küçük, ölçülebilir work package'a böler.
@@ -110,6 +116,10 @@ Work package'ların bitmesi fazın bittiği anlamına gelmez. Faz exit criteria'
 - Yanlışlıkla görünen token derhal revoke edilir; yalnız metinden silmek yeterli değildir.
 
 ## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-08
+
+- İnsan ürün otoritesi, güncel model direktifi ve KRR-001 backlog önceliği netleştirildi.
 
 ### 1.0.0 — 2026-09-05
 

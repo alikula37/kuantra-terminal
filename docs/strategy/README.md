@@ -6,12 +6,22 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 
 ## Belge kataloğu
 
+Güncel geliştirme sırası ve açık riskler için önce
+[2026-09-08 ürün/roadmap denetimini](ROADMAP-REVIEW-2026-09-08.md) okuyun.
+İlk hazır iş **P1-WP16 snapshot completeness**; ardından accounting → lifecycle/journal
+→ ilk değer UI akışı → weekly review → dağıtım/pilot kapıları gelir. Yeni P2 altyapısı
+otomatik sıradaki iş değildir. Tarihsel `Active` kayıtları bütün acceptance kriterleri
+tamamlandı anlamına gelmez; `Verified` yalnız kayıtlı commit/platform kapsamındadır.
+Gerçek kullanıcı olmadığından Faz 1/2 kullanıcı exit kriterleri henüz karşılanmadı.
+
 | Kimlik | Belge | Durum | Sürüm | Son güncelleme |
 |---|---|---:|---:|---:|
-| KPS-001 | [Ürün ve Mimari Stratejisi](./KUANTRA-STRATEGY-001.md) | Accepted | 1.0.0 | 2026-09-05 |
-| KDG-001 | [Geliştirme Yönetişimi](./DEVELOPMENT-GOVERNANCE.md) | Accepted | 1.0.0 | 2026-09-05 |
-| KDG-002 | [Yerel CI ve merge gate politikası](./LOCAL-CI-POLICY.md) | Accepted | 1.1.0 | 2026-09-07 |
-| KWT-001 | [İş Paketi / Agent Prompt Şablonu](./WORK-PACKAGE-TEMPLATE.md) | Active | 1.0.0 | 2026-09-05 |
+| KPS-001 | [Ürün ve Mimari Stratejisi](./KUANTRA-STRATEGY-001.md) | Accepted | 1.1.0 | 2026-09-08 |
+| KRR-001 | [Ürün doğruluğu ve kalan geliştirme denetimi](./ROADMAP-REVIEW-2026-09-08.md) | Accepted | 1.0.0 | 2026-09-08 |
+| P1-WP16 | [Read-Only Snapshot Completeness](./work-packages/P1-WP16-read-only-snapshot-completeness.md) | Ready | 1.0.0 | 2026-09-08 |
+| KDG-001 | [Geliştirme Yönetişimi](./DEVELOPMENT-GOVERNANCE.md) | Accepted | 1.0.1 | 2026-09-08 |
+| KDG-002 | [Yerel CI ve merge gate politikası](./LOCAL-CI-POLICY.md) | Accepted | 1.1.1 | 2026-09-08 |
+| KWT-001 | [İş Paketi / Agent Prompt Şablonu](./WORK-PACKAGE-TEMPLATE.md) | Active | 1.0.1 | 2026-09-08 |
 | KPS-P0-STATUS | [Faz 0 durum panosu](./PHASE-0-STATUS.md) | Verified | — | 2026-09-06 |
 | ADR-0001 | [Ürün kimliği ve ilk pazar](./adr/ADR-0001-product-identity-and-entry-market.md) | Accepted | — | 2026-09-05 |
 | ADR-0002 | [Evidence ledger ve veri katmanları](./adr/ADR-0002-evidence-ledger-and-storage.md) | Accepted | — | 2026-09-05 |
@@ -59,7 +69,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP11 | [Public Binance Depth Network Adapter](./work-packages/P2-WP11-binance-depth-network-adapter.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP12 | [Bounded Binance Depth Reconnect Session](./work-packages/P2-WP12-binance-depth-reconnect-session.md) | Active | 1.1.0 | 2026-09-07 |
 | P2-WP13 | [Deterministic Binance Depth Soak Harness](./work-packages/P2-WP13-binance-depth-soak-harness.md) | Active | 1.0.1 | 2026-09-07 |
-| P2-WP14 | [Opt-in Binance Depth Testnet Soak Gate](./work-packages/P2-WP14-binance-depth-testnet-soak-gate.md) | Active | 1.2.3 | 2026-09-07 |
+| P2-WP14 | [Opt-in Binance Depth Testnet Soak Gate](./work-packages/P2-WP14-binance-depth-testnet-soak-gate.md) | Active | 1.2.6 | 2026-09-08 |
 | P2-WP15 | [Binance Depth Soak Report Verification Gate](./work-packages/P2-WP15-binance-depth-report-verification.md) | Active | 1.1.3 | 2026-09-07 |
 | P2-WP16 | [Binance Depth Soak Report Hash Archive](./work-packages/P2-WP16-binance-depth-report-hash-archive.md) | Active | 1.0.2 | 2026-09-07 |
 | P2-WP17 | [Binance Depth Soak Operator Attestation](./work-packages/P2-WP17-binance-depth-operator-attestation.md) | Active | 1.0.2 | 2026-09-07 |
@@ -67,9 +77,9 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP19 | [Binance Depth Attestation Review Gate](./work-packages/P2-WP19-binance-depth-attestation-review-gate.md) | Active | 1.0.2 | 2026-09-07 |
 | P2-WP20 | [Binance Depth Operator Review ve Key Policy](./work-packages/P2-WP20-binance-depth-review-record-key-policy.md) | Active | 1.0.2 | 2026-09-07 |
 | P2-WP21 | [Binance Depth Evidence Bundle ve Restore Drill](./work-packages/P2-WP21-binance-depth-evidence-bundle.md) | Active | 1.0.2 | 2026-09-07 |
-| P2-WP22 | [Binance Depth Fault-Injection ve Recovery Matrix](./work-packages/P2-WP22-binance-depth-fault-matrix.md) | Active | 1.0.0 | 2026-09-07 |
-| P2-WP23 | [Binance Depth Soak Observation Series](./work-packages/P2-WP23-binance-depth-soak-series.md) | Active | 1.0.0 | 2026-09-07 |
-| P2-WP24 | [Binance Depth Soak Series Quality Gate](./work-packages/P2-WP24-binance-depth-soak-quality-gate.md) | Active | 1.0.0 | 2026-09-07 |
+| P2-WP22 | [Binance Depth Fault-Injection ve Recovery Matrix](./work-packages/P2-WP22-binance-depth-fault-matrix.md) | Active | 1.0.1 | 2026-09-07 |
+| P2-WP23 | [Binance Depth Soak Observation Series](./work-packages/P2-WP23-binance-depth-soak-series.md) | Active | 1.0.1 | 2026-09-07 |
+| P2-WP24 | [Binance Depth Soak Series Quality Gate](./work-packages/P2-WP24-binance-depth-soak-quality-gate.md) | Active | 1.0.1 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -91,10 +101,18 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 - `Proposed`: karar için hazır, henüz onaylanmamış.
 - `Accepted`: uygulama için bağlayıcı.
 - `Active`: kullanılan şablon veya süreç.
+- `Ready`: bağımlılıkları ve bounded acceptance kriterleri tanımlanmış sıradaki uygulama paketi.
+- `Verified`: yalnız belirtilen commit/platform/senaryo kanıtı; otomatik faz veya release onayı değil.
 - `Superseded`: daha yeni belge tarafından değiştirilmiş.
 - `Retired`: artık geçerli değil; tarihsel kayıt olarak tutulur.
 
 ## Değişiklik geçmişi
+
+### 2026-09-08 — Roadmap denetimi
+
+- KRR-001 ve P1-WP16 ile P1 ürün değerine geri bağlanan kalan sıra ve doğruluk riskleri kaydedildi.
+- KPS-001 1.1.0: tarihsel/güncel kanıt ve koşullu yatırım sınırları düzeltildi.
+- Mac runbook ve local CI kanıt yorumları netleştirildi; yeni runtime doğrulaması iddia edilmedi.
 
 ### 2026-09-05
 

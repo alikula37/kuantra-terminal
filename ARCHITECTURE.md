@@ -2,7 +2,8 @@
 
 This document provides a comprehensive technical breakdown of Kuantra Terminal's single-process
 desktop architecture, in-process request dispatch and push streaming, dual-engine storage model,
-and AI Swarm decision pipelines.
+and explicit experimental boundaries. Current priorities and evidence limitations are
+defined in the [roadmap audit](docs/strategy/ROADMAP-REVIEW-2026-09-08.md).
 
 ---
 
@@ -39,7 +40,7 @@ HTTP port sits between the UI and the backend.**
 | Platform | pywebview backend | Engine | Runtime prerequisite |
 |:---|:---|:---|:---|
 | macOS | `cocoa` | WKWebView | none (OS component) |
-| Windows | `qt` | PyQt6 + PyQt6-WebEngine | none — the engine is bundled; WebView2 is **not** required |
+| Windows | `edgechromium` | WebView2 Evergreen | WebView2 runtime; see Accepted ADR-0004 |
 | Linux | `qt` | PyQt6 + PyQt6-WebEngine | X11/XCB system libraries (see `docs/BUILD_LINUX.md`) |
 
 ### JS to Python Bridge
@@ -62,7 +63,7 @@ shapes the WebSocket used (`TICK`, `CANDLE_UPDATE`, `SNAPSHOT`, `COMPLIANCE_ALER
 In a browser dev session (`npm run dev` + `python backend/main.py`) `window.pywebview` is absent
 and the adapter falls back to real `fetch` and a real `WebSocket` against `127.0.0.1:8000`.
 
-### Integrations Gateway (the only socket)
+### Optional Integrations Gateway
 
 Two features are consumed by *other programs* and therefore still need a socket: the TradingView
 Chrome extension (`/ws/tv-sync`) and TradingView alert webhooks
@@ -82,7 +83,7 @@ Long-lived state lives outside the install tree so upgrades and uninstalls never
 | Linux | `$XDG_DATA_HOME/kuantra-terminal` (fallback `~/.local/share/kuantra-terminal`) |
 
 `KUANTRA_DATA_DIR` overrides it. A non-frozen dev checkout keeps using `backend/data`. The
-directory holds the SQLite/DuckDB databases, logs, downloaded plugins and the WebView
+directory holds the SQLite/DuckDB databases, logs, plugin-directory metadata and the WebView
 `localStorage` store.
 
 ### Packaging
@@ -110,19 +111,25 @@ Kuantra implements a specialized dual-database topology separating OLTP transact
 +=====================+                       +=====================+
 | • ACID Transactions |                       | • Multi-GB Candles  |
 | • Playbook Rules    |                       | • MAE / MFE Grid    |
-| • User Preferences  |                       | • Sub-ms Aggregates |
+| • User Preferences  |                       | • Measured Queries |
 +=====================+                       +=====================+
 ```
 
 ### Shadow Hydration Recovery Engine
-DuckDB acts as an ephemeral, ultra-fast vectorized cache. If the DuckDB file is deleted, corrupted, or schema-modified:
-1. `DuckDBHydrator` detects the anomaly automatically.
-2. Extracts canonical historical trade records from SQLite OLTP.
-3. Vectorizes and reconstitutes the DuckDB database in under **150ms** with zero data loss.
+DuckDB trade hydration is a rebuildable analytical projection gated by canonical
+evidence coverage (P1-WP05/06). Incomplete coverage must block hydration rather than
+silently mix unverified records. A rebuild does not imply recovery of missing market
+observations, and there is no universal 150ms/zero-loss claim. Do not delete a user's
+DuckDB file to test recovery. Use isolated fixtures and explicit migration approval.
 
 ---
 
 ## 3. Financial MCP Gateway & Reverse-Skill Engine
+
+**Historical design sketch, not runtime capability.** The diagram below is retained
+only for context: remote MCP retrieval, reverse deployment and AI Swarm execution are
+experimental/disabled. It is not an integration backlog or authority chain. A future
+AI auditor, if separately approved, is read-only and cannot issue orders.
 
 ```
 [ External Quant Feeds ]
@@ -152,9 +159,9 @@ DuckDB acts as an ephemeral, ultra-fast vectorized cache. If the DuckDB file is 
 
 ## 4. Multi-Layer Pre-Trade Risk Guardrail Interceptor
 
-Every order proposal passes through 4 deterministic safety gates prior to broker transmission:
-
-1. **Panic Circuit-Breaker**: Verifies terminal is not in `READ_ONLY_LOCKDOWN`.
-2. **Biometric Wearable Interceptor**: Blocks execution if Physiological Tilt Score $\ge 75$ ($S_{bio} = \frac{BPM}{1.5} + (100 - HRV) \times 0.6$).
-3. **Multi-Agent Swarm Consensus**: Conducts debate round-robin between `MacroAgent`, `QuantAgent`, and `RiskAgent`. If `RiskAgent` dissents, the order is vetoed.
-4. **Prop Firm Compliance Shield**: Enforces max daily drawdown and total account loss limits.
+The deterministic risk/compliance boundary is the authority; AI consensus and wearable
+scores are not risk gates. Missing price, compliance evidence, transport or reconciliation
+must fail closed. A passing local risk verdict is not proof of broker acceptance or
+permission to enable live execution. Follow [ADR-0003](docs/strategy/adr/ADR-0003-execution-authority-boundary.md)
+and the [release truth matrix](docs/release/README.md); experimental broker/AI/biometric
+surfaces remain unavailable. No real order is authorized by this architecture document.

@@ -1,8 +1,11 @@
 # Contributing to Kuantra Terminal
 
-Thank you for your interest in contributing to **Kuantra Terminal** — the institutional desktop algorithmic trading suite and AI Swarm ecosystem.
+Kuantra Terminal is a local-first Execution Intelligence & Trade Forensics workstation,
+not an institutional algorithmic trading suite or AI Swarm product.
 
-To maintain our strict standards of execution reliability, security isolation, and sub-millisecond responsiveness, all contributions must adhere to the protocols outlined below.
+Contributions must preserve deterministic risk authority, evidence integrity and explicit
+unavailable states. Follow the [current roadmap audit](docs/strategy/ROADMAP-REVIEW-2026-09-08.md);
+unmeasured performance or unimplemented capabilities must not become product claims.
 
 ---
 
@@ -10,9 +13,9 @@ To maintain our strict standards of execution reliability, security isolation, a
 
 - **`main`**: Release-bound branch. Every merge must pass the local KDG-002 gate; a release
   additionally needs independently recorded Windows, macOS and Linux artifact evidence.
-- **`feat/<feature-name>`**: Development of new features or phase extensions.
-- **`fix/<bug-description>`**: Targeted bug fixes and security patches.
-- **`perf/<optimization>`**: Quantitative latency and memory optimizations.
+- **`codex/<phase>-<work-package>-<short-name>`**: Bounded implementation branches.
+- Current Mac continuation stays on **`codex/p1-wp01-evidence-ledger`**. No direct main
+  work, merge, release or tag without explicit owner approval.
 
 ---
 
@@ -59,8 +62,10 @@ UI and the backend in the packaged app, and no Rust toolchain is involved.
 
 ### 1. One-time setup
 ```bash
-pip install -r backend/requirements.txt -r backend/requirements-desktop.txt
-npm --prefix frontend install
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.lock
+npm --prefix frontend ci
 ```
 
 ### 2. Day-to-day loops

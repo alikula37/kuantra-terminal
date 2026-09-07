@@ -2,17 +2,18 @@
 
 ```yaml
 document_id: KDG-002
-version: 1.1.0
+version: 1.1.1
 status: Accepted
-date: 2026-09-07
-strategy: KPS-001@1.0.0
+date: 2026-09-08
+strategy: KPS-001@1.1.0
 implementation: scripts/run_local_ci.py
 ```
 
 ## Karar
 
-GitHub Actions, bu özel repository için kota ve bütçe nedeniyle şu anda kanıt kaynağı
-değildir. `main` dalına merge kararı bu nedenle yerel, tekrarlanabilir gate ile verilir.
+GitHub Actions için 2026-09-07 kaydında kota/bütçe nedeniyle kanıt alınamıyordu;
+bu kayıt güncel billing sorgusu değildir. `main` dalına merge kararı yerel,
+tekrarlanabilir gate ve ayrıca ürün sahibinin onayı ile verilir.
 Remote workflow dosyaları silinmez; kota geri geldiğinde aynı sözleşmenin ek kanıt kaynağı
 olarak yeniden etkinleştirilebilir. Remote yeşil görünmüyorsa yerel gate sonucu override
 edilmez.
@@ -49,6 +50,26 @@ Başarılı koşuda geçici test/smoke verisi silinir; başarısız koşuda tan�
 
 ## Merge ve push protokolü
 
+### Kanıtın yorumlanması — 2026-09-08 açıklaması
+
+- `uv --offline` dependency resolution içindir; runtime network isolation değildir.
+  Mevcut startup public Binance bağlantısı açabilir. İlk network install ve public
+  testnet koşuları offline kanıt diye yazılmaz.
+- macOS `_desktop_preflight` atlanır ve smoke validator renderer equality'yi macOS için
+  zorunlu tutmaz. Native smoke başarısı otomatik WKWebView identity enforcement değildir.
+- `--artifact` yalnız hash metadata'sı ekler; final DMG kanıtı mount edilmiş artifact'ın
+  executable'ını çalıştırmayı gerektirir. `build_commit=UNKNOWN` provenance eksiğidir.
+- Full local CI mühendislik kanıtıdır; broker completeness, tüm perps accounting,
+  kullanıcı review başarısı veya üç-OS final artifact doğrulaması yerine geçmez.
+- Yalnız doküman değişikliklerinde diff/link/release-truth/packaging kontrolleriyle
+  branch commit/push yapılabilir; çalıştırılmayan full gate yeni koşu gibi raporlanmaz.
+  `main` merge ve release kapıları bundan muaf değildir.
+
+Bu açıklama script/report policy kimliğini değiştirmez (`KDG-002@1.1.0`). Açık
+runtime sertleştirme işleri [KRR-001](ROADMAP-REVIEW-2026-09-08.md) içinde takip edilir.
+
+### İşlem sınırı
+
 - `MERGE READY` görülmeden commit push edilebilir ama `main` merge edilemez.
 - `MERGE BLOCKED` raporunda listelenen adım çözülmeden başarısız koşu “bilinen sorun” diye
   kapatılamaz.
@@ -67,6 +88,10 @@ Başarılı koşuda geçici test/smoke verisi silinir; başarısız koşuda tan�
 - Local gate'i bypass etmek için `--skip-*` benzeri sessiz seçenek eklemek.
 
 ## Değişiklik geçmişi
+
+### 1.1.1 — 2026-09-08
+
+- Offline, Mac renderer, DMG provenance ve docs-only branch doğrulaması sınırları eklendi.
 
 ### 1.1.0 — 2026-09-07
 

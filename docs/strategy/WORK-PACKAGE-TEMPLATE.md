@@ -2,12 +2,14 @@
 
 ```yaml
 document_id: KWT-001
-version: 1.0.0
+version: 1.0.1
 status: Active
-date: 2026-09-05
+date: 2026-09-08
 ```
 
-Bu şablon ayrı chat'e gönderilebilir veya aynı chat içinde GPT-5.6 Terra subagent'a verilebilir.
+Bu şablon aynı görevde kullanılabilir veya kullanıcı isterse ayrı göreve taşınabilir.
+Model adları tarihsel varsayımdır; güncel kullanıcı direktifi önceliklidir
+(Mac devamında istenen subagent: GPT-5.6 Luna). Subagent kullanmak zorunlu değildir.
 Köşeli alanlar lead agent tarafından doldurulmadan coding başlamaz.
 
 ---
@@ -98,6 +100,10 @@ ve mimari karar otoritesi değilsin; aşağıdaki work package'ı mevcut ADR'ler
 - [ ] Faz metriğine etkisi ölçülebilir mi?
 
 ## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-08
+
+- Model/görev tercihlerinin güncel kullanıcı direktifine tabi olduğu netleştirildi.
 
 ### 1.0.0 — 2026-09-05
 
