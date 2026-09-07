@@ -59,7 +59,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP12 | [Bounded Binance Depth Reconnect Session](./work-packages/P2-WP12-binance-depth-reconnect-session.md) | Active | 1.1.0 | 2026-09-07 |
 | P2-WP13 | [Deterministic Binance Depth Soak Harness](./work-packages/P2-WP13-binance-depth-soak-harness.md) | Active | 1.0.0 | 2026-09-06 |
 | P2-WP14 | [Opt-in Binance Depth Testnet Soak Gate](./work-packages/P2-WP14-binance-depth-testnet-soak-gate.md) | Active | 1.1.2 | 2026-09-07 |
-| P2-WP15 | [Binance Depth Soak Report Verification Gate](./work-packages/P2-WP15-binance-depth-report-verification.md) | Active | 1.0.4 | 2026-09-07 |
+| P2-WP15 | [Binance Depth Soak Report Verification Gate](./work-packages/P2-WP15-binance-depth-report-verification.md) | Active | 1.0.5 | 2026-09-07 |
 | P2-WP16 | [Binance Depth Soak Report Hash Archive](./work-packages/P2-WP16-binance-depth-report-hash-archive.md) | Active | 1.0.1 | 2026-09-07 |
 | P2-WP17 | [Binance Depth Soak Operator Attestation](./work-packages/P2-WP17-binance-depth-operator-attestation.md) | Active | 1.0.1 | 2026-09-07 |
 | P2-WP18 | [Binance Depth Attestation Key Registry](./work-packages/P2-WP18-binance-depth-key-registry.md) | Active | 1.0.1 | 2026-09-07 |
@@ -322,3 +322,5 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   sayılmıyor. Bu, uzun soak/recovery continuity kapısını açık tutuyor.
 - Soak CLI aynı verifier'a bağlandı; recovery backoff sırasında duran ve son
   cycle'ı tamamlanmayan raporlar artık CLI seviyesinde de non-zero dönüyor.
+- Verifier, session toplam event sayısını cycle `events_processed` toplamına
+  bağladı; aggregate alanın tek başına oynanması artık geçerli değil.

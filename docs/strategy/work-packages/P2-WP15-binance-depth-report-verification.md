@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP15
-version: 1.0.4
+version: 1.0.5
 status: Active
 date: 2026-09-07
 baseline: 9a19f61
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP14 Opt-in Binance Depth Testnet Soak Gate
-implementation_commits: 845a0b4, 070998a, 0aa0dfd
+implementation_commits: 845a0b4, 070998a, 0aa0dfd, e27762b
 ```
 
 ## Problem
@@ -54,7 +54,8 @@ riskini bırakıyordu.
 - [x] CLI valid raporda zero, tamper raporunda non-zero exit veriyor.
 - [x] Focused suite: `6 passed`.
 - [x] Soak CLI doğrudan aynı verifier'dan geçiyor; incomplete stop raporu non-zero.
-- [x] Full backend suite: `527 passed, 1 skipped`.
+- [x] Session toplam event sayısı cycle başına `events_processed` toplamıyla eşleşiyor.
+- [x] Full backend suite: `528 passed, 1 skipped`.
 - [x] Gerçek testnet raporu operator-run ile `VALID_TESTNET_OBSERVATION_UNVERIFIED`
   olarak doğrulandı; source verification açılmadı.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
@@ -90,6 +91,11 @@ kapı, gerçek testnet raporlarını operatör imzası/retention politikasıyla 
 ve disconnect/gap/reconnect metriklerini ürün kararına bağlamaktır.
 
 ## Değişiklik geçmişi
+
+### 1.0.5 — 2026-09-07
+
+- `processed_event_count` ile cycle `events_processed` toplamı arasında fail-closed
+  cross-field doğrulaması eklendi; oynanmış aggregate raporlar reddediliyor.
 
 ### 1.0.4 — 2026-09-07
 
