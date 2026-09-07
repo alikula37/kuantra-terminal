@@ -135,10 +135,16 @@ def verify_depth_soak_report(
             errors.append("session.cycles exceeds attempts")
         else:
             cycle_decisions: list[str] = []
+            cycle_processed_total = 0
             for index, cycle in enumerate(cycles):
                 if not isinstance(cycle, Mapping):
                     errors.append(f"session.cycles[{index}] must be an object")
                     continue
+                cycle_processed_total += _non_negative_int(
+                    cycle.get("events_processed"),
+                    f"session.cycles[{index}].events_processed",
+                    errors,
+                )
                 cycle_decision = cycle.get("decision")
                 if cycle_decision not in _CYCLE_DECISIONS:
                     errors.append(f"session.cycles[{index}].decision is unsupported")
@@ -146,6 +152,8 @@ def verify_depth_soak_report(
                     cycle_decisions.append(cycle_decision)
                 if cycle.get("source_verified") is not False:
                     errors.append(f"session.cycles[{index}].source_verified must remain false")
+            if processed != cycle_processed_total:
+                errors.append("session.processed_event_count must equal cycle event totals")
             if decision in _SUCCESS_DECISIONS:
                 if not cycle_decisions:
                     errors.append("successful session must contain a terminal cycle")
