@@ -101,6 +101,7 @@ def verify_system_integrity() -> bool:
         os.path.join(root_dir, "ARCHITECTURE.md"),
         os.path.join(root_dir, "docs", "BUILD_WINDOWS.md"),
         os.path.join(root_dir, "docs", "BUILD_MACOS.md"),
+        os.path.join(root_dir, "docs", "MACOS_MIGRATION.md"),
         os.path.join(root_dir, "docs", "BUILD_LINUX.md"),
     ]
 
