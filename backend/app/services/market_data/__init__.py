@@ -89,6 +89,13 @@ from .binance_depth_fault_matrix import (
     run_binance_depth_fault_matrix,
     verify_binance_depth_fault_matrix,
 )
+from .binance_depth_soak_series import (
+    INVALID_SERIES_VERDICT,
+    SOAK_SERIES_SCHEMA_VERSION,
+    VALID_SERIES_VERDICT,
+    build_binance_depth_soak_series,
+    verify_binance_depth_soak_series,
+)
 from .binance_depth_report import (
     LEGACY_REPORT_SCHEMA_VERSION,
     REPORT_SCHEMA_VERSION,
@@ -220,6 +227,11 @@ __all__ = [
     "build_binance_depth_fault_matrix",
     "run_binance_depth_fault_matrix",
     "verify_binance_depth_fault_matrix",
+    "SOAK_SERIES_SCHEMA_VERSION",
+    "VALID_SERIES_VERDICT",
+    "INVALID_SERIES_VERDICT",
+    "build_binance_depth_soak_series",
+    "verify_binance_depth_soak_series",
     "LEGACY_REPORT_SCHEMA_VERSION",
     "REPORT_SCHEMA_VERSION",
     "DepthSoakReportVerification",
