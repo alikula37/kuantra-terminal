@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP22
-version: 1.0.0
+version: 1.0.1
 status: Active
 date: 2026-09-07
 baseline: 72a2000
@@ -76,6 +76,17 @@ olmadan çalıştırıldı:
 - Rapor SHA-256:
   `4578EAF11D8A43808D6A130842295F1750FB32D7542EA9309C4D283A2AD8777E`.
 
+## Mac local revalidation — 2026-09-08
+
+Fault matrix Mac mini üzerinde network'süz tekrarlandı ve `7/7` vaka valid
+olarak geçti. Kontrollü disconnect recovery, gap retry açık/kapalı, malformed
+event, snapshot rejection ve reconnect budget exhaustion kararları beklenen
+continuity/persistence metrikleriyle eşleşti. Rapor SHA-256:
+`c2c4eb9f92ab5533a03ff419be2d3568ea45f855fb0c399fbd401e6896846102`.
+
+Bu kanıt public testnet bağlantı kesintisini veya 24 saatlik gap metriğini
+kanıtlamaz; ilgili acceptance maddeleri açık kalır.
+
 ## Acceptance criteria
 
 - [x] Yedi vaka aynı ingestor/transport/session/durable sink zincirinden geçiyor.
@@ -112,3 +123,8 @@ testnet gözlemleri ve gap/recovery oranlarının zaman serisi olarak toplanmas�
 ### 1.0.0 — 2026-09-07
 
 - Yedi senaryolu offline fault-injection/recovery matrix ve CLI verifier eklendi.
+
+### 1.0.1 — 2026-09-08
+
+- Mac mini üzerinde yedi vakalı offline fault matrix revalidation kanıtı
+  kaydedildi; gerçek ağ validation sınırı korunuyor.

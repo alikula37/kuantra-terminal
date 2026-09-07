@@ -366,3 +366,9 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   korur; live order veya production market-data yetkisi vermez. Canonical
   quality series SHA-256:
   `81d0466e380b248ea061d64118af8c61d67376becf0c153b107293ad2a4735bb`.
+- P2-WP13/P2-WP22 controlled-disconnect fault matrix'i Mac mini üzerinde
+  network'süz `7/7` vaka ile yeniden doğrulandı; gap retry, recovery terminality,
+  malformed event, snapshot rejection ve reconnect budget kararları fail-closed
+  kaldı. Gerçek public testnet disconnect injection ve 24 saatlik gap metriği
+  hâlâ açık operasyon kapısıdır. Rapor SHA-256:
+  `c2c4eb9f92ab5533a03ff419be2d3568ea45f855fb0c399fbd401e6896846102`.

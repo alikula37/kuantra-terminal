@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: P2-WP13
-version: 1.0.1
+version: 1.0.2
 status: Active
 date: 2026-09-07
 baseline: 0f96f5b
@@ -65,12 +65,29 @@ opt-in testnet soak job'ında uzun süreli bağlantı, disconnect injection ve
 sequence continuity metriklerini toplamaktır. Bu kanıt olmadan live varsayılanı
 ve `source_verified=true` açılmamalıdır.
 
+## Mac local revalidation — 2026-09-08
+
+P2-WP13 ve P2-WP22 focused testleri Mac mini üzerinde `6 passed` oldu. Aynı
+ingestor/transport/session/durable-sink zincirini kullanan fault matrix CLI'si
+`VALID_OFFLINE_FAULT_MATRIX cases=7` ile geçti; controlled disconnect recovery,
+gap terminality, malformed event, snapshot rejection ve reconnect budget
+kararları beklenen reason code'larla eşleşti. Rapor SHA-256:
+`c2c4eb9f92ab5533a03ff419be2d3568ea45f855fb0c399fbd401e6896846102`.
+
+Bu yalnızca offline deterministik kanıttır; gerçek public testnet disconnect
+injection ve uzun süreli gözlem maddesi açık kalır.
+
 ## Değişiklik geçmişi
 
 ### 1.0.1 — 2026-09-07
 
 - Reconnect sonrası gap event sayısı aynı transport/session sonuçlarından türetilip
   test kontratına bağlandı; synthetic gap doldurma yapılmadı.
+
+### 1.0.2 — 2026-09-08
+
+- Mac mini fault-matrix revalidation sonucu ve gerçek testnet kanıtının hâlâ
+  ayrı bir operasyon kapısı olduğu kaydedildi.
 
 ### 1.0.0 — 2026-09-06
 
