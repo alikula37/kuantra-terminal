@@ -66,6 +66,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P2-WP19 | [Binance Depth Attestation Review Gate](./work-packages/P2-WP19-binance-depth-attestation-review-gate.md) | Active | 1.0.2 | 2026-09-07 |
 | P2-WP20 | [Binance Depth Operator Review ve Key Policy](./work-packages/P2-WP20-binance-depth-review-record-key-policy.md) | Active | 1.0.2 | 2026-09-07 |
 | P2-WP21 | [Binance Depth Evidence Bundle ve Restore Drill](./work-packages/P2-WP21-binance-depth-evidence-bundle.md) | Active | 1.0.2 | 2026-09-07 |
+| P2-WP22 | [Binance Depth Fault-Injection ve Recovery Matrix](./work-packages/P2-WP22-binance-depth-fault-matrix.md) | Active | 1.0.0 | 2026-09-07 |
 
 ## Sürümleme kuralları
 
@@ -292,6 +293,12 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   içermeden deterministic ZIP evidence bundle'a alan, manifest/hash doğrulayan
   ve strict restore recovery yapan akış eklendi. Focused suite `5 passed`, full
   backend regression `512 passed, 1 skipped`.
+- P2-WP22 ile aynı ingestor/transport/session/durable sink zincirinden geçen
+  yedi vakalı offline fault-injection matrix eklendi. Gap retry açık/kapalı,
+  malformed event, snapshot rejection ve reconnect budget kararları exact
+  continuity/persistence metrikleriyle karşılaştırılıyor; truth/execution
+  bayrakları false kalıyor. Focused suite `3 passed`, full backend regression
+  `533 passed, 1 skipped`.
 
 ### 2026-09-07
 
