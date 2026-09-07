@@ -21,7 +21,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.services.market_data.binance_depth_ingestor import BinanceDepthIngestor  # noqa: E402
-from app.services.market_data.binance_depth_report import verify_depth_soak_report  # noqa: E402
+from app.services.market_data.binance_depth_report import (  # noqa: E402
+    REPORT_SCHEMA_VERSION,
+    verify_depth_soak_report,
+)
 from app.services.market_data.binance_depth_network import (  # noqa: E402
     BinanceDepthEnvironment,
     BinanceDepthNetworkAdapter,
@@ -39,7 +42,6 @@ from app.services.market_data.binance_depth_transport import BinanceDepthTranspo
 from app.services.market_data.market_event_segments import MarketEventSegmentSet  # noqa: E402
 
 
-REPORT_SCHEMA_VERSION = "BINANCE_DEPTH_SOAK_REPORT_V1"
 DEFAULT_STORAGE_ROOT = Path(tempfile.gettempdir()) / "kuantra-depth-soak"
 
 

@@ -38,6 +38,19 @@ def test_fixture_probe_writes_truth_bound_report(tmp_path):
     assert report["environment"] == "offline"
     assert report["session"]["decision"] == "COMPLETED"
     assert report["session"]["reconnects"] == 1
+    assert report["session"]["continuity"] == {
+        "completed_cycle_count": 1,
+        "cycle_count": 2,
+        "gap_event_count": 0,
+        "persistence_failure_cycle_count": 0,
+        "processed_event_count": 2,
+        "reconnect_count": 1,
+        "recovery_required_cycle_count": 0,
+        "snapshot_rejected_cycle_count": 0,
+        "snapshot_retry_cycle_count": 0,
+        "source_failure_cycle_count": 1,
+        "stopped_cycle_count": 0,
+    }
     assert report["chain"]["valid"] is True
     assert report["persistence"]["valid"] is True
     assert report["source_verified"] is False

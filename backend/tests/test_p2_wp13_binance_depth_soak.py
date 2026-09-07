@@ -74,6 +74,7 @@ async def test_gap_after_reconnect_is_terminal_and_not_filled(tmp_path):
     assert report.session.attempts == 2
     assert report.persistence_report["event_count"] == 3
     assert report.chain_report["valid"] is True
+    assert report.session.gap_event_count == 1
     assert report.source_verified is False
 
 

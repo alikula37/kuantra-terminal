@@ -10,7 +10,9 @@ from enum import Enum
 from typing import Any, Mapping, Optional
 
 
-REPORT_SCHEMA_VERSION = "BINANCE_DEPTH_SOAK_REPORT_V1"
+LEGACY_REPORT_SCHEMA_VERSION = "BINANCE_DEPTH_SOAK_REPORT_V1"
+REPORT_SCHEMA_VERSION = "BINANCE_DEPTH_SOAK_REPORT_V2"
+_SUPPORTED_SCHEMA_VERSIONS = {LEGACY_REPORT_SCHEMA_VERSION, REPORT_SCHEMA_VERSION}
 _SYMBOL_RE = re.compile(r"^[A-Z0-9][A-Z0-9._-]{2,29}$")
 _HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 _DECISIONS = {
@@ -78,8 +80,12 @@ def verify_depth_soak_report(
     mode = payload.get("mode")
     environment = payload.get("environment")
     symbol = payload.get("symbol")
-    if payload.get("schema_version") != REPORT_SCHEMA_VERSION:
+    schema_version = payload.get("schema_version")
+    if schema_version not in _SUPPORTED_SCHEMA_VERSIONS:
         errors.append("unsupported or missing schema_version")
+    is_current_schema = schema_version == REPORT_SCHEMA_VERSION
+    if schema_version == LEGACY_REPORT_SCHEMA_VERSION:
+        warnings.append("legacy V1 report has no required continuity metrics; re-run the soak to emit V2")
     if mode not in {"fixture", "testnet"}:
         errors.append("mode must be fixture or testnet")
     if expected_mode is not None and mode != expected_mode:
@@ -136,6 +142,7 @@ def verify_depth_soak_report(
         else:
             cycle_decisions: list[str] = []
             cycle_processed_total = 0
+            cycle_gap_total = 0
             for index, cycle in enumerate(cycles):
                 if not isinstance(cycle, Mapping):
                     errors.append(f"session.cycles[{index}] must be an object")
@@ -145,6 +152,12 @@ def verify_depth_soak_report(
                     f"session.cycles[{index}].events_processed",
                     errors,
                 )
+                if is_current_schema:
+                    cycle_gap_total += _non_negative_int(
+                        cycle.get("gap_events"),
+                        f"session.cycles[{index}].gap_events",
+                        errors,
+                    )
                 cycle_decision = cycle.get("decision")
                 if cycle_decision not in _CYCLE_DECISIONS:
                     errors.append(f"session.cycles[{index}].decision is unsupported")
@@ -154,6 +167,34 @@ def verify_depth_soak_report(
                     errors.append(f"session.cycles[{index}].source_verified must remain false")
             if processed != cycle_processed_total:
                 errors.append("session.processed_event_count must equal cycle event totals")
+            continuity = session.get("continuity")
+            if is_current_schema:
+                if not isinstance(continuity, Mapping):
+                    errors.append("session.continuity must be an object")
+                else:
+                    expected_continuity = {
+                        "cycle_count": len(cycles),
+                        "reconnect_count": reconnects,
+                        "processed_event_count": processed,
+                        "gap_event_count": cycle_gap_total,
+                        "completed_cycle_count": cycle_decisions.count("COMPLETED"),
+                        "stopped_cycle_count": cycle_decisions.count("STOPPED"),
+                        "source_failure_cycle_count": cycle_decisions.count("SOURCE_FAILED"),
+                        "snapshot_retry_cycle_count": cycle_decisions.count("SNAPSHOT_RETRY_REQUIRED"),
+                        "snapshot_rejected_cycle_count": cycle_decisions.count("SNAPSHOT_REJECTED"),
+                        "recovery_required_cycle_count": cycle_decisions.count("RECOVERY_REQUIRED"),
+                        "persistence_failure_cycle_count": cycle_decisions.count("PERSISTENCE_FAILED"),
+                    }
+                    for field, expected in expected_continuity.items():
+                        actual = _non_negative_int(
+                            continuity.get(field),
+                            f"session.continuity.{field}",
+                            errors,
+                        )
+                        if actual != expected:
+                            errors.append(
+                                f"session.continuity.{field} does not match derived cycle metrics"
+                            )
             if decision in _SUCCESS_DECISIONS:
                 if not cycle_decisions:
                     errors.append("successful session must contain a terminal cycle")
@@ -240,6 +281,7 @@ def _non_negative_int(value: Any, field: str, errors: list[str]) -> int:
 
 __all__ = [
     "REPORT_SCHEMA_VERSION",
+    "LEGACY_REPORT_SCHEMA_VERSION",
     "DepthSoakReportVerification",
     "DepthSoakReportVerdict",
     "verify_depth_soak_report",

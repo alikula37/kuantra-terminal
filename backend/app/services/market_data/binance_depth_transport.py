@@ -75,12 +75,23 @@ class DepthTransportResult:
     def processed_event_count(self) -> int:
         return len(self.events)
 
+    @property
+    def gap_event_count(self) -> int:
+        """Count sequence gaps observed by the ingestor in this cycle."""
+
+        return sum(
+            1
+            for event in self.events
+            if event.decision is DepthIngestDecision.GAP_DETECTED
+        )
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "decision": self.decision.value,
             "reason_code": self.reason_code,
             "snapshot": self.snapshot.as_dict() if self.snapshot else None,
             "events_processed": self.processed_event_count,
+            "gap_events": self.gap_event_count,
             "source_verified": self.source_verified,
             "source_error": self.source_error,
         }

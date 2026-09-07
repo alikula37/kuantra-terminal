@@ -7,6 +7,7 @@ import json
 from scripts.run_binance_depth_soak import run_fixture_probe
 from scripts.verify_binance_depth_soak_report import main
 from app.services.market_data.binance_depth_report import (
+    LEGACY_REPORT_SCHEMA_VERSION,
     DepthSoakReportVerdict,
     verify_depth_soak_report,
 )
@@ -103,6 +104,31 @@ def test_processed_event_count_must_match_cycle_totals(tmp_path):
     assert verification.ok is False
     assert verification.verdict is DepthSoakReportVerdict.INVALID
     assert any("cycle event totals" in error for error in verification.errors)
+
+
+def test_continuity_metric_tamper_is_rejected(tmp_path):
+    report = _fixture_report(tmp_path)
+    report["session"]["continuity"]["gap_event_count"] = 99
+
+    verification = verify_depth_soak_report(report, expected_mode="fixture")
+
+    assert verification.ok is False
+    assert verification.verdict is DepthSoakReportVerdict.INVALID
+    assert any("gap_event_count" in error for error in verification.errors)
+
+
+def test_legacy_v1_report_remains_readable_without_new_metrics(tmp_path):
+    report = _fixture_report(tmp_path)
+    report["schema_version"] = LEGACY_REPORT_SCHEMA_VERSION
+    report["session"].pop("continuity")
+    for cycle in report["session"]["cycles"]:
+        cycle.pop("gap_events")
+
+    verification = verify_depth_soak_report(report, expected_mode="fixture")
+
+    assert verification.ok is True
+    assert verification.verdict is DepthSoakReportVerdict.VALID_OFFLINE_FIXTURE
+    assert any("legacy V1" in warning for warning in verification.warnings)
 
 
 def test_verifier_cli_serializes_and_returns_nonzero_for_tamper(tmp_path):

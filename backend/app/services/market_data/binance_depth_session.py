@@ -77,6 +77,30 @@ class DepthSessionResult:
     def processed_event_count(self) -> int:
         return sum(cycle.processed_event_count for cycle in self.cycles)
 
+    def _cycle_count(self, decision: DepthTransportDecision) -> int:
+        return sum(1 for cycle in self.cycles if cycle.decision is decision)
+
+    @property
+    def gap_event_count(self) -> int:
+        return sum(cycle.gap_event_count for cycle in self.cycles)
+
+    def continuity_metrics(self) -> dict[str, int]:
+        """Return aggregate lifecycle metrics derived from immutable cycles."""
+
+        return {
+            "cycle_count": len(self.cycles),
+            "reconnect_count": self.reconnects,
+            "processed_event_count": self.processed_event_count,
+            "gap_event_count": self.gap_event_count,
+            "completed_cycle_count": self._cycle_count(DepthTransportDecision.COMPLETED),
+            "stopped_cycle_count": self._cycle_count(DepthTransportDecision.STOPPED),
+            "source_failure_cycle_count": self._cycle_count(DepthTransportDecision.SOURCE_FAILED),
+            "snapshot_retry_cycle_count": self._cycle_count(DepthTransportDecision.SNAPSHOT_RETRY_REQUIRED),
+            "snapshot_rejected_cycle_count": self._cycle_count(DepthTransportDecision.SNAPSHOT_REJECTED),
+            "recovery_required_cycle_count": self._cycle_count(DepthTransportDecision.RECOVERY_REQUIRED),
+            "persistence_failure_cycle_count": self._cycle_count(DepthTransportDecision.PERSISTENCE_FAILED),
+        }
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "decision": self.decision.value,
@@ -86,6 +110,7 @@ class DepthSessionResult:
             "processed_event_count": self.processed_event_count,
             "source_verified": self.source_verified,
             "cycles": [cycle.as_dict() for cycle in self.cycles],
+            "continuity": self.continuity_metrics(),
         }
 
 

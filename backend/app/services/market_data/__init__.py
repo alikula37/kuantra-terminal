@@ -83,6 +83,7 @@ from .binance_depth_soak import (
     DepthSoakReport,
 )
 from .binance_depth_report import (
+    LEGACY_REPORT_SCHEMA_VERSION,
     REPORT_SCHEMA_VERSION,
     DepthSoakReportVerification,
     DepthSoakReportVerdict,
@@ -207,6 +208,7 @@ __all__ = [
     "BinanceDepthSoakHarness",
     "DepthFixtureCycle",
     "DepthSoakReport",
+    "LEGACY_REPORT_SCHEMA_VERSION",
     "REPORT_SCHEMA_VERSION",
     "DepthSoakReportVerification",
     "DepthSoakReportVerdict",
