@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP14
-version: 1.1.0
+version: 1.1.1
 status: Active
 date: 2026-09-07
 baseline: 257e881
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP11 Public Binance Depth Network Adapter, P2-WP13 Deterministic Binance Depth Soak Harness
-implementation_commits: 17dc616, 078dc02
+implementation_commits: 17dc616, 078dc02, 070998a
 ```
 
 ## Problem
@@ -83,6 +83,7 @@ verilmiştir.
 | Offline fixture, `BTCUSDT`, reconnect budget `1` | `COMPLETED`; verifier `VALID_OFFLINE_FIXTURE` | 4 chain event'i, 2 durable segment, chain/persistence valid; `source_verified=false`, `execution_authority=false` | `238095970798F52B976D33BAD2A2587378356BA5AC19A185C408147BBD76A932` |
 | Public Binance testnet, 5 s, `--allow-network`, reconnect budget `0` | **Başarısız gözlem; terfi edilmedi** | `EXHAUSTED` / `RECONNECT_BUDGET_EXHAUSTED`, `SNAPSHOT_FETCH_FAILED`, 0 event; verifier `FAILED_OBSERVATION`; truth flags false | `A21FF7CE4D94A4983AC2DAEE046B712A48EA29CC0B5100FD136E0BCE6A0B1D70` |
 | Public Binance testnet, 20 s, `--allow-network --retry-recovery`, reconnect budget `3` | `STOPPED`; verifier `VALID_TESTNET_OBSERVATION_UNVERIFIED` | 38 depth event'i işlendi, 39 chain/persistence event'i, chain/persistence valid; `source_verified=false`, `execution_authority=false` | `9182585DBCCB58D3FF115CD27F67FF28D17F5F0C8AA8881B86C5FB50E6AF4D0A` |
+| Public Binance testnet, 60 s, `--allow-network --retry-recovery`, reconnect budget `3` | **Geçersiz gözlem; terfi edilmedi** | 110 event alındı; sequence gap sonrası `RECOVERY_REQUIRED`, stop backoff sırasında geldi; 1 chain/persistence event'i; verifier `INVALID` / non-zero | `31327613A973CF8960F155C92F2BEA28D2C0E66FE443846035E7F5CADBA52967` |
 
 Tüm testnet çalışmaları credential, private endpoint veya emir yetkisi kullanmadı.
 İlk 5 saniyelik deneme host proxy'si (`127.0.0.1:9`) yüzünden snapshot fetch'te
@@ -105,7 +106,7 @@ Bundle verify ve boş hedefe restore zero exit verdi; bundle SHA-256
 - [x] Rapor chain/sink/session kanıtlarını ve false truth flags'ini taşıyor.
 - [x] Sessiz socket stop event ile timeout beklemeden kapanabiliyor.
 - [x] Focused suite: `7 passed`.
-- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Full backend suite: `526 passed, 1 skipped`.
 - [x] Bounded gerçek testnet raporu verifier'dan geçti ve operator archive/attestation/review akışına bağlandı.
 - [ ] Uzun süreli soak, kontrollü disconnect sonrası recovery continuity ve 24 saatlik gap metriği.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
@@ -124,6 +125,12 @@ disconnect sayısı, `last_update_id` sürekliliği, gap/recovery oranı ve dura
 segment reopen sonucu incelenmeden canlı varsayılanı açılmamalıdır.
 
 ## Değişiklik geçmişi
+
+### 1.1.1 — 2026-09-07
+
+- 60 saniyelik gerçek testnet soak'ta sequence gap ve backoff stop sonucu
+  kaydedildi. Verifier, başarılı session kararını son cycle'ın gerçekten
+  `COMPLETED`/`STOPPED` olmasına bağlayarak bu raporu fail-closed reddetti.
 
 ### 1.1.0 — 2026-09-07
 

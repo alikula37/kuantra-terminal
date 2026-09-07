@@ -2,14 +2,14 @@
 
 ```yaml
 document_id: P2-WP15
-version: 1.0.2
+version: 1.0.3
 status: Active
 date: 2026-09-07
 baseline: 9a19f61
 strategy: KPS-001@1.0.0
 adr: ADR-0001, ADR-0002
 depends_on: P2-WP14 Opt-in Binance Depth Testnet Soak Gate
-implementation_commits: 845a0b4
+implementation_commits: 845a0b4, 070998a
 ```
 
 ## Problem
@@ -33,6 +33,9 @@ riskini bırakıyordu.
 4. Fixture mode yalnızca `COMPLETED` ve `remaining_fixture_cycles=0` ile geçer;
    testnet gözlemi `COMPLETED`/`STOPPED` olabilir ama source verification false
    kalır.
+5. `STOP_EVENT_SET_DURING_BACKOFF` gibi başarılı session kararları, son cycle
+   başarısız/recovery terminali ise geçerli gözlem sayılmaz; başarılı bir terminal
+   cycle (`COMPLETED` veya `STOPPED`) zorunludur.
 
 ## Teknik teslimatlar
 
@@ -49,8 +52,8 @@ riskini bırakıyordu.
 - [x] Chain invalid veya persistence event-count mismatch reddediliyor.
 - [x] Mode ve minimum duration gate'leri çalışıyor.
 - [x] CLI valid raporda zero, tamper raporunda non-zero exit veriyor.
-- [x] Focused suite: `5 passed`.
-- [x] Full backend suite: `525 passed, 1 skipped`.
+- [x] Focused suite: `6 passed`.
+- [x] Full backend suite: `526 passed, 1 skipped`.
 - [x] Gerçek testnet raporu operator-run ile `VALID_TESTNET_OBSERVATION_UNVERIFIED`
   olarak doğrulandı; source verification açılmadı.
 - [ ] Remote CI: GitHub Actions kota/bütçe nedeniyle geçici disabled.
@@ -68,6 +71,9 @@ riskini bırakıyordu.
   hâlâ yoktur.
 - Geçerli operator raporu SHA-256:
   `9182585DBCCB58D3FF115CD27F67FF28D17F5F0C8AA8881B86C5FB50E6AF4D0A`.
+- 60 saniyelik soak raporu `RECOVERY_REQUIRED` cycle'ından backoff stop'a
+  geçiş nedeniyle verifier tarafından `INVALID` / non-zero reddedildi; rapor
+  SHA-256 `31327613A973CF8960F155C92F2BEA28D2C0E66FE443846035E7F5CADBA52967`.
 
 ## Kesinlikle kapsam dışı
 
@@ -83,6 +89,11 @@ kapı, gerçek testnet raporlarını operatör imzası/retention politikasıyla 
 ve disconnect/gap/reconnect metriklerini ürün kararına bağlamaktır.
 
 ## Değişiklik geçmişi
+
+### 1.0.3 — 2026-09-07
+
+- Başarılı session kararının son cycle ile tutarlı olmasını zorunlu kılan
+  fail-closed verifier kuralı ve 60 saniyelik negatif soak kanıtı eklendi.
 
 ### 1.0.2 — 2026-09-07
 
