@@ -88,6 +88,7 @@ def _snapshot_sqlite(source: Path, destination: Path) -> dict[str, Any]:
     source_conn = sqlite3.connect(str(source))
     target_conn = sqlite3.connect(str(destination))
     deleted_legacy_credentials = 0
+    deleted_credential_refs = 0
     deleted_sensitive_settings = 0
     try:
         source_conn.execute("PRAGMA query_only = ON")
@@ -97,6 +98,13 @@ def _snapshot_sqlite(source: Path, destination: Path) -> dict[str, Any]:
         if _table_exists(target_conn, "exchange_credentials"):
             result = target_conn.execute("DELETE FROM exchange_credentials")
             deleted_legacy_credentials = max(result.rowcount, 0)
+
+        # Keychain references are machine-local pointers.  Copying Windows
+        # references to macOS would make the destination appear configured
+        # while pointing at a non-existent keychain entry.
+        if _table_exists(target_conn, "exchange_credential_refs"):
+            result = target_conn.execute("DELETE FROM exchange_credential_refs")
+            deleted_credential_refs = max(result.rowcount, 0)
 
         if _table_exists(target_conn, "user_settings"):
             keys = [
@@ -120,6 +128,7 @@ def _snapshot_sqlite(source: Path, destination: Path) -> dict[str, Any]:
     return {
         "integrity": "ok",
         "deleted_legacy_credential_rows": deleted_legacy_credentials,
+        "deleted_keychain_reference_rows": deleted_credential_refs,
         "deleted_sensitive_setting_rows": deleted_sensitive_settings,
         "wal_sidecar_included": False,
     }
@@ -209,6 +218,8 @@ def _iter_cold_storage_files(source_root: Path) -> Iterable[tuple[Path, Path]]:
     if not cold_root.is_dir():
         return
     for path in sorted(cold_root.rglob("*")):
+        if path.is_symlink():
+            raise MigrationBundleError(f"cold storage symlink is not allowed: {path}")
         if not path.is_file():
             continue
         if path.suffix.lower() != ".parquet":
@@ -338,6 +349,9 @@ def _verify_sqlite_snapshot(path: Path) -> dict[str, Any]:
         legacy_rows = 0
         if _table_exists(conn, "exchange_credentials"):
             legacy_rows = int(conn.execute("SELECT COUNT(*) FROM exchange_credentials").fetchone()[0])
+        keychain_refs = 0
+        if _table_exists(conn, "exchange_credential_refs"):
+            keychain_refs = int(conn.execute("SELECT COUNT(*) FROM exchange_credential_refs").fetchone()[0])
         sensitive_settings = []
         if _table_exists(conn, "user_settings"):
             sensitive_settings = [
@@ -345,11 +359,12 @@ def _verify_sqlite_snapshot(path: Path) -> dict[str, Any]:
                 for row in conn.execute("SELECT key FROM user_settings").fetchall()
                 if _is_sensitive_setting(str(row[0]))
             ]
-        if legacy_rows or sensitive_settings:
+        if legacy_rows or keychain_refs or sensitive_settings:
             return {
                 "valid": False,
                 "reason": "CREDENTIAL_MATERIAL_REMAINS",
                 "legacy_credential_rows": legacy_rows,
+                "keychain_reference_rows": keychain_refs,
                 "sensitive_setting_keys": sensitive_settings,
             }
         event_count = 0
@@ -371,6 +386,8 @@ def verify_migration_bundle(bundle_path: str | Path) -> dict[str, Any]:
     try:
         with zipfile.ZipFile(bundle, "r") as archive:
             names = archive.namelist()
+            if len(names) != len(set(names)):
+                errors.append("duplicate archive members are not allowed")
             unsafe = [name for name in names if not _safe_bundle_member(name)]
             if unsafe:
                 errors.append(f"unsafe archive members: {unsafe}")
@@ -379,6 +396,13 @@ def verify_migration_bundle(bundle_path: str | Path) -> dict[str, Any]:
             if not isinstance(expected_files, list) or not expected_files:
                 errors.append("manifest files list is empty")
                 expected_files = []
+            manifest_paths = [
+                item.get("path")
+                for item in expected_files
+                if isinstance(item, dict) and isinstance(item.get("path"), str)
+            ]
+            if len(manifest_paths) != len(set(manifest_paths)):
+                errors.append("manifest contains duplicate file paths")
             expected_names = {"manifest.json"}
             with tempfile.TemporaryDirectory(prefix="kuantra-macos-verify-") as temp_dir:
                 temp_root = Path(temp_dir)
@@ -452,6 +476,11 @@ def restore_migration_bundle(
     verification = verify_migration_bundle(bundle_path)
     if not verification["valid"]:
         raise MigrationBundleError("migration bundle verification failed: " + "; ".join(verification["errors"]))
+    if not verification.get("migration_ready"):
+        raise MigrationBundleError(
+            "migration bundle is not ready: evidence projection coverage is incomplete; "
+            "run the evidence backfill/projection rebuild on the source and recreate the bundle"
+        )
 
     target = Path(target_data_dir).expanduser().resolve()
     existing_backup: Path | None = None

@@ -85,3 +85,5 @@ def test_macos_migration_contract_is_checked_in():
     ):
         assert needle in service
     assert "Windows-to-macOS" in docs
+    assert "no-user-data path" in docs
+    assert "machine-local keychain" in docs

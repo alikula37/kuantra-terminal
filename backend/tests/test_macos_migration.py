@@ -83,6 +83,8 @@ def test_create_sanitizes_credentials_and_excludes_projection(tmp_path):
         payload = archive.read("data/kuantra_oltp.sqlite3")
         assert b"encrypted-secret" not in payload
         assert b"must-be-removed" not in payload
+        assert b"exchange/binance_futures/api_key" not in payload
+        assert result["manifest"]["sqlite"]["deleted_keychain_reference_rows"] == 1
 
     # The source database must remain untouched.
     with sqlite3.connect(source / "kuantra_oltp.sqlite3") as conn:
@@ -121,6 +123,20 @@ def test_verify_detects_tamper_and_restore_requires_safe_target(tmp_path):
     assert (target / "kuantra_oltp.sqlite3").is_file()
     assert (target / "cold_storage" / "2026" / "09" / "ticks.parquet").is_file()
     assert not (target / "kuantra_olap.duckdb").exists()
+
+
+def test_restore_rejects_incomplete_evidence_projection(tmp_path):
+    source = _source_data(tmp_path)
+    with sqlite3.connect(source / "kuantra_oltp.sqlite3") as conn:
+        conn.execute("DELETE FROM evidence_trade_projections")
+        conn.commit()
+
+    bundle = tmp_path / "incomplete.zip"
+    result = create_migration_bundle(source, bundle)
+    assert result["valid"] is True
+    assert result["migration_ready"] is False
+    with pytest.raises(MigrationBundleError, match="not ready"):
+        restore_migration_bundle(bundle, tmp_path / "target")
 
 
 def test_cli_manifest_is_json_and_versioned(tmp_path):

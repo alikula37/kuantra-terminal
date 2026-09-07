@@ -1,9 +1,38 @@
 # Windows-to-macOS migration runbook
 
 Document ID: KMP-001
-Version: 1.0.0
+Version: 1.1.0
 Status: Accepted
 Last updated: 2026-09-07
+
+## Current transition decision: no-user-data path
+
+The current repository has no external users and no user-owned journal that
+must be preserved. `backend/data/` contains local development artifacts and is
+ignored by Git; it is not part of the code migration. For the current Windows
+to Mac move, **do not create or restore a migration ZIP**. Clone the private
+repository, checkout the product branch, install the toolchain, and let Kuantra
+create a fresh local data directory on first run.
+
+The bundle procedure below remains the required path for a future machine that
+contains real journal/evidence data. It is intentionally separate from the
+code-only Mac bootstrap so test fixtures, synthetic local trades, DuckDB files,
+logs, and credentials are never copied accidentally.
+
+### Code-only Mac bootstrap acceptance
+
+1. Windows has no intended uncommitted code (`git status --short` reviewed) and
+   the intended branch is pushed to the private GitHub repository.
+2. On Mac, authenticate with `gh auth login --web`; never paste a GitHub token
+   into Codex chat or commit it to a file.
+3. Clone `codex/p1-wp01-evidence-ledger` with `gh repo clone` and confirm the
+   remote branch contains the expected latest commit.
+4. Run the local merge gate, frontend tests/build, macOS desktop smoke, and DMG
+   packaging with a fresh data directory.
+5. Verify that no `backend/data` contents, Windows Credential Manager entries,
+   `.env` files, logs, or generated artifacts were copied from Windows.
+
+After these checks, the Mac becomes the single active development workspace.
 
 This runbook moves the local Kuantra journal to a Mac without copying API
 secrets or treating DuckDB as a second source of truth. The migration bundle is
@@ -18,7 +47,8 @@ macOS data directory.
 
 ## What is deliberately not migrated
 
-- Exchange secrets, legacy encrypted credential rows, or keychain contents.
+- Exchange secrets, legacy encrypted credential rows, machine-local keychain
+  reference rows, or keychain contents.
 - DuckDB and its WAL sidecar; it is rebuilt from SQLite after restore.
 - Logs, telemetry queues, plugins, experimental local models, and SQLite WAL/SHM sidecars.
 
@@ -83,8 +113,8 @@ directory before restoring user data:
 
 ```bash
 xcode-select --install
-gh auth login
-git clone -b codex/p1-wp01-evidence-ledger https://github.com/alikula37/kuantra-terminal.git
+gh auth login --web --git-protocol https
+gh repo clone alikula37/kuantra-terminal -- --branch codex/p1-wp01-evidence-ledger
 cd kuantra-terminal
 npm --prefix frontend ci
 npm --prefix frontend test
