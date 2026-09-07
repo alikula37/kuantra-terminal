@@ -69,6 +69,31 @@ def test_minimum_duration_and_mode_are_enforced(tmp_path):
     assert any("expected mode" in error for error in wrong_mode.errors)
 
 
+def test_stop_during_recovery_backoff_is_not_a_valid_observation(tmp_path):
+    report = _fixture_report(tmp_path)
+    report["session"] = {
+        "decision": "STOPPED",
+        "reason_code": "STOP_EVENT_SET_DURING_BACKOFF",
+        "attempts": 1,
+        "reconnects": 1,
+        "processed_event_count": 2,
+        "source_verified": False,
+        "cycles": [
+            {
+                "decision": "RECOVERY_REQUIRED",
+                "reason_code": "INGESTOR_REQUIRES_RECOVERY",
+                "source_verified": False,
+            }
+        ],
+    }
+
+    verification = verify_depth_soak_report(report, expected_mode="fixture")
+
+    assert verification.ok is False
+    assert verification.verdict is DepthSoakReportVerdict.INVALID
+    assert any("successful terminal cycle" in error for error in verification.errors)
+
+
 def test_verifier_cli_serializes_and_returns_nonzero_for_tamper(tmp_path):
     report = _fixture_report(tmp_path)
     report_path = tmp_path / "report.json"

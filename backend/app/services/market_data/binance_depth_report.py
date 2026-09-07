@@ -21,6 +21,7 @@ _DECISIONS = {
     "RECOVERY_REQUIRED",
     "PERSISTENCE_FAILED",
 }
+_CYCLE_DECISIONS = _DECISIONS | {"SOURCE_FAILED", "SNAPSHOT_RETRY_REQUIRED"}
 _SUCCESS_DECISIONS = {"COMPLETED", "STOPPED"}
 
 
@@ -123,7 +124,7 @@ def verify_depth_soak_report(
         attempts = _non_negative_int(session.get("attempts"), "session.attempts", errors)
         reconnects = _non_negative_int(session.get("reconnects"), "session.reconnects", errors)
         processed = _non_negative_int(session.get("processed_event_count"), "session.processed_event_count", errors)
-        if reconnects > max(0, attempts - 1):
+        if reconnects > attempts:
             errors.append("session.reconnects exceeds attempts")
         if session.get("source_verified") is not False:
             errors.append("session.source_verified must remain false")
@@ -132,6 +133,29 @@ def verify_depth_soak_report(
             errors.append("session.cycles must be an array")
         elif len(cycles) > attempts:
             errors.append("session.cycles exceeds attempts")
+        else:
+            cycle_decisions: list[str] = []
+            for index, cycle in enumerate(cycles):
+                if not isinstance(cycle, Mapping):
+                    errors.append(f"session.cycles[{index}] must be an object")
+                    continue
+                cycle_decision = cycle.get("decision")
+                if cycle_decision not in _CYCLE_DECISIONS:
+                    errors.append(f"session.cycles[{index}].decision is unsupported")
+                elif isinstance(cycle_decision, str):
+                    cycle_decisions.append(cycle_decision)
+                if cycle.get("source_verified") is not False:
+                    errors.append(f"session.cycles[{index}].source_verified must remain false")
+            if decision in _SUCCESS_DECISIONS:
+                if not cycle_decisions:
+                    errors.append("successful session must contain a terminal cycle")
+                elif cycle_decisions[-1] not in _SUCCESS_DECISIONS:
+                    errors.append("successful session must end with a successful terminal cycle")
+                if any(
+                    cycle_decision in {"PERSISTENCE_FAILED", "SNAPSHOT_REJECTED"}
+                    for cycle_decision in cycle_decisions[:-1]
+                ):
+                    errors.append("terminal cycle failure cannot be followed by another cycle")
         if processed < 0:
             errors.append("session.processed_event_count must be non-negative")
 
