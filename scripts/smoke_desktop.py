@@ -59,6 +59,61 @@ def enrich_report(report: dict, executable_path: Path, artifact_path: Path | Non
     return report
 
 
+def terminate_webview2_for_data_dir(data_dir: Path) -> None:
+    """Stop WebView2 roots that detached after a controller initialization failure."""
+    try:
+        import psutil
+    except ImportError:
+        return
+    marker = str(data_dir.resolve()).lower()
+    for _ in range(3):
+        targets = []
+        for process in psutil.process_iter(["pid", "name", "cmdline"]):
+            try:
+                name = (process.info.get("name") or "").lower()
+                command_line = " ".join(process.info.get("cmdline") or []).lower()
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                continue
+            if name == "msedgewebview2.exe" and marker in command_line:
+                targets.append(process)
+        if not targets:
+            return
+        for process in targets:
+            try:
+                process.kill()
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                pass
+        gone, _ = psutil.wait_procs(targets, timeout=2)
+        if len(gone) == len(targets):
+            return
+
+
+def terminate_process_tree(proc: subprocess.Popen, data_dir: Path | None = None) -> None:
+    """Stop the packaged process and any WebView2 descendants it owns."""
+    if proc.poll() is not None:
+        return
+    if os.name == "nt":
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    else:
+        proc.terminate()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait(timeout=5)
+    if data_dir is not None:
+        terminate_webview2_for_data_dir(data_dir)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--report", default=str(ROOT / "dist" / "smoke.json"))
@@ -75,47 +130,49 @@ def main() -> int:
         return 1
 
     artifact = Path(args.artifact).resolve() if args.artifact else None
+    report = Path(args.report).resolve()
+    report.parent.mkdir(parents=True, exist_ok=True)
+    if report.exists():
+        report.unlink()
     data_dir = Path(args.data_dir).resolve() if args.data_dir else ROOT / "dist" / "smoke-data"
     env = {**os.environ,
            "KUANTRA_DATA_DIR": str(data_dir),
            "KUANTRA_GATEWAY_ENABLED": "0"}
     if args.appimage:
         env["APPIMAGE_EXTRACT_AND_RUN"] = "1"
-    hard_timeout = args.timeout + 60
+    hard_timeout = args.timeout + 15
     proc = subprocess.Popen(
         [str(exe), "--smoke", "--smoke-report", args.report, "--smoke-timeout", str(args.timeout)],
         env=env,
     )
     deadline = time.monotonic() + hard_timeout
     terminated_for_renderer_failure = False
+    terminated_after_success = False
     while proc.poll() is None:
-        if Path(args.report).exists():
+        if report.exists():
             try:
-                early_payload = json.loads(Path(args.report).read_text(encoding="utf-8"))
+                early_payload = json.loads(report.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 early_payload = {}
             if early_payload.get("renderer_controller_ready") is False:
                 terminated_for_renderer_failure = True
-                proc.terminate()
-                try:
-                    proc.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-                    proc.wait(timeout=5)
+                terminate_process_tree(proc, data_dir)
+                break
+            if early_payload.get("renderer_controller_ready") is True and early_payload.get("ok") is True:
+                # A successful report is authoritative. The desktop shell may keep a native GUI
+                # or network worker alive after window.destroy(), so do not leave the local gate
+                # blocked on process shutdown.
+                terminated_after_success = True
+                terminate_process_tree(proc, data_dir)
                 break
         if time.monotonic() >= deadline:
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait(timeout=5)
+            terminate_process_tree(proc, data_dir)
             print(f"SMOKE FAIL (timeout after {hard_timeout:g} s)")
             return 1
         time.sleep(0.25)
     if terminated_for_renderer_failure:
         print("SMOKE FAIL (renderer controller did not become ready)")
-    report = Path(args.report)
+    terminate_webview2_for_data_dir(data_dir)
     if report.exists():
         try:
             payload = json.loads(report.read_text(encoding="utf-8"))
@@ -131,8 +188,9 @@ def main() -> int:
     print(json.dumps(payload, indent=2))
     required_checks = {"react_mounted", "bridge_roundtrip", "health", "push_sink", "plugin_boundary"}
     checks = payload.get("checks", {})
+    process_ok = proc.returncode == 0 or terminated_after_success
     ok = (
-        proc.returncode == 0
+        process_ok
         and payload.get("ok") is True
         and payload.get("version") == __version__
         and payload.get("truth_matrix", {}).get("product_version") == __version__

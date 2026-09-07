@@ -29,6 +29,7 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
 | P0-WP08 | [Experimental capability containment](./work-packages/P0-WP08-experimental-containment.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP09 | [Release truth matrix ve current claims](./work-packages/P0-WP09-release-truth-matrix.md) | Verified | 1.0.0 | 2026-09-06 |
 | P0-WP10 | [Üç OS final artifact smoke ve Faz 0 exit audit](./work-packages/P0-WP10-phase0-exit-audit.md) | Verified | 1.0.0 | 2026-09-06 |
+| P0-WP11 | [WebView2 host diagnostics](./work-packages/P0-WP11-webview2-host-diagnostics.md) | Active | 1.0.0 | 2026-09-07 |
 | P1-WP01 | [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) | Active | 1.1.0 | 2026-09-06 |
 | P1-WP02 | [Atomic Journal Evidence Write Adapter](./work-packages/P1-WP02-atomic-journal-evidence-write.md) | Active | 1.0.0 | 2026-09-06 |
 | P1-WP03 | [Rebuildable Trade Projection ve Tombstone](./work-packages/P1-WP03-rebuildable-trade-projection.md) | Active | 1.0.0 | 2026-09-06 |
@@ -299,3 +300,8 @@ uygulama kapsamını, kalite kapılarını ve durdurma kriterlerini belirleyen s
   merge'i bloklayan fail-closed kanıt kapısına bağlandı.
 - ADR-0004 ile Windows production renderer'ı Evergreen WebView2 olarak sabitlendi; PyQt6/Qt
   WebEngine payload'dan çıkarıldı ve Windows smoke görünür WebView2 controller'ı ile doğrulanır.
+- P0-WP11 ile WebView2 controller `E_ABORT` blocker'ını farklı Windows makinesi
+  gerektirmeden runtime/profile/native-host katmanlarına ayıran bağımsız, bounded
+  probe tanımlandı. Aynı host'ta runtime ve interop mevcut olmasına rağmen bağımsız
+  probe ve gerçek paket smoke'u `CreateCoreWebView2ControllerAsync` / `E_ABORT` ile
+  BLOCKED kaldı; probe başarısı ürün smoke veya release approval sayılmıyor.

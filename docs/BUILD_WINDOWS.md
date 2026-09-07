@@ -73,6 +73,25 @@ performs a JS → Python bridge roundtrip and an in-process `/health` call, writ
 and exits non-zero on failure. Because a `--windowed` build has no stdout on Windows, the JSON
 report is the authoritative result. CI fails the build if this fails.
 
+### WebView2 host teşhisi
+
+Paketlenmiş smoke `renderer_controller_ready=false` veya `0x80004004 E_ABORT` ile
+başarısız olursa, Kuantra backend/frontend'ini başlatmadan bağımsız bir probe çalıştırın:
+
+```powershell
+uv run --offline --no-project --with-requirements backend/requirements.lock `
+  python scripts/diagnose_webview2.py `
+  --report "$PWD/dist/webview2-probe.json" `
+  --timeout 15
+```
+
+Probe runtime registry, pywebview/pythonnet sürümleri, ilgili WebView2 environment
+değişkenleri, DPI, gerçek renderer, controller readiness ve JavaScript roundtrip
+sonuçlarını raporlar. Yeni user-data klasörü varsayılan olarak korunur; rapor ürün
+smoke veya release approval değildir; probe parent'ı kendi WebView2 child ağacını
+bounded biçimde temizler. `--disable-gpu`, MSHTML/Qt fallback'i veya `--no-sandbox`
+üretim yapılandırmasına bu teşhis nedeniyle eklenemez.
+
 ---
 
 ## 5. Package the Installer
