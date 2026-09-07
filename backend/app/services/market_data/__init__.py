@@ -82,6 +82,13 @@ from .binance_depth_soak import (
     DepthFixtureCycle,
     DepthSoakReport,
 )
+from .binance_depth_fault_matrix import (
+    FAULT_MATRIX_SCHEMA_VERSION,
+    DepthFaultScenario,
+    build_binance_depth_fault_matrix,
+    run_binance_depth_fault_matrix,
+    verify_binance_depth_fault_matrix,
+)
 from .binance_depth_report import (
     LEGACY_REPORT_SCHEMA_VERSION,
     REPORT_SCHEMA_VERSION,
@@ -208,6 +215,11 @@ __all__ = [
     "BinanceDepthSoakHarness",
     "DepthFixtureCycle",
     "DepthSoakReport",
+    "FAULT_MATRIX_SCHEMA_VERSION",
+    "DepthFaultScenario",
+    "build_binance_depth_fault_matrix",
+    "run_binance_depth_fault_matrix",
+    "verify_binance_depth_fault_matrix",
     "LEGACY_REPORT_SCHEMA_VERSION",
     "REPORT_SCHEMA_VERSION",
     "DepthSoakReportVerification",
