@@ -1,12 +1,17 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
+> Historical reference only. Not a current work order. Acceptance evidence and remaining
+> boundaries are recorded here; see [current status](../../../strategy/STATUS.md).
+> Read only for a relevant task.
+
 # P1-WP18 — Fee, Precision & Unit Contract
 
 ```yaml
 work_package: P1-WP18
-version: 1.0.0
-status: InProgress
+version: 1.1.0
+status: Verified
 date: 2026-09-08
 baseline_commit: d5d6f07
+implementation_commit: 0c7d11f
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP17
@@ -51,23 +56,34 @@ yeni venue desteği bu paketin sonucu değildir.
 
 ## Acceptance criteria
 
-- [ ] Önce kırmızı, sonra yeşil: `0.1 + 0.2`, küçük unit ve string round-trip değerleri
+- [x] Önce kırmızı, sonra yeşil: `0.1 + 0.2`, küçük unit ve string round-trip değerleri
   exact/deterministic reconciliation üretir.
-- [ ] Missing fee zero sayılmaz; explicit zero bilinen zero olarak korunur.
-- [ ] Signed negative rebate ve pozitif fee ayrı semantik ile saklanır; fee currency
+- [x] Missing fee zero sayılmaz; explicit zero bilinen zero olarak korunur.
+- [x] Signed negative rebate ve pozitif fee ayrı semantik ile saklanır; fee currency
   provenance'ta korunur.
-- [ ] Multi-currency fee toplama, unknown currency ve order/fill currency mismatch
+- [x] Multi-currency fee toplama, unknown currency ve order/fill currency mismatch
   explicit discrepancy üretir; sessiz netleme yoktur.
-- [ ] NaN, Inf, locale string, negatif quantity/price ve implicit unit dönüşümü fail-closed
+- [x] NaN, Inf, locale string, negatif quantity/price ve implicit unit dönüşümü fail-closed
   reddedilir; mevcut geçerli fixture'lar bozulmaz.
-- [ ] v1 source/provenance/idempotency compatibility ve P1-WP17 source identity regression
+- [x] v1 source/provenance/idempotency compatibility ve P1-WP17 source identity regression
   testleri geçer; raw payload/credential ledger'a girmez.
-- [ ] Odak testleri, tam backend suite ve uygun Mac local CI kanıtı kaydedilir.
-- [ ] Exact commit, changed files, unsupported/unknown semantics ve sonraki P1-WP19
-  funding/accounting bağımlılığı bu kayda yazılır.
+- [x] Odak testleri `30 passed, 2 warnings`; tam backend suite `579 passed, 2 warnings`;
+  Mac local CI `MERGE READY` olarak kaydedildi: frontend `51`, production build, arm64
+  desktop build, WKWebView native smoke ve packaging preflight geçti.
+- [x] Exact implementation commit `0c7d11f`; changed files, unsupported/unknown
+  semantics ve sonraki P1-WP19 funding/accounting bağımlılığı bu kayda yazıldı.
 
 ## Kapsam dışı
 
 Funding/corrections/opening balance/realized-unrealized PnL, economic trade grouping,
 CSV formatlarının tamamını yeniden tasarlama, yeni exchange connector, live order,
 AI karar/emir ve gerçek kullanıcı verisi migration'ı.
+
+## Verified implementation notes
+
+- Lifecycle numeric values are kept as bounded `Decimal` internally and emitted as
+  canonical `DECIMAL_STRING_V1` evidence values with explicit venue-native units.
+- Fee reconciliation distinguishes `NOT_PROVIDED`, `UNKNOWN`, `RECONCILED` and
+  `UNRECONCILED`; missing fee data is never substituted with zero.
+- This package does not establish account PnL, funding coverage or economic trade
+  grouping. Those claims remain blocked behind the next bounded work packages.
