@@ -4,6 +4,7 @@ import sqlite3
 
 import pytest
 
+import app.db.repositories.evidence_ledger_repo as evidence_ledger_repo
 from scripts.run_h07_benchmark import (
     BenchmarkContractError,
     BenchmarkResourceLimitError,
@@ -79,6 +80,22 @@ def test_event_hash_fast_path_matches_the_canonical_json_contract():
     }
 
     assert _canonical_hash_json(body) == canonical_json(body)
+
+
+def test_canonical_metadata_validation_uses_orjson_byte_fast_path(monkeypatch):
+    if evidence_ledger_repo.orjson is None:
+        pytest.skip("locked runtime does not provide orjson")
+
+    evidence_ledger_repo._validate_canonical_json_text.cache_clear()
+    value = '{"coverage":"COMPLETE","source":"h07-validation-fast-path"}'
+
+    def stdlib_path_must_not_run(*_args, **_kwargs):
+        raise AssertionError("canonical metadata fast path fell back to stdlib")
+
+    monkeypatch.setattr(evidence_ledger_repo, "canonical_json", stdlib_path_must_not_run)
+    monkeypatch.setattr(evidence_ledger_repo.json, "loads", stdlib_path_must_not_run)
+
+    evidence_ledger_repo._validate_canonical_json_text(value, "provenance")
 
 
 def test_benchmark_report_rejects_missing_measurement_provenance():

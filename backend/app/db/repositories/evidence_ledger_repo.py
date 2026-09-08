@@ -121,15 +121,18 @@ def _decode_json_value(value: Any, field_name: str) -> Any:
 def _assert_no_secret_keys(value: Any, path: str = "payload") -> None:
     if isinstance(value, dict):
         for key, child in value.items():
-            normalized_key = _normalized_secret_key(str(key))
+            key_text = str(key)
+            normalized_key = _normalized_secret_key(key_text)
             if normalized_key in _SECRET_KEYS:
                 raise EvidenceValidationError(
                     f"{path}.{key} is a secret-bearing field and cannot enter the ledger"
                 )
-            _assert_no_secret_keys(child, f"{path}.{key}")
+            if isinstance(child, (dict, list)):
+                _assert_no_secret_keys(child, f"{path}.{key_text}")
     elif isinstance(value, list):
         for index, child in enumerate(value):
-            _assert_no_secret_keys(child, f"{path}[{index}]")
+            if isinstance(child, (dict, list)):
+                _assert_no_secret_keys(child, f"{path}[{index}]")
 
 
 def _canonical_payload(value: Any, field_name: str) -> str:
@@ -146,6 +149,21 @@ def _validate_canonical_json_text(value: str, field_name: str) -> None:
     only validation results avoids re-parsing that repeated text while keeping
     the cache bounded and preserving the strict canonical/secret checks.
     """
+
+    if orjson is not None and isinstance(value, str):
+        raw = value.encode("utf-8")
+        try:
+            decoded = orjson.loads(raw)
+            if orjson.dumps(decoded, option=orjson.OPT_SORT_KEYS) == raw:
+                _assert_no_secret_keys(decoded, field_name)
+                return
+        except EvidenceValidationError:
+            raise
+        except (TypeError, ValueError):
+            # Keep the stdlib path as the compatibility and fail-closed
+            # fallback for values whose exact canonical representation is not
+            # byte-compatible with orjson (for example unusually large ints).
+            pass
 
     decoded = json.loads(value)
     if canonical_json(decoded) != value:
