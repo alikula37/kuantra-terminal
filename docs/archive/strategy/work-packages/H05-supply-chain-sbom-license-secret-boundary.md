@@ -1,10 +1,11 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
+<!-- Historical evidence: this file is not a current implementation instruction. -->
 # H05 — Supply Chain, SBOM, License & Secret Boundary
 
 ```yaml
 work_package: H05
-version: 1.0.0
-status: InProgress
+version: 1.1.0
+status: Deferred
 date: 2026-09-08
 baseline_commit: 1cf486e
 implementation_commit: c089cd2
@@ -62,8 +63,11 @@ GitHub default branch'teki beş açık Dependabot alert'ini kapatmış sayılmaz
   repository false-positive olmadan geçer.
 - [x] Current branch vulnerability sonuçları ve GitHub default-branch alerts ayrı,
   kaynak/tarih/platform ile kaydedilir; ilgili critical/high bulgu varsa açık kalır.
-- [ ] `LICENSE` ve third-party notices için ürün sahibi/lisans sahibi kararı açıkça
-  kaydedilir; lisans varsayımı veya otomatik legal approval yapılmaz.
+- [ ] Ticari dağıtımdan önce root `LICENSE` ve third-party notices ürün sahibi/lisans
+  incelemesiyle tamamlanır; lisans varsayımı veya otomatik legal approval yapılmaz.
+- [x] 2026-09-08 owner disposition kaydedildi: ürün lisansı şimdilik seçilmedi; ticari
+  paket hedefi nedeniyle notices/license inventory release öncesi zorunlu yeniden açma
+  kapısıdır. Default-branch Dependabot merge'i bu geliştirme aşamasında yapılmayacaktır.
 - [x] Focused → full suite/local CI ve docs evidence aynı source commit ile PASS;
   gerçek credential/user data kullanılmaz.
 
@@ -114,20 +118,24 @@ GitHub default branch'teki beş açık Dependabot alert'ini kapatmış sayılmaz
   `wkwebview`, controller ready and clean detach PASS. The smoke attempted the
   configured public Binance stream; it is not offline runtime evidence.
 
-## Açık karar kapısı
+## Ertelenen dağıtım kapısı
 
-H05 makine doğrulaması PASS, fakat paket **OWNER_DECISION_REQUIRED** durumundadır:
+H05 makine doğrulaması PASS, ancak ticari dağıtım kararları ürün geliştirme aşaması için
+**DEFERRED** olarak kaydedilmiştir. Bu karar makine kanıtını silmez ve production/release
+izni vermez:
 
-- `package.json` MIT metadata'sı root `LICENSE` metni değildir. Ürün sahibi MIT
-  beyanını ve dağıtım kapsamını onaylamadan `LICENSE` eklenmeyecek.
-- Third-party notices için 395 locked component'in özellikle Python tarafındaki
-  100 unverified license metadata kaydı owner/legal review gerektirir; otomatik
-  lisans eşlemesi veya legal approval yapılmayacak.
-- Default branch Dependabot uyarıları bu branch'te `npm audit` PASS olduğu için
-  kapanmış sayılamaz. H05, owner/repository kararı gelene kadar `Complete` değildir.
+- `package.json` içindeki metadata root `LICENSE` metni değildir. Ürün lisansı
+  seçilene kadar repo'ya varsayımsal MIT veya başka bir lisans metni eklenmeyecek.
+- İleride ücretli/paketlenmiş dağıtım başlamadan önce 395 locked component için
+  third-party notices, lisans kaynakları ve özellikle 100 unverified Python kaydı
+  ürün sahibi/lisans incelemesinden geçmelidir.
+- Default branch'teki beş Dependabot uyarısı bu branch'te `npm audit` PASS olduğu için
+  kapanmış sayılamaz. Şimdilik merge yoktur; release öncesi remediation veya süreli,
+  sahipli risk kabulü yeniden açılmalıdır.
 
-H06 privacy/data lifecycle bu karar kapısı çözülmeden aktif coding paketi olarak
-başlatılmayacaktır.
+H06 privacy/data lifecycle, bu ertelenmiş ticari kapıyı bypass etmeden yalnızca geliştirme
+ve doğrulama kapsamıyla aktif edilebilir. H05, ilk ticari/release adayı hazırlanırken
+yeniden açılmadan production-ready sayılamaz.
 
 ## Kesinlikle kapsam dışı
 
@@ -136,10 +144,11 @@ Developer ID/notarization/Gatekeeper, Windows/Linux final artifact, pilot/releas
 new connector, live execution, AI order authority, full-account PnL/tax accounting,
 funding/transfer schema ve gerçek kullanıcı secret'ları.
 
-## Başlangıç kararı
+## Tarihsel kapanış/erteleme kararı
 
 H04 `1cf486e` ile trust-boundary misuse testleri ve Mac local-CI kanıtı üzerinden
 bounded olarak kapandı. H05 `c089cd2` ile machine-checkable supply-chain, SBOM ve
-secret-boundary kanıtını tamamladı; ancak lisans/notices owner kararı ve default
-branch alert disposition olmadan `Complete` işareti konulmadı. Hiçbir UNKNOWN veya
-OWNER_DECISION_REQUIRED sonucu PASS olarak yazılmamıştır.
+secret-boundary kanıtını tamamladı. Ürün lisansı/notices ve default-branch alert
+disposition kararları 2026-09-08 tarihinde geliştirme dönemi için ertelendi; bu nedenle
+bu belge `Deferred` olarak arşivlendi. Hiçbir UNKNOWN veya ertelenmiş release koşulu
+PASS olarak yazılmamıştır.

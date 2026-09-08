@@ -18,7 +18,7 @@ historical-reference banners. Accepted ADRs and live runbooks are not archived.
 
 The exact unchecked wording is retained in each linked package. Counts are pinned in
 `docs/documentation.json` and checked automatically. Zero means no unchecked boxes in
-that document, **not** current release verification. Forty packages retain open boxes.
+that document, **not** current release verification. Forty-one packages retain open boxes.
 Remote evidence, Windows host, latest-SHA and P2 operational gaps remain in STATUS.
 
 | Historical package | Unchecked criteria retained |
@@ -64,6 +64,7 @@ Remote evidence, Windows host, latest-SHA and P2 operational gaps remain in STAT
 | [H01-canonical-persistence-boundary](strategy/work-packages/H01-canonical-persistence-boundary.md) | 0 |
 | [H02-schema-upgrade-restore-boundary](strategy/work-packages/H02-schema-upgrade-restore-boundary.md) | 0 |
 | [H04-threat-model-trust-boundaries](strategy/work-packages/H04-threat-model-trust-boundaries.md) | 0 |
+| [H05-supply-chain-sbom-license-secret-boundary](strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md) | 1 |
 | [P2-WP01-sequence-gap-aware-market-context](strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md) | 1 |
 | [P2-WP02-binance-depth-sequence-validator](strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md) | 1 |
 | [P2-WP03-binance-depth-recovery-coordinator](strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | 1 |

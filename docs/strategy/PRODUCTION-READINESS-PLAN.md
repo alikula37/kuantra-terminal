@@ -3,7 +3,7 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.9
+version: 1.0.10
 status: Proposed
 date: 2026-09-08
 reviewed_commit: c089cd2
@@ -30,9 +30,11 @@ kanıtlarıyla kapatılmıştır. P1-WP23 / U02 de bounded kanıtla kapatılmı�
 U03, P1-WP25 / U04 ve P1-WP26 / U05 de bounded kanıtla kapatılmıştır. H01 canonical
 persistence/recovery bounded kanıtla kapatılmıştır. H02 schema upgrade/restore da
 `169c446` ile bounded kanıtla kapatılmıştır. H04 de `1cf486e` ile bounded kanıtla
-kapalıdır; H05 machine-checkable kanıtla `c089cd2` üzerinde uygulanmıştır ancak
-owner decision gate'i açıktır. H05 kapanmadan H06 coding başlamaz. Aşağıdaki
-diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
+kapalıdır; H05 machine-checkable kanıtla `c089cd2` üzerinde uygulanmıştır. Ürün
+lisansı/notices ve default-branch alert disposition, ticari dağıtım öncesine kadar
+bilinçli olarak ertelenmiştir; bu release gate'i kapalı tutar, fakat H06 non-release
+privacy/data-lifecycle geliştirmesinin başlamasını engellemez. Aşağıdaki diğer iş
+kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
 sertifika satın alma, imzalama servislerine yükleme, pilot daveti, main merge, release
@@ -140,9 +142,11 @@ hardening `006e86e` ile bounded olarak tamamlandı. H02 schema upgrade ve restor
 boundary'si `169c446` ile tamamlandı. H04 threat model ve trust boundaries de
 `1cf486e` ile bounded misuse testleri, fail-closed input/native boundary'leri ve
 Mac local-CI kanıtıyla tamamlandı. H05 supply chain, SBOM, license ve secret
-boundary machine gate'i `c089cd2` ile PASS oldu; lisans/notices ve default-branch
-Dependabot disposition owner/repository kararı bekliyor. H05 kapanmadan H06–H07 ve
-sonraki platform kapıları coding sırasına alınmaz; production iddiası açılmaz.
+boundary machine gate'i `c089cd2` ile PASS oldu. Ürün lisansı/notices ve
+default-branch Dependabot disposition geliştirme dönemi için ertelendi; bunlar ilk
+ticari/release adayı öncesi yeniden açılacak zorunlu kapılardır. H06 non-release
+privacy/data-lifecycle paketi bu kayıtlı erteleme ile başlayabilir; production
+iddiası yine açılamaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
@@ -336,10 +340,12 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 13. H02: schema upgrade ve restore; tamamlandı `169c446`.
 14. H04: threat model ve trust boundaries; bounded olarak tamamlandı `1cf486e`.
 15. H05: supply-chain, deterministic SBOM ve secret boundary machine gate'i
-    uygulandı `c089cd2`; lock/scan/artifact kanıtı PASS, fakat license/notices ve
-    default-branch alert disposition `OWNER_DECISION_REQUIRED`. H05 kapanmadan
-    H06 privacy veya H07 performance coding paketi başlatılmaz.
-16. H06–H07 ve N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
+    uygulandı `c089cd2`; lock/scan/artifact kanıtı PASS. Ürün lisansı/notices ve
+    default-branch alert disposition geliştirme dönemi için `DEFERRED`; ticari veya
+    production release adayı öncesi yeniden açılmaları zorunlu.
+16. H06: privacy/data-lifecycle ve credential availability boundary; non-release
+    geliştirme olarak sıradaki aktif paket.
+17. H07 ve N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -348,6 +354,14 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.10 — 2026-09-08
+
+- H05 machine gate kanıtı korunarak ürün lisansı/notices ve default-branch Dependabot
+  işlemleri geliştirme dönemi için açıkça ertelendi; varsayımsal MIT/başka lisans metni
+  eklenmedi ve merge yapılmadı. H05 arşivlendi, ticari dağıtım öncesi yeniden açma
+  koşulları korundu. H06 privacy/data lifecycle, yalnız non-release geliştirme için
+  güncel aktif paket olarak seçildi.
 
 ### 1.0.9 — 2026-09-08
 

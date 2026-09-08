@@ -7,8 +7,8 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**H05 — Owner Decision Required:**
-[Supply chain, SBOM, license and secret boundary](work-packages/H05-supply-chain-sbom-license-secret-boundary.md).
+**H06 — Ready:**
+[Privacy, data lifecycle and credential availability boundary](work-packages/H06-privacy-data-lifecycle-credential-boundary.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
 verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
@@ -23,12 +23,14 @@ in `afedb70`; P1-WP25 U04 weekly review and as-of determinism is complete in `26
 P1-WP26 U05 accessible/understandable shell is complete in `30dfcd7`; H01 canonical
 persistence/recovery is complete in `006e86e`; H02 schema upgrade/restore is complete
 in `169c446`; H04 threat model and trust boundaries is complete in `1cf486e`.
-H05 machine-checkable implementation/evidence is complete in `c089cd2`, but its
-license/notices and default-branch alert disposition remain an owner/repository
-decision gate. Neither package silently became full tax/accounting scope or new
-venue scope. H06 is not started until H05's owner decision gate is resolved. No
-other historical `Active` WP is automatically queued. Pilot/release claims remain
-blocked by their explicit gates.
+H05 machine-checkable implementation/evidence is complete in `c089cd2`. Its
+license/notices and default-branch alert disposition were explicitly deferred for
+the non-production development period and remain release gates; the archived H05
+record preserves the reopen conditions. H06 is now the sole active package and may
+proceed only as non-release privacy/data-lifecycle development. Neither package
+silently became full tax/accounting scope or new venue scope. No other historical
+`Active` WP is automatically queued. Pilot/release claims remain blocked by their
+explicit gates.
 
 ## Current evidence, not completion claims
 
@@ -52,12 +54,13 @@ blocked by their explicit gates.
 | H01 | CLOSED | Canonical journal/event/projection persistence under crash, transaction, read-only, disk/busy and concurrent import conditions | Test-only transaction hooks plus real Mac temporary-fixture evidence in `006e86e`; H02 schema/restore boundary remains separate |
 | H02 | CLOSED | Supported legacy schema upgrade, interrupted migration/restore, corrupt backup, missing segment, archive traversal/symlink and incompatible future schema fail closed while preserving canonical lineage | `169c446`; archived [H02](../archive/strategy/work-packages/H02-schema-upgrade-restore-boundary.md); 19 focused and 651 backend tests PASS |
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
-| H05 | OWNER_DECISION_REQUIRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; license/notices and default-branch alert disposition are unresolved | Current package: [H05](work-packages/H05-supply-chain-sbom-license-secret-boundary.md); 675 backend, 67 frontend, exact DMG/WKWebView smoke PASS; do not mark Complete until owner/repository decisions are recorded |
+| H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
+| H06 | IMPLEMENTATION_REQUIRED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Current package: [H06](work-packages/H06-privacy-data-lifecycle-credential-boundary.md); development-only, no real data/credential, no release claim |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
-| PRODUCT | OWNER_DECISION_REQUIRED | Review/pilot metrics, MIT LICENSE/notices, signing/host access, support/incident readiness | G2–G7 and explicit product-owner decisions; `LICENSE`, `NOTICE` and `THIRD_PARTY_NOTICES.md` are currently absent |
-| DEP | OWNER_DECISION_REQUIRED | Branch dependency audit is clean, but GitHub default branch retains five open npm alerts | Branch `npm audit`: 0 vulnerabilities. Default-branch alerts remain open until an approved PR merge or explicit repository action |
+| PRODUCT | OWNER_DECISION_REQUIRED | Review/pilot metrics, product license/notices, signing/host access, support/incident readiness | G2–G7 and explicit product-owner decisions; root `LICENSE`, `NOTICE` and `THIRD_PARTY_NOTICES.md` remain intentionally absent until commercial distribution is prepared |
+| DEP | DEFERRED | Branch dependency audit is clean, but GitHub default branch retains five open npm alerts | No merge while development-only; before release, remediate or record a time-bounded owner risk acceptance with applicability/mitigation |
 
 All historical unchecked criteria remain discoverable in the
 [archive obligation index](../archive/README.md). The archive is not a completed-work list.
@@ -73,8 +76,9 @@ P1-WP22 U01 in `ea4e12c`; P1-WP23 U02 in `51ee968`; P1-WP24 U03 in `afedb70`;
 P1-WP25 U04 in `26751f7`; P1-WP26 U05 in `30dfcd7`; H01 canonical
 persistence/recovery in `006e86e`; H02 schema upgrade/restore in `169c446`; H04
 trust-boundary hardening in `1cf486e`; and H05 machine-checkable supply-chain,
-SBOM and secret boundary in `c089cd2`. H04 is archived; H05 remains current because
-its owner decision gate is open.
+SBOM and secret boundary in `c089cd2`. H04 and deferred H05 are archived; H06 is
+the current package. H05's commercial distribution gate remains explicitly closed
+until it is reopened with the required license/notice and dependency dispositions.
 
 The 2026-09-08 H05 Mac evidence used locked dependencies and clean temporary data
 directories: local CI was **MERGE READY**, with full backend **675**, frontend **67**,
@@ -105,8 +109,9 @@ GitHub default branch retains five open Dependabot alerts (1 critical, 1 high, 3
 moderate), kept separate from branch-local audit results. No PnL, live execution,
 pilot or production claim was opened.
 
-Next handoff: owner/repository decision for H05 license/notices and default-branch
-Dependabot disposition; H06 starts only after that gate is explicitly resolved.
+Next handoff: H06 privacy/data-lifecycle red tests and bounded implementation. H05
+license/notices and default-branch Dependabot remain deferred release gates; no
+production or commercial package claim is allowed.
 
 ## Update protocol
 
