@@ -548,6 +548,35 @@ class EvidenceLedgerRepository:
         allowed_venues = list(venues) if venues is not None else ([venue] if venue else None)
         if allowed_venues is not None:
             allowed_venues = list(dict.fromkeys(str(value) for value in allowed_venues))
+
+        # Current journal writers persist the trade identity in correlation_id,
+        # and legacy backfill uses the stable ``legacy-trade:<id>`` form.  Use
+        # the indexed identity path first; only old rows that have neither
+        # correlation convention need the compatibility payload scan below.
+        correlation_ids = (str(trade_id), f"legacy-trade:{trade_id}")
+        conn = self._connect(write=False)
+        try:
+            query = (
+                "SELECT * FROM evidence_events "
+                "WHERE account_id = ? AND correlation_id IN (?, ?)"
+            )
+            params: List[Any] = [account_id, *correlation_ids]
+            if allowed_venues is not None:
+                if not allowed_venues:
+                    return []
+                placeholders = ", ".join("?" for _ in allowed_venues)
+                query += f" AND venue IN ({placeholders})"
+                params.extend(allowed_venues)
+            query += " ORDER BY chain_date_utc ASC, chain_sequence ASC, event_id ASC"
+            indexed_rows = conn.execute(query, params).fetchall()
+            if indexed_rows:
+                return [self._row_to_dict(row, created=False) for row in indexed_rows]
+        finally:
+            conn.close()
+
+        # Preserve compatibility with historical events whose trade identity
+        # exists only inside normalized_payload.  This path is intentionally
+        # retained and is used only when the indexed identity lookup is empty.
         result: List[Dict[str, Any]] = []
         for event in self.export_events(account_id=account_id):
             if allowed_venues is not None and event.get("venue") not in allowed_venues:
