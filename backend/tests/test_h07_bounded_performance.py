@@ -1,5 +1,7 @@
 """H07 deterministic synthetic benchmark and resource-boundary contracts."""
 
+import sqlite3
+
 import pytest
 
 from scripts.run_h07_benchmark import (
@@ -13,7 +15,7 @@ from scripts.run_h07_benchmark import (
     validate_benchmark_report,
 )
 from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
-from app.db.sqlite_driver import SQLiteDriver
+from app.db.sqlite_driver import SQLiteDriver, SQLiteOperationCancelled
 from scripts.run_h07_benchmark import _command_for_trade
 
 
@@ -121,3 +123,36 @@ def test_trade_event_lookup_uses_correlation_index_for_canonical_events(tmp_path
     )
 
     assert [event["event_id"] for event in events] == ["H07-EVENT-000000"]
+
+
+def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_ledger(tmp_path):
+    db_path = tmp_path / "cancelled-batch.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    commands = [
+        _command_for_trade(
+            generate_trade_snapshot(index, seed="H07-CANCEL"),
+            index,
+            seed="H07-CANCEL",
+        )
+        for index in range(2)
+    ]
+    checks = 0
+
+    def cancel_after_first_boundary():
+        nonlocal checks
+        checks += 1
+        return checks >= 2
+
+    with pytest.raises(SQLiteOperationCancelled, match="cancelled"):
+        driver.record_grouped_evidence_batch(
+            commands,
+            cancel_check=cancel_after_first_boundary,
+        )
+
+    assert checks == 2
+    assert driver.list_trades(limit=10) == []
+    assert EvidenceLedgerRepository(str(db_path)).count_events() == 0
+    with sqlite3.connect(str(db_path)) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM evidence_trade_projections"
+        ).fetchone()[0] == 0

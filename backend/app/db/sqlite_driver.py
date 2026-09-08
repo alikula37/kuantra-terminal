@@ -9,6 +9,11 @@ from app.db.projection_schema import initialize_trade_projection_schema
 
 logger = logging.getLogger(__name__)
 
+
+class SQLiteOperationCancelled(RuntimeError):
+    """A cooperative write operation was cancelled before commit."""
+
+
 class SQLiteDriver:
     """OLTP SQLite Database Driver configured with WAL mode and robust schema."""
 
@@ -364,17 +369,24 @@ class SQLiteDriver:
     def record_grouped_evidence_batch(
         self,
         commands: Sequence[Dict[str, Any]],
+        *,
+        cancel_check: Optional[Callable[[], bool]] = None,
     ) -> List[Dict[str, Any]]:
         """Persist economic-group journal/evidence commands in one transaction.
 
         Each command carries a validated trade snapshot and its normalized
         economic evidence context.  The compatibility row, canonical ledger
         append and typed projection are deliberately coupled; a failure for any
-        command rolls back the complete bounded batch.
+        command rolls back the complete bounded batch.  ``cancel_check`` is an
+        optional cooperative boundary for callers that can cancel before the
+        transaction is committed; a requested cancellation rolls back the
+        entire batch instead of returning a partial success.
         """
 
         if not commands:
             return []
+        if cancel_check is not None and not callable(cancel_check):
+            raise TypeError("cancel_check must be callable")
 
         from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
         from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
@@ -387,6 +399,10 @@ class SQLiteDriver:
             conn.execute("PRAGMA synchronous=FULL")
             conn.execute("BEGIN IMMEDIATE")
             for command in commands:
+                if cancel_check is not None and cancel_check():
+                    raise SQLiteOperationCancelled(
+                        "grouped evidence batch cancelled before commit"
+                    )
                 if not isinstance(command, dict):
                     raise TypeError("grouped evidence command must be an object")
                 trade = command.get("trade")
@@ -461,6 +477,10 @@ class SQLiteDriver:
                 projection.upsert_event_in_transaction(conn, event)
                 self._notify_transaction_hook("after_projection_update", conn)
                 persisted.append({"trade": dict(stored), "event": event})
+            if cancel_check is not None and cancel_check():
+                raise SQLiteOperationCancelled(
+                    "grouped evidence batch cancelled before commit"
+                )
             self._notify_transaction_hook("before_commit", conn)
             conn.commit()
             self._notify_transaction_hook("after_commit_before_ack", conn)
