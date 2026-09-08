@@ -110,7 +110,8 @@ class DesktopBridge:
                 "last_price": binance_client.last_price,
                 "event_age_ms": binance_client.event_age_ms,
                 "timestamp": int(binance_client.last_tick_time * 1000) if binance_client.last_tick_time is not None else None,
-                "status": "LIVE" if binance_client.last_price is not None else "NO_DATA",
+                "status": binance_client.market_data_status,
+                "market_data_enabled": binance_client.market_data_enabled,
                 "open_positions": binance_client._recalculate_open_positions(binance_client.last_price),
             }
 

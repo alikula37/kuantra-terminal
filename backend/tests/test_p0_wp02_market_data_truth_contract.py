@@ -81,7 +81,9 @@ def test_no_data_snapshot_preserves_positions_and_marks_price_derived_fields_nul
     assert positions[0]["r_multiple"] is None
 
 
-def test_market_ticker_and_websocket_snapshot_report_no_data(monkeypatch):
+def test_market_ticker_and_websocket_snapshot_report_degraded_without_data(monkeypatch):
+    monkeypatch.setattr(endpoints.binance_client, "market_data_enabled", True)
+    monkeypatch.setattr(endpoints.binance_client, "market_data_status", "DEGRADED")
     monkeypatch.setattr(endpoints.binance_client, "last_price", None)
     monkeypatch.setattr(endpoints.binance_client, "last_tick_time", None)
     monkeypatch.setattr(endpoints.binance_client, "event_age_ms", None)
@@ -91,33 +93,37 @@ def test_market_ticker_and_websocket_snapshot_report_no_data(monkeypatch):
     ticker = client.get("/api/v1/market/ticker")
     assert ticker.status_code == 200
     assert ticker.json() == {
-        "symbol": "BTCUSDT", "price": None, "event_age_ms": None, "timestamp": None, "status": "NO_DATA",
+        "symbol": "BTCUSDT", "price": None, "event_age_ms": None, "timestamp": None,
+        "status": "DEGRADED", "market_data_enabled": True,
     }
 
     with client.websocket_connect("/api/v1/ws/stream") as websocket:
         snapshot = websocket.receive_json()
-    assert snapshot["status"] == "NO_DATA"
+    assert snapshot["status"] == "DEGRADED"
     assert snapshot["last_price"] is None
     assert snapshot["open_positions"] == [{"id": "OPEN-1", "current_price": None, "unrealized_pnl": None}]
 
     monkeypatch.setattr(endpoints.binance_client, "last_price", 65001.25)
     monkeypatch.setattr(endpoints.binance_client, "last_tick_time", 1_700_000_000.0)
     monkeypatch.setattr(endpoints.binance_client, "event_age_ms", 10.0)
+    monkeypatch.setattr(endpoints.binance_client, "market_data_status", "LIVE")
     live_ticker = client.get("/api/v1/market/ticker")
 
     assert live_ticker.json() == {
         "symbol": "BTCUSDT", "price": 65001.25, "event_age_ms": 10.0,
-        "timestamp": 1_700_000_000_000, "status": "LIVE",
+        "timestamp": 1_700_000_000_000, "status": "LIVE", "market_data_enabled": True,
     }
 
 
-def test_desktop_snapshot_carries_no_data_without_dropping_positions(monkeypatch):
+def test_desktop_snapshot_carries_degraded_status_without_dropping_positions(monkeypatch):
     class InlineRuntime:
         def run(self, coroutine):
             return asyncio.run(coroutine)
 
     push = PushChannel()
     bridge = DesktopBridge(InlineRuntime(), push)
+    monkeypatch.setattr(endpoints.binance_client, "market_data_enabled", True)
+    monkeypatch.setattr(endpoints.binance_client, "market_data_status", "DEGRADED")
     monkeypatch.setattr(endpoints.binance_client, "last_price", None)
     monkeypatch.setattr(endpoints.binance_client, "last_tick_time", None)
     monkeypatch.setattr(endpoints.binance_client, "event_age_ms", None)
@@ -133,7 +139,7 @@ def test_desktop_snapshot_carries_no_data_without_dropping_positions(monkeypatch
         from app.websocket.connection_manager import ws_manager
         ws_manager.detach(push)
 
-    assert snapshot["status"] == "NO_DATA"
+    assert snapshot["status"] == "DEGRADED"
     assert snapshot["last_price"] is None
     assert snapshot["open_positions"] == [{"id": "OPEN-1", "current_price": None, "unrealized_pnl": None}]
 

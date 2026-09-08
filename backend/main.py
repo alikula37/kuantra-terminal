@@ -44,7 +44,14 @@ def create_app() -> FastAPI:
             "service": settings.app_name,
             "version": settings.version,
             "ws_active": binance_client.is_running,
-            "last_price": binance_client.last_price
+            "last_price": binance_client.last_price,
+            "market_data_enabled": binance_client.market_data_enabled,
+            "market_data_status": binance_client.market_data_status,
+            "market_data": {
+                "enabled": binance_client.market_data_enabled,
+                "status": binance_client.market_data_status,
+                "stream_active": binance_client.is_running,
+            },
         }
 
     app.add_api_websocket_route("/ws/tv-sync", tv_sync_websocket)

@@ -1,4 +1,6 @@
 /** Typed access to window.pywebview.api (the Python DesktopBridge). Null outside the desktop app. */
+import type { MarketDataStatus } from "../types";
+
 export interface BridgeFile { field: string; filename: string; content_type: string; data_b64: string; }
 export interface BridgeRequest {
   method: string; path: string; query: string; headers: Record<string, string>;
@@ -11,7 +13,8 @@ export interface StreamSnapshot {
   last_price: number | null;
   event_age_ms: number | null;
   timestamp: number | null;
-  status: "LIVE" | "NO_DATA";
+  status: MarketDataStatus;
+  market_data_enabled?: boolean;
   open_positions: unknown[];
 }
 export interface AppInfo { version: string; platform: string; gui: string | null; frozen: boolean; data_dir: string; gateway_url: string | null; }

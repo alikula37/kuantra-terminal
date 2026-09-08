@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenInitialBalanceModal,
   onOpenApiKeySettings
 }) => {
-  const { eventAgeMs } = useMarketStore();
+  const { eventAgeMs, marketDataStatus } = useMarketStore();
   const { theme, toggleTheme } = useTheme();
   const { locale, setLocale, t } = useTranslation();
   const { activePersona, isLiteMode, isPluginActive } = usePluginRegistry();
@@ -249,6 +249,19 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Exchange event age */}
+        <div
+          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded border text-xs font-mono ${
+            marketDataStatus === "LIVE"
+              ? "border-emerald-500/40 text-emerald-300"
+              : marketDataStatus === "DEGRADED"
+                ? "border-amber-500/50 text-amber-300"
+                : "border-slate-500/50 text-slate-400"
+          }`}
+          aria-label={`Market data ${marketDataStatus.toLowerCase()}`}
+          title="Market data provenance status"
+        >
+          <span className="font-bold">MARKET: {marketDataStatus}</span>
+        </div>
         <div className="flex items-center space-x-1.5 bg-[#111722] px-2.5 py-1 rounded border border-surface-border text-xs font-mono">
           <Zap className="w-3.5 h-3.5 text-accent" />
           <span className="text-slate-400">AGE:</span>

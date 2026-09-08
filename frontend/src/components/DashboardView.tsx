@@ -9,22 +9,24 @@ import { useMarketStore } from "../stores/marketStore";
 import { usePluginRegistry } from "../context/PluginRegistryContext";
 import { RefreshCw, LayoutDashboard } from "lucide-react";
 import { apiBase, apiFetch, apiUrl } from "../lib/backend";
+import type { MarketDataStatus } from "../types";
 
 interface DashboardViewProps {
   onOpenNewTrade?: () => void;
   onOpenInitialBalanceModal?: () => void;
 }
 
-export function canClosePositionAtMarketPrice(currentPrice: number | null): currentPrice is number {
-  return currentPrice !== null && Number.isFinite(currentPrice) && currentPrice > 0;
+export function canClosePositionAtMarketPrice(currentPrice: number | null, marketDataStatus: MarketDataStatus = "LIVE"): currentPrice is number {
+  return marketDataStatus === "LIVE" && currentPrice !== null && Number.isFinite(currentPrice) && currentPrice > 0;
 }
 
 export async function requestPositionClose(
   tradeId: string,
   currentPrice: number | null,
   request: (tradeId: string, exitPrice: number) => Promise<{ ok: boolean }>,
+  marketDataStatus: MarketDataStatus = "LIVE",
 ): Promise<{ closed: boolean; error: string | null }> {
-  if (!canClosePositionAtMarketPrice(currentPrice)) {
+  if (!canClosePositionAtMarketPrice(currentPrice, marketDataStatus)) {
     return { closed: false, error: "Canlı piyasa fiyatı olmadan pozisyon kapatılamaz." };
   }
   const response = await request(tradeId, currentPrice);
@@ -38,7 +40,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenInitialBalanceModal
 }) => {
   const { openPositions, updatePositionPnl } = useTradeStore();
-  const { currentPrice } = useMarketStore();
+  const { currentPrice, marketDataStatus } = useMarketStore();
   const { isLiteMode } = usePluginRegistry();
 
   const [summary, setSummary] = useState<PortfolioSummaryData | null>(null);
@@ -82,7 +84,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   const handleClosePosition = async (tradeId: string) => {
-    if (!canClosePositionAtMarketPrice(currentPrice)) {
+    if (!canClosePositionAtMarketPrice(currentPrice, marketDataStatus)) {
       setCloseError("Canlı piyasa fiyatı olmadan pozisyon kapatılamaz.");
       return;
     }
@@ -95,7 +97,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           exit_price: exitPrice,
           exit_time: new Date().toISOString(),
         }),
-      }));
+      }), marketDataStatus);
       if (!result.closed) {
         setCloseError(result.error);
         return;

@@ -1554,13 +1554,13 @@ def get_market_candles(
 
 @router.get("/market/ticker")
 def get_market_ticker():
-    has_market_data = binance_client.last_price is not None
     return {
         "symbol": binance_client.symbol,
         "price": binance_client.last_price,
         "event_age_ms": binance_client.event_age_ms,
         "timestamp": int(binance_client.last_tick_time * 1000) if binance_client.last_tick_time is not None else None,
-        "status": "LIVE" if has_market_data else "NO_DATA",
+        "status": binance_client.market_data_status,
+        "market_data_enabled": binance_client.market_data_enabled,
     }
 
 @router.websocket("/ws/stream")
@@ -1573,7 +1573,8 @@ async def websocket_stream_endpoint(websocket: WebSocket):
             "last_price": binance_client.last_price,
             "event_age_ms": binance_client.event_age_ms,
             "timestamp": int(binance_client.last_tick_time * 1000) if binance_client.last_tick_time is not None else None,
-            "status": "LIVE" if binance_client.last_price is not None else "NO_DATA",
+            "status": binance_client.market_data_status,
+            "market_data_enabled": binance_client.market_data_enabled,
             "open_positions": binance_client._recalculate_open_positions(binance_client.last_price)
         })
         while True:
@@ -1683,6 +1684,8 @@ def get_market_data_status():
     return {
         "status": "HEALTHY",
         "auth_required": False,
+        "live_stream_status": binance_client.market_data_status,
+        "live_stream_enabled": binance_client.market_data_enabled,
         "cache_total_records": stats["total_records"],
         "symbols_count": stats["symbols_count"],
         "symbols_cached": stats["symbols"],

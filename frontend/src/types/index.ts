@@ -39,8 +39,10 @@ export interface MarketTicker {
   volume?: number;
   event_age_ms: number | null;
   timestamp: number | null;
-  status: "LIVE" | "NO_DATA";
+  status: MarketDataStatus;
 }
+
+export type MarketDataStatus = "LIVE" | "DEGRADED" | "UNAVAILABLE";
 
 export interface QuantScorecard {
   total_trades: number;

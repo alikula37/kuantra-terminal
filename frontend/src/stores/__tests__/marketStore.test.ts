@@ -8,6 +8,7 @@ beforeEach(() => {
     eventAgeMs: null,
     lastTickTime: null,
     recentTicks: [],
+    marketDataStatus: "UNAVAILABLE",
   });
 });
 
@@ -49,4 +50,13 @@ it("keeps tick history while a no-data snapshot clears only market values", () =
   expect(state.currentPrice).toBeNull();
   expect(state.eventAgeMs).toBeNull();
   expect(state.recentTicks).toHaveLength(1);
+});
+
+it("preserves degraded status even when the last real price is retained", () => {
+  useMarketStore.getState().updateTick(65001.25, 10, 1_700_000_000_000, 0.42, "BUY");
+  useMarketStore.getState().setMarketSnapshot(65001.25, 2500, 1_700_000_000_000, "DEGRADED");
+  const state = useMarketStore.getState();
+
+  expect(state.currentPrice).toBe(65001.25);
+  expect(state.marketDataStatus).toBe("DEGRADED");
 });

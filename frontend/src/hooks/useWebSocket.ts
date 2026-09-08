@@ -4,9 +4,14 @@ import { useTradeStore } from "../stores/tradeStore";
 import { wsUrl } from "../lib/backend";
 import { getBridge } from "../lib/bridge";
 import { openStream, subscribePush } from "../lib/push";
+import type { MarketDataStatus } from "../types";
 
 // Only used by the browser dev fallback; the desktop app has no HTTP/WS listener at all.
 const getWsUrl = () => wsUrl("/api/v1/ws/stream");
+
+export function normalizeMarketDataStatus(value: unknown): MarketDataStatus {
+  return value === "LIVE" || value === "DEGRADED" || value === "UNAVAILABLE" ? value : "UNAVAILABLE";
+}
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
@@ -14,7 +19,7 @@ export function useWebSocket() {
   const pingIntervalRef = useRef<number | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  const { setConnectionStatus, updateTick, setMarketSnapshot, updateCandle } = useMarketStore();
+  const { setConnectionStatus, setMarketDataStatus, updateTick, setMarketSnapshot, updateCandle } = useMarketStore();
   const { updatePositionPnl } = useTradeStore();
 
   const handleMessage = useCallback(
@@ -33,18 +38,21 @@ export function useWebSocket() {
         }
       } else if (message.type === "CANDLE_UPDATE") {
         updateCandle(message.data);
+      } else if (message.type === "MARKET_DATA_STATUS") {
+        setMarketDataStatus(normalizeMarketDataStatus(message.status));
       } else if (message.type === "SNAPSHOT") {
         setMarketSnapshot(
           Number.isFinite(message.last_price) ? message.last_price : null,
           Number.isFinite(message.event_age_ms) ? message.event_age_ms : null,
           Number.isFinite(message.timestamp) ? message.timestamp : null,
+          normalizeMarketDataStatus(message.status),
         );
         if (message.open_positions) {
           updatePositionPnl(message.open_positions);
         }
       }
     },
-    [updateTick, setMarketSnapshot, updateCandle, updatePositionPnl]
+    [updateTick, setMarketDataStatus, setMarketSnapshot, updateCandle, updatePositionPnl]
   );
 
   const connect = useCallback(() => {

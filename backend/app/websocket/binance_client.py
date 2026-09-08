@@ -6,23 +6,42 @@ import time
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 import websockets
+from app.core.config import settings
 from app.websocket.connection_manager import ws_manager
 from app.db.sqlite_driver import sqlite_driver
 from app.db.duckdb_driver import duckdb_driver
 
 logger = logging.getLogger(__name__)
 
+LIVE = "LIVE"
+DEGRADED = "DEGRADED"
+UNAVAILABLE = "UNAVAILABLE"
+
 class BinanceStreamClient:
     """AsyncIO Binance Market Data WebSocket Client with real-time PnL recalculator."""
 
-    def __init__(self, symbol: str = "BTCUSDT"):
+    def __init__(self, symbol: str = "BTCUSDT", market_data_enabled: Optional[bool] = None):
         self.symbol = symbol.upper()
+        self.market_data_enabled = settings.market_data_enabled if market_data_enabled is None else bool(market_data_enabled)
         self.is_running: bool = False
         self._task: Optional[asyncio.Task] = None
         self.last_price: Optional[float] = None
         self.last_tick_time: Optional[float] = None
         self.event_age_ms: Optional[float] = None
         self.candle_buffer: Dict[str, Any] = {}
+        self.market_data_status = DEGRADED if self.market_data_enabled else UNAVAILABLE
+
+    def _set_live(self):
+        self.market_data_status = LIVE
+
+    def _set_degraded(self):
+        if self.market_data_enabled:
+            self.market_data_status = DEGRADED
+        else:
+            self.market_data_status = UNAVAILABLE
+
+    def _set_unavailable(self):
+        self.market_data_status = UNAVAILABLE
 
     def _stream_url(self) -> str:
         stream_name = f"{self.symbol.lower()}@trade"
@@ -41,6 +60,11 @@ class BinanceStreamClient:
     async def start(self):
         if self.is_running:
             return
+        if not self.market_data_enabled:
+            self._set_unavailable()
+            logger.info("Binance market-data stream disabled by KUANTRA_MARKET_DATA_ENABLED.")
+            return
+        self._set_degraded()
         self.is_running = True
         self._task = asyncio.create_task(self._run_loop())
         logger.info(f"BinanceStreamClient initialized for {self.symbol}")
@@ -56,11 +80,16 @@ class BinanceStreamClient:
         logger.info("BinanceStreamClient stopped.")
 
     async def _run_loop(self):
+        if not self.market_data_enabled:
+            self._set_unavailable()
+            return
         url = self._stream_url()
 
         retry_count = 0
         while self.is_running:
             try:
+                self._set_degraded()
+                await self._broadcast_status()
                 logger.info(f"Connecting to Binance WS at {url}...")
                 async with websockets.connect(url, ping_interval=20, ping_timeout=10) as ws:
                     retry_count = 0
@@ -70,16 +99,30 @@ class BinanceStreamClient:
                         await self._handle_message(json.loads(msg))
             except (websockets.exceptions.WebSocketException, OSError, asyncio.TimeoutError) as e:
                 retry_count += 1
+                self._set_degraded()
+                await self._broadcast_status()
                 logger.warning(f"Binance WS connection failed: {e}. Market data remains unavailable; reconnecting (attempt {retry_count}).")
                 await self._wait_to_reconnect(duration_seconds=10)
             except asyncio.CancelledError:
                 break
             except Exception as e:
+                self._set_degraded()
+                await self._broadcast_status()
                 logger.error(f"Unexpected stream error: {e}", exc_info=True)
                 await asyncio.sleep(2)
 
+    async def _broadcast_status(self):
+        """Publish only the truth state; this never creates a market event or price."""
+        await ws_manager.broadcast({
+            "type": "MARKET_DATA_STATUS",
+            "symbol": self.symbol,
+            "status": self.market_data_status,
+            "market_data_enabled": self.market_data_enabled,
+        }, channel="market_ticks")
+
     async def _wait_to_reconnect(self, duration_seconds: int = 10):
         """Wait between reconnects without fabricating market events."""
+        self._set_degraded()
         logger.warning("[BINANCE WS] No live market data available. Waiting for reconnect...")
         await asyncio.sleep(duration_seconds)
 
@@ -120,6 +163,8 @@ class BinanceStreamClient:
                 "source_verified": False,
             }
             # Broadcast live candle update
+            self._set_live()
+            await self._broadcast_status()
             await ws_manager.broadcast({
                 "type": "CANDLE_UPDATE",
                 "data": candle
@@ -133,6 +178,7 @@ class BinanceStreamClient:
                     logger.error(f"Error persisting candle to DuckDB: {e}")
 
     async def _process_tick(self, price: float, timestamp_ms: int, volume: float, taker_side: str):
+        self._set_live()
         self.last_price = price
         self.last_tick_time = timestamp_ms / 1000.0
         self.event_age_ms = max(0.0, round((time.time() * 1000.0) - timestamp_ms, 1))

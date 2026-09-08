@@ -24,6 +24,7 @@ class AppSettings(BaseModel):
     gateway_host: str = Field(default_factory=lambda: os.getenv("KUANTRA_GATEWAY_HOST", "127.0.0.1"))
     gateway_port: int = Field(default_factory=lambda: int(os.getenv("KUANTRA_GATEWAY_PORT", "8765")))
     binance_ws_url: str = "wss://stream.binance.com:9443/ws"
+    market_data_enabled: bool = Field(default_factory=lambda: _env_bool("KUANTRA_MARKET_DATA_ENABLED", True))
     default_symbol: str = "BTCUSDT"
     ws_broadcast_interval_ms: int = 50
     sqlite_db_url: str = Field(default_factory=lambda: os.getenv("SQLITE_DB_URL", ""))

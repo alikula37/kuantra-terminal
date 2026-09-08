@@ -12,6 +12,8 @@ it("rejects dashboard close actions without a finite positive market price", () 
   expect(canClosePositionAtMarketPrice(0)).toBe(false);
   expect(canClosePositionAtMarketPrice(Number.NaN)).toBe(false);
   expect(canClosePositionAtMarketPrice(65001.25)).toBe(true);
+  expect(canClosePositionAtMarketPrice(65001.25, "DEGRADED")).toBe(false);
+  expect(canClosePositionAtMarketPrice(65001.25, "UNAVAILABLE")).toBe(false);
 });
 
 it("does not send a close request or report success when market price is unavailable", async () => {

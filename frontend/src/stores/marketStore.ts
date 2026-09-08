@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Candle } from "../types";
+import { Candle, MarketDataStatus } from "../types";
 
 interface MarketState {
   symbol: string;
@@ -7,14 +7,16 @@ interface MarketState {
   prevPrice: number | null;
   eventAgeMs: number | null;
   isConnected: boolean;
+  marketDataStatus: MarketDataStatus;
   candles: Candle[];
   lastTickTime: number | null;
   recentTicks: { price: number; volume: number; time: number; side: "BUY" | "SELL" | "UNKNOWN" }[];
   
   setSymbol: (symbol: string) => void;
   setConnectionStatus: (connected: boolean) => void;
+  setMarketDataStatus: (status: MarketDataStatus) => void;
   updateTick: (price: number, eventAgeMs: number | null, timestamp: number, volume: number, side?: string) => void;
-  setMarketSnapshot: (price: number | null, eventAgeMs: number | null, timestamp: number | null) => void;
+  setMarketSnapshot: (price: number | null, eventAgeMs: number | null, timestamp: number | null, status?: MarketDataStatus) => void;
   setCandles: (candles: Candle[]) => void;
   updateCandle: (candle: Candle) => void;
 }
@@ -25,12 +27,14 @@ export const useMarketStore = create<MarketState>((set) => ({
   prevPrice: null,
   eventAgeMs: null,
   isConnected: false,
+  marketDataStatus: "UNAVAILABLE",
   candles: [],
   lastTickTime: null,
   recentTicks: [],
 
   setSymbol: (symbol) => set({ symbol: symbol.toUpperCase() }),
   setConnectionStatus: (connected) => set({ isConnected: connected }),
+  setMarketDataStatus: (status) => set({ marketDataStatus: status }),
   
   updateTick: (price, eventAgeMs, timestamp, volume, side) => set((state) => {
     const tickSide: "BUY" | "SELL" | "UNKNOWN" = side === "BUY" || side === "SELL" || side === "UNKNOWN" ? side : "UNKNOWN";
@@ -42,15 +46,17 @@ export const useMarketStore = create<MarketState>((set) => ({
       currentPrice: price,
       eventAgeMs,
       lastTickTime: timestamp,
+      marketDataStatus: "LIVE",
       recentTicks: newRecent,
     };
   }),
 
-  setMarketSnapshot: (price, eventAgeMs, timestamp) => set((state) => ({
+  setMarketSnapshot: (price, eventAgeMs, timestamp, status = "UNAVAILABLE") => set((state) => ({
     prevPrice: state.currentPrice,
     currentPrice: price,
     eventAgeMs,
     lastTickTime: timestamp,
+    marketDataStatus: status,
   })),
 
   setCandles: (candles) => set({ candles }),
