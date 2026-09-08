@@ -9,7 +9,7 @@ status: Complete
 date: 2026-09-08
 baseline_commit: ed689a0
 completed_commit: 1cf486e
-evidence_commit: 1cf486e
+evidence_commit: ca94b83
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H02, H03, P1-WP22, P1-WP24, P1-WP26
@@ -90,17 +90,26 @@ AI order authority ve full-account PnL/tax accounting.
   redaction POSIX/Windows path, token ve credential kalıplarını maskeler.
 - Red→green H04 focused/boundary suite: **60 passed, 2 warnings**. Full backend:
   **669 passed, 2 warnings**. Frontend: **17 files / 67 tests passed**.
-- Mac local CI on `1cf486eefc3bf513303cb5f55902c411a21aa544`: **MERGE READY**;
-  report SHA-256 `a59b1069b19d8be8986a03397cbdf13562847292f81bc46067247f0f36fb416a`,
-  smoke report SHA-256 `ecaae6e90e5818e3872cf751cc88ec06f08def90e9450b199cc3a35d11355f5c`,
+- Mac local CI on `ca94b83e0f018c83e7aaebfd4e40b4708cdaedf7`: **MERGE READY**;
+  report SHA-256 `e40f10591206c0ea612a2afe64928bc2684739f144ce11f0121e16126078d639`,
+  smoke report SHA-256 `d8bb1c09d919a2270150cd2676527ca78c959f7b9bea7af797e96ec9729b340b`,
   tracked source tree SHA-256
-  `c91d317e8c5e3b0bce726b269b753f74ab9d0a03edb03dacb8ba986d670af985`;
+  `ead42c15aecda199619e64fa55ebd42479d5e7135a128e8e120ace1e19ae5d9e`;
   Python `3.11.16`, Node `20.20.2`, npm `10.8.2`, uv `0.12.10`, PyInstaller
   `6.22.2`, macOS arm64. Local executable SHA-256
-  `0bfd17e160ea693cb8bd34f9ab7f31e7d5bef04df2c37659c3dab0a641718447`;
-  `.app` SHA-256 `999741169af175d2ea85095d2ac31b342daba7b19d10672d528e182ebcfe9cd7`.
+  `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`;
+  `.app` SHA-256 `5a2ecb0e7db672a51958050c52f7edc219963f854ca08343a7e848f5b20c0081`.
   Provenance status **COMPLETE**; tracked source tree clean. `uv --offline` is
   dependency-preparation evidence only; runtime smoke is not offline proof.
+
+- Exact read-only DMG/WKWebView smoke on source `ca94b83e0f018c83e7aaebfd4e40b4708cdaedf7`:
+  report SHA-256 `5ebc294420567b3789be1ddf3986b7c05f8cb7cefdef7ede6a279ce23b119a66`,
+  DMG SHA-256 `cc1fab496a1cfbb66bdea5ee94da61c4ed9d64dc635019890a8216d01663189b`,
+  mounted executable SHA-256
+  `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`.
+  Smoke selected the executable inside the mounted DMG, verified `wkwebview` and
+  controller identity, and detached cleanly. The smoke attempted the configured
+  public Binance stream; it is not offline runtime evidence.
 
 ## Sonraki bağımlılık
 

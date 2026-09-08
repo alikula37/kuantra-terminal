@@ -32,10 +32,10 @@ claims remain blocked by their explicit gates.
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `1cf486e`; fresh clean Mac local CI `MERGE READY`: 669 backend, 67 frontend, i18n 560/560, arm64 build and native smoke passed. Provenance is COMPLETE; H03 disabled/degraded tests are PASS |
+| Runtime baseline | `ca94b83`; fresh clean Mac local CI `MERGE READY`: 669 backend, 67 frontend, i18n 560/560, arm64 build and native smoke passed. Provenance is COMPLETE; H03 disabled/degraded tests are PASS |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
-| Mac (latest local evidence) | H04 source `1cf486e` passed clean arm64 local CI, native `wkwebview` smoke and packaging preflight; local executable SHA `0bfd17e160ea693cb8bd34f9ab7f31e7d5bef04df2c37659c3dab0a641718447`, `.app` SHA `999741169af175d2ea85095d2ac31b342daba7b19d10672d528e182ebcfe9cd7`. Exact DMG-mounted H04 evidence is recorded after the package preflight; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
+| Mac (latest local evidence) | H04 source `ca94b83` passed clean arm64 local CI and exact read-only DMG/WKWebView smoke; DMG SHA `cc1fab496a1cfbb66bdea5ee94da61c4ed9d64dc635019890a8216d01663189b`, smoke report SHA `5ebc294420567b3789be1ddf3986b7c05f8cb7cefdef7ede6a279ce23b119a66`, mounted executable SHA `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -49,7 +49,7 @@ claims remain blocked by their explicit gates.
 | B4 | CLOSED | Mac runtime offline/degraded boundary, exact artifact provenance, mounted executable and WKWebView gate | N01 `05e826d`, N02 `cc0ad94`, H03 `62921f7`; Windows/Linux and distribution signing remain separate host/owner gates |
 | H01 | CLOSED | Canonical journal/event/projection persistence under crash, transaction, read-only, disk/busy and concurrent import conditions | Test-only transaction hooks plus real Mac temporary-fixture evidence in `006e86e`; H02 schema/restore boundary remains separate |
 | H02 | CLOSED | Supported legacy schema upgrade, interrupted migration/restore, corrupt backup, missing segment, archive traversal/symlink and incompatible future schema fail closed while preserving canonical lineage | `169c446`; archived [H02](../archive/strategy/work-packages/H02-schema-upgrade-restore-boundary.md); 19 focused and 651 backend tests PASS |
-| H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | `1cf486e`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; clean Mac local CI PASS |
+| H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | IMPLEMENTATION_REQUIRED | Locked dependency, SBOM/license notice, secret scan and build trust evidence | Current bounded package: [H05](work-packages/H05-supply-chain-sbom-license-secret-boundary.md); default-branch Dependabot alerts and owner license decisions remain open |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
@@ -77,14 +77,19 @@ The 2026-09-08 H04 Mac evidence used locked dependencies and clean temporary dat
 directories: local CI was **MERGE READY**, with full backend **669**, frontend **67**,
 i18n **560/560**, production build, arm64 desktop build, native `wkwebview` smoke,
 packaging preflight and provenance contract PASS. Local CI report SHA-256
-`a59b1069b19d8be8986a03397cbdf13562847292f81bc46067247f0f36fb416a`; source commit
-`1cf486eefc3bf513303cb5f55902c411a21aa544`; tracked source tree SHA
-`c91d317e8c5e3b0bce726b269b753f74ab9d0a03edb03dacb8ba986d670af985`; provenance
+`e40f10591206c0ea612a2afe64928bc2684739f144ce11f0121e16126078d639`; source commit
+`ca94b83e0f018c83e7aaebfd4e40b4708cdaedf7`; tracked source tree SHA
+`ead42c15aecda199619e64fa55ebd42479d5e7135a128e8e120ace1e19ae5d9e`; provenance
 `COMPLETE`; release validator PASS. Local smoke report SHA-256
-`ecaae6e90e5818e3872cf751cc88ec06f08def90e9450b199cc3a35d11355f5c`, executable
-SHA-256 `0bfd17e160ea693cb8bd34f9ab7f31e7d5bef04df2c37659c3dab0a641718447`, and
-`.app` SHA-256 `999741169af175d2ea85095d2ac31b342daba7b19d10672d528e182ebcfe9cd7`.
-Exact H04 DMG evidence is added below after the package preflight rerun.
+`d8bb1c09d919a2270150cd2676527ca78c959f7b9bea7af797e96ec9729b340b`, executable
+SHA-256 `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`, and
+`.app` SHA-256 `5a2ecb0e7db672a51958050c52f7edc219963f854ca08343a7e848f5b20c0081`.
+Exact read-only DMG smoke report SHA-256
+`5ebc294420567b3789be1ddf3986b7c05f8cb7cefdef7ede6a279ce23b119a66`; DMG SHA-256
+`cc1fab496a1cfbb66bdea5ee94da61c4ed9d64dc635019890a8216d01663189b`; mounted
+executable SHA-256 `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`.
+The read-only mount selected the DMG-contained executable, verified `wkwebview`/
+controller identity and detached cleanly.
 
 `uv --offline` is dependency-preparation evidence only; the default runtime smoke
 still attempts the configured public market-data connection. H03 disabled/degraded

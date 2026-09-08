@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.7
+version: 1.0.8
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 1cf486e
+reviewed_commit: ca94b83
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -344,15 +344,24 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
 
 ## Değişiklik geçmişi
 
+### 1.0.8 — 2026-09-08
+
+- H04 Mac kanıtı `ca94b83` source checkout'ında yenilendi: local CI **MERGE READY**,
+  exact read-only DMG/WKWebView smoke PASS. DMG SHA
+  `cc1fab496a1cfbb66bdea5ee94da61c4ed9d64dc635019890a8216d01663189b`, smoke report
+  SHA `5ebc294420567b3789be1ddf3986b7c05f8cb7cefdef7ede6a279ce23b119a66`, mounted
+  executable SHA `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`.
+  `wkwebview`/controller identity ve clean detach doğrulandı. Signing/notarization,
+  second-host ve default-branch Dependabot alerts açık sınır olarak kaldı.
+
 ### 1.0.7 — 2026-09-08
 
 - H04 threat model/trust boundary paketi `1cf486e` ile bounded olarak kapatıldı:
   untrusted input, archive resource, WebView bridge, gateway origin ve secret/path
   redaction negative testleri PASS; full backend **669**, frontend **67**, temiz Mac
   local CI **MERGE READY**. H05 supply-chain, SBOM, license ve secret boundary tek
-  güncel Ready work package olarak seçildi. Exact DMG evidence, package preflight
-  sonrasında ayrıca kayda alınır; signing/notarization ve default-branch alerts
-  açık sınırdır.
+  güncel Ready work package olarak seçildi. Signing/notarization ve default-branch
+  alerts açık sınırdır.
 
 ### 1.0.6 — 2026-09-08
 
@@ -360,7 +369,7 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
   SQLite staged atomic upgrade, doğrulanabilir backup, interrupted failure injection,
   canonical backfill/projection rebuild, exact restore, checksum/integrity/schema/
   traversal/symlink fail-closed testleri. 19 focused/package test ve 651 backend testi
-  PASS. H05 supply-chain/SBOM/license/secret boundary tek güncel Ready pakettir.
+  PASS. H04 trust model/boundary tests tek güncel Ready pakettir.
 
 ### 1.0.5 — 2026-09-08
 
