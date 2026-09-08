@@ -299,6 +299,22 @@ class BrokerImportService:
             and normalized_record_count > 0
             and rejected_row_count == 0
         )
+        bounded_discrepancies = []
+        allowed_fields = {
+            "type", "external_order_id", "external_fill_id", "order_filled_qty",
+            "fill_qty", "order_avg_price", "fill_weighted_price", "order_fee",
+            "fill_fee", "fee_currency", "currencies", "count", "warning_count",
+        }
+        for discrepancy in report.get("discrepancies", []):
+            if not isinstance(discrepancy, dict):
+                continue
+            bounded = {
+                key: discrepancy[key]
+                for key in allowed_fields
+                if key in discrepancy
+            }
+            if bounded.get("type"):
+                bounded_discrepancies.append(bounded)
         return {
             "status": "READY_FOR_USER_REVIEW" if ready else "REVIEW_REQUIRED",
             "source_type": "BROKER_ORDER_FILL_EXPORT",
@@ -307,6 +323,7 @@ class BrokerImportService:
             "coverage": coverage,
             "discrepancy_count": len(report.get("discrepancies", [])),
             "discrepancy_types": discrepancy_types,
+            "discrepancies": bounded_discrepancies,
         }
 
     @staticmethod

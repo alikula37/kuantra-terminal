@@ -55,6 +55,7 @@ function policyReference(event: EvidenceEvent): PolicyReference | null {
 
 function eventLabel(event: EvidenceEvent): string {
   const payload = event.normalized_payload || {};
+  if (payload.review_kind === "RECONCILIATION_DECISION") return "Reconciliation decision";
   if (payload.decision_kind === "PRE_EXECUTION_RISK") return "Risk decision";
   if (payload.policy_kind === "RISK_POLICY_VERSION") return "Risk policy snapshot";
   if (payload.policy_kind === "PLAYBOOK") return "Playbook snapshot";
@@ -255,6 +256,12 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
                             <span>{reference.kind === "risk" ? "Risk policy" : "Playbook"}: {reference.label}</span>
                             <span>v{reference.version}</span>
                             <span>snapshot {shortHash(reference.snapshot)}</span>
+                          </div>
+                        )}
+                        {event.normalized_payload?.review_kind === "RECONCILIATION_DECISION" && (
+                          <div className="mt-2 text-[10px] text-amber-300 flex flex-wrap gap-x-3 gap-y-1">
+                            <span>Decision: {String(event.normalized_payload.decision || "UNKNOWN")}</span>
+                            <span>Source: {shortHash(event.normalized_payload.source_event_hash as string | undefined)}</span>
                           </div>
                         )}
                       </div>

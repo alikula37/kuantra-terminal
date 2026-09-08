@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2 } from "lucide-react";
+import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2, ClipboardCheck } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
+import { ReconciliationInbox } from "./ReconciliationInbox";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
@@ -17,6 +18,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
+  const [reconciliationInboxOpen, setReconciliationInboxOpen] = useState(false);
 
   useEffect(() => {
     apiFetch(apiUrl("/api/v1/trades?limit=200"))
@@ -76,6 +78,14 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           >
             <Upload className="w-3.5 h-3.5 text-accent" />
             <span>{t("journal.import_csv")}</span>
+          </button>
+
+          <button
+            onClick={() => setReconciliationInboxOpen(true)}
+            className="flex items-center space-x-1.5 bg-[#162032] hover:bg-[#1f2d47] border border-amber-400/40 text-amber-300 font-semibold px-3 py-1.5 rounded transition shadow-sm cursor-pointer"
+          >
+            <ClipboardCheck className="w-3.5 h-3.5" />
+            <span>{t("journal.reconciliation_inbox")}</span>
           </button>
 
           <button
@@ -213,6 +223,15 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
     )}
       {evidenceTradeId && (
         <TradeEvidencePanel tradeId={evidenceTradeId} onClose={() => setEvidenceTradeId(null)} />
+      )}
+      {reconciliationInboxOpen && (
+        <ReconciliationInbox
+          onClose={() => setReconciliationInboxOpen(false)}
+          onOpenEvidence={(tradeId) => {
+            setReconciliationInboxOpen(false);
+            setEvidenceTradeId(tradeId);
+          }}
+        />
       )}
   </div>
   );

@@ -21,6 +21,12 @@ from app.services.evidence_pack_export import (
 )
 from app.services.csv_importer import csv_trade_importer
 from app.services.broker_import_service import broker_import_service, BrokerImportValidationError
+from app.services.reconciliation_inbox import (
+    ReconciliationDecisionConflict,
+    ReconciliationInboxError,
+    ReconciliationReviewNotFound,
+    reconciliation_inbox_service,
+)
 from app.services.exchange.read_only_broker_sync import (
     ReadOnlyBrokerSyncError,
     read_only_broker_sync_service,
@@ -55,6 +61,12 @@ class TradeCloseSchema(BaseModel):
     exit_price: float
     exit_time: Optional[str] = None
     commission: Optional[float] = 0.0
+
+
+class ReconciliationDecisionSchema(BaseModel):
+    decision: str = Field(..., min_length=1, max_length=32)
+    note: Optional[str] = Field(default=None, max_length=500)
+    correction: Optional[Dict[str, Any]] = None
 
 @router.get("/trades")
 def list_trades(
@@ -248,6 +260,42 @@ async def import_broker_json(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Broker export could not be imported safely.") from exc
+
+
+@router.get("/reconciliation/inbox")
+def list_reconciliation_inbox(
+    status: Optional[str] = Query(None, min_length=1, max_length=32),
+    limit: int = Query(100, ge=1, le=1000),
+):
+    """List source-linked discrepancy reviews without claiming accounting success."""
+    try:
+        items = reconciliation_inbox_service.list_items(status=status, limit=limit)
+    except ReconciliationInboxError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "status": str(status or "ALL").upper(),
+        "count": len(items),
+        "items": items,
+        "scope": "LOCAL_EVIDENCE_ONLY",
+    }
+
+
+@router.post("/reconciliation/inbox/{review_id}/decision")
+def decide_reconciliation_review(review_id: str, payload: ReconciliationDecisionSchema):
+    """Record an explicit acknowledgement, rejection, or bounded correction."""
+    try:
+        return reconciliation_inbox_service.record_decision(
+            review_id,
+            payload.decision,
+            note=payload.note,
+            correction=payload.correction,
+        )
+    except ReconciliationReviewNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ReconciliationDecisionConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ReconciliationInboxError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/broker/sync-read-only")

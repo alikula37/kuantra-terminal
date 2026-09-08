@@ -213,6 +213,7 @@ class SQLiteDriver:
         account_id: str = "local-journal",
         venue: str = "local-journal",
         occurred_at: Optional[str] = None,
+        causation_id: Optional[str] = None,
         provenance: Optional[Dict[str, Any]] = None,
         raw_payload: Any = None,
     ) -> Dict[str, Any]:
@@ -271,6 +272,7 @@ class SQLiteDriver:
                 schema_version="1",
                 adapter_version="journal-write-v1",
                 correlation_id=resolved_id,
+                causation_id=causation_id,
                 provenance=provenance or {"source": "journal"},
             )
             # Keep the typed read model current in the same transaction as the
