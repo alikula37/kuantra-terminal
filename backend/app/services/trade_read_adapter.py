@@ -267,24 +267,38 @@ class TradeReadAdapter:
         symbol: Optional[str] = None,
         status: Optional[str] = None,
         order_by_utc: bool = False,
+        resource_check: Optional[Callable[[str], None]] = None,
     ) -> List[Dict[str, Any]]:
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
+
         if not self._projection_ready():
+            legacy_kwargs = {
+                "limit": limit,
+                "offset": offset,
+                "symbol": symbol,
+                "status": status,
+                "order_by_utc": order_by_utc,
+            }
+            if resource_check is not None:
+                legacy_kwargs["resource_check"] = resource_check
             return self.legacy_driver.list_trades(
-                limit=limit,
-                offset=offset,
-                symbol=symbol,
-                status=status,
-                order_by_utc=order_by_utc,
+                **legacy_kwargs,
             )
+        projection_kwargs = {
+            "limit": limit,
+            "offset": offset,
+            "symbol": symbol,
+            "status": status,
+            "order_by_utc": order_by_utc,
+            "account_id": self.account_id,
+            "venue": self.venue,
+            "venues": self.projection_venues,
+        }
+        if resource_check is not None:
+            projection_kwargs["resource_check"] = resource_check
         return self.projection_repo.list_trade_snapshots(
-            limit=limit,
-            offset=offset,
-            symbol=symbol,
-            status=status,
-            order_by_utc=order_by_utc,
-            account_id=self.account_id,
-            venue=self.venue,
-            venues=self.projection_venues,
+            **projection_kwargs,
         )
 
     def get_trade(self, trade_id: str) -> Optional[Dict[str, Any]]:

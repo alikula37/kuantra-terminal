@@ -440,7 +440,15 @@ class EvidenceTradeProjectionRepository:
         venue: str = "local-journal",
         venues: Optional[Sequence[str]] = None,
         include_tombstones: bool = True,
+        resource_check: Optional[Callable[[str], None]] = None,
     ) -> List[Dict[str, Any]]:
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
+
+        def check_resources(phase: str) -> None:
+            if resource_check is not None:
+                resource_check(phase)
+
         venue_clause, venue_params = self._venue_scope(venue, venues)
         query = f"""SELECT snapshot_json FROM evidence_trade_projections
                    WHERE account_id = ? AND {venue_clause}"""
@@ -462,7 +470,13 @@ class EvidenceTradeProjectionRepository:
 
         conn = self._connect(write=False)
         try:
-            return [self._row_to_snapshot(row) for row in conn.execute(query, params)]
+            check_resources("before_trade_query")
+            result = []
+            for row in conn.execute(query, params):
+                check_resources("before_trade_row")
+                result.append(self._row_to_snapshot(row))
+            check_resources("after_trade_query")
+            return result
         finally:
             conn.close()
 

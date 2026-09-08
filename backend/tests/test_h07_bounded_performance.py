@@ -269,6 +269,74 @@ def test_projection_rebuild_resource_limit_rolls_back_existing_projection(tmp_pa
     )["ready"] is True
 
 
+def test_legacy_trade_query_resource_limit_aborts_mid_stream_without_partial_result(tmp_path):
+    db_path = tmp_path / "resource-limited-legacy-query.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    for index in range(4):
+        driver.insert_trade(generate_trade_snapshot(index, seed="H07-QUERY-LEGACY"))
+
+    phases = []
+    rows_attempted = 0
+
+    def resource_check(phase):
+        nonlocal rows_attempted
+        phases.append(phase)
+        if phase == "before_trade_row":
+            rows_attempted += 1
+            if rows_attempted == 3:
+                raise SQLiteOperationResourceLimit("RSS resource budget exceeded")
+
+    with pytest.raises(SQLiteOperationResourceLimit, match="resource budget"):
+        driver.list_trades(limit=4, resource_check=resource_check)
+
+    assert phases[0] == "before_trade_query"
+    assert rows_attempted == 3
+    assert "after_trade_query" not in phases
+    assert len(driver.list_trades(limit=4)) == 4
+
+
+def test_projection_trade_query_resource_limit_aborts_mid_stream_without_partial_result(tmp_path):
+    db_path = tmp_path / "resource-limited-projection-query.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    commands = [
+        _command_for_trade(
+            generate_trade_snapshot(index, seed="H07-QUERY-PROJECTION"),
+            index,
+            seed="H07-QUERY-PROJECTION",
+        )
+        for index in range(4)
+    ]
+    driver.record_grouped_evidence_batch(commands)
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=False)
+    adapter = TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=projection,
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+        projection_venues=("h07-synthetic",),
+    )
+
+    phases = []
+    rows_attempted = 0
+
+    def resource_check(phase):
+        nonlocal rows_attempted
+        phases.append(phase)
+        if phase == "before_trade_row":
+            rows_attempted += 1
+            if rows_attempted == 3:
+                raise SQLiteOperationResourceLimit("temporary disk resource budget exceeded")
+
+    with pytest.raises(SQLiteOperationResourceLimit, match="resource budget"):
+        adapter.list_trades(limit=4, order_by_utc=True, resource_check=resource_check)
+
+    assert phases[0] == "before_trade_query"
+    assert rows_attempted == 3
+    assert "after_trade_query" not in phases
+    assert len(adapter.list_trades(limit=4, order_by_utc=True)) == 4
+
+
 def test_benchmark_resource_budget_aborts_import_before_commit(tmp_path):
     db_path = tmp_path / "resource-limited-run.sqlite"
     runner = H07BenchmarkRunner(

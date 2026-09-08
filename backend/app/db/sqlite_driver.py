@@ -15,7 +15,7 @@ class SQLiteOperationCancelled(RuntimeError):
 
 
 class SQLiteOperationResourceLimit(RuntimeError):
-    """A cooperative resource check rejected a write before commit."""
+    """A cooperative resource check rejected an operation."""
 
 
 class SQLiteDriver:
@@ -555,7 +555,22 @@ class SQLiteDriver:
                 return dict(row)
         return None
 
-    def list_trades(self, limit: int = 100, offset: int = 0, symbol: Optional[str] = None, status: Optional[str] = None, order_by_utc: bool = False) -> List[Dict[str, Any]]:
+    def list_trades(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        symbol: Optional[str] = None,
+        status: Optional[str] = None,
+        order_by_utc: bool = False,
+        resource_check: Optional[Callable[[str], None]] = None,
+    ) -> List[Dict[str, Any]]:
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
+
+        def check_resources(phase: str) -> None:
+            if resource_check is not None:
+                resource_check(phase)
+
         query = "SELECT * FROM trades WHERE 1=1"
         params: List[Any] = []
         if symbol:
@@ -571,8 +586,14 @@ class SQLiteDriver:
 
         with self.get_connection() as conn:
             cursor = conn.cursor()
+            check_resources("before_trade_query")
             cursor.execute(query, params)
-            return [dict(row) for row in cursor.fetchall()]
+            result = []
+            for row in cursor:
+                check_resources("before_trade_row")
+                result.append(dict(row))
+            check_resources("after_trade_query")
+            return result
 
     def get_open_trades(self) -> List[Dict[str, Any]]:
         with self.get_connection() as conn:

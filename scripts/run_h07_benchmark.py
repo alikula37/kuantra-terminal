@@ -517,9 +517,14 @@ class H07BenchmarkRunner:
         query_samples: list[dict[str, Any]] = []
         for _ in range(self.operation_repetitions):
             sample, rows = _timed_call(
-                lambda: adapter.list_trades(limit=min(100, size), order_by_utc=True),
+                lambda resource_check: adapter.list_trades(
+                    limit=min(100, size),
+                    order_by_utc=True,
+                    resource_check=resource_check,
+                ),
                 storage_dir=db_path.parent,
                 budget=self.budget,
+                dynamic_resource_check=True,
             )
             if not isinstance(rows, list) or len(rows) != min(100, size):
                 raise BenchmarkContractError("synthetic query returned an unexpected row count")
