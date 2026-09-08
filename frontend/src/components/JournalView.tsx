@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2, ClipboardCheck } from "lucide-react";
+import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
 import { ReconciliationInbox } from "./ReconciliationInbox";
+import { WeeklyReviewPanel } from "./WeeklyReviewPanel";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
@@ -19,6 +20,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
   const [reconciliationInboxOpen, setReconciliationInboxOpen] = useState(false);
+  const [weeklyReviewOpen, setWeeklyReviewOpen] = useState(false);
 
   useEffect(() => {
     apiFetch(apiUrl("/api/v1/trades?limit=200"))
@@ -86,6 +88,14 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           >
             <ClipboardCheck className="w-3.5 h-3.5" />
             <span>{t("journal.reconciliation_inbox")}</span>
+          </button>
+
+          <button
+            onClick={() => setWeeklyReviewOpen(true)}
+            className="flex items-center space-x-1.5 bg-[#162032] hover:bg-[#1f2d47] border border-accent/40 text-accent font-semibold px-3 py-1.5 rounded transition shadow-sm cursor-pointer"
+          >
+            <CalendarClock className="w-3.5 h-3.5" />
+            <span>{t("journal.weekly_review")}</span>
           </button>
 
           <button
@@ -233,6 +243,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           }}
         />
       )}
+      {weeklyReviewOpen && <WeeklyReviewPanel onClose={() => setWeeklyReviewOpen(false)} />}
   </div>
   );
 };

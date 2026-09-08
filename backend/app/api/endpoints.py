@@ -27,6 +27,7 @@ from app.services.reconciliation_inbox import (
     ReconciliationReviewNotFound,
     reconciliation_inbox_service,
 )
+from app.services.weekly_review import WeeklyReviewError, weekly_review_service
 from app.services.exchange.read_only_broker_sync import (
     ReadOnlyBrokerSyncError,
     read_only_broker_sync_service,
@@ -67,6 +68,15 @@ class ReconciliationDecisionSchema(BaseModel):
     decision: str = Field(..., min_length=1, max_length=32)
     note: Optional[str] = Field(default=None, max_length=500)
     correction: Optional[Dict[str, Any]] = None
+
+
+class WeeklyReviewDecisionSchema(BaseModel):
+    period_start: str = Field(..., min_length=10, max_length=10)
+    period_end: str = Field(..., min_length=10, max_length=10)
+    timezone: str = Field(..., min_length=1, max_length=80)
+    as_of_utc: str = Field(..., min_length=1, max_length=64)
+    decision: str = Field(..., min_length=1, max_length=32)
+    note: Optional[str] = Field(default=None, max_length=500)
 
 @router.get("/trades")
 def list_trades(
@@ -295,6 +305,45 @@ def decide_reconciliation_review(review_id: str, payload: ReconciliationDecision
     except ReconciliationDecisionConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ReconciliationInboxError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/reviews/weekly")
+def get_weekly_review(
+    period_start: str = Query(..., min_length=10, max_length=10),
+    period_end: str = Query(..., min_length=10, max_length=10),
+    timezone_name: str = Query(..., alias="timezone", min_length=1, max_length=80),
+    as_of_utc: str = Query(..., min_length=1, max_length=64),
+):
+    """Build an explicit period/as-of review over immutable local evidence."""
+    try:
+        return weekly_review_service.build_review(
+            period_start=period_start,
+            period_end=period_end,
+            timezone_name=timezone_name,
+            as_of_utc=as_of_utc,
+        )
+    except WeeklyReviewError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/reviews/weekly/decision")
+def decide_weekly_review(payload: WeeklyReviewDecisionSchema):
+    """Record a bounded review action through the existing journal event type."""
+    try:
+        review = weekly_review_service.build_review(
+            period_start=payload.period_start,
+            period_end=payload.period_end,
+            timezone_name=payload.timezone,
+            as_of_utc=payload.as_of_utc,
+        )
+        decision = weekly_review_service.record_decision(
+            review,
+            decision=payload.decision,
+            note=payload.note,
+        )
+        return {"review": review, "decision": decision}
+    except WeeklyReviewError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
