@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 1.2.0
+version: 1.3.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: d2463b2
+baseline_commit: 4e85e3f
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -70,8 +70,10 @@ pakete eklenmeyecektir.
 
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
-- [ ] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
+- [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
   için p50/p95/p99, peak RSS ve temporary disk ölçümleri source/artifact kanıtına bağlı.
+  1k tam benchmark'taki tek import örneği `UNKNOWN` kalır; ayrı `batch-size=100`
+  ölçümü import percentile'larını tamamlar. `UNKNOWN` hiçbir yerde PASS sayılmaz.
 - [ ] Resource limit, cancellation, malformed/oversized input ve partial/unknown
   coverage durumları fail-closed; canonical veri ve evidence lineage korunuyor.
 - [ ] Backend correctness/performance regression suite ve frontend loading/cancel/error
@@ -106,72 +108,93 @@ H05 ticari dağıtım gate'i ve production iddiası değişmeden kalır. H07 tam
 sonuçlar ölçüm kanıtına göre sınıflandırılacak; hedef tutmadığında sınır sessizce
 gevşetilmeyecek ve sonraki paket STATUS üzerinden seçilecektir.
 
-## İlk bounded uygulama ve ölçüm sonucu — 2026-09-08
+## Güncel bounded uygulama ve ölçüm sonucu — 2026-09-08
 
-İlk implementation `f0b93ba` ile deterministik synthetic benchmark harness'i,
-correlation-index üzerinden trade event lookup ve fail-closed benchmark report
-validator'ı eklendi. `779e2d7` ile grouped canonical batch'e cooperative
-`cancel_check` sınırı eklendi; iptal transaction commit'inden önce gerçekleşirse
-compatibility trade row, canonical ledger event ve typed projection birlikte rollback
-oluyor. `d2463b2` ile `verify_chain` aynı tam hash/JSON doğrulamalarını tek SQLite
-read snapshot'ında, gereksiz decoded row listesi oluşturmadan yürütüyor. Bu API
-yüzeyleri UI'ya veya live execution'a açılmadı.
+`4e85e3f` ile önceki H07 benchmark/cancellation/integrity sınırlarının üzerine
+deterministik correction, idempotent correction replay ve recorded-bar replay ölçümü
+eklendi. `SQLiteDriver.record_trade_with_evidence` içindeki mevcut yazma yoluna
+yalnızca `event_id` ve `received_at` için optional test/ingestion bağlamı eklendi;
+şema genişletilmedi, funding/transfer event type eklenmedi ve immutable correction
+lineage korunuyor. Üç correction event'i yeniden oynatıldığında ledger event sayısı
+artmıyor; replay snapshot'ları `READY` ve deterministik kalıyor. Bu API yüzeyleri
+UI'ya veya live execution'a açılmadı.
 
-Focused H07 suite `10 passed`; full backend suite `693 passed, 2 warnings`. Frontend
-değişmedi: `19` test dosyası ve `71` test PASS; i18n `574/574`. Bu commit'te
-`uv run --offline --no-project --with-requirements backend/requirements.lock
-python scripts/run_local_ci.py` sonucu **MERGE READY** oldu; local-ci report SHA-256
-`f675b1ff8122fa9bd341980dbdcc0de130db083fa31fd0368375036092e675a5`, source commit
-`d2463b203a9847560fbe6343ef0f04f12435946c`, tracked source tree SHA-256
-`f88bf83005b4a411d50a08670bb6774fef4c1f417533b138a28def4d6fe418b8` ve provenance
-`COMPLETE` olarak kaydedildi. Toolchain: Python `3.11.16`, Node `v20.20.2`, npm
-`10.8.2`, uv `0.12.10`, PyInstaller `6.22.2`; backend/frontend lock SHA'ları
-raporda kayıtlıdır.
+Focused H07 suite `10 passed`; correction/replay ile birlikte ilgili regression
+seti `33 passed, 2 warnings`; full backend suite `693 passed, 2 warnings`. Frontend
+değişmedi: `19` test dosyası ve `71` test PASS; i18n `574/574`. Locked local CI
+`MERGE READY` oldu. Current source commit tam SHA'sı
+`4e85e3ff35984c37a3baa9e11ef67d62d1de07a1`, tracked source tree SHA-256'sı
+`6acd4cf41c9958845d7978f12d7077779a053a68abf2c00d3813c2e464e0321b`'dir.
+Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
+`uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
+backend/frontend lock SHA'ları sırasıyla
+`6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
+`b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-### Sentetik baseline
+Local CI report SHA-256 `fdefe3be9b161b2fb20bbdbbbb4b0bbb30d1ea4969a408b7bc3d4cf819f8ff38`,
+native local smoke report SHA-256 `4f13939b97d5a67d6cfcb04df5a4537d168fd4c3268bb35a56c308eb212fc1af`.
 
-`/tmp/h07-d2463b-artifact-benchmark.json` report SHA-256
-`ce93f1a9bed1a050544d7b0800112193c6877c59df6d7cb5ff7f743862e509cd` ile 1k/10k/100k
-koşuldu. 1k import için tek batch yüzünden percentile `UNKNOWN` kalmıştır; yeterli
-örnek almak üzere `--batch-size 100` ile ayrı 1k raporu üretildi. Bu raporun SHA-256'sı
-`f11d29131150feecfb10dfa54f57700f9fde221a6837f948f7c9536864256d78`'dir. Her iki
-raporda da `real_data=false`, `credentials=false`, `network=false`,
-`live_execution=false` ve `support_limit_claim=false` sözleşmesi korunmuştur.
+### Artifact-bağlı sentetik baseline
 
-| Sentetik geçmiş | Import p95 | Projection rebuild p95 | Query p95 | Evidence Pack p95 | Export p95 | Cancel p95 | Peak RSS | Temp disk |
-|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1,000 | 15.7145 ms | 72.1581 ms | 3.1059 ms | 261.2186 ms | 53.8550 ms | 0.0278 ms | 112.1250 MB | 303,104 B |
-| 10,000 | 146.8722 ms | 746.8787 ms | 21.4798 ms | 453.1828 ms | 454.8826 ms | 0.0480 ms | 164.5156 MB | 2,899,968 B |
-| 100,000 | 177.3521 ms | 8,067.4208 ms | 222.3159 ms | 4,523.3492 ms | 4,515.7266 ms | 0.0480 ms | 331.1406 MB | 2,949,120 B |
+1k/10k/100k raporu `/tmp/h07-4e85e3f-artifact-benchmark.json`, SHA-256
+`82eb76e5cd08bb78909d484cb7da3d6fc75401e6aba3db8b51ba7b368169aed0` ile; 1k
+import percentile'larını yeterli örnekle doğrulayan `--batch-size 100` raporu
+`/tmp/h07-4e85e3f-1000-b100.json`, SHA-256
+`da8bb8072d5a6c192eb35b7ccd5a05419ccdf399b540267e068e1c0e73c3dff7` ile üretildi.
+Ana rapordaki 1k import tek örnek nedeniyle `UNKNOWN`/`INSUFFICIENT_SAMPLES` olarak
+kalır; aşağıdaki 1k satırındaki import değeri ayrı batch-100 raporundan gelir.
+Diğer tüm operasyonlarda üç veya daha fazla örnek, projection rebuild'de dört örnek
+vardır. Hücrelerdeki sıra `p50 / p95 / p99 ms`'dir; RSS ve temporary disk, o boyuttaki
+operasyon özetleri arasındaki maksimum değerdir.
 
+| Sentetik geçmiş | Import | Projection rebuild | Query | Correction | Correction replay | Recorded-bar replay | Evidence Pack | Export | Cancel | Max RSS | Max temp disk |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1,000 | 15.3208 / 15.5612 / 15.6206 | 60.6454 / 71.6859 / 73.2260 | 3.1540 / 3.2107 / 3.2157 | 2.1961 / 2.2439 / 2.2481 | 0.8830 / 0.9789 / 0.9875 | 0.0814 / 0.1164 / 0.1195 | 50.7957 / 50.9788 / 50.9950 | 51.1166 / 51.6642 / 51.7128 | 0.0322 / 0.0348 / 0.0350 | 121.1406 MB | 303,104 B |
+| 10,000 | 138.3207 / 143.3688 / 143.8882 | 622.4468 / 745.3964 / 762.7501 | 21.0480 / 21.4688 / 21.5062 | 2.2236 / 2.3050 / 2.3122 | 0.9373 / 0.9801 / 0.9839 | 0.0737 / 0.0983 / 0.1005 | 449.1722 / 449.3347 / 449.3491 | 449.9332 / 451.2008 / 451.3134 | 0.0472 / 0.0480 / 0.0481 | 165.0156 MB | 2,899,968 B |
+| 100,000 | 165.5465 / 177.4708 / 185.9861 | 6,576.5317 / 8,250.7935 / 8,482.8942 | 220.9887 / 222.0413 / 222.1349 | 2.6927 / 3.0591 / 3.0917 | 0.9566 / 1.0360 / 1.0430 | 0.0848 / 0.1055 / 0.1073 | 4,470.0229 / 4,473.6330 / 4,473.9539 | 4,480.1803 / 4,487.7439 / 4,488.4162 | 0.0456 / 0.0479 / 0.0481 | 336.2188 MB | 2,949,120 B |
+
+Her boyutta `trades` ve `projections` sayısı sırasıyla 1k/10k/100k, immutable
+correction ekleriyle `ledger_events` sayısı 1,003/10,003/100,003 oldu. Coverage
+raporu her boyutta `ready=true`, `missing=0`, `duplicate=0`, `extra=0` gösteriyor.
 Dataset SHA-256'ları sırasıyla `ac6a639a04c15e17abc36572087a1358ce5cde70dbb326c4443a3acd30d1d27a`,
 `f058faf806ea8f5c4f547dfe23005a5ab4c2eaeb7cf673cd6a019ffbc5c5af79` ve
-`cbffe7e178c9efd9e08c876c902cc4dd5efb06e2bc1da7a428b8d001830051bd`; run snapshot
-SHA-256'ları sırasıyla `c41bfa653ebd2add989c0b3952aba9d4e84d7dc99a0eef3bd31ed8d3f67fe144`,
-`12fcd18a762856bb95f3a787e853b861a11350ac71325aaa2a92602feb33f453` ve
-`a6e337ba06dbe9030d9920c55e420f0fcdf3a32cc42fd13527ff7fe662c14a18`'dir.
+`cbffe7e178c9efd9e08c876c902cc4dd5efb06e2bc1da7a428b8d001830051bd`; yeni correction/
+replay run snapshot SHA-256'ları `cf6a1ae220f083e0de63d4b8172fc860be9510555243af3072ace4a8a8f75d2e`,
+`fcffc5419329c23d86305176000e05c3f20731543d56c9f4d7d5ff5b26e7edf7` ve
+`6bb1eb94ba9293ab4039e4d03ee34a8d67e25361ebcd6c98679e7be9decf264e`'dir.
+Rapor sözleşmesi `real_data=false`, `credentials=false`, `network=false`,
+`live_execution=false` ve `support_limit_claim=false` olarak kalmıştır.
 
-Bu ölçüm 100k için Evidence Pack p95'inin planlama hedefi olan `<2s` altında
-olmadığını ve projection rebuild p95'inin de yaklaşık `8.07s` olduğunu gösteriyor.
-H07 **IMPLEMENTATION_REQUIRED** kalır; support limit, production SLO veya “fast”
-ürün iddiası çıkarılamaz. `verify_chain` bütün account ledger'ını doğruladığı için
-Evidence Pack yolu hâlâ doğruluk öncelikli pahalı bir boundary'dir. d2463b2 önceki
-ölçümdeki decoded-row maliyetini azalttı ve snapshot hash'ini değiştirmedi; ancak
-ölçüm host varyansı ve hedef dışı p95 nedeniyle bu bir support SLO değildir.
-Correction/replay
-ölçümü, gerçek import cancellation'ın API/UI'ya bağlanması, dinamik RSS/disk limitinde
-transaction abort davranışı ve frontend loading/cancel/error truth testleri bu
-paketin açık alt işleridir.
+Bu ölçümde 100k Evidence Pack p95'i `4,473.6330 ms`, export p95'i `4,487.7439 ms`
+ve projection rebuild p95'i `8,250.7935 ms` oldu; planlama hedefi olan `<2s`
+karşılanmıyor. H07 **IMPLEMENTATION_REQUIRED** kalır. Bu sonuç support limit,
+production SLO veya “fast” ürün iddiası değildir; host ve workload varyansı ayrıca
+değerlendirilmelidir.
 
 ### Mac artifact kanıtı
 
-d2463b2 source commit'i ile clean Mac arm64 build ve native smoke PASS oldu. Exact
-read-only DMG smoke `KUANTRA_MARKET_DATA_ENABLED=false` ile çalıştırıldı; public market
-stream başlatılmadı, gerçek veri/credential kullanılmadı, mount güvenli biçimde detach
-edildi. DMG smoke report SHA-256
-`9cf42e65143d92b5e8008a3b33e74d8787a6db5ea3b51200389154f20fa0f2a5`, DMG SHA-256
-`43b25776976c20de88b69f0c3ac1d92c30172926bf8d4f27e6d98e763d79d8e2`, mounted
-executable SHA-256 `e13972922292092da1f4069d5c820a2a544bef3a0c0aea9f20ed22b4f8bc3556`.
+`4e85e3f` source commit'i ile clean Mac arm64 build, native smoke ve exact read-only
+DMG smoke PASS oldu. DMG smoke `KUANTRA_MARKET_DATA_ENABLED=false` ile çalıştırıldı;
+market-data stream başlatılmadı, gerçek veri/credential kullanılmadı ve mount güvenli
+biçimde detach edildi. DMG smoke report SHA-256
+`d22be62d47c876ccd6e3d5fc48601d2f8695897a9387c616357b9cebff235353`, DMG SHA-256
+`e6d76e95bac2f20270115ee556d23ee02baccd7bf2dbe0913d96b8385fb4ab2a`, mounted
+executable SHA-256 `59a690fe3aeadc2a558872465f54a42b3462e60198b4e63be0b6fdae467ed0fb`.
 WKWebView controller identity, bridge, health, React mount, push sink ve plugin
 boundary kontrolleri PASS oldu. Bu artifact ad-hoc development artifact'ıdır;
 Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı değildir.
+
+### H07'nin halen açık teknik sınırları
+
+- Benchmark'teki `ResourceBudget` ölçülen RSS/disk değerlerine karşı explicit bir
+  rapor/exception sınırıdır; production import, projection veya Evidence Pack akışında
+  dinamik budget aşımını transaction içinde abort eden ortak boundary henüz yoktur.
+- Grouped canonical batch için cooperative cancellation ve rollback kanıtı vardır;
+  gerçek import pipeline'ının tüm uzun operasyonları ve frontend AbortSignal/cancel
+  durumu bu backend boundary'sine bağlanmış değildir.
+- Malformed/oversized input, partial/unknown coverage ve UI loading/cancel/error
+  truth için H07 red testleri ve fail-closed implementation tamamlanmamıştır.
+
+Sonraki H07 adımı dinamik RSS/disk budget abort semantics ve ardından frontend
+loading/cancel/error truth testleridir. Bu iki sınır kapanmadan H07 tamamlanmış,
+production-ready veya desteklenen veri boyutu olarak işaretlenmeyecektir.
