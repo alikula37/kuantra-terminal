@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.24
+version: 1.0.25
 status: Proposed
 date: 2026-09-08
-reviewed_commit: c095025
+reviewed_commit: f94ba8e
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -362,9 +362,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     `bf30860` ile eklendi. `c095025` safe Quant persona altında deneysel workspace,
     AI/pop-out ve Chart Vision surface'lerini görünmez tutan frontend boundary gate'ini
     ekledi; safe-persona görünür core read listesi için bounded kanıt günceldir.
-    Append-tail workload'unda `<2s` ölçülse de aynı artifact dataset'inde no-cache
-    full-chain cold audit p95 `4560.05042 ms` kaldığı ve H07 resource acceptance gaps
-    sürdüğü için paket hâlâ aktif non-release iştir.
+    Append-tail workload'unda `<2s` ölçülse de `f94ba8e` canonical-hash/provenance
+    validation optimizasyonu sonrası aynı artifact dataset'inde no-cache full-chain
+    cold audit p95 `2920.32949 ms` kaldığı ve H07 resource acceptance gaps sürdüğü için
+    paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -374,6 +375,31 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.25 — 2026-09-08
+
+- H07 cold verifier maliyeti `f94ba8e` ile bounded biçimde optimize edildi. Scalar-only
+  canonical hash body'lerinde mevcut `canonical_json` byte sözleşmesi korundu; tekrarlı
+  canonical provenance/secret-key validation için bounded cache eklendi. Yeni schema,
+  event type, funding/transfer kapsamı, connector veya production capability'si açılmadı.
+- Red→green odak testi H07 `22` PASS; full locked local CI `MERGE READY`, backend
+  `715` (2 warning), frontend `25/102`, i18n `608/608`, Mac arm64 build/native
+  WKWebView smoke ve exact disabled-market-data mounted DMG smoke PASS oldu. Source
+  `f94ba8e5400ad7fe16b8b38dc3747ae422eb42a6`; tracked source tree SHA
+  `ec485408570e0ff95f0fe69088ea9bd2ebfc52375b143ffe17ef62b29b5c174d`; local CI
+  report SHA `f69a649ff0063fe8f8ad6e9aa0499762f4f2ee3823ae75afd1692dedd97e4d9a`;
+  native smoke report SHA `f79286b86fc0e387631186d9095fb8881efd99fc26938d84f22f74409d6d3892`;
+  exact DMG smoke report SHA `6c71e7776b58a628fbfc3751af503a795d38565f79476efc0764c4793163ecc0`;
+  DMG SHA `cf1d861ceee9dc513d4702a4a24d781bd8ce423a7cd6c551a803c5a57554bcdf`;
+  mounted executable SHA `f6475ceedc78b3176c056d24218fe33ad769947c3c1280c3bc88c112c68de772`.
+- Exact artifact-bound 100k benchmark report SHA
+  `9b00d70231b2f23b31065c9e982d8472563dd6f9c3076f177733cbd4f87eda39` measured
+  append-tail Evidence Pack p95 `357.3308 ms`, projection rebuild p95 `4872.536 ms`,
+  export p95 `346.5805 ms`, max operation RSS `320.375 MB` and projection operation
+  temporary disk `0 B`. Separate no-cache full-chain audit samples were
+  `2921.9293 / 2889.9332 / 2890.3821 ms`, p95 `2920.32949 ms`, with all `100003`
+  events valid. The `<2s` target therefore remains open and H07 remains
+  `IMPLEMENTATION_REQUIRED`; this is not a support SLO or production claim.
 
 ### 1.0.24 — 2026-09-08
 

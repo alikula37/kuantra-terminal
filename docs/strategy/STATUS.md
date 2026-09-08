@@ -39,8 +39,8 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 | Runtime baseline | `a7b99b7`; fresh clean Mac local CI `MERGE READY`: 683 backend, 71 frontend, i18n 574/574, arm64 build and native smoke passed. Provenance is COMPLETE; H03 disabled/degraded tests and H06 privacy boundary tests are PASS; supply-chain audit remains an integrated step with commercial owner review explicitly deferred |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
-| Mac (latest local evidence) | H07 source `c095025` passed clean arm64 locked local CI and exact read-only DMG/WKWebView smoke; DMG SHA `9853bb8058b55e672ce9dc3e40ee4f4740d385fa6ae4204313d3af9dbe83bf25`, exact smoke report SHA `d3f9bcfd55bd9642bd7b24f45e8571eb99b37be5fa4a7c08051a75840fd4159c`, mounted executable SHA `551107a4de39194956c4e0bd6f7cc80306b6a6ac918cec133c7293528a745624`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
-| H07 bounded baseline | Code `c095025` on clean Mac arm64: 714 backend, 102 frontend, i18n 608/608, local CI `MERGE READY`; legacy and exact-coverage typed trade queries abort mid-stream at the cooperative resource boundary without returning partial results. Evidence Pack/Reconciliation Inbox/Weekly Review/CSV preview plus Dashboard/Quant Analytics/Header portfolio, JournalView trade-list, MAE/MFE, SettingsView portfolio-summary, Charts/TradingViewChart historical OHLCV and plugin registry/ModStore read surfaces have bounded AbortSignal, stale-response suppression and explicit loading/error truth; malformed successful payloads fail closed, unavailable analytics never becomes a zero scorecard/empty journal/chart, historical candles never become synthetic live ticks, Settings never falls back to zero balance, and malformed registry metadata never becomes capability. The safe Quant persona now exposes only deterministic core presets and does not expose experimental Docking/AI/pop-out or Chart Vision surfaces. Ledger verification now uses an evidence-events-only append fingerprint with no persistent SQLite verifier connection; projection repository and TradeReadAdapter share the verifier, and append-only cached prefixes are reused for tail verification. Exact DMG/WKWebView smoke is PASS with provenance COMPLETE: report `d3f9bcf...`, DMG `9853bb8...`, mounted executable `551107a...`; local CI report `acd0215e...`, `.app` `0f613f8...`. Current artifact-bound 100k append-tail Evidence Pack p95 `350.8862 ms`, no-cache full-chain audit p95 `4560.05042 ms`, export p95 `342.8506 ms`, projection rebuild p95 `6158.9151 ms`, max operation RSS `319.0469 MB`, temporary disk `0 B` for projection rebuild; the append-tail workload meets `<2s`, but true no-cache cold startup does not, so H07 remains `IMPLEMENTATION_REQUIRED` |
+| Mac (latest local evidence) | H07 source `f94ba8e` passed clean arm64 locked local CI and exact read-only DMG/WKWebView smoke with provenance `COMPLETE`; local CI report SHA `f69a649ff0063fe8f8ad6e9aa0499762f4f2ee3823ae75afd1692dedd97e4d9a`, native smoke report SHA `f79286b86fc0e387631186d9095fb8881efd99fc26938d84f22f74409d6d3892`, `.app` SHA `9450f540df17ce67f565f7869b57c939771782ed5d94ec11fbdaf16f532f54ae`, exact DMG smoke report SHA `6c71e7776b58a628fbfc3751af503a795d38565f79476efc0764c4793163ecc0`, DMG SHA `cf1d861ceee9dc513d4702a4a24d781bd8ce423a7cd6c551a803c5a57554bcdf`, mounted executable SHA `f6475ceedc78b3176c056d24218fe33ad769947c3c1280c3bc88c112c68de772`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
+| H07 bounded baseline | Code `f94ba8e` on clean Mac arm64: focused H07 `22`, full backend `715` (2 warnings), frontend `102`, i18n `608/608`, local CI `MERGE READY`; scalar-only canonical hash fast path preserves existing hash bytes and repeated provenance/secret validation is bounded by caches. Safe Quant exposes only deterministic core presets; experimental Docking/AI/pop-out and Chart Vision surfaces are not promoted. Legacy/typed query abort, frontend AbortSignal/stale-response/error truth, ledger-only fingerprint/shared verifier and append-tail verification remain bounded. Artifact-bound 100k report SHA `9b00d70231b2f23b31065c9e982d8472563dd6f9c3076f177733cbd4f87eda39`: append-tail Evidence Pack p95 `357.3308 ms`, export p95 `346.5805 ms`, projection rebuild p95 `4872.536 ms`, max operation RSS `320.375 MB`, projection temporary disk `0 B`; separate no-cache full-chain audit p95 `2920.32949 ms` with all `100003` events valid. Append-tail meets the measured `<2s` planning target, but true cold startup does not; H07 remains `IMPLEMENTATION_REQUIRED` |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -57,7 +57,7 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Deterministic 1k/10k/100k synthetic performance baselines, resource limits and explicit cancellation/failure truth | `f0b93ba` benchmark/index path, `779e2d7` atomic grouped-batch cancellation, `d2463b2` streamed integrity verification, `4e85e3f` correction/replay measurement, `46531e4`/`6af4fd9` dynamic budget boundary, `6748d96` bounded input/coverage fail-closed fixtures, `5137383` legacy/typed query mid-operation abort, `27b3404` bounded value-chain frontend cancellation, `42d67c6` dashboard/analytics/header read truth, `3de57c5` JournalView trade-list read truth, `f57da9d` MAE/MFE read truth, `3fa98a9` SettingsView portfolio-summary read truth, `dd0639b` Charts/TradingViewChart historical read truth, `950af74` plugin registry/ModStore read truth, `c095025` safe-persona experimental-surface gate, `da9af9b` initial ledger verification cache, `2da9fe1` projection verifier reuse, `f551b1f` WAL boundary test, `3863288` ledger-only fingerprint/shared verifier and `bf30860` incremental append-tail verification are present. Current exact Mac evidence is artifact-bound and non-release; append-tail Evidence Pack p95 is below `<2s`, but no-cache full-chain cold p95 is `4560.05042 ms`, so the target is not globally closed and the next handling is explicit cold-target classification plus remaining H07 resource acceptance gaps |
+| H07 | IMPLEMENTATION_REQUIRED | Deterministic 1k/10k/100k synthetic performance baselines, resource limits and explicit cancellation/failure truth | `f0b93ba` benchmark/index path, `779e2d7` atomic grouped-batch cancellation, `d2463b2` streamed integrity verification, `4e85e3f` correction/replay measurement, `46531e4`/`6af4fd9` dynamic budget boundary, `6748d96` bounded input/coverage fail-closed fixtures, `5137383` legacy/typed query mid-operation abort, `27b3404` bounded value-chain frontend cancellation, `42d67c6` dashboard/analytics/header read truth, `3de57c5` JournalView trade-list read truth, `f57da9d` MAE/MFE read truth, `3fa98a9` SettingsView portfolio-summary read truth, `dd0639b` Charts/TradingViewChart historical read truth, `950af74` plugin registry/ModStore read truth, `c095025` safe-persona experimental-surface gate, `da9af9b` initial ledger verification cache, `2da9fe1` projection verifier reuse, `f551b1f` WAL boundary test, `3863288` ledger-only fingerprint/shared verifier, `bf30860` incremental append-tail verification and `f94ba8e` canonical-hash/provenance validation optimization are present. Current exact Mac evidence is artifact-bound and non-release; append-tail Evidence Pack p95 is `357.3308 ms`, but no-cache full-chain cold p95 is `2920.32949 ms`, so the target is not globally closed and remaining H07 resource acceptance gaps require the next bounded decision |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -111,35 +111,30 @@ H07's current bounded evidence is recorded in
 [H07](work-packages/H07-bounded-performance-resource-limits.md): deterministic
 1k/10k/100k synthetic reports, indexed trade lookup, atomic grouped-batch
 cancellation, streamed full-chain verification, correction/replay measurement,
-dynamic RSS/disk budget abort/rollback boundaries, `6748d96` malformed/oversized
-plus partial/unknown coverage fixtures, `5137383` legacy/typed query
-mid-operation abort fixtures, `27b3404` value-chain frontend cancellation
-fixtures, `42d67c6` dashboard/analytics/header read truth fixtures, `3de57c5`
-JournalView trade-list read truth fixtures, `f57da9d` MAE/MFE read truth fixtures,
-`3fa98a9` SettingsView portfolio-summary read truth fixtures, `dd0639b` Charts/
-TradingViewChart historical read truth fixtures, `950af74` plugin registry/ModStore
-read truth fixtures, `da9af9b` initial unchanged-ledger verification cache,
-`2da9fe1` projection verifier reuse, `f551b1f` WAL boundary test, `3863288`
-ledger-only fingerprint/shared verifier, `bf30860` incremental append-tail
-verification and `c095025` safe-persona surface gate are present. Exact Mac arm64
-app/DMG/WKWebView evidence is tied to code baseline `c095025`;
-local CI report SHA
-`acd0215e8cc8f939314575b68bb2230c1e2b27e8d3ba4f7bf4a8a52e2adc936f`, exact DMG
-smoke report SHA `d3f9bcfd55bd9642bd7b24f45e8571eb99b37be5fa4a7c08051a75840fd4159c`,
-mounted executable SHA `551107a4de39194956c4e0bd6f7cc80306b6a6ac918cec133c7293528a745624`
-and DMG SHA `9853bb8058b55e672ce9dc3e40ee4f4740d385fa6ae4204313d3af9dbe83bf25`.
+dynamic RSS/disk budget abort/rollback boundaries, malformed/oversized plus
+partial/unknown coverage fixtures, legacy/typed query mid-operation abort fixtures,
+bounded frontend cancellation/read truth, ledger-only fingerprint/shared verifier,
+append-tail verification, safe-persona surface gating and `f94ba8e` canonical-hash /
+provenance validation optimization are present. Exact Mac arm64 app/DMG/WKWebView
+evidence is tied to code baseline `f94ba8e`; local CI report SHA
+`f69a649ff0063fe8f8ad6e9aa0499762f4f2ee3823ae75afd1692dedd97e4d9a`, native smoke
+report SHA `f79286b86fc0e387631186d9095fb8881efd99fc26938d84f22f74409d6d3892`, exact
+DMG smoke report SHA `6c71e7776b58a628fbfc3751af503a795d38565f79476efc0764c4793163ecc0`,
+mounted executable SHA `f6475ceedc78b3176c056d24218fe33ad769947c3c1280c3bc88c112c68de772`
+and DMG SHA `cf1d861ceee9dc513d4702a4a24d781bd8ce423a7cd6c551a803c5a57554bcdf`.
 The exact 100k report SHA is
-`7a1464a36f072cfb5fc5daf424ea0adbbc30cad1aafaae0d1120f83ff2466a5a`; append-tail
-Evidence Pack p95 is `350.8862 ms`, while the separate no-cache full-chain audit on
-the same artifact dataset measured `4558.6977 / 4548.2708 / 4560.6704 ms` with p95
-`4560.05042 ms`. Projection rebuild p95 is `6158.9151 ms` with `0 B` temporary-disk
-growth in the rebuild operation. H07 remains `IMPLEMENTATION_REQUIRED`: the
-append-tail path meets the measured `<2s` planning target, but true no-cache cold
-startup does not and remaining H07 resource acceptance gaps are not silently closed.
-The safe-persona core read surface is now bounded and experimental surfaces are not
-promoted; auxiliary/disabled surfaces remain outside the production capability claim.
-Next handoff is explicit cold-target classification and the remaining H07 resource
-acceptance audit.
+`9b00d70231b2f23b31065c9e982d8472563dd6f9c3076f177733cbd4f87eda39`; append-tail
+Evidence Pack p95 is `357.3308 ms`, export p95 is `346.5805 ms`, and projection
+rebuild p95 is `4872.536 ms` with `0 B` temporary-disk growth in the rebuild
+operation. Separate no-cache full-chain audit samples were
+`2921.9293 / 2889.9332 / 2890.3821 ms`, p95 `2920.32949 ms`; every `100003` event
+was valid. H07 remains `IMPLEMENTATION_REQUIRED`: the append-tail path meets the
+measured `<2s` planning target, but true no-cache cold startup does not and remaining
+H07 resource acceptance gaps are not silently closed. The safe-persona core read
+surface is bounded and experimental surfaces are not promoted; auxiliary/disabled
+surfaces remain outside the production capability claim. Next handoff is the explicit
+cold-target decision or another bounded optimization, followed by the remaining H07
+resource acceptance audit.
 H05 license/notices and default-branch Dependabot remain deferred release gates;
 no production or commercial package claim is allowed.
 
