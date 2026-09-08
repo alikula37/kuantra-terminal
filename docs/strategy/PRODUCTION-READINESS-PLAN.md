@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.25
+version: 1.0.26
 status: Proposed
 date: 2026-09-08
-reviewed_commit: f94ba8e
+reviewed_commit: 5a70f8b
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -362,10 +362,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     `bf30860` ile eklendi. `c095025` safe Quant persona altında deneysel workspace,
     AI/pop-out ve Chart Vision surface'lerini görünmez tutan frontend boundary gate'ini
     ekledi; safe-persona görünür core read listesi için bounded kanıt günceldir.
-    Append-tail workload'unda `<2s` ölçülse de `f94ba8e` canonical-hash/provenance
-    validation optimizasyonu sonrası aynı artifact dataset'inde no-cache full-chain
-    cold audit p95 `2920.32949 ms` kaldığı ve H07 resource acceptance gaps sürdüğü için
-    paket hâlâ aktif non-release iştir.
+    Append-tail workload'unda `<2s` ölçülse de `5a70f8b` canonical JSON validation
+    hızlı yolu sonrası aynı artifact dataset'inde no-cache full-chain cold audit p95
+    `2216.36659 ms` kaldığı ve H07 resource acceptance gaps sürdüğü için paket hâlâ
+    aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -375,6 +375,32 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.26 — 2026-09-08
+
+- H07 cold verifier canonical JSON validation maliyeti `5a70f8b` ile bounded biçimde
+  optimize edildi. Byte-eşleşen canonical payload/provenance değerlerinde locked
+  `orjson` hızlı yolu kullanılıyor; temsil edilemeyen veya byte-eşleşmeyen değerler
+  mevcut stdlib canonical/fail-closed fallback'e gidiyor. Secret-key traversal,
+  hash byte sözleşmesi, schema/event type ve funding/transfer kapsamı korunuyor.
+- Red→green odak testi H07 `23` PASS; full locked local CI `MERGE READY`, backend
+  `716` (2 warning), frontend `25/102`, i18n `608/608`, Mac arm64 build/native
+  WKWebView smoke ve exact disabled-market-data mounted DMG smoke PASS oldu. Source
+  `5a70f8b74702338602379f8419b8b4938e0aae9c`; tracked source tree SHA
+  `04b375e7a161feb8b3b3f8bfb4dc3b44af45ec345f69e0990c69d30f7a20a148`; local CI
+  report SHA `c513b5f4ce3a14270277c1a9031bcf0b9d51a3271a84ebe59f7deb2daa06be01`;
+  native smoke report SHA `413d5029e79276c66149ae4574be0ced14860a4ac72b7858e34490d6dc0e5c5e`;
+  exact DMG smoke report SHA `bc587f232c7f5d09c787412549d924aa8aa045524590bdcecdd3047490367963`;
+  DMG SHA `f5183bee511352e97b6c4d6e363d0951fc32361d6a9d718ccfe3174752c45fc7`;
+  mounted executable SHA `17508bbfa429689ab6adeeee419e166c604a15457a55a5f8a543bbb16b04cbc0`.
+- Exact artifact-bound 100k benchmark report SHA
+  `c92200c37fe1db0e7d13727d818060998d112c54c049e1c9bd81201ee57f5087` measured
+  append-tail Evidence Pack p95 `349.5183 ms`, projection rebuild p95 `4153.3801 ms`,
+  export p95 `340.3408 ms`, max operation RSS `320.375 MB` and projection operation
+  temporary disk `0 B`. Separate no-cache full-chain audit samples were
+  `2217.7044 / 2190.9482 / 2208.2548 ms`, p95 `2216.36659 ms`, with all `100003`
+  events valid. The `<2s` target remains open and H07 remains
+  `IMPLEMENTATION_REQUIRED`; this is not a support SLO or production claim.
 
 ### 1.0.25 — 2026-09-08
 
