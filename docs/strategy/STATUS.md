@@ -21,25 +21,26 @@ automatically queued. Next after P1-WP21: UX/review integration.
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `5d691b9`; P1-WP20 local CI: 595 backend, 51 frontend, build/smoke passed. Smoke `build_commit=UNKNOWN`; exact provenance remains B4 |
+| Runtime baseline | `77b4997`; fresh Mac local CI `MERGE READY`: 595 backend, 51 frontend, i18n 480/480, arm64 build and native smoke passed. Smoke executable SHA `c5844d6d5697536dee1516c68fe3176887f64a6a597702c9be8b2bd90e61f133`; `build_commit=UNKNOWN` remains B4/N01 |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
-| Mac | Local build/smoke works; runtime offline, exact mounted-DMG provenance and fail-closed renderer verification remain open |
+| Mac | App `.app` smoke observed `wkwebview`; ad-hoc signed DMG `83fee6a15f2abfea2ebe0c76dd1818d51c8231df7ebdaf9caa60af4b1d09b4f8` packaged and standalone signature verified. Exact mounted-DMG executable smoke, provenance binding and fail-closed native renderer gate remain open |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
 ## Open obligations and blockers
 
-| ID | Obligation | Next handling |
-|---|---|---|
-| B1 | Timestamp pagination can skip records and overstate completeness | Closed by P1-WP16 / `ef909d1`; historical package retained in archive |
-| B2 | Fee currency/unknown handling, perps identity/accounting and economic dedup | P1-WP17 identity, P1-WP18 fee/precision, P1-WP19 funding/account and P1-WP20 economic dedup boundaries closed; propagation remains open |
-| B3/M1 | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Before further long/24h soak; not primary product path |
-| B4 | Runtime offline ≠ uv offline; artifact hash ≠ mounted executable; UNKNOWN commit; Mac renderer gate | H03/N01/N02 |
-| WIN | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
-| VERIFY | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
-| OPS | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
-| PRODUCT | Review/pilot metrics, LICENSE/notices, signing/host access, support/incident readiness | G2–G7 and owner decisions |
+| ID | Classification | Obligation | Next handling |
+|---|---|---|---|
+| B1 | CLOSED | Timestamp pagination can skip records and overstate completeness | Closed by P1-WP16 / `ef909d1`; historical package retained in archive |
+| B2 | IMPLEMENTATION_REQUIRED | Fee currency/unknown handling, perps identity/accounting and economic dedup | P1-WP17–20 boundaries are closed; P1-WP21 propagation is the next code package. Full account PnL/tax accounting remains out of scope |
+| B3/M1 | DEFERRED | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Complete before another long/24h soak; not primary product path |
+| B4 | IMPLEMENTATION_REQUIRED | Runtime offline ≠ uv offline; artifact hash ≠ mounted executable; UNKNOWN commit; Mac renderer gate | N01 provenance, N02 exact mounted-DMG smoke, H03 degraded/network boundary |
+| WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
+| VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
+| OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
+| PRODUCT | OWNER_DECISION_REQUIRED | Review/pilot metrics, MIT LICENSE/notices, signing/host access, support/incident readiness | G2–G7 and explicit product-owner decisions; `LICENSE`, `NOTICE` and `THIRD_PARTY_NOTICES.md` are currently absent |
+| DEP | OWNER_DECISION_REQUIRED | Branch dependency audit is clean, but GitHub default branch retains five open npm alerts | Branch `npm audit`: 0 vulnerabilities. Default-branch alerts remain open until an approved PR merge or explicit repository action |
 
 All historical unchecked criteria remain discoverable in the
 [archive obligation index](../archive/README.md). The archive is not a completed-work list.
@@ -49,15 +50,19 @@ registry records unchecked counts so accidental checkbox deletion is detected.
 ## Latest maintenance handoff
 
 P1-WP20 economic dedup/lifecycle contract was implemented in `5d691b9` and its
-historical evidence record is archived. Focused WP20 tests passed **8**; full backend
-suite passed **595** with 2 deprecation warnings. Canonical Mac local CI passed with
-frontend **51**, i18n **480/480**, production build, arm64 desktop build, WKWebView
-native smoke and packaging preflight; result `MERGE READY`. The smoke report still has
-`build_commit=UNKNOWN`, so B4/N01 provenance is not closed. Source identity conflicts,
-unknown position mode and incomplete lifecycle remain fail-closed; no PnL claim was
-opened. The locked environment and fresh temporary data directory were used; this is
-not a claim of real-user data or runtime network-isolation evidence. Next active
-contract: P1-WP21.
+historical evidence record is archived. The fresh 2026-09-08 Mac audit used the locked
+environment and temporary data directories: local CI was `MERGE READY`, with frontend
+**51**, i18n **480/480**, full backend **595**, production build, arm64 desktop build,
+native `wkwebview` smoke and packaging preflight. The `.app` smoke observed
+`wkwebview`; it also attempted the public Binance WebSocket during startup. The smoke
+report still has `build_commit=UNKNOWN`, and the exact mounted-DMG executable was not
+smoked, so B4/N01/N02 remain open. DMG SHA-256 was recorded as
+`83fee6a15f2abfea2ebe0c76dd1818d51c8231df7ebdaf9caa60af4b1d09b4f8`; standalone
+ad-hoc signature verification passed. Branch `npm audit` reported zero findings, while
+the GitHub default branch still exposes five open npm Dependabot alerts. Source identity
+conflicts, unknown position mode, incomplete lifecycle, funding/transfer schema and
+network-denied runtime remain fail-closed boundaries; no PnL, live execution or pilot
+claim was opened. Next active contract: P1-WP21.
 
 ## Update protocol
 
