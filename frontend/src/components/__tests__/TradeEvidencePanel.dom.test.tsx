@@ -102,6 +102,36 @@ it("shows a bounded error instead of implying evidence exists", async () => {
   expect(host.textContent).not.toContain("Verified chain");
 });
 
+it("puts focus in the dialog and closes on Escape", async () => {
+  mockPanelResponse(basePack);
+  const onClose = vi.fn();
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={onClose} /></I18nProvider>));
+  await flush();
+
+  const close = host.querySelector("button[aria-label='Close Evidence Pack']") as HTMLButtonElement;
+  expect(document.activeElement).toBe(close);
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+it("keeps a failed Evidence Pack request recoverable", async () => {
+  let packCalls = 0;
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path === "/api/v1/settings") return Promise.resolve(response({ locale: "en" }));
+    packCalls += 1;
+    return Promise.resolve(packCalls === 1 ? response({ detail: "temporary evidence failure" }, 503) : response(basePack));
+  });
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  expect(host.textContent).toContain("temporary evidence failure");
+  const retry = host.querySelector("[data-testid=trade-evidence-retry]") as HTMLButtonElement;
+  expect(retry).toBeTruthy();
+  await act(async () => retry.click());
+  await flush();
+  expect(host.textContent).toContain("Verified chain");
+});
+
 it("renders explicit coverage, applicable rule provenance, snapshot identity, and CSV export", async () => {
   mockPanelResponse({
     ...basePack,

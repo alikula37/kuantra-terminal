@@ -392,6 +392,7 @@
     "close": "Close reconciliation inbox",
     "loading": "Loading source-linked reviews...",
     "error": "Reconciliation inbox could not be loaded safely.",
+    "retry": "Retry",
     "decision_error": "Decision could not be recorded safely.",
     "empty": "No unresolved reconciliation reviews.",
     "source": "Source",
@@ -424,6 +425,7 @@
     "load": "Load review",
     "loading": "Loading deterministic review...",
     "error": "Weekly review could not be loaded safely.",
+    "retry": "Retry",
     "record_complete": "Record review completion",
     "reopen": "Reopen review",
     "note": "Review note",
@@ -459,7 +461,8 @@
     "json_export": "JSON",
     "html_export": "HTML",
     "export_ready": "{format} export ready.",
-    "export_failed": "Export failed safely."
+    "export_failed": "Export failed safely.",
+    "retry": "Retry"
   },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE SCORECARD",

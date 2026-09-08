@@ -1,7 +1,8 @@
-import React, { FormEvent, useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useRef, useState } from "react";
 import { Check, ClipboardCheck, X, XCircle } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
+import { useDialogAccessibility } from "../hooks/useDialogAccessibility";
 
 type DecisionState = "UNRESOLVED" | "ACKNOWLEDGED" | "REJECTED" | "CORRECTED" | string;
 
@@ -42,6 +43,9 @@ const displayValue = (value: unknown): string => {
 
 export const ReconciliationInbox: React.FC<ReconciliationInboxProps> = ({ onClose, onOpenEvidence }) => {
   const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useDialogAccessibility(dialogRef, onClose || (() => {}), closeRef);
   const [items, setItems] = useState<ReconciliationInboxItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -123,19 +127,19 @@ export const ReconciliationInbox: React.FC<ReconciliationInboxProps> = ({ onClos
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={t("reconciliation_inbox.title")}>
-      <div data-testid="reconciliation-inbox" className="w-full max-w-5xl max-h-[92vh] overflow-y-auto bg-[#0b0e14] border border-surface-border rounded-lg shadow-2xl font-mono">
+      <div ref={dialogRef} data-testid="reconciliation-inbox" className="w-full max-w-5xl max-h-[92vh] overflow-y-auto overflow-x-hidden bg-[#0b0e14] border border-surface-border rounded-lg shadow-2xl font-mono">
         <div className="sticky top-0 z-10 bg-[#0d121c] border-b border-surface-border px-4 py-3 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-white flex items-center gap-2"><ClipboardCheck className="w-4 h-4 text-accent" />{t("reconciliation_inbox.title")}</h2>
             <p className="text-[11px] text-slate-400 mt-1">{t("reconciliation_inbox.subtitle")}</p>
           </div>
-          {onClose && <button type="button" onClick={onClose} aria-label={t("reconciliation_inbox.close")} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded"><X className="w-4 h-4" /></button>}
+          {onClose && <button ref={closeRef} type="button" onClick={onClose} aria-label={t("reconciliation_inbox.close")} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><X className="w-4 h-4" /></button>}
         </div>
 
         {loading && <div className="p-8 text-center text-slate-400 text-xs">{t("reconciliation_inbox.loading")}</div>}
         {!loading && error && (
-          <div className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2">
-            <XCircle className="w-4 h-4 shrink-0" /><span>{error}</span>
+          <div role="alert" className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2">
+            <XCircle className="w-4 h-4 shrink-0" /><div className="flex-1 space-y-2"><span className="block break-words">{error}</span><button type="button" data-testid="reconciliation-inbox-retry" onClick={loadItems} className="px-2 py-1.5 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("reconciliation_inbox.retry")}</button></div>
           </div>
         )}
         {!loading && !error && items.length === 0 && (
@@ -182,21 +186,21 @@ export const ReconciliationInbox: React.FC<ReconciliationInboxProps> = ({ onClos
                         value={decisionNotes[item.review_id] || ""}
                         onChange={(event) => setDecisionNotes((current) => ({ ...current, [item.review_id]: event.target.value }))}
                         placeholder={t("reconciliation_inbox.note_placeholder")}
-                        className="flex-1 min-w-[180px] bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-[10px] text-white"
+                        className="flex-1 min-w-[180px] bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-[10px] text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       />
-                      <button type="button" data-testid="reconciliation-acknowledge" disabled={pendingReviewId === item.review_id} onClick={() => void recordDecision(item, "ACKNOWLEDGE")} className="px-2 py-1.5 rounded border border-accent/50 text-accent text-[10px] font-bold hover:bg-accent/10 disabled:opacity-50">{t("reconciliation_inbox.acknowledge")}</button>
-                      <button type="button" data-testid="reconciliation-reject" disabled={pendingReviewId === item.review_id} onClick={() => void recordDecision(item, "REJECT")} className="px-2 py-1.5 rounded border border-loss/50 text-loss text-[10px] font-bold hover:bg-loss/10 disabled:opacity-50">{t("reconciliation_inbox.reject")}</button>
-                      {item.trade_id && <button type="button" data-testid="reconciliation-correct-toggle" disabled={pendingReviewId === item.review_id} onClick={() => setCorrectionReviewId(isCorrecting ? null : item.review_id)} className="px-2 py-1.5 rounded border border-amber-400/50 text-amber-300 text-[10px] font-bold hover:bg-amber-400/10 disabled:opacity-50">{isCorrecting ? t("reconciliation_inbox.cancel_correction") : t("reconciliation_inbox.correct")}</button>}
-                      {item.trade_id && onOpenEvidence && <button type="button" onClick={() => onOpenEvidence(item.trade_id as string)} className="px-2 py-1.5 rounded border border-surface-border text-slate-300 text-[10px] font-bold hover:bg-slate-800">{t("reconciliation_inbox.view_evidence")}</button>}
+                      <button type="button" data-testid="reconciliation-acknowledge" disabled={pendingReviewId === item.review_id} onClick={() => void recordDecision(item, "ACKNOWLEDGE")} className="px-2 py-1.5 rounded border border-accent/50 text-accent text-[10px] font-bold hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("reconciliation_inbox.acknowledge")}</button>
+                      <button type="button" data-testid="reconciliation-reject" disabled={pendingReviewId === item.review_id} onClick={() => void recordDecision(item, "REJECT")} className="px-2 py-1.5 rounded border border-loss/50 text-loss text-[10px] font-bold hover:bg-loss/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("reconciliation_inbox.reject")}</button>
+                      {item.trade_id && <button type="button" data-testid="reconciliation-correct-toggle" disabled={pendingReviewId === item.review_id} onClick={() => setCorrectionReviewId(isCorrecting ? null : item.review_id)} className="px-2 py-1.5 rounded border border-amber-400/50 text-amber-300 text-[10px] font-bold hover:bg-amber-400/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">{isCorrecting ? t("reconciliation_inbox.cancel_correction") : t("reconciliation_inbox.correct")}</button>}
+                      {item.trade_id && onOpenEvidence && <button type="button" onClick={() => onOpenEvidence(item.trade_id as string)} className="px-2 py-1.5 rounded border border-surface-border text-slate-300 text-[10px] font-bold hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("reconciliation_inbox.view_evidence")}</button>}
                     </div>
                   )}
 
                   {isCorrecting && (
                     <form data-testid="reconciliation-correction-form" onSubmit={(event) => submitCorrection(event, item)} className="grid grid-cols-1 md:grid-cols-4 gap-2 pt-2 border-t border-amber-400/30">
-                      <label className="text-[10px] text-slate-400">{t("reconciliation_inbox.exit_price")}<input inputMode="decimal" value={correctionValues[`${item.review_id}:exit_price`] || ""} onChange={(event) => setCorrectionValues((current) => ({ ...current, [`${item.review_id}:exit_price`]: event.target.value }))} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white" /></label>
-                      <label className="text-[10px] text-slate-400">{t("reconciliation_inbox.pnl")}<input inputMode="decimal" value={correctionValues[`${item.review_id}:pnl`] || ""} onChange={(event) => setCorrectionValues((current) => ({ ...current, [`${item.review_id}:pnl`]: event.target.value }))} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white" /></label>
-                      <label className="text-[10px] text-slate-400">{t("reconciliation_inbox.commission")}<input inputMode="decimal" value={correctionValues[`${item.review_id}:commission`] || ""} onChange={(event) => setCorrectionValues((current) => ({ ...current, [`${item.review_id}:commission`]: event.target.value }))} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white" /></label>
-                      <button type="submit" disabled={pendingReviewId === item.review_id} className="self-end px-2 py-1.5 rounded border border-amber-400/50 text-amber-300 text-[10px] font-bold hover:bg-amber-400/10 disabled:opacity-50">{t("reconciliation_inbox.record_correction")}</button>
+                      <label className="text-[10px] text-slate-400">{t("reconciliation_inbox.exit_price")}<input inputMode="decimal" value={correctionValues[`${item.review_id}:exit_price`] || ""} onChange={(event) => setCorrectionValues((current) => ({ ...current, [`${item.review_id}:exit_price`]: event.target.value }))} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400" /></label>
+                      <label className="text-[10px] text-slate-400">{t("reconciliation_inbox.pnl")}<input inputMode="decimal" value={correctionValues[`${item.review_id}:pnl`] || ""} onChange={(event) => setCorrectionValues((current) => ({ ...current, [`${item.review_id}:pnl`]: event.target.value }))} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400" /></label>
+                      <label className="text-[10px] text-slate-400">{t("reconciliation_inbox.commission")}<input inputMode="decimal" value={correctionValues[`${item.review_id}:commission`] || ""} onChange={(event) => setCorrectionValues((current) => ({ ...current, [`${item.review_id}:commission`]: event.target.value }))} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400" /></label>
+                      <button type="submit" disabled={pendingReviewId === item.review_id} className="self-end px-2 py-1.5 rounded border border-amber-400/50 text-amber-300 text-[10px] font-bold hover:bg-amber-400/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">{t("reconciliation_inbox.record_correction")}</button>
                     </form>
                   )}
 

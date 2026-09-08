@@ -87,3 +87,18 @@ it("does not show no-data as a successful reconciliation", async () => {
   expect(host.textContent).not.toContain("PASS");
   expect(host.textContent).not.toContain("COMPLETE");
 });
+
+it("keeps the error recoverable with an explicit retry", async () => {
+  mocks.apiFetch
+    .mockResolvedValueOnce(response({ detail: "temporary inbox failure" }, 503))
+    .mockResolvedValueOnce(response({ status: "UNRESOLVED", count: 0, items: [] }));
+  await act(async () => root.render(<ReconciliationInbox onClose={vi.fn()} />));
+  await flush();
+
+  expect(host.textContent).toContain("reconciliation_inbox.error");
+  const retry = host.querySelector("[data-testid=reconciliation-inbox-retry]") as HTMLButtonElement;
+  expect(retry).toBeTruthy();
+  await act(async () => retry.click());
+  await flush();
+  expect(host.querySelector("[data-testid=reconciliation-inbox-empty]")).not.toBeNull();
+});

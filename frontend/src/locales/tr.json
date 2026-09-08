@@ -392,6 +392,7 @@
     "close": "Reconciliation gelen kutusunu kapat",
     "loading": "Kaynağa bağlı incelemeler yükleniyor...",
     "error": "Reconciliation gelen kutusu güvenli şekilde yüklenemedi.",
+    "retry": "Tekrar dene",
     "decision_error": "Karar güvenli şekilde kaydedilemedi.",
     "empty": "Çözülmemiş reconciliation incelemesi yok.",
     "source": "Kaynak",
@@ -424,6 +425,7 @@
     "load": "İncelemeyi yükle",
     "loading": "Deterministik inceleme yükleniyor...",
     "error": "Haftalık inceleme güvenli şekilde yüklenemedi.",
+    "retry": "Tekrar dene",
     "record_complete": "İncelemenin tamamlandığını kaydet",
     "reopen": "İncelemeyi yeniden aç",
     "note": "İnceleme notu",
@@ -459,7 +461,8 @@
     "json_export": "JSON",
     "html_export": "HTML",
     "export_ready": "{format} export hazır.",
-    "export_failed": "Export güvenli biçimde başarısız oldu."
+    "export_failed": "Export güvenli biçimde başarısız oldu.",
+    "retry": "Tekrar dene"
   },
   "analytics": {
     "title": "KANTİTATİF PERFORMANS SKOR KARTI",

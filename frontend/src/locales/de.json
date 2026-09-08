@@ -392,6 +392,7 @@
     "close": "Reconciliation-Inbox schließen",
     "loading": "Quellverknüpfte Prüfungen werden geladen...",
     "error": "Die Reconciliation-Inbox konnte nicht sicher geladen werden.",
+    "retry": "Erneut versuchen",
     "decision_error": "Die Entscheidung konnte nicht sicher gespeichert werden.",
     "empty": "Keine offenen Reconciliation-Prüfungen.",
     "source": "Quelle",
@@ -424,6 +425,7 @@
     "load": "Prüfung laden",
     "loading": "Deterministische Prüfung wird geladen...",
     "error": "Die wöchentliche Prüfung konnte nicht sicher geladen werden.",
+    "retry": "Erneut versuchen",
     "record_complete": "Prüfungsabschluss speichern",
     "reopen": "Prüfung wieder öffnen",
     "note": "Prüfungsnotiz",
@@ -459,7 +461,8 @@
     "json_export": "JSON",
     "html_export": "HTML",
     "export_ready": "{format}-Export bereit.",
-    "export_failed": "Export wurde sicher abgebrochen."
+    "export_failed": "Export wurde sicher abgebrochen.",
+    "retry": "Erneut versuchen"
   },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE-SCORECARD",

@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FileCheck2, Hash, X, XCircle } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { EvidenceEvent, TradeEvidencePack } from "../types";
+import { useDialogAccessibility } from "../hooks/useDialogAccessibility";
 
 interface TradeEvidencePanelProps {
   tradeId: string;
@@ -73,11 +74,15 @@ function sourceLabel(pack: TradeEvidencePack): { label: string; className: strin
 
 export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId, onClose }) => {
   const { t } = useTranslation();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useDialogAccessibility(dialogRef, onClose, closeRef);
   const [pack, setPack] = useState<TradeEvidencePack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"json" | "html" | "csv" | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -110,7 +115,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [tradeId]);
+  }, [tradeId, retryNonce]);
 
   const source = useMemo(() => (pack ? sourceLabel(pack) : null), [pack]);
   const ledgerVerified = Boolean(pack?.ledger_integrity.valid && pack.ledger_integrity.checked_events > 0);
@@ -155,22 +160,22 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Trade Evidence Pack">
-      <div className="w-full max-w-5xl max-h-[92vh] overflow-y-auto bg-[#0b0e14] border border-surface-border rounded-lg shadow-2xl font-mono">
+      <div ref={dialogRef} className="w-full max-w-5xl max-h-[92vh] overflow-y-auto overflow-x-hidden bg-[#0b0e14] border border-surface-border rounded-lg shadow-2xl font-mono">
         <div className="sticky top-0 z-10 bg-[#0d121c] border-b border-surface-border px-4 py-3 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-white flex items-center gap-2"><FileCheck2 className="w-4 h-4 text-accent" />TRADE EVIDENCE PACK</h2>
             <p className="text-[11px] text-slate-400 mt-1">{tradeId} · read-only forensic view · no execution authority</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close Evidence Pack" className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded">
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close Evidence Pack" className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {loading && <div className="p-8 text-center text-slate-400 text-xs">Loading source-linked evidence…</div>}
         {!loading && error && (
-          <div className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2">
+          <div role="alert" className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2">
             <XCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
+            <div className="flex-1 space-y-2"><span className="block break-words">{error}</span><button type="button" data-testid="trade-evidence-retry" onClick={() => setRetryNonce((current) => current + 1)} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("evidence_pack.retry")}</button></div>
           </div>
         )}
 
@@ -198,7 +203,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
                 <span className="block text-[10px] text-slate-500 uppercase">Exports</span>
                 <div className="flex gap-2 mt-1">
                   {(["json", "html", "csv"] as const).map((format) => (
-                    <button key={format} type="button" onClick={() => downloadExport(format)} disabled={exporting !== null} className="inline-flex items-center gap-1 px-2 py-1 rounded border border-accent/50 text-accent hover:bg-accent/10 disabled:opacity-50">
+                    <button key={format} type="button" onClick={() => downloadExport(format)} disabled={exporting !== null} className="inline-flex items-center gap-1 px-2 py-1 rounded border border-accent/50 text-accent hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                       <Download className="w-3 h-3" />{exporting === format ? "…" : t(`evidence_pack.${format}_export`)}
                     </button>
                   ))}
