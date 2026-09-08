@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 1.9.0
+version: 2.0.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 3de57c5
+baseline_commit: f57da9d
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -82,7 +82,7 @@ pakete eklenmeyecektir.
   coverage-ready typed projection query'lerinde mid-operation abort bounded olarak
   uygulanmıştır. Evidence Pack, Reconciliation Inbox, Weekly Review ve CSV preview
   read/loading yüzeylerinde frontend cancellation/loading/error truth bounded olarak
-  uygulanmıştır; MAE/MFE ve diğer core read yüzeyleri hâlâ açıktır.
+  uygulanmıştır; diğer core read yüzeyleri hâlâ açıktır.
 - [ ] Backend correctness/performance regression suite ve frontend loading/cancel/error
   truth testleri geçiyor; yeni capability veya live execution yolu açılmıyor.
 - [x] Aynı host ve aynı source/dataset girdisinde rapor snapshot/hash deterministik;
@@ -171,31 +171,42 @@ payload veya geç response hiçbir koşulda boş journal olarak gösterilmiyor. 
 yalnız mevcut trade-list read davranışını sınırlar; yeni endpoint, schema, live
 execution veya plugin capability açmaz.
 
+`f57da9d` ile MAE/MFE analytics read yolu bounded hale getirildi: response status,
+numeric alanlar, excluded trade, stop sensitivity ve point shape'leri strict
+doğrulanıyor; `READY`, `NO_DATA` ve `UNAVAILABLE` ayrımı korunuyor. `AbortController`,
+kullanıcı cancel'i, request-generation/stale-response guard ve unmount cleanup ile
+loading, cancelled, error, unavailable ve retry state'leri explicit. HTTP hata,
+malformed başarılı payload veya geç response chart/empty success olarak gösterilmiyor;
+valid `UNAVAILABLE` sonucu alert ve retry ile kalıyor. Descriptive candle-bar
+approximation ve no-target boundary değişmedi; yeni capability, schema, live execution
+veya AI order authority açılmadı.
+
 Focused H07 backend suite `26 passed`; value-chain frontend boundary suite `20 passed`;
 dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
-`3 passed`; full backend suite `709 passed, 2 warnings`, full frontend `23` test
-dosyası ve `87` test PASS; i18n `596/596`. Locked local CI `MERGE READY` oldu.
+`3 passed`; MAE/MFE focused suite `5 passed`; full backend suite `709 passed,
+2 warnings`, full frontend `23` test dosyası ve `90` test PASS; i18n `600/600`.
+Locked local CI `MERGE READY` oldu.
 Current code baseline source commit tam SHA'sı
-`3de57c5a9e94d73ab075af141f5845bb990a1791`, tracked source tree SHA-256'sı
-`c4ac60301c9f24ea991212f18886517ee3174ea5c09f8d1b635c1d3be060ae67`'dir.
+`f57da9dabccf8d5805cccca02c745028673a28af`, tracked source tree SHA-256'sı
+`51b9cac8f98edeb86c12176fed9cdf92763071ee8224ba26b04bcadc8c0aa44a`'dır.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `78bba9e822a3b50af8407f7790aa7cdeb9b1781c91743d752abc2bc77540373b`,
-native local smoke report SHA-256 `a51186c86ea36b1d4dcc18a1db84d865c791ee500f66ec4f48e9b02f2d44299c`;
-local smoke executable SHA-256 `0f444063f90bad198ba5ff5096e1c0ec9f2eab9e0265ba3e72011c51fe64abea`
-ve `.app` artifact SHA-256 `245339d7c5cbc8fc1fa41f334934d0bbb7aed7e8b86068c89c3b32a8d5f63454`.
+Local CI report SHA-256 `ee1ff6be78bf9da2774570f690c783b73d6ea5b2856f6dc72efcdd09f79ffb1b`,
+native local smoke report SHA-256 `c220127fd66432e66c33a3e4103878d1085b4d9dcf218987c60b2fd3956681d7`;
+local smoke executable SHA-256 `e633809bb07c9d87a2e55853c62be68df929b94cf7282856fc0b3b96f440ee2a`
+ve `.app` artifact SHA-256 `2ec5d4e18d21ec68e14ac1216a0fa7f5404df7f94155576c1c3e795d7f7162c3`.
 Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
 public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`94fe05ae1e67c55201d9ccea317275adebb4379471c11f107b71cecdc531e3f7`, DMG
-SHA-256 `58dd9f0dca4537edcf412d0edd19e5a9f1df3383b909d9fabce314255662b2d5`
+`a7201c6d6c66f6fe3c2e908d810563c5281a89969bf0beff3737d446f15bbe30`, DMG
+SHA-256 `a0a1470ee746a8efc7713ef268259c577230ac0f02b9dcd6099461cf2b2f2cec`
 ve mounted executable SHA-256
-`0f444063f90bad198ba5ff5096e1c0ec9f2eab9e0265ba3e72011c51fe64abea`'dir.
+`e633809bb07c9d87a2e55853c62be68df929b94cf7282856fc0b3b96f440ee2a`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
@@ -270,12 +281,12 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
 - Malformed/oversized input ve partial/unknown coverage için bounded backend red/
   green fixture ve fail-closed implementation tamamlandı: 10 yeni fixture PASS.
 - Evidence Pack, Reconciliation Inbox, Weekly Review, CSV preview, Dashboard,
-  Quant Analytics, Header portfolio telemetry ve JournalView trade-list için frontend
-  AbortSignal/loading/cancel/error truth bounded olarak test edilmiştir; MAE/MFE ve
-  diğer core read yüzeyleri henüz audit edilmemiştir. Bu nedenle H07
+  Quant Analytics, Header portfolio telemetry, JournalView trade-list ve MAE/MFE için
+  frontend AbortSignal/loading/cancel/error truth bounded olarak test edilmiştir; diğer
+  core read yüzeyleri henüz audit edilmemiştir. Bu nedenle H07
   tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı MAE/MFE ile diğer core read yüzeylerinin loading/cancel/error truth
-için ayrı red testlerle audit edilmesidir. Bu audit ve 100k planning target kararı
-kapanmadan H07 tamamlanmış, production-ready veya desteklenen veri boyutu olarak
+Sonraki H07 adımı diğer core read yüzeylerinin loading/cancel/error truth için ayrı
+red testlerle audit edilmesidir. Bu audit ve 100k planning target kararı kapanmadan
+H07 tamamlanmış, production-ready veya desteklenen veri boyutu olarak
 işaretlenmeyecektir.

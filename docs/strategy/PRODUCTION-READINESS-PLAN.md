@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.15
+version: 1.0.16
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 3de57c5
+reviewed_commit: f57da9d
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -352,9 +352,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     mid-operation abort backend sınırı `5137383` ile, Evidence Pack/Reconciliation
     Inbox/Weekly Review/CSV preview read yüzeylerinin bounded cancellation/loading/
     error truth'i `27b3404` ile, Dashboard/Quant Analytics/Header portfolio read
-    truth'i `42d67c6` ile, JournalView trade-list read truth'i `3de57c5` ile eklendi.
-    MAE-MFE/diğer core read audit'i ve 100k planning target kararı açık kaldığı için
-    paket hâlâ aktif non-release iştir.
+    truth'i `42d67c6` ile, JournalView trade-list read truth'i `3de57c5` ile,
+    MAE/MFE read truth'i `f57da9d` ile eklendi. Diğer core read audit'i ve 100k
+    planning target kararı açık kaldığı için paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -364,6 +364,16 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.16 — 2026-09-08
+
+- H07 MAE/MFE analytics read paketi `f57da9d` ile kaydedildi: strict response
+  validation, `READY`/`NO_DATA`/`UNAVAILABLE` ayrımı, AbortSignal ve kullanıcı cancel'i,
+  stale-response suppression, unmount cleanup, explicit loading/error/unavailable/retry
+  state'leri ve malformed/HTTP failure'ın chart/empty success'e dönüşmesini engelleyen
+  fail-closed UI sözleşmesi eklendi. Full local CI `MERGE READY`, 709 backend, 90
+  frontend, i18n `600/600` ve exact mounted Mac DMG/WKWebView smoke PASS oldu.
+  Diğer core read yüzeyleri ve 100k planning target açık kaldı.
 
 ### 1.0.15 — 2026-09-08
 
