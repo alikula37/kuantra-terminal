@@ -40,7 +40,7 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac (latest local evidence) | H06 source `a7b99b7` passed clean arm64 local CI and exact read-only DMG/WKWebView smoke; DMG SHA `7ec5226771dc3b9619c37b17b179043412d140d84b5e89a0262b5ed4805eaca3`, smoke report SHA `5e4980ae1813eb36812d15032afe5d351060d5eb460ca7b41ca263c3603a1582`, mounted executable SHA `967cf5db996b91bf948763b0d1fe0a003d8cee228883bfc3abe6599dce1815bc`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
-| H07 bounded baseline | Code `42d67c6` on clean Mac arm64: 709 backend, 84 frontend, i18n 591/591, local CI `MERGE READY`; legacy and exact-coverage typed trade queries abort mid-stream at the cooperative resource boundary without returning partial results. Evidence Pack/Reconciliation Inbox/Weekly Review/CSV preview plus Dashboard/Quant Analytics/Header portfolio read surfaces have bounded AbortSignal, stale-response suppression and explicit loading/error truth; malformed successful payloads fail closed and unavailable analytics never becomes a zero scorecard. Exact DMG/WKWebView smoke is PASS with provenance COMPLETE: report `4cc9fe7d...`, DMG `f992806b...`, mounted executable `76d92760...`. Previous artifact-bound 100k Evidence Pack p95 `4530.5968 ms`, export p95 `4545.3095 ms`, projection rebuild p95 `8347.3076 ms`, max operation RSS `336.3438 MB` remains a non-release baseline; the `<2s` planning target is not met and JournalView/MAE-MFE/other core read cancellation truth remains open |
+| H07 bounded baseline | Code `3de57c5` on clean Mac arm64: 709 backend, 87 frontend, i18n 596/596, local CI `MERGE READY`; legacy and exact-coverage typed trade queries abort mid-stream at the cooperative resource boundary without returning partial results. Evidence Pack/Reconciliation Inbox/Weekly Review/CSV preview plus Dashboard/Quant Analytics/Header portfolio and JournalView trade-list read surfaces have bounded AbortSignal, stale-response suppression and explicit loading/error truth; malformed successful payloads fail closed and unavailable analytics never becomes a zero scorecard or empty journal. Exact DMG/WKWebView smoke is PASS with provenance COMPLETE: report `94fe05ae...`, DMG `58dd9f0d...`, mounted executable `0f444063...`. Previous artifact-bound 100k Evidence Pack p95 `4530.5968 ms`, export p95 `4545.3095 ms`, projection rebuild p95 `8347.3076 ms`, max operation RSS `336.3438 MB` remains a non-release baseline; the `<2s` planning target is not met and MAE/MFE/other core read cancellation truth remains open |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -57,7 +57,7 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Deterministic 1k/10k/100k synthetic performance baselines, resource limits and explicit cancellation/failure truth | `f0b93ba` benchmark/index path, `779e2d7` atomic grouped-batch cancellation, `d2463b2` streamed integrity verification, `4e85e3f` correction/replay measurement, `46531e4`/`6af4fd9` dynamic budget boundary, `6748d96` bounded input/coverage fail-closed fixtures, `5137383` legacy/typed query mid-operation abort, `27b3404` bounded value-chain frontend cancellation and `42d67c6` dashboard/analytics/header read truth are present. 100k Evidence Pack/rebuild p95 exceeds planning target; JournalView, MAE-MFE and other core read cancellation/loading/error truth remains open |
+| H07 | IMPLEMENTATION_REQUIRED | Deterministic 1k/10k/100k synthetic performance baselines, resource limits and explicit cancellation/failure truth | `f0b93ba` benchmark/index path, `779e2d7` atomic grouped-batch cancellation, `d2463b2` streamed integrity verification, `4e85e3f` correction/replay measurement, `46531e4`/`6af4fd9` dynamic budget boundary, `6748d96` bounded input/coverage fail-closed fixtures, `5137383` legacy/typed query mid-operation abort, `27b3404` bounded value-chain frontend cancellation, `42d67c6` dashboard/analytics/header read truth and `3de57c5` JournalView trade-list read truth are present. 100k Evidence Pack/rebuild p95 exceeds planning target; MAE/MFE and other core read cancellation/loading/error truth remain open |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -114,15 +114,15 @@ cancellation, streamed full-chain verification, correction/replay measurement,
 dynamic RSS/disk budget abort/rollback boundaries, `6748d96` malformed/oversized
 plus partial/unknown coverage fixtures, `5137383` legacy/typed query
 mid-operation abort fixtures, `27b3404` value-chain frontend cancellation
-fixtures and `42d67c6` dashboard/analytics/header read truth fixtures are present.
-Exact Mac arm64 app/DMG/WKWebView evidence is tied to code baseline `42d67c6`;
-DMG smoke report SHA
-`4cc9fe7d1a1d834837071d7fd6091462ad50ca7314aa783748a6d7ad329e926f`, mounted
-executable SHA `76d927600013f0e33b5bc70e1a8a7bd768e467277e80bccaf720a68f50c177ef`
-and DMG SHA `f992806baf458bdc74b32c78a0a569dff0c077ac8c924ce2a690e59ab0314637`.
+fixtures, `42d67c6` dashboard/analytics/header read truth fixtures and `3de57c5`
+JournalView trade-list read truth fixtures are present. Exact Mac arm64
+app/DMG/WKWebView evidence is tied to code baseline `3de57c5`; DMG smoke report SHA
+`94fe05ae1e67c55201d9ccea317275adebb4379471c11f107b71cecdc531e3f7`, mounted
+executable SHA `0f444063f90bad198ba5ff5096e1c0ec9f2eab9e0265ba3e72011c51fe64abea`
+and DMG SHA `58dd9f0dca4537edcf412d0edd19e5a9f1df3383b909d9fabce314255662b2d5`.
 The 100k Evidence Pack and projection rebuild p95 values do not meet the planning
-target, so H07 remains `IMPLEMENTATION_REQUIRED`. Next handoff is JournalView,
-MAE-MFE and other core long-read loading/cancellation/error truth audit.
+target, so H07 remains `IMPLEMENTATION_REQUIRED`. Next handoff is MAE-MFE and
+other core long-read loading/cancellation/error truth audit.
 H05 license/notices and default-branch Dependabot remain deferred release gates;
 no production or commercial package claim is allowed.
 

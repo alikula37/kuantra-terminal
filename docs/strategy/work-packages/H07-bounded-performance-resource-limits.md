@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 1.8.0
+version: 1.9.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 42d67c6
+baseline_commit: 3de57c5
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -82,7 +82,7 @@ pakete eklenmeyecektir.
   coverage-ready typed projection query'lerinde mid-operation abort bounded olarak
   uygulanmıştır. Evidence Pack, Reconciliation Inbox, Weekly Review ve CSV preview
   read/loading yüzeylerinde frontend cancellation/loading/error truth bounded olarak
-  uygulanmıştır; JournalView, MAE/MFE ve diğer core read yüzeyleri hâlâ açıktır.
+  uygulanmıştır; MAE/MFE ve diğer core read yüzeyleri hâlâ açıktır.
 - [ ] Backend correctness/performance regression suite ve frontend loading/cancel/error
   truth testleri geçiyor; yeni capability veya live execution yolu açılmıyor.
 - [x] Aynı host ve aynı source/dataset girdisinde rapor snapshot/hash deterministik;
@@ -163,26 +163,39 @@ scorecard'a çevrilmez. Header portfolio telemetry de abort-on-unmount/stale gua
 explicit unavailable/loading state taşır; backend erişilemezken sahte `$0.00` değerleri
 gösterilmez. Yeni endpoint, schema, live execution veya plugin capability açılmadı.
 
+`3de57c5` ile JournalView trade-list read yolu aynı bounded read sözleşmesine
+taşındı: başarılı response shape'i strict doğrulanıyor; `AbortController`, kullanıcı
+cancel'i, request-generation/stale-response guard ve unmount cleanup uygulanıyor;
+loading, cancelled, error ve retry state'leri explicit. HTTP hata, malformed başarılı
+payload veya geç response hiçbir koşulda boş journal olarak gösterilmiyor. Bu paket
+yalnız mevcut trade-list read davranışını sınırlar; yeni endpoint, schema, live
+execution veya plugin capability açmaz.
+
 Focused H07 backend suite `26 passed`; value-chain frontend boundary suite `20 passed`;
-dashboard/analytics/header focused suite `8 passed`; full backend suite `709 passed,
-2 warnings`, full frontend `22` test dosyası ve `84` test PASS; i18n `591/591`.
-Locked local CI `MERGE READY` oldu. Current code baseline source commit tam SHA'sı
-`42d67c6b1e15ab98ea7c17dab09d285c338289d9`, tracked source tree SHA-256'sı
-`e436ea9982066e1949124fddabad993f53dedad4ead4a99597eb5ea0449fa00a`'dır.
+dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
+`3 passed`; full backend suite `709 passed, 2 warnings`, full frontend `23` test
+dosyası ve `87` test PASS; i18n `596/596`. Locked local CI `MERGE READY` oldu.
+Current code baseline source commit tam SHA'sı
+`3de57c5a9e94d73ab075af141f5845bb990a1791`, tracked source tree SHA-256'sı
+`c4ac60301c9f24ea991212f18886517ee3174ea5c09f8d1b635c1d3be060ae67`'dir.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `c5d2bdef168a9065a7732fe9419ca68e7988ca9b5124d347243a2cb17af0fbc9`,
-native local smoke report SHA-256 `1db56d91aafda8b6a33e34ae8823c0ea482a950a126b9949c31d1a3570b09d0c`.
+Local CI report SHA-256 `78bba9e822a3b50af8407f7790aa7cdeb9b1781c91743d752abc2bc77540373b`,
+native local smoke report SHA-256 `a51186c86ea36b1d4dcc18a1db84d865c791ee500f66ec4f48e9b02f2d44299c`;
+local smoke executable SHA-256 `0f444063f90bad198ba5ff5096e1c0ec9f2eab9e0265ba3e72011c51fe64abea`
+ve `.app` artifact SHA-256 `245339d7c5cbc8fc1fa41f334934d0bbb7aed7e8b86068c89c3b32a8d5f63454`.
+Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
+public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`4cc9fe7d1a1d834837071d7fd6091462ad50ca7314aa783748a6d7ad329e926f`, DMG
-SHA-256 `f992806baf458bdc74b32c78a0a569dff0c077ac8c924ce2a690e59ab0314637`
+`94fe05ae1e67c55201d9ccea317275adebb4379471c11f107b71cecdc531e3f7`, DMG
+SHA-256 `58dd9f0dca4537edcf412d0edd19e5a9f1df3383b909d9fabce314255662b2d5`
 ve mounted executable SHA-256
-`76d927600013f0e33b5bc70e1a8a7bd768e467277e80bccaf720a68f50c177ef`'dir.
+`0f444063f90bad198ba5ff5096e1c0ec9f2eab9e0265ba3e72011c51fe64abea`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
@@ -257,12 +270,12 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
 - Malformed/oversized input ve partial/unknown coverage için bounded backend red/
   green fixture ve fail-closed implementation tamamlandı: 10 yeni fixture PASS.
 - Evidence Pack, Reconciliation Inbox, Weekly Review, CSV preview, Dashboard,
-  Quant Analytics ve Header portfolio telemetry için frontend
-  AbortSignal/loading/cancel/error truth bounded olarak test edilmiştir; JournalView,
-  MAE/MFE ve diğer core read yüzeyleri henüz audit edilmemiştir. Bu nedenle H07
+  Quant Analytics, Header portfolio telemetry ve JournalView trade-list için frontend
+  AbortSignal/loading/cancel/error truth bounded olarak test edilmiştir; MAE/MFE ve
+  diğer core read yüzeyleri henüz audit edilmemiştir. Bu nedenle H07
   tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı JournalView trade-list read sınırının ve ardından MAE/MFE ile diğer
-core read yüzeylerinin loading/cancel/error truth için ayrı red testlerle audit
-edilmesidir. Bu audit ve 100k planning target kararı kapanmadan H07 tamamlanmış,
-production-ready veya desteklenen veri boyutu olarak işaretlenmeyecektir.
+Sonraki H07 adımı MAE/MFE ile diğer core read yüzeylerinin loading/cancel/error truth
+için ayrı red testlerle audit edilmesidir. Bu audit ve 100k planning target kararı
+kapanmadan H07 tamamlanmış, production-ready veya desteklenen veri boyutu olarak
+işaretlenmeyecektir.
