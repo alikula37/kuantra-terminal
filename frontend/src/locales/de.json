@@ -151,7 +151,21 @@
     "sync_desc": "Neu aufgezeichnete Trades von SQLite in DuckDB-Spaltentabellen synchronisieren.",
     "sync_btn": "VOLLSTÄNDIGE DUAL-DB-SYNCHRONISATION STARTEN",
     "syncing": "Wird synchronisiert...",
-    "sync_success": "Vollständige OLTP -> DuckDB Synchronisation erfolgreich abgeschlossen!"
+    "sync_success": "Vollständige OLTP -> DuckDB Synchronisation erfolgreich abgeschlossen!",
+    "privacy_title": "DATENSCHUTZ-TELEMETRIE & SYSTEMDIAGNOSTIK",
+    "pii_redaction_active": "PII-Bereinigung: Aktiv",
+    "telemetry_label": "Anonyme Fehler- und Absturzberichte",
+    "telemetry_enabled": "OPT-IN AKTIV",
+    "telemetry_disabled": "DEAKTIVIERT (STANDARD)",
+    "telemetry_description": "Geheimnisse, Auth-Header und übliche personenbezogene Kennungen werden vor der lokalen Ablage bereinigt.",
+    "telemetry_queue_title": "Offline-Absturz-Warteschlange",
+    "telemetry_queue_empty": "Keine ausstehenden Absturzspuren lokal gespeichert.",
+    "telemetry_queue_no_transport": "{count} Absturzberichte werden lokal gespeichert; externe Übertragung ist nicht konfiguriert.",
+    "telemetry_queue_opt_out": "{count} Absturzberichte werden lokal gespeichert; externe Übertragung ist deaktiviert.",
+    "telemetry_queue_pending": "{count} Absturzberichte werden lokal gespeichert und warten auf eine ausdrückliche Übertragung.",
+    "telemetry_refresh": "Aktualisieren",
+    "telemetry_export_description": "Rotierende Logs mit geprüfter Bereinigung für den technischen Support paketieren.",
+    "telemetry_export_btn": "BEREINIGTE LOGS EXPORTIEREN (.ZIP)"
   },
   "alerts": {
     "panic_triggered": "Notfall-Panik-Schalter aktiviert! Positionen werden geschlossen...",

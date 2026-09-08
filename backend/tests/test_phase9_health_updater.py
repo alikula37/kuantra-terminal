@@ -1,4 +1,5 @@
 import os
+from app.core.telemetry import PrivacyTelemetryManager
 import pytest
 from app.core.logging_config import redact_sensitive_text, LOG_FILE_PATH, export_logs_zip
 from app.core.telemetry import telemetry_manager
@@ -47,7 +48,8 @@ class TestPhase9HealthAndUpdater:
         telemetry_manager.set_opt_in(True)
         assert telemetry_manager.is_opted_in() is True
 
-    def test_offline_crash_queue_spooling_and_flushing(self):
+    def test_offline_crash_queue_spooling_and_flushing(self, tmp_path):
+        telemetry_manager.queue_file = tmp_path / "telemetry_queue.json"
         telemetry_manager.set_opt_in(False)
         telemetry_manager.spool_crash(
             "WebSocketDisconnect",
@@ -60,9 +62,20 @@ class TestPhase9HealthAndUpdater:
         res_skipped = telemetry_manager.flush_queue()
         assert res_skipped["status"] == "SKIPPED_OPT_OUT"
 
-        # Opt-in and flush
+        # Opt-in without a configured transport retains the queue and does not
+        # claim that a network delivery happened.
         telemetry_manager.set_opt_in(True)
-        res_flushed = telemetry_manager.flush_queue()
+        res_without_transport = telemetry_manager.flush_queue()
+        assert res_without_transport["status"] == "NO_TRANSPORT"
+        assert telemetry_manager.get_queued_crashes_count() == 1
+
+        # An explicit test transport can acknowledge delivery and clear it.
+        delivery_manager = PrivacyTelemetryManager(
+            queue_file=telemetry_manager.queue_file,
+            flush_transport=lambda records: True,
+        )
+        delivery_manager.set_opt_in(True)
+        res_flushed = delivery_manager.flush_queue()
         assert res_flushed["status"] == "SUCCESS"
         assert telemetry_manager.get_queued_crashes_count() == 0
 

@@ -10,11 +10,11 @@ import zipfile
 import logging
 from logging.handlers import RotatingFileHandler
 from typing import Optional
-from app.core.paths import DATA_DIR
+from app.core.paths import DATA_DIR, ensure_private_directory, ensure_private_file
 
-LOGS_DIR = DATA_DIR / "logs"
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
+LOGS_DIR = ensure_private_directory(DATA_DIR / "logs")
 LOG_FILE_PATH = LOGS_DIR / "kuantra_backend.log"
+ensure_private_file(LOG_FILE_PATH)
 
 # Regex Patterns for PII, Secrets & API Tokens
 PATTERNS = [
@@ -84,6 +84,7 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
     )
     file_handler.setFormatter(formatter)
     file_handler.addFilter(redaction_filter)
+    ensure_private_file(LOG_FILE_PATH)
     root_logger.addHandler(file_handler)
 
     root_logger.info("Kuantra Logging System initialized with 10MB rotation & PII Scrubbing.")
@@ -91,16 +92,27 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
 
 def export_logs_zip(output_zip_path: Optional[str] = None) -> str:
     """Packages redacted log files into a zip file for support export."""
-    target_zip = output_zip_path or str(LOGS_DIR / "kuantra_diagnostics_redacted.zip")
-    with zipfile.ZipFile(target_zip, "w", zipfile.ZIP_DEFLATED) as z:
-        for root, _, files in os.walk(str(LOGS_DIR)):
-            for file in files:
-                if file.endswith(".log"):
-                    file_path = os.path.join(root, file)
-                    # Read content, re-verify scrub, write to zip
-                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                        clean_content = redact_sensitive_text(f.read())
-                    z.writestr(file, clean_content)
-    return target_zip
+    target = os.path.abspath(output_zip_path or str(LOGS_DIR / "kuantra_diagnostics_redacted.zip"))
+    temporary = f"{target}.tmp"
+    try:
+        with zipfile.ZipFile(temporary, "w", zipfile.ZIP_DEFLATED) as z:
+            for root, _, files in os.walk(str(LOGS_DIR)):
+                for file in files:
+                    if file.endswith(".log"):
+                        file_path = os.path.join(root, file)
+                        # Read content, re-verify scrub, write to zip
+                        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                            clean_content = redact_sensitive_text(f.read())
+                        z.writestr(file, clean_content)
+        ensure_private_file(temporary)
+        os.replace(temporary, target)
+        ensure_private_file(target)
+    except Exception:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+        raise
+    return target
 
 logger = setup_logging()

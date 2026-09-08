@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { downloadFromBackend } from "../lib/desktop";
 
+export type TelemetryDeliveryStatus = "OPT_OUT" | "IDLE" | "NO_TRANSPORT" | "READY_TO_FLUSH" | string;
+
 export const useTelemetry = () => {
   const [isOptedIn, setIsOptedIn] = useState<boolean>(false);
   const [queuedCrashes, setQueuedCrashes] = useState<number>(0);
+  const [deliveryStatus, setDeliveryStatus] = useState<TelemetryDeliveryStatus>("OPT_OUT");
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchStatus = useCallback(() => {
@@ -13,6 +16,7 @@ export const useTelemetry = () => {
       .then((data) => {
         setIsOptedIn(data.opt_in);
         setQueuedCrashes(data.queued_crashes);
+        setDeliveryStatus(data.delivery_status || (data.opt_in ? "IDLE" : "OPT_OUT"));
         setIsLoading(false);
       })
       .catch(() => {
@@ -64,6 +68,7 @@ export const useTelemetry = () => {
   return {
     isOptedIn,
     queuedCrashes,
+    deliveryStatus,
     isLoading,
     updateConsent,
     reportCrash,

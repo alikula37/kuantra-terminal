@@ -834,7 +834,8 @@ class SpoolCrashSchema(BaseModel):
 def get_telemetry_status():
     return {
         "opt_in": telemetry_manager.is_opted_in(),
-        "queued_crashes": telemetry_manager.get_queued_crashes_count()
+        "queued_crashes": telemetry_manager.get_queued_crashes_count(),
+        "delivery_status": telemetry_manager.delivery_status(),
     }
 
 @router.post("/telemetry/consent")

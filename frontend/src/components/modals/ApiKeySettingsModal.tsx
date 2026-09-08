@@ -176,7 +176,8 @@ export const ApiKeySettingsModal: React.FC<ApiKeySettingsModalProps> = ({ isOpen
         fetchConfigs();
       } else {
         const err = await res.json();
-        setStatusMessage({ type: "error", text: err.detail || t("exchange.save_failed") });
+        const detail = typeof err.detail === "string" ? err.detail : err.detail?.message;
+        setStatusMessage({ type: "error", text: detail || t("exchange.save_failed") });
       }
     } catch (err: any) {
       setStatusMessage({ type: "error", text: err.message || t("exchange.save_failed") });

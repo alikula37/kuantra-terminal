@@ -151,7 +151,21 @@
     "sync_desc": "Sync newly recorded trades across SQLite into DuckDB columnar analytical tables.",
     "sync_btn": "TRIGGER FULL DUAL-DB SYNC",
     "syncing": "Syncing...",
-    "sync_success": "Full OLTP -> DuckDB sync completed successfully!"
+    "sync_success": "Full OLTP -> DuckDB sync completed successfully!",
+    "privacy_title": "PRIVACY TELEMETRY & SYSTEM DIAGNOSTICS",
+    "pii_redaction_active": "PII Redaction: Active",
+    "telemetry_label": "Anonymous Error & Crash Reporting",
+    "telemetry_enabled": "OPT-IN ENABLED",
+    "telemetry_disabled": "DISABLED (DEFAULT)",
+    "telemetry_description": "Secrets, auth headers, and common personal identifiers are scrubbed before local spooling.",
+    "telemetry_queue_title": "Offline Crash Spool Queue",
+    "telemetry_queue_empty": "No pending crash traces queued locally.",
+    "telemetry_queue_no_transport": "{count} crash reports are retained locally; external delivery is not configured.",
+    "telemetry_queue_opt_out": "{count} crash reports are retained locally; external delivery is disabled.",
+    "telemetry_queue_pending": "{count} crash reports are retained locally pending explicit delivery.",
+    "telemetry_refresh": "Refresh",
+    "telemetry_export_description": "Package rotating logs with verified redaction for technical support.",
+    "telemetry_export_btn": "EXPORT REDACTED LOGS (.ZIP)"
   },
   "alerts": {
     "panic_triggered": "Emergency Panic Kill-Switch activated! Flattening positions...",
