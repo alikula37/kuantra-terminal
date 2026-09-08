@@ -203,7 +203,13 @@ class ResourceBudget:
     max_rss_mb: Optional[float] = None
     max_temp_disk_bytes: Optional[int] = None
 
+    @property
+    def enabled(self) -> bool:
+        return self.max_rss_mb is not None or self.max_temp_disk_bytes is not None
+
     def check(self, *, rss_mb: float, temp_disk_bytes: int) -> None:
+        if not self.enabled:
+            return
         if self.max_rss_mb is not None and rss_mb > self.max_rss_mb:
             raise BenchmarkResourceLimitError(
                 f"RSS resource budget exceeded: {rss_mb:.2f} MB > {self.max_rss_mb:.2f} MB"
@@ -279,8 +285,22 @@ def _timed_call(
     dynamic_resource_check: bool = False,
 ) -> tuple[dict[str, Any], Any]:
     before_disk = _directory_size(storage_dir)
+    resource_checks = 0
+    terminal_phases = {
+        "before_commit",
+        "before_projection_commit",
+        "before_pack_return",
+    }
 
-    def check_resources(_phase: str = "operation") -> None:
+    def check_resources(phase: str = "operation") -> None:
+        nonlocal resource_checks
+        resource_checks += 1
+        if not budget.enabled:
+            return
+        # Dynamic enforcement remains bounded at commit/return boundaries while
+        # avoiding a full RSS/directory scan for every synthetic ledger row.
+        if resource_checks != 1 and phase not in terminal_phases and resource_checks % 64:
+            return
         budget.check(
             rss_mb=_rss_mb(),
             temp_disk_bytes=max(0, _directory_size(storage_dir) - before_disk),
