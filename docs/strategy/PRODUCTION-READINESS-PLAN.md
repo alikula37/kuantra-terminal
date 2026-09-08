@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.19
+version: 1.0.20
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 950af74
+reviewed_commit: da9af9b
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -354,9 +354,11 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     error truth'i `27b3404` ile, Dashboard/Quant Analytics/Header portfolio read
     truth'i `42d67c6` ile, JournalView trade-list read truth'i `3de57c5` ile,
     MAE/MFE read truth'i `f57da9d` ile, SettingsView portfolio-summary read truth'i
-    `3fa98a9` ile, Charts/TradingViewChart historical read truth'i `dd0639b` ile ve
-    plugin registry/ModStore read truth'i `950af74` ile eklendi. Diğer core read audit'i
-    ve 100k planning target kararı açık kaldığı için paket hâlâ aktif non-release iştir.
+    `3fa98a9` ile, Charts/TradingViewChart historical read truth'i `dd0639b` ile,
+    plugin registry/ModStore read truth'i `950af74` ile ve unchanged-ledger integrity
+    verification cache'i `da9af9b` ile eklendi. Safe-persona görünür read listesi için
+    bounded kanıt günceldir; cold 100k planning target kararı açık kaldığı için paket
+    hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -366,6 +368,17 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.20 — 2026-09-08
+
+- H07 unchanged-ledger integrity cache paketi `da9af9b` ile kaydedildi: append-only
+  ledger doğrulaması yalnız değişmeyen SQLite `PRAGMA data_version` snapshot'ında
+  tekrar kullanılıyor; yeni append/commit sonrası tam verification yeniden çalışıyor.
+  Full locked local CI `MERGE READY`, 710 backend, 100 frontend, i18n `608/608`,
+  clean Mac arm64 build/native smoke ve exact disabled-market-data mounted DMG smoke
+  PASS oldu. Artifact-bound 100k benchmark cold Evidence Pack p95 `4132.1722 ms`,
+  cache-warm export p95 `329.0577 ms`, projection rebuild p95 `8093.7152 ms` kaldı;
+  `<2s` planning target karşılanmadı ve H07 açık tutuldu.
 
 ### 1.0.19 — 2026-09-08
 

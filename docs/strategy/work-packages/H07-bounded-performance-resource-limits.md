@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 2.3.0
+version: 2.4.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 950af74
+baseline_commit: da9af9b
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -209,38 +209,61 @@ eklendi. ModStore loading, cancelled, error ve retry state'lerini görünür kı
 remote registry/download, plugin activation, runtime mounting ve execution authority
 kapalı kalıyor. Yeni plugin capability, schema veya live execution açılmadı.
 
-Focused H07 backend suite `26 passed`; value-chain frontend boundary suite `20 passed`;
+`da9af9b` ile append-only ledger integrity doğrulamasında güvenli tekrar-okuma sınırı
+eklendi: başarılı bir doğrulama sonucu yalnız aynı repository instance'ının SQLite
+`PRAGMA data_version` değeri değişmediği sürece yeniden kullanılıyor; yeni append veya
+başka bir connection commit'i cache'i geçersiz kılıp tam doğrulamayı yeniden çalıştırıyor.
+Cache sonucu defensive copy ile dönüyor, invalid zincir cache'lenmiyor ve cache için
+yeni schema/event type eklenmiyor. Bu, Evidence Pack tekrar okumalarını azaltan bir
+warm-read optimizasyonudur; ilk cold full-chain doğrulaması hâlâ ölçüm kapsamındadır.
+
+Focused H07 backend suite `27 passed`; value-chain frontend boundary suite `20 passed`;
 dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
 `3 passed`; MAE/MFE focused suite `5 passed`; SettingsView focused suite `3 passed`;
 Charts focused suite `4 passed`; plugin registry/ModStore focused suite `7 passed`;
-full backend suite `709 passed, 2 warnings`, full
+full backend suite `710 passed, 2 warnings`, full
 frontend `25` test dosyası ve `100` test PASS; i18n `608/608`.
 Locked local CI `MERGE READY` oldu.
 Current code baseline source commit tam SHA'sı
-`950af746b69cb0d6325a1f2b020ff6150c1ba792`, tracked source tree SHA-256'sı
-`57d6ff8160450d1051622ca9ccb4568dcb20939883316f2b5e9c94f4416abdaf`'dır.
+`da9af9b82b2d32bb4d8aa9f0917988e1926305fb`, tracked source tree SHA-256'sı
+`d87be24ad6910ecdb3b87861f8e977862d741b2e2e209db5dbd5da90732a3710`'dir.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `985d478afe82803bc7a8a66e8fc009737d60f2d2824916432307db72681319d2`,
-native local smoke report SHA-256 `53c71847bc6c808399e479e6da6ee10b37fccfa8476ff99acdec01a2832101d6`;
-local smoke executable SHA-256 `caaf2d51ea5f782d417677cdcb0fc826e9f624d7533f819c3d2c5e4925cd08c1`
-ve `.app` artifact SHA-256 `b3efd7534020c305ea6a34a29fcae518f06808b0bcdec33647e215332582739d`.
+Local CI report SHA-256 `1a2544ae69c715ba71536befd84d08eeca9883b6aa9b4eb4a98e5e7e472c5795`,
+native local smoke report SHA-256 `99971b9da9df3401e58fbfdf0de294aca93f98d102c03933474c2e272023a5a5`;
+local smoke executable SHA-256 `2e23dd2298ac5ae1406bb6203a23f0982353ca1b595b49251d34282205326a9b`
+ve `.app` artifact SHA-256 `ed9760202d8b087a74e897237944c372d903e96d9dff38df54ddb7239923f742`.
 Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
 public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`54478f145dd6a7f8e18f5588d7c0220af7afe05e3306a253da3c7b068ca2c139`, DMG
-SHA-256 `7825a56dd2d52ea559f6d30c04d0b29a47da73e114853fe89920f9e7a9d56c7a`
+`7c5f74a3bb56baf53aa5acd27caf310cb206a2680759bab0ce08c5bc5d1afaf3`, DMG
+SHA-256 `5a7c6dd40ba2a453ebbe9cbca3377cea4664d0829e06473ed00f3efeb30d5940`
 ve mounted executable SHA-256
-`caaf2d51ea5f782d417677cdcb0fc826e9f624d7533f819c3d2c5e4925cd08c1`'dir.
+`2e23dd2298ac5ae1406bb6203a23f0982353ca1b595b49251d34282205326a9b`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
 notarization, Gatekeeper veya commercial distribution kanıtı değildir.
+
+Bu source/artifact çiftiyle çalıştırılan güncel 100k sentetik benchmark raporu
+`/tmp/h07-da9af9b-artifact.json`, report SHA-256
+`3d2f3218f691b36fdcfc7fabb31b8bdbde614d66b784ef211d2208f64431ef55`'dir.
+Provenance `COMPLETE`, `network=false`, `credentials=false`, `live_execution=false`;
+dataset SHA-256 `cbffe7e178c9efd9e08c876c902cc4dd5efb06e2bc1da7a428b8d001830051bd`,
+determinism snapshot SHA-256
+`6bb1eb94ba9293ab4039e4d03ee34a8d67e25361ebcd6c98679e7be9decf264e` ve sayımlar
+`100000 trades / 100003 ledger events / 100000 projections` olarak kaldı. 100k
+operation p95 değerleri import `179.0969 ms`, projection rebuild `8093.7152 ms`,
+query `224.8434 ms`, Evidence Pack `4132.1722 ms` ve export `329.0577 ms`'dir;
+Evidence Pack/export tekrarlarının cache-warm niteliği nedeniyle bu değerler support
+SLO veya production claim değildir. Cold full-chain Evidence Pack p95 hâlâ `<2s`
+planning hedefini karşılamıyor; H07 `IMPLEMENTATION_REQUIRED` kalır. Max operation
+RSS `335.4219 MB`, max temporary disk `2949120 B` ölçüldü.
 
 ### Önceki artifact-bağlı sentetik baseline
 
@@ -311,12 +334,16 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
 - Malformed/oversized input ve partial/unknown coverage için bounded backend red/
   green fixture ve fail-closed implementation tamamlandı: 10 yeni fixture PASS.
 - Evidence Pack, Reconciliation Inbox, Weekly Review, CSV preview, Dashboard,
-  Quant Analytics, Header portfolio telemetry, JournalView trade-list ve MAE/MFE için
-  frontend AbortSignal/loading/cancel/error truth bounded olarak test edilmiştir; diğer
-  core read yüzeyleri henüz audit edilmemiştir. Bu nedenle H07
-  tamamlanmış veya production-ready değildir.
+  Quant Analytics, Header portfolio telemetry, JournalView trade-list, MAE/MFE,
+  SettingsView portfolio summary, Charts/TradingViewChart historical OHLCV ve
+  plugin registry/ModStore için frontend AbortSignal/loading/cancel/error truth
+  bounded olarak test edilmiştir. Bu liste safe-persona görünür core read
+  yüzeylerinin mevcut audit sınırıdır; auxiliary onboarding/theme/telemetry/native
+  reads ve disabled experimental surfaces production capability olarak açılmamıştır.
+  Bu nedenle H07 tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı diğer core read yüzeylerinin loading/cancel/error truth için ayrı
-red testlerle audit edilmesidir. Bu audit ve 100k planning target kararı kapanmadan
-H07 tamamlanmış, production-ready veya desteklenen veri boyutu olarak
-işaretlenmeyecektir.
+Sonraki H07 adımı cold 100k projection rebuild ve Evidence Pack doğrulama maliyetini
+ayrı red testlerle bounded biçimde azaltmak veya hedefin bu host/workload için
+karşılanmadığını kanıtlı biçimde sınıflandırmaktır. Bu audit ve 100k planning target
+kararı kapanmadan H07 tamamlanmış, production-ready veya desteklenen veri boyutu
+olarak işaretlenmeyecektir.
