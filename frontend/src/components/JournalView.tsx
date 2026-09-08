@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTradeStore } from "../stores/tradeStore";
 import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
@@ -6,11 +6,48 @@ import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
 import { ReconciliationInbox } from "./ReconciliationInbox";
 import { WeeklyReviewPanel } from "./WeeklyReviewPanel";
+import type { Trade } from "../types";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
   onOpenCsvImport?: () => void;
   onReplayTrade?: (tradeId: string) => void;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isTrade(value: unknown): value is Trade {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  const optionalNumbers = ["exit_price", "pnl", "r_multiple", "commission", "unrealized_pnl", "current_price"];
+  return typeof candidate.id === "string"
+    && typeof candidate.symbol === "string"
+    && (candidate.side === "BUY" || candidate.side === "SELL" || candidate.side === "LONG" || candidate.side === "SHORT")
+    && isFiniteNumber(candidate.entry_price)
+    && isFiniteNumber(candidate.qty)
+    && typeof candidate.entry_time === "string"
+    && (candidate.status === "OPEN" || candidate.status === "CLOSED" || candidate.status === "CANCELED")
+    && optionalNumbers.every((field) => candidate[field] === undefined || candidate[field] === null || isFiniteNumber(candidate[field]));
+}
+
+async function readTradeList(response: Response): Promise<Trade[]> {
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const payload = await response.json() as { detail?: unknown };
+      if (typeof payload.detail === "string") detail = payload.detail;
+    } catch {
+      // Keep the HTTP status as the bounded error when the body is not JSON.
+    }
+    throw new Error(detail || `Trade list request failed (HTTP ${response.status})`);
+  }
+  const payload = await response.json();
+  if (!Array.isArray(payload) || !payload.every(isTrade)) {
+    throw new Error("Trade list response was malformed");
+  }
+  return payload;
 }
 
 export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onReplayTrade }) => {
@@ -21,17 +58,56 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
   const [reconciliationInboxOpen, setReconciliationInboxOpen] = useState(false);
   const [weeklyReviewOpen, setWeeklyReviewOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cancelled, setCancelled] = useState(false);
+  const loadControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
+  const loadTrades = useCallback(async () => {
+    loadControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
+    loadControllerRef.current = controller;
+    setIsLoading(true);
+    setError(null);
+    setCancelled(false);
+
+    try {
+      const nextTrades = await apiFetch(apiUrl("/api/v1/trades?limit=200"), { signal: controller.signal }).then(readTradeList);
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      setTrades(nextTrades);
+    } catch (cause) {
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      console.warn("[JournalView] Failed to fetch trade list:", cause);
+      setError(cause instanceof Error ? cause.message : t("journal.error"));
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+        loadControllerRef.current = null;
+      }
+    }
+  }, [setTrades, t]);
 
   useEffect(() => {
-    apiFetch(apiUrl("/api/v1/trades?limit=200"))
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setTrades(data);
-        }
-      })
-      .catch(() => {});
-  }, [setTrades]);
+    void loadTrades();
+    return () => {
+      requestIdRef.current += 1;
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
+  }, [loadTrades]);
+
+  const cancelLoad = () => {
+    const controller = loadControllerRef.current;
+    if (!controller) return;
+    requestIdRef.current += 1;
+    controller.abort();
+    loadControllerRef.current = null;
+    setIsLoading(false);
+    setCancelled(true);
+    setError(t("journal.cancelled"));
+  };
 
   const filteredTrades = trades.filter((t) => {
     if (filterSymbol !== "ALL" && t.symbol !== filterSymbol) return false;
@@ -108,8 +184,22 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         </div>
       </div>
 
-      {trades.length === 0 ? (
-        <div className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none font-mono">
+      {isLoading ? (
+        <div role="status" data-testid="journal-loading" className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none font-mono text-slate-400 text-xs space-y-3">
+          <span>{t("journal.loading")}</span>
+          <button type="button" data-testid="journal-cancel" onClick={cancelLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            {t("journal.cancel_load")}
+          </button>
+        </div>
+      ) : error ? (
+        <div role="alert" data-testid={cancelled ? "journal-cancelled" : "journal-error"} className="flex-1 mt-4 rounded-lg border border-loss/50 bg-loss/10 flex flex-col items-center justify-center p-8 text-center select-none font-mono text-loss text-xs space-y-3">
+          <span className="break-words">{error}</span>
+          <button type="button" data-testid="journal-retry" onClick={() => void loadTrades()} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">
+            {t("journal.retry")}
+          </button>
+        </div>
+      ) : trades.length === 0 ? (
+        <div data-testid="journal-empty" className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none font-mono">
           <div className="w-14 h-14 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
             <BookOpen className="w-7 h-7 text-accent" />
           </div>

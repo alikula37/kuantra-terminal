@@ -405,7 +405,12 @@
     "col_status": "Status",
     "col_actions": "Actions",
     "no_matching": "No trades found matching current filter criteria.",
-    "replay_btn": "Replay"
+    "replay_btn": "Replay",
+    "loading": "Loading trade journal...",
+    "cancel_load": "Cancel loading",
+    "cancelled": "Loading was cancelled. No journal result is shown.",
+    "error": "Trade journal could not be loaded safely.",
+    "retry": "Retry"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION INBOX",

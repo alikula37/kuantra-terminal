@@ -405,7 +405,12 @@
     "col_status": "Durum",
     "col_actions": "İşlemler",
     "no_matching": "Filtreleme kriterlerine uygun işlem bulunamadı.",
-    "replay_btn": "Yeniden Oynat"
+    "replay_btn": "Yeniden Oynat",
+    "loading": "İşlem günlüğü yükleniyor...",
+    "cancel_load": "Yüklemeyi iptal et",
+    "cancelled": "Yükleme iptal edildi. Günlük sonucu gösterilmiyor.",
+    "error": "İşlem günlüğü güvenli biçimde yüklenemedi.",
+    "retry": "Tekrar dene"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION GELEN KUTUSU",

@@ -405,7 +405,12 @@
     "col_status": "Status",
     "col_actions": "Aktionen",
     "no_matching": "Keine Trades für die aktuellen Filterkriterien gefunden.",
-    "replay_btn": "Wiedergabe"
+    "replay_btn": "Wiedergabe",
+    "loading": "Handelsjournal wird geladen...",
+    "cancel_load": "Laden abbrechen",
+    "cancelled": "Laden abgebrochen. Kein Journal-Ergebnis wird angezeigt.",
+    "error": "Handelsjournal konnte nicht sicher geladen werden.",
+    "retry": "Erneut versuchen"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION-INBOX",
