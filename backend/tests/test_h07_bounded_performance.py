@@ -230,7 +230,7 @@ def test_projection_rebuild_reuses_ledger_verification_for_unchanged_snapshot(
     assert iterator_calls == 1
 
 
-def test_projection_apply_releases_verifier_connection_after_write(tmp_path):
+def test_projection_verifier_does_not_retain_sqlite_connection(tmp_path):
     db_path = tmp_path / "projection-verification-connection.sqlite"
     driver = SQLiteDriver(str(db_path))
     trade = generate_trade_snapshot(0, seed="H07-PROJECTION-CONNECTION")
@@ -240,11 +240,51 @@ def test_projection_apply_releases_verifier_connection_after_write(tmp_path):
     projection = EvidenceTradeProjectionRepository(str(db_path))
     projection.rebuild(account_id="h07-synthetic-account", dry_run=True)
 
-    assert projection._ledger_repo._integrity_cache_connection is not None
+    assert getattr(projection._ledger_repo, "_integrity_cache_connection", None) is None
 
     projection.rebuild(account_id="h07-synthetic-account", dry_run=False)
 
-    assert projection._ledger_repo._integrity_cache_connection is None
+    assert getattr(projection._ledger_repo, "_integrity_cache_connection", None) is None
+
+
+def test_projection_only_commit_preserves_shared_ledger_verification_cache(
+    tmp_path, monkeypatch
+):
+    db_path = tmp_path / "projection-shared-verification.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    trade = generate_trade_snapshot(0, seed="H07-PROJECTION-SHARED")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(trade, 0, seed="H07-PROJECTION-SHARED"),
+    ])
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    adapter = TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=projection,
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+        projection_venues=("h07-synthetic",),
+    )
+    assert adapter.ledger_repo is projection._ledger_repo
+
+    original_iter = projection._ledger_repo._iter_raw_verification_rows
+    iterator_calls = 0
+
+    def count_iterator_calls(*args, **kwargs):
+        nonlocal iterator_calls
+        iterator_calls += 1
+        return original_iter(*args, **kwargs)
+
+    monkeypatch.setattr(
+        projection._ledger_repo,
+        "_iter_raw_verification_rows",
+        count_iterator_calls,
+    )
+
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=True)
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=False)
+    adapter.ledger_repo.verify_chain(account_id="h07-synthetic-account")
+
+    assert iterator_calls == 1
 
 
 def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_ledger(tmp_path):

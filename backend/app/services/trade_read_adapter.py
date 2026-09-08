@@ -224,6 +224,7 @@ class TradeReadAdapter:
         *,
         legacy_driver: Optional[SQLiteDriver] = None,
         projection_repo: Optional[EvidenceTradeProjectionRepository] = None,
+        ledger_repo: Optional[EvidenceLedgerRepository] = None,
         account_id: str = "local-journal",
         venue: str = "local-journal",
         projection_venues: Optional[Sequence[str]] = None,
@@ -232,7 +233,11 @@ class TradeReadAdapter:
         self.projection_repo = projection_repo or EvidenceTradeProjectionRepository(
             self.legacy_driver.db_path
         )
-        self.ledger_repo = EvidenceLedgerRepository(self.legacy_driver.db_path)
+        self.ledger_repo = (
+            ledger_repo
+            or getattr(self.projection_repo, "ledger_repo", None)
+            or EvidenceLedgerRepository(self.legacy_driver.db_path)
+        )
         self.account_id = account_id
         self.venue = venue
         # ``legacy`` is the explicit venue used by the P1-WP01 backfill.  It is

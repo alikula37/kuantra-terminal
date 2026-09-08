@@ -56,11 +56,16 @@ class EvidenceTradeProjectionRepository:
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = str(db_path or get_sqlite_path())
         self._ensure_schema()
-        # Reuse the append-only verifier so repeated rebuilds can benefit from
-        # its data_version-bound integrity cache.  A commit from any other
-        # SQLite connection still invalidates that cache and forces a full
-        # verification before projection work continues.
+        # Reuse the append-only verifier so repeated rebuilds and read adapters
+        # share one ledger-only integrity cache. Projection commits do not
+        # invalidate that cache, and the verifier retains no SQLite connection.
         self._ledger_repo = EvidenceLedgerRepository(self.db_path)
+
+    @property
+    def ledger_repo(self) -> EvidenceLedgerRepository:
+        """Expose the shared canonical verifier to read-side adapters."""
+
+        return self._ledger_repo
 
     def _connect(self, *, write: bool = False) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path, check_same_thread=False, isolation_level=None)
@@ -300,7 +305,6 @@ class EvidenceTradeProjectionRepository:
             return report
 
         conn = self._connect(write=True)
-        committed = False
         try:
             conn.execute("BEGIN IMMEDIATE")
             check_resources("before_projection_delete")
@@ -318,18 +322,12 @@ class EvidenceTradeProjectionRepository:
                 check_resources("after_projection_record")
             check_resources("before_projection_commit")
             conn.commit()
-            committed = True
         except Exception:
             if conn.in_transaction:
                 conn.rollback()
             raise
         finally:
             conn.close()
-        if committed:
-            # Do not keep the verifier's read connection alive across a large
-            # projection write.  Releasing it lets SQLite checkpoint its WAL;
-            # the next rebuild will recreate the cache connection safely.
-            ledger.close()
         return report
 
     def get_projection(

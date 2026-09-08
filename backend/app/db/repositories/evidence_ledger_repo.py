@@ -189,11 +189,12 @@ class EvidenceLedgerRepository:
         # never supplies it.
         self._failure_injector = failure_injector
         # A successful chain verification can be reused while the append-only
-        # database remains unchanged.  The connection is intentionally kept
-        # separate from read/write connections so SQLite's data_version can
-        # invalidate the cache when any other connection appends evidence.
-        self._integrity_cache_connection: Optional[sqlite3.Connection] = None
-        self._integrity_cache_key: Optional[Tuple[Optional[str], Optional[str], int]] = None
+        # ledger remains unchanged. The cache key is derived only from
+        # evidence_events, so projection commits do not invalidate a canonical
+        # ledger verification. No connection is retained between calls: a
+        # persistent read connection can retain SQLite WAL pages after a large
+        # projection write.
+        self._integrity_cache_key: Optional[Tuple[Any, ...]] = None
         self._integrity_cache_result: Optional[Dict[str, Any]] = None
         # Restore verification must inspect the supplied snapshot as-is. It can
         # disable bootstrap schema creation so an incomplete/future snapshot is
@@ -201,43 +202,76 @@ class EvidenceLedgerRepository:
         if initialize_schema:
             self._ensure_schema()
 
-    def _integrity_data_version(self) -> Optional[int]:
-        """Return a connection-scoped SQLite version for integrity caching.
+    def _ledger_state_fingerprint(
+        self,
+        *,
+        account_id: Optional[str],
+        chain_date_utc: Optional[str],
+    ) -> Optional[Tuple[Tuple[Any, ...], ...]]:
+        """Return an append-only fingerprint for the requested ledger scope.
 
-        ``PRAGMA data_version`` changes when another connection commits.  The
-        ledger is append-only, so a cached verification is safe only while this
-        value remains stable.  If SQLite cannot provide the value, callers fall
-        back to a complete verification rather than weakening the boundary.
+        ``PRAGMA data_version`` also changes when the rebuildable projection is
+        written. The verifier only needs to invalidate after an evidence event
+        append, so the fingerprint is scoped to ``evidence_events`` and
+        contains enough append-only state to detect a new row in every chain.
+        If SQLite cannot provide the fingerprint, ``None`` forces a complete
+        verification instead of weakening the integrity boundary.
         """
 
+        conn: Optional[sqlite3.Connection] = None
         try:
-            if self._integrity_cache_connection is None:
-                Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
-                self._integrity_cache_connection = sqlite3.connect(
-                    self.db_path,
-                    check_same_thread=False,
-                    isolation_level=None,
+            conn = self._connect(write=False)
+            query = """
+                SELECT
+                    events.account_id,
+                    events.chain_date_utc,
+                    COUNT(*) AS event_count,
+                    MIN(events.chain_sequence) AS first_sequence,
+                    MAX(events.chain_sequence) AS last_sequence,
+                    (
+                        SELECT latest.event_hash
+                        FROM evidence_events AS latest
+                        WHERE latest.account_id = events.account_id
+                          AND latest.chain_date_utc = events.chain_date_utc
+                        ORDER BY latest.chain_sequence DESC
+                        LIMIT 1
+                    ) AS last_event_hash
+                FROM evidence_events AS events
+                WHERE 1 = 1
+            """
+            params: List[Any] = []
+            if account_id is not None:
+                query += " AND events.account_id = ?"
+                params.append(account_id)
+            if chain_date_utc is not None:
+                query += " AND events.chain_date_utc = ?"
+                params.append(chain_date_utc)
+            query += """
+                GROUP BY events.account_id, events.chain_date_utc
+                ORDER BY events.account_id ASC, events.chain_date_utc ASC
+            """
+            return tuple(
+                (
+                    str(row["account_id"]),
+                    str(row["chain_date_utc"]),
+                    int(row["event_count"]),
+                    int(row["first_sequence"]),
+                    int(row["last_sequence"]),
+                    str(row["last_event_hash"]),
                 )
-                self._integrity_cache_connection.execute("PRAGMA busy_timeout=5000")
-            row = self._integrity_cache_connection.execute(
-                "PRAGMA data_version"
-            ).fetchone()
-            return int(row[0]) if row else None
+                for row in conn.execute(query, params)
+            )
         except (OSError, sqlite3.Error, TypeError, ValueError):
             return None
+        finally:
+            if conn is not None:
+                conn.close()
 
     def close(self) -> None:
-        """Release the read-only connection used by the verification cache."""
+        """Invalidate the in-memory verification cache."""
 
-        connection = self._integrity_cache_connection
-        self._integrity_cache_connection = None
         self._integrity_cache_key = None
         self._integrity_cache_result = None
-        if connection is not None:
-            try:
-                connection.close()
-            except sqlite3.Error:
-                pass
 
     def __del__(self) -> None:
         try:
@@ -766,10 +800,13 @@ class EvidenceLedgerRepository:
     ) -> Dict[str, Any]:
         if resource_check is not None and not callable(resource_check):
             raise TypeError("resource_check must be callable")
-        cache_version = self._integrity_data_version()
+        cache_fingerprint = self._ledger_state_fingerprint(
+            account_id=account_id,
+            chain_date_utc=chain_date_utc,
+        )
         cache_key = (
-            (account_id, chain_date_utc, cache_version)
-            if cache_version is not None
+            (account_id, chain_date_utc, cache_fingerprint)
+            if cache_fingerprint is not None
             else None
         )
         if (
@@ -887,9 +924,16 @@ class EvidenceLedgerRepository:
             "scopes": [f"{account}/{day}" for account, day in sorted(scopes)],
             "errors": duplicate_errors + chain_errors,
         }
-        end_version = self._integrity_data_version()
-        if result["valid"] and cache_version is not None and end_version == cache_version:
-            self._integrity_cache_key = (account_id, chain_date_utc, cache_version)
+        end_fingerprint = self._ledger_state_fingerprint(
+            account_id=account_id,
+            chain_date_utc=chain_date_utc,
+        )
+        if (
+            result["valid"]
+            and cache_fingerprint is not None
+            and end_fingerprint == cache_fingerprint
+        ):
+            self._integrity_cache_key = (account_id, chain_date_utc, cache_fingerprint)
             self._integrity_cache_result = deepcopy(result)
         return result
 
