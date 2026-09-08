@@ -7,7 +7,7 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**H07 — Ready:**
+**H07 — Active / IMPLEMENTATION_REQUIRED:**
 [Bounded performance and resource limits](work-packages/H07-bounded-performance-resource-limits.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
@@ -40,6 +40,7 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac (latest local evidence) | H06 source `a7b99b7` passed clean arm64 local CI and exact read-only DMG/WKWebView smoke; DMG SHA `7ec5226771dc3b9619c37b17b179043412d140d84b5e89a0262b5ed4805eaca3`, smoke report SHA `5e4980ae1813eb36812d15032afe5d351060d5eb460ca7b41ca263c3603a1582`, mounted executable SHA `967cf5db996b91bf948763b0d1fe0a003d8cee228883bfc3abe6599dce1815bc`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
+| H07 bounded baseline | Source `779e2d7` on clean Mac arm64: 692 backend, 71 frontend, i18n 574/574, local CI `MERGE READY`; 100k synthetic Evidence Pack p95 `5248.0007 ms`, projection rebuild p95 `8862.8957 ms`, peak RSS `337.8438 MB`. Benchmark report provenance/artifact is COMPLETE, but these are non-release measurements and the `<2s` planning target is not met |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -56,7 +57,7 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Deterministic 1k/10k/100k synthetic performance baselines, resource limits and explicit cancellation/failure truth | Current package: [H07](work-packages/H07-bounded-performance-resource-limits.md); no real data/network/credential, no support-limit or release claim before measurement |
+| H07 | IMPLEMENTATION_REQUIRED | Deterministic 1k/10k/100k synthetic performance baselines, resource limits and explicit cancellation/failure truth | `f0b93ba` benchmark/index path and `779e2d7` atomic grouped-batch cancellation are bounded partial implementation. 100k Evidence Pack/rebuild p95 exceeds planning target; correction/replay, dynamic budget abort and UI cancellation remain open |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -106,9 +107,15 @@ The five default-branch Dependabot alerts (1 critical, 1 high, 3 moderate) remai
 open and were not merged. Advisory scans used network and are not offline proof.
 No PnL, live execution, pilot, commercial package or production claim was opened.
 
-Next handoff: H07 deterministic synthetic performance/resource-boundary red tests and
-bounded implementation. H05 license/notices and default-branch Dependabot remain
-deferred release gates; no production or commercial package claim is allowed.
+H07 first evidence pass is recorded in current
+[H07](work-packages/H07-bounded-performance-resource-limits.md): deterministic
+1k/10k/100k synthetic reports, indexed trade lookup and atomic grouped-batch
+cancellation are present; exact Mac arm64 app/DMG/WKWebView evidence is tied to
+`779e2d7`. The current 100k Evidence Pack and projection rebuild p95 values do not
+meet the planning target, so H07 remains `IMPLEMENTATION_REQUIRED`. Next handoff is
+the safe integrity-verification/resource-boundary follow-up, then correction/replay
+and frontend cancellation truth. H05 license/notices and default-branch Dependabot
+remain deferred release gates; no production or commercial package claim is allowed.
 
 ## Update protocol
 
