@@ -300,6 +300,7 @@ class EvidenceTradeProjectionRepository:
             return report
 
         conn = self._connect(write=True)
+        committed = False
         try:
             conn.execute("BEGIN IMMEDIATE")
             check_resources("before_projection_delete")
@@ -317,12 +318,18 @@ class EvidenceTradeProjectionRepository:
                 check_resources("after_projection_record")
             check_resources("before_projection_commit")
             conn.commit()
+            committed = True
         except Exception:
             if conn.in_transaction:
                 conn.rollback()
             raise
         finally:
             conn.close()
+        if committed:
+            # Do not keep the verifier's read connection alive across a large
+            # projection write.  Releasing it lets SQLite checkpoint its WAL;
+            # the next rebuild will recreate the cache connection safely.
+            ledger.close()
         return report
 
     def get_projection(

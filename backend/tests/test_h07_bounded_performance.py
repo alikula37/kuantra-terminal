@@ -230,6 +230,23 @@ def test_projection_rebuild_reuses_ledger_verification_for_unchanged_snapshot(
     assert iterator_calls == 1
 
 
+def test_projection_apply_releases_verifier_connection_after_write(tmp_path):
+    db_path = tmp_path / "projection-verification-connection.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    trade = generate_trade_snapshot(0, seed="H07-PROJECTION-CONNECTION")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(trade, 0, seed="H07-PROJECTION-CONNECTION"),
+    ])
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=True)
+
+    assert projection._ledger_repo._integrity_cache_connection is not None
+
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=False)
+
+    assert projection._ledger_repo._integrity_cache_connection is None
+
+
 def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_ledger(tmp_path):
     db_path = tmp_path / "cancelled-batch.sqlite"
     driver = SQLiteDriver(str(db_path))
