@@ -4,9 +4,9 @@
 ```yaml
 work_package: P1-WP20
 version: 1.0.0
-status: Ready
+status: InProgress
 date: 2026-09-08
-baseline_commit: f67e732
+baseline_commit: c1f131f
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP19
@@ -55,20 +55,36 @@ complete account state olarak sunulmaz.
 
 ## Acceptance criteria
 
-- [ ] Önce kırmızı, sonra yeşil: aynı economic fill overlapping CSV/API source’larında
+- [x] Önce kırmızı, sonra yeşil: aynı economic fill overlapping CSV/API source’larında
   tek contribution ve iki source lineage ile görünür.
-- [ ] Same external ID farklı account/source/market scope’larında ayrılır; eksik veya
+- [x] Same external ID farklı account/source/market scope’larında ayrılır; eksik veya
   çelişkili identity `UNRESOLVED`/`PARTIAL` olur.
-- [ ] Partial fill, scale-in/out, flip, cancel/reject ve orphan fill state/discrepancy
+- [x] Partial fill, scale-in/out, flip, cancel/reject ve orphan fill state/discrepancy
   sözleşmeleri deterministic olarak test edilir.
-- [ ] Late correction yeni immutable lineage üretir; eski observation korunur ve
+- [x] Late correction yeni immutable lineage üretir; eski observation korunur ve
   re-import idempotent kalır.
-- [ ] Sıralama, batch partition ve tekrar import ekonomik sonucu değiştirmez; gerçek
+- [x] Sıralama, batch partition ve tekrar import ekonomik sonucu değiştirmez; gerçek
   correction açıkça değiştirir.
-- [ ] P1-WP17/P1-WP18/P1-WP19 regression, focused suite, full backend suite ve
-  uygun Mac local CI kanıtı kaydedilir.
+- [x] P1-WP17/P1-WP18/P1-WP19 regression, focused suite `8 passed`, full backend
+  suite `595 passed, 2 warnings` ve Mac local CI `MERGE READY` kanıtı kaydedildi:
+  frontend `51`, i18n `480/480`, production build, arm64 desktop build, WKWebView
+  native smoke ve packaging preflight geçti.
 - [ ] Exact commit, changed files, unsupported/unknown semantics ve sonraki P1-WP21
   journal/evidence propagation bağımlılığı bu kayda yazılır.
+
+## Uygulama sınırı (InProgress)
+
+- `EconomicGroupingService` source observation identity’yi account, venue, source
+  exchange, market type, source document ve row hash ile scope’lar; economic group
+  identity’yi bu source kimliğinden ayrı tutar.
+- Aynı explicit economic key veya aynı source-scoped fill ID farklı CSV/API
+  observations arasında tek contribution üretir; source lineage listesi korunur.
+  Quantity/price conflict sessizce netlenmez ve `UNRESOLVED` kalır.
+- Order lifecycle partial/canceled/rejected/orphan durumlarını ayrı state olarak
+  raporlar. One-way position mode açıkça verilmeden scale-in/out/flip semantics
+  üretilmez; bu paket PnL hesaplamaz.
+- Late correction eski group snapshot’ını silmez; effective contribution ve correction
+  lineage birlikte taşınır. Ledger/projection write propagation P1-WP21’e bırakılmıştır.
 
 ## Kapsam dışı
 
