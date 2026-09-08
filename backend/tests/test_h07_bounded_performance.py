@@ -15,7 +15,12 @@ from scripts.run_h07_benchmark import (
     percentile,
     validate_benchmark_report,
 )
-from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+from app.db.repositories.evidence_ledger_repo import (
+    EvidenceLedgerRepository,
+    GENESIS_HASH,
+    _canonical_hash_json,
+    canonical_json,
+)
 from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 from app.db.sqlite_driver import (
     SQLiteDriver,
@@ -50,6 +55,30 @@ def test_percentile_is_deterministic_without_numpy():
     assert percentile(values, 50) == 25.0
     assert percentile(values, 95) == 38.5
     assert percentile(values, 99) == 39.7
+
+
+def test_event_hash_fast_path_matches_the_canonical_json_contract():
+    body = {
+        "event_id": 'evt-ä-"-\\-\n',
+        "event_type": "IntentRecorded",
+        "account_id": "acct",
+        "venue": "venue",
+        "occurred_at_utc": "2026-01-01T00:00:00.000000Z",
+        "chain_date_utc": "2026-01-01",
+        "chain_sequence": 7,
+        "schema_version": "1",
+        "adapter_version": "test",
+        "correlation_id": "corr",
+        "causation_id": None,
+        "idempotency_key": "idempotency",
+        "request_fingerprint_sha256": "a" * 64,
+        "raw_payload_sha256": "b" * 64,
+        "normalized_payload_json": "{\"trade\":{}}",
+        "provenance_json": "{}",
+        "prev_hash": GENESIS_HASH,
+    }
+
+    assert _canonical_hash_json(body) == canonical_json(body)
 
 
 def test_benchmark_report_rejects_missing_measurement_provenance():

@@ -14,8 +14,14 @@ import sqlite3
 import uuid
 from copy import deepcopy
 from datetime import date, datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, Tuple
+
+try:
+    import orjson
+except ImportError:  # pragma: no cover - the locked runtime provides orjson.
+    orjson = None  # type: ignore[assignment]
 
 from app.core.paths import get_sqlite_path
 from app.db.evidence_schema import EVENT_TYPES, initialize_evidence_schema
@@ -43,6 +49,7 @@ _SECRET_KEYS = {
     "credential",
     "credentials",
 }
+_SECRET_KEY_NORMALIZE_RE = re.compile(r"[^a-z0-9]")
 
 
 class EvidenceLedgerError(Exception):
@@ -76,6 +83,27 @@ def canonical_json(value: Any) -> str:
         raise EvidenceValidationError(f"Payload is not canonical JSON: {exc}") from exc
 
 
+def _canonical_hash_json(value: Any) -> str:
+    """Serialize the scalar-only hash bodies without changing their bytes.
+
+    Event and request fingerprint bodies contain only strings, integers and
+    ``None`` values.  The locked ``orjson`` implementation produces the same
+    sorted, compact UTF-8 representation as :func:`canonical_json` for that
+    restricted shape. Callers must preserve that scalar-only contract; the
+    standard-library fallback remains available when ``orjson`` is absent or
+    rejects a value.
+    """
+
+    if orjson is not None:
+        try:
+            return orjson.dumps(value, option=orjson.OPT_SORT_KEYS).decode("utf-8")
+        except (TypeError, ValueError):
+            # Keep the standard canonical contract if a future hash body is
+            # not representable by the scalar-only fast path.
+            pass
+    return canonical_json(value)
+
+
 def _decode_json_value(value: Any, field_name: str) -> Any:
     if isinstance(value, bytes):
         try:
@@ -93,7 +121,7 @@ def _decode_json_value(value: Any, field_name: str) -> Any:
 def _assert_no_secret_keys(value: Any, path: str = "payload") -> None:
     if isinstance(value, dict):
         for key, child in value.items():
-            normalized_key = re.sub(r"[^a-z0-9]", "", str(key).lower())
+            normalized_key = _normalized_secret_key(str(key))
             if normalized_key in _SECRET_KEYS:
                 raise EvidenceValidationError(
                     f"{path}.{key} is a secret-bearing field and cannot enter the ledger"
@@ -110,8 +138,30 @@ def _canonical_payload(value: Any, field_name: str) -> str:
     return canonical_json(decoded)
 
 
+@lru_cache(maxsize=128)
+def _validate_canonical_json_text(value: str, field_name: str) -> None:
+    """Validate canonical JSON with a bounded cache for repeated metadata.
+
+    Provenance is commonly identical across a batch (often ``{}``).  Caching
+    only validation results avoids re-parsing that repeated text while keeping
+    the cache bounded and preserving the strict canonical/secret checks.
+    """
+
+    decoded = json.loads(value)
+    if canonical_json(decoded) != value:
+        raise EvidenceValidationError(f"{field_name} is not canonical JSON")
+    _assert_no_secret_keys(decoded, field_name)
+
+
 def _sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
+
+
+@lru_cache(maxsize=256)
+def _normalized_secret_key(value: str) -> str:
+    """Normalize repeated JSON keys with a bounded cache."""
+
+    return _SECRET_KEY_NORMALIZE_RE.sub("", value.lower())
 
 
 def _raw_payload_bytes(raw_payload: Any, normalized_payload_json: str) -> bytes:
@@ -408,7 +458,7 @@ class EvidenceLedgerRepository:
             "normalized_payload_json": fields["normalized_payload_json"],
             "provenance_json": fields["provenance_json"],
         }
-        return _sha256_bytes(canonical_json(fingerprint_body).encode("utf-8"))
+        return _sha256_bytes(_canonical_hash_json(fingerprint_body).encode("utf-8"))
 
     @classmethod
     def _event_hash_body(cls, row: Dict[str, Any]) -> Dict[str, Any]:
@@ -435,7 +485,7 @@ class EvidenceLedgerRepository:
 
     @classmethod
     def _event_hash(cls, row: Dict[str, Any]) -> str:
-        return _sha256_bytes(canonical_json(cls._event_hash_body(row)).encode("utf-8"))
+        return _sha256_bytes(_canonical_hash_json(cls._event_hash_body(row)).encode("utf-8"))
 
     @staticmethod
     def _same_semantic_event(existing: sqlite3.Row, candidate: Dict[str, Any]) -> bool:
@@ -1003,14 +1053,10 @@ class EvidenceLedgerRepository:
                 if not _SHA256_RE.fullmatch(row[digest_field] or ""):
                     chain_errors.append(f"{prefix}: invalid {digest_field}")
             try:
-                parsed_payload = json.loads(row["normalized_payload_json"])
-                if canonical_json(parsed_payload) != row["normalized_payload_json"]:
-                    chain_errors.append(f"{prefix}: normalized payload is not canonical JSON")
-                _assert_no_secret_keys(parsed_payload, "normalized_payload")
-                parsed_provenance = json.loads(row["provenance_json"])
-                if canonical_json(parsed_provenance) != row["provenance_json"]:
-                    chain_errors.append(f"{prefix}: provenance is not canonical JSON")
-                _assert_no_secret_keys(parsed_provenance, "provenance")
+                _validate_canonical_json_text(
+                    row["normalized_payload_json"], "normalized_payload"
+                )
+                _validate_canonical_json_text(row["provenance_json"], "provenance")
             except (EvidenceValidationError, json.JSONDecodeError, TypeError) as exc:
                 chain_errors.append(f"{prefix}: invalid JSON payload ({exc})")
             try:
