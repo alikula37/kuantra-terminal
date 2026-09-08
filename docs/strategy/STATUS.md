@@ -7,22 +7,23 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**N01 — InProgress:**
-[Exact build provenance](work-packages/N01-build-provenance.md).
+**N02 — InProgress:**
+[Exact macOS DMG ve WKWebView smoke](work-packages/N02-macos-dmg-smoke.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
 verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
 `f67e732`; P1-WP20 economic dedup/lifecycle was verified in `5d691b9`. P1-WP21
-journal/projection/evidence propagation is complete in `056b1ca`; it did not silently
-become full tax/accounting scope or new venue scope. The next bounded implementation
-is exact build provenance. No other historical `Active` WP is automatically queued.
-UX/review integration waits for the N01/N02/H03 evidence chain.
+journal/projection/evidence propagation is complete in `056b1ca`; N01 exact build
+provenance is complete in `05e826d`. Neither package silently became full
+tax/accounting scope or new venue scope. The next bounded implementation is exact
+mounted-DMG/WKWebView smoke. No other historical `Active` WP is automatically queued.
+UX/review integration waits for N02/H03 evidence.
 
 ## Current evidence, not completion claims
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `056b1ca`; fresh Mac local CI `MERGE READY`: 601 backend, 51 frontend, i18n 480/480, arm64 build and native smoke passed. Smoke executable SHA `e8124fee1ed0c666bdc5f0eb49af129da279c8b4dd1f2450ed7f27fe77ae984c`; exact provenance fields are N01 |
+| Runtime baseline | `05e826d`; fresh Mac local CI `MERGE READY`: 604 backend, 51 frontend, i18n 480/480, arm64 build and native smoke passed. Provenance `COMPLETE`; executable SHA `e73116e69faa61f2d13530cd7da26ef2747cd4dd7274b932922ea0d1209bf303`; exact DMG-mounted smoke remains N02 |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac | App `.app` smoke observed `wkwebview`; ad-hoc signed DMG `83fee6a15f2abfea2ebe0c76dd1818d51c8231df7ebdaf9caa60af4b1d09b4f8` packaged and standalone signature verified. Exact mounted-DMG executable smoke, provenance binding and fail-closed native renderer gate remain open |
@@ -36,7 +37,7 @@ UX/review integration waits for the N01/N02/H03 evidence chain.
 | B1 | CLOSED | Timestamp pagination can skip records and overstate completeness | Closed by P1-WP16 / `ef909d1`; historical package retained in archive |
 | B2 | IMPLEMENTATION_REQUIRED | Fee currency/unknown handling, perps identity/accounting and economic dedup | P1-WP17–20 and P1-WP21 propagation are closed within their bounded contracts. Full account PnL/tax accounting remains out of scope |
 | B3/M1 | DEFERRED | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Complete before another long/24h soak; not primary product path |
-| B4 | IMPLEMENTATION_REQUIRED | Runtime offline ≠ uv offline; artifact hash ≠ mounted executable; UNKNOWN commit; Mac renderer gate | N01 exact provenance, N02 exact mounted-DMG smoke, H03 degraded/network boundary |
+| B4 | IMPLEMENTATION_REQUIRED | Runtime offline ≠ uv offline; artifact hash ≠ mounted executable; UNKNOWN commit; Mac renderer gate | N01 provenance is closed; N02 exact mounted-DMG smoke and H03 degraded/network boundary remain |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -52,20 +53,21 @@ registry records unchecked counts so accidental checkbox deletion is detected.
 
 P1-WP20 economic dedup/lifecycle contract was implemented in `5d691b9` and its
 historical evidence record is archived. P1-WP21 propagation was implemented in
-`056b1ca` and archived with its focused/full test and Mac local-CI evidence. The fresh
-2026-09-08 Mac audit used the locked
+`056b1ca`, and N01 exact provenance in `05e826d`; both are archived with focused/full
+test and Mac local-CI evidence. The fresh 2026-09-08 Mac audit used the locked
 environment and temporary data directories: local CI was `MERGE READY`, with frontend
-**51**, i18n **480/480**, full backend **595**, production build, arm64 desktop build,
+**51**, i18n **480/480**, full backend **604**, production build, arm64 desktop build,
 native `wkwebview` smoke and packaging preflight. The `.app` smoke observed
-`wkwebview`; it also attempted the public Binance WebSocket during startup. The smoke
-report still has `build_commit=UNKNOWN`, and the exact mounted-DMG executable was not
-smoked, so B4/N01/N02 remain open. DMG SHA-256 was recorded as
+`wkwebview`; it also attempted the public Binance WebSocket during startup. The clean
+local-CI report now has `provenance_status=COMPLETE` and release-facing
+validator PASS; the exact mounted-DMG executable was not yet smoked, so N02 remains
+open. Earlier standalone DMG SHA-256 was recorded as
 `83fee6a15f2abfea2ebe0c76dd1818d51c8231df7ebdaf9caa60af4b1d09b4f8`; standalone
 ad-hoc signature verification passed. Branch `npm audit` reported zero findings, while
 the GitHub default branch still exposes five open npm Dependabot alerts. Source identity
 conflicts, unknown position mode, incomplete lifecycle, funding/transfer schema and
 network-denied runtime remain fail-closed boundaries; no PnL, live execution or pilot
-claim was opened. Next active contract: N01.
+claim was opened. Next active contract: N02.
 
 ## Update protocol
 
