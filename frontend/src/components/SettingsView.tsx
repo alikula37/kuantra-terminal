@@ -1,30 +1,109 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Database, Server, RefreshCw, Zap, DollarSign, Check } from "lucide-react";
 import { UpdateNotifier } from "./updater/UpdateNotifier";
 import { SystemHealthSettings } from "./settings/SystemHealthSettings";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+async function readInitialBalance(response: Response): Promise<number> {
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const payload = await response.json() as { detail?: unknown; message?: unknown };
+      const candidate = [payload.detail, payload.message].find((item) => typeof item === "string");
+      if (typeof candidate === "string") detail = candidate;
+    } catch {
+      // Keep the HTTP status as the bounded error when the body is not JSON.
+    }
+    throw new Error(detail || `Portfolio summary request failed (HTTP ${response.status})`);
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new Error("Portfolio summary response was malformed");
+  }
+  if (
+    !payload ||
+    typeof payload !== "object" ||
+    !isFiniteNumber((payload as Record<string, unknown>).initial_balance) ||
+    (payload as Record<string, number>).initial_balance < 0
+  ) {
+    throw new Error("Portfolio summary response was malformed");
+  }
+  return (payload as Record<string, number>).initial_balance;
+}
+
 export const SettingsView: React.FC = () => {
   const { t } = useTranslation();
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
-  const [initialBalance, setInitialBalance] = useState<number>(0);
+  const [initialBalance, setInitialBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(true);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [balanceLoadCancelled, setBalanceLoadCancelled] = useState<boolean>(false);
   const [balanceSavedMsg, setBalanceSavedMsg] = useState<string | null>(null);
   const [isSavingBalance, setIsSavingBalance] = useState<boolean>(false);
+  const balanceControllerRef = useRef<AbortController | null>(null);
+  const balanceRequestIdRef = useRef(0);
+
+  const loadInitialBalance = useCallback(async () => {
+    balanceControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = ++balanceRequestIdRef.current;
+    balanceControllerRef.current = controller;
+    setIsLoadingBalance(true);
+    setBalanceError(null);
+    setBalanceLoadCancelled(false);
+
+    try {
+      const balance = await apiFetch(apiUrl("/api/v1/portfolio/summary"), { signal: controller.signal }).then(readInitialBalance);
+      if (controller.signal.aborted || requestId !== balanceRequestIdRef.current) return;
+      setInitialBalance(balance);
+    } catch (cause) {
+      if (controller.signal.aborted || requestId !== balanceRequestIdRef.current) return;
+      if (!(cause instanceof Error && cause.name === "AbortError")) {
+        console.warn("[SettingsView] Failed to fetch initial balance:", cause);
+        setBalanceError(cause instanceof Error ? cause.message : t("settings.capital_load_error"));
+      }
+    } finally {
+      if (requestId === balanceRequestIdRef.current) {
+        setIsLoadingBalance(false);
+        balanceControllerRef.current = null;
+      }
+    }
+  }, [t]);
 
   useEffect(() => {
-    apiFetch(apiUrl("/api/v1/portfolio/summary"))
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && typeof data.initial_balance === "number") {
-          setInitialBalance(data.initial_balance);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    void loadInitialBalance();
+    return () => {
+      balanceRequestIdRef.current += 1;
+      balanceControllerRef.current?.abort();
+      balanceControllerRef.current = null;
+    };
+  }, [loadInitialBalance]);
+
+  const cancelBalanceLoad = () => {
+    const controller = balanceControllerRef.current;
+    if (!controller) return;
+    balanceRequestIdRef.current += 1;
+    controller.abort();
+    balanceControllerRef.current = null;
+    setIsLoadingBalance(false);
+    setBalanceLoadCancelled(true);
+    setBalanceError(t("settings.capital_load_cancelled"));
+  };
 
   const handleSaveBalance = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (initialBalance === null || !isFiniteNumber(initialBalance) || initialBalance < 0) {
+      setBalanceSavedMsg(t("settings.save_capital_error"));
+      return;
+    }
     setIsSavingBalance(true);
     setBalanceSavedMsg(null);
     try {
@@ -80,8 +159,8 @@ export const SettingsView: React.FC = () => {
               type="number"
               step="any"
               min="0"
-              value={initialBalance || ""}
-              onChange={(e) => setInitialBalance(Number(e.target.value))}
+              value={initialBalance ?? ""}
+              onChange={(e) => setInitialBalance(e.target.value === "" ? null : Number(e.target.value))}
               placeholder="0.00"
               className="bg-[#090d14] border border-surface-border rounded pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-accent font-bold w-48"
               required
@@ -89,12 +168,28 @@ export const SettingsView: React.FC = () => {
           </div>
           <button
             type="submit"
-            disabled={isSavingBalance}
+            disabled={isSavingBalance || isLoadingBalance}
             className="px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs flex items-center space-x-1.5 transition disabled:opacity-50 cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
             <span>{isSavingBalance ? t("settings.saving_capital_btn") : t("settings.save_capital_btn")}</span>
           </button>
+          {isLoadingBalance && (
+            <div role="status" data-testid="settings-capital-loading" className="text-xs text-slate-400 flex items-center gap-2">
+              <span>{t("settings.capital_loading")}</span>
+              <button type="button" data-testid="settings-capital-cancel" onClick={cancelBalanceLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800">
+                {t("settings.capital_cancel_load")}
+              </button>
+            </div>
+          )}
+          {balanceError && !isLoadingBalance && (
+            <div role="alert" data-testid={balanceLoadCancelled ? "settings-capital-cancelled" : "settings-capital-error"} className="text-xs text-loss flex items-center gap-2">
+              <span>{balanceError}</span>
+              <button type="button" data-testid="settings-capital-retry" onClick={() => void loadInitialBalance()} className="px-2 py-1 rounded border border-loss/50 text-loss hover:bg-loss/10">
+                {t("settings.capital_retry")}
+              </button>
+            </div>
+          )}
           {balanceSavedMsg && (
             <span className="text-xs text-gain font-semibold animate-fade-in">{balanceSavedMsg}</span>
           )}
