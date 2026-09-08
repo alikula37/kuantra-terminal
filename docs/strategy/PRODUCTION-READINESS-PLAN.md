@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.4
+version: 1.0.5
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 30dfcd7105d06a13297267e0b938660906921f4e
+reviewed_commit: 006e86e6b6fae022fc27a1169f55f0c1e82c7120
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -27,8 +27,8 @@ veya kullanıcı tarafından ticari olarak onaylanmış değildir. Accepted ADR'
 mevcut güvenlik kapıları geçerlidir. P1-WP16, P1-WP17, P1-WP18, P1-WP19 ve P1-WP20 bounded doğruluk paketleri
 kanıtla kapatılmıştır; P1-WP21, N01, N02, H03 ve P1-WP22 bounded paketleri de kendi
 kanıtlarıyla kapatılmıştır. P1-WP23 / U02 de bounded kanıtla kapatılmış; P1-WP24 /
-U03, P1-WP25 / U04 ve P1-WP26 / U05 de bounded kanıtla kapatılmıştır. Mevcut `Ready`
-iş H01'dir. Aşağıdaki
+U03, P1-WP25 / U04 ve P1-WP26 / U05 de bounded kanıtla kapatılmıştır. H01 canonical
+persistence/recovery bounded kanıtla kapatılmıştır. Mevcut `Ready` iş H02'dir. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -132,9 +132,10 @@ Pack, coverage/rule görünürlüğü, redaction ve deterministic export safety 
 (`afedb70`) ile bounded olarak tamamlanmıştır. U04 weekly review ve
 period/timezone/as-of determinism P1-WP25 (`26751f7`) ile bounded olarak
 tamamlanmıştır. U05 erişilebilir ve anlaşılır shell state'lerini P1-WP26
-(`30dfcd7`) ile bounded olarak tamamlamıştır. Sıradaki aktif paket **H01**'dir:
-canonical persistence ve recovery hardening. H01 tamamlanmadan release/pilot iddiası
-açılmaz.
+(`30dfcd7`) ile bounded olarak tamamlamıştır. H01 canonical persistence/recovery
+hardening `006e86e` ile bounded olarak tamamlandı. Sıradaki aktif paket **H02**'dir:
+schema upgrade ve restore boundary'si. H02 tamamlanmadan restore/upgrade
+production iddiası açılmaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
@@ -324,8 +325,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     `26751f7`.
 11. P1-WP26 / U05: accessible/understandable shell; ardından bağımlılığa göre
     tamamlandı `30dfcd7`. U05 yeni capability veya release gate açmaz.
-12. H01: canonical persistence ve recovery; ardından H02/H04–H07 ve N03–N06
-    bağımlılık sırasıyla. H01 tamamlanmadan durability/release iddiası açılmaz.
+12. H01: canonical persistence ve recovery; tamamlandı `006e86e`.
+13. H02: schema upgrade ve restore; ardından H04–H07 ve N03–N06 bağımlılık
+    sırasıyla. H02 tamamlanmadan restore/upgrade production iddiası açılmaz.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -334,6 +336,15 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.5 — 2026-09-08
+
+- H01 canonical persistence/recovery boundary'si `006e86e` ile process crash,
+  transaction/read-only/disk-busy/concurrent import ve restart/rebuild kanıtlarıyla
+  bounded olarak kapatıldı. H02 schema upgrade/restore tek güncel Ready work package
+  olarak seçildi. H02 yalnız synthetic fixture, preflight, interrupted migration,
+  corrupt restore ve future-schema fail-closed sınırlarını kapsar; gerçek kullanıcı
+  migration'ı veya release yetkisi vermez.
 
 ### 1.0.4 — 2026-09-08
 

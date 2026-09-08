@@ -61,6 +61,7 @@ Remote evidence, Windows host, latest-SHA and P2 operational gaps remain in STAT
 | [P1-WP24-evidence-pack-export-boundary](strategy/work-packages/P1-WP24-evidence-pack-export-boundary.md) | 0 |
 | [P1-WP25-weekly-review-asof-boundary](strategy/work-packages/P1-WP25-weekly-review-asof-boundary.md) | 0 |
 | [P1-WP26-accessible-shell-boundary](strategy/work-packages/P1-WP26-accessible-shell-boundary.md) | 0 |
+| [H01-canonical-persistence-boundary](strategy/work-packages/H01-canonical-persistence-boundary.md) | 0 |
 | [P2-WP01-sequence-gap-aware-market-context](strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md) | 1 |
 | [P2-WP02-binance-depth-sequence-validator](strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md) | 1 |
 | [P2-WP03-binance-depth-recovery-coordinator](strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | 1 |
