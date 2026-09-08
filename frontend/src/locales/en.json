@@ -559,9 +559,12 @@
   "market_chart": {
     "search_placeholder": "Search Symbol...",
     "refresh_tooltip": "Refresh Data",
-    "loading_candles": "Fetching Live Market Candles ({symbol})...",
+    "loading_candles": "Fetching market candles ({symbol})...",
     "error_title": "Market Data Fetch Failed",
     "retry_btn": "Retry",
+    "cancel_request": "Cancel request",
+    "request_cancelled": "Market data request cancelled.",
+    "malformed": "Market data response was malformed.",
     "fetch_timeout": "{symbol} data request timed out (6s).",
     "no_candles": "No candle data found for {symbol} on this timeframe."
   },

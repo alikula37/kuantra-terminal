@@ -559,9 +559,12 @@
   "market_chart": {
     "search_placeholder": "Symbol suchen...",
     "refresh_tooltip": "Daten aktualisieren",
-    "loading_candles": "Live-Marktkerzen werden geladen ({symbol})...",
+    "loading_candles": "Marktkerzen werden geladen ({symbol})...",
     "error_title": "Marktdaten-Abruf fehlgeschlagen",
     "retry_btn": "Wiederholen",
+    "cancel_request": "Anfrage abbrechen",
+    "request_cancelled": "Marktdatenanfrage abgebrochen.",
+    "malformed": "Die Marktdatenantwort ist fehlerhaft.",
     "fetch_timeout": "Datenanfrage für {symbol} hat Zeitüberschreitung erreicht (6s).",
     "no_candles": "Keine Kerzendaten für {symbol} in diesem Zeitrahmen gefunden."
   },

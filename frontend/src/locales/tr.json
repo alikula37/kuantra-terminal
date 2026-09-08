@@ -559,9 +559,12 @@
   "market_chart": {
     "search_placeholder": "Sembol Ara...",
     "refresh_tooltip": "Veriyi Yenile",
-    "loading_candles": "Canlı Piyasa Mumları Alınıyor ({symbol})...",
+    "loading_candles": "Piyasa mumları alınıyor ({symbol})...",
     "error_title": "Piyasa Verisi Alınamadı",
     "retry_btn": "Tekrar Dene",
+    "cancel_request": "İsteği iptal et",
+    "request_cancelled": "Piyasa verisi isteği iptal edildi.",
+    "malformed": "Piyasa verisi yanıtı hatalı biçimde geldi.",
     "fetch_timeout": "{symbol} veri isteği zaman aşımına uğradı (6s).",
     "no_candles": "Bu zaman diliminde {symbol} için mum verisi bulunamadı."
   },

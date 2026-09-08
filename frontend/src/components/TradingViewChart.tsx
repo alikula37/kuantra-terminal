@@ -14,6 +14,28 @@ export interface CandleDataPoint {
   volume: number;
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function normalizeCandle(value: unknown): CandleDataPoint | null {
+  if (!value || typeof value !== "object") return null;
+  const candle = value as Record<string, unknown>;
+  if (!isFiniteNumber(candle.timestamp) || candle.timestamp <= 0) return null;
+  const prices = [candle.open, candle.high, candle.low, candle.close];
+  if (!prices.every((price) => isFiniteNumber(price) && price > 0) || !isFiniteNumber(candle.volume) || candle.volume < 0) return null;
+  const [open, high, low, close] = prices as number[];
+  if (high < Math.max(open, low, close) || low > Math.min(open, high, close)) return null;
+  return {
+    timestamp: candle.timestamp > 1e11 ? Math.floor(candle.timestamp / 1000) : Math.floor(candle.timestamp),
+    open,
+    high,
+    low,
+    close,
+    volume: candle.volume,
+  };
+}
+
 const POPULAR_SYMBOLS = [
   { symbol: "BTCUSDT", label: "BTC/USDT" },
   { symbol: "ETHUSDT", label: "ETH/USDT" },
@@ -40,14 +62,18 @@ export const TradingViewChart: React.FC = () => {
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
 
-  const { symbol: storeSymbol, setSymbol: setStoreSymbol, updateTick } = useMarketStore();
+  const { symbol: storeSymbol, setSymbol: setStoreSymbol } = useMarketStore();
   const [activeSymbol, setActiveSymbol] = useState<string>(storeSymbol || "BTCUSDT");
   const [activeTimeframe, setActiveTimeframe] = useState<string>("15m");
   const [customInput, setCustomInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isCancelled, setIsCancelled] = useState<boolean>(false);
   const [hoveredCandle, setHoveredCandle] = useState<CandleDataPoint | null>(null);
   const [latestCandle, setLatestCandle] = useState<CandleDataPoint | null>(null);
+  const candleControllerRef = useRef<AbortController | null>(null);
+  const candleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const candleRequestIdRef = useRef(0);
 
   // Initialize Lightweight Charts Canvas
   useEffect(() => {
@@ -145,11 +171,20 @@ export const TradingViewChart: React.FC = () => {
 
   // Fetch 100% Real Historical Market Data from Backend with Timeout & AbortController Guard
   const fetchMarketCandles = useCallback(async () => {
+    candleControllerRef.current?.abort();
+    if (candleTimeoutRef.current) clearTimeout(candleTimeoutRef.current);
+    const requestId = ++candleRequestIdRef.current;
+    const controller = new AbortController();
+    candleControllerRef.current = controller;
+    let timedOut = false;
     setIsLoading(true);
     setErrorMsg(null);
+    setIsCancelled(false);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    candleTimeoutRef.current = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 6000);
 
     try {
       const url = `${apiBase()}/api/v1/market-data/candles?symbol=${encodeURIComponent(
@@ -158,33 +193,42 @@ export const TradingViewChart: React.FC = () => {
 
       const response = await apiFetch(url, { signal: controller.signal });
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${activeSymbol} verisi alınamadı.`);
+        let detail = "";
+        try {
+          const payload = await response.json() as { detail?: unknown; message?: unknown };
+          const candidate = [payload.detail, payload.message].find((item) => typeof item === "string");
+          if (typeof candidate === "string") detail = candidate;
+        } catch {
+          // Keep the HTTP status as the bounded error when the body is not JSON.
+        }
+        throw new Error(detail || `HTTP ${response.status}: ${activeSymbol} verisi alınamadı.`);
       }
 
-      const jsonRes = await response.json();
-      const rawData: CandleDataPoint[] = Array.isArray(jsonRes)
-        ? jsonRes
-        : Array.isArray(jsonRes?.candles)
-        ? jsonRes.candles
-        : [];
+      let jsonRes: unknown;
+      try {
+        jsonRes = await response.json();
+      } catch {
+        throw new Error(t("market_chart.malformed"));
+      }
+      const rawData = jsonRes && typeof jsonRes === "object" && Array.isArray((jsonRes as Record<string, unknown>).candles)
+        ? (jsonRes as { candles: unknown[] }).candles
+        : null;
 
-      if (!rawData || rawData.length === 0) {
+      if (!rawData) {
+        throw new Error(t("market_chart.malformed"));
+      }
+      if (rawData.length === 0) {
         throw new Error(t("market_chart.no_candles", { symbol: activeSymbol }));
       }
 
       // Deduplicate and sort strictly ascending by time
       const timeMap = new Map<number, CandleDataPoint>();
-      rawData.forEach((c) => {
-        const timeSec = c.timestamp > 1e11 ? Math.floor(c.timestamp / 1000) : c.timestamp;
+      rawData.forEach((rawCandle) => {
+        const c = normalizeCandle(rawCandle);
+        if (!c) throw new Error(t("market_chart.malformed"));
+        const timeSec = c.timestamp;
         if (!timeMap.has(timeSec)) {
-          timeMap.set(timeSec, {
-            timestamp: timeSec,
-            open: Number(c.open),
-            high: Number(c.high),
-            low: Number(c.low),
-            close: Number(c.close),
-            volume: Number(c.volume || 0),
-          });
+          timeMap.set(timeSec, c);
         }
       });
 
@@ -193,6 +237,8 @@ export const TradingViewChart: React.FC = () => {
       if (sortedCandles.length === 0) {
         throw new Error(t("market_chart.no_candles", { symbol: activeSymbol }));
       }
+
+      if (requestId !== candleRequestIdRef.current || controller.signal.aborted) return;
 
       const chartCandles: CandlestickData<Time>[] = sortedCandles.map((c) => ({
         time: c.timestamp as Time,
@@ -216,12 +262,12 @@ export const TradingViewChart: React.FC = () => {
 
       const last = sortedCandles[sortedCandles.length - 1];
       setLatestCandle(last);
-      updateTick(last.close, 12, Date.now(), last.volume);
       setErrorMsg(null);
+      setIsCancelled(false);
     } catch (err: any) {
+      if (requestId !== candleRequestIdRef.current || (controller.signal.aborted && !timedOut)) return;
       console.warn("[TradingViewChart] Real market data error:", err);
-      const isAbort = err.name === "AbortError";
-      const message = isAbort
+      const message = timedOut
         ? t("market_chart.fetch_timeout", { symbol: activeSymbol })
         : err.message || `${activeSymbol} piyasa verisi alınamadı.`;
       setErrorMsg(message);
@@ -231,17 +277,40 @@ export const TradingViewChart: React.FC = () => {
       }
       setLatestCandle(null);
     } finally {
-      clearTimeout(timeoutId);
-      setIsLoading(false);
+      if (requestId === candleRequestIdRef.current) {
+        if (candleTimeoutRef.current) clearTimeout(candleTimeoutRef.current);
+        candleTimeoutRef.current = null;
+        candleControllerRef.current = null;
+        setIsLoading(false);
+      }
     }
-  }, [activeSymbol, activeTimeframe, updateTick, t]);
+  }, [activeSymbol, activeTimeframe, t]);
 
   // Trigger real data fetch on symbol or timeframe change
   useEffect(() => {
-    fetchMarketCandles();
-    const interval = setInterval(fetchMarketCandles, 8000);
-    return () => clearInterval(interval);
+    void fetchMarketCandles();
+    const interval = setInterval(() => void fetchMarketCandles(), 8000);
+    return () => {
+      clearInterval(interval);
+      candleRequestIdRef.current += 1;
+      candleControllerRef.current?.abort();
+      candleControllerRef.current = null;
+      if (candleTimeoutRef.current) clearTimeout(candleTimeoutRef.current);
+      candleTimeoutRef.current = null;
+    };
   }, [fetchMarketCandles]);
+
+  const cancelMarketFetch = () => {
+    if (!candleControllerRef.current) return;
+    candleRequestIdRef.current += 1;
+    candleControllerRef.current.abort();
+    candleControllerRef.current = null;
+    if (candleTimeoutRef.current) clearTimeout(candleTimeoutRef.current);
+    candleTimeoutRef.current = null;
+    setIsLoading(false);
+    setIsCancelled(true);
+    setErrorMsg(null);
+  };
 
   const handleSymbolChange = (sym: string) => {
     setActiveSymbol(sym.toUpperCase());
@@ -313,7 +382,7 @@ export const TradingViewChart: React.FC = () => {
           </div>
 
           <button
-            onClick={fetchMarketCandles}
+            onClick={() => void fetchMarketCandles()}
             disabled={isLoading}
             className="p-1.5 rounded bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white transition disabled:opacity-50"
             title={t("market_chart.refresh_tooltip")}
@@ -367,21 +436,37 @@ export const TradingViewChart: React.FC = () => {
         <div ref={chartContainerRef} className="w-full h-full" />
 
         {/* Loading Overlay */}
-        {isLoading && !latestCandle && (
+        {isLoading && (
           <div className="absolute inset-0 bg-[#0b0e14]/80 flex flex-col items-center justify-center space-y-2 z-10">
             <RefreshCw className="w-6 h-6 text-accent animate-spin" />
             <span className="text-xs text-slate-400">{t("market_chart.loading_candles", { symbol: activeSymbol })}</span>
+            <button type="button" data-testid="market-chart-cancel" onClick={cancelMarketFetch} className="px-3 py-1.5 rounded border border-surface-border text-slate-300 hover:bg-slate-800 text-xs">
+              {t("market_chart.cancel_request")}
+            </button>
           </div>
         )}
 
         {/* Authentic Error State Banner */}
         {errorMsg && (
-          <div className="absolute inset-0 bg-[#0b0e14]/90 flex flex-col items-center justify-center p-6 space-y-3 z-20 text-center">
+          <div role="alert" data-testid="market-chart-error" className="absolute inset-0 bg-[#0b0e14]/90 flex flex-col items-center justify-center p-6 space-y-3 z-20 text-center">
             <AlertCircle className="w-8 h-8 text-rose-400" />
             <div className="text-sm font-bold text-white">{t("market_chart.error_title")}</div>
             <p className="text-xs text-slate-400 max-w-md">{errorMsg}</p>
             <button
-              onClick={fetchMarketCandles}
+              onClick={() => void fetchMarketCandles()}
+              className="px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-xs rounded transition shadow-md cursor-pointer"
+            >
+              {t("market_chart.retry_btn")}
+            </button>
+          </div>
+        )}
+        {isCancelled && !isLoading && !errorMsg && (
+          <div role="alert" data-testid="market-chart-cancelled" className="absolute inset-0 bg-[#0b0e14]/90 flex flex-col items-center justify-center p-6 space-y-3 z-20 text-center">
+            <AlertCircle className="w-8 h-8 text-amber-400" />
+            <div className="text-sm font-bold text-white">{t("market_chart.request_cancelled")}</div>
+            <button
+              type="button"
+              onClick={() => void fetchMarketCandles()}
               className="px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-xs rounded transition shadow-md cursor-pointer"
             >
               {t("market_chart.retry_btn")}
