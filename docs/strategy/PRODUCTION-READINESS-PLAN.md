@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.13
+version: 1.0.14
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 27b3404
+reviewed_commit: 42d67c6
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -351,8 +351,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 17. H07: deterministik sentetik performance/resource-limit baseline'ı; query
     mid-operation abort backend sınırı `5137383` ile, Evidence Pack/Reconciliation
     Inbox/Weekly Review/CSV preview read yüzeylerinin bounded cancellation/loading/
-    error truth'i `27b3404` ile eklendi. Dashboard/analytics audit'i ve 100k planning
-    target kararı açık kaldığı için paket hâlâ aktif non-release iştir.
+    error truth'i `27b3404` ile, Dashboard/Quant Analytics/Header portfolio read
+    truth'i `42d67c6` ile eklendi. JournalView/MAE-MFE audit'i ve 100k planning target
+    kararı açık kaldığı için paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -390,6 +391,16 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
   kullanıcıya iptal edilebilir gibi sunulmadı. Dashboard/analytics ve diğer uzun
   read yüzeyleri ile 100k planning target kararı açık kaldı; local CI `MERGE READY`,
   709 backend, 76 frontend ve i18n `580/580` kanıtı güncellendi.
+
+### 1.0.14 — 2026-09-08
+
+- H07 core dashboard/analytics read paketi `42d67c6` ile kaydedildi: Dashboard'ın
+  dört portföy endpoint'i, Quant Analytics scorecard/symbol response contract'ı ve
+  Header portfolio telemetry için AbortSignal, stale-response suppression, explicit
+  loading/error/cancel veya unavailable state ve malformed payload fail-closed
+  doğrulandı. Backend erişilemezken sıfır scorecard veya sahte `$0.00` gösterilmez.
+  Full local CI `MERGE READY`, 709 backend, 84 frontend, i18n `591/591` ve exact
+  mounted Mac DMG/WKWebView smoke PASS; JournalView/MAE-MFE ve 100k target açık.
 
 ### 1.0.10 — 2026-09-08
 

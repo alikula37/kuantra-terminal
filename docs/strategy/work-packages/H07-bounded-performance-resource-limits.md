@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 1.7.0
+version: 1.8.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 27b3404
+baseline_commit: 42d67c6
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -82,7 +82,7 @@ pakete eklenmeyecektir.
   coverage-ready typed projection query'lerinde mid-operation abort bounded olarak
   uygulanmıştır. Evidence Pack, Reconciliation Inbox, Weekly Review ve CSV preview
   read/loading yüzeylerinde frontend cancellation/loading/error truth bounded olarak
-  uygulanmıştır; genel analytics/dashboard yüzeyleri hâlâ açıktır.
+  uygulanmıştır; JournalView, MAE/MFE ve diğer core read yüzeyleri hâlâ açıktır.
 - [ ] Backend correctness/performance regression suite ve frontend loading/cancel/error
   truth testleri geçiyor; yeni capability veya live execution yolu açılmıyor.
 - [x] Aynı host ve aynı source/dataset girdisinde rapor snapshot/hash deterministik;
@@ -154,26 +154,35 @@ kullanıcıya iptal edilebilir gibi sunulmaz ve import sırasında modal kapanı
 devre dışı kalır. Loading state'leri `role=status`, hata ve iptal state'leri
 `role=alert` ile görünürdür.
 
-Focused H07 backend suite `26 passed`; focused frontend boundary suite `20 passed`;
-full backend suite `709 passed, 2 warnings`, full frontend `19` test dosyası ve
-`76` test PASS; i18n `580/580`.
+`42d67c6` ile Dashboard'ın dört portföy read endpoint'i tek cooperative
+`AbortController` ile yüklenir; stale response'lar bastırılır, herhangi bir endpoint
+başarısız veya malformed dönerse partial dashboard gösterilmez ve retry/cancel/error
+state'leri explicit kalır. Quant Analytics aynı sözleşmeyle quant scorecard ve symbol
+breakdown response shape'lerini doğrular; backend hatası veya incomplete payload sıfır
+scorecard'a çevrilmez. Header portfolio telemetry de abort-on-unmount/stale guard ve
+explicit unavailable/loading state taşır; backend erişilemezken sahte `$0.00` değerleri
+gösterilmez. Yeni endpoint, schema, live execution veya plugin capability açılmadı.
+
+Focused H07 backend suite `26 passed`; value-chain frontend boundary suite `20 passed`;
+dashboard/analytics/header focused suite `8 passed`; full backend suite `709 passed,
+2 warnings`, full frontend `22` test dosyası ve `84` test PASS; i18n `591/591`.
 Locked local CI `MERGE READY` oldu. Current code baseline source commit tam SHA'sı
-`27b34043dd0381461f3079d94044e30d10e1af18`, tracked source tree SHA-256'sı
-`1da4ab3a34a60a1fd1f2a6fb4cab9fdc7be43dada986865f5f71c51b00eccaca`'dır.
+`42d67c6b1e15ab98ea7c17dab09d285c338289d9`, tracked source tree SHA-256'sı
+`e436ea9982066e1949124fddabad993f53dedad4ead4a99597eb5ea0449fa00a`'dır.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `2ea24e2104fe909757dc60b629aeaa3c5f980f02fccb7f282fab11b7dbfaa08c`,
-native local smoke report SHA-256 `ab4490e4d005b1f735381a485240d3ad87fd4f03ba23da487ed67b0cca8e01aa`.
+Local CI report SHA-256 `c5d2bdef168a9065a7732fe9419ca68e7988ca9b5124d347243a2cb17af0fbc9`,
+native local smoke report SHA-256 `1db56d91aafda8b6a33e34ae8823c0ea482a950a126b9949c31d1a3570b09d0c`.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`71436cad1189f42c4ff9a12d541a1aa5ccf9434c1d94d7cec49332f09403f911`, DMG
-SHA-256 `dfa77879073bf2b5adb8ccb132fff9cb1b3ede66f60cb0b375fa287d9a9873d7`
+`4cc9fe7d1a1d834837071d7fd6091462ad50ca7314aa783748a6d7ad329e926f`, DMG
+SHA-256 `f992806baf458bdc74b32c78a0a569dff0c077ac8c924ce2a690e59ab0314637`
 ve mounted executable SHA-256
-`60523b2e74c4f41f58d977d610ffafb6bb72eb69c9c26fbd25c599b55754bfa8`'dır.
+`76d927600013f0e33b5bc70e1a8a7bd768e467277e80bccaf720a68f50c177ef`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
@@ -247,12 +256,13 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
   olmadığı için kullanıcıya iptal edilebilir mutation sunulmaz.
 - Malformed/oversized input ve partial/unknown coverage için bounded backend red/
   green fixture ve fail-closed implementation tamamlandı: 10 yeni fixture PASS.
-- Evidence Pack, Reconciliation Inbox, Weekly Review ve CSV preview için frontend
-  AbortSignal/loading/cancel/error truth bounded olarak test edilmiştir; dashboard,
-  analytics ve diğer uzun süren read yüzeyleri henüz audit edilmemiştir. Bu nedenle
-  H07 tamamlanmış veya production-ready değildir.
+- Evidence Pack, Reconciliation Inbox, Weekly Review, CSV preview, Dashboard,
+  Quant Analytics ve Header portfolio telemetry için frontend
+  AbortSignal/loading/cancel/error truth bounded olarak test edilmiştir; JournalView,
+  MAE/MFE ve diğer core read yüzeyleri henüz audit edilmemiştir. Bu nedenle H07
+  tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı dashboard/analytics ve diğer uzun süren read yüzeylerinde
-loading/cancel/error truth için ayrı red testlerin eklenmesidir. Bu audit ve 100k
-planning target kararı kapanmadan H07 tamamlanmış, production-ready veya desteklenen
-veri boyutu olarak işaretlenmeyecektir.
+Sonraki H07 adımı JournalView trade-list read sınırının ve ardından MAE/MFE ile diğer
+core read yüzeylerinin loading/cancel/error truth için ayrı red testlerle audit
+edilmesidir. Bu audit ve 100k planning target kararı kapanmadan H07 tamamlanmış,
+production-ready veya desteklenen veri boyutu olarak işaretlenmeyecektir.
