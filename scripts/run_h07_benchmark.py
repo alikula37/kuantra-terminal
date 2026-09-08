@@ -30,9 +30,11 @@ if str(BACKEND_DIR) not in sys.path:
 
 import psutil
 
-from app.db.repositories.evidence_ledger_repo import canonical_json
+from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository, canonical_json
 from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 from app.db.sqlite_driver import SQLiteDriver
+from app.quant.candle_evidence import load_candle_evidence
+from app.replay.replay_service import ReplaySession
 from app.services.evidence_pack_export import EvidencePackExportService
 from app.services.trade_read_adapter import TradeReadAdapter
 from scripts.build_provenance import collect_provenance
@@ -320,6 +322,52 @@ def _command_for_trade(trade: Mapping[str, Any], index: int, *, seed: str) -> di
     }
 
 
+def _synthetic_replay_candles(
+    trade: Mapping[str, Any],
+    *,
+    lookback_bars: int = 2,
+    lookforward_bars: int = 2,
+) -> list[dict[str, Any]]:
+    """Build bounded, deterministic OHLC fixtures for the recorded-bar replay path."""
+
+    entry_at = datetime.fromisoformat(str(trade["entry_time"]).replace("Z", "+00:00"))
+    exit_at = datetime.fromisoformat(str(trade["exit_time"]).replace("Z", "+00:00"))
+    entry_second = int(entry_at.timestamp())
+    exit_second = int(exit_at.timestamp())
+    start = (entry_second // 60) * 60 - lookback_bars * 60
+    end = ((exit_second + 59) // 60) * 60 + lookforward_bars * 60
+    entry_price = float(trade["entry_price"])
+    symbol = str(trade["symbol"])
+    candles: list[dict[str, Any]] = []
+    for offset, timestamp in enumerate(range(start, end, 60)):
+        base = entry_price + (offset - lookback_bars) * 0.05
+        close = base + 0.02
+        candles.append({
+            "time": timestamp,
+            "symbol": symbol,
+            "timeframe": "1m",
+            "open": round(base, 6),
+            "high": round(max(base, close) + 0.05, 6),
+            "low": round(min(base, close) - 0.05, 6),
+            "close": round(close, 6),
+            "volume": 1.0,
+        })
+    return candles
+
+
+def _synthetic_replay_snapshot(trade: Mapping[str, Any]) -> dict[str, Any]:
+    candles = _synthetic_replay_candles(trade)
+    evidence = load_candle_evidence(
+        dict(trade),
+        candles=candles,
+        lookback_bars=2,
+        lookforward_bars=2,
+    )
+    session = ReplaySession(f"H07-REPLAY-{trade['id']}", evidence)
+    session.current_index = min(session.exit_index, session.entry_index + 1)
+    return session.to_dict()
+
+
 def _cancel_probe(size: int) -> dict[str, Any]:
     token = CancellationToken()
     cancel_at = max(1, min(size // 2, 1_000))
@@ -435,7 +483,129 @@ class H07BenchmarkRunner:
                 raise BenchmarkContractError("synthetic query returned an unexpected row count")
             query_samples.append(sample)
 
-        representative_id = str(generate_trade_snapshot(size // 2, seed=self.seed)["id"])
+        ledger = EvidenceLedgerRepository(str(db_path))
+        correction_specs: list[dict[str, Any]] = []
+        for offset in range(self.operation_repetitions):
+            correction_index = (size // 2 + offset) % size
+            source_trade = generate_trade_snapshot(correction_index, seed=self.seed)
+            source_events = ledger.list_events_for_trade(
+                source_trade["id"],
+                account_id=SYNTHETIC_ACCOUNT_ID,
+                venues=(SYNTHETIC_VENUE,),
+            )
+            if len(source_events) != 1:
+                raise BenchmarkContractError(
+                    "synthetic correction source event lookup is not unique"
+                )
+            correction_specs.append({
+                "index": correction_index,
+                "trade": source_trade,
+                "source_event": source_events[0],
+                "idempotency_key": f"h07:{source_trade['id']}:correction",
+                "event_id": f"H07-CORRECTION-{correction_index:06d}",
+                "correction": {
+                    "id": source_trade["id"],
+                    "exit_price": round(float(source_trade["exit_price"]) + 0.01, 2),
+                    "pnl": round(float(source_trade["pnl"]) + 0.01, 4),
+                    "commission": round(float(source_trade["commission"]) + 0.001, 4),
+                    "status": "CLOSED",
+                },
+            })
+
+        def _persist_correction(spec: Mapping[str, Any]) -> dict[str, Any]:
+            source_event = spec["source_event"]
+            saved = driver.record_trade_with_evidence(
+                dict(spec["correction"]),
+                event_type="TradeCorrected",
+                idempotency_key=str(spec["idempotency_key"]),
+                account_id=SYNTHETIC_ACCOUNT_ID,
+                venue=SYNTHETIC_VENUE,
+                occurred_at=str(spec["trade"]["exit_time"]),
+                received_at=str(spec["trade"]["exit_time"]),
+                causation_id=str(source_event["event_id"]),
+                provenance={
+                    "source": "h07-synthetic-correction",
+                    "dataset_seed": self.seed,
+                    "corrects_event_id": source_event["event_id"],
+                    "corrects_event_hash": source_event["event_hash"],
+                    "coverage": "COMPLETE",
+                },
+                event_id=str(spec["event_id"]),
+            )
+            return {"saved": saved}
+
+        correction_samples: list[dict[str, Any]] = []
+        correction_records: list[dict[str, Any]] = []
+        for spec in correction_specs:
+            sample, result = _timed_call(
+                lambda spec=spec: _persist_correction(spec),
+                storage_dir=db_path.parent,
+                budget=self.budget,
+            )
+            if not isinstance(result, dict) or not isinstance(result.get("saved"), dict):
+                raise BenchmarkContractError("synthetic correction did not return a trade snapshot")
+            correction_event = ledger.get_event_by_identity(
+                SYNTHETIC_ACCOUNT_ID,
+                SYNTHETIC_VENUE,
+                "TradeCorrected",
+                str(spec["idempotency_key"]),
+            )
+            if correction_event is None:
+                raise BenchmarkContractError("synthetic correction did not create immutable evidence")
+            correction_records.append({
+                "event_id": correction_event["event_id"],
+                "event_hash": correction_event["event_hash"],
+                "causation_id": correction_event["causation_id"],
+            })
+            correction_samples.append(sample)
+
+        corrected_ledger_count = self._table_count(db_path, "evidence_events")
+        expected_corrected_count = size + self.operation_repetitions
+        if corrected_ledger_count != expected_corrected_count:
+            raise BenchmarkContractError(
+                "synthetic correction count mismatch: "
+                f"events={corrected_ledger_count}, expected={expected_corrected_count}"
+            )
+
+        correction_replay_samples: list[dict[str, Any]] = []
+        for spec in correction_specs:
+            sample, result = _timed_call(
+                lambda spec=spec: _persist_correction(spec),
+                storage_dir=db_path.parent,
+                budget=self.budget,
+            )
+            if not isinstance(result, dict) or not isinstance(result.get("saved"), dict):
+                raise BenchmarkContractError("synthetic correction replay did not return a trade snapshot")
+            correction_replay_samples.append(sample)
+
+        replay_ledger_count = self._table_count(db_path, "evidence_events")
+        if replay_ledger_count != corrected_ledger_count:
+            raise BenchmarkContractError("synthetic correction replay was not idempotent")
+
+        recorded_replay_samples: list[dict[str, Any]] = []
+        recorded_replay_snapshots: list[dict[str, Any]] = []
+        representative_id = str(correction_specs[0]["trade"]["id"])
+        corrected_trade = driver.get_trade(representative_id)
+        if corrected_trade is None:
+            raise BenchmarkContractError("synthetic corrected trade is not readable")
+        for _ in range(self.operation_repetitions):
+            sample, replay_value = _timed_call(
+                lambda corrected_trade=corrected_trade: _synthetic_replay_snapshot(corrected_trade),
+                storage_dir=db_path.parent,
+                budget=self.budget,
+                expected_status="READY",
+            )
+            if not isinstance(replay_value, dict) or replay_value.get("status") != "READY":
+                raise BenchmarkContractError("synthetic recorded replay did not become READY")
+            if recorded_replay_snapshots and replay_value != recorded_replay_snapshots[0]:
+                raise BenchmarkContractError("synthetic recorded replay snapshot is not deterministic")
+            recorded_replay_snapshots.append(replay_value)
+            recorded_replay_samples.append(sample)
+
+        coverage = adapter.coverage()
+        if not coverage.get("ready"):
+            raise BenchmarkContractError(f"synthetic post-correction projection coverage is not ready: {coverage}")
+
         pack_samples: list[dict[str, Any]] = []
         export_samples: list[dict[str, Any]] = []
         exporter = EvidencePackExportService(adapter)
@@ -486,10 +656,17 @@ class H07BenchmarkRunner:
             "seed": self.seed,
             "dataset_digest": dataset_digest,
             "trade_count": trade_count,
-            "ledger_count": ledger_count,
+            "ledger_count": corrected_ledger_count,
             "coverage": coverage,
             "rebuild": rebuild_reports[-1],
             "representative_trade_id": representative_id,
+            "correction_records": correction_records,
+            "correction_replay_status": "IDEMPOTENT",
+            "recorded_replay_fingerprint": (
+                recorded_replay_snapshots[0].get("replay_fingerprint")
+                if recorded_replay_snapshots
+                else None
+            ),
             "evidence_pack_snapshot_sha256": pack["snapshot_sha256"] if pack else None,
             "evidence_artifact_sha256": artifact.artifact_sha256 if artifact else None,
             "cancel_status": cancel_results[0]["status"] if cancel_results else "UNKNOWN",
@@ -505,13 +682,16 @@ class H07BenchmarkRunner:
             },
             "counts": {
                 "trades": trade_count,
-                "ledger_events": ledger_count,
+                "ledger_events": corrected_ledger_count,
                 "projections": coverage.get("projected_count"),
             },
             "operations": {
                 "import": _summarize_samples(ingest_samples),
                 "projection_rebuild": _summarize_samples(rebuild_samples),
                 "query": _summarize_samples(query_samples),
+                "correction": _summarize_samples(correction_samples),
+                "correction_replay": _summarize_samples(correction_replay_samples),
+                "replay": _summarize_samples(recorded_replay_samples, expected_status="READY"),
                 "evidence_pack": _summarize_samples(pack_samples),
                 "evidence_pack_export": _summarize_samples(export_samples),
                 "cancel": _summarize_samples(cancel_samples, expected_status="CANCELLED"),

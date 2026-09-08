@@ -287,9 +287,11 @@ class SQLiteDriver:
         account_id: str = "local-journal",
         venue: str = "local-journal",
         occurred_at: Optional[str] = None,
+        received_at: Optional[str] = None,
         causation_id: Optional[str] = None,
         provenance: Optional[Dict[str, Any]] = None,
         raw_payload: Any = None,
+        event_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Persist a journal mutation and its evidence event atomically.
 
@@ -348,6 +350,8 @@ class SQLiteDriver:
                 correlation_id=resolved_id,
                 causation_id=causation_id,
                 provenance=provenance or {"source": "journal"},
+                received_at=received_at,
+                event_id=event_id,
             )
             self._notify_transaction_hook("after_canonical_event", conn)
             # Keep the typed read model current in the same transaction as the

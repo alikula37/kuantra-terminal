@@ -80,7 +80,7 @@ def test_small_benchmark_exercises_import_rebuild_query_pack_export_and_cancel(t
 
     validate_benchmark_report(report)
     run = report["runs"][0]
-    assert run["counts"] == {"trades": 12, "ledger_events": 12, "projections": 12}
+    assert run["counts"] == {"trades": 12, "ledger_events": 15, "projections": 12}
     assert run["coverage"]["ready"] is True
     assert run["determinism"]["status"] == "COMPLETE"
     assert run["determinism"]["evidence_pack_snapshot_sha256"]
@@ -91,6 +91,9 @@ def test_small_benchmark_exercises_import_rebuild_query_pack_export_and_cancel(t
             "import",
             "projection_rebuild",
             "query",
+            "correction",
+            "correction_replay",
+            "replay",
             "evidence_pack",
             "evidence_pack_export",
             "cancel",
