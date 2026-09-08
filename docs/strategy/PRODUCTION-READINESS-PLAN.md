@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.8
+version: 1.0.9
 status: Proposed
 date: 2026-09-08
-reviewed_commit: ca94b83
+reviewed_commit: c089cd2
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -30,7 +30,8 @@ kanıtlarıyla kapatılmıştır. P1-WP23 / U02 de bounded kanıtla kapatılmı�
 U03, P1-WP25 / U04 ve P1-WP26 / U05 de bounded kanıtla kapatılmıştır. H01 canonical
 persistence/recovery bounded kanıtla kapatılmıştır. H02 schema upgrade/restore da
 `169c446` ile bounded kanıtla kapatılmıştır. H04 de `1cf486e` ile bounded kanıtla
-kapalıdır; mevcut `Ready` iş H05'tir. Aşağıdaki
+kapalıdır; H05 machine-checkable kanıtla `c089cd2` üzerinde uygulanmıştır ancak
+owner decision gate'i açıktır. H05 kapanmadan H06 coding başlamaz. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -138,9 +139,10 @@ tamamlanmıştır. U05 erişilebilir ve anlaşılır shell state'lerini P1-WP26
 hardening `006e86e` ile bounded olarak tamamlandı. H02 schema upgrade ve restore
 boundary'si `169c446` ile tamamlandı. H04 threat model ve trust boundaries de
 `1cf486e` ile bounded misuse testleri, fail-closed input/native boundary'leri ve
-Mac local-CI kanıtıyla tamamlandı. Sıradaki aktif paket **H05**'tir: supply chain,
-SBOM, license ve secret boundary. H05–H07 ve sonraki platform kapıları tamamlanmadan
-production iddiası açılmaz.
+Mac local-CI kanıtıyla tamamlandı. H05 supply chain, SBOM, license ve secret
+boundary machine gate'i `c089cd2` ile PASS oldu; lisans/notices ve default-branch
+Dependabot disposition owner/repository kararı bekliyor. H05 kapanmadan H06–H07 ve
+sonraki platform kapıları coding sırasına alınmaz; production iddiası açılmaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
@@ -333,8 +335,11 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 12. H01: canonical persistence ve recovery; tamamlandı `006e86e`.
 13. H02: schema upgrade ve restore; tamamlandı `169c446`.
 14. H04: threat model ve trust boundaries; bounded olarak tamamlandı `1cf486e`.
-15. H05–H07 ve N03–N06 bağımlılık sırasıyla. H05 supply-chain/secret gate'i
-    geçmeden production artifact veya release claim'i açılmaz.
+15. H05: supply-chain, deterministic SBOM ve secret boundary machine gate'i
+    uygulandı `c089cd2`; lock/scan/artifact kanıtı PASS, fakat license/notices ve
+    default-branch alert disposition `OWNER_DECISION_REQUIRED`. H05 kapanmadan
+    H06 privacy veya H07 performance coding paketi başlatılmaz.
+16. H06–H07 ve N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -343,6 +348,16 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.9 — 2026-09-08
+
+- H05 machine gate `c089cd2` ile uygulandı: deterministic CycloneDX inventory (395
+  component), lock/hash drift check, release-source/DMG secret scan, Python `pip-audit`
+  80 dependency / 0 known vulnerability ve frontend `npm audit` 0 vulnerability.
+  Mac local CI **MERGE READY** (675 backend, 67 frontend, i18n 560/560), exact
+  read-only DMG/WKWebView smoke PASS. Root `LICENSE`/third-party notices yokluğu ve
+  default branch'teki 5 Dependabot alert'i owner/repository kararı olarak açık kaldı;
+  H05 `OWNER_DECISION_REQUIRED`, H06 coding başlamadı.
 
 ### 1.0.8 — 2026-09-08
 

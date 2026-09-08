@@ -7,7 +7,7 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**H05 — Ready:**
+**H05 — Owner Decision Required:**
 [Supply chain, SBOM, license and secret boundary](work-packages/H05-supply-chain-sbom-license-secret-boundary.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
@@ -23,19 +23,21 @@ in `afedb70`; P1-WP25 U04 weekly review and as-of determinism is complete in `26
 P1-WP26 U05 accessible/understandable shell is complete in `30dfcd7`; H01 canonical
 persistence/recovery is complete in `006e86e`; H02 schema upgrade/restore is complete
 in `169c446`; H04 threat model and trust boundaries is complete in `1cf486e`.
-Neither package silently became full tax/accounting scope or new venue scope. The
-next bounded implementation is H05: supply chain, SBOM, license and secret
-boundary. No other historical `Active` WP is automatically queued. Pilot/release
-claims remain blocked by their explicit gates.
+H05 machine-checkable implementation/evidence is complete in `c089cd2`, but its
+license/notices and default-branch alert disposition remain an owner/repository
+decision gate. Neither package silently became full tax/accounting scope or new
+venue scope. H06 is not started until H05's owner decision gate is resolved. No
+other historical `Active` WP is automatically queued. Pilot/release claims remain
+blocked by their explicit gates.
 
 ## Current evidence, not completion claims
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `ca94b83`; fresh clean Mac local CI `MERGE READY`: 669 backend, 67 frontend, i18n 560/560, arm64 build and native smoke passed. Provenance is COMPLETE; H03 disabled/degraded tests are PASS |
+| Runtime baseline | `c089cd2`; fresh clean Mac local CI `MERGE READY`: 675 backend, 67 frontend, i18n 560/560, arm64 build and native smoke passed. Provenance is COMPLETE; H03 disabled/degraded tests are PASS; supply-chain audit is integrated as a PASS step with owner review explicitly reported |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
-| Mac (latest local evidence) | H04 source `ca94b83` passed clean arm64 local CI and exact read-only DMG/WKWebView smoke; DMG SHA `cc1fab496a1cfbb66bdea5ee94da61c4ed9d64dc635019890a8216d01663189b`, smoke report SHA `5ebc294420567b3789be1ddf3986b7c05f8cb7cefdef7ede6a279ce23b119a66`, mounted executable SHA `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
+| Mac (latest local evidence) | H05 source `c089cd2` passed clean arm64 local CI and exact read-only DMG/WKWebView smoke; DMG SHA `6d517542848a04d16e8e326432b79f683f4722c28413e62c34a494bfadfd7b2e`, smoke report SHA `c6d935c8fa6f5b4e816ab09e9d1c741eff66a0cd4ab941f66b3fdc44e5c53a2f`, mounted executable SHA `a4ae72354581032dca2cef42f2a27bac7e6a204a1bdbdbee0b9b7b154149181c`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -50,7 +52,7 @@ claims remain blocked by their explicit gates.
 | H01 | CLOSED | Canonical journal/event/projection persistence under crash, transaction, read-only, disk/busy and concurrent import conditions | Test-only transaction hooks plus real Mac temporary-fixture evidence in `006e86e`; H02 schema/restore boundary remains separate |
 | H02 | CLOSED | Supported legacy schema upgrade, interrupted migration/restore, corrupt backup, missing segment, archive traversal/symlink and incompatible future schema fail closed while preserving canonical lineage | `169c446`; archived [H02](../archive/strategy/work-packages/H02-schema-upgrade-restore-boundary.md); 19 focused and 651 backend tests PASS |
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
-| H05 | IMPLEMENTATION_REQUIRED | Locked dependency, SBOM/license notice, secret scan and build trust evidence | Current bounded package: [H05](work-packages/H05-supply-chain-sbom-license-secret-boundary.md); default-branch Dependabot alerts and owner license decisions remain open |
+| H05 | OWNER_DECISION_REQUIRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; license/notices and default-branch alert disposition are unresolved | Current package: [H05](work-packages/H05-supply-chain-sbom-license-secret-boundary.md); 675 backend, 67 frontend, exact DMG/WKWebView smoke PASS; do not mark Complete until owner/repository decisions are recorded |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -69,38 +71,42 @@ propagation in `056b1ca`; N01 exact provenance in `05e826d`; N02 exact mounted-D
 WKWebView smoke in `cc0ad94`; H03 runtime degraded/offline boundary in `62921f7`;
 P1-WP22 U01 in `ea4e12c`; P1-WP23 U02 in `51ee968`; P1-WP24 U03 in `afedb70`;
 P1-WP25 U04 in `26751f7`; P1-WP26 U05 in `30dfcd7`; H01 canonical
-persistence/recovery in `006e86e`; H02 schema upgrade/restore in `169c446`; and
-H04 trust-boundary hardening in `1cf486e`. Their historical evidence records are
-archived.
+persistence/recovery in `006e86e`; H02 schema upgrade/restore in `169c446`; H04
+trust-boundary hardening in `1cf486e`; and H05 machine-checkable supply-chain,
+SBOM and secret boundary in `c089cd2`. H04 is archived; H05 remains current because
+its owner decision gate is open.
 
-The 2026-09-08 H04 Mac evidence used locked dependencies and clean temporary data
-directories: local CI was **MERGE READY**, with full backend **669**, frontend **67**,
+The 2026-09-08 H05 Mac evidence used locked dependencies and clean temporary data
+directories: local CI was **MERGE READY**, with full backend **675**, frontend **67**,
 i18n **560/560**, production build, arm64 desktop build, native `wkwebview` smoke,
-packaging preflight and provenance contract PASS. Local CI report SHA-256
-`e40f10591206c0ea612a2afe64928bc2684739f144ce11f0121e16126078d639`; source commit
-`ca94b83e0f018c83e7aaebfd4e40b4708cdaedf7`; tracked source tree SHA
-`ead42c15aecda199619e64fa55ebd42479d5e7135a128e8e120ace1e19ae5d9e`; provenance
+packaging preflight, supply-chain audit step and provenance contract PASS. Local CI
+report SHA-256 `4ca05d22d9fc459dac1de76ef0bcb889595372a5f3478824a718a940fa903c52`;
+source commit `c089cd2b48f0a849bd67c6da3e652d1ab65a1d37`; tracked source tree SHA
+`ac09ccce98b8b2d79a3115c390066edb1cd7eed375da14901e8b847d0edcc74f`; provenance
 `COMPLETE`; release validator PASS. Local smoke report SHA-256
-`d8bb1c09d919a2270150cd2676527ca78c959f7b9bea7af797e96ec9729b340b`, executable
-SHA-256 `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`, and
-`.app` SHA-256 `5a2ecb0e7db672a51958050c52f7edc219963f854ca08343a7e848f5b20c0081`.
+`36c097f6a0b4918de820edb95e4cfd7f433d10e5013b1a625b55b19c0a659d63`, executable
+SHA-256 `a4ae72354581032dca2cef42f2a27bac7e6a204a1bdbdbee0b9b7b154149181c`, and
+`.app` SHA-256 `9f3357d433b82ea372c8d07867c09bf6dd7ff386485cfa71d9f661e5747ab06b`.
 Exact read-only DMG smoke report SHA-256
-`5ebc294420567b3789be1ddf3986b7c05f8cb7cefdef7ede6a279ce23b119a66`; DMG SHA-256
-`cc1fab496a1cfbb66bdea5ee94da61c4ed9d64dc635019890a8216d01663189b`; mounted
-executable SHA-256 `00725e65ff915174a820d39e252646ff8cd54877feb32b22331fb73413201d7a`.
+`c6d935c8fa6f5b4e816ab09e9d1c741eff66a0cd4ab941f66b3fdc44e5c53a2f`; DMG SHA-256
+`6d517542848a04d16e8e326432b79f683f4722c28413e62c34a494bfadfd7b2e`; mounted
+executable SHA-256 `a4ae72354581032dca2cef42f2a27bac7e6a204a1bdbdbee0b9b7b154149181c`.
 The read-only mount selected the DMG-contained executable, verified `wkwebview`/
 controller identity and detached cleanly.
 
-`uv --offline` is dependency-preparation evidence only; the default runtime smoke
-still attempts the configured public market-data connection. H03 disabled/degraded
-tests cover the explicit no-network boundary. H04 tests used only synthetic temporary
-fixtures and no credentials/user data. Branch `npm audit` reported zero findings,
-while the GitHub default branch still exposes five open npm Dependabot alerts. Source
-identity conflicts, unknown position mode, incomplete lifecycle, funding/transfer
-schema, Windows/Linux host evidence, licensing, pilot and release-owner decisions
-remain boundaries; no PnL, live execution or pilot claim was opened.
+H05 supply-chain report SHA-256 `c180de2bffb92f279f1995c9fe4061a4e1c6b28628b428679b4aa01b5d74646f`:
+lock contract PASS, 395-component deterministic inventory, source/DMG secret scan
+PASS, but overall `OWNER_REVIEW_REQUIRED` because root license/notices are absent.
+Python `pip-audit` report SHA-256 `fd8d91aa438cee28cfc25575394c9b3f35d4ae59511659c96cbe8cbf36234f31`
+reported 80 dependencies / 0 known vulnerabilities; frontend `npm audit` report
+SHA-256 `f3ff707e3ec193e8e0e5d725180374b4e93657ebea4f844a1f67a2acdb7cccd3` reported
+0 vulnerabilities. Both advisory scans used network; they are not offline proof.
+GitHub default branch retains five open Dependabot alerts (1 critical, 1 high, 3
+moderate), kept separate from branch-local audit results. No PnL, live execution,
+pilot or production claim was opened.
 
-Next handoff: H05 supply chain, SBOM, license and secret boundary.
+Next handoff: owner/repository decision for H05 license/notices and default-branch
+Dependabot disposition; H06 starts only after that gate is explicitly resolved.
 
 ## Update protocol
 

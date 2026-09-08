@@ -4,9 +4,11 @@
 ```yaml
 work_package: H05
 version: 1.0.0
-status: Ready
+status: InProgress
 date: 2026-09-08
 baseline_commit: 1cf486e
+implementation_commit: c089cd2
+evidence_commit: c089cd2
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H04
@@ -54,16 +56,78 @@ GitHub default branch'teki beş açık Dependabot alert'ini kapatmış sayılmaz
 
 ## Acceptance criteria
 
-- [ ] Locked backend/frontend dependency ve hash doğrulaması red→green geçer.
-- [ ] Deterministic SBOM/package inventory aynı girdide aynı snapshot'ı üretir.
-- [ ] Synthetic secret canary source/report/artifact sınırında yakalanır; temiz
+- [x] Locked backend/frontend dependency ve hash doğrulaması red→green geçer.
+- [x] Deterministic SBOM/package inventory aynı girdide aynı snapshot'ı üretir.
+- [x] Synthetic secret canary source/report/artifact sınırında yakalanır; temiz
   repository false-positive olmadan geçer.
-- [ ] Current branch vulnerability sonuçları ve GitHub default-branch alerts ayrı,
+- [x] Current branch vulnerability sonuçları ve GitHub default-branch alerts ayrı,
   kaynak/tarih/platform ile kaydedilir; ilgili critical/high bulgu varsa açık kalır.
 - [ ] `LICENSE` ve third-party notices için ürün sahibi/lisans sahibi kararı açıkça
   kaydedilir; lisans varsayımı veya otomatik legal approval yapılmaz.
-- [ ] Focused → full suite/local CI ve docs evidence aynı source commit ile PASS;
+- [x] Focused → full suite/local CI ve docs evidence aynı source commit ile PASS;
   gerçek credential/user data kullanılmaz.
+
+## Uygulama ve kanıt
+
+- `scripts/supply_chain_audit.py` backend `requirements.lock` ve frontend
+  `package-lock.json` için lock/hash/spec drift kontrolü yapar; CycloneDX 1.5
+  inventory'yi deterministik üretir. Aynı lock girdileriyle 395 component snapshot'ı
+  ve stable serial üretildi; package path, direct/transitive scope, resolved URL,
+  integrity ve environment marker bilgisi korunur.
+- Release source scan test/history fixture'larını ayrı policy ile dışarıda bırakır;
+  runtime/config ve current release source'larını tarar. Private key, cloud key,
+  bearer/JWT, GitHub/Stripe token, credential assignment ve tracked `.env` için
+  secret değeri rapora yazmadan fail-closed fingerprint üretir. Generated DMG
+  artifact scan PASS oldu. CLI vault audit artık executable içine sabit secret-like
+  literal gömmek yerine runtime ephemeral canary kullanır.
+- Red→green H05 focused suite: **6 passed**. H04 regression dahil focused set:
+  **11 passed, 2 warnings**. Full backend: **675 passed, 2 warnings**. Frontend:
+  **17 files / 67 tests passed**.
+- Branch lock evidence: `uv pip check --python .venv/bin/python` PASS, `npm audit`
+  **0 vulnerabilities**, Python 3.11 `pip-audit -r backend/requirements.lock`
+  **80 dependencies / 0 known vulnerabilities**. `npm audit` and `pip-audit` use
+  network advisory services; these are not offline evidence. `uv --offline` remains
+  dependency-preparation evidence only.
+- GitHub default branch evidence collected read-only on 2026-09-08: five open
+  Dependabot alerts in `frontend/package-lock.json`: one critical (Vitest), one high
+  (Vite), three moderate (Vite/esbuild). They remain open until an approved default
+  branch action/merge; this branch was not used to close them.
+- Mac local CI on source `c089cd2b48f0a849bd67c6da3e652d1ab65a1d37`: **MERGE READY**;
+  report SHA-256 `4ca05d22d9fc459dac1de76ef0bcb889595372a5f3478824a718a940fa903c52`,
+  local smoke report SHA-256
+  `36c097f6a0b4918de820edb95e4cfd7f433d10e5013b1a625b55b19c0a659d63`, tracked
+  source tree SHA-256 `ac09ccce98b8b2d79a3115c390066edb1cd7eed375da14901e8b847d0edcc74f`,
+  Python `3.11.16`, Node `20.20.2`, npm `10.8.2`, uv `0.12.10`, PyInstaller
+  `6.22.2`, macOS arm64, provenance **COMPLETE**. Executable SHA-256
+  `a4ae72354581032dca2cef42f2a27bac7e6a204a1bdbdbee0b9b7b154149181c`, `.app` SHA-256
+  `9f3357d433b82ea372c8d07867c09bf6dd7ff386485cfa71d9f661e5747ab06b`.
+- H05 supply-chain report with DMG artifact scan: **OWNER_REVIEW_REQUIRED**, report
+  SHA-256 `c180de2bffb92f279f1995c9fe4061a4e1c6b28628b428679b4aa01b5d74646f`, 395
+  components, lock contract PASS, source/artifact secret scan PASS. Python audit
+  report SHA-256 `fd8d91aa438cee28cfc25575394c9b3f35d4ae59511659c96cbe8cbf36234f31`;
+  frontend audit report SHA-256
+  `f3ff707e3ec193e8e0e5d725180374b4e93657ebea4f844a1f67a2acdb7cccd3`.
+- Exact read-only DMG/WKWebView smoke on the same source: report SHA-256
+  `c6d935c8fa6f5b4e816ab09e9d1c741eff66a0cd4ab941f66b3fdc44e5c53a2f`, DMG SHA-256
+  `6d517542848a04d16e8e326432b79f683f4722c28413e62c34a494bfadfd7b2e`, mounted
+  executable SHA-256 `a4ae72354581032dca2cef42f2a27bac7e6a204a1bdbdbee0b9b7b154149181c`;
+  `wkwebview`, controller ready and clean detach PASS. The smoke attempted the
+  configured public Binance stream; it is not offline runtime evidence.
+
+## Açık karar kapısı
+
+H05 makine doğrulaması PASS, fakat paket **OWNER_DECISION_REQUIRED** durumundadır:
+
+- `package.json` MIT metadata'sı root `LICENSE` metni değildir. Ürün sahibi MIT
+  beyanını ve dağıtım kapsamını onaylamadan `LICENSE` eklenmeyecek.
+- Third-party notices için 395 locked component'in özellikle Python tarafındaki
+  100 unverified license metadata kaydı owner/legal review gerektirir; otomatik
+  lisans eşlemesi veya legal approval yapılmayacak.
+- Default branch Dependabot uyarıları bu branch'te `npm audit` PASS olduğu için
+  kapanmış sayılamaz. H05, owner/repository kararı gelene kadar `Complete` değildir.
+
+H06 privacy/data lifecycle bu karar kapısı çözülmeden aktif coding paketi olarak
+başlatılmayacaktır.
 
 ## Kesinlikle kapsam dışı
 
@@ -75,6 +139,7 @@ funding/transfer schema ve gerçek kullanıcı secret'ları.
 ## Başlangıç kararı
 
 H04 `1cf486e` ile trust-boundary misuse testleri ve Mac local-CI kanıtı üzerinden
-bounded olarak kapandı. H05'in sonucu yalnız kanıtla `Complete` yapılacak; GitHub
-default branch alert'leri, lisans/notice owner kararı veya eksik platform kanıtı
-UNKNOWN/PASS olarak yazılmayacaktır.
+bounded olarak kapandı. H05 `c089cd2` ile machine-checkable supply-chain, SBOM ve
+secret-boundary kanıtını tamamladı; ancak lisans/notices owner kararı ve default
+branch alert disposition olmadan `Complete` işareti konulmadı. Hiçbir UNKNOWN veya
+OWNER_DECISION_REQUIRED sonucu PASS olarak yazılmamıştır.
