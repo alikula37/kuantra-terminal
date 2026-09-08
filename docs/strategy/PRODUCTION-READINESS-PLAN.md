@@ -6,7 +6,7 @@ document_id: KPR-001
 version: 1.0.0
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 6500083481078b42d814ec163d18cb73867b6fa0
+reviewed_commit: ea4e12cc60aea52c86d1318e97d90a566a3b1736
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -25,7 +25,8 @@ Bu belge önceki [KRR-001 denetimini](../archive/strategy/ROADMAP-REVIEW-2026-09
 **plan teklifidir**. Yeni eşikler, teslimat tahminleri ve destek kapsamı henüz achieved
 veya kullanıcı tarafından ticari olarak onaylanmış değildir. Accepted ADR'ler ve
 mevcut güvenlik kapıları geçerlidir. P1-WP16, P1-WP17, P1-WP18, P1-WP19 ve P1-WP20 bounded doğruluk paketleri
-kanıtla kapatılmıştır; mevcut `Ready` iş P1-WP21'dir. Aşağıdaki
+kanıtla kapatılmıştır; P1-WP21, N01, N02, H03 ve P1-WP22 bounded paketleri de kendi
+kanıtlarıyla kapatılmıştır. Mevcut `Ready` iş P1-WP23 / U02'dir. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -87,7 +88,7 @@ recovery bakımı uzun testnet koşusundan önce gelir; ilk ürünün kritik yol
 ## 4. G0–G1: Doğruluk paketleri
 
 Kimlikler bu belgede kalıcı plan satırlarıdır. `D01 / P1-WP16`, `D02 / P1-WP17`,
-`D03 / P1-WP18`, `D04 / P1-WP19` ve `D05 / P1-WP20` kanıtla kapatılmıştır; `D06 / P1-WP21` mevcut bounded iştir. Sonraki işler hazır
+`D03 / P1-WP18`, `D04 / P1-WP19`, `D05 / P1-WP20` ve `D06 / P1-WP21` kanıtla kapatılmıştır. P1-WP22, G2/R4 değer zinciri geçidini bounded olarak kapatmıştır. Sonraki işler hazır
 olmadan ayrı WP açılıp dosya/test sınırı yazılır. Tek pakette birden çok bağımsız hata
 varsa test edilebilir parçalara bölünür.
 
@@ -121,6 +122,11 @@ Scope dışı kaydın “başarı paydasından çıkarılarak” metriği iyile�
 | U03 | Trade Evidence Pack: timeline, fees/funding coverage, applicable rule, export | UI→API→canonical source tutarlılığı; redaction; CSV formula injection ve HTML escaping; unavailable analytics görünür |
 | U04 | Weekly review: period/timezone, yeterli veri, rule breach, kullanıcı notu ve tamamlanma | As-of policy/effective time; hindsight rule ayrı; haftayı tekrar açınca aynı snapshot; late correction varsa revision/stale uyarısı |
 | U05 | Erişilebilir ve anlaşılır shell | EN/TR/DE parity; keyboard/focus; kontrast/zoom; loading/error/retry; timezone/numeric locale; dar ekran/uzun içerik testleri |
+
+U01 import/review/export akışı P1-WP22 ile bounded olarak uygulanmış ve `ea4e12c`
+ile kanıtlanmıştır. Sıradaki aktif paket **P1-WP23 / U02**'dir: reconciliation
+inbox, açık discrepancy kaydı ve kullanıcı düzeltme/karar sınırı. U02 tamamlanmadan
+R5 weekly review veya release/pilot iddiası açılmaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
@@ -298,8 +304,12 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 3. P1-WP18: fee/precision/unknown doğruluğu; verified `0c7d11f`.
 4. P1-WP19: funding/corrections/account coverage; verified `f67e732`.
 5. P1-WP20: ekonomik dedup/lifecycle; verified `5d691b9`.
-6. P1-WP21: journal/projection/evidence propagation.
-7. U01–05; paralelde H01–07/N01–06 bağımlılığa göre; sonra kapalı pilot.
+6. P1-WP21: journal/projection/evidence propagation; ardından N01, N02 ve H03 Mac
+   kanıt kapıları.
+7. P1-WP22 / U01: import preview → discrepancy görünürlüğü → source-linked Evidence
+   Pack/export; tamamlandı `ea4e12c`.
+8. P1-WP23 / U02: reconciliation inbox ve correction/user-decision boundary; sonra
+   U03–U05/R5 ve bağımlılığa göre H01–H07/N03–N06.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve

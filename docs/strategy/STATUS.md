@@ -7,8 +7,8 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**P1-WP22 — InProgress:**
-[R4 value-chain integration gate](work-packages/P1-WP22-value-chain-integration.md).
+**P1-WP23 — Ready:**
+[U02 reconciliation inbox and correction boundary](work-packages/P1-WP23-reconciliation-inbox-correction-boundary.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
 verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
@@ -16,19 +16,20 @@ verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified
 journal/projection/evidence propagation is complete in `056b1ca`; N01 exact build
 provenance is complete in `05e826d`; N02 exact mounted-DMG/WKWebView smoke is
 complete in `cc0ad94`; H03 runtime degraded/offline boundary is complete in
-`62921f7`. Neither package silently became full tax/accounting scope or new venue
-scope. The next bounded implementation is the R4 import → reconciliation → Trade
-Evidence Pack/export integration gate. No other historical `Active` WP is
-automatically queued. Weekly review remains a later R5 package and is not implied by
-R4.
+`62921f7`; P1-WP22 R4 import/review/Evidence Pack/export integration is complete in
+`ea4e12c`. Neither package silently became full tax/accounting scope or new venue
+scope. The next bounded implementation is U02: explicit reconciliation inbox and
+correction/user-decision boundary. No other historical `Active` WP is automatically
+queued. Weekly review remains a later R5 package and is not implied by U02.
 
 ## Current evidence, not completion claims
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `62921f7`; fresh Mac local CI `MERGE READY`: 615 backend, 54 frontend, i18n 480/480, arm64 build and native smoke passed. Exact DMG-mounted smoke and release provenance are PASS; H03 disabled/degraded tests are PASS |
+| Runtime baseline | `ea4e12c`; fresh clean Mac local CI `MERGE READY`: 620 backend, 56 frontend, i18n 486/486, arm64 build and native smoke passed. Exact DMG-mounted smoke and release provenance are PASS; H03 disabled/degraded tests are PASS |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
+| Mac (latest WP22 evidence) | Exact read-only DMG-mounted smoke PASS for source `ea4e12c`: DMG SHA `d865310ab6fa2e3721fc524d0357fa61307b1fa9810fab136d147fcdf445b2ec`, mounted executable SHA `d19790e16cab9e475d51536d6dbb62e4f0e9923f20a62181ee7e305adfc145c6`, `wkwebview`, controller ready, detach PASS. Ad-hoc signature is only packaging preflight |
 | Mac | Exact read-only DMG-mounted executable smoke PASS: DMG SHA `5a0010a919ba8a6a296531486918379d5bd58257b86445a76fb14a02089e09e6`, executable SHA `2d53c4c2c0b894a43127c34be76c53726fe2130d0dbcc9583282dba776fa9f44`, `wkwebview`, controller ready, detach PASS. Ad-hoc signature is only packaging preflight; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
@@ -75,7 +76,17 @@ Branch `npm audit` reported zero findings, while the GitHub default branch still
 five open npm Dependabot alerts. Source identity conflicts, unknown position mode,
 incomplete lifecycle, funding/transfer schema, Windows/Linux host evidence, licensing,
 pilot and release-owner decisions remain boundaries; no PnL, live execution or pilot
-claim was opened. Next active contract: P1-WP22 R4.
+claim was opened. The prior H03 baseline is retained for comparison; the latest
+P1-WP22 handoff follows.
+
+P1-WP22 `ea4e12c` completed the bounded import review, discrepancy/coverage
+propagation, source-linked Evidence Pack and deterministic export chain. Clean local
+CI was `MERGE READY`: backend **620**, frontend **56**, i18n **486/486**, arm64 build,
+native smoke and provenance contract PASS. Exact mounted-DMG smoke used a read-only
+mount and the explicit mounted executable; source `ea4e12c`, provenance `COMPLETE`,
+release validator PASS, DMG SHA `d865310ab6fa2e3721fc524d0357fa61307b1fa9810fab136d147fcdf445b2ec`,
+mounted executable SHA `d19790e16cab9e475d51536d6dbb62e4f0e9923f20a62181ee7e305adfc145c6`,
+`wkwebview`/controller ready and detach PASS. Next active contract: P1-WP23 U02.
 
 ## Update protocol
 
