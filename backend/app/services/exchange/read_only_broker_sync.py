@@ -497,6 +497,8 @@ class ReadOnlyBrokerSyncService:
         warnings: List[str] = []
         request_count = 0
         complete = False
+        previous_page_max_timestamp: Optional[int] = None
+        seen_page_fingerprints: set[str] = set()
 
         for page_index in range(max_pages):
             request_params = dict(params or {})
@@ -528,23 +530,62 @@ class ReadOnlyBrokerSyncService:
 
             page_hashes.append(_page_hash(kind, page_index, mapped_page))
 
+            # ``since`` is an inclusive timestamp boundary in the normalized
+            # CCXT contract.  A content fingerprint is kept separately from
+            # the manifest page hash (which includes page_index) so an
+            # exchange that ignores the cursor cannot silently spin forever.
+            page_fingerprint = hashlib.sha256(
+                canonical_json({"kind": kind, "rows": mapped_page}).encode("utf-8")
+            ).hexdigest()
+            repeated_page = page_fingerprint in seen_page_fingerprints
+            seen_page_fingerprints.add(page_fingerprint)
+            if repeated_page:
+                warnings.append(f"{kind.upper()}_REPEATED_PAGE")
+
+            missing_timestamp = len(timestamps) != len(raw_page)
+            if missing_timestamp:
+                warnings.append(f"{kind.upper()}_MISSING_TIMESTAMP_CURSOR")
+
+            unsorted_page = bool(timestamps) and timestamps != sorted(timestamps)
+            if unsorted_page:
+                warnings.append(f"{kind.upper()}_UNSORTED_PAGE")
+
+            non_monotonic_page = (
+                previous_page_max_timestamp is not None
+                and bool(timestamps)
+                and min(timestamps) < previous_page_max_timestamp
+            )
+            if non_monotonic_page:
+                warnings.append(f"{kind.upper()}_NON_MONOTONIC_PAGE")
+
+            if repeated_page or missing_timestamp or unsorted_page or non_monotonic_page:
+                break
+
             if not raw_page:
                 complete = True
                 break
             max_timestamp = max(timestamps) if timestamps else None
-            if until_ms is not None and max_timestamp is not None and max_timestamp >= until_ms:
-                complete = True
-                break
             if len(raw_page) < page_limit:
                 complete = True
                 break
             if max_timestamp is None:
                 warnings.append(f"{kind.upper()}_MISSING_TIMESTAMP_CURSOR")
                 break
-            if cursor is not None and max_timestamp <= cursor:
+            if until_ms is not None and max_timestamp >= until_ms:
+                # A full page ending at the requested boundary may contain
+                # more records with that same timestamp.  A short page or an
+                # empty page is the only bounded end-of-history signal this
+                # adapter currently accepts.
+                warnings.append(f"{kind.upper()}_UNTIL_BOUNDARY_UNCERTAIN")
+                break
+            if cursor is not None and max_timestamp < cursor:
                 warnings.append(f"{kind.upper()}_NON_ADVANCING_TIMESTAMP_CURSOR")
                 break
-            cursor = max_timestamp + 1
+            previous_page_max_timestamp = max_timestamp
+            # Keep the boundary inclusive.  The overlap is deduplicated by
+            # broker identity and is required to retrieve same-millisecond
+            # records that straddle two pages.
+            cursor = max_timestamp
         else:
             warnings.append(f"{kind.upper()}_MAX_PAGES_REACHED")
 

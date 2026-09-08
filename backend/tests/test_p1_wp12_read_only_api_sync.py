@@ -110,8 +110,8 @@ def test_read_only_sync_paginates_retries_and_records_manifest(tmp_path):
     assert manifest["fills_page_count"] == 2
     assert manifest["request_count"] == 5  # one rate-limit retry
     assert sleeps == [0.01]
-    assert fake.order_calls[1][1] == 1_000_000_002_001
-    assert fake.fill_calls[2][1] == 1_000_000_002_001
+    assert fake.order_calls[1][1] == 1_000_000_002_000
+    assert fake.fill_calls[2][1] == 1_000_000_002_000
 
     events = list(ledger.export_events(account_id="pilot-account"))
     assert len(events) == 6
@@ -137,6 +137,200 @@ def test_max_pages_is_fail_closed_and_never_claims_reconciled(tmp_path):
     assert report["snapshot_complete"] is False
     assert any(item["type"] == "SNAPSHOT_INCOMPLETE" for item in report["discrepancies"])
     assert "ORDERS_MAX_PAGES_REACHED" in report["snapshot_manifest"]["warnings"]
+
+
+def test_same_timestamp_page_boundary_is_overlapped_and_not_silently_dropped(tmp_path):
+    """An inclusive timestamp cursor must not skip a full-page timestamp tie."""
+
+    class SameTimestampClient:
+        timestamp = 1_000_000_000_000
+
+        def __init__(self):
+            self.order_calls = []
+            self.fill_calls = []
+
+        @staticmethod
+        def _order(order_id, quantity):
+            return {
+                "id": order_id,
+                "symbol": "BTC/USDT",
+                "side": "buy",
+                "status": "closed",
+                "amount": quantity,
+                "filled": quantity,
+                "average": 100,
+                "timestamp": SameTimestampClient.timestamp,
+            }
+
+        @staticmethod
+        def _fill(fill_id, order_id, quantity):
+            return {
+                "id": fill_id,
+                "order": order_id,
+                "symbol": "BTC/USDT",
+                "side": "buy",
+                "amount": quantity,
+                "price": 100,
+                "timestamp": SameTimestampClient.timestamp,
+            }
+
+        def fetch_orders(self, *, since, **_kwargs):
+            self.order_calls.append(since)
+            if since is None:
+                return [self._order("O-1", 1), self._order("O-2", 1)]
+            if since == self.timestamp:
+                if len(self.order_calls) > 2:
+                    return []
+                return [self._order("O-2", 1), self._order("O-3", 1)]
+            return []
+
+        def fetch_my_trades(self, *, since, **_kwargs):
+            self.fill_calls.append(since)
+            if since is None:
+                return [self._fill("F-1", "O-1", 1), self._fill("F-2", "O-2", 1)]
+            if since == self.timestamp:
+                if len(self.fill_calls) > 2:
+                    return []
+                return [self._fill("F-2", "O-2", 1), self._fill("F-3", "O-3", 1)]
+            return []
+
+    fake = SameTimestampClient()
+    service = ReadOnlyBrokerSyncService(
+        import_service=BrokerImportService(EvidenceLedgerRepository(str(tmp_path / "ledger.sqlite"))),
+        sleeper=lambda _delay: None,
+        jitter_fn=lambda: 0.0,
+    )
+
+    report = service.sync(
+        exchange_id="binance_spot",
+        account_id="same-timestamp-account",
+        symbol="BTC/USDT",
+        page_limit=2,
+        client=fake,
+    )
+
+    assert report["status"] == "RECONCILED"
+    assert report["snapshot_complete"] is True
+    assert report["order_count"] == 3
+    assert report["fill_count"] == 3
+    assert fake.order_calls == [None, SameTimestampClient.timestamp, SameTimestampClient.timestamp]
+    assert fake.fill_calls == [None, SameTimestampClient.timestamp, SameTimestampClient.timestamp]
+
+
+def test_unsorted_full_page_is_incomplete_even_when_the_import_rows_reconcile(tmp_path):
+    class UnsortedClient:
+        def fetch_orders(self, **_kwargs):
+            return [
+                {"id": "O-2", "symbol": "BTC/USDT", "side": "buy", "status": "closed", "amount": 1, "filled": 1, "average": 100, "timestamp": 2_000_000_000_000},
+                {"id": "O-1", "symbol": "BTC/USDT", "side": "buy", "status": "closed", "amount": 1, "filled": 1, "average": 100, "timestamp": 1_000_000_000_000},
+            ]
+
+        def fetch_my_trades(self, **_kwargs):
+            return [
+                {"id": "F-2", "order": "O-2", "symbol": "BTC/USDT", "side": "buy", "amount": 1, "price": 100, "timestamp": 2_000_000_000_000},
+                {"id": "F-1", "order": "O-1", "symbol": "BTC/USDT", "side": "buy", "amount": 1, "price": 100, "timestamp": 1_000_000_000_000},
+            ]
+
+    service = ReadOnlyBrokerSyncService(
+        import_service=BrokerImportService(EvidenceLedgerRepository(str(tmp_path / "ledger.sqlite"))),
+        sleeper=lambda _delay: None,
+        jitter_fn=lambda: 0.0,
+    )
+    report = service.sync(exchange_id="binance_spot", page_limit=2, client=UnsortedClient())
+
+    assert report["status"] == "UNRECONCILED"
+    assert report["snapshot_complete"] is False
+    assert "ORDERS_UNSORTED_PAGE" in report["snapshot_manifest"]["warnings"]
+    assert "FILLS_UNSORTED_PAGE" in report["snapshot_manifest"]["warnings"]
+
+
+def test_missing_timestamp_never_becomes_complete_on_a_short_page(tmp_path):
+    class MissingTimestampClient:
+        def fetch_orders(self, **_kwargs):
+            return [{"id": "O-1", "symbol": "BTC/USDT", "side": "buy", "status": "closed", "amount": 1, "filled": 1, "average": 100}]
+
+        def fetch_my_trades(self, **_kwargs):
+            return [{"id": "F-1", "order": "O-1", "symbol": "BTC/USDT", "side": "buy", "amount": 1, "price": 100}]
+
+    service = ReadOnlyBrokerSyncService(
+        import_service=BrokerImportService(EvidenceLedgerRepository(str(tmp_path / "ledger.sqlite"))),
+        sleeper=lambda _delay: None,
+        jitter_fn=lambda: 0.0,
+    )
+    report = service.sync(exchange_id="binance_spot", page_limit=10, client=MissingTimestampClient())
+    assert report["status"] == "UNRECONCILED"
+    assert report["snapshot_complete"] is False
+    assert "ORDERS_MISSING_TIMESTAMP_CURSOR" in report["snapshot_manifest"]["warnings"]
+    assert "FILLS_MISSING_TIMESTAMP_CURSOR" in report["snapshot_manifest"]["warnings"]
+
+    orders = service._paginate(
+        ReadOnlyExchangeClient(MissingTimestampClient()),
+        kind="orders",
+        method_name="fetch_orders",
+        mapper=lambda row: row,
+        symbol=None,
+        since_ms=None,
+        until_ms=None,
+        max_pages=2,
+        page_limit=10,
+        params=None,
+    )
+    assert orders.complete is False
+    assert "ORDERS_MISSING_TIMESTAMP_CURSOR" in orders.warnings
+
+
+def test_repeated_full_page_is_incomplete_instead_of_spinning_or_claiming_complete(tmp_path):
+    class RepeatedPageClient:
+        def fetch_orders(self, **_kwargs):
+            return [{"id": "O-1", "symbol": "BTC/USDT", "side": "buy", "status": "closed", "amount": 1, "filled": 1, "average": 100, "timestamp": 1_000_000_000_000}]
+
+        def fetch_my_trades(self, **_kwargs):
+            return [{"id": "F-1", "order": "O-1", "symbol": "BTC/USDT", "side": "buy", "amount": 1, "price": 100, "timestamp": 1_000_000_000_000}]
+
+    service = ReadOnlyBrokerSyncService(
+        import_service=BrokerImportService(EvidenceLedgerRepository(str(tmp_path / "ledger.sqlite"))),
+        sleeper=lambda _delay: None,
+        jitter_fn=lambda: 0.0,
+    )
+    report = service.sync(exchange_id="binance_spot", page_limit=1, max_pages=3, client=RepeatedPageClient())
+
+    assert report["status"] == "UNRECONCILED"
+    assert report["snapshot_complete"] is False
+    assert "ORDERS_REPEATED_PAGE" in report["snapshot_manifest"]["warnings"]
+    assert "FILLS_REPEATED_PAGE" in report["snapshot_manifest"]["warnings"]
+    assert report["snapshot_manifest"]["orders_page_count"] == 2
+
+
+def test_full_page_at_until_boundary_is_incomplete_without_a_tie_breaker(tmp_path):
+    class BoundaryClient:
+        def fetch_orders(self, **_kwargs):
+            return [
+                {"id": "O-1", "symbol": "BTC/USDT", "side": "buy", "status": "closed", "amount": 1, "filled": 1, "average": 100, "timestamp": 1_000_000_000_000},
+                {"id": "O-2", "symbol": "BTC/USDT", "side": "buy", "status": "closed", "amount": 1, "filled": 1, "average": 100, "timestamp": 1_000_000_001_000},
+            ]
+
+        def fetch_my_trades(self, **_kwargs):
+            return [
+                {"id": "F-1", "order": "O-1", "symbol": "BTC/USDT", "side": "buy", "amount": 1, "price": 100, "timestamp": 1_000_000_000_000},
+                {"id": "F-2", "order": "O-2", "symbol": "BTC/USDT", "side": "buy", "amount": 1, "price": 100, "timestamp": 1_000_000_001_000},
+            ]
+
+    service = ReadOnlyBrokerSyncService(
+        import_service=BrokerImportService(EvidenceLedgerRepository(str(tmp_path / "ledger.sqlite"))),
+        sleeper=lambda _delay: None,
+        jitter_fn=lambda: 0.0,
+    )
+    report = service.sync(
+        exchange_id="binance_spot",
+        page_limit=2,
+        until_ms=1_000_000_001_000,
+        client=BoundaryClient(),
+    )
+
+    assert report["status"] == "UNRECONCILED"
+    assert report["snapshot_complete"] is False
+    assert "ORDERS_UNTIL_BOUNDARY_UNCERTAIN" in report["snapshot_manifest"]["warnings"]
+    assert "FILLS_UNTIL_BOUNDARY_UNCERTAIN" in report["snapshot_manifest"]["warnings"]
 
 
 def test_scope_and_write_proxy_fail_closed():

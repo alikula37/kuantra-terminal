@@ -7,9 +7,13 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**P1-WP16 — Ready, not implemented:**
+**P1-WP16 — InProgress:**
 [Read-only snapshot completeness](work-packages/P1-WP16-read-only-snapshot-completeness.md).
-Start with same-timestamp pagination reproduction, then bounded fail-closed fix and tests.
+Same-timestamp pagination reproduction, inclusive overlap, deduplication and
+fail-closed ordering/timestamp/boundary tests are implemented. Final local CI and
+commit evidence remain open until the work package is closed. Current working-tree
+local CI reached `MERGE READY`; the smoke report still records `build_commit=UNKNOWN`,
+which remains the separate B4 provenance obligation.
 No other historical `Active` WP is automatically queued. Next: D02 identity/support
 contract → D03 fee/precision → D04 funding → D05/D06 lifecycle/evidence → review UX.
 
@@ -17,7 +21,7 @@ contract → D03 fee/precision → D04 funding → D05/D06 lifecycle/evidence �
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `b1ceba6`; prior Mac full local CI recorded 550 backend / 51 frontend. Not rerun evidence for this documentation/tooling change |
+| Runtime baseline | `b1ceba6`; P1-WP16 local CI: 566 backend, 51 frontend, build/smoke passed. Smoke `build_commit=UNKNOWN`; exact provenance remains B4 |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac | Local build/smoke works; runtime offline, exact mounted-DMG provenance and fail-closed renderer verification remain open |
@@ -28,7 +32,7 @@ contract → D03 fee/precision → D04 funding → D05/D06 lifecycle/evidence �
 
 | ID | Obligation | Next handling |
 |---|---|---|
-| B1 | Timestamp pagination can skip records and overstate completeness | Current P1-WP16 |
+| B1 | Timestamp pagination can skip records and overstate completeness | P1-WP16 implementation complete; final local CI/close evidence pending |
 | B2 | Fee currency/unknown handling, perps identity/accounting and economic dedup | Roadmap D02–D06; choose supported subset before implementation |
 | B3/M1 | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Before further long/24h soak; not primary product path |
 | B4 | Runtime offline ≠ uv offline; artifact hash ≠ mounted executable; UNKNOWN commit; Mac renderer gate | H03/N01/N02 |

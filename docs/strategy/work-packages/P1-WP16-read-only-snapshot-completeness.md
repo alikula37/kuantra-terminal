@@ -3,8 +3,8 @@
 
 ```yaml
 work_package: P1-WP16
-version: 1.0.0
-status: Ready
+version: 1.0.1
+status: InProgress
 date: 2026-09-08
 baseline_commit: f746132
 branch: codex/p1-wp01-evidence-ledger
@@ -43,12 +43,13 @@ Bağlam: [KRR-001 B1/R1](../../archive/strategy/ROADMAP-REVIEW-2026-09-08.md), A
 
 ## Acceptance criteria
 
-- [ ] Bug'ı yakalayan same-timestamp boundary testi önce kırmızı, sonra yeşil.
-- [ ] Empty/short/full/repeated/unsorted page; max-pages; missing timestamp testleri.
-- [ ] Inclusive until sınırı ve retention/capability belirsizliğinde fail-closed testleri.
-- [ ] Incomplete snapshot'ın import/API sonucuna ve reconciliation claim'ine propagation testi.
-- [ ] Retry/duplicate/re-import ve canonical snapshot hash regression suite'i.
-- [ ] İlgili backend testleri ve tam local CI; network/credential olmadan fixtures.
+- [x] Bug'ı yakalayan same-timestamp boundary testi önce kırmızı (3 failure), sonra yeşil.
+- [x] Empty/short/full/repeated/unsorted page; max-pages; missing timestamp testleri.
+- [x] Inclusive `until` sınırı ve retention/capability belirsizliğinde fail-closed testleri.
+- [x] Incomplete snapshot'ın import/API sonucuna ve reconciliation claim'ine propagation testi.
+- [x] Retry/duplicate/re-import ve canonical snapshot hash regression suite'i.
+- [x] İlgili backend testleri ve tam local CI; network/credential olmadan fixtures. Backend suite
+  `566 passed, 2 warnings`; Mac local CI `MERGE READY` (frontend 51, build/smoke passed).
 - [ ] Değişen dosya, exact commit, test sonuçları ve kalan riskler kaydedildi.
 
 ## Kapsam dışı
@@ -56,10 +57,17 @@ Bağlam: [KRR-001 B1/R1](../../archive/strategy/ROADMAP-REVIEW-2026-09-08.md), A
 Gerçek hesap veya credential; canlı broker çağrısı; finansal accounting redesign
 (R2); yeni connector/market; otomatik migration; P2 soak; AI veya execution.
 Venue dokümantasyonu gerekiyorsa yalnız güncel resmi kaynaklar incelenir; test edilmemiş
-cursor varsayımı eklenmez. Bu paket henüz uygulanmadı, acceptance kutuları bilerek açıktır.
+cursor varsayımı eklenmez. Bu paket uygulama aşamasındadır; provenance/commit kanıtı
+kapanmadan `Verified` sayılmaz.
 
 ## Değişiklik geçmişi
 
 ### 1.0.0 — 2026-09-08
 
 - Denetim bulgusundan ilk bounded doğruluk paketi oluşturuldu.
+
+### 1.0.1 — 2026-09-08
+
+- Inclusive timestamp overlap, page fingerprint, ordering/timestamp/boundary fail-closed
+  kontrolleri ve P1-WP12 regression fixture'ları eklendi. Full local CI ve final commit
+  kanıtı bu iş tamamlanana kadar açık.
