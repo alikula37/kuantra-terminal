@@ -7,24 +7,26 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**H03 — InProgress:**
-[Runtime degraded/offline boundary](work-packages/H03-market-data-degraded-boundary.md).
+**P1-WP22 — InProgress:**
+[R4 value-chain integration gate](work-packages/P1-WP22-value-chain-integration.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
 verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
 `f67e732`; P1-WP20 economic dedup/lifecycle was verified in `5d691b9`. P1-WP21
 journal/projection/evidence propagation is complete in `056b1ca`; N01 exact build
 provenance is complete in `05e826d`; N02 exact mounted-DMG/WKWebView smoke is
-complete in `cc0ad94`. Neither package silently became full tax/accounting scope or
-new venue scope. The next bounded implementation is the explicit degraded/offline
-market-data boundary. No other historical `Active` WP is automatically queued.
-UX/review integration waits for H03 evidence.
+complete in `cc0ad94`; H03 runtime degraded/offline boundary is complete in
+`62921f7`. Neither package silently became full tax/accounting scope or new venue
+scope. The next bounded implementation is the R4 import → reconciliation → Trade
+Evidence Pack/export integration gate. No other historical `Active` WP is
+automatically queued. Weekly review remains a later R5 package and is not implied by
+R4.
 
 ## Current evidence, not completion claims
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `cc0ad94`; fresh Mac local CI `MERGE READY`: 608 backend, 51 frontend, i18n 480/480, arm64 build and native smoke passed. Exact DMG-mounted smoke and release provenance are PASS; H03 runtime degraded/offline behavior remains open |
+| Runtime baseline | `62921f7`; fresh Mac local CI `MERGE READY`: 615 backend, 54 frontend, i18n 480/480, arm64 build and native smoke passed. Exact DMG-mounted smoke and release provenance are PASS; H03 disabled/degraded tests are PASS |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac | Exact read-only DMG-mounted executable smoke PASS: DMG SHA `5a0010a919ba8a6a296531486918379d5bd58257b86445a76fb14a02089e09e6`, executable SHA `2d53c4c2c0b894a43127c34be76c53726fe2130d0dbcc9583282dba776fa9f44`, `wkwebview`, controller ready, detach PASS. Ad-hoc signature is only packaging preflight; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
@@ -38,7 +40,7 @@ UX/review integration waits for H03 evidence.
 | B1 | CLOSED | Timestamp pagination can skip records and overstate completeness | Closed by P1-WP16 / `ef909d1`; historical package retained in archive |
 | B2 | IMPLEMENTATION_REQUIRED | Fee currency/unknown handling, perps identity/accounting and economic dedup | P1-WP17–20 and P1-WP21 propagation are closed within their bounded contracts. Full account PnL/tax accounting remains out of scope |
 | B3/M1 | DEFERRED | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Complete before another long/24h soak; not primary product path |
-| B4 | IMPLEMENTATION_REQUIRED | Runtime offline ≠ uv offline; artifact hash ≠ mounted executable; UNKNOWN commit; Mac renderer gate | N01 and N02 evidence are closed; H03 explicit disabled/degraded network boundary remains |
+| B4 | CLOSED | Mac runtime offline/degraded boundary, exact artifact provenance, mounted executable and WKWebView gate | N01 `05e826d`, N02 `cc0ad94`, H03 `62921f7`; Windows/Linux and distribution signing remain separate host/owner gates |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -54,23 +56,26 @@ registry records unchecked counts so accidental checkbox deletion is detected.
 
 P1-WP20 economic dedup/lifecycle contract was implemented in `5d691b9` and its
 historical evidence record is archived. P1-WP21 propagation was implemented in
-`056b1ca`, N01 exact provenance in `05e826d`, and N02 exact mounted-DMG/WKWebView
-smoke in `cc0ad94`; all three are archived with focused/full test and Mac evidence.
-The fresh 2026-09-08 Mac audit used the locked environment and temporary data
-directories: local CI was `MERGE READY`, with frontend **51**, i18n **480/480**, full
-backend **608**, production build, arm64 desktop build, native `wkwebview` smoke and
-packaging preflight. Exact DMG smoke used a read-only mount and the mounted
-executable, with DMG SHA-256 `5a0010a919ba8a6a296531486918379d5bd58257b86445a76fb14a02089e09e6`,
-executable SHA-256 `2d53c4c2c0b894a43127c34be76c53726fe2130d0dbcc9583282dba776fa9f44`,
-`renderer_actual=wkwebview`, controller ready and `mount_detached=true`. Release
-provenance validation passed; `.app` ad-hoc signature verification passed, but this
-is not Developer ID/notarization or Gatekeeper evidence. The smoke attempted the
-public Binance WebSocket during startup, so runtime network-degraded behavior remains
-H03. Branch `npm audit` reported zero findings, while the GitHub default branch still
-exposes five open npm Dependabot alerts. Source identity conflicts, unknown position
-mode, incomplete lifecycle, funding/transfer schema and network-denied runtime remain
-fail-closed boundaries; no PnL, live execution or pilot claim was opened. Next active
-contract: H03.
+`056b1ca`, N01 exact provenance in `05e826d`, N02 exact mounted-DMG/WKWebView smoke
+in `cc0ad94`, and H03 runtime degraded/offline boundary in `62921f7`; all are
+archived or recorded with focused/full test and Mac evidence. The fresh 2026-09-08
+Mac audit used locked dependencies and temporary data directories: local CI was
+`MERGE READY`, with frontend **54**, i18n **480/480**, full backend **615**, production
+build, arm64 desktop build, native `wkwebview` smoke and packaging preflight. H03
+focused tests cover explicit env disable, no socket scheduling, preserved last real
+value with `DEGRADED`, status-only transition broadcast, disabled health/ticker/
+WebSocket/desktop contracts and local CSV preview continuity. Local CI source commit
+`62921f72df12c3bf50cf10c05e903ad463d3ec00`; provenance `COMPLETE`; release validator
+PASS; executable SHA `91308c4b60a0b9f5685fd3392d319a29e15b73189a56a1a96364f0e71d36a521`;
+`.app` artifact SHA `1631e5e38d7b3f773567e7635d5055ea26b3893fab1b09aa58d0e9adc7c2b921`.
+The exact N02 DMG evidence remains DMG SHA `5a0010a919ba8a6a296531486918379d5bd58257b86445a76fb14a02089e09e6`
+and mounted executable SHA `2d53c4c2c0b894a43127c34be76c53726fe2130d0dbcc9583282dba776fa9f44`.
+Ad-hoc signature is packaging preflight only, not Developer ID/notarization/Gatekeeper.
+Branch `npm audit` reported zero findings, while the GitHub default branch still exposes
+five open npm Dependabot alerts. Source identity conflicts, unknown position mode,
+incomplete lifecycle, funding/transfer schema, Windows/Linux host evidence, licensing,
+pilot and release-owner decisions remain boundaries; no PnL, live execution or pilot
+claim was opened. Next active contract: P1-WP22 R4.
 
 ## Update protocol
 
