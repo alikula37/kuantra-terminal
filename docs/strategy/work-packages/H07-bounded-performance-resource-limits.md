@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 2.0.0
+version: 2.1.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: f57da9d
+baseline_commit: 3fa98a9
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -181,32 +181,43 @@ valid `UNAVAILABLE` sonucu alert ve retry ile kalıyor. Descriptive candle-bar
 approximation ve no-target boundary değişmedi; yeni capability, schema, live execution
 veya AI order authority açılmadı.
 
+`3fa98a9` ile SettingsView içindeki mevcut portfolio summary read'i aynı bounded read
+sözleşmesine taşındı: `initial_balance` strict finite/non-negative response validation,
+HTTP/malformed yanıtların explicit error state'e taşınması, sahte `0` fallback yerine
+`null`/boş input, AbortSignal, kullanıcı cancel'i, request-generation/stale-response
+guard ve unmount cleanup eklendi. Loading, cancelled, error ve retry state'leri
+görünürdür; kullanıcı tarafından açıkça submit edilen capital mutation'ı native
+rollback garantisi olmadığı için iptal edilebilir gibi sunulmaz. Yeni endpoint, schema,
+funding/transfer event type, plugin capability, live execution veya AI order authority
+açılmadı.
+
 Focused H07 backend suite `26 passed`; value-chain frontend boundary suite `20 passed`;
 dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
-`3 passed`; MAE/MFE focused suite `5 passed`; full backend suite `709 passed,
-2 warnings`, full frontend `23` test dosyası ve `90` test PASS; i18n `600/600`.
+`3 passed`; MAE/MFE focused suite `5 passed`; SettingsView focused suite `3 passed`;
+full backend suite `709 passed, 2 warnings`, full frontend `24` test dosyası ve
+`93` test PASS; i18n `605/605`.
 Locked local CI `MERGE READY` oldu.
 Current code baseline source commit tam SHA'sı
-`f57da9dabccf8d5805cccca02c745028673a28af`, tracked source tree SHA-256'sı
-`51b9cac8f98edeb86c12176fed9cdf92763071ee8224ba26b04bcadc8c0aa44a`'dır.
+`3fa98a9fc1aff483ad5f71193520000897d4abf0`, tracked source tree SHA-256'sı
+`cfaacddb84992358afc6d1eec153025c6faa2e69bd0382775f563bd39fb0f047`'dır.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `ee1ff6be78bf9da2774570f690c783b73d6ea5b2856f6dc72efcdd09f79ffb1b`,
-native local smoke report SHA-256 `c220127fd66432e66c33a3e4103878d1085b4d9dcf218987c60b2fd3956681d7`;
-local smoke executable SHA-256 `e633809bb07c9d87a2e55853c62be68df929b94cf7282856fc0b3b96f440ee2a`
-ve `.app` artifact SHA-256 `2ec5d4e18d21ec68e14ac1216a0fa7f5404df7f94155576c1c3e795d7f7162c3`.
+Local CI report SHA-256 `1435d19c74c5cebb02a27e7e651297c28088bbd1c2e82859689e51ed573dbaff`,
+native local smoke report SHA-256 `501a8f15a902e7f36f1a1470768ed094e0c4b3f8078cd1981ac4b23349b79cce`;
+local smoke executable SHA-256 `51c82fb2ae5a6a3ba7285684048d22c2e12b4702ce2d56cb27831426406e3155`
+ve `.app` artifact SHA-256 `fd5f40472ff89cc02bfa39b8412240cfa1aab2374cd635ac22f91f7eebaea7a6`.
 Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
 public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`a7201c6d6c66f6fe3c2e908d810563c5281a89969bf0beff3737d446f15bbe30`, DMG
-SHA-256 `a0a1470ee746a8efc7713ef268259c577230ac0f02b9dcd6099461cf2b2f2cec`
+`4ee5a13e052c1973097d719f24fd0c2e34c9a7b8c3b7d5a7b39b63dc40f767da`, DMG
+SHA-256 `268d3a67ed682d5d9d2327611f1f6318b03f6fb495e93f761866463bc3c5a119`
 ve mounted executable SHA-256
-`e633809bb07c9d87a2e55853c62be68df929b94cf7282856fc0b3b96f440ee2a`'dir.
+`51c82fb2ae5a6a3ba7285684048d22c2e12b4702ce2d56cb27831426406e3155`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
