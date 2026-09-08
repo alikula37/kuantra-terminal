@@ -98,7 +98,12 @@
     "active_positions": "Açık Pozisyonlar",
     "new_trade_btn": "Yeni İşlem Girişi",
     "upload_chart_btn": "Grafik OCR Yükle",
-    "live_market": "Canlı Piyasa Akışları"
+    "live_market": "Canlı Piyasa Akışları",
+    "loading": "Dashboard verileri yükleniyor...",
+    "cancel_load": "Yüklemeyi iptal et",
+    "cancelled": "Yükleme iptal edildi. Dashboard sonucu gösterilmiyor.",
+    "error": "Dashboard verileri güvenli biçimde yüklenemedi.",
+    "retry": "Tekrar dene"
   },
   "orderflow": {
     "footprint_title": "Emir Akışı Footprint Matrisi",
@@ -181,7 +186,9 @@
     "change_persona": "Mimari Personayı Değiştir",
     "set_initial_capital": "Başlangıç Bakiyesini Ayarla",
     "positions": "Pozisyon",
-    "new_trade_btn": "YENİ İŞLEM"
+    "new_trade_btn": "YENİ İŞLEM",
+    "portfolio_loading": "Portföy verileri yükleniyor...",
+    "portfolio_unavailable": "Portföy verileri kullanılamıyor"
   },
   "sidebar": {
     "lite_core_badge": "LİTE ÇEKİRDEK (0 Eklenti)",
@@ -490,7 +497,11 @@
     "total_closed": "TOPLAM KAPATILMIŞ İŞLEM: {count}",
     "waiting_title": "Kantitatif Analitik İşlem Bekliyor",
     "waiting_desc": "MAE/MFE dağılım analizi ve Kantitatif Skor Kartı metriklerini hesaplamak için en az 1 tamamlanmış (kapatılmış) işlem gereklidir.",
-    "loading": "Kantitatif analitik yükleniyor..."
+    "loading": "Kantitatif analitik yükleniyor...",
+    "cancel_load": "Yüklemeyi iptal et",
+    "cancelled": "Yükleme iptal edildi. Analitik sonucu gösterilmiyor.",
+    "error": "Kantitatif analitik güvenli biçimde yüklenemedi.",
+    "retry": "Tekrar dene"
   },
   "mae_mfe": {
     "title": "MAKSİMUM TERS / LEHTE HAREKET (MAE / MFE)",

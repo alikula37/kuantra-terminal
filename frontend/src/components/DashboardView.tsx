@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { PortfolioKpiGrid, PortfolioSummaryData } from "./dashboard/PortfolioKpiGrid";
 import { MultiAssetBreakdown, AssetBreakdownItem } from "./dashboard/MultiAssetBreakdown";
 import { EquityCurveChart, EquityCurvePoint } from "./dashboard/EquityCurveChart";
@@ -10,6 +10,7 @@ import { usePluginRegistry } from "../context/PluginRegistryContext";
 import { RefreshCw, LayoutDashboard } from "lucide-react";
 import { apiBase, apiFetch, apiUrl } from "../lib/backend";
 import type { MarketDataStatus } from "../types";
+import { useTranslation } from "../context/I18nContext";
 
 interface DashboardViewProps {
   onOpenNewTrade?: () => void;
@@ -35,10 +36,71 @@ export async function requestPositionClose(
     : { closed: false, error: "Pozisyon kapatma isteği reddedildi; pozisyon korunuyor." };
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isPortfolioSummaryData(value: unknown): value is PortfolioSummaryData {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  const counts = candidate.today_trades_count;
+  const numericFields = [
+    "initial_balance", "total_equity", "net_pnl", "net_pnl_pct", "today_pnl", "today_pnl_pct",
+    "open_risk_usd", "open_risk_r", "active_positions_count", "total_closed_trades", "win_rate",
+    "profit_factor", "avg_r_multiple", "max_drawdown_usd", "max_drawdown_pct",
+  ];
+  return numericFields.every((field) => isFiniteNumber(candidate[field]))
+    && !!counts && typeof counts === "object"
+    && ["wins", "losses", "total"].every((field) => isFiniteNumber((counts as Record<string, unknown>)[field]));
+}
+
+function isAssetBreakdown(value: unknown): value is AssetBreakdownItem {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.symbol === "string"
+    && typeof candidate.asset_class === "string"
+    && ["net_pnl", "pnl_percentage", "trade_count", "closed_count", "open_positions", "win_rate", "total_volume"]
+      .every((field) => isFiniteNumber(candidate[field]));
+}
+
+function isEquityCurvePoint(value: unknown): value is EquityCurvePoint {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return isFiniteNumber(candidate.timestamp)
+    && typeof candidate.date === "string"
+    && ["equity", "drawdown_pct", "trade_pnl", "cumulative_pnl"].every((field) => isFiniteNumber(candidate[field]))
+    && (candidate.symbol === undefined || typeof candidate.symbol === "string");
+}
+
+function isHeatmapItem(value: unknown): value is DailyHeatmapItem {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.date === "string"
+    && ["pnl", "trades_count", "wins", "losses", "win_rate", "intensity"]
+      .every((field) => isFiniteNumber(candidate[field]));
+}
+
+async function readDashboardResponse<T>(response: Response, validate: (value: unknown) => value is T, label: string): Promise<T> {
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const payload = await response.json() as { detail?: unknown };
+      if (typeof payload.detail === "string") detail = payload.detail;
+    } catch {
+      // Keep the HTTP status as the bounded error when the body is not JSON.
+    }
+    throw new Error(detail || `Dashboard request failed (HTTP ${response.status})`);
+  }
+  const payload = await response.json();
+  if (!validate(payload)) throw new Error(`${label} response was incomplete or malformed`);
+  return payload;
+}
+
 export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenNewTrade,
   onOpenInitialBalanceModal
 }) => {
+  const { t } = useTranslation();
   const { openPositions, updatePositionPnl } = useTradeStore();
   const { currentPrice, marketDataStatus } = useMarketStore();
   const { isLiteMode } = usePluginRegistry();
@@ -50,37 +112,72 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [closeError, setCloseError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [cancelled, setCancelled] = useState<boolean>(false);
+  const loadControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   const fetchDashboardData = useCallback(async () => {
+    loadControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
+    loadControllerRef.current = controller;
+    setLoading(true);
+    setError(null);
+    setCancelled(false);
+
     try {
-      const [sumRes, breakRes, curveRes, heatRes] = await Promise.all([
-        apiFetch(apiUrl("/api/v1/portfolio/summary")),
-        apiFetch(apiUrl("/api/v1/portfolio/multi-asset-breakdown")),
-        apiFetch(apiUrl("/api/v1/portfolio/equity-curve")),
-        apiFetch(apiUrl("/api/v1/portfolio/heatmap"))
+      const [summary, nextBreakdown, nextEquityCurve, nextHeatmap] = await Promise.all([
+        apiFetch(apiUrl("/api/v1/portfolio/summary"), { signal: controller.signal }).then((response) => readDashboardResponse(response, isPortfolioSummaryData, "Portfolio summary")),
+        apiFetch(apiUrl("/api/v1/portfolio/multi-asset-breakdown"), { signal: controller.signal }).then((response) => readDashboardResponse(response, (value): value is AssetBreakdownItem[] => Array.isArray(value) && value.every(isAssetBreakdown), "Portfolio breakdown")),
+        apiFetch(apiUrl("/api/v1/portfolio/equity-curve"), { signal: controller.signal }).then((response) => readDashboardResponse(response, (value): value is EquityCurvePoint[] => Array.isArray(value) && value.every(isEquityCurvePoint), "Equity curve")),
+        apiFetch(apiUrl("/api/v1/portfolio/heatmap"), { signal: controller.signal }).then((response) => readDashboardResponse(response, (value): value is DailyHeatmapItem[] => Array.isArray(value) && value.every(isHeatmapItem), "Portfolio heatmap"))
       ]);
 
-      if (sumRes.ok) setSummary(await sumRes.json());
-      if (breakRes.ok) setBreakdown(await breakRes.json());
-      if (curveRes.ok) setEquityCurve(await curveRes.json());
-      if (heatRes.ok) setHeatmap(await heatRes.json());
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      setSummary(summary);
+      setBreakdown(nextBreakdown);
+      setEquityCurve(nextEquityCurve);
+      setHeatmap(nextHeatmap);
     } catch (err) {
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
       console.warn("[DashboardView] Failed to fetch portfolio telemetry:", err);
+      setError(err instanceof Error ? err.message : t("dashboard.error"));
     } finally {
-      setLoading(false);
-      setIsRefreshing(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        setIsRefreshing(false);
+        loadControllerRef.current = null;
+      }
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
-    fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 4000);
-    return () => clearInterval(interval);
+    void fetchDashboardData();
+    const interval = setInterval(() => { void fetchDashboardData(); }, 4000);
+    return () => {
+      clearInterval(interval);
+      requestIdRef.current += 1;
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
   }, [fetchDashboardData]);
 
   const handleManualRefresh = () => {
     setIsRefreshing(true);
-    fetchDashboardData();
+    void fetchDashboardData();
+  };
+
+  const cancelLoad = () => {
+    const controller = loadControllerRef.current;
+    if (!controller) return;
+    requestIdRef.current += 1;
+    controller.abort();
+    loadControllerRef.current = null;
+    setLoading(false);
+    setIsRefreshing(false);
+    setCancelled(true);
+    setError(t("dashboard.cancelled"));
   };
 
   const handleClosePosition = async (tradeId: string) => {
@@ -130,12 +227,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </button>
       </div>
 
+      {loading && (
+        <div role="status" data-testid="dashboard-loading" className="rounded border border-surface-border bg-[#111722] px-3 py-2 text-xs text-slate-300 flex items-center justify-between gap-3">
+          <span>{t("dashboard.loading")}</span>
+          <button type="button" data-testid="dashboard-cancel" onClick={cancelLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            {t("dashboard.cancel_load")}
+          </button>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div role="alert" data-testid={cancelled ? "dashboard-cancelled" : "dashboard-error"} className="rounded border border-loss/50 bg-loss/10 px-3 py-2 text-xs text-loss flex items-center justify-between gap-3">
+          <span className="break-words">{error}</span>
+          <button type="button" data-testid="dashboard-retry" onClick={() => void fetchDashboardData()} className="shrink-0 px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">
+            {t("dashboard.retry")}
+          </button>
+        </div>
+      )}
+
       {closeError && (
         <div role="alert" className="rounded border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
           {closeError}
         </div>
       )}
 
+      {!error && (
+        <>
       {/* Section 1: Portfolio Key Performance Indicators (KPIs) */}
       <PortfolioKpiGrid 
         summary={summary} 
@@ -167,6 +284,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Section 4: 90-Day PnL Calendar Heatmap */}
       <PnlCalendarHeatmap data={heatmap} loading={loading} />
+        </>
+      )}
     </div>
   );
 };

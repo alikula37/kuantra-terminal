@@ -98,7 +98,12 @@
     "active_positions": "Active Positions",
     "new_trade_btn": "New Trade Execution",
     "upload_chart_btn": "Upload Chart OCR",
-    "live_market": "Live Market Feeds"
+    "live_market": "Live Market Feeds",
+    "loading": "Loading dashboard data...",
+    "cancel_load": "Cancel loading",
+    "cancelled": "Loading was cancelled. No dashboard result is shown.",
+    "error": "Dashboard data could not be loaded safely.",
+    "retry": "Retry"
   },
   "orderflow": {
     "footprint_title": "Order Flow Footprint Matrix",
@@ -181,7 +186,9 @@
     "change_persona": "Change Architectural Persona",
     "set_initial_capital": "Set Initial Capital",
     "positions": "Positions",
-    "new_trade_btn": "NEW TRADE"
+    "new_trade_btn": "NEW TRADE",
+    "portfolio_loading": "Portfolio data loading...",
+    "portfolio_unavailable": "Portfolio data unavailable"
   },
   "sidebar": {
     "lite_core_badge": "LITE CORE (0 Plugins)",
@@ -490,7 +497,11 @@
     "total_closed": "TOTAL CLOSED TRADES: {count}",
     "waiting_title": "Quantitative Analytics Awaiting Trades",
     "waiting_desc": "At least 1 completed (closed) trade is required to compute MAE/MFE scatter analysis and Quant Scorecard metrics.",
-    "loading": "Loading quantitative analytics..."
+    "loading": "Loading quantitative analytics...",
+    "cancel_load": "Cancel loading",
+    "cancelled": "Loading was cancelled. No analytics result is shown.",
+    "error": "Quantitative analytics could not be loaded safely.",
+    "retry": "Retry"
   },
   "mae_mfe": {
     "title": "MAXIMUM ADVERSE / FAVORABLE EXCURSION (MAE / MFE)",

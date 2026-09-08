@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { 
   PlusCircle, 
   Zap, 
@@ -43,6 +43,36 @@ interface HeaderProps {
   onOpenApiKeySettings?: () => void;
 }
 
+const PORTFOLIO_NUMERIC_FIELDS: Array<keyof Omit<PortfolioSummary, "today_trades_count">> = [
+  "initial_balance", "total_equity", "net_pnl", "net_pnl_pct", "today_pnl", "today_pnl_pct",
+  "open_risk_usd", "open_risk_r", "active_positions_count", "win_rate", "profit_factor",
+];
+
+function isPortfolioSummary(value: unknown): value is PortfolioSummary {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  const counts = candidate.today_trades_count;
+  return PORTFOLIO_NUMERIC_FIELDS.every((field) => typeof candidate[field] === "number" && Number.isFinite(candidate[field]))
+    && !!counts && typeof counts === "object"
+    && ["wins", "losses", "total"].every((field) => typeof (counts as Record<string, unknown>)[field] === "number" && Number.isFinite((counts as Record<string, unknown>)[field]));
+}
+
+async function readPortfolioSummary(response: Response): Promise<PortfolioSummary> {
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const payload = await response.json() as { detail?: unknown };
+      if (typeof payload.detail === "string") detail = payload.detail;
+    } catch {
+      // Keep the HTTP status as the bounded error when the body is not JSON.
+    }
+    throw new Error(detail || `Portfolio summary request failed (HTTP ${response.status})`);
+  }
+  const payload = await response.json();
+  if (!isPortfolioSummary(payload)) throw new Error("Portfolio summary response was incomplete");
+  return payload;
+}
+
 export function formatEventAge(eventAgeMs: number | null): string {
   return Number.isFinite(eventAgeMs) ? `${Math.round(eventAgeMs as number)}ms` : "—";
 }
@@ -60,41 +90,43 @@ export const Header: React.FC<HeaderProps> = ({
   const { locale, setLocale, t } = useTranslation();
   const { activePersona, isLiteMode, isPluginActive } = usePluginRegistry();
 
-  const [portfolio, setPortfolio] = useState<PortfolioSummary>({
-    initial_balance: 0.0,
-    total_equity: 0.0,
-    net_pnl: 0.0,
-    net_pnl_pct: 0.0,
-    today_pnl: 0.0,
-    today_pnl_pct: 0.0,
-    today_trades_count: { wins: 0, losses: 0, total: 0 },
-    open_risk_usd: 0.0,
-    open_risk_r: 0.0,
-    active_positions_count: 0,
-    win_rate: 0.0,
-    profit_factor: 0.0
-  });
+  const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
+  const [portfolioError, setPortfolioError] = useState<string | null>(null);
+  const loadControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
-  const fetchPortfolioSummary = async () => {
+  const fetchPortfolioSummary = useCallback(async () => {
+    loadControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
+    loadControllerRef.current = controller;
     try {
-      const res = await apiFetch(apiUrl("/api/v1/portfolio/summary"));
-      if (res.ok) {
-        const data = await res.json();
-        setPortfolio(data);
-      }
+      const data = await apiFetch(apiUrl("/api/v1/portfolio/summary"), { signal: controller.signal }).then(readPortfolioSummary);
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      setPortfolio(data);
+      setPortfolioError(null);
     } catch (err) {
-      // Desktop core booting, keep existing state
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      console.warn("[Header] Failed to fetch portfolio summary:", err);
+      setPortfolioError(err instanceof Error ? err.message : t("header.portfolio_unavailable"));
+    } finally {
+      if (requestId === requestIdRef.current) loadControllerRef.current = null;
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    fetchPortfolioSummary();
-    const interval = setInterval(fetchPortfolioSummary, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    void fetchPortfolioSummary();
+    const interval = setInterval(() => { void fetchPortfolioSummary(); }, 4000);
+    return () => {
+      clearInterval(interval);
+      requestIdRef.current += 1;
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
+  }, [fetchPortfolioSummary]);
 
-  const isNetPnlPositive = portfolio.net_pnl >= 0;
-  const isTodayPnlPositive = portfolio.today_pnl >= 0;
+  const isNetPnlPositive = portfolio ? portfolio.net_pnl >= 0 : false;
+  const isTodayPnlPositive = portfolio ? portfolio.today_pnl >= 0 : false;
 
   return (
     <header className="h-14 border-b border-surface-border bg-[#0d121c] flex items-center justify-between px-4 select-none shrink-0">
@@ -127,18 +159,20 @@ export const Header: React.FC<HeaderProps> = ({
             title={t("header.set_initial_capital")}
           >
             <Wallet className="w-3.5 h-3.5 text-accent" />
-            <div className="flex flex-col">
+            <div className="flex flex-col" aria-busy={!portfolio}>
               <span className="text-[9px] text-slate-500 font-semibold leading-tight group-hover:text-cyan-400 transition">
                 {t("header.total_equity")}
               </span>
               <div className="flex items-baseline space-x-1.5 leading-tight">
                 <span className="text-white font-bold text-xs group-hover:text-cyan-300 transition">
-                  ${portfolio.total_equity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {portfolio ? `$${portfolio.total_equity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                 </span>
                 <span className={`text-[10px] font-bold ${isNetPnlPositive ? "text-gain" : "text-loss"}`}>
-                  {isNetPnlPositive ? "+" : ""}${portfolio.net_pnl.toFixed(2)} ({isNetPnlPositive ? "+" : ""}{portfolio.net_pnl_pct.toFixed(1)}%)
+                  {portfolio ? `${isNetPnlPositive ? "+" : ""}$${portfolio.net_pnl.toFixed(2)} (${isNetPnlPositive ? "+" : ""}${portfolio.net_pnl_pct.toFixed(1)}%)` : "—"}
                 </span>
               </div>
+              {portfolioError && <span data-testid="header-portfolio-unavailable" className="text-[9px] text-amber-300 mt-1 break-words">{portfolioError}</span>}
+              {!portfolio && !portfolioError && <span data-testid="header-portfolio-loading" className="text-[9px] text-slate-500 mt-1">{t("header.portfolio_loading")}</span>}
             </div>
           </div>
 
@@ -151,10 +185,10 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
               <div className="flex items-baseline space-x-1.5 leading-tight">
                 <span className="text-amber-400 font-bold text-xs">
-                  {portfolio.open_risk_r.toFixed(1)}R (${portfolio.open_risk_usd.toFixed(2)})
+                  {portfolio ? `${portfolio.open_risk_r.toFixed(1)}R ($${portfolio.open_risk_usd.toFixed(2)})` : "—"}
                 </span>
                 <span className="text-[10px] text-slate-400">
-                  | {portfolio.active_positions_count} {t("header.positions")}
+                  {portfolio ? `| ${portfolio.active_positions_count} ${t("header.positions")}` : "—"}
                 </span>
               </div>
             </div>
@@ -169,10 +203,10 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
               <div className="flex items-baseline space-x-1.5 leading-tight">
                 <span className={`font-bold text-xs ${isTodayPnlPositive ? "text-gain" : "text-loss"}`}>
-                  {isTodayPnlPositive ? "+" : ""}${portfolio.today_pnl.toFixed(2)}
+                  {portfolio ? `${isTodayPnlPositive ? "+" : ""}$${portfolio.today_pnl.toFixed(2)}` : "—"}
                 </span>
                 <span className="text-[10px] text-slate-400">
-                  ({portfolio.today_trades_count.wins}W / {portfolio.today_trades_count.losses}L)
+                  {portfolio ? `(${portfolio.today_trades_count.wins}W / ${portfolio.today_trades_count.losses}L)` : "—"}
                 </span>
               </div>
             </div>

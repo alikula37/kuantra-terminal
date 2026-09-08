@@ -1,52 +1,133 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { QuantScorecard, SymbolBreakdown } from "../types";
 import { Award, TrendingUp, ShieldAlert, Target, PieChart } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
+
+const SCORECARD_FIELDS: Array<keyof QuantScorecard> = [
+  "total_trades", "win_rate", "loss_rate", "total_pnl", "avg_win", "avg_loss",
+  "profit_factor", "expectancy", "sqn", "sharpe_ratio", "sortino_ratio",
+  "max_drawdown_amount", "max_drawdown_pct", "half_kelly_pct",
+];
+
+function isQuantScorecard(value: unknown): value is QuantScorecard {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return SCORECARD_FIELDS.every((field) => typeof candidate[field] === "number" && Number.isFinite(candidate[field]));
+}
+
+function isSymbolBreakdown(value: unknown): value is SymbolBreakdown {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.symbol === "string"
+    && typeof candidate.count === "number" && Number.isFinite(candidate.count)
+    && typeof candidate.total_pnl === "number" && Number.isFinite(candidate.total_pnl)
+    && typeof candidate.avg_pnl === "number" && Number.isFinite(candidate.avg_pnl)
+    && typeof candidate.win_rate === "number" && Number.isFinite(candidate.win_rate);
+}
+
+async function readAnalyticsResponse(response: Response): Promise<unknown> {
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const payload = await response.json() as { detail?: unknown };
+      if (typeof payload.detail === "string") detail = payload.detail;
+    } catch {
+      // Keep the HTTP status as the bounded error when the body is not JSON.
+    }
+    throw new Error(detail || `Analytics request failed (HTTP ${response.status})`);
+  }
+  return response.json();
+}
 
 export const AnalyticsView: React.FC = () => {
   const { t } = useTranslation();
   const [scorecard, setScorecard] = useState<QuantScorecard | null>(null);
   const [symbols, setSymbols] = useState<SymbolBreakdown[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cancelled, setCancelled] = useState<boolean>(false);
+  const loadControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
+  const loadAnalytics = useCallback(async () => {
+    loadControllerRef.current?.abort();
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
+    loadControllerRef.current = controller;
+    setIsLoading(true);
+    setError(null);
+    setCancelled(false);
+
+    try {
+      const [quantData, symData] = await Promise.all([
+        apiFetch(apiUrl("/api/v1/analytics/quant"), { signal: controller.signal }).then(readAnalyticsResponse),
+        apiFetch(apiUrl("/api/v1/analytics/symbols"), { signal: controller.signal }).then(readAnalyticsResponse),
+      ]);
+
+      if (!isQuantScorecard(quantData)) {
+        throw new Error("Analytics response did not contain a complete quant scorecard");
+      }
+
+      if (!Array.isArray(symData) || !symData.every(isSymbolBreakdown)) {
+        throw new Error("Analytics response did not contain a valid symbol breakdown");
+      }
+
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      setScorecard(quantData);
+      setSymbols(symData);
+    } catch (err) {
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      console.warn("[AnalyticsView] Failed to fetch quantitative analytics:", err);
+      setError(err instanceof Error ? err.message : t("analytics.error"));
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+        loadControllerRef.current = null;
+      }
+    }
+  }, [t]);
 
   useEffect(() => {
-    setIsLoading(true);
-    Promise.all([
-      apiFetch(apiUrl("/api/v1/analytics/quant"))
-        .then((res) => res.json())
-        .catch(() => null),
-      apiFetch(apiUrl("/api/v1/analytics/symbols"))
-        .then((res) => res.json())
-        .catch(() => []),
-    ]).then(([quantData, symData]) => {
-      if (quantData) {
-        setScorecard(quantData);
-      } else {
-        setScorecard({
-          total_trades: 0,
-          win_rate: 0.0,
-          loss_rate: 0.0,
-          total_pnl: 0.0,
-          avg_win: 0.0,
-          avg_loss: 0.0,
-          profit_factor: 0.0,
-          expectancy: 0.0,
-          sqn: 0.0,
-          sharpe_ratio: 0.0,
-          sortino_ratio: 0.0,
-          max_drawdown_amount: 0.0,
-          max_drawdown_pct: 0.0,
-          half_kelly_pct: 0.0,
-        });
-      }
-      setSymbols(Array.isArray(symData) ? symData : []);
-      setIsLoading(false);
-    });
-  }, []);
+    void loadAnalytics();
+    return () => {
+      requestIdRef.current += 1;
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
+  }, [loadAnalytics]);
 
-  if (isLoading || !scorecard) {
-    return <div className="p-8 text-center text-slate-400 font-mono">{t("analytics.loading")}</div>;
+  const cancelLoad = () => {
+    const controller = loadControllerRef.current;
+    if (!controller) return;
+    requestIdRef.current += 1;
+    controller.abort();
+    loadControllerRef.current = null;
+    setIsLoading(false);
+    setCancelled(true);
+    setError(t("analytics.cancelled"));
+  };
+
+  if (isLoading) {
+    return (
+      <div role="status" data-testid="analytics-loading" className="p-8 text-center text-slate-400 font-mono space-y-3">
+        <span className="block">{t("analytics.loading")}</span>
+        <button type="button" data-testid="analytics-cancel" onClick={cancelLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          {t("analytics.cancel_load")}
+        </button>
+      </div>
+    );
+  }
+
+  if (error || !scorecard) {
+    return (
+      <div role="alert" data-testid={cancelled ? "analytics-cancelled" : "analytics-error"} className="p-8 text-center text-loss font-mono space-y-3">
+        <span className="block">{error || t("analytics.error")}</span>
+        <button type="button" data-testid="analytics-retry" onClick={() => void loadAnalytics()} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">
+          {t("analytics.retry")}
+        </button>
+      </div>
+    );
   }
 
   return (

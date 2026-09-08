@@ -98,7 +98,12 @@
     "active_positions": "Aktive Positionen",
     "new_trade_btn": "Neue Trade-Ausführung",
     "upload_chart_btn": "Chart-OCR hochladen",
-    "live_market": "Live-Markt-Feeds"
+    "live_market": "Live-Markt-Feeds",
+    "loading": "Dashboard-Daten werden geladen...",
+    "cancel_load": "Laden abbrechen",
+    "cancelled": "Laden abgebrochen. Kein Dashboard-Ergebnis wird angezeigt.",
+    "error": "Dashboard-Daten konnten nicht sicher geladen werden.",
+    "retry": "Erneut versuchen"
   },
   "orderflow": {
     "footprint_title": "Orderflow-Footprint-Matrix",
@@ -181,7 +186,9 @@
     "change_persona": "Architektur-Persona ändern",
     "set_initial_capital": "Startkapital festlegen",
     "positions": "Positionen",
-    "new_trade_btn": "NEUER TRADE"
+    "new_trade_btn": "NEUER TRADE",
+    "portfolio_loading": "Portfoliodaten werden geladen...",
+    "portfolio_unavailable": "Portfoliodaten nicht verfügbar"
   },
   "sidebar": {
     "lite_core_badge": "LITE-KERN (0 Plugins)",
@@ -490,7 +497,11 @@
     "total_closed": "GESAMT GESCHLOSSENE TRADES: {count}",
     "waiting_title": "Quant-Analytik wartet auf Trades",
     "waiting_desc": "Mindestens 1 geschlossener Trade erforderlich, um MAE/MFE-Analysen und Scorecard-Metriken zu berechnen.",
-    "loading": "Quantitatives Scoring wird geladen..."
+    "loading": "Quantitatives Scoring wird geladen...",
+    "cancel_load": "Laden abbrechen",
+    "cancelled": "Laden abgebrochen. Kein Analyseergebnis wird angezeigt.",
+    "error": "Quantitative Analysen konnten nicht sicher geladen werden.",
+    "retry": "Erneut versuchen"
   },
   "mae_mfe": {
     "title": "MAXIMALE ADVERSE / GÜNSTIGE EXKURSION (MAE / MFE)",
