@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.3
+version: 1.0.4
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 26751f72079a80c0589c9cc599b532b5d6bee78e
+reviewed_commit: 30dfcd7105d06a13297267e0b938660906921f4e
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -27,8 +27,8 @@ veya kullanıcı tarafından ticari olarak onaylanmış değildir. Accepted ADR'
 mevcut güvenlik kapıları geçerlidir. P1-WP16, P1-WP17, P1-WP18, P1-WP19 ve P1-WP20 bounded doğruluk paketleri
 kanıtla kapatılmıştır; P1-WP21, N01, N02, H03 ve P1-WP22 bounded paketleri de kendi
 kanıtlarıyla kapatılmıştır. P1-WP23 / U02 de bounded kanıtla kapatılmış; P1-WP24 /
-U03 ve P1-WP25 / U04 de bounded kanıtla kapatılmıştır. Mevcut `Ready` iş P1-WP26 /
-U05'tir. Aşağıdaki
+U03, P1-WP25 / U04 ve P1-WP26 / U05 de bounded kanıtla kapatılmıştır. Mevcut `Ready`
+iş H01'dir. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -131,8 +131,10 @@ P1-WP23 (`51ee968`) ile bounded olarak tamamlanmıştır. U03 canonical Trade Ev
 Pack, coverage/rule görünürlüğü, redaction ve deterministic export safety P1-WP24
 (`afedb70`) ile bounded olarak tamamlanmıştır. U04 weekly review ve
 period/timezone/as-of determinism P1-WP25 (`26751f7`) ile bounded olarak
-tamamlanmıştır. Sıradaki aktif paket **P1-WP26 / U05**'tir: erişilebilir ve anlaşılır
-shell state'leri. U05 tamamlanmadan release/pilot iddiası açılmaz.
+tamamlanmıştır. U05 erişilebilir ve anlaşılır shell state'lerini P1-WP26
+(`30dfcd7`) ile bounded olarak tamamlamıştır. Sıradaki aktif paket **H01**'dir:
+canonical persistence ve recovery hardening. H01 tamamlanmadan release/pilot iddiası
+açılmaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
@@ -321,7 +323,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 10. P1-WP25 / U04: weekly review ve period/timezone/as-of determinism; tamamlandı
     `26751f7`.
 11. P1-WP26 / U05: accessible/understandable shell; ardından bağımlılığa göre
-    H01–H07/N03–N06. U05 yeni capability veya release gate açmaz.
+    tamamlandı `30dfcd7`. U05 yeni capability veya release gate açmaz.
+12. H01: canonical persistence ve recovery; ardından H02/H04–H07 ve N03–N06
+    bağımlılık sırasıyla. H01 tamamlanmadan durability/release iddiası açılmaz.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -330,6 +334,13 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.4 — 2026-09-08
+
+- P1-WP26/U05 accessible/understandable shell boundary'si `30dfcd7` ile kanıtla
+  kapatıldı; H01 tek güncel Ready work package olarak seçildi. H01 yalnız canonical
+  persistence/recovery testlerini kapsar; yeni schema/event veya release yetkisi
+  vermez.
 
 ### 1.0.3 — 2026-09-08
 
