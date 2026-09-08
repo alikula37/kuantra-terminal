@@ -8,6 +8,8 @@
       "origQty": "1.5",
       "executedQty": "1.5",
       "avgPrice": "60000",
+      "fee": "0.75",
+      "commissionAsset": "USDT",
       "updateTime": 1788256800000
     },
     {
@@ -18,6 +20,8 @@
       "origQty": "2",
       "executedQty": "0",
       "avgPrice": "0",
+      "fee": "0",
+      "commissionAsset": "USDT",
       "updateTime": 1788256860000
     }
   ],

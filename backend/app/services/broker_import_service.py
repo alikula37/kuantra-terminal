@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation, localcontext
 import hashlib
 import json
 import math
@@ -28,6 +29,10 @@ SUPPORTED_SOURCE_EXCHANGES = {
 }
 SUPPORTED_SOURCE_EXCHANGE_IDS = set(SUPPORTED_SOURCE_EXCHANGES)
 SUPPORTED_MARKET_TYPES = {metadata["market_type"] for metadata in SUPPORTED_SOURCE_EXCHANGES.values()}
+DECIMAL_ENCODING = "DECIMAL_STRING_V1"
+_DECIMAL_ZERO = Decimal("0")
+_DECIMAL_MAX_DIGITS = 64
+_DECIMAL_MAX_EXPONENT = 64
 ORDER_EVENT_STATUSES = {
     "NEW",
     "PARTIALLY_FILLED",
@@ -59,7 +64,13 @@ def _required_text(value: Any, field: str) -> str:
     return str(value).strip()
 
 
-def _finite_number(value: Any, field: str, *, required: bool = False, allow_negative: bool = False) -> Optional[float]:
+def _decimal_number(
+    value: Any,
+    field: str,
+    *,
+    required: bool = False,
+    allow_negative: bool = False,
+) -> Optional[Decimal]:
     if value is None or str(value).strip() == "":
         if required:
             raise BrokerImportValidationError(f"{field} is required")
@@ -67,14 +78,56 @@ def _finite_number(value: Any, field: str, *, required: bool = False, allow_nega
     if isinstance(value, bool):
         raise BrokerImportValidationError(f"{field} must be a finite number")
     try:
-        number = float(value)
-    except (TypeError, ValueError, OverflowError) as exc:
+        number = Decimal(str(value).strip())
+    except (InvalidOperation, TypeError, ValueError) as exc:
         raise BrokerImportValidationError(f"{field} must be a finite number") from exc
-    if not math.isfinite(number):
+    if not number.is_finite():
         raise BrokerImportValidationError(f"{field} must be a finite number")
+    decimal_tuple = number.as_tuple()
+    if len(decimal_tuple.digits) > _DECIMAL_MAX_DIGITS or (
+        isinstance(decimal_tuple.exponent, int)
+        and abs(decimal_tuple.exponent) > _DECIMAL_MAX_EXPONENT
+    ):
+        raise BrokerImportValidationError(f"{field} exceeds the supported decimal precision")
     if not allow_negative and number < 0:
         raise BrokerImportValidationError(f"{field} cannot be negative")
     return number
+
+
+def _decimal_text(value: Optional[Decimal]) -> Optional[str]:
+    if value is None:
+        return None
+    text = format(value, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return "0" if text in {"", "-0"} else text
+
+
+def _normalize_fee_currency(value: Any) -> Optional[str]:
+    if value is None or str(value).strip() == "":
+        return None
+    text = str(value).strip().upper()
+    if len(text) > 32 or not all(character.isalnum() or character in "._:-" for character in text):
+        raise BrokerImportValidationError("fee_currency must be a bounded currency identifier")
+    return text
+
+
+def _decimal_sum(values: Iterable[Decimal]) -> Decimal:
+    with localcontext() as context:
+        context.prec = 128
+        return sum(values, _DECIMAL_ZERO)
+
+
+def _decimal_product(left: Decimal, right: Decimal) -> Decimal:
+    with localcontext() as context:
+        context.prec = 128
+        return left * right
+
+
+def _decimal_divide(left: Decimal, right: Decimal) -> Decimal:
+    with localcontext() as context:
+        context.prec = 128
+        return left / right
 
 
 def _normalize_timestamp(value: Any) -> str:
@@ -151,11 +204,11 @@ class BrokerLifecycleRecord:
     symbol: str
     side: str
     status: str
-    order_qty: Optional[float]
-    filled_qty: Optional[float]
-    price: Optional[float]
-    avg_price: Optional[float]
-    fee: Optional[float]
+    order_qty: Optional[Decimal]
+    filled_qty: Optional[Decimal]
+    price: Optional[Decimal]
+    avg_price: Optional[Decimal]
+    fee: Optional[Decimal]
     fee_currency: Optional[str]
     occurred_at: str
     source_row_number: int
@@ -167,6 +220,14 @@ class BrokerLifecycleRecord:
 
     def payload(self) -> Dict[str, Any]:
         return {
+            "numeric_encoding": DECIMAL_ENCODING,
+            "numeric_units": {
+                "order_qty": "VENUE_NATIVE_QUANTITY",
+                "filled_qty": "VENUE_NATIVE_QUANTITY",
+                "price": "VENUE_NATIVE_PRICE",
+                "avg_price": "VENUE_NATIVE_PRICE",
+                "fee": f"CURRENCY:{self.fee_currency}" if self.fee_currency else "UNKNOWN_CURRENCY",
+            },
             "record_type": self.record_type,
             "venue": self.venue,
             "external_order_id": self.external_order_id,
@@ -174,11 +235,11 @@ class BrokerLifecycleRecord:
             "symbol": self.symbol,
             "side": self.side,
             "status": self.status,
-            "order_qty": self.order_qty,
-            "filled_qty": self.filled_qty,
-            "price": self.price,
-            "avg_price": self.avg_price,
-            "fee": self.fee,
+            "order_qty": _decimal_text(self.order_qty),
+            "filled_qty": _decimal_text(self.filled_qty),
+            "price": _decimal_text(self.price),
+            "avg_price": _decimal_text(self.avg_price),
+            "fee": _decimal_text(self.fee),
             "fee_currency": self.fee_currency,
             "occurred_at": self.occurred_at,
             "source_row_number": self.source_row_number,
@@ -206,19 +267,19 @@ class BrokerImportService:
         venue = cls._validate_venue(venue)
         order_id = _required_text(_first(row, "orderId", "order_id", "ordId", "id"), "external_order_id")
         status = _normalize_order_status(_first(row, "status", "state"))
-        order_qty = _finite_number(
+        order_qty = _decimal_number(
             _first(row, "origQty", "order_qty", "quantity", "qty", "sz"),
             "order_qty",
             required=True,
         )
-        filled_qty = _finite_number(
+        filled_qty = _decimal_number(
             _first(row, "executedQty", "filled_qty", "filledQty", "accFillSz", "filled_size"),
             "filled_qty",
         )
-        avg_price = _finite_number(_first(row, "avgPrice", "avg_price", "avgPx"), "avg_price")
-        price = _finite_number(_first(row, "price", "px", "order_price"), "price")
-        fee = _finite_number(_first(row, "fee", "commission", "fee_cost"), "fee", allow_negative=True)
-        fee_currency = _first(row, "fee_currency", "commissionAsset", "feeCcy")
+        avg_price = _decimal_number(_first(row, "avgPrice", "avg_price", "avgPx"), "avg_price")
+        price = _decimal_number(_first(row, "price", "px", "order_price"), "price")
+        fee = _decimal_number(_first(row, "fee", "commission", "fee_cost"), "fee", allow_negative=True)
+        fee_currency = _normalize_fee_currency(_first(row, "fee_currency", "commissionAsset", "feeCcy"))
         return BrokerLifecycleRecord(
             venue=venue,
             record_type="order",
@@ -232,7 +293,7 @@ class BrokerImportService:
             price=price,
             avg_price=avg_price,
             fee=fee,
-            fee_currency=str(fee_currency).strip() if fee_currency is not None else None,
+            fee_currency=fee_currency,
             occurred_at=_normalize_timestamp(_first(row, "updateTime", "uTime", "time", "cTime", "timestamp")),
             source_row_number=row_number,
             source_row_sha256=_row_hash(row),
@@ -243,18 +304,18 @@ class BrokerImportService:
         venue = cls._validate_venue(venue)
         order_id = _required_text(_first(row, "orderId", "order_id", "ordId"), "external_order_id")
         fill_id = _required_text(_first(row, "id", "tradeId", "fillId", "fill_id"), "external_fill_id")
-        quantity = _finite_number(
+        quantity = _decimal_number(
             _first(row, "qty", "quantity", "size", "fill_qty", "sz"),
             "filled_qty",
             required=True,
         )
         if quantity <= 0:
             raise BrokerImportValidationError("filled_qty must be greater than zero")
-        price = _finite_number(_first(row, "price", "fill_price", "fillPx"), "price", required=True)
+        price = _decimal_number(_first(row, "price", "fill_price", "fillPx"), "price", required=True)
         if price <= 0:
             raise BrokerImportValidationError("price must be greater than zero")
-        fee = _finite_number(_first(row, "fee", "commission", "fee_cost"), "fee", allow_negative=True)
-        fee_currency = _first(row, "fee_currency", "commissionAsset", "feeCcy")
+        fee = _decimal_number(_first(row, "fee", "commission", "fee_cost"), "fee", allow_negative=True)
+        fee_currency = _normalize_fee_currency(_first(row, "fee_currency", "commissionAsset", "feeCcy"))
         return BrokerLifecycleRecord(
             venue=venue,
             record_type="fill",
@@ -268,7 +329,7 @@ class BrokerImportService:
             price=price,
             avg_price=price,
             fee=fee,
-            fee_currency=str(fee_currency).strip() if fee_currency is not None else None,
+            fee_currency=fee_currency,
             occurred_at=_normalize_timestamp(_first(row, "time", "fillTime", "ts", "uTime", "timestamp")),
             source_row_number=row_number,
             source_row_sha256=_row_hash(row),
@@ -303,8 +364,81 @@ class BrokerImportService:
         return records, rejected
 
     @staticmethod
-    def _tolerance(expected: float) -> float:
-        return max(1e-10, abs(expected) * 1e-9)
+    def _tolerance(_expected: Decimal) -> Decimal:
+        """Return no implicit numeric tolerance before a unit contract exists."""
+
+        return _DECIMAL_ZERO
+
+    @classmethod
+    def _reconcile_fees(
+        cls,
+        order: BrokerLifecycleRecord,
+        fills: Sequence[BrokerLifecycleRecord],
+    ) -> Tuple[str, List[Dict[str, Any]]]:
+        """Reconcile fees without treating missing amounts as zero."""
+
+        fee_records = [order, *fills]
+        fee_amounts = [record.fee for record in fee_records if record.fee is not None]
+        fee_currency_only = any(record.fee is None and record.fee_currency is not None for record in fee_records)
+        if not fee_amounts:
+            if fee_currency_only:
+                return "UNKNOWN", [{
+                    "type": "FEE_AMOUNT_UNKNOWN",
+                    "external_order_id": order.external_order_id,
+                }]
+            return "NOT_PROVIDED", []
+
+        discrepancies: List[Dict[str, Any]] = []
+        if order.fee is None or any(fill.fee is None for fill in fills):
+            discrepancies.append({
+                "type": "FEE_DATA_INCOMPLETE",
+                "external_order_id": order.external_order_id,
+            })
+
+        fee_records_with_amount = [record for record in fee_records if record.fee is not None]
+        if any(record.fee_currency is None for record in fee_records_with_amount):
+            discrepancies.append({
+                "type": "FEE_CURRENCY_UNKNOWN",
+                "external_order_id": order.external_order_id,
+            })
+        currencies = {record.fee_currency for record in fee_records_with_amount if record.fee_currency is not None}
+        if len(currencies) > 1:
+            discrepancies.append({
+                "type": "MULTI_CURRENCY_FEES",
+                "external_order_id": order.external_order_id,
+                "currencies": sorted(currencies),
+            })
+
+        if fills and order.fee_currency is not None and all(fill.fee_currency is not None for fill in fills):
+            fill_currencies = {fill.fee_currency for fill in fills}
+            if fill_currencies != {order.fee_currency}:
+                discrepancies.append({
+                    "type": "FEE_CURRENCY_MISMATCH",
+                    "external_order_id": order.external_order_id,
+                })
+
+        if not discrepancies:
+            fill_fee = _decimal_sum(fill.fee for fill in fills if fill.fee is not None)
+            if fill_fee != order.fee:
+                discrepancies.append({
+                    "type": "FEE_MISMATCH",
+                    "external_order_id": order.external_order_id,
+                    "order_fee": _decimal_text(order.fee),
+                    "fill_fee": _decimal_text(fill_fee),
+                    "fee_currency": order.fee_currency,
+                })
+        if discrepancies:
+            has_hard_conflict = any(
+                item["type"] in {
+                    "FEE_CURRENCY_UNKNOWN",
+                    "MULTI_CURRENCY_FEES",
+                    "FEE_CURRENCY_MISMATCH",
+                    "FEE_MISMATCH",
+                }
+                for item in discrepancies
+            )
+            return "UNRECONCILED" if has_hard_conflict else "UNKNOWN", discrepancies
+        return "RECONCILED", []
 
     @classmethod
     def reconcile(cls, records: Iterable[BrokerLifecycleRecord]) -> Dict[str, Any]:
@@ -313,6 +447,7 @@ class BrokerImportService:
         discrepancies: List[Dict[str, Any]] = []
         duplicate_orders = 0
         duplicate_fills = 0
+        fee_statuses: List[str] = []
 
         for record in records:
             if record.record_type == "order":
@@ -338,42 +473,40 @@ class BrokerImportService:
         reconciled_orders = 0
         for order_id, order in orders.items():
             fills = fills_by_order.get(order_id, [])
-            total_filled = sum(fill.filled_qty or 0.0 for fill in fills)
+            total_filled = _decimal_sum(fill.filled_qty for fill in fills if fill.filled_qty is not None)
             if order.filled_qty is None:
                 discrepancies.append({"type": "MISSING_ORDER_FILLED_QTY", "external_order_id": order_id})
             elif abs(total_filled - order.filled_qty) > cls._tolerance(order.filled_qty):
                 discrepancies.append({
                     "type": "QUANTITY_MISMATCH",
                     "external_order_id": order_id,
-                    "order_filled_qty": order.filled_qty,
-                    "fill_qty": total_filled,
+                    "order_filled_qty": _decimal_text(order.filled_qty),
+                    "fill_qty": _decimal_text(total_filled),
                 })
 
-            if order.status == "FILLED" and total_filled <= cls._tolerance(1.0):
+            if order.status == "FILLED" and total_filled <= _DECIMAL_ZERO:
                 discrepancies.append({"type": "FILLED_ORDER_WITHOUT_FILL", "external_order_id": order_id})
-            if (order.filled_qty or 0.0) > 0 and not fills:
+            if order.filled_qty is not None and order.filled_qty > _DECIMAL_ZERO and not fills:
                 discrepancies.append({"type": "MISSING_FILL_ROWS", "external_order_id": order_id})
 
-            expected_price = order.avg_price or order.price
-            if expected_price is not None and total_filled > 0:
-                weighted_price = sum((fill.filled_qty or 0.0) * (fill.price or 0.0) for fill in fills) / total_filled
-                if abs(weighted_price - expected_price) > cls._tolerance(expected_price):
+            expected_price = order.avg_price if order.avg_price is not None else order.price
+            if expected_price is not None and total_filled > _DECIMAL_ZERO:
+                weighted_numerator = _decimal_sum(
+                    _decimal_product(fill.filled_qty, fill.price)
+                    for fill in fills
+                    if fill.filled_qty is not None and fill.price is not None
+                )
+                if weighted_numerator != _decimal_product(expected_price, total_filled):
                     discrepancies.append({
                         "type": "AVERAGE_PRICE_MISMATCH",
                         "external_order_id": order_id,
-                        "order_avg_price": expected_price,
-                        "fill_weighted_price": weighted_price,
+                        "order_avg_price": _decimal_text(expected_price),
+                        "fill_weighted_price": _decimal_text(_decimal_divide(weighted_numerator, total_filled)),
                     })
 
-            if order.fee is not None:
-                fill_fee = sum(fill.fee or 0.0 for fill in fills)
-                if abs(fill_fee - order.fee) > cls._tolerance(order.fee):
-                    discrepancies.append({
-                        "type": "FEE_MISMATCH",
-                        "external_order_id": order_id,
-                        "order_fee": order.fee,
-                        "fill_fee": fill_fee,
-                    })
+            _fee_status, fee_discrepancies = cls._reconcile_fees(order, fills)
+            fee_statuses.append(_fee_status)
+            discrepancies.extend(fee_discrepancies)
 
             if not any(item.get("external_order_id") == order_id for item in discrepancies):
                 reconciled_orders += 1
@@ -381,6 +514,15 @@ class BrokerImportService:
         orphan_fill_orders = sorted(set(fills_by_order) - set(orders))
         for order_id in orphan_fill_orders:
             discrepancies.append({"type": "ORPHAN_FILL", "external_order_id": order_id})
+
+        if any(status == "UNRECONCILED" for status in fee_statuses):
+            fee_reconciliation_status = "UNRECONCILED"
+        elif any(status == "UNKNOWN" for status in fee_statuses):
+            fee_reconciliation_status = "UNKNOWN"
+        elif any(status == "RECONCILED" for status in fee_statuses):
+            fee_reconciliation_status = "RECONCILED"
+        else:
+            fee_reconciliation_status = "NOT_PROVIDED"
 
         return {
             "status": "RECONCILED" if not discrepancies else "UNRECONCILED",
@@ -391,6 +533,7 @@ class BrokerImportService:
             "orphan_fill_order_count": len(orphan_fill_orders),
             "duplicate_order_count": duplicate_orders,
             "duplicate_fill_count": duplicate_fills,
+            "fee_reconciliation_status": fee_reconciliation_status,
             "discrepancies": discrepancies,
         }
 
@@ -503,9 +646,9 @@ class BrokerImportService:
                 "occurred_at": record.occurred_at,
                 "schema_version": "1",
                 "adapter_version": (
-                    f"{venue.lower()}-read-only-api-v1"
+                    f"{venue.lower()}-read-only-api-v2"
                     if snapshot_provenance
-                    else f"{venue.lower()}-export-v1"
+                    else f"{venue.lower()}-export-v2"
                 ),
                 "correlation_id": record.external_order_id,
                 "provenance": {

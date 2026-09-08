@@ -8,6 +8,8 @@
       "sz": "2",
       "accFillSz": "2",
       "avgPx": "60000",
+      "fee": "-0.10",
+      "feeCcy": "USDT",
       "uTime": "1788256800000"
     },
     {
@@ -18,6 +20,8 @@
       "sz": "1",
       "accFillSz": "0",
       "avgPx": "0",
+      "fee": "0",
+      "feeCcy": "USDT",
       "uTime": "1788256860000"
     }
   ],

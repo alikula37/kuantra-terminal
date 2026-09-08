@@ -4,9 +4,9 @@
 ```yaml
 work_package: P1-WP18
 version: 1.0.0
-status: Ready
+status: InProgress
 date: 2026-09-08
-baseline_commit: 930d25a
+baseline_commit: d5d6f07
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP17

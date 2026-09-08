@@ -15,6 +15,7 @@ from app.services.exchange.read_only_broker_sync import (
     ReadOnlyExchangeClient,
     ReadOnlySnapshotManifest,
     SnapshotManifestValidationError,
+    _ccxt_order_status,
 )
 from app.services.exchange.credentials_manager import ExchangeCredentialsManager
 from app.db.sqlite_driver import sqlite_driver
@@ -118,6 +119,10 @@ def test_read_only_sync_paginates_retries_and_records_manifest(tmp_path):
     assert len(events) == 6
     assert all(event["provenance"]["source"] == "broker_api_snapshot" for event in events)
     assert all(event["provenance"]["snapshot_permission_scope"] == "READ_ONLY" for event in events)
+
+
+def test_closed_order_partial_status_uses_exact_decimal_comparison():
+    assert _ccxt_order_status({"status": "closed", "amount": "0.300000000000", "filled": "0.299999999999"}) == "PARTIALLY_FILLED"
 
 
 def test_max_pages_is_fail_closed_and_never_claims_reconciled(tmp_path):

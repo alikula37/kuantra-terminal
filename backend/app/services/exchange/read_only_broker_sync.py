@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 import hashlib
 import math
 import random
@@ -104,9 +105,10 @@ def _ccxt_order_status(row: Mapping[str, Any]) -> Any:
     amount = _first(row, "amount", "origQty", "order_qty", "quantity", "qty", "sz")
     filled = _first(row, "filled", "executedQty", "filled_qty", "filledQty", "accFillSz")
     try:
-        if amount is not None and filled is not None and float(filled) + 1e-12 < float(amount):
-            return "PARTIALLY_FILLED"
-    except (TypeError, ValueError, OverflowError):
+        if amount is not None and filled is not None:
+            if Decimal(str(filled)) < Decimal(str(amount)):
+                return "PARTIALLY_FILLED"
+    except (InvalidOperation, TypeError, ValueError, OverflowError):
         # The canonical importer will reject malformed quantities; status must
         # not turn an invalid row into a fabricated fill.
         pass
