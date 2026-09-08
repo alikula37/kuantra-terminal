@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from app.db.sqlite_driver import SQLiteDriver
 from app.services.macos_migration import (
     MigrationBundleError,
     create_migration_bundle,
@@ -21,34 +22,49 @@ def _source_data(tmp_path: Path) -> Path:
     source = tmp_path / "source-data"
     source.mkdir()
     database = source / "kuantra_oltp.sqlite3"
+    driver = SQLiteDriver(str(database))
+    driver.record_trade_with_evidence(
+        {
+            "id": "trade-1",
+            "symbol": "BTCUSDT",
+            "side": "BUY",
+            "entry_price": 100.0,
+            "qty": 1.0,
+            "entry_time": "2026-09-08T10:00:00Z",
+            "status": "OPEN",
+            "pnl": 0.0,
+            "commission": 0.1,
+            "notes": "synthetic migration fixture",
+        },
+        event_type="IntentRecorded",
+        idempotency_key="migration:trade-1:intent",
+        occurred_at="2026-09-08T10:00:00Z",
+        provenance={"source": "migration-test"},
+    )
     with sqlite3.connect(database) as conn:
         conn.executescript(
             """
-            CREATE TABLE trades (id TEXT PRIMARY KEY, symbol TEXT NOT NULL);
-            CREATE TABLE evidence_events (event_id TEXT PRIMARY KEY);
-            CREATE TABLE evidence_trade_projections (
-                account_id TEXT NOT NULL,
-                venue TEXT NOT NULL,
-                trade_id TEXT NOT NULL
+            INSERT INTO exchange_credentials (
+                exchange_id, name, api_key_encrypted, api_secret_encrypted,
+                passphrase_encrypted, is_testnet, is_active, created_at, updated_at
+            ) VALUES (
+                'binance_futures', 'Binance Futures', 'encrypted-key',
+                'encrypted-secret', NULL, 1, 1,
+                '2026-09-08T10:00:00Z', '2026-09-08T10:00:00Z'
             );
-            CREATE TABLE exchange_credentials (
-                exchange_id TEXT PRIMARY KEY,
-                api_key_encrypted TEXT NOT NULL,
-                api_secret_encrypted TEXT NOT NULL
+            INSERT INTO exchange_credential_refs (
+                exchange_id, name, api_key_ref, api_secret_ref, passphrase_ref,
+                permission_scope, is_testnet, is_active, created_at, updated_at
+            ) VALUES (
+                'binance_futures', 'Binance Futures',
+                'exchange/binance_futures/api_key',
+                'exchange/binance_futures/api_secret', NULL, 'READ_ONLY', 1, 1,
+                '2026-09-08T10:00:00Z', '2026-09-08T10:00:00Z'
             );
-            CREATE TABLE exchange_credential_refs (
-                exchange_id TEXT PRIMARY KEY,
-                api_key_ref TEXT NOT NULL,
-                api_secret_ref TEXT NOT NULL
-            );
-            CREATE TABLE user_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-            INSERT INTO trades VALUES ('trade-1', 'BTCUSDT');
-            INSERT INTO evidence_events VALUES ('event-1');
-            INSERT INTO evidence_trade_projections VALUES ('local-journal', 'legacy', 'trade-1');
-            INSERT INTO exchange_credentials VALUES ('binance_futures', 'encrypted-key', 'encrypted-secret');
-            INSERT INTO exchange_credential_refs VALUES ('binance_futures', 'exchange/binance_futures/api_key', 'exchange/binance_futures/api_secret');
-            INSERT INTO user_settings VALUES ('user_initial_balance', '10000');
-            INSERT INTO user_settings VALUES ('BINANCE_API_KEY', 'must-be-removed');
+            INSERT INTO user_settings (key, value, updated_at)
+            VALUES ('user_initial_balance', '10000', '2026-09-08T10:00:00Z');
+            INSERT INTO user_settings (key, value, updated_at)
+            VALUES ('BINANCE_API_KEY', 'must-be-removed', '2026-09-08T10:00:00Z');
             """
         )
     cold_storage = source / "cold_storage" / "2026" / "09"
@@ -57,7 +73,6 @@ def _source_data(tmp_path: Path) -> Path:
     (source / "logs").mkdir()
     (source / "logs" / "backend.log").write_text("token=do-not-copy", encoding="utf-8")
     (source / "kuantra_olap.duckdb").write_bytes(b"projection-placeholder")
-    (source / "kuantra_oltp.sqlite3-wal").write_bytes(b"sidecar-placeholder")
     return source
 
 

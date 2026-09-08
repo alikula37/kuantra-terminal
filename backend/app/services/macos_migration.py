@@ -25,11 +25,13 @@ import time
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 
 BUNDLE_SCHEMA_VERSION = 1
 BUNDLE_TYPE = "kuantra-macos-migration"
+CURRENT_SQLITE_SCHEMA_VERSION = 3
+LEGACY_SQLITE_SCHEMA_VERSION = 1
 _SQLITE_RELATIVE_PATH = Path("data") / "kuantra_oltp.sqlite3"
 _COLD_STORAGE_RELATIVE_ROOT = Path("data") / "cold_storage"
 _SENSITIVE_SETTING_TOKENS = (
@@ -48,6 +50,201 @@ _SENSITIVE_SETTING_TOKENS = (
 
 class MigrationBundleError(ValueError):
     """Raised when a migration bundle violates its safety contract."""
+
+
+_LEGACY_TRADE_COLUMNS = frozenset(
+    {"id", "symbol", "side", "entry_price", "qty", "entry_time", "status"}
+)
+_CURRENT_TRADE_COLUMNS = frozenset(
+    {
+        "id",
+        "symbol",
+        "side",
+        "entry_price",
+        "qty",
+        "entry_time",
+        "status",
+        "commission",
+        "created_at",
+        "updated_at",
+    }
+)
+_LEDGER_COLUMNS = frozenset(
+    {
+        "event_id",
+        "event_type",
+        "account_id",
+        "venue",
+        "occurred_at_utc",
+        "received_at_utc",
+        "chain_date_utc",
+        "chain_sequence",
+        "schema_version",
+        "adapter_version",
+        "correlation_id",
+        "idempotency_key",
+        "request_fingerprint_sha256",
+        "raw_payload_sha256",
+        "normalized_payload_json",
+        "provenance_json",
+        "prev_hash",
+        "event_hash",
+    }
+)
+_PROJECTION_COLUMNS = frozenset(
+    {
+        "account_id",
+        "venue",
+        "trade_id",
+        "symbol",
+        "side",
+        "entry_price",
+        "qty",
+        "status",
+        "source_event_id",
+        "source_event_hash",
+        "snapshot_json",
+    }
+)
+_KNOWN_ALEMBIC_REVISIONS = {
+    "001_initial_baseline": LEGACY_SQLITE_SCHEMA_VERSION,
+    "002_evidence_ledger": 2,
+    "003_trade_projection": CURRENT_SQLITE_SCHEMA_VERSION,
+}
+
+
+def _table_columns(conn: sqlite3.Connection, table_name: str) -> set[str]:
+    return {
+        str(row[1])
+        for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    }
+
+
+def _inspect_sqlite_schema(conn: sqlite3.Connection) -> dict[str, Any]:
+    """Classify the SQLite file without creating or changing any schema."""
+
+    try:
+        user_version = int(conn.execute("PRAGMA user_version").fetchone()[0])
+    except (TypeError, ValueError, sqlite3.DatabaseError):
+        user_version = 0
+
+    revision: str | None = None
+    if _table_exists(conn, "alembic_version"):
+        rows = conn.execute("SELECT version_num FROM alembic_version").fetchall()
+        if len(rows) != 1:
+            return {
+                "status": "unsupported",
+                "reason": "SQLITE_SCHEMA_VERSION_MISSING_OR_AMBIGUOUS",
+                "version": None,
+                "alembic_revision": None,
+                "sqlite_user_version": user_version,
+            }
+        revision = str(rows[0][0])
+        if revision not in _KNOWN_ALEMBIC_REVISIONS:
+            return {
+                "status": "unsupported",
+                "reason": "SQLITE_SCHEMA_VERSION_UNSUPPORTED",
+                "version": None,
+                "alembic_revision": revision,
+                "sqlite_user_version": user_version,
+            }
+
+    if user_version > CURRENT_SQLITE_SCHEMA_VERSION:
+        return {
+            "status": "unsupported",
+            "reason": "SQLITE_SCHEMA_VERSION_FUTURE",
+            "version": user_version,
+            "alembic_revision": revision,
+            "sqlite_user_version": user_version,
+        }
+
+    trade_columns = _table_columns(conn, "trades") if _table_exists(conn, "trades") else set()
+    missing_legacy = sorted(_LEGACY_TRADE_COLUMNS - trade_columns)
+    if missing_legacy:
+        return {
+            "status": "unsupported",
+            "reason": "SQLITE_SCHEMA_INCOMPATIBLE",
+            "version": None,
+            "alembic_revision": revision,
+            "sqlite_user_version": user_version,
+            "missing_trade_columns": missing_legacy,
+        }
+
+    ledger_columns = _table_columns(conn, "evidence_events") if _table_exists(conn, "evidence_events") else set()
+    projection_columns = (
+        _table_columns(conn, "evidence_trade_projections")
+        if _table_exists(conn, "evidence_trade_projections")
+        else set()
+    )
+    current_missing = sorted(
+        (_CURRENT_TRADE_COLUMNS - trade_columns)
+        | (_LEDGER_COLUMNS - ledger_columns)
+        | (_PROJECTION_COLUMNS - projection_columns)
+    )
+    if not current_missing and _table_exists(conn, "evidence_events") and _table_exists(
+        conn, "evidence_trade_projections"
+    ):
+        return {
+            "status": "current",
+            "reason": None,
+            "version": CURRENT_SQLITE_SCHEMA_VERSION,
+            "alembic_revision": revision,
+            "sqlite_user_version": user_version,
+        }
+
+    # A baseline schema with the canonical trade identity can be upgraded by
+    # the explicit staged upgrade below.  It is never silently upgraded by a
+    # read-only bundle verifier.
+    if revision in (None, "001_initial_baseline") and not ledger_columns and not projection_columns:
+        return {
+            "status": "legacy",
+            "reason": "SQLITE_SCHEMA_UPGRADE_REQUIRED",
+            "version": LEGACY_SQLITE_SCHEMA_VERSION,
+            "alembic_revision": revision,
+            "sqlite_user_version": user_version,
+            "missing_current_columns": current_missing,
+        }
+    if (
+        revision in (None, "002_evidence_ledger")
+        and _LEDGER_COLUMNS.issubset(ledger_columns)
+        and not projection_columns
+    ):
+        return {
+            "status": "legacy",
+            "reason": "SQLITE_SCHEMA_UPGRADE_REQUIRED",
+            "version": 2,
+            "alembic_revision": revision,
+            "sqlite_user_version": user_version,
+            "missing_current_columns": current_missing,
+        }
+
+    return {
+        "status": "unsupported",
+        "reason": "SQLITE_SCHEMA_INCOMPLETE",
+        "version": None,
+        "alembic_revision": revision,
+        "sqlite_user_version": user_version,
+        "missing_current_columns": current_missing,
+    }
+
+
+def _copy_sqlite_snapshot(source: Path, destination: Path) -> dict[str, Any]:
+    """Copy a live SQLite database, including WAL state, without scrubbing it."""
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    source_conn = sqlite3.connect(str(source))
+    target_conn = sqlite3.connect(str(destination))
+    try:
+        source_conn.execute("PRAGMA query_only = ON")
+        source_conn.backup(target_conn)
+        target_conn.commit()
+        integrity = [row[0] for row in target_conn.execute("PRAGMA integrity_check").fetchall()]
+        if integrity != ["ok"]:
+            raise MigrationBundleError(f"SQLite snapshot failed integrity check: {integrity}")
+        return {"integrity": "ok", "sha256": _sha256_file(destination)}
+    finally:
+        target_conn.close()
+        source_conn.close()
 
 
 def _utc_now() -> str:
@@ -84,15 +281,12 @@ def _snapshot_sqlite(source: Path, destination: Path) -> dict[str, Any]:
     freelist.
     """
 
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    source_conn = sqlite3.connect(str(source))
+    _copy_sqlite_snapshot(source, destination)
     target_conn = sqlite3.connect(str(destination))
     deleted_legacy_credentials = 0
     deleted_credential_refs = 0
     deleted_sensitive_settings = 0
     try:
-        source_conn.execute("PRAGMA query_only = ON")
-        source_conn.backup(target_conn)
         target_conn.execute("PRAGMA secure_delete = ON")
 
         if _table_exists(target_conn, "exchange_credentials"):
@@ -123,7 +317,6 @@ def _snapshot_sqlite(source: Path, destination: Path) -> dict[str, Any]:
             raise MigrationBundleError(f"sanitized SQLite snapshot failed integrity check: {integrity}")
     finally:
         target_conn.close()
-        source_conn.close()
 
     return {
         "integrity": "ok",
@@ -142,6 +335,18 @@ def _projection_preflight(source: Path) -> dict[str, Any]:
         has_trades = _table_exists(conn, "trades")
         has_projection = _table_exists(conn, "evidence_trade_projections")
         has_events = _table_exists(conn, "evidence_events")
+        trade_columns = _table_columns(conn, "trades") if has_trades else set()
+        if has_trades and not _LEGACY_TRADE_COLUMNS.issubset(trade_columns):
+            return {
+                "ready": False,
+                "reason": "TRADES_SCHEMA_INCOMPLETE",
+                "trade_count": 0,
+                "projected_count": 0,
+                "missing_count": 0,
+                "extra_count": 0,
+                "duplicate_count": 0,
+                "evidence_event_count": 0,
+            }
         trade_count = int(conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0]) if has_trades else 0
         event_count = int(conn.execute("SELECT COUNT(*) FROM evidence_events").fetchone()[0]) if has_events else 0
         if not has_trades:
@@ -159,6 +364,18 @@ def _projection_preflight(source: Path) -> dict[str, Any]:
             return {
                 "ready": trade_count == 0,
                 "reason": "PROJECTION_TABLE_MISSING" if trade_count else None,
+                "trade_count": trade_count,
+                "projected_count": 0,
+                "missing_count": trade_count,
+                "extra_count": 0,
+                "duplicate_count": 0,
+                "evidence_event_count": event_count,
+            }
+        projection_columns = _table_columns(conn, "evidence_trade_projections")
+        if not _PROJECTION_COLUMNS.issubset(projection_columns):
+            return {
+                "ready": False,
+                "reason": "PROJECTION_SCHEMA_INCOMPLETE",
                 "trade_count": trade_count,
                 "projected_count": 0,
                 "missing_count": trade_count,
@@ -270,6 +487,8 @@ def create_migration_bundle(
         staging = Path(temp_dir)
         staged_db = staging / _SQLITE_RELATIVE_PATH
         sqlite_meta = _snapshot_sqlite(source_db, staged_db)
+        sqlite_preflight = _verify_sqlite_snapshot(staged_db)
+        projection_preflight = _projection_preflight(source_db)
         staged_files: list[tuple[Path, Path]] = [(staged_db, _SQLITE_RELATIVE_PATH)]
 
         for source_file, relative in _iter_cold_storage_files(source_root):
@@ -286,7 +505,8 @@ def create_migration_bundle(
             "source_architecture": platform.machine(),
             "credential_policy": "os_keychain_not_exported",
             "projection_policy": "duckdb_excluded_rebuild_from_sqlite",
-            "projection_preflight": _projection_preflight(source_db),
+            "projection_preflight": projection_preflight,
+            "sqlite_preflight": sqlite_preflight,
             "sqlite": sqlite_meta,
             "files": [_manifest_file_entry(path, relative) for path, relative in staged_files],
             "excluded": [
@@ -320,7 +540,10 @@ def create_migration_bundle(
         "valid": True,
         "bundle_path": str(output_path),
         "bundle_sha256": _sha256_file(output_path),
-        "migration_ready": bool(manifest["projection_preflight"].get("ready")),
+        "migration_ready": bool(
+            manifest["projection_preflight"].get("ready")
+            and manifest["sqlite_preflight"].get("valid")
+        ),
         "manifest": manifest,
     }
 
@@ -346,6 +569,14 @@ def _verify_sqlite_snapshot(path: Path) -> dict[str, Any]:
         integrity = [row[0] for row in conn.execute("PRAGMA integrity_check").fetchall()]
         if integrity != ["ok"]:
             return {"valid": False, "reason": "SQLITE_INTEGRITY_FAILED", "integrity": integrity}
+        schema = _inspect_sqlite_schema(conn)
+        if schema.get("status") != "current":
+            return {
+                "valid": False,
+                "reason": str(schema.get("reason") or "SQLITE_SCHEMA_UNSUPPORTED"),
+                "integrity": "ok",
+                "schema": schema,
+            }
         legacy_rows = 0
         if _table_exists(conn, "exchange_credentials"):
             legacy_rows = int(conn.execute("SELECT COUNT(*) FROM exchange_credentials").fetchone()[0])
@@ -368,9 +599,44 @@ def _verify_sqlite_snapshot(path: Path) -> dict[str, Any]:
                 "sensitive_setting_keys": sensitive_settings,
             }
         event_count = 0
-        if _table_exists(conn, "evidence_events"):
-            event_count = int(conn.execute("SELECT COUNT(*) FROM evidence_events").fetchone()[0])
-        return {"valid": True, "integrity": "ok", "event_count": event_count}
+        if not _table_exists(conn, "evidence_events"):
+            return {
+                "valid": False,
+                "reason": "EVIDENCE_LEDGER_TABLE_MISSING",
+                "integrity": "ok",
+                "schema": schema,
+            }
+        event_count = int(conn.execute("SELECT COUNT(*) FROM evidence_events").fetchone()[0])
+
+        # Inspect the snapshot without running the application's bootstrap
+        # schema initializer. Verification must not turn an incomplete or future
+        # snapshot into a different database before deciding whether it is safe.
+        from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+
+        ledger = EvidenceLedgerRepository(str(path), initialize_schema=False)
+        chain = ledger.verify_chain()
+        if not chain["valid"]:
+            return {
+                "valid": False,
+                "reason": "EVIDENCE_CHAIN_INVALID",
+                "integrity": "ok",
+                "event_count": event_count,
+                "ledger_integrity": chain,
+                "schema": schema,
+            }
+        return {
+            "valid": True,
+            "integrity": "ok",
+            "event_count": event_count,
+            "ledger_integrity": chain,
+            "schema": schema,
+        }
+    except (sqlite3.DatabaseError, OSError, ValueError) as exc:
+        return {
+            "valid": False,
+            "reason": "SQLITE_SCHEMA_OR_READ_ERROR",
+            "error": str(exc),
+        }
     finally:
         conn.close()
 
@@ -435,6 +701,11 @@ def verify_migration_bundle(bundle_path: str | Path) -> dict[str, Any]:
                         sqlite_result = _verify_sqlite_snapshot(extracted)
                         if not sqlite_result.get("valid"):
                             errors.append(str(sqlite_result.get("reason", "invalid SQLite snapshot")))
+                        else:
+                            projection = _projection_preflight(extracted)
+                            sqlite_result["projection_preflight"] = projection
+            if sqlite_result is None:
+                errors.append("canonical SQLite snapshot is missing from archive")
             unexpected = sorted(set(names) - expected_names)
             if unexpected:
                 errors.append(f"unlisted archive members: {unexpected}")
@@ -444,7 +715,10 @@ def verify_migration_bundle(bundle_path: str | Path) -> dict[str, Any]:
     return {
         "valid": not errors,
         "migration_ready": bool(
-            not errors and manifest and manifest.get("projection_preflight", {}).get("ready")
+            not errors
+            and sqlite_result
+            and sqlite_result.get("valid")
+            and sqlite_result.get("projection_preflight", {}).get("ready")
         ),
         "bundle_path": str(bundle),
         "bundle_sha256": _sha256_file(bundle) if bundle.is_file() else None,
@@ -465,13 +739,256 @@ def _next_backup_path(target: Path) -> Path:
     return candidate
 
 
+def _next_upgrade_backup_path(target: Path) -> Path:
+    stamp = time.strftime("%Y%m%d_%H%M%S", time.gmtime())
+    candidate = target.with_name(f"{target.name}.pre-upgrade-{stamp}")
+    counter = 1
+    while candidate.exists():
+        candidate = target.with_name(f"{target.name}.pre-upgrade-{stamp}-{counter}")
+        counter += 1
+    return candidate
+
+
+def _sqlite_sidecar_paths(path: Path) -> tuple[Path, ...]:
+    return tuple(path.with_name(path.name + suffix) for suffix in ("-wal", "-shm", "-journal"))
+
+
+def _checkpoint_and_remove_sqlite_sidecars(path: Path) -> None:
+    """Fold WAL state into a disposable staged DB before file promotion."""
+
+    conn = sqlite3.connect(str(path))
+    try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    finally:
+        conn.close()
+    for sidecar in _sqlite_sidecar_paths(path):
+        if sidecar.exists():
+            sidecar.unlink()
+
+
+def _move_sqlite_with_sidecars(source: Path, destination: Path) -> tuple[Path, ...]:
+    """Move a SQLite file and its sidecars as one recoverable file set."""
+
+    moved: list[tuple[Path, Path]] = []
+    try:
+        os.replace(source, destination)
+        moved.append((destination, source))
+        for sidecar in _sqlite_sidecar_paths(source):
+            if sidecar.exists():
+                destination_sidecar = destination.with_name(destination.name + sidecar.name[len(source.name):])
+                os.replace(sidecar, destination_sidecar)
+                moved.append((destination_sidecar, sidecar))
+    except Exception:
+        for moved_path, original_path in reversed(moved):
+            if moved_path.exists():
+                os.replace(moved_path, original_path)
+        raise
+    return tuple(moved_path for moved_path, _ in moved)
+
+
+def _verify_upgrade_database(path: Path) -> dict[str, Any]:
+    """Verify a current database while preserving credential rows."""
+
+    conn = sqlite3.connect(str(path))
+    try:
+        integrity = [row[0] for row in conn.execute("PRAGMA integrity_check").fetchall()]
+        schema = _inspect_sqlite_schema(conn)
+    finally:
+        conn.close()
+    if integrity != ["ok"]:
+        return {"valid": False, "reason": "SQLITE_INTEGRITY_FAILED", "integrity": integrity, "schema": schema}
+    if schema.get("status") != "current":
+        return {
+            "valid": False,
+            "reason": str(schema.get("reason") or "SQLITE_SCHEMA_UNSUPPORTED"),
+            "integrity": "ok",
+            "schema": schema,
+        }
+
+    from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+
+    ledger = EvidenceLedgerRepository(str(path), initialize_schema=False)
+    chain = ledger.verify_chain()
+    if not chain["valid"]:
+        return {
+            "valid": False,
+            "reason": "EVIDENCE_CHAIN_INVALID",
+            "integrity": "ok",
+            "schema": schema,
+            "ledger_integrity": chain,
+        }
+    projection = _projection_preflight(path)
+    return {
+        "valid": bool(projection.get("ready")),
+        "reason": None if projection.get("ready") else str(projection.get("reason")),
+        "integrity": "ok",
+        "schema": schema,
+        "ledger_integrity": chain,
+        "projection_preflight": projection,
+    }
+
+
+def upgrade_sqlite_schema(
+    db_path: str | Path,
+    *,
+    failure_injector: Callable[[str, Path], None] | None = None,
+) -> dict[str, Any]:
+    """Upgrade a supported legacy SQLite file through a staged atomic swap.
+
+    The optional injector is a test-only failure boundary.  It is deliberately
+    phase-labelled so tests can prove that a failed upgrade leaves the original
+    database and its WAL sidecars untouched.
+    """
+
+    raw_target = Path(db_path).expanduser()
+    if raw_target.is_symlink():
+        raise MigrationBundleError(f"SQLite upgrade target cannot be a symlink: {raw_target}")
+    target = raw_target.resolve()
+    if not target.is_file():
+        raise MigrationBundleError(f"SQLite upgrade target must be a regular file: {target}")
+
+    try:
+        source_conn = sqlite3.connect(str(target))
+        try:
+            source_integrity = [
+                row[0] for row in source_conn.execute("PRAGMA integrity_check").fetchall()
+            ]
+            source_schema = _inspect_sqlite_schema(source_conn)
+        finally:
+            source_conn.close()
+    except sqlite3.DatabaseError as exc:
+        raise MigrationBundleError("SQLite preflight validation failed") from exc
+    if source_integrity != ["ok"]:
+        raise MigrationBundleError(f"SQLite preflight integrity failed: {source_integrity}")
+    if source_schema.get("status") == "current":
+        validation = _verify_upgrade_database(target)
+        if not validation["valid"]:
+            raise MigrationBundleError(
+                "current SQLite database failed canonical validation: "
+                + str(validation.get("reason"))
+            )
+        return {
+            "valid": True,
+            "status": "CURRENT",
+            "changed": False,
+            "target": str(target),
+            "schema_before": source_schema,
+            "schema_after": source_schema,
+            "validation": validation,
+        }
+    if source_schema.get("status") != "legacy":
+        raise MigrationBundleError(
+            "SQLite schema upgrade is unsupported: "
+            + str(source_schema.get("reason") or "unknown")
+        )
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    work_dir = Path(tempfile.mkdtemp(prefix=f".{target.name}.upgrade-", dir=str(target.parent)))
+    backup_snapshot = work_dir / "pre-upgrade.sqlite3"
+    staged = work_dir / "staged.sqlite3"
+    promoted_backup: Path | None = None
+    try:
+        _copy_sqlite_snapshot(target, backup_snapshot)
+        try:
+            backup_preflight_conn = sqlite3.connect(str(backup_snapshot))
+            try:
+                backup_schema = _inspect_sqlite_schema(backup_preflight_conn)
+                backup_integrity = [
+                    row[0]
+                    for row in backup_preflight_conn.execute("PRAGMA integrity_check").fetchall()
+                ]
+            finally:
+                backup_preflight_conn.close()
+        except sqlite3.DatabaseError as exc:
+            raise MigrationBundleError("pre-upgrade backup failed SQLite validation") from exc
+        if backup_integrity != ["ok"] or backup_schema.get("status") != "legacy":
+            raise MigrationBundleError("pre-upgrade backup failed schema/integrity verification")
+        if failure_injector is not None:
+            failure_injector("after_backup", backup_snapshot)
+
+        _copy_sqlite_snapshot(backup_snapshot, staged)
+        from app.db.sqlite_driver import SQLiteDriver
+
+        SQLiteDriver(str(staged))
+        staged_conn = sqlite3.connect(str(staged))
+        try:
+            if _table_exists(staged_conn, "alembic_version"):
+                staged_conn.execute(
+                    "UPDATE alembic_version SET version_num = ?",
+                    ("003_trade_projection",),
+                )
+            staged_conn.commit()
+        finally:
+            staged_conn.close()
+        if failure_injector is not None:
+            failure_injector("after_schema_upgrade", staged)
+
+        from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+        from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
+
+        ledger = EvidenceLedgerRepository(str(staged))
+        backfill = ledger.backfill_legacy_trades(dry_run=False)
+        if backfill.get("errors"):
+            raise MigrationBundleError(
+                "legacy evidence backfill failed: " + json.dumps(backfill["errors"], sort_keys=True)
+            )
+        if failure_injector is not None:
+            failure_injector("after_backfill", staged)
+
+        projection = EvidenceTradeProjectionRepository(str(staged))
+        projection_rebuild = projection.rebuild(account_id=None, dry_run=False)
+        if failure_injector is not None:
+            failure_injector("after_projection_rebuild", staged)
+
+        validation = _verify_upgrade_database(staged)
+        if not validation["valid"]:
+            raise MigrationBundleError(
+                "staged SQLite database failed canonical validation: "
+                + str(validation.get("reason"))
+            )
+        _checkpoint_and_remove_sqlite_sidecars(staged)
+        if failure_injector is not None:
+            failure_injector("before_promote", staged)
+
+        promoted_backup = _next_upgrade_backup_path(target)
+        _move_sqlite_with_sidecars(target, promoted_backup)
+        try:
+            os.replace(staged, target)
+        except Exception:
+            if promoted_backup.exists() and not target.exists():
+                _move_sqlite_with_sidecars(promoted_backup, target)
+            raise
+    finally:
+        if work_dir.exists():
+            shutil.rmtree(work_dir, ignore_errors=True)
+
+    schema_after_conn = sqlite3.connect(str(target))
+    try:
+        schema_after = _inspect_sqlite_schema(schema_after_conn)
+    finally:
+        schema_after_conn.close()
+    return {
+        "valid": True,
+        "status": "UPGRADED",
+        "changed": True,
+        "target": str(target),
+        "schema_before": source_schema,
+        "schema_after": schema_after,
+        "backup_path": str(promoted_backup) if promoted_backup else None,
+        "backup_sha256": _sha256_file(promoted_backup) if promoted_backup else None,
+        "backfill": backfill,
+        "projection_rebuild": projection_rebuild,
+        "validation": validation,
+    }
+
+
 def restore_migration_bundle(
     bundle_path: str | Path,
     target_data_dir: str | Path,
     *,
     force: bool = False,
 ) -> dict[str, Any]:
-    """Restore a verified bundle without deleting an existing target by default."""
+    """Restore a verified bundle through a staged, atomic directory promotion."""
 
     verification = verify_migration_bundle(bundle_path)
     if not verification["valid"]:
@@ -482,18 +999,21 @@ def restore_migration_bundle(
             "run the evidence backfill/projection rebuild on the source and recreate the bundle"
         )
 
-    target = Path(target_data_dir).expanduser().resolve()
-    existing_backup: Path | None = None
-    if target.exists() and any(target.iterdir()):
-        if not force:
-            raise MigrationBundleError(
-                f"target data directory is not empty: {target}; pass --force to move it aside safely"
-            )
-        existing_backup = _next_backup_path(target)
-        shutil.move(str(target), str(existing_backup))
-    target.mkdir(parents=True, exist_ok=True)
+    raw_target = Path(target_data_dir).expanduser()
+    if raw_target.is_symlink():
+        raise MigrationBundleError(f"target data directory cannot be a symlink: {raw_target}")
+    target = raw_target.resolve()
+    if target.exists() and not target.is_dir():
+        raise MigrationBundleError(f"target data path is not a directory: {target}")
+    if target.exists() and any(target.iterdir()) and not force:
+        raise MigrationBundleError(
+            f"target data directory is not empty: {target}; pass --force to move it aside safely"
+        )
 
-    restored: list[str] = []
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=f".{target.name}.restore-", dir=str(target.parent)))
+    existing_backup: Path | None = None
+    restored_relative: list[PurePosixPath] = []
     try:
         with zipfile.ZipFile(Path(bundle_path).expanduser().resolve(), "r") as archive:
             manifest = _read_manifest(archive)
@@ -501,21 +1021,59 @@ def restore_migration_bundle(
                 relative = PurePosixPath(item["path"])
                 if not _safe_bundle_member(relative.as_posix()) or relative.parts[0] != "data":
                     raise MigrationBundleError(f"invalid restore path: {relative}")
-                destination = target.joinpath(*relative.parts[1:])
+                info = archive.getinfo(relative.as_posix())
+                if info.is_dir() or ((info.external_attr >> 16) & 0o170000) == stat.S_IFLNK:
+                    raise MigrationBundleError(f"archive member is not a regular file: {relative}")
+                destination = staging.joinpath(*relative.parts[1:])
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(relative.as_posix(), "r") as source, destination.open("wb") as sink:
                     shutil.copyfileobj(source, sink)
-                restored.append(str(destination))
+                if destination.stat().st_size != item.get("size_bytes"):
+                    raise MigrationBundleError(f"restored size mismatch: {relative}")
+                if _sha256_file(destination) != item.get("sha256"):
+                    raise MigrationBundleError(f"restored hash mismatch: {relative}")
+                restored_relative.append(relative)
+
+        staged_db = staging / "kuantra_oltp.sqlite3"
+        staged_sqlite = _verify_sqlite_snapshot(staged_db)
+        if not staged_sqlite.get("valid"):
+            raise MigrationBundleError(
+                "staged SQLite verification failed: "
+                + str(staged_sqlite.get("reason", "unknown"))
+            )
+        staged_projection = _projection_preflight(staged_db)
+        if not staged_projection.get("ready"):
+            raise MigrationBundleError(
+                "staged projection preflight failed: "
+                + str(staged_projection.get("reason", "unknown"))
+            )
+
+        # Move the old target aside only after every archive member has been
+        # extracted and verified. If promotion fails, restore that path and keep
+        # the user's pre-restore directory recoverable.
+        if target.exists():
+            existing_backup = _next_backup_path(target)
+            os.replace(target, existing_backup)
+        try:
+            os.replace(staging, target)
+        except Exception:
+            if existing_backup is not None and not target.exists():
+                os.replace(existing_backup, target)
+            raise
     except Exception:
-        # The previous target is recoverable if --force was used.  Leave the
-        # partially restored target visible for forensics instead of deleting it.
+        # A failed extraction never writes into the target. The staging directory
+        # is disposable and is removed below; a forced target remains in place
+        # until the final atomic promotion.
         raise
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
 
     return {
         "valid": True,
         "migration_ready": bool(verification.get("migration_ready")),
         "target_data_dir": str(target),
-        "restored_files": restored,
+        "restored_files": [str(target.joinpath(*relative.parts[1:])) for relative in restored_relative],
         "previous_target_backup": str(existing_backup) if existing_backup else None,
         "duckdb_rebuild_required": True,
         "credentials_reenter_required": True,

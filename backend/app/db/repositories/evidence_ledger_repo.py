@@ -181,12 +181,17 @@ class EvidenceLedgerRepository:
         db_path: Optional[str] = None,
         *,
         failure_injector: Optional[Callable[[sqlite3.Connection], None]] = None,
+        initialize_schema: bool = True,
     ) -> None:
         self.db_path = str(db_path or get_sqlite_path())
         # This hook exists only for transaction rollback tests; production code
         # never supplies it.
         self._failure_injector = failure_injector
-        self._ensure_schema()
+        # Restore verification must inspect the supplied snapshot as-is. It can
+        # disable bootstrap schema creation so an incomplete/future snapshot is
+        # rejected instead of being silently repaired during verification.
+        if initialize_schema:
+            self._ensure_schema()
 
     def _connect(self, *, write: bool = False) -> sqlite3.Connection:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)

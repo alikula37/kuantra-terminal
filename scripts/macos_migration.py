@@ -24,6 +24,7 @@ from app.services.macos_migration import (  # noqa: E402
     create_migration_bundle,
     restore_migration_bundle,
     rebuild_duckdb_projection,
+    upgrade_sqlite_schema,
     verify_migration_bundle,
 )
 
@@ -54,6 +55,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     rebuild.add_argument("--data-dir", type=Path, required=True)
     rebuild.add_argument("--json", action="store_true", dest="as_json")
+
+    upgrade = subparsers.add_parser(
+        "upgrade-schema",
+        help="upgrade a supported legacy SQLite file through an atomic staged swap",
+    )
+    upgrade.add_argument("--db-path", type=Path, required=True)
+    upgrade.add_argument("--json", action="store_true", dest="as_json")
     return parser
 
 
@@ -82,6 +90,13 @@ def _print_result(result: dict, *, as_json: bool) -> None:
             f"status={result['hydration'].get('status')} "
             f"trades={result['hydration'].get('recovered_trades_count', 0)}"
         )
+    elif result.get("status") in {"CURRENT", "UPGRADED"}:
+        print(
+            f"[macos-migration] schema_status={result['status']} "
+            f"changed={result.get('changed')} target={result['target']}"
+        )
+        if result.get("backup_path"):
+            print(f"  backup={result['backup_path']} sha256={result.get('backup_sha256')}")
     else:
         print(
             f"[macos-migration] restored={result['target_data_dir']} "
@@ -100,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
             result = verify_migration_bundle(args.bundle)
         elif args.command == "restore":
             result = restore_migration_bundle(args.bundle, args.target_data_dir, force=args.force)
+        elif args.command == "upgrade-schema":
+            result = upgrade_sqlite_schema(args.db_path)
         else:
             result = rebuild_duckdb_projection(args.data_dir)
         _print_result(result, as_json=args.as_json)

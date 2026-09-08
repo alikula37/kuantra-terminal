@@ -128,6 +128,7 @@ class SQLiteDriver:
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_candles_sym_tf_time ON market_candles_cache(symbol, timeframe, timestamp);
                 CREATE INDEX IF NOT EXISTS idx_candles_lookup ON market_candles_cache(symbol, timeframe, timestamp ASC);
             """)
+            self._ensure_legacy_trade_columns(cursor)
             # The keychain reference table predates the read-only broker sync
             # boundary.  Keep the migration additive so existing desktop
             # databases become explicitly read-only without touching secrets.
@@ -148,6 +149,61 @@ class SQLiteDriver:
             initialize_trade_projection_schema(conn)
             conn.commit()
             logger.info("SQLite OLTP schema initialized with WAL mode and candle cache.")
+
+    @staticmethod
+    def _ensure_legacy_trade_columns(cursor: sqlite3.Cursor) -> None:
+        """Add only the additive compatibility columns used by current writes.
+
+        Alembic revision 001 databases predate ``commission`` and
+        ``updated_at``.  The canonical trade identity and snapshot fields are
+        not inferable, so a database missing one of those fields remains
+        unsupported instead of being guessed into a new schema.
+        """
+
+        columns = {
+            row[1]
+            for row in cursor.execute("PRAGMA table_info(trades)").fetchall()
+        }
+        required = {
+            "id",
+            "symbol",
+            "side",
+            "entry_price",
+            "qty",
+            "entry_time",
+            "status",
+        }
+        missing_required = sorted(required - columns)
+        if missing_required:
+            raise RuntimeError(
+                "unsupported trades schema; missing required columns: "
+                + ", ".join(missing_required)
+            )
+
+        additive_columns = {
+            "exit_price": "REAL",
+            "stop_loss": "REAL",
+            "take_profit": "REAL",
+            "exit_time": "TEXT",
+            "pnl": "REAL DEFAULT 0.0",
+            "r_multiple": "REAL",
+            "commission": "REAL DEFAULT 0.0",
+            "notes": "TEXT DEFAULT ''",
+            "created_at": "TEXT DEFAULT ''",
+            "updated_at": "TEXT DEFAULT ''",
+        }
+        for name, definition in additive_columns.items():
+            if name not in columns:
+                cursor.execute(f"ALTER TABLE trades ADD COLUMN {name} {definition}")
+
+        cursor.execute(
+            "UPDATE trades SET created_at = datetime('now') "
+            "WHERE created_at IS NULL OR created_at = ''"
+        )
+        cursor.execute(
+            "UPDATE trades SET updated_at = created_at "
+            "WHERE updated_at IS NULL OR updated_at = ''"
+        )
 
     _TRADE_SNAPSHOT_FIELDS = (
         "id", "symbol", "side", "entry_price", "exit_price", "qty",

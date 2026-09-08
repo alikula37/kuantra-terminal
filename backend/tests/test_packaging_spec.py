@@ -80,6 +80,7 @@ def test_macos_migration_contract_is_checked_in():
         "verify",
         "restore",
         "rebuild-projection",
+        "upgrade-schema",
         "--source-data-dir",
         "--target-data-dir",
     ):
