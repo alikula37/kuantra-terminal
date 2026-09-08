@@ -665,100 +665,143 @@ class EvidenceLedgerRepository:
         rows = list(self.export_events(account_id=account_id, chain_date_utc=chain_date_utc))
         return "\n".join(canonical_json({key: value for key, value in row.items() if key != "created"}) for row in rows)
 
+    def _iter_raw_verification_rows(
+        self,
+        *,
+        account_id: Optional[str] = None,
+        chain_date_utc: Optional[str] = None,
+    ) -> Generator[Dict[str, Any], None, None]:
+        """Yield ledger rows without decoding JSON fields that verification does not reuse.
+
+        The connection stays open for the complete cursor iteration, so the
+        verifier observes one SQLite read snapshot while avoiding the extra
+        ``_row_to_dict`` JSON decode performed by export/read paths.  The
+        canonical JSON strings are still parsed and re-hashed by
+        :meth:`verify_chain` below.
+        """
+
+        conn = self._connect(write=False)
+        try:
+            query = "SELECT * FROM evidence_events WHERE 1 = 1"
+            params: List[Any] = []
+            if account_id is not None:
+                query += " AND account_id = ?"
+                params.append(account_id)
+            if chain_date_utc is not None:
+                query += " AND chain_date_utc = ?"
+                params.append(chain_date_utc)
+            query += " ORDER BY account_id ASC, chain_date_utc ASC, chain_sequence ASC"
+            for row in conn.execute(query, params):
+                yield dict(row)
+        finally:
+            conn.close()
+
     def verify_chain(
         self,
         *,
         account_id: Optional[str] = None,
         chain_date_utc: Optional[str] = None,
     ) -> Dict[str, Any]:
-        rows = list(self.export_events(account_id=account_id, chain_date_utc=chain_date_utc))
-        errors: List[str] = []
+        duplicate_errors: List[str] = []
+        chain_errors: List[str] = []
         seen_identities = set()
-        grouped: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
-        for row in rows:
-            grouped.setdefault((row["account_id"], row["chain_date_utc"]), []).append(row)
+        scopes = set()
+        current_scope: Optional[Tuple[str, str]] = None
+        expected_sequence = 1
+        expected_prev_hash = GENESIS_HASH
+        checked_events = 0
+
+        for row in self._iter_raw_verification_rows(
+            account_id=account_id,
+            chain_date_utc=chain_date_utc,
+        ):
+            checked_events += 1
+            row_scope = (row["account_id"], row["chain_date_utc"])
+            scopes.add(row_scope)
+            if row_scope != current_scope:
+                current_scope = row_scope
+                expected_sequence = 1
+                expected_prev_hash = GENESIS_HASH
+
             identity = (row["account_id"], row["venue"], row["event_type"], row["idempotency_key"])
             if identity in seen_identities:
-                errors.append(f"duplicate identity: {identity}")
+                duplicate_errors.append(f"duplicate identity: {identity}")
             seen_identities.add(identity)
 
-        for (row_account, row_date), chain_rows in grouped.items():
-            expected_sequence = 1
-            expected_prev_hash = GENESIS_HASH
-            for row in chain_rows:
-                raw_sequence = row.get("chain_sequence")
-                prefix = f"{row_account}/{row_date}/{raw_sequence}"
-                try:
-                    sequence = int(raw_sequence)
-                except (TypeError, ValueError):
-                    sequence = None
-                    errors.append(f"{prefix}: chain sequence is not an integer")
-                if row["event_type"] not in EVENT_TYPES:
-                    errors.append(f"{prefix}: unsupported event type")
-                if row["chain_date_utc"] != row_date:
-                    errors.append(f"{prefix}: chain date scope mismatch")
-                if sequence != expected_sequence:
-                    errors.append(
-                        f"{prefix}: expected sequence {expected_sequence}, got {raw_sequence}"
-                    )
-                if sequence is not None:
-                    expected_sequence = sequence + 1
-                try:
-                    occurred_normalized, occurred_date = _utc_iso(
-                        row["occurred_at_utc"], "occurred_at_utc"
-                    )
-                    if occurred_normalized != row["occurred_at_utc"]:
-                        errors.append(f"{prefix}: occurred_at_utc is not normalized UTC")
-                    if occurred_date != row["chain_date_utc"]:
-                        errors.append(f"{prefix}: occurred_at_utc/day scope mismatch")
-                except EvidenceValidationError as exc:
-                    errors.append(f"{prefix}: invalid occurred_at_utc ({exc})")
-                try:
-                    received_normalized, _ = _utc_iso(
-                        row["received_at_utc"], "received_at_utc"
-                    )
-                    if received_normalized != row["received_at_utc"]:
-                        errors.append(f"{prefix}: received_at_utc is not normalized UTC")
-                except EvidenceValidationError as exc:
-                    errors.append(f"{prefix}: invalid received_at_utc ({exc})")
-                if row["prev_hash"] != expected_prev_hash:
-                    errors.append(f"{prefix}: prev_hash mismatch")
-                if not _SHA256_RE.fullmatch(row["prev_hash"] or ""):
-                    errors.append(f"{prefix}: invalid prev_hash")
-                for digest_field in (
-                    "request_fingerprint_sha256",
-                    "raw_payload_sha256",
-                    "event_hash",
-                ):
-                    if not _SHA256_RE.fullmatch(row[digest_field] or ""):
-                        errors.append(f"{prefix}: invalid {digest_field}")
-                try:
-                    parsed_payload = json.loads(row["normalized_payload_json"])
-                    if canonical_json(parsed_payload) != row["normalized_payload_json"]:
-                        errors.append(f"{prefix}: normalized payload is not canonical JSON")
-                    _assert_no_secret_keys(parsed_payload, "normalized_payload")
-                    parsed_provenance = json.loads(row["provenance_json"])
-                    if canonical_json(parsed_provenance) != row["provenance_json"]:
-                        errors.append(f"{prefix}: provenance is not canonical JSON")
-                    _assert_no_secret_keys(parsed_provenance, "provenance")
-                except (EvidenceValidationError, json.JSONDecodeError, TypeError) as exc:
-                    errors.append(f"{prefix}: invalid JSON payload ({exc})")
-                try:
-                    fingerprint = self._request_fingerprint(row)
-                    if fingerprint != row["request_fingerprint_sha256"]:
-                        errors.append(f"{prefix}: request fingerprint mismatch")
-                    event_hash = self._event_hash(row)
-                    if event_hash != row["event_hash"]:
-                        errors.append(f"{prefix}: event hash mismatch")
-                except (KeyError, EvidenceValidationError, TypeError) as exc:
-                    errors.append(f"{prefix}: hash recomputation failed ({exc})")
-                expected_prev_hash = row["event_hash"]
+            raw_sequence = row.get("chain_sequence")
+            row_account, row_date = row["account_id"], row["chain_date_utc"]
+            prefix = f"{row_account}/{row_date}/{raw_sequence}"
+            try:
+                sequence = int(raw_sequence)
+            except (TypeError, ValueError):
+                sequence = None
+                chain_errors.append(f"{prefix}: chain sequence is not an integer")
+            if row["event_type"] not in EVENT_TYPES:
+                chain_errors.append(f"{prefix}: unsupported event type")
+            if row["chain_date_utc"] != row_date:
+                chain_errors.append(f"{prefix}: chain date scope mismatch")
+            if sequence != expected_sequence:
+                chain_errors.append(
+                    f"{prefix}: expected sequence {expected_sequence}, got {raw_sequence}"
+                )
+            if sequence is not None:
+                expected_sequence = sequence + 1
+            try:
+                occurred_normalized, occurred_date = _utc_iso(
+                    row["occurred_at_utc"], "occurred_at_utc"
+                )
+                if occurred_normalized != row["occurred_at_utc"]:
+                    chain_errors.append(f"{prefix}: occurred_at_utc is not normalized UTC")
+                if occurred_date != row["chain_date_utc"]:
+                    chain_errors.append(f"{prefix}: occurred_at_utc/day scope mismatch")
+            except EvidenceValidationError as exc:
+                chain_errors.append(f"{prefix}: invalid occurred_at_utc ({exc})")
+            try:
+                received_normalized, _ = _utc_iso(
+                    row["received_at_utc"], "received_at_utc"
+                )
+                if received_normalized != row["received_at_utc"]:
+                    chain_errors.append(f"{prefix}: received_at_utc is not normalized UTC")
+            except EvidenceValidationError as exc:
+                chain_errors.append(f"{prefix}: invalid received_at_utc ({exc})")
+            if row["prev_hash"] != expected_prev_hash:
+                chain_errors.append(f"{prefix}: prev_hash mismatch")
+            if not _SHA256_RE.fullmatch(row["prev_hash"] or ""):
+                chain_errors.append(f"{prefix}: invalid prev_hash")
+            for digest_field in (
+                "request_fingerprint_sha256",
+                "raw_payload_sha256",
+                "event_hash",
+            ):
+                if not _SHA256_RE.fullmatch(row[digest_field] or ""):
+                    chain_errors.append(f"{prefix}: invalid {digest_field}")
+            try:
+                parsed_payload = json.loads(row["normalized_payload_json"])
+                if canonical_json(parsed_payload) != row["normalized_payload_json"]:
+                    chain_errors.append(f"{prefix}: normalized payload is not canonical JSON")
+                _assert_no_secret_keys(parsed_payload, "normalized_payload")
+                parsed_provenance = json.loads(row["provenance_json"])
+                if canonical_json(parsed_provenance) != row["provenance_json"]:
+                    chain_errors.append(f"{prefix}: provenance is not canonical JSON")
+                _assert_no_secret_keys(parsed_provenance, "provenance")
+            except (EvidenceValidationError, json.JSONDecodeError, TypeError) as exc:
+                chain_errors.append(f"{prefix}: invalid JSON payload ({exc})")
+            try:
+                fingerprint = self._request_fingerprint(row)
+                if fingerprint != row["request_fingerprint_sha256"]:
+                    chain_errors.append(f"{prefix}: request fingerprint mismatch")
+                event_hash = self._event_hash(row)
+                if event_hash != row["event_hash"]:
+                    chain_errors.append(f"{prefix}: event hash mismatch")
+            except (KeyError, EvidenceValidationError, TypeError) as exc:
+                chain_errors.append(f"{prefix}: hash recomputation failed ({exc})")
+            expected_prev_hash = row["event_hash"]
 
         return {
-            "valid": not errors,
-            "checked_events": len(rows),
-            "scopes": [f"{account}/{day}" for account, day in sorted(grouped)],
-            "errors": errors,
+            "valid": not duplicate_errors and not chain_errors,
+            "checked_events": checked_events,
+            "scopes": [f"{account}/{day}" for account, day in sorted(scopes)],
+            "errors": duplicate_errors + chain_errors,
         }
 
     def backfill_legacy_trades(

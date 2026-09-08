@@ -125,6 +125,25 @@ def test_trade_event_lookup_uses_correlation_index_for_canonical_events(tmp_path
     assert [event["event_id"] for event in events] == ["H07-EVENT-000000"]
 
 
+def test_chain_verification_uses_raw_snapshot_without_read_path_json_decode(tmp_path, monkeypatch):
+    db_path = tmp_path / "raw-verification.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    trade = generate_trade_snapshot(0, seed="H07-VERIFY")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(trade, 0, seed="H07-VERIFY"),
+    ])
+    ledger = EvidenceLedgerRepository(str(db_path))
+
+    def fail_if_export_read_path_is_used(*_args, **_kwargs):
+        raise AssertionError("verification must use its bounded raw snapshot path")
+
+    monkeypatch.setattr(ledger, "export_events", fail_if_export_read_path_is_used)
+    report = ledger.verify_chain(account_id="h07-synthetic-account")
+
+    assert report["valid"] is True
+    assert report["checked_events"] == 1
+
+
 def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_ledger(tmp_path):
     db_path = tmp_path / "cancelled-batch.sqlite"
     driver = SQLiteDriver(str(db_path))
