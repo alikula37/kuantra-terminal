@@ -5,7 +5,7 @@
 work_package: H07
 version: 3.0.0
 status: InProgress
-date: 2026-09-08
+date: 2026-09-09
 baseline_commit: 5a70f8b
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current

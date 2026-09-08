@@ -5,7 +5,7 @@
 document_id: KPR-001
 version: 1.0.26
 status: Proposed
-date: 2026-09-08
+date: 2026-09-09
 reviewed_commit: 5a70f8b
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
@@ -376,7 +376,7 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
 
 ## Değişiklik geçmişi
 
-### 1.0.26 — 2026-09-08
+### 1.0.26 — 2026-09-09
 
 - H07 cold verifier canonical JSON validation maliyeti `5a70f8b` ile bounded biçimde
   optimize edildi. Byte-eşleşen canonical payload/provenance değerlerinde locked

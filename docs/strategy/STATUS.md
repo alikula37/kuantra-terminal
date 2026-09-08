@@ -1,7 +1,7 @@
 <!-- doc-role: current-status -->
 # Current development status
 
-Updated: 2026-09-08. Branch: `codex/p1-wp01-evidence-ledger`.
+Updated: 2026-09-09. Branch: `codex/p1-wp01-evidence-ledger`.
 Roadmap: [KPR-001](PRODUCTION-READINESS-PLAN.md), current planning source, still Proposed
 for new scope/estimates. Selecting one roadmap does not approve its commercial assumptions.
 
