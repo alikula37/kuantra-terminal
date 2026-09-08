@@ -2,7 +2,7 @@ import sqlite3
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Sequence
+from typing import Callable, Dict, Any, List, Optional, Sequence
 from app.core.paths import get_sqlite_path
 from app.db.evidence_schema import initialize_evidence_schema
 from app.db.projection_schema import initialize_trade_projection_schema
@@ -12,9 +12,22 @@ logger = logging.getLogger(__name__)
 class SQLiteDriver:
     """OLTP SQLite Database Driver configured with WAL mode and robust schema."""
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(
+        self,
+        db_path: Optional[str] = None,
+        *,
+        transaction_hook: Optional[Callable[[str, sqlite3.Connection], None]] = None,
+    ):
         self.db_path = db_path or get_sqlite_path()
+        # Test-only crash/failure injection. Production callers leave this unset;
+        # it makes the commit/ack boundary observable without adding persistence
+        # state or changing the ledger event contract.
+        self._transaction_hook = transaction_hook
         self._init_db()
+
+    def _notify_transaction_hook(self, phase: str, conn: sqlite3.Connection) -> None:
+        if self._transaction_hook is not None:
+            self._transaction_hook(phase, conn)
 
     def get_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path, check_same_thread=False)
@@ -275,11 +288,15 @@ class SQLiteDriver:
                 causation_id=causation_id,
                 provenance=provenance or {"source": "journal"},
             )
+            self._notify_transaction_hook("after_canonical_event", conn)
             # Keep the typed read model current in the same transaction as the
             # compatibility row and canonical ledger event.  A projection
             # validation/constraint error must roll back the whole journal write.
             projection.upsert_event_in_transaction(conn, event)
+            self._notify_transaction_hook("after_projection_update", conn)
+            self._notify_transaction_hook("before_commit", conn)
             conn.commit()
+            self._notify_transaction_hook("after_commit_before_ack", conn)
             return dict(stored)
         except Exception:
             if conn.in_transaction:
@@ -384,9 +401,13 @@ class SQLiteDriver:
                     provenance=command.get("provenance") or {},
                     event_id=command.get("event_id"),
                 )
+                self._notify_transaction_hook("after_canonical_event", conn)
                 projection.upsert_event_in_transaction(conn, event)
+                self._notify_transaction_hook("after_projection_update", conn)
                 persisted.append({"trade": dict(stored), "event": event})
+            self._notify_transaction_hook("before_commit", conn)
             conn.commit()
+            self._notify_transaction_hook("after_commit_before_ack", conn)
             return persisted
         except Exception:
             if conn.in_transaction:
