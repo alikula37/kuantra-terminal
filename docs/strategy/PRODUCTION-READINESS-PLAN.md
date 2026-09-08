@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.2
+version: 1.0.3
 status: Proposed
 date: 2026-09-08
-reviewed_commit: afedb70edebb990ceb19555b4312460554fdbc56
+reviewed_commit: 26751f72079a80c0589c9cc599b532b5d6bee78e
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -27,7 +27,8 @@ veya kullanıcı tarafından ticari olarak onaylanmış değildir. Accepted ADR'
 mevcut güvenlik kapıları geçerlidir. P1-WP16, P1-WP17, P1-WP18, P1-WP19 ve P1-WP20 bounded doğruluk paketleri
 kanıtla kapatılmıştır; P1-WP21, N01, N02, H03 ve P1-WP22 bounded paketleri de kendi
 kanıtlarıyla kapatılmıştır. P1-WP23 / U02 de bounded kanıtla kapatılmış; P1-WP24 /
-U03 de bounded kanıtla kapatılmıştır. Mevcut `Ready` iş P1-WP25 / U04'tür. Aşağıdaki
+U03 ve P1-WP25 / U04 de bounded kanıtla kapatılmıştır. Mevcut `Ready` iş P1-WP26 /
+U05'tir. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -128,9 +129,10 @@ U01 import/review/export akışı P1-WP22 ile bounded olarak uygulanmış ve `ea
 ile kanıtlanmıştır. U02 reconciliation inbox ve correction/user-decision boundary'si
 P1-WP23 (`51ee968`) ile bounded olarak tamamlanmıştır. U03 canonical Trade Evidence
 Pack, coverage/rule görünürlüğü, redaction ve deterministic export safety P1-WP24
-(`afedb70`) ile bounded olarak tamamlanmıştır. Sıradaki aktif paket **P1-WP25 / U04**'tür:
-weekly review ve period/timezone/as-of determinism. U04 tamamlanmadan R5 weekly review
-genişletmesi veya release/pilot iddiası açılmaz.
+(`afedb70`) ile bounded olarak tamamlanmıştır. U04 weekly review ve
+period/timezone/as-of determinism P1-WP25 (`26751f7`) ile bounded olarak
+tamamlanmıştır. Sıradaki aktif paket **P1-WP26 / U05**'tir: erişilebilir ve anlaşılır
+shell state'leri. U05 tamamlanmadan release/pilot iddiası açılmaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
@@ -316,8 +318,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    tamamlandı `51ee968`.
 9. P1-WP24 / U03: canonical Trade Evidence Pack, coverage/rule görünürlüğü,
    redaction ve deterministic export boundary; tamamlandı `afedb70`.
-10. P1-WP25 / U04: weekly review ve period/timezone/as-of determinism; ardından
-    U05/R5 ve bağımlılığa göre H01–H07/N03–N06.
+10. P1-WP25 / U04: weekly review ve period/timezone/as-of determinism; tamamlandı
+    `26751f7`.
+11. P1-WP26 / U05: accessible/understandable shell; ardından bağımlılığa göre
+    H01–H07/N03–N06. U05 yeni capability veya release gate açmaz.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -326,6 +330,13 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.3 — 2026-09-08
+
+- P1-WP25/U04 deterministic weekly review ve as-of boundary'si `26751f7` ile
+  kanıtla kapatıldı; P1-WP26/U05 tek güncel Ready work package olarak seçildi.
+  Sonraki paket yalnız erişilebilirlik, anlaşılabilir durumlar, locale ve retry
+  sınırlarını kapsar; yeni ürün yetkisi veya production iddiası vermez.
 
 ### 1.0.2 — 2026-09-08
 

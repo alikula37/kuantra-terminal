@@ -7,8 +7,8 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**P1-WP25 — Ready:**
-[U04 weekly review and as-of determinism boundary](work-packages/P1-WP25-weekly-review-asof-boundary.md).
+**P1-WP26 — Ready:**
+[U05 accessible and understandable review shell boundary](work-packages/P1-WP26-accessible-shell-boundary.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
 verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
@@ -19,19 +19,20 @@ complete in `cc0ad94`; H03 runtime degraded/offline boundary is complete in
 `62921f7`; P1-WP22 R4 import/review/Evidence Pack/export integration is complete in
 `ea4e12c`; P1-WP23 U02 reconciliation inbox and correction/user-decision boundary is
 complete in `51ee968`; P1-WP24 U03 canonical Evidence Pack/export boundary is complete
-in `afedb70`. Neither package silently became full tax/accounting scope or new venue
-scope. The next bounded implementation is U04: deterministic weekly review and as-of
-boundary. No other historical `Active` WP is automatically queued. Pilot/release
-claims remain blocked by their explicit gates.
+in `afedb70`; P1-WP25 U04 weekly review and as-of determinism is complete in `26751f7`.
+Neither package silently became full tax/accounting scope or new venue scope. The next
+bounded implementation is U05: accessible and understandable shell states. No other
+historical `Active` WP is automatically queued. Pilot/release claims remain blocked by
+their explicit gates.
 
 ## Current evidence, not completion claims
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `afedb70`; fresh clean Mac local CI `MERGE READY`: 629 backend, 59 frontend, i18n 528/528, arm64 build and native smoke passed. Exact DMG-mounted smoke and release provenance are PASS; H03 disabled/degraded tests are PASS |
+| Runtime baseline | `26751f7`; fresh clean Mac local CI `MERGE READY`: 634 backend, 61 frontend, i18n 557/557, arm64 build and native smoke passed. Exact DMG-mounted smoke and release provenance are PASS; H03 disabled/degraded tests are PASS |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
-| Mac (latest WP24 evidence) | Exact read-only DMG-mounted smoke PASS for source `afedb70`: DMG SHA `53ec57a3f65fc2a489e7c9e130ee9a0654cbe4f423b9297738d83223701f42fd`, mounted executable SHA `4d6aefb9c3898811c8020046fb9f16c896ee91bf4bc1bf5abbda977384869bd9`, `wkwebview`, controller ready, detach PASS. Ad-hoc signature is only packaging preflight; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
+| Mac (latest WP25 evidence) | Exact read-only DMG-mounted smoke PASS for source `26751f7`: DMG SHA `3b6a8e748a83e8cb9536959a41a5bbfbaef7c32a23a3e653a97cd72190802103`, mounted executable SHA `7e7763daec32943bf10a9e89d17970729da6cd8498b1d3ce496d33008aa34bdc`, `wkwebview`, controller ready, detach PASS. Ad-hoc signature is only packaging preflight; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -56,43 +57,35 @@ registry records unchecked counts so accidental checkbox deletion is detected.
 
 ## Latest maintenance handoff
 
-P1-WP20 economic dedup/lifecycle contract was implemented in `5d691b9` and its
-historical evidence record is archived. P1-WP21 propagation was implemented in
-`056b1ca`, N01 exact provenance in `05e826d`, N02 exact mounted-DMG/WKWebView smoke
-in `cc0ad94`, H03 runtime degraded/offline boundary in `62921f7`, P1-WP22 U01 in
-`ea4e12c`, P1-WP23 U02 in `51ee968` and P1-WP24 U03 in `afedb70`; these are archived
-with focused/full test and Mac evidence. The 2026-09-08 Mac evidence for WP24 used
-locked dependencies and temporary data directories: local CI was `MERGE READY`, with
-full backend **629**, frontend **59**, i18n **528/528**, production build, arm64
-desktop build, native `wkwebview` smoke and packaging preflight. Local CI source
-commit `afedb70edebb990ceb19555b4312460554fdbc56`; tracked source tree SHA
-`0ac3d9f65e1d839ef4a48d51785479e45e23d8aeed4195c5cd47c77fd5dd81c6`; provenance
-`COMPLETE`; release validator PASS; executable SHA
-`4d6aefb9c3898811c8020046fb9f16c896ee91bf4bc1bf5abbda977384869bd9`; `.app` SHA
-`9803f07916e48d02f3d8b684fe88b22957b5b627bfecf524be59bf430733a859`. Exact WP24
-DMG evidence is DMG SHA
-`53ec57a3f65fc2a489e7c9e130ee9a0654cbe4f423b9297738d83223701f42fd` and mounted
-executable SHA `4d6aefb9c3898811c8020046fb9f16c896ee91bf4bc1bf5abbda977384869bd9`,
-with read-only mount, explicit executable, `wkwebview`, controller ready and detach
-PASS. `uv --offline` is dependency-preparation evidence only; the default runtime
-smoke still attempts the configured public market-data connection. H03 disabled/
-degraded tests cover the explicit no-network boundary. Branch `npm audit` reported
-zero findings, while the GitHub default branch still exposes five open npm Dependabot
+P1-WP20 economic dedup/lifecycle contract was implemented in `5d691b9`; P1-WP21
+propagation in `056b1ca`; N01 exact provenance in `05e826d`; N02 exact mounted-DMG/
+WKWebView smoke in `cc0ad94`; H03 runtime degraded/offline boundary in `62921f7`;
+P1-WP22 U01 in `ea4e12c`; P1-WP23 U02 in `51ee968`; P1-WP24 U03 in `afedb70`;
+and P1-WP25 U04 in `26751f7`. Their historical evidence records are archived.
+
+The 2026-09-08 WP25 Mac evidence used locked dependencies and clean temporary data
+directories: local CI was **MERGE READY**, with full backend **634**, frontend **61**,
+i18n **557/557**, production build, arm64 desktop build, native `wkwebview` smoke,
+packaging preflight and provenance contract PASS. Local CI report SHA-256
+`ef2f6ddf1aec78a3e18606572648f0498f3af6e829b4868b9bfec58caa3ee731`; source commit
+`26751f72079a80c0589c9cc599b532b5d6bee78e`; tracked source tree SHA
+`224950da874d8ef0a547ae48faf17be02d5f15d8ff82208bc05aca80132fb4aa`; provenance
+`COMPLETE`; release validator PASS. Local executable SHA
+`7e7763daec32943bf10a9e89d17970729da6cd8498b1d3ce496d33008aa34bdc`; `.app` SHA
+`54f21fa4f066a58686eaa43904b72900040000ee753976813715a744ac42d152`. Exact WP25
+DMG evidence: DMG SHA
+`3b6a8e748a83e8cb9536959a41a5bbfbaef7c32a23a3e653a97cd72190802103`; mounted
+executable SHA `7e7763daec32943bf10a9e89d17970729da6cd8498b1d3ce496d33008aa34bdc`,
+read-only mount, explicit executable, `wkwebview`, controller ready and detach PASS.
+`uv --offline` is dependency-preparation evidence only; the default runtime smoke
+still attempts the configured public market-data connection. H03 disabled/degraded
+tests cover the explicit no-network boundary. Branch `npm audit` reported zero
+findings, while the GitHub default branch still exposes five open npm Dependabot
 alerts. Source identity conflicts, unknown position mode, incomplete lifecycle,
 funding/transfer schema, Windows/Linux host evidence, licensing, pilot and release-
 owner decisions remain boundaries; no PnL, live execution or pilot claim was opened.
-The next handoff is P1-WP25 U04.
 
-P1-WP24 `afedb70` completed the bounded canonical Evidence Pack and deterministic
-JSON/HTML/CSV export boundary. Clean local CI was `MERGE READY`: backend **629**,
-frontend **59**, i18n **528/528**, arm64 build, native smoke and provenance contract
-PASS. Exact mounted-DMG smoke used a read-only mount and the explicit mounted
-executable; source `afedb70`, provenance `COMPLETE`, release validator PASS, DMG SHA
-`53ec57a3f65fc2a489e7c9e130ee9a0654cbe4f423b9297738d83223701f42fd`, mounted
-executable SHA `4d6aefb9c3898811c8020046fb9f16c896ee91bf4bc1bf5abbda977384869bd9`,
-`wkwebview`/controller ready and detach PASS. No new ledger schema or funding/transfer
-event was introduced. Next active contract: P1-WP25 U04 weekly review and as-of
-determinism boundary.
+Next handoff: P1-WP26 U05 accessible and understandable review shell boundary.
 
 ## Update protocol
 
