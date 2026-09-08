@@ -24,6 +24,8 @@ PATTERNS = [
     (r'Bearer\s+[a-zA-Z0-9\-\._~+/]+=*', None, 'Bearer [REDACTED_TOKEN]'),
     (r'["'']?(?:password|api_key|secret_key|private_key)["'']?\s*:\s*["''][^"'']+["'']', None, '"secret": "[REDACTED]"'),
     (r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', None, '[REDACTED_EMAIL]'),
+    (r'(?<![A-Za-z0-9])/(?:Users|private/var|var/folders|tmp|Volumes)/[^\s"''<>]+', None, '[REDACTED_PATH]'),
+    (r'(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s"''<>]+', None, '[REDACTED_PATH]'),
 ]
 
 def redact_sensitive_text(text: str) -> str:

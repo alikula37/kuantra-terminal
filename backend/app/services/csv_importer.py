@@ -19,6 +19,11 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 
+from app.core.input_limits import (
+    MAX_CSV_BYTES,
+    MAX_CSV_FIELD_BYTES,
+    MAX_CSV_ROWS,
+)
 from app.db.sqlite_driver import sqlite_driver
 from app.db.sync_pipeline import sync_pipeline
 
@@ -304,7 +309,7 @@ class CsvTradeImporterService:
         return ""
 
     @classmethod
-    def parse_rows(cls, content_str: str) -> Tuple[str, List[Dict[str, Any]], List[str]]:
+    def _parse_rows(cls, content_str: str) -> Tuple[str, List[Dict[str, Any]], List[str]]:
         """
         Parses CSV string into standardized trade dictionaries with error telemetry.
         """
@@ -315,6 +320,8 @@ class CsvTradeImporterService:
         parsing_errors = []
 
         for idx, raw_row in enumerate(reader, start=2): # Line 2 is first data row
+            if idx > MAX_CSV_ROWS + 1:
+                raise ValueError(f"CSV row count exceeds the safety limit of {MAX_CSV_ROWS} rows.")
             # Case-insensitive column key access
             row = {k.strip().lower().replace('"', ''): v for k, v in raw_row.items() if k is not None}
 
@@ -537,17 +544,50 @@ class CsvTradeImporterService:
         return format_type, normalized_trades, parsing_errors
 
     @classmethod
+    def parse_rows(cls, content_str: str) -> Tuple[str, List[Dict[str, Any]], List[str]]:
+        """Parse bounded UTF-8 text without letting CSV parser errors become 500s."""
+
+        if not isinstance(content_str, str):
+            raise ValueError("CSV content must be text")
+        if len(content_str.encode("utf-8")) > MAX_CSV_BYTES:
+            raise ValueError(f"CSV content exceeds the safety size limit of {MAX_CSV_BYTES} bytes.")
+        if "\x00" in content_str:
+            raise ValueError("CSV content contains a NUL byte")
+
+        previous_field_limit = csv.field_size_limit()
+        csv.field_size_limit(MAX_CSV_FIELD_BYTES)
+        try:
+            return cls._parse_rows(content_str)
+        except csv.Error as exc:
+            raise ValueError(
+                f"CSV field or record exceeds the safety limit of {MAX_CSV_FIELD_BYTES} bytes."
+            ) from exc
+        finally:
+            csv.field_size_limit(previous_field_limit)
+
+    @staticmethod
+    def _decode_csv_bytes(file_bytes: bytes, filename: str) -> str:
+        if not isinstance(file_bytes, (bytes, bytearray, memoryview)):
+            raise ValueError("CSV content must be bytes")
+        raw = bytes(file_bytes)
+        if len(raw) > MAX_CSV_BYTES:
+            raise ValueError(
+                f"CSV file '{filename}' exceeds the safety size limit of {MAX_CSV_BYTES} bytes."
+            )
+        try:
+            content_str = raw.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValueError(f"CSV file '{filename}' must be valid UTF-8") from exc
+        if "\x00" in content_str:
+            raise ValueError(f"CSV file '{filename}' contains a NUL byte")
+        return content_str
+
+    @classmethod
     def parse_and_preview_csv(cls, file_bytes: bytes, filename: str = "import.csv") -> Dict[str, Any]:
         """
         Parses CSV and returns preview telemetry without committing to database.
         """
-        try:
-            content_str = file_bytes.decode("utf-8-sig")
-        except UnicodeDecodeError:
-            try:
-                content_str = file_bytes.decode("latin-1")
-            except Exception as e:
-                raise ValueError(f"Unable to decode CSV file '{filename}': {str(e)}")
+        content_str = cls._decode_csv_bytes(file_bytes, filename)
 
         format_type, trades, errors = cls.parse_rows(content_str)
         source_file_sha256 = hashlib.sha256(file_bytes).hexdigest()
@@ -573,13 +613,7 @@ class CsvTradeImporterService:
         """
         Parses, validates, checks for duplicates, and commits trades in a single SQLite transaction.
         """
-        try:
-            content_str = file_bytes.decode("utf-8-sig")
-        except UnicodeDecodeError:
-            try:
-                content_str = file_bytes.decode("latin-1")
-            except Exception as e:
-                raise ValueError(f"Unable to decode CSV file '{filename}': {str(e)}")
+        content_str = cls._decode_csv_bytes(file_bytes, filename)
 
         format_type, trades, errors = cls.parse_rows(content_str)
         source_file_sha256 = hashlib.sha256(file_bytes).hexdigest()

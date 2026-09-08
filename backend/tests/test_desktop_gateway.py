@@ -28,7 +28,10 @@ def test_gateway_serves_tv_sync_and_webhook(runtime):
     assert gw.url == f"http://127.0.0.1:{port}"
     try:
         async def talk():
-            async with websockets.connect(f"ws://127.0.0.1:{port}/ws/tv-sync") as ws:
+            async with websockets.connect(
+                f"ws://127.0.0.1:{port}/ws/tv-sync",
+                origin="http://127.0.0.1:5173",
+            ) as ws:
                 first = json.loads(await asyncio.wait_for(ws.recv(), 5))
                 assert first["type"] == "INITIAL_STATE"
                 await ws.send(json.dumps({"symbol": "solusdt", "timeframe": "1h", "exchange": "binance"}))

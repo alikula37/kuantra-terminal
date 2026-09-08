@@ -35,6 +35,7 @@ from app.services.exchange.read_only_broker_sync import (
 from app.services.exchange.credentials_manager import exchange_credentials_manager
 from app.services.security.credential_store import CredentialStoreUnavailable, credential_store_status
 from app.core.availability import experimental_disabled_exception, experimental_disabled_response as build_experimental_disabled_response
+from app.core.input_limits import MAX_BROKER_JSON_BYTES, MAX_CSV_BYTES
 from app.services.execution.ccxt_engine import ccxt_execution_engine
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
@@ -43,6 +44,18 @@ from app.quant.quant_engine import quant_engine
 router = APIRouter(prefix="/api/v1")
 router.include_router(webhook_router)
 router.include_router(plugin_router)
+
+
+async def _read_bounded_upload(file: UploadFile, limit: int) -> bytes:
+    """Read an upload once with an explicit byte ceiling before parsing it."""
+
+    content = await file.read(limit + 1)
+    if len(content) > limit:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Uploaded file exceeds the safety size limit of {limit} bytes.",
+        )
+    return content
 
 
 def experimental_disabled_response(payload: Dict[str, Any]) -> JSONResponse:
@@ -212,8 +225,8 @@ async def import_csv_trades(file: UploadFile = File(...)):
     """Imports multi-format trade history from Binance, Bybit, MetaTrader, or Generic CSV."""
     if not file.filename or not file.filename.lower().endswith((".csv", ".txt")):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .csv or .txt file.")
+    content = await _read_bounded_upload(file, MAX_CSV_BYTES)
     try:
-        content = await file.read()
         res = csv_trade_importer.parse_and_import_csv(content, file.filename)
         summary = portfolio_service.get_portfolio_summary()
         res["portfolio_summary"] = summary
@@ -228,8 +241,8 @@ async def preview_csv_trades(file: UploadFile = File(...)):
     """Parses and previews CSV rows without committing to the database."""
     if not file.filename or not file.filename.lower().endswith((".csv", ".txt")):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .csv or .txt file.")
+    content = await _read_bounded_upload(file, MAX_CSV_BYTES)
     try:
-        content = await file.read()
         return csv_trade_importer.parse_and_preview_csv(content, file.filename)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -255,9 +268,7 @@ async def import_broker_json(
     """Import a bounded local broker export; no connector or order write occurs."""
     if not file.filename or not file.filename.lower().endswith(".json"):
         raise HTTPException(status_code=400, detail="Broker import accepts a UTF-8 .json export only.")
-    content = await file.read(10 * 1024 * 1024 + 1)
-    if len(content) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Broker export exceeds the 10 MB safety limit.")
+    content = await _read_bounded_upload(file, MAX_BROKER_JSON_BYTES)
     try:
         return broker_import_service.import_json_document(
             venue,

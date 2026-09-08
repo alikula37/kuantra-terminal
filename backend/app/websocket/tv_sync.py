@@ -6,6 +6,7 @@ Broadcasts active symbol and timeframe changes between browser and desktop termi
 import json
 import time
 import logging
+import re
 from typing import Dict, Any, Set
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -40,9 +41,23 @@ class TradingViewSyncManager:
 
     async def handle_extension_message(self, message_data: Dict[str, Any]):
         """Processes symbol/timeframe updates from Chrome Extension."""
-        symbol = message_data.get("symbol", self.active_symbol).upper()
-        timeframe = message_data.get("timeframe", self.active_timeframe)
-        exchange = message_data.get("exchange", self.active_exchange).upper()
+        if not isinstance(message_data, dict):
+            raise ValueError("TradingView sync message must be an object")
+
+        def bounded_text(key: str, fallback: str, *, uppercase: bool = False, limit: int = 64) -> str:
+            value = message_data[key] if key in message_data else fallback
+            if not isinstance(value, str):
+                raise ValueError(f"TradingView sync {key} must be text")
+            value = value.strip()
+            if not value or len(value) > limit or any(ord(character) < 32 for character in value):
+                raise ValueError(f"TradingView sync {key} is invalid")
+            if not re.fullmatch(r"[A-Za-z0-9._:/-]+", value):
+                raise ValueError(f"TradingView sync {key} contains unsupported characters")
+            return value.upper() if uppercase else value
+
+        symbol = bounded_text("symbol", self.active_symbol, uppercase=True)
+        timeframe = bounded_text("timeframe", self.active_timeframe, limit=32)
+        exchange = bounded_text("exchange", self.active_exchange, uppercase=True)
 
         self.active_symbol = symbol
         self.active_timeframe = timeframe

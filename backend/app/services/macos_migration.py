@@ -27,6 +27,12 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterable
 
+from app.core.input_limits import (
+    MAX_ARCHIVE_BYTES,
+    MAX_ARCHIVE_MEMBER_BYTES,
+    MAX_ARCHIVE_MEMBERS,
+    MAX_ARCHIVE_TOTAL_UNCOMPRESSED_BYTES,
+)
 
 BUNDLE_SCHEMA_VERSION = 1
 BUNDLE_TYPE = "kuantra-macos-migration"
@@ -650,8 +656,35 @@ def verify_migration_bundle(bundle_path: str | Path) -> dict[str, Any]:
     files_checked = 0
     sqlite_result: dict[str, Any] | None = None
     try:
+        if not bundle.is_file():
+            raise MigrationBundleError(f"migration bundle does not exist: {bundle}")
+        if bundle.stat().st_size > MAX_ARCHIVE_BYTES:
+            raise MigrationBundleError(
+                f"archive size exceeds the safety limit of {MAX_ARCHIVE_BYTES} bytes"
+            )
         with zipfile.ZipFile(bundle, "r") as archive:
-            names = archive.namelist()
+            infos = archive.infolist()
+            names = [info.filename for info in infos]
+            resource_errors = []
+            if len(infos) > MAX_ARCHIVE_MEMBERS:
+                resource_errors.append(
+                    f"archive member count exceeds the safety limit of {MAX_ARCHIVE_MEMBERS}"
+                )
+            total_uncompressed = 0
+            for info in infos:
+                if info.file_size < 0 or info.file_size > MAX_ARCHIVE_MEMBER_BYTES:
+                    resource_errors.append(
+                        f"archive member exceeds the safety limit of {MAX_ARCHIVE_MEMBER_BYTES}: {info.filename}"
+                    )
+                total_uncompressed += max(info.file_size, 0)
+            if total_uncompressed > MAX_ARCHIVE_TOTAL_UNCOMPRESSED_BYTES:
+                resource_errors.append(
+                    "uncompressed archive size exceeds the safety limit of "
+                    f"{MAX_ARCHIVE_TOTAL_UNCOMPRESSED_BYTES} bytes"
+                )
+            if resource_errors:
+                errors.extend(resource_errors)
+                raise MigrationBundleError("archive resource limits exceeded")
             if len(names) != len(set(names)):
                 errors.append("duplicate archive members are not allowed")
             unsafe = [name for name in names if not _safe_bundle_member(name)]

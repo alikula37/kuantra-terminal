@@ -34,6 +34,15 @@ _SECRET_KEY_RE = re.compile(
     r"access[_-]?token|refresh[_-]?token|authorization|credential)",
     re.IGNORECASE,
 )
+_SECRET_TEXT_RE = re.compile(
+    r"(?i)(?:api[_-]?key|api[_-]?secret|password|passphrase|private[_-]?key|"
+    r"access[_-]?token|refresh[_-]?token|authorization)\s*[:=]\s*[^\s,;]+|"
+    r"\bbearer\s+[a-z0-9._~+/=-]{8,}"
+)
+_LOCAL_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9])/(?:Users|private/var|var/folders|tmp|Volumes)/[^\s\"'<>]+|"
+    r"(?<![A-Za-z0-9])[A-Za-z]:[\\/][^\s\"'<>]+"
+)
 
 
 def _assert_export_safe(value: Any, path: str = "pack") -> None:
@@ -45,6 +54,8 @@ def _assert_export_safe(value: Any, path: str = "pack") -> None:
     elif isinstance(value, list):
         for index, child in enumerate(value):
             _assert_export_safe(child, f"{path}[{index}]")
+    elif isinstance(value, str) and (_SECRET_TEXT_RE.search(value) or _LOCAL_PATH_RE.search(value)):
+        raise EvidencePackExportError(f"{path} contains a sensitive value and is not exportable")
 
 
 def _safe_trade_id(trade_id: str) -> str:
