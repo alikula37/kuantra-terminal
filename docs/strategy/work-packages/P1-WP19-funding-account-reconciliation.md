@@ -4,9 +4,9 @@
 ```yaml
 work_package: P1-WP19
 version: 1.0.0
-status: Ready
+status: InProgress
 date: 2026-09-08
-baseline_commit: 0c7d11f
+baseline_commit: e4ca324
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP18
@@ -51,21 +51,34 @@ credential, canlı emir ve migration apply kullanılmaz.
 
 ## Acceptance criteria
 
-- [ ] Önce kırmızı, sonra yeşil: funding/transfer/fee/correction event’leri ayrı
+- [x] Önce kırmızı, sonra yeşil: funding/transfer/fee/correction event’leri ayrı
   normalize edilir ve signed Decimal/currency korunur.
-- [ ] Opening balance veya position coverage eksik olduğunda zero/flat PnL üretilmez;
+- [x] Opening balance veya position coverage eksik olduğunda zero/flat PnL üretilmez;
   explicit coverage state ve discrepancy/report reason döner.
-- [ ] Funding ve transfer realized/unrealized PnL’ye sessizce karışmaz; aynı currency
+- [x] Funding ve transfer realized/unrealized PnL’ye sessizce karışmaz; aynı currency
   içinde bile event türü kaybolmaz.
-- [ ] Correction yeni immutable evidence ve lineage üretir; eski event/provenance
+- [x] Correction yeni immutable evidence ve lineage üretir; eski event/provenance
   silinmez; late correction yeniden importta idempotent kalır.
-- [ ] Liquidation/ADL/venue-specific unsupported event’ler fail-closed görünür;
+- [x] Liquidation/ADL/venue-specific unsupported event’ler fail-closed görünür;
   desteklenmeyen account claim’i production capability olarak açılmaz.
-- [ ] Multi-account, source identity ve market type collision negative testleri geçer;
+- [x] Multi-account, source identity ve market type collision negative testleri geçer;
   P1-WP17/P1-WP18 regression yeşil kalır.
 - [ ] Odak testleri, tam backend suite ve uygun Mac local CI kanıtı kaydedilir.
 - [ ] Exact commit, changed files, accounting limitations ve sonraki P1-WP20 economic
   dedup/lifecycle bağımlılığı bu kayda yazılır.
+
+## Uygulama sınırı (InProgress)
+
+- `AccountReconciliationService` funding, transfer, trade fee, rebate, liquidation/ADL
+  ve manual correction kayıtlarını ayrı `account_event_kind` değerleriyle normalize eder.
+- Numeric amount değerleri P1-WP18 ile aynı `DECIMAL_STRING_V1` ve explicit currency
+  unit sözleşmesini kullanır; bilinmeyen currency aggregation'a dahil edilmez.
+- Mevcut ledger event sözlüğünde funding/transfer için ayrı event type bulunmadığı için
+  bu gözlemler `SCHEMA_EVENT_TYPE_PENDING` olarak raporlanır ve kanonik ledger'a yazılmaz.
+  Fee/rebate `FeeAdjusted`, manual correction `TradeCorrected` olarak append-only
+  yazılabilir; correction hedefi `causation_id` ve provenance lineage ile korunur.
+- Bu paket realized/unrealized PnL hesaplamaz; opening/account/mark coverage yoksa
+  `NOT_AVAILABLE` veya `PARTIAL` döner ve zero/flat değer uydurmaz.
 
 ## Kapsam dışı
 
