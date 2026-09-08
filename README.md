@@ -17,7 +17,7 @@ transport, source, security, and reconciliation contracts are implemented.
 Implementation is not proof of complete perpetual-account reconciliation or improved
 trading outcomes. There is no real-user pilot evidence yet. The current branch is not
 automatically a new release of the version in this heading. See the
-[current roadmap audit](docs/strategy/ROADMAP-REVIEW-2026-09-08.md) for open correctness
+[current status](docs/strategy/STATUS.md) for open correctness
 risks, evidence limits and the remaining P1 delivery order.
 
 - SQLite WAL journal and transactional settings/metadata.
@@ -48,7 +48,7 @@ they are not production capabilities:
 - reverse-skill agent deployment and unverified MCP source retrieval;
 - remote ModStore download, hot-mount and arbitrary plugin execution.
 
-See [`docs/strategy/`](docs/strategy/) for the decision log, ADRs, evidence
+See [`docs/strategy/`](docs/strategy) for the decision log, ADRs, evidence
 gates and work-package status. P0-WP08 is the current experimental-containment
 package; a disabled surface is a deliberate truth result, not a failed demo.
 
@@ -79,6 +79,9 @@ history and a read-only local AI Auditor are not implied by those foundations. A
 plane or model sidecar is not implied by the current Python desktop build.
 
 ## Development
+
+Coding agents start at [AGENTS.md](AGENTS.md), not the historical archive. It selects
+the five current documents and defines how progress is updated after each task.
 
 Prerequisites: Python 3.11+, Node.js 20+, and npm. Use a fresh data directory
 for tests so local journal state cannot affect results.

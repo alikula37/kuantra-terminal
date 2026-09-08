@@ -1,3 +1,4 @@
+<!-- doc-role: current-work-package -->
 # P1-WP16 — Read-Only Snapshot Completeness
 
 ```yaml
@@ -18,7 +19,7 @@ alınmamış kayıtları atlayabilir. Snapshot hash'i bu kaybı tespit etmez. Bu
 amacı supported read-only snapshot akışının eksiksizliği kanıtlanamadığında başarılı
 complete/reconciled claim üretmesini engellemektir; yeni venue desteği değildir.
 
-Bağlam: [KRR-001 B1/R1](../ROADMAP-REVIEW-2026-09-08.md), ADR-0001/0002/0003.
+Bağlam: [KRR-001 B1/R1](../../archive/strategy/ROADMAP-REVIEW-2026-09-08.md), ADR-0001/0002/0003.
 
 ## Dosya kapsamı
 

@@ -1,3 +1,7 @@
+<!-- doc-role: historical-reference -->
+> Historical Phase 0 evidence, retained at this path for audit tooling. Not current release status.
+> See [current status](STATUS.md).
+
 # Faz 0 — Truth & Safety Durum Panosu
 
 ```yaml
@@ -38,7 +42,7 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Context devam protokolü
 
-1. Yeni oturum/compaction sonrası önce bu dosya, `docs/strategy/README.md` ve son aktif WP okunur.
+1. Yeni oturum/compaction sonrası önce bu dosya, `docs/archive/strategy/CATALOG-2026-09-08.md` ve son aktif WP okunur.
 2. `git status --short`, `git log --oneline -5` ve draft PR durumu doğrulanır.
 3. Working tree temiz değilse değişiklik sahibi ve paket sınırı belirlenmeden yeni iş başlamaz.
 4. Her paket ayrı commit olur; draft PR Phase 0 tamamlanana kadar açık kalır.
@@ -46,7 +50,7 @@ veya daha yüksek npm bulgusunun CI ve release paketlemesini durdurmasını zoru
 
 ## Sıradaki sıra
 
-1. P1-WP01 — [Canonical Evidence Ledger Foundation](./work-packages/P1-WP01-canonical-evidence-ledger.md) Active; implementation commits `43641e1`/`25e4640`/`db80a77`, last green CI `34038244922`; latest CI attempt billing nedeniyle başlayamadı, pilot metrikleri bekleniyor.
+1. P1-WP01 — [Canonical Evidence Ledger Foundation](../archive/strategy/work-packages/P1-WP01-canonical-evidence-ledger.md) Active; implementation commits `43641e1`/`25e4640`/`db80a77`, last green CI `34038244922`; latest CI attempt billing nedeniyle başlayamadı, pilot metrikleri bekleniyor.
 2. Release publication — `publish=true` adayını çalıştırmak ayrı bir ürün sahibi release onayı ister; bu karar canlı execution yetkisi vermez.
 
 ## Phase 0 final kanıtı

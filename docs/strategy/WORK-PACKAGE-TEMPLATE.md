@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: KWT-001
-version: 1.0.1
+version: 1.0.2
 status: Active
 date: 2026-09-08
 ```
@@ -26,7 +26,9 @@ ve mimari karar otoritesi değilsin; aşağıdaki work package'ı mevcut ADR'ler
 - Repo: `https://github.com/alikula37/kuantra-terminal`
 - Baseline commit: `[tam SHA]`
 - Branch: `codex/[phase]-[wp]-[short-name]`
-- Strateji: `docs/strategy/KUANTRA-STRATEGY-001.md`, sürüm `[x.y.z]`
+- Ürün: `docs/strategy/PRODUCT.md`
+- Roadmap: `docs/strategy/PRODUCTION-READINESS-PLAN.md`, sürüm `[x.y.z]`
+- Durum: `docs/strategy/STATUS.md`; yalnız seçili aktif paket uygulanır.
 - Bağlı ADR: `[ADR-XXXX]`
 
 ### Problem ve risk
@@ -100,6 +102,10 @@ ve mimari karar otoritesi değilsin; aşağıdaki work package'ı mevcut ADR'ler
 - [ ] Faz metriğine etkisi ölçülebilir mi?
 
 ## Değişiklik geçmişi
+
+### 1.0.2 — 2026-09-08
+
+- Yeni paket bağlamı arşiv stratejisi yerine PRODUCT, roadmap ve STATUS'a bağlandı.
 
 ### 1.0.1 — 2026-09-08
 

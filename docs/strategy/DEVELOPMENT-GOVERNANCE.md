@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: KDG-001
-version: 1.0.1
+version: 1.0.2
 status: Accepted
 date: 2026-09-08
 strategy: KPS-001@1.1.0
@@ -18,19 +18,20 @@ kanıt zincirinde kalmasını sağlamak. Hız, yalnız test ve acceptance criter
 2026-09-08 açıklaması: aşağıdaki model adları tarihsel görev dağılımıdır; kullanıcının
 güncel direktifi önceliklidir (Mac devamında istenen subagent: GPT-5.6 Luna). Subagent
 zorunlu değildir. Lead agent entegrasyon/review yürütür; nihai ürün/mimari kararı
-ürün sahibinindir. Güncel kalan iş sırası [KRR-001](ROADMAP-REVIEW-2026-09-08.md)
+ürün sahibinindir. Güncel kalan iş sırası [STATUS](STATUS.md) ve
+[tek roadmap](PRODUCTION-READINESS-PLAN.md)
 ile okunur; eski `Active` paket sayısı faz çıkışı veya sonraki iş sırası değildir.
 
 ### Lead agent — ürün/mimari sınırlarının korunması ve entegrasyon
 
 - Faz sırasını, ürün sınırını ve ADR'leri korur.
 - Her değişikliği küçük, ölçülebilir work package'a böler.
-- Terra coding agent'a implementation brief verir.
+- Kullanılırsa scoped coding agent'a implementation brief verir.
 - Diff'i güvenlik, veri bütünlüğü ve scope bakımından inceler.
 - Test/benchmark kanıtını doğrular; gerektiğinde işi geri gönderir.
 - Kullanıcı onayı olmadan dış servis, production secret, release veya canlı işlem açmaz.
 
-### Coding agent — GPT-5.6 Terra
+### Coding agent — güncel kullanıcı model direktifiyle
 
 - Yalnız verilen work package kapsamında kod değiştirir.
 - Önce ilgili kod/testleri okur; architecture scope genişletmez.
@@ -49,17 +50,17 @@ ile okunur; eski `Active` paket sayısı faz çıkışı veya sonraki iş sıras
 
 1. Lead agent Faz backlog'undan tek bir work package seçer.
 2. Paket `Ready` olmadan coding başlamaz.
-3. Terra aynı chat içinde subagent olarak çalışır. Böylece kullanıcı prompt taşımaz ve lead agent
+3. Gerekliyse coding agent aynı chat içinde subagent olarak çalışır. Böylece kullanıcı prompt taşımaz ve lead agent
    bağlamı, diff'i ve test sonucunu aynı görev içinde denetler.
 4. Aynı working tree'ye iki yazıcı agent paralel verilmez. Paralel agent yalnız read-only audit,
    test veya bağımsız dosya alanlarında kullanılır.
-5. Terra tamamlayınca lead agent diff'i okur, eksik testleri çalıştırır ve acceptance criteria'yı
+5. Implementasyon tamamlanınca lead agent diff'i okur, eksik testleri çalıştırır ve acceptance criteria'yı
    madde madde kapatır.
 6. Her work package ayrı commit olur. Commit edilmemiş kullanıcı değişiklikleri asla ezilmez.
 7. Push/PR ancak local gate'ler geçince yapılır.
 
 Local gate'in resmi sözleşmesi ve tek komutu KDG-002
-([Yerel CI ve merge gate politikası](./LOCAL-CI-POLICY.md)) içindedir. GitHub Actions kotası
+([Yerel CI ve merge gate politikası](LOCAL-CI-POLICY.md)) içindedir. GitHub Actions kotası
 doluyken remote workflow sonucu beklenmez; KDG-002 raporu olmadan `main` merge edilmez.
 
 Kullanıcının ayrı chat'te Terra kullanması mümkündür; bu durumda KWT-001 şablonuyla tam prompt
@@ -102,7 +103,7 @@ Bir work package ancak şunlar varsa `Ready` olur:
 
 ## Faz kapısı
 
-Work package'ların bitmesi fazın bittiği anlamına gelmez. Faz exit criteria'sı KPS-001'deki
+Work package'ların bitmesi fazın bittiği anlamına gelmez. Faz exit criteria'sı güncel roadmap'teki
 ürün metriği ve soak/pilot kanıtıyla kapanır. Coding agent fazı kendi başına “complete” ilan edemez.
 
 ## GitHub secret politikası
@@ -116,6 +117,11 @@ Work package'ların bitmesi fazın bittiği anlamına gelmez. Faz exit criteria'
 - Yanlışlıkla görünen token derhal revoke edilir; yalnız metinden silmek yeterli değildir.
 
 ## Değişiklik geçmişi
+
+### 1.0.2 — 2026-09-08
+
+- Başlangıç AGENTS/PRODUCT/roadmap/STATUS/aktif WP olarak tekilleştirildi; tarihsel
+  paketler arşivlendi. Güncel sıra STATUS'tan okunur, model rolü çoğaltılmaz.
 
 ### 1.0.1 — 2026-09-08
 

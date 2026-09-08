@@ -4,7 +4,7 @@ Kuantra Terminal is a local-first Execution Intelligence & Trade Forensics works
 not an institutional algorithmic trading suite or AI Swarm product.
 
 Contributions must preserve deterministic risk authority, evidence integrity and explicit
-unavailable states. Follow the [current roadmap audit](docs/strategy/ROADMAP-REVIEW-2026-09-08.md);
+unavailable states. Start at [AGENTS.md](AGENTS.md) and the [current status](docs/strategy/STATUS.md);
 unmeasured performance or unimplemented capabilities must not become product claims.
 
 ---

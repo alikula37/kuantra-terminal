@@ -1,3 +1,7 @@
+<!-- doc-role: historical-reference -->
+> Historical Phase 0 evidence, retained at this path for audit tooling. Not current release status.
+> See [current status](STATUS.md).
+
 # Phase 0 Exit Audit — Final Artifact Evidence Recorded
 
 ```yaml

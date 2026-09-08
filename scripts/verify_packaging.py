@@ -14,6 +14,7 @@ from typing import Any, Dict, Set
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from check_release_truth import TruthContractError, run_checks  # noqa: E402
+from check_docs import DocumentationError, run_checks as check_documentation  # noqa: E402
 
 
 def get_leaf_keys(d: Dict[str, Any], prefix: str = "") -> Set[str]:
@@ -31,6 +32,13 @@ def get_leaf_keys(d: Dict[str, Any], prefix: str = "") -> Set[str]:
 def verify_system_integrity() -> bool:
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     print(f"[*] Verifying Kuantra Terminal packaging integrity at: {root_dir}")
+
+    try:
+        result = check_documentation(Path(root_dir))
+    except DocumentationError as exc:
+        print(f"[-] Documentation contract failed: {exc}")
+        return False
+    print(f"[+] Documentation routing and links validated: {result}")
 
     try:
         run_checks(Path(root_dir))

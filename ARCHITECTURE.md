@@ -3,7 +3,7 @@
 This document provides a comprehensive technical breakdown of Kuantra Terminal's single-process
 desktop architecture, in-process request dispatch and push streaming, dual-engine storage model,
 and explicit experimental boundaries. Current priorities and evidence limitations are
-defined in the [roadmap audit](docs/strategy/ROADMAP-REVIEW-2026-09-08.md).
+defined in the [current status](docs/strategy/STATUS.md). Coding starts at [AGENTS.md](AGENTS.md).
 
 ---
 

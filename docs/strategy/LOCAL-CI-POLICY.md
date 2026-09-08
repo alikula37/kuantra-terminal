@@ -2,7 +2,7 @@
 
 ```yaml
 document_id: KDG-002
-version: 1.1.1
+version: 1.1.2
 status: Accepted
 date: 2026-09-08
 strategy: KPS-001@1.1.0
@@ -66,7 +66,12 @@ Başarılı koşuda geçici test/smoke verisi silinir; başarısız koşuda tan�
   `main` merge ve release kapıları bundan muaf değildir.
 
 Bu açıklama script/report policy kimliğini değiştirmez (`KDG-002@1.1.0`). Açık
-runtime sertleştirme işleri [KRR-001](ROADMAP-REVIEW-2026-09-08.md) içinde takip edilir.
+runtime sertleştirme işleri [STATUS](STATUS.md) içinde takip edilir.
+
+Doküman rol/bağlantı kapısı `python3.11 scripts/check_docs.py` ile çalışır ve
+`verify_packaging.py` tarafından da zorunlu çağrılır. Tek roadmap, beş güncel başlangıç
+belgesi, seçili WP ve arşivde korunmuş açık kabul sayıları doğrulanır. Gate semantic
+doğruluk, dış URL veya tarihsel kod satırı doğrulaması iddiası taşımaz.
 
 ### İşlem sınırı
 
@@ -88,6 +93,11 @@ runtime sertleştirme işleri [KRR-001](ROADMAP-REVIEW-2026-09-08.md) içinde ta
 - Local gate'i bypass etmek için `--skip-*` benzeri sessiz seçenek eklemek.
 
 ## Değişiklik geçmişi
+
+### 1.1.2 — 2026-09-08
+
+- Doküman role/link gate packaging preflight'a bağlandı; runtime rapor kimliği
+  değişmedi. Güncel blocker referansı STATUS oldu.
 
 ### 1.1.1 — 2026-09-08
 

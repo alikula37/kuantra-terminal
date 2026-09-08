@@ -1,3 +1,4 @@
+<!-- doc-role: current-roadmap -->
 # KPR-001 — İlk production sürümüne kadar geliştirme ve doğrulama planı
 
 ```yaml
@@ -20,7 +21,7 @@ Amaç kâr veya kusursuzluk garantisi değil; kullanıcıyı yanlış finansal s
 veriye karşı koruyan, sınırları ölçülmüş üründür. Bilinmeyen veri dürüstçe bilinmeyen
 kalır. Bir kayıt hash'inin geçmesi, kaydın borsadaki bütün geçmişi içerdiğini kanıtlamaz.
 
-Bu belge önceki [KRR-001 denetimini](ROADMAP-REVIEW-2026-09-08.md) ayrıntılandıran
+Bu belge önceki [KRR-001 denetimini](../archive/strategy/ROADMAP-REVIEW-2026-09-08.md) ayrıntılandıran
 **plan teklifidir**. Yeni eşikler, teslimat tahminleri ve destek kapsamı henüz achieved
 veya kullanıcı tarafından ticari olarak onaylanmış değildir. Accepted ADR'ler ve
 mevcut güvenlik kapıları geçerlidir. İlk `Ready` iş P1-WP16 olarak kalır; aşağıdaki
