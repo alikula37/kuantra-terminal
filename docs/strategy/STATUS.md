@@ -7,8 +7,8 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**H02 — Ready:**
-[Schema upgrade and restore boundary](work-packages/H02-schema-upgrade-restore-boundary.md).
+**H04 — Ready:**
+[Threat model and trust boundaries](work-packages/H04-threat-model-trust-boundaries.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
 verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
@@ -21,9 +21,10 @@ complete in `cc0ad94`; H03 runtime degraded/offline boundary is complete in
 complete in `51ee968`; P1-WP24 U03 canonical Evidence Pack/export boundary is complete
 in `afedb70`; P1-WP25 U04 weekly review and as-of determinism is complete in `26751f7`;
 P1-WP26 U05 accessible/understandable shell is complete in `30dfcd7`; H01 canonical
-persistence/recovery is complete in `006e86e`. Neither package
+persistence/recovery is complete in `006e86e`; H02 schema upgrade/restore is complete
+in `169c446`. Neither package
 silently became full tax/accounting scope or new venue scope. The next bounded
-implementation is H02: schema upgrade and restore. No other historical
+implementation is H04: threat model and trust boundaries. No other historical
 `Active` WP is automatically queued. Pilot/release claims remain blocked by their
 explicit gates.
 
@@ -47,7 +48,8 @@ explicit gates.
 | B3/M1 | DEFERRED | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Complete before another long/24h soak; not primary product path |
 | B4 | CLOSED | Mac runtime offline/degraded boundary, exact artifact provenance, mounted executable and WKWebView gate | N01 `05e826d`, N02 `cc0ad94`, H03 `62921f7`; Windows/Linux and distribution signing remain separate host/owner gates |
 | H01 | CLOSED | Canonical journal/event/projection persistence under crash, transaction, read-only, disk/busy and concurrent import conditions | Test-only transaction hooks plus real Mac temporary-fixture evidence in `006e86e`; H02 schema/restore boundary remains separate |
-| H02 | IMPLEMENTATION_REQUIRED | Supported old schema upgrade, interrupted migration/restore, corrupt backup, missing segment and incompatible future schema must fail closed while preserving canonical lineage | Current bounded package: [H02](work-packages/H02-schema-upgrade-restore-boundary.md) |
+| H02 | CLOSED | Supported legacy schema upgrade, interrupted migration/restore, corrupt backup, missing segment, archive traversal/symlink and incompatible future schema fail closed while preserving canonical lineage | `169c446`; archived [H02](../archive/strategy/work-packages/H02-schema-upgrade-restore-boundary.md); 19 focused and 651 backend tests PASS |
+| H04 | IMPLEMENTATION_REQUIRED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge and gateway trust boundaries require misuse tests and fail-closed behavior | Current bounded package: [H04](work-packages/H04-threat-model-trust-boundaries.md) |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -89,10 +91,10 @@ synthetic temporary data and no credentials/user data. Branch `npm audit` report
 findings, while the GitHub default branch still exposes five open npm Dependabot
 alerts. Source identity conflicts, unknown position mode, incomplete lifecycle,
 funding/transfer schema, Windows/Linux host evidence, licensing, pilot and release-
-owner decisions remain boundaries; H02 schema/restore is not yet closed; no PnL, live
-execution or pilot claim was opened.
+owner decisions remain boundaries; H04 trust-boundary work is not yet closed; no PnL,
+live execution or pilot claim was opened.
 
-Next handoff: H02 schema upgrade and restore boundary.
+Next handoff: H04 threat model and trust boundaries.
 
 ## Update protocol
 

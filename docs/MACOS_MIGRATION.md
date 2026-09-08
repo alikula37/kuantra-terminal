@@ -1,9 +1,9 @@
 # Windows-to-macOS migration runbook
 
 Document ID: KMP-001
-Version: 1.1.0
+Version: 1.2.0
 Status: Accepted
-Last updated: 2026-09-07
+Last updated: 2026-09-08
 
 ## Current transition decision: no-user-data path
 
@@ -54,6 +54,33 @@ macOS data directory.
 
 Credentials must be entered again into macOS Keychain. Never copy Windows
 Credential Manager material or raw `.env` secrets to the Mac.
+
+## Legacy SQLite schema upgrade (future real-data path only)
+
+The current Mac has no user data, so this command is **not** part of the clean
+bootstrap. When a future real-data database predates the evidence ledger or
+typed projection, stop Kuantra and obtain explicit owner approval before using:
+
+```bash
+python scripts/macos_migration.py upgrade-schema \
+  --db-path "$HOME/Library/Application Support/Kuantra Terminal/kuantra_oltp.sqlite3" \
+  --json
+```
+
+The command accepts only the supported baseline/evidence schema versions. It
+performs integrity and schema preflight, creates a verifiable SQLite snapshot,
+works in a temporary staging file, adds only bounded additive trade columns,
+backfills legacy trades into the existing canonical evidence event types, rebuilds
+the existing projection, and atomically promotes the validated file. The previous
+SQLite/WAL set is retained as a `.pre-upgrade-*` backup. Unsupported/future schema,
+corrupt backup, malformed legacy rows, or any failed validation stops the operation
+without promoting staged data. It does not remove credentials; bundle creation has
+the separate credential-sanitization policy below.
+
+Do not run `upgrade-schema` on the clean no-user-data Mac and do not treat it as a
+general database reset or migration-apply shortcut. After a successful upgrade,
+create and verify the migration bundle; only a bundle with `valid=true`,
+`migration_ready=true`, and empty `errors` may enter the restore flow.
 
 ## 1. Create the bundle on Windows
 
@@ -163,7 +190,9 @@ copy an old DuckDB file to bypass that gate.
 
 Restore refuses a non-empty target. If an explicit replacement is necessary,
 use `--force`; the existing target is moved to a timestamped
-`.pre-migration-*` sibling instead of being deleted.
+`.pre-migration-*` sibling instead of being deleted. Extraction always happens in
+a temporary sibling staging directory; a checksum, schema, chain, and projection
+coverage failure leaves the target untouched and removes the failed staging tree.
 
 After restore:
 

@@ -1,12 +1,14 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
+<!-- Historical evidence: this file is not a current implementation instruction. -->
 # H02 — Schema Upgrade & Restore Boundary
 
 ```yaml
 work_package: H02
-version: 1.0.0
-status: Ready
+version: 1.1.0
+status: Complete
 date: 2026-09-08
 baseline_commit: 006e86e
+completed_commit: 169c446
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01
@@ -58,17 +60,43 @@ genel backup ürünü veya kullanıcı verisi taşıma akışı eklenmez.
 
 ## Acceptance criteria
 
-- [ ] Supported old schema preflight/upgrade idempotent; canonical data korunuyor.
-- [ ] Interrupted migration/restore sonrası no-half-upgrade ve tekrar açılış sonucu
+- [x] Supported old schema preflight/upgrade idempotent; canonical data korunuyor.
+- [x] Interrupted migration/restore sonrası no-half-upgrade ve tekrar açılış sonucu
   fail-closed, deterministik ve tekrar çalıştırılabilir.
-- [ ] Corrupt backup, missing segment/entry, traversal/symlink ve incompatible future
+- [x] Corrupt backup, missing segment/entry, traversal/symlink ve incompatible future
   schema açık hata ile reddediliyor; hedef data directory değişmeden kalıyor.
-- [ ] Restore sonrası `verify_chain` PASS; projection rebuild ve Evidence Pack snapshot
+- [x] Restore sonrası `verify_chain` PASS; projection rebuild ve Evidence Pack snapshot
   canonical lineage/correction/coverage bilgilerini koruyor.
-- [ ] Red→green focused tests, full backend/frontend suite ve Mac local CI aynı source
+- [x] Red→green focused tests, full backend/frontend suite ve Mac local CI aynı source
   commit üzerinde PASS; yalnız synthetic temporary data kullanılıyor.
-- [ ] Yeni schema/event capability, funding/transfer modeli, live order, credential,
+- [x] Yeni schema/event capability, funding/transfer modeli, live order, credential,
   destructive migration apply veya release/pilot claim'i eklenmiyor.
+
+## Uygulama ve kanıt
+
+- `upgrade_sqlite_schema` yalnız desteklenen baseline/evidence şemalarını read-only
+  preflight, doğrulanabilir snapshot, temporary staged upgrade, legacy evidence
+  backfill, projection rebuild ve atomic file promotion sırasıyla işler. Eski hedef
+  SQLite/WAL seti `.pre-upgrade-*` backup olarak korunur; failure injection öncesinde
+  target'a yazılmaz.
+- `SQLiteDriver` yalnız additive legacy trade sütunlarını (`commission`,
+  `updated_at` ve mevcut nullable snapshot alanları) tamamlar; identity alanları
+  eksikse şema unsupported kalır. Evidence/projection doğrulaması bootstrap ile
+  sessizce onarılmaz.
+- Bundle verify current schema, integrity, chain hash, projection coverage, manifest
+  hash/size, missing entry, traversal ve symlink kontrollerini yapar. Restore önce
+  staging directory'ye çıkarır, checksum/schema/coverage doğrular ve ancak sonra
+  atomic directory promotion yapar.
+- CLI'de gelecekteki gerçek kullanıcı verisi için açık opt-in
+  `python scripts/macos_migration.py upgrade-schema --db-path ...` sınırı vardır;
+  mevcut temiz Mac bootstrap'ında bu komut çalıştırılmadı.
+- Red→green H02/migration/package focused suite: **19 passed**. Full backend suite:
+  **651 passed, 2 warnings**. Testler yalnız synthetic temporary SQLite/archive
+  fixture kullandı; gerçek kullanıcı verisi, credential, migration ZIP'i veya live
+  broker işlemi yoktu.
+
+Sonraki bounded paket: **H04 — Threat Model & Trust Boundaries**. H04 tamamlanana
+kadar archive/import/WebView/gateway trust-boundary iddiaları production gate sayılmaz.
 
 ## Kesinlikle kapsam dışı
 
@@ -78,5 +106,8 @@ host kanıtı, pilot/release ve full-account PnL/tax accounting.
 
 ## Başlangıç kararı
 
-H01 `006e86e` ile canonical persistence/recovery boundary'sini kapattı. H02 tamamlanmadan
-restore/upgrade production claim'i veya gerçek kullanıcı migration'ı açılmaz.
+H01 `006e86e` ile canonical persistence/recovery boundary'sini kapattı. H02
+`169c446` ile yalnız sentetik fixture üzerinde schema/restore boundary'sini kapattı.
+Gerçek kullanıcı migration'ı hâlâ `docs/MACOS_MIGRATION.md` içindeki açık onaylı akışa
+bağlıdır; H04 ve sonraki production hardening kapıları geçilmeden production claim'i
+açılmaz.

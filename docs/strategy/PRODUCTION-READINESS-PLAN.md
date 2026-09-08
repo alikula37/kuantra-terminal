@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.5
+version: 1.0.6
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 006e86e6b6fae022fc27a1169f55f0c1e82c7120
+reviewed_commit: 169c446
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -28,7 +28,8 @@ mevcut güvenlik kapıları geçerlidir. P1-WP16, P1-WP17, P1-WP18, P1-WP19 ve P
 kanıtla kapatılmıştır; P1-WP21, N01, N02, H03 ve P1-WP22 bounded paketleri de kendi
 kanıtlarıyla kapatılmıştır. P1-WP23 / U02 de bounded kanıtla kapatılmış; P1-WP24 /
 U03, P1-WP25 / U04 ve P1-WP26 / U05 de bounded kanıtla kapatılmıştır. H01 canonical
-persistence/recovery bounded kanıtla kapatılmıştır. Mevcut `Ready` iş H02'dir. Aşağıdaki
+persistence/recovery bounded kanıtla kapatılmıştır. H02 schema upgrade/restore da
+`169c446` ile bounded kanıtla kapatılmıştır. Mevcut `Ready` iş H04'tür. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -133,9 +134,10 @@ Pack, coverage/rule görünürlüğü, redaction ve deterministic export safety 
 period/timezone/as-of determinism P1-WP25 (`26751f7`) ile bounded olarak
 tamamlanmıştır. U05 erişilebilir ve anlaşılır shell state'lerini P1-WP26
 (`30dfcd7`) ile bounded olarak tamamlamıştır. H01 canonical persistence/recovery
-hardening `006e86e` ile bounded olarak tamamlandı. Sıradaki aktif paket **H02**'dir:
-schema upgrade ve restore boundary'si. H02 tamamlanmadan restore/upgrade
-production iddiası açılmaz.
+hardening `006e86e` ile bounded olarak tamamlandı. H02 schema upgrade ve restore
+boundary'si `169c446` ile tamamlandı. Sıradaki aktif paket **H04**'tür: threat model
+ve trust boundaries. H04 ve sonraki hardening kapıları tamamlanmadan production
+iddiası açılmaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
@@ -326,8 +328,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 11. P1-WP26 / U05: accessible/understandable shell; ardından bağımlılığa göre
     tamamlandı `30dfcd7`. U05 yeni capability veya release gate açmaz.
 12. H01: canonical persistence ve recovery; tamamlandı `006e86e`.
-13. H02: schema upgrade ve restore; ardından H04–H07 ve N03–N06 bağımlılık
-    sırasıyla. H02 tamamlanmadan restore/upgrade production iddiası açılmaz.
+13. H02: schema upgrade ve restore; tamamlandı `169c446`.
+14. H04–H07 ve N03–N06 bağımlılık sırasıyla. H04 trust-boundary gate'i geçmeden
+    untrusted input/native bridge production iddiası açılmaz.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -336,6 +339,14 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.6 — 2026-09-08
+
+- H02 schema upgrade/restore boundary'si `169c446` ile kapatıldı: supported legacy
+  SQLite staged atomic upgrade, doğrulanabilir backup, interrupted failure injection,
+  canonical backfill/projection rebuild, exact restore, checksum/integrity/schema/
+  traversal/symlink fail-closed testleri. 19 focused/package test ve 651 backend testi
+  PASS. H04 trust model/boundary tests tek güncel Ready pakettir.
 
 ### 1.0.5 — 2026-09-08
 

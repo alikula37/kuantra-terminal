@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/H02-schema-upgrade-restore-boundary.md"
+    "docs/strategy/work-packages/H04-threat-model-trust-boundaries.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -76,7 +76,8 @@
     "docs/archive/strategy/work-packages/P1-WP25-weekly-review-asof-boundary.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP26-accessible-shell-boundary.md": "archived",
     "docs/archive/strategy/work-packages/H01-canonical-persistence-boundary.md": "archived",
-    "docs/strategy/work-packages/H02-schema-upgrade-restore-boundary.md": "current-work-package",
+    "docs/archive/strategy/work-packages/H02-schema-upgrade-restore-boundary.md": "archived",
+    "docs/strategy/work-packages/H04-threat-model-trust-boundaries.md": "current-work-package",
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md": "archived",
@@ -152,6 +153,7 @@
     "docs/archive/strategy/work-packages/P1-WP25-weekly-review-asof-boundary.md": 0,
     "docs/archive/strategy/work-packages/P1-WP26-accessible-shell-boundary.md": 0,
     "docs/archive/strategy/work-packages/H01-canonical-persistence-boundary.md": 0,
+    "docs/archive/strategy/work-packages/H02-schema-upgrade-restore-boundary.md": 0,
     "docs/archive/strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md": 1,
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": 1,
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": 1,
