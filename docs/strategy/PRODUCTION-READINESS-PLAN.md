@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.0
+version: 1.0.1
 status: Proposed
 date: 2026-09-08
-reviewed_commit: ea4e12cc60aea52c86d1318e97d90a566a3b1736
+reviewed_commit: 51ee968e07b9463d1b6d316c7d8419f8aaf7a7c3
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -26,7 +26,8 @@ Bu belge önceki [KRR-001 denetimini](../archive/strategy/ROADMAP-REVIEW-2026-09
 veya kullanıcı tarafından ticari olarak onaylanmış değildir. Accepted ADR'ler ve
 mevcut güvenlik kapıları geçerlidir. P1-WP16, P1-WP17, P1-WP18, P1-WP19 ve P1-WP20 bounded doğruluk paketleri
 kanıtla kapatılmıştır; P1-WP21, N01, N02, H03 ve P1-WP22 bounded paketleri de kendi
-kanıtlarıyla kapatılmıştır. Mevcut `Ready` iş P1-WP23 / U02'dir. Aşağıdaki
+kanıtlarıyla kapatılmıştır. P1-WP23 / U02 de bounded kanıtla kapatılmış; mevcut
+`Ready` iş P1-WP24 / U03'tür. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -88,7 +89,7 @@ recovery bakımı uzun testnet koşusundan önce gelir; ilk ürünün kritik yol
 ## 4. G0–G1: Doğruluk paketleri
 
 Kimlikler bu belgede kalıcı plan satırlarıdır. `D01 / P1-WP16`, `D02 / P1-WP17`,
-`D03 / P1-WP18`, `D04 / P1-WP19`, `D05 / P1-WP20` ve `D06 / P1-WP21` kanıtla kapatılmıştır. P1-WP22, G2/R4 değer zinciri geçidini bounded olarak kapatmıştır. Sonraki işler hazır
+`D03 / P1-WP18`, `D04 / P1-WP19`, `D05 / P1-WP20` ve `D06 / P1-WP21` kanıtla kapatılmıştır. P1-WP22, G2/R4 değer zinciri geçidini bounded olarak kapatmış; P1-WP23, U02 reconciliation inbox ve correction/user-decision boundary'sini bounded olarak kapatmıştır. Sonraki işler hazır
 olmadan ayrı WP açılıp dosya/test sınırı yazılır. Tek pakette birden çok bağımsız hata
 varsa test edilebilir parçalara bölünür.
 
@@ -124,9 +125,11 @@ Scope dışı kaydın “başarı paydasından çıkarılarak” metriği iyile�
 | U05 | Erişilebilir ve anlaşılır shell | EN/TR/DE parity; keyboard/focus; kontrast/zoom; loading/error/retry; timezone/numeric locale; dar ekran/uzun içerik testleri |
 
 U01 import/review/export akışı P1-WP22 ile bounded olarak uygulanmış ve `ea4e12c`
-ile kanıtlanmıştır. Sıradaki aktif paket **P1-WP23 / U02**'dir: reconciliation
-inbox, açık discrepancy kaydı ve kullanıcı düzeltme/karar sınırı. U02 tamamlanmadan
-R5 weekly review veya release/pilot iddiası açılmaz.
+ile kanıtlanmıştır. U02 reconciliation inbox ve correction/user-decision boundary'si
+P1-WP23 (`51ee968`) ile bounded olarak tamamlanmıştır. Sıradaki aktif paket
+**P1-WP24 / U03**'tür: canonical Trade Evidence Pack, coverage/rule görünürlüğü,
+redaction ve deterministic export safety. U03 tamamlanmadan R5 weekly review veya
+release/pilot iddiası açılmaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
@@ -308,8 +311,11 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    kanıt kapıları.
 7. P1-WP22 / U01: import preview → discrepancy görünürlüğü → source-linked Evidence
    Pack/export; tamamlandı `ea4e12c`.
-8. P1-WP23 / U02: reconciliation inbox ve correction/user-decision boundary; sonra
-   U03–U05/R5 ve bağımlılığa göre H01–H07/N03–N06.
+8. P1-WP23 / U02: reconciliation inbox ve correction/user-decision boundary;
+   tamamlandı `51ee968`.
+9. P1-WP24 / U03: canonical Trade Evidence Pack, coverage/rule görünürlüğü,
+   redaction ve deterministic export boundary; ardından U04–U05/R5 ve bağımlılığa
+   göre H01–H07/N03–N06.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -318,6 +324,12 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.1 — 2026-09-08
+
+- P1-WP23/U02 kanıtla kapatıldı; P1-WP24/U03 tek güncel Ready work package olarak
+  seçildi. U03 için canonical pack/export, redaction ve unavailable-analytics
+  boundary'si bounded kapsam olarak tanımlandı.
 
 ### 1.0.0 — 2026-09-08
 

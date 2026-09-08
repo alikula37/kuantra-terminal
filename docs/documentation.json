@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP23-reconciliation-inbox-correction-boundary.md"
+    "docs/strategy/work-packages/P1-WP24-evidence-pack-export-boundary.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -71,7 +71,8 @@
     "docs/archive/strategy/work-packages/N02-macos-dmg-smoke.md": "archived",
     "docs/archive/strategy/work-packages/H03-market-data-degraded-boundary.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP22-value-chain-integration.md": "archived",
-    "docs/strategy/work-packages/P1-WP23-reconciliation-inbox-correction-boundary.md": "current-work-package",
+    "docs/archive/strategy/work-packages/P1-WP23-reconciliation-inbox-correction-boundary.md": "archived",
+    "docs/strategy/work-packages/P1-WP24-evidence-pack-export-boundary.md": "current-work-package",
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md": "archived",
@@ -142,6 +143,7 @@
     "docs/archive/strategy/work-packages/N02-macos-dmg-smoke.md": 0,
     "docs/archive/strategy/work-packages/H03-market-data-degraded-boundary.md": 0,
     "docs/archive/strategy/work-packages/P1-WP22-value-chain-integration.md": 0,
+    "docs/archive/strategy/work-packages/P1-WP23-reconciliation-inbox-correction-boundary.md": 0,
     "docs/archive/strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md": 1,
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": 1,
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": 1,
