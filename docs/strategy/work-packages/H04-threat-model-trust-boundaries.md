@@ -6,7 +6,7 @@ work_package: H04
 version: 1.0.0
 status: Ready
 date: 2026-09-08
-baseline_commit: 169c446
+baseline_commit: ed689a0
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H02, H03, P1-WP22, P1-WP24, P1-WP26

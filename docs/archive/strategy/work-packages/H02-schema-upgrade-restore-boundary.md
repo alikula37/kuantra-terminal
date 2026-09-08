@@ -9,6 +9,7 @@ status: Complete
 date: 2026-09-08
 baseline_commit: 006e86e
 completed_commit: 169c446
+evidence_commit: ed689a0
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01
@@ -94,6 +95,17 @@ genel backup ürünü veya kullanıcı verisi taşıma akışı eklenmez.
   **651 passed, 2 warnings**. Testler yalnız synthetic temporary SQLite/archive
   fixture kullandı; gerçek kullanıcı verisi, credential, migration ZIP'i veya live
   broker işlemi yoktu.
+- Mac local CI on `ed689a0ba7fd571d176cb3dfc09ae9397dace298`: **MERGE READY**;
+  report SHA-256 `4ad98b4fd3d6eb6f0cc2afb2b554402c8f8bb1ede35643a8d0065f30ec935580`,
+  tracked tree SHA-256
+  `cf382072bb678f95286170fe3cfe0c2e8f886b546a707fa890c298c58e966c73`, local `.app`
+  SHA-256 `51d44e29faa675acfcd10878d5ef0dd11ddb66cf2da8553d52d28c18cba3b4df`.
+  Exact read-only DMG/WKWebView smoke PASS; DMG report SHA-256
+  `da82507eda312bb6effc14acc2dbd2febf14109ab45175411593bad30105e1f2`, DMG SHA-256
+  `0f53140163ba6526b611fbe7dff8b70425155ac1173e8c9801e140e4fd5c4fc8`, mounted
+  executable SHA-256 `c75201db4fe54ace8b06eb85d6315ed5695e5ae7219c6d7b60434cc955980173`.
+  `uv --offline` preparation is dependency evidence only; runtime smoke used the
+  configured public stream and does not prove offline runtime.
 
 Sonraki bounded paket: **H04 — Threat Model & Trust Boundaries**. H04 tamamlanana
 kadar archive/import/WebView/gateway trust-boundary iddiaları production gate sayılmaz.

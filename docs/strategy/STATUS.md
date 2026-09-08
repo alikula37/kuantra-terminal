@@ -32,7 +32,7 @@ explicit gates.
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `006e86e`; fresh clean Mac local CI `MERGE READY`: 643 backend, 67 frontend, i18n 560/560, arm64 build and native smoke passed. Exact DMG-mounted smoke and release provenance are PASS; H03 disabled/degraded tests are PASS |
+| Runtime baseline | `ed689a0`; fresh clean Mac local CI `MERGE READY`: 651 backend, 67 frontend, i18n 560/560, arm64 build and native smoke passed. Exact DMG-mounted smoke and release provenance are PASS; H03 disabled/degraded tests are PASS |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac (latest H01 evidence) | Exact read-only DMG-mounted smoke PASS for source `006e86e`: DMG SHA `80764167ba924db4d918dfccb893936b1ac95d72931524351a0c4bd8a37530ad`, mounted executable SHA `90f3b06f9cde166eacb7310927b600fb3b6f0c1195435c99cca0d7f721a9ce60`, `wkwebview`, controller ready, detach PASS. Ad-hoc signature is only packaging preflight; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
@@ -67,8 +67,9 @@ P1-WP20 economic dedup/lifecycle contract was implemented in `5d691b9`; P1-WP21
 propagation in `056b1ca`; N01 exact provenance in `05e826d`; N02 exact mounted-DMG/
 WKWebView smoke in `cc0ad94`; H03 runtime degraded/offline boundary in `62921f7`;
 P1-WP22 U01 in `ea4e12c`; P1-WP23 U02 in `51ee968`; P1-WP24 U03 in `afedb70`;
-P1-WP25 U04 in `26751f7`; P1-WP26 U05 in `30dfcd7`; and H01 canonical
-persistence/recovery in `006e86e`. Their historical evidence records are archived.
+P1-WP25 U04 in `26751f7`; P1-WP26 U05 in `30dfcd7`; H01 canonical
+persistence/recovery in `006e86e`; and H02 schema upgrade/restore in `169c446`.
+Their historical evidence records are archived.
 
 The 2026-09-08 H01 Mac evidence used locked dependencies and clean temporary data
 directories: local CI was **MERGE READY**, with full backend **643**, frontend **67**,
@@ -86,13 +87,29 @@ executable SHA `90f3b06f9cde166eacb7310927b600fb3b6f0c1195435c99cca0d7f721a9ce60
 read-only mount, explicit executable, `wkwebview`, controller ready and detach PASS.
 `uv --offline` is dependency-preparation evidence only; the default runtime smoke
 still attempts the configured public market-data connection. H03 disabled/degraded
-tests cover the explicit no-network boundary. H01 process/recovery tests used only
-synthetic temporary data and no credentials/user data. Branch `npm audit` reported zero
-findings, while the GitHub default branch still exposes five open npm Dependabot
-alerts. Source identity conflicts, unknown position mode, incomplete lifecycle,
-funding/transfer schema, Windows/Linux host evidence, licensing, pilot and release-
-owner decisions remain boundaries; H04 trust-boundary work is not yet closed; no PnL,
-live execution or pilot claim was opened.
+tests cover the explicit no-network boundary. H01/H02 tests used only synthetic
+temporary data and no credentials/user data. Branch `npm audit` reported zero findings,
+while the GitHub default branch still exposes five open npm Dependabot alerts. Source
+identity conflicts, unknown position mode, incomplete lifecycle, funding/transfer
+schema, Windows/Linux host evidence, licensing, pilot and release-owner decisions
+remain boundaries; H04 trust-boundary work is not yet closed; no PnL, live execution
+or pilot claim was opened.
+
+Final H02 Mac evidence on source `ed689a0ba7fd571d176cb3dfc09ae9397dace298`:
+local-CI report SHA-256
+`4ad98b4fd3d6eb6f0cc2afb2b554402c8f8bb1ede35643a8d0065f30ec935580`, smoke report
+SHA-256 `91e1273b1f2a6052b4165bae822174b415c35244bfc5409abe0d2ab7b430d5ec`, full
+backend **651**, frontend **67**, i18n **560/560**, release truth, packaging preflight,
+arm64 PyInstaller, frozen native `wkwebview` smoke and provenance **COMPLETE**. Tracked
+source tree SHA `cf382072bb678f95286170fe3cfe0c2e8f886b546a707fa890c298c58e966c73`;
+local `.app` SHA `51d44e29faa675acfcd10878d5ef0dd11ddb66cf2da8553d52d28c18cba3b4df`;
+mounted executable SHA `c75201db4fe54ace8b06eb85d6315ed5695e5ae7219c6d7b60434cc955980173`.
+Exact read-only DMG smoke report SHA
+`da82507eda312bb6effc14acc2dbd2febf14109ab45175411593bad30105e1f2`; DMG SHA
+`0f53140163ba6526b611fbe7dff8b70425155ac1173e8c9801e140e4fd5c4fc8`; mount selected
+the DMG-contained executable, verified `wkwebview`/controller identity and detached
+cleanly. The smoke attempted the configured public Binance stream; it is not offline
+runtime evidence.
 
 Next handoff: H04 threat model and trust boundaries.
 
