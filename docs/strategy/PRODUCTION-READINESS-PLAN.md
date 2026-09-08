@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.21
+version: 1.0.22
 status: Proposed
 date: 2026-09-08
-reviewed_commit: f551b1f
+reviewed_commit: 3863288
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -356,9 +356,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     MAE/MFE read truth'i `f57da9d` ile, SettingsView portfolio-summary read truth'i
     `3fa98a9` ile, Charts/TradingViewChart historical read truth'i `dd0639b` ile,
     plugin registry/ModStore read truth'i `950af74` ile, unchanged-ledger integrity
-    verification cache'i `da9af9b` ile, projection verifier reuse'ı `2da9fe1` ile ve
-    post-write verifier connection release'i `f551b1f` ile eklendi. Safe-persona
-    görünür read listesi için bounded kanıt günceldir; cold 100k Evidence Pack
+    verification cache'i `da9af9b` ile, projection verifier reuse'ı `2da9fe1` ile,
+    post-write verifier connection release sınırı `f551b1f` ile ve ledger-only
+    fingerprint/shared verifier `3863288` ile eklendi. Safe-persona görünür read
+    listesi için bounded kanıt günceldir; cold 100k Evidence Pack
     planning target kararı açık kaldığı için paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
@@ -369,6 +370,28 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.22 — 2026-09-08
+
+- H07 ledger doğrulama cache sınırı `3863288` ile daraltıldı: cache anahtarı yalnız
+  append-only `evidence_events` state fingerprint'ine bağlıdır; projection-only
+  commit ledger verification cache'ini invalid etmez, ledger append'i eder. Projection
+  repository ve `TradeReadAdapter` aynı verifier'ı paylaşır; persistent SQLite
+  verifier bağlantısı tutulmadığı için apply sonrası WAL sayfası tutulmaz. Yeni schema,
+  event type, funding/transfer kapsamı veya üretim capability'si eklenmedi.
+- Red→green odak kanıtı H07 `20`, projection/H01 regression `41` test; full locked
+  local CI `MERGE READY`, backend `713` (2 warning), frontend `25/100`, i18n `608/608`,
+  Mac arm64 build/native WKWebView smoke ve exact disabled-market-data mounted DMG
+  smoke PASS oldu. Source `3863288095af43aaa8918d71394994593efb8822`; local CI report
+  SHA `f9a2e18620a68c3eb482c2e7412dc80de20beee96a925095e966d8f94068a382`; exact DMG
+  smoke report SHA `7fe0761f474ad72dcfb2fc907e3b2611c3607d31d42ec9fc883d7e43a9306d14`;
+  DMG SHA `5f84d80eea209167d52709fe1d1bf3da1ec8d54e848769933986e3f43fd85ccb`;
+  mounted executable SHA `ffc1fd0358d54bafc5f44b4e22b6622a00945a9369d1c2c778fcb7766327c438`.
+- Exact artifact-bound 100k benchmark report SHA
+  `35c20c31fdab0391f6a39d1ac06722b2e8b37d4c0ccaf3ee5e397d4fbe4c2987` ölçtü:
+  projection rebuild p95 `6316.4108 ms`, Evidence Pack p95 `4187.8654 ms`, export
+  p95 `344.4804 ms`, projection operation temporary disk `0 B`; cold Evidence Pack
+  `<2s` planning target karşılanmadı ve H07 `IMPLEMENTATION_REQUIRED` kaldı.
 
 ### 1.0.21 — 2026-09-08
 
