@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 2.1.0
+version: 2.2.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 3fa98a9
+baseline_commit: dd0639b
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -191,33 +191,43 @@ rollback garantisi olmadığı için iptal edilebilir gibi sunulmaz. Yeni endpoi
 funding/transfer event type, plugin capability, live execution veya AI order authority
 açılmadı.
 
+`dd0639b` ile core Charts/TradingViewChart historical OHLCV read'i bounded hale
+getirildi: response envelope ve her candle'ın timestamp/OHLCV finite/invariant shape'i
+strict doğrulanıyor; malformed/HTTP/empty yanıt chart veya empty success olarak
+gösterilmiyor. AbortSignal, kullanıcı cancel'i, timeout ayrımı,
+request-generation/stale-response guard ve unmount cleanup eklendi. Tarihsel candle'ın
+son kapanışı sahte event age ile `LIVE` tick'e yükseltilmiyor; böylece historical
+context ile live market data ayrımı korunuyor. Loading, cancelled, error ve retry
+state'leri görünürdür. Yeni connector, schema, live execution veya AI order authority
+açılmadı.
+
 Focused H07 backend suite `26 passed`; value-chain frontend boundary suite `20 passed`;
 dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
 `3 passed`; MAE/MFE focused suite `5 passed`; SettingsView focused suite `3 passed`;
-full backend suite `709 passed, 2 warnings`, full frontend `24` test dosyası ve
-`93` test PASS; i18n `605/605`.
+Charts focused suite `4 passed`; full backend suite `709 passed, 2 warnings`, full
+frontend `25` test dosyası ve `97` test PASS; i18n `608/608`.
 Locked local CI `MERGE READY` oldu.
 Current code baseline source commit tam SHA'sı
-`3fa98a9fc1aff483ad5f71193520000897d4abf0`, tracked source tree SHA-256'sı
-`cfaacddb84992358afc6d1eec153025c6faa2e69bd0382775f563bd39fb0f047`'dır.
+`dd0639b2a05ebc02f91c796e01629e904b494dc2`, tracked source tree SHA-256'sı
+`2f94c20602e3ae8ce8d676593fe7efdf0ffde0c08235190b5d23c3f817397b11`'dir.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `1435d19c74c5cebb02a27e7e651297c28088bbd1c2e82859689e51ed573dbaff`,
-native local smoke report SHA-256 `501a8f15a902e7f36f1a1470768ed094e0c4b3f8078cd1981ac4b23349b79cce`;
-local smoke executable SHA-256 `51c82fb2ae5a6a3ba7285684048d22c2e12b4702ce2d56cb27831426406e3155`
-ve `.app` artifact SHA-256 `fd5f40472ff89cc02bfa39b8412240cfa1aab2374cd635ac22f91f7eebaea7a6`.
+Local CI report SHA-256 `9377d2545d17b5ac1eb984ad4578c40fd0c31abd6016211f06ad1563d2a63b4a`,
+native local smoke report SHA-256 `cf22a95f5c8dcec696d2a9f27a09f8ce628812b6fd7cebe8e9cec5b3a86cb5a3`;
+local smoke executable SHA-256 `82c700e4decd1120c43aa3bffd321ab31dcdd7b1c59c5d1761a03a66e5032f37`
+ve `.app` artifact SHA-256 `240537a27685bbc571d96e42d700838f541c9b97548b92f7dac9b030928f92b1`.
 Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
 public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`4ee5a13e052c1973097d719f24fd0c2e34c9a7b8c3b7d5a7b39b63dc40f767da`, DMG
-SHA-256 `268d3a67ed682d5d9d2327611f1f6318b03f6fb495e93f761866463bc3c5a119`
+`96298f0ebfc357210459565d70e22915b66c9dab13e275eecbdd2644690a0d30`, DMG
+SHA-256 `cd50cb6225d5254dbcece7d87332912143820f8fd1d2fdd64bcc3f77253c8e04`
 ve mounted executable SHA-256
-`51c82fb2ae5a6a3ba7285684048d22c2e12b4702ce2d56cb27831426406e3155`'dir.
+`82c700e4decd1120c43aa3bffd321ab31dcdd7b1c59c5d1761a03a66e5032f37`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
