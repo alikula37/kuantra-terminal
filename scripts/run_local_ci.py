@@ -241,6 +241,18 @@ def main(argv: list[str] | None = None) -> int:
     steps.append(_run_step("compileall", _python_command("-m", "compileall", "-q", "backend"), env, 180))
     steps.append(_run_step("release-truth", _python_command("scripts/check_release_truth.py"), env, 120))
     steps.append(_run_step("packaging-integrity", _python_command("scripts/verify_packaging.py"), env, 120))
+    steps.append(
+        _run_step(
+            "supply-chain-audit",
+            _python_command(
+                "scripts/supply_chain_audit.py",
+                "--report",
+                str(ROOT / "dist" / "h05-supply-chain-report.json"),
+            ),
+            env,
+            180,
+        )
+    )
     steps.append(_run_step("backend-tests", _python_command("-m", "pytest", "backend/tests", "-q", "--tb=short"), env, 900))
 
     npm = _npm_command()

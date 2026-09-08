@@ -9,6 +9,7 @@ import os
 import argparse
 import json
 import logging
+import secrets
 from typing import List, Optional
 
 # Ensure app package is importable
@@ -73,7 +74,9 @@ def handle_vault_audit(args: argparse.Namespace):
     """Audits Stronghold Vault AES-256-GCM encryption enclave."""
     print("\n[+] Auditing Stronghold Vault & Secret Enclave...")
     test_key = "AUDIT_TEST_KEY"
-    test_secret = "INSTITUTIONAL_SECRET_PAYLOAD_99482"
+    # Generate an ephemeral canary at runtime; never embed a credential-like
+    # literal in the shipped executable or release source.
+    test_secret = secrets.token_urlsafe(24)
 
     stronghold_vault.store_secret(test_key, test_secret)
     retrieved = stronghold_vault.get_secret(test_key)
