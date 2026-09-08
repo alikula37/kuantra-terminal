@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 1.5.0
+version: 1.6.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 6748d96
+baseline_commit: 5137383
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -78,8 +78,9 @@ pakete eklenmeyecektir.
   coverage durumları fail-closed; canonical veri ve evidence lineage korunuyor.
   Dynamic budget abort/rollback import, correction, projection rebuild ve Evidence
   Pack sınırlarında; malformed/oversized input ve partial/unknown coverage
-  propagation alt sınırlarında bounded backend kanıtı vardır. Frontend cancellation
-  ve query mid-operation abort hâlâ açıktır.
+  propagation alt sınırlarında bounded backend kanıtı vardır. Legacy SQLite ve
+  coverage-ready typed projection query'lerinde mid-operation abort bounded olarak
+  uygulanmıştır; frontend cancellation/loading/error truth hâlâ açıktır.
 - [ ] Backend correctness/performance regression suite ve frontend loading/cancel/error
   truth testleri geçiyor; yeni capability veya live execution yolu açılmıyor.
 - [x] Aynı host ve aynı source/dataset girdisinde rapor snapshot/hash deterministik;
@@ -133,21 +134,46 @@ coverage summary, source'un açık `PARTIAL`, `UNKNOWN` veya `NOT_AVAILABLE` tra
 snapshot değerini compatibility row varlığıyla `COMPLETE`'e yükseltmiyor.
 Funding/transfer schema'sı ve ledger event type'ları değişmedi.
 
-Focused H07 suite `24 passed`; full backend suite `707 passed, 2 warnings`.
+`5137383` ile `SQLiteDriver.list_trades`, typed projection query'si ve
+`TradeReadAdapter` aynı cooperative `resource_check` boundary'sini taşıyor:
+query başında, her materialize edilen trade row öncesinde ve başarılı bitişte
+kontrol çalışıyor. Limit callback'i mid-stream hata verirse cursor/connection
+`finally` ile kapanıyor, partial list dışarı dönmüyor ve okuma yolu false-success
+üretmiyor. Legacy compatibility path ve exact-coverage typed projection path
+ayrı red testlerle doğrulandı; H07 benchmark query callback'i de aynı boundary'ye
+bağlandı. Bu read-only abort yeni schema, event type veya funding/transfer
+kapsamı eklemiyor.
+
+Focused H07 suite `26 passed`; full backend suite `709 passed, 2 warnings`.
 Frontend değişmedi: `19` test dosyası ve `71` test PASS; i18n `574/574`.
-Locked local CI `MERGE READY` oldu. Current source commit tam SHA'sı
-`6748d9681f1029700e68f9b719642da7df68a0ff`, tracked source tree SHA-256'sı
-`f9a425b15a37a4898c9b76c228926d72aaced4297c10e156972bcc053088c57e`'dir.
+Locked local CI `MERGE READY` oldu. Current code baseline source commit tam SHA'sı
+`513738312de7e0a5e4f2dddaa3c10eb22583c65a`, tracked source tree SHA-256'sı
+`401d3f3db75d6ec2cf34b87764b448a2633ba0d3d3a0e95c38f901256a02e87d`'dir.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `114dc11651cbfb8cc5ca055666014b117896bdfb596add5d616ac31c8a6d0753`,
-native local smoke report SHA-256 `fd230a63f45fe3ffd80d4db27fbd31f78b679d352b1f58dfb6eafab4a719e493`.
+Local CI report SHA-256 `8cf088277d58a8bc1dc74a7875f8e45e86ef345e228147cc969a4766c9554a79`,
+native local smoke report SHA-256 `bffae4ba001e8ca06a8462fa89743fea822606ed91de7367c3b6b575853c512a`.
 
-### Artifact-bağlı sentetik baseline
+Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
+`3424e0b2346eed7af03c6ca223492de3093cea21390bec83bf044ffce39201eb`, DMG
+SHA-256 `5f55202fc906bcfbc6c5933f2738f0a33512d3d3dd7cc0891c3ab1d6a01732b4`
+ve mounted executable SHA-256
+`f0c2e927d75cf45d3c50c9b45af344f7732b68fccb635bcd836bda45726ba544`'dir.
+DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
+WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
+ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
+notarization, Gatekeeper veya commercial distribution kanıtı değildir.
+
+### Önceki artifact-bağlı sentetik baseline
+
+Aşağıdaki 1k/10k/100k ölçümleri source `6748d96` üzerinde üretilmiş önceki
+non-release baseline'dır. `5137383` query abort paketi bu ölçüm sonuçlarını
+değiştiren bir veri/schema değişikliği yapmadı; yeni query abort doğrulaması
+focused/full test ve güncel Mac local-CI/DMG kanıtıyla ayrıca kaydedildi.
 
 1k/10k/100k raporu `/tmp/h07-6af4fd9-artifact-benchmark.json`, SHA-256
 `a65d1785c0d514dd2342e856aa137a7057ecf03468004ca5d7dc9f0f3c69ee13` ile; 1k
@@ -184,7 +210,7 @@ karşılanmıyor. H07 **IMPLEMENTATION_REQUIRED** kalır. Bu sonuç support limi
 production SLO veya “fast” ürün iddiası değildir; host ve workload varyansı ayrıca
 değerlendirilmelidir.
 
-### Mac artifact kanıtı
+### Önceki Mac artifact kanıtı
 
 `6748d96` source commit'i ile clean Mac arm64 build, native smoke ve exact read-only
 DMG smoke PASS oldu. DMG smoke `KUANTRA_MARKET_DATA_ENABLED=false` ile çalıştırıldı;
@@ -200,17 +226,17 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
 ### H07'nin halen açık teknik sınırları
 
 - Explicit RSS/disk budget abort semantics artık import, correction, projection
-  rebuild ve Evidence Pack assembly sınırlarında fail-closed/rollback olarak vardır.
-  Query için halen operation sonrası RSS/disk ölçümü vardır; mid-query budget abort
-  ayrı bir alt iştir.
+  rebuild, Evidence Pack assembly ve trade-list query sınırlarında fail-closed
+  olarak vardır. Query mid-operation abort legacy ve typed projection yollarında
+  test edilmiştir; bu read-only yol rollback gerektirmediği için partial list
+  döndürmeden connection'ı kapatır.
 - Grouped canonical batch için cooperative cancellation ve rollback kanıtı vardır;
   frontend AbortSignal/cancel durumu bu backend boundary'sine bağlanmış değildir.
 - Malformed/oversized input ve partial/unknown coverage için bounded backend red/
   green fixture ve fail-closed implementation tamamlandı: 10 yeni fixture PASS.
-- Query mid-operation budget abort ve frontend AbortSignal/loading/cancel/error
-  truth hâlâ açık; bu nedenle H07 tamamlanmış veya production-ready değildir.
+- Frontend AbortSignal/loading/cancel/error truth hâlâ açıktır; bu nedenle H07
+  tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı frontend loading/cancel/error truth ve query mid-operation
-budget abort sınırlarının ayrı red testlerle kapatılmasıdır.
-Bu sınırlar kapanmadan H07 tamamlanmış, production-ready veya desteklenen veri
-boyutu olarak işaretlenmeyecektir.
+Sonraki H07 adımı frontend loading/cancel/error truth sınırının ayrı red testlerle
+kapatılmasıdır. Bu sınır kapanmadan H07 tamamlanmış, production-ready veya
+desteklenen veri boyutu olarak işaretlenmeyecektir.

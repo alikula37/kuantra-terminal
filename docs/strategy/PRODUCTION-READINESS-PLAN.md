@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.11
+version: 1.0.12
 status: Proposed
 date: 2026-09-08
-reviewed_commit: a7b99b7
+reviewed_commit: 5137383
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -348,8 +348,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     production release adayı öncesi yeniden açılmaları zorunlu.
 16. H06: privacy/data-lifecycle ve credential availability boundary; bounded olarak
     tamamlandı `4270d33`/`a7b99b7`.
-17. H07: deterministik sentetik performance/resource-limit baseline'ı; sıradaki aktif
-    non-release paket.
+17. H07: deterministik sentetik performance/resource-limit baseline'ı; query
+    mid-operation abort backend sınırı `5137383` ile bounded olarak eklendi; frontend
+    loading/cancel/error truth açık kaldığı için paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -359,6 +360,15 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.12 — 2026-09-08
+
+- H07 query read path'i `5137383` ile bounded resource-check callback'i aldı:
+  legacy SQLite ve exact-coverage typed projection mid-operation limit aşımında
+  partial list döndürmeden fail-closed kapanıyor. 709 backend, 71 frontend, i18n
+  574/574 ve clean Mac arm64 local CI `MERGE READY`; exact read-only DMG/WKWebView
+  smoke PASS. Frontend loading/cancellation/error truth, 100k planning target'i,
+  signing/notarization ve commercial/release gates açık kaldı.
 
 ### 1.0.11 — 2026-09-08
 
