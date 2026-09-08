@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { apiFetch, apiUrl } from "../lib/backend";
 
 export interface PluginMetadata {
@@ -46,6 +46,50 @@ const PRODUCTION_PLUGIN_IDS = new Set<string>();
 const normalizePersona = (persona?: string | null): string =>
   SAFE_PERSONAS.has(persona || "") ? persona! : "kuantra_lite";
 
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
+
+const normalizePluginMetadata = (value: unknown): PluginMetadata | null => {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.plugin_id !== "string" || !candidate.plugin_id ||
+    typeof candidate.name !== "string" || !candidate.name ||
+    typeof candidate.version !== "string" || !candidate.version ||
+    typeof candidate.category !== "string" ||
+    typeof candidate.description !== "string" ||
+    typeof candidate.author !== "string" ||
+    !isStringArray(candidate.heavy_dependencies) ||
+    typeof candidate.is_active !== "boolean" ||
+    typeof candidate.ram_footprint_mb !== "number" || !Number.isFinite(candidate.ram_footprint_mb) || candidate.ram_footprint_mb < 0 ||
+    !isStringArray(candidate.persona_tags) ||
+    (candidate.router_prefix !== null && candidate.router_prefix !== undefined && typeof candidate.router_prefix !== "string")
+  ) return null;
+  return {
+    plugin_id: candidate.plugin_id,
+    name: candidate.name,
+    version: candidate.version,
+    category: candidate.category,
+    description: candidate.description,
+    author: candidate.author,
+    heavy_dependencies: candidate.heavy_dependencies,
+    router_prefix: typeof candidate.router_prefix === "string" ? candidate.router_prefix : undefined,
+    is_active: candidate.is_active,
+    ram_footprint_mb: candidate.ram_footprint_mb,
+    persona_tags: candidate.persona_tags,
+  };
+};
+
+const readInstalledPluginResponse = (value: unknown): { plugins: PluginMetadata[]; activePersona?: string } | null => {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  if (!Array.isArray(candidate.plugins)) return null;
+  const plugins = candidate.plugins.map(normalizePluginMetadata);
+  if (plugins.some((plugin) => plugin === null)) return null;
+  if (candidate.active_persona !== undefined && typeof candidate.active_persona !== "string") return null;
+  return { plugins: plugins as PluginMetadata[], activePersona: candidate.active_persona as string | undefined };
+};
+
 interface PluginRegistryContextType {
   plugins: PluginMetadata[];
   activePlugins: string[];
@@ -58,6 +102,7 @@ interface PluginRegistryContextType {
   togglePlugin: (pluginId: string, enable: boolean) => Promise<boolean>;
   applyPersona: (persona: string) => Promise<boolean>;
   refreshPlugins: () => Promise<void>;
+  cancelRefresh: () => void;
   registerContribution: (contribution: PluginContribution) => void;
   getSlotContributions: (slot: SlotType) => PluginContribution[];
 }
@@ -78,37 +123,63 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [contributions, setContributions] = useState<PluginContribution[]>([]);
+  const refreshControllerRef = useRef<AbortController | null>(null);
+  const refreshGenerationRef = useRef(0);
 
   const isLiteMode = activePersona === "lite" || activePersona === "kuantra_lite";
   const activePlugins = plugins.filter((p) => p.is_active).map((p) => p.plugin_id);
 
+  const cancelRefresh = useCallback(() => {
+    if (!refreshControllerRef.current) return;
+    refreshGenerationRef.current += 1;
+    refreshControllerRef.current.abort();
+    refreshControllerRef.current = null;
+    setLoading(false);
+    setError("Installed component registry request cancelled. No plugin capability is asserted.");
+  }, []);
+
   const fetchPlugins = useCallback(async () => {
+    refreshControllerRef.current?.abort();
+    const controller = new AbortController();
+    const generation = ++refreshGenerationRef.current;
+    refreshControllerRef.current = controller;
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      const res = await apiFetch(`${API_BASE()}/plugins/installed`);
+      const res = await apiFetch(`${API_BASE()}/plugins/installed`, { signal: controller.signal });
       if (!res.ok) {
         throw new Error(`Plugin registry returned HTTP ${res.status}`);
       }
 
-      const data = await res.json();
-      if (!data || !Array.isArray(data.plugins)) {
-        throw new Error("Plugin registry did not return an installed-component list");
-      }
+      const data = readInstalledPluginResponse(await res.json());
+      if (!data) throw new Error("Installed component registry response was malformed");
+      if (generation !== refreshGenerationRef.current || controller.signal.aborted) return;
 
       setPlugins(data.plugins);
-      setActivePersona(normalizePersona(data.active_persona || localStorage.getItem("kuantra_selected_persona")));
+      setActivePersona(normalizePersona(data.activePersona || localStorage.getItem("kuantra_selected_persona")));
       setError(null);
     } catch (err: any) {
+      if (generation !== refreshGenerationRef.current || controller.signal.aborted) return;
       console.warn("[PluginRegistry] Backend unavailable; no plugin capability is asserted:", err.message);
       setPlugins([]);
-      setError("Installed component registry is unavailable. No plugin capability is asserted.");
+      setError(err instanceof Error && err.message === "Installed component registry response was malformed"
+        ? err.message
+        : "Installed component registry is unavailable. No plugin capability is asserted.");
     } finally {
-      setLoading(false);
+      if (generation === refreshGenerationRef.current) {
+        refreshControllerRef.current = null;
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchPlugins();
+    void fetchPlugins();
+    return () => {
+      refreshGenerationRef.current += 1;
+      refreshControllerRef.current?.abort();
+      refreshControllerRef.current = null;
+    };
   }, [fetchPlugins]);
 
   const isPluginActive = useCallback(
@@ -202,6 +273,7 @@ export const PluginRegistryProvider: React.FC<{ children: ReactNode }> = ({ chil
         togglePlugin,
         applyPersona,
         refreshPlugins: fetchPlugins,
+        cancelRefresh,
         registerContribution,
         getSlotContributions
       }}

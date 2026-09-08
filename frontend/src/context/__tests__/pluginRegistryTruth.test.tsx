@@ -17,8 +17,38 @@ import {
 } from "../PluginRegistryContext";
 
 const Probe = () => {
-  const { plugins, error } = usePluginRegistry();
-  return <div>{`${plugins.length}|${error || "NO_ERROR"}`}</div>;
+  const { plugins, error, loading, cancelRefresh } = usePluginRegistry();
+  return (
+    <div>
+      <span>{`${plugins.length}|${error || "NO_ERROR"}`}</span>
+      {loading && (
+        <button data-testid="plugin-registry-cancel" onClick={cancelRefresh}>
+          Cancel
+        </button>
+      )}
+    </div>
+  );
+};
+
+const response = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  return { promise: new Promise<T>((done) => { resolve = done; }), resolve };
+};
+
+const validPlugin = {
+  plugin_id: "plugin_quant_shield",
+  name: "Quant Shield",
+  version: "1.0.0",
+  category: "Analytics",
+  description: "Deterministic analytics",
+  author: "Kuantra",
+  heavy_dependencies: [],
+  router_prefix: null,
+  is_active: false,
+  ram_footprint_mb: 5,
+  persona_tags: ["quant"],
 };
 
 const flush = async () => {
@@ -54,6 +84,36 @@ describe("plugin registry truth boundary", () => {
 
     expect(host.textContent).toContain("0|Installed component registry is unavailable");
     expect(host.textContent).not.toContain("plugin_ai_swarm");
+  });
+
+  it("cancels a pending registry read and ignores a late installed-plugin payload", async () => {
+    const pending = deferred<Response>();
+    let requestSignal: AbortSignal | undefined;
+    mocks.apiFetch.mockImplementation((_path: string, init?: RequestInit) => {
+      requestSignal = init?.signal;
+      return pending.promise;
+    });
+
+    await act(async () => root.render(<PluginRegistryProvider><Probe /></PluginRegistryProvider>));
+    await flush();
+    await act(async () => (host.querySelector("[data-testid=plugin-registry-cancel]") as HTMLButtonElement).click());
+    await flush();
+
+    expect(requestSignal?.aborted).toBe(true);
+    expect(host.textContent).toContain("registry request cancelled");
+    pending.resolve(response({ plugins: [validPlugin], active_persona: "kuantra_lite" }));
+    await flush();
+    expect(host.textContent).toContain("0|");
+    expect(host.textContent).not.toContain("Quant Shield");
+  });
+
+  it("rejects a malformed installed-plugin response without partial capability", async () => {
+    mocks.apiFetch.mockResolvedValue(response({ plugins: [{}], active_persona: "kuantra_lite" }));
+
+    await act(async () => root.render(<PluginRegistryProvider><Probe /></PluginRegistryProvider>));
+    await flush();
+
+    expect(host.textContent).toContain("0|Installed component registry response was malformed");
   });
 
   it("exposes only Lite and bounded Quant personas, with no order-flow activation claim", () => {

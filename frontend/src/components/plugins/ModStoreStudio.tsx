@@ -11,7 +11,7 @@ import {
 import { usePluginRegistry } from "../../context/PluginRegistryContext";
 
 export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = ({ onOpenPersonaSelector }) => {
-  const { plugins, activePersona, loading, error, refreshPlugins } = usePluginRegistry();
+  const { plugins, activePersona, loading, error, refreshPlugins, cancelRefresh } = usePluginRegistry();
   const [activeTab, setActiveTab] = useState<"installed" | "telemetry">("installed");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -56,7 +56,7 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
           )}
 
           <button
-            onClick={() => refreshPlugins()}
+            onClick={() => void refreshPlugins()}
             className="p-2 rounded-lg bg-[#151c2c] hover:bg-[#1a2337] border border-surface-border text-slate-300 hover:text-white transition"
             title="Reload Plugin Registry"
           >
@@ -109,9 +109,20 @@ export const ModStoreStudio: React.FC<{ onOpenPersonaSelector?: () => void }> = 
 
       {/* Main Content Body */}
       <div className="flex-1 overflow-y-auto p-6">
+        {loading && (
+          <div role="status" data-testid="plugin-registry-loading" className="mb-4 rounded-lg border border-surface-border bg-slate-900/50 p-3 text-xs text-slate-300 flex items-center justify-between">
+            <span>Installed component registry is loading. No capability is asserted until the response is verified.</span>
+            <button type="button" data-testid="plugin-registry-cancel" onClick={cancelRefresh} className="ml-3 px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800">
+              Cancel
+            </button>
+          </div>
+        )}
         {error && (
-          <div role="alert" className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-100">
+          <div role="alert" data-testid="plugin-registry-error" className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-100 flex items-center justify-between">
             {error}
+            <button type="button" data-testid="plugin-registry-retry" onClick={() => void refreshPlugins()} className="ml-3 px-2 py-1 rounded border border-amber-500/40 text-amber-100 hover:bg-amber-500/20">
+              Retry
+            </button>
           </div>
         )}
 
