@@ -14,10 +14,17 @@ otomatik sıradaki iş değildir. Tarihsel `Active` kayıtları bütün acceptan
 tamamlandı anlamına gelmez; `Verified` yalnız kayıtlı commit/platform kapsamındadır.
 Gerçek kullanıcı olmadığından Faz 1/2 kullanıcı exit kriterleri henüz karşılanmadı.
 
+Production'a kadar ayrıntılı teslimat/bağımlılık planı:
+[KPR-001 — Production Readiness Plan](PRODUCTION-READINESS-PLAN.md).
+Bu belge `Proposed` durumundadır: G0–G7 kapıları, support scope önerileri, efor ve
+operasyon planı tanımlar; mevcut ADR'leri veya release onayını değiştirmez. İlk
+`Ready` WP hâlâ P1-WP16'dır; diğer plan satırları ayrı bounded WP'ye dönüştürülür.
+
 | Kimlik | Belge | Durum | Sürüm | Son güncelleme |
 |---|---|---:|---:|---:|
 | KPS-001 | [Ürün ve Mimari Stratejisi](./KUANTRA-STRATEGY-001.md) | Accepted | 1.1.0 | 2026-09-08 |
 | KRR-001 | [Ürün doğruluğu ve kalan geliştirme denetimi](./ROADMAP-REVIEW-2026-09-08.md) | Accepted | 1.0.0 | 2026-09-08 |
+| KPR-001 | [İlk production sürümüne kadar geliştirme planı](./PRODUCTION-READINESS-PLAN.md) | Proposed | 1.0.0 | 2026-09-08 |
 | P1-WP16 | [Read-Only Snapshot Completeness](./work-packages/P1-WP16-read-only-snapshot-completeness.md) | Ready | 1.0.0 | 2026-09-08 |
 | KDG-001 | [Geliştirme Yönetişimi](./DEVELOPMENT-GOVERNANCE.md) | Accepted | 1.0.1 | 2026-09-08 |
 | KDG-002 | [Yerel CI ve merge gate politikası](./LOCAL-CI-POLICY.md) | Accepted | 1.1.1 | 2026-09-08 |
@@ -109,6 +116,9 @@ Gerçek kullanıcı olmadığından Faz 1/2 kullanıcı exit kriterleri henüz k
 ## Değişiklik geçmişi
 
 ### 2026-09-08 — Roadmap denetimi
+
+- KPR-001: production kapıları, sıralı doğruluk/UX/hardening paketleri, pilot,
+  release/operasyon ve koşullu sonraki fazlar plan teklifi olarak eklendi.
 
 - KRR-001 ve P1-WP16 ile P1 ürün değerine geri bağlanan kalan sıra ve doğruluk riskleri kaydedildi.
 - KPS-001 1.1.0: tarihsel/güncel kanıt ve koşullu yatırım sınırları düzeltildi.
