@@ -102,3 +102,29 @@ it("keeps the error recoverable with an explicit retry", async () => {
   await flush();
   expect(host.querySelector("[data-testid=reconciliation-inbox-empty]")).not.toBeNull();
 });
+
+it("cancels a pending inbox load without showing an empty success state", async () => {
+  let resolveInbox!: (value: Response) => void;
+  let requestSignal: AbortSignal | undefined;
+  const pending = new Promise<Response>((resolve) => { resolveInbox = resolve; });
+  mocks.apiFetch.mockImplementation((path: string, init?: RequestInit) => {
+    requestSignal = init?.signal;
+    return pending;
+  });
+
+  await act(async () => root.render(<ReconciliationInbox onClose={vi.fn()} />));
+  await flush();
+
+  const cancel = host.querySelector("[data-testid=reconciliation-inbox-cancel]") as HTMLButtonElement;
+  expect(cancel).toBeTruthy();
+  await act(async () => cancel.click());
+  await flush();
+
+  expect(requestSignal?.aborted).toBe(true);
+  expect(host.querySelector("[data-testid=reconciliation-inbox-cancelled]")).not.toBeNull();
+  expect(host.querySelector("[data-testid=reconciliation-inbox-empty]")).toBeNull();
+
+  resolveInbox(response({ status: "UNRESOLVED", count: 0, items: [] }));
+  await flush();
+  expect(host.querySelector("[data-testid=reconciliation-inbox-empty]")).toBeNull();
+});

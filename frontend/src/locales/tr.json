@@ -406,6 +406,8 @@
     "close": "Reconciliation gelen kutusunu kapat",
     "loading": "Kaynağa bağlı incelemeler yükleniyor...",
     "error": "Reconciliation gelen kutusu güvenli şekilde yüklenemedi.",
+    "cancel_load": "Yüklemeyi iptal et",
+    "cancelled": "Yükleme iptal edildi. Reconciliation sonucu gösterilmiyor.",
     "retry": "Tekrar dene",
     "decision_error": "Karar güvenli şekilde kaydedilemedi.",
     "empty": "Çözülmemiş reconciliation incelemesi yok.",
@@ -438,6 +440,8 @@
     "as_of_label": "As-of (UTC)",
     "load": "İncelemeyi yükle",
     "loading": "Deterministik inceleme yükleniyor...",
+    "cancel_load": "Yüklemeyi iptal et",
+    "cancelled": "Yükleme iptal edildi. İnceleme sonucu gösterilmiyor.",
     "error": "Haftalık inceleme güvenli şekilde yüklenemedi.",
     "retry": "Tekrar dene",
     "record_complete": "İncelemenin tamamlandığını kaydet",
@@ -476,7 +480,9 @@
     "html_export": "HTML",
     "export_ready": "{format} export hazır.",
     "export_failed": "Export güvenli biçimde başarısız oldu.",
-    "retry": "Tekrar dene"
+    "retry": "Tekrar dene",
+    "cancel_load": "Yüklemeyi iptal et",
+    "cancelled": "Yükleme iptal edildi. Evidence Pack sonucu gösterilmiyor."
   },
   "analytics": {
     "title": "KANTİTATİF PERFORMANS SKOR KARTI",

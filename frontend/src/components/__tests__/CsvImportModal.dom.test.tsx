@@ -88,3 +88,72 @@ it("shows partial import as review-required instead of a success-only state", as
   expect(host.textContent).not.toContain("csv_import.result_success_msg");
 });
 
+it("aborts a pending preview when the modal cancel action is used", async () => {
+  let resolvePreview!: (value: Response) => void;
+  let requestSignal: AbortSignal | undefined;
+  const pending = new Promise<Response>((resolve) => { resolvePreview = resolve; });
+  const onClose = vi.fn();
+  mocks.apiFetch.mockImplementation((_path: string, init?: RequestInit) => {
+    requestSignal = init?.signal;
+    return pending;
+  });
+
+  await act(async () => root.render(<CsvImportModal isOpen onClose={onClose} />));
+  const input = host.querySelector("input[type=file]") as HTMLInputElement;
+  const file = new File(["symbol,side\nBTCUSDT,BUY\n"], "pending.csv", { type: "text/csv" });
+  await act(async () => {
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await flush();
+
+  const cancel = host.querySelector("[data-testid=csv-import-cancel]") as HTMLButtonElement;
+  expect(cancel).toBeTruthy();
+  await act(async () => cancel.click());
+  await flush();
+
+  expect(requestSignal?.aborted).toBe(true);
+  expect(onClose).toHaveBeenCalledTimes(1);
+  resolvePreview(response({ detected_format: "GENERIC_KUANTRA", total_rows_parsed: 1, preview_trades: [] }));
+  await flush();
+  expect(host.textContent).not.toContain("csv_import.result_success_msg");
+});
+
+it("keeps the modal close action disabled while an import mutation is pending", async () => {
+  let resolveImport!: (value: Response) => void;
+  const pendingImport = new Promise<Response>((resolve) => { resolveImport = resolve; });
+  const onClose = vi.fn();
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path === "/api/v1/journal/preview-csv") {
+      return Promise.resolve(response({
+        detected_format: "GENERIC_KUANTRA",
+        total_rows_parsed: 1,
+        preview_trades: [{ symbol: "BTCUSDT", side: "BUY", entry_price: 100, qty: 1, pnl: 1, entry_time: "2026-09-08T10:00:00Z" }],
+        import_review: { status: "READY", decision: "READY", coverage: { status: "COMPLETE" } },
+      }));
+    }
+    if (path === "/api/v1/journal/import-csv") return pendingImport;
+    return Promise.resolve(response([]));
+  });
+
+  await act(async () => root.render(<CsvImportModal isOpen onClose={onClose} />));
+  const input = host.querySelector("input[type=file]") as HTMLInputElement;
+  const file = new File(["symbol,side\nBTCUSDT,BUY\n"], "pending-import.csv", { type: "text/csv" });
+  await act(async () => {
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await flush();
+
+  const importButton = Array.from(host.querySelectorAll("button")).find((button) => button.textContent?.includes("Import 1 Trades"));
+  expect(importButton).toBeTruthy();
+  await act(async () => importButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+  await flush();
+
+  const cancel = host.querySelector("[data-testid=csv-import-cancel]") as HTMLButtonElement;
+  expect(cancel.disabled).toBe(true);
+  expect(onClose).not.toHaveBeenCalled();
+
+  resolveImport(response({ success: true, imported: 1, duplicates_skipped: 0, errors: [], message: "stored" }));
+  await flush();
+});

@@ -132,6 +132,33 @@ it("keeps a failed Evidence Pack request recoverable", async () => {
   expect(host.textContent).toContain("Verified chain");
 });
 
+it("lets the user cancel a pending Evidence Pack load without showing partial success", async () => {
+  let resolvePack!: (value: Response) => void;
+  let requestSignal: AbortSignal | undefined;
+  const pending = new Promise<Response>((resolve) => { resolvePack = resolve; });
+  mocks.apiFetch.mockImplementation((path: string, init?: RequestInit) => {
+    if (path === "/api/v1/settings") return Promise.resolve(response({ locale: "en" }));
+    requestSignal = init?.signal;
+    return pending;
+  });
+
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  const cancel = host.querySelector("[data-testid=trade-evidence-cancel]") as HTMLButtonElement;
+  expect(cancel).toBeTruthy();
+  await act(async () => cancel.click());
+  await flush();
+
+  expect(requestSignal?.aborted).toBe(true);
+  expect(host.querySelector("[data-testid=trade-evidence-cancelled]")).not.toBeNull();
+  expect(host.textContent).not.toContain("Verified chain");
+
+  resolvePack(response(basePack));
+  await flush();
+  expect(host.textContent).not.toContain("Verified chain");
+});
+
 it("renders explicit coverage, applicable rule provenance, snapshot identity, and CSV export", async () => {
   mockPanelResponse({
     ...basePack,

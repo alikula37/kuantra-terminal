@@ -71,11 +71,18 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [decisionMessage, setDecisionMessage] = useState<string | null>(null);
+  const loadControllerRef = useRef<AbortController | null>(null);
+  const [cancelled, setCancelled] = useState(false);
 
   const loadReview = async () => {
+    loadControllerRef.current?.abort();
+    const controller = new AbortController();
+    loadControllerRef.current = controller;
     setLoading(true);
     setError(null);
     setDecisionMessage(null);
+    setCancelled(false);
+    setReview(null);
     const query = new URLSearchParams({
       period_start: periodStart,
       period_end: periodEnd,
@@ -83,7 +90,7 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
       as_of_utc: asOfUtc,
     });
     try {
-      const response = await apiFetch(apiUrl(`/api/v1/reviews/weekly?${query.toString()}`));
+      const response = await apiFetch(apiUrl(`/api/v1/reviews/weekly?${query.toString()}`), { signal: controller.signal });
       if (!response.ok) {
         let detail = t("weekly_review.error");
         try {
@@ -94,24 +101,47 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
         }
         throw new Error(detail);
       }
-      setReview(await response.json() as WeeklyReview);
+      const nextReview = await response.json() as WeeklyReview;
+      if (loadControllerRef.current === controller && !controller.signal.aborted) setReview(nextReview);
     } catch (reason: unknown) {
-      setReview(null);
-      setError(reason instanceof Error ? reason.message : t("weekly_review.error"));
+      if (loadControllerRef.current === controller && !controller.signal.aborted) {
+        setCancelled(false);
+        setReview(null);
+        setError(reason instanceof Error ? reason.message : t("weekly_review.error"));
+      }
     } finally {
-      setLoading(false);
+      if (loadControllerRef.current === controller) {
+        loadControllerRef.current = null;
+        if (!controller.signal.aborted) setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     void loadReview();
+    return () => {
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
   }, []);
+
+  const cancelLoad = () => {
+    const controller = loadControllerRef.current;
+    if (!controller) return;
+    controller.abort();
+    loadControllerRef.current = null;
+    setLoading(false);
+    setReview(null);
+    setCancelled(true);
+    setError(t("weekly_review.cancelled"));
+  };
 
   const recordDecision = async (decision: "COMPLETE" | "REOPEN") => {
     if (!review) return;
     setSaving(true);
     setError(null);
     setDecisionMessage(null);
+    setCancelled(false);
     try {
       const response = await apiFetch(apiUrl("/api/v1/reviews/weekly/decision"), {
         method: "POST",
@@ -184,8 +214,8 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
           </div>
         </form>
 
-        {loading && <div className="p-8 text-center text-slate-400 text-xs">{t("weekly_review.loading")}</div>}
-        {!loading && error && <div role="alert" className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2"><XCircle className="w-4 h-4 shrink-0" /><div className="flex-1 space-y-2"><span className="block break-words">{error}</span><button type="button" data-testid="weekly-review-retry" onClick={() => void loadReview()} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("weekly_review.retry")}</button></div></div>}
+        {loading && <div role="status" className="p-8 text-center text-slate-400 text-xs space-y-3"><span className="block">{t("weekly_review.loading")}</span><button type="button" data-testid="weekly-review-cancel" onClick={cancelLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("weekly_review.cancel_load")}</button></div>}
+        {!loading && error && <div role="alert" data-testid={cancelled ? "weekly-review-cancelled" : undefined} className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2"><XCircle className="w-4 h-4 shrink-0" /><div className="flex-1 space-y-2"><span className="block break-words">{error}</span><button type="button" data-testid="weekly-review-retry" onClick={() => void loadReview()} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("weekly_review.retry")}</button></div></div>}
 
         {!loading && !error && review && (
           <div className="px-4 pb-4 space-y-4">

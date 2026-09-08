@@ -83,11 +83,15 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
   const [exporting, setExporting] = useState<"json" | "html" | "csv" | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const [cancelled, setCancelled] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
+    requestControllerRef.current = controller;
     setLoading(true);
     setError(null);
+    setCancelled(false);
     setPack(null);
     apiFetch(apiUrl(`/api/v1/trades/${encodeURIComponent(tradeId)}/evidence`), { signal: controller.signal })
       .then(async (response) => {
@@ -104,18 +108,36 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
         return response.json() as Promise<TradeEvidencePack>;
       })
       .then((data) => {
-        if (!controller.signal.aborted) setPack(data);
+        if (requestControllerRef.current === controller && !controller.signal.aborted) setPack(data);
       })
       .catch((reason: unknown) => {
-        if (!controller.signal.aborted) {
+        if (requestControllerRef.current === controller && !controller.signal.aborted) {
+          setCancelled(false);
           setError(reason instanceof Error ? reason.message : "Evidence Pack could not be loaded.");
         }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (requestControllerRef.current === controller) {
+          requestControllerRef.current = null;
+          if (!controller.signal.aborted) setLoading(false);
+        }
       });
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (requestControllerRef.current === controller) requestControllerRef.current = null;
+    };
   }, [tradeId, retryNonce]);
+
+  const cancelLoad = () => {
+    const controller = requestControllerRef.current;
+    if (!controller) return;
+    controller.abort();
+    requestControllerRef.current = null;
+    setLoading(false);
+    setPack(null);
+    setCancelled(true);
+    setError(t("evidence_pack.cancelled"));
+  };
 
   const source = useMemo(() => (pack ? sourceLabel(pack) : null), [pack]);
   const ledgerVerified = Boolean(pack?.ledger_integrity.valid && pack.ledger_integrity.checked_events > 0);
@@ -171,9 +193,9 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
           </button>
         </div>
 
-        {loading && <div className="p-8 text-center text-slate-400 text-xs">Loading source-linked evidence…</div>}
+        {loading && <div role="status" className="p-8 text-center text-slate-400 text-xs space-y-3"><span className="block">Loading source-linked evidence…</span><button type="button" data-testid="trade-evidence-cancel" onClick={cancelLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("evidence_pack.cancel_load")}</button></div>}
         {!loading && error && (
-          <div role="alert" className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2">
+          <div role="alert" data-testid={cancelled ? "trade-evidence-cancelled" : undefined} className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2">
             <XCircle className="w-4 h-4 shrink-0" />
             <div className="flex-1 space-y-2"><span className="block break-words">{error}</span><button type="button" data-testid="trade-evidence-retry" onClick={() => setRetryNonce((current) => current + 1)} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("evidence_pack.retry")}</button></div>
           </div>

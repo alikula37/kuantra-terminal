@@ -108,6 +108,33 @@ it("offers a bounded retry after a review request failure", async () => {
   expect(host.textContent).toContain("LIMITED");
 });
 
+it("cancels a pending review load without showing stale or successful review data", async () => {
+  let resolveReview!: (value: Response) => void;
+  let requestSignal: AbortSignal | undefined;
+  const pending = new Promise<Response>((resolve) => { resolveReview = resolve; });
+  mocks.apiFetch.mockImplementation((path: string, init?: RequestInit) => {
+    if (path === "/api/v1/settings") return Promise.resolve(response({ locale: "en" }));
+    requestSignal = init?.signal;
+    return pending;
+  });
+
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  const cancel = host.querySelector("[data-testid=weekly-review-cancel]") as HTMLButtonElement;
+  expect(cancel).toBeTruthy();
+  await act(async () => cancel.click());
+  await flush();
+
+  expect(requestSignal?.aborted).toBe(true);
+  expect(host.querySelector("[data-testid=weekly-review-cancelled]")).not.toBeNull();
+  expect(host.textContent).not.toContain("LIMITED");
+
+  resolveReview(response(review));
+  await flush();
+  expect(host.textContent).not.toContain("LIMITED");
+});
+
 it("formats numeric counts and keeps long snapshot identifiers bounded", async () => {
   mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(
     path === "/api/v1/settings" ? response({ locale: "en" }) : response(review),

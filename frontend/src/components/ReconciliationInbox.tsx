@@ -53,23 +53,59 @@ export const ReconciliationInbox: React.FC<ReconciliationInboxProps> = ({ onClos
   const [correctionReviewId, setCorrectionReviewId] = useState<string | null>(null);
   const [correctionValues, setCorrectionValues] = useState<Record<string, string>>({});
   const [decisionNotes, setDecisionNotes] = useState<Record<string, string>>({});
+  const loadControllerRef = useRef<AbortController | null>(null);
+  const [cancelled, setCancelled] = useState(false);
 
   const loadItems = () => {
+    loadControllerRef.current?.abort();
+    const controller = new AbortController();
+    loadControllerRef.current = controller;
     setLoading(true);
     setError(null);
-    apiFetch(apiUrl("/api/v1/reconciliation/inbox?status=UNRESOLVED&limit=100"))
+    setCancelled(false);
+    setItems([]);
+    apiFetch(apiUrl("/api/v1/reconciliation/inbox?status=UNRESOLVED&limit=100"), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(t("reconciliation_inbox.error"));
         return response.json() as Promise<{ items?: ReconciliationInboxItem[] }>;
       })
-      .then((payload) => setItems(Array.isArray(payload.items) ? payload.items : []))
-      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : t("reconciliation_inbox.error")))
-      .finally(() => setLoading(false));
+      .then((payload) => {
+        if (loadControllerRef.current === controller && !controller.signal.aborted) {
+          setItems(Array.isArray(payload.items) ? payload.items : []);
+        }
+      })
+      .catch((reason: unknown) => {
+        if (loadControllerRef.current === controller && !controller.signal.aborted) {
+          setCancelled(false);
+          setError(reason instanceof Error ? reason.message : t("reconciliation_inbox.error"));
+        }
+      })
+      .finally(() => {
+        if (loadControllerRef.current === controller) {
+          loadControllerRef.current = null;
+          if (!controller.signal.aborted) setLoading(false);
+        }
+      });
   };
 
   useEffect(() => {
     loadItems();
+    return () => {
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
   }, []);
+
+  const cancelLoad = () => {
+    const controller = loadControllerRef.current;
+    if (!controller) return;
+    controller.abort();
+    loadControllerRef.current = null;
+    setLoading(false);
+    setItems([]);
+    setCancelled(true);
+    setError(t("reconciliation_inbox.cancelled"));
+  };
 
   const recordDecision = async (
     item: ReconciliationInboxItem,
@@ -136,9 +172,9 @@ export const ReconciliationInbox: React.FC<ReconciliationInboxProps> = ({ onClos
           {onClose && <button ref={closeRef} type="button" onClick={onClose} aria-label={t("reconciliation_inbox.close")} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><X className="w-4 h-4" /></button>}
         </div>
 
-        {loading && <div className="p-8 text-center text-slate-400 text-xs">{t("reconciliation_inbox.loading")}</div>}
+        {loading && <div role="status" className="p-8 text-center text-slate-400 text-xs space-y-3"><span className="block">{t("reconciliation_inbox.loading")}</span><button type="button" data-testid="reconciliation-inbox-cancel" onClick={cancelLoad} className="px-2 py-1.5 rounded border border-surface-border text-slate-300 font-bold hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("reconciliation_inbox.cancel_load")}</button></div>}
         {!loading && error && (
-          <div role="alert" className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2">
+          <div role="alert" data-testid={cancelled ? "reconciliation-inbox-cancelled" : undefined} className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2">
             <XCircle className="w-4 h-4 shrink-0" /><div className="flex-1 space-y-2"><span className="block break-words">{error}</span><button type="button" data-testid="reconciliation-inbox-retry" onClick={loadItems} className="px-2 py-1.5 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("reconciliation_inbox.retry")}</button></div>
           </div>
         )}

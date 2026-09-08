@@ -406,6 +406,8 @@
     "close": "Reconciliation-Inbox schließen",
     "loading": "Quellverknüpfte Prüfungen werden geladen...",
     "error": "Die Reconciliation-Inbox konnte nicht sicher geladen werden.",
+    "cancel_load": "Laden abbrechen",
+    "cancelled": "Laden abgebrochen. Es wird kein Reconciliation-Ergebnis angezeigt.",
     "retry": "Erneut versuchen",
     "decision_error": "Die Entscheidung konnte nicht sicher gespeichert werden.",
     "empty": "Keine offenen Reconciliation-Prüfungen.",
@@ -438,6 +440,8 @@
     "as_of_label": "As-of (UTC)",
     "load": "Prüfung laden",
     "loading": "Deterministische Prüfung wird geladen...",
+    "cancel_load": "Laden abbrechen",
+    "cancelled": "Laden abgebrochen. Es wird kein Prüfungsergebnis angezeigt.",
     "error": "Die wöchentliche Prüfung konnte nicht sicher geladen werden.",
     "retry": "Erneut versuchen",
     "record_complete": "Prüfungsabschluss speichern",
@@ -476,7 +480,9 @@
     "html_export": "HTML",
     "export_ready": "{format}-Export bereit.",
     "export_failed": "Export wurde sicher abgebrochen.",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "cancel_load": "Laden abbrechen",
+    "cancelled": "Laden abgebrochen. Es wird kein Evidence-Pack-Ergebnis angezeigt."
   },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE-SCORECARD",

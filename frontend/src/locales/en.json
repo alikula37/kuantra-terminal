@@ -406,6 +406,8 @@
     "close": "Close reconciliation inbox",
     "loading": "Loading source-linked reviews...",
     "error": "Reconciliation inbox could not be loaded safely.",
+    "cancel_load": "Cancel loading",
+    "cancelled": "Loading was cancelled. No reconciliation result is shown.",
     "retry": "Retry",
     "decision_error": "Decision could not be recorded safely.",
     "empty": "No unresolved reconciliation reviews.",
@@ -438,6 +440,8 @@
     "as_of_label": "As-of (UTC)",
     "load": "Load review",
     "loading": "Loading deterministic review...",
+    "cancel_load": "Cancel loading",
+    "cancelled": "Loading was cancelled. No review result is shown.",
     "error": "Weekly review could not be loaded safely.",
     "retry": "Retry",
     "record_complete": "Record review completion",
@@ -476,7 +480,9 @@
     "html_export": "HTML",
     "export_ready": "{format} export ready.",
     "export_failed": "Export failed safely.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "cancel_load": "Cancel loading",
+    "cancelled": "Loading was cancelled. No Evidence Pack result is shown."
   },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE SCORECARD",

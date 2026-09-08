@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Upload, FileText, CheckCircle2, AlertTriangle, Download, X, RefreshCw } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
 import { useTradeStore } from "../../stores/tradeStore";
@@ -27,6 +27,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   const { t } = useTranslation();
   const { setTrades } = useTradeStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewControllerRef = useRef<AbortController | null>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [detectedFormat, setDetectedFormat] = useState<string | null>(null);
@@ -46,9 +47,22 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (!isOpen) {
+      previewControllerRef.current?.abort();
+      previewControllerRef.current = null;
+    }
+    return () => {
+      previewControllerRef.current?.abort();
+      previewControllerRef.current = null;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const resetState = () => {
+    previewControllerRef.current?.abort();
+    previewControllerRef.current = null;
     setSelectedFile(null);
     setDetectedFormat(null);
     setPreviewTrades([]);
@@ -62,11 +76,14 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   };
 
   const handleClose = () => {
+    if (isImporting) return;
     resetState();
     onClose();
   };
 
   const handleFileChange = async (file: File) => {
+    previewControllerRef.current?.abort();
+    previewControllerRef.current = null;
     if (!file.name.endsWith(".csv") && !file.name.endsWith(".txt")) {
       setErrorMessage(t("csv_import.error_invalid_format"));
       return;
@@ -76,6 +93,8 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
     setErrorMessage(null);
     setImportResult(null);
     setIsLoadingPreview(true);
+    const controller = new AbortController();
+    previewControllerRef.current = controller;
 
     try {
       const formData = new FormData();
@@ -84,6 +103,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
       const res = await apiFetch(apiUrl("/api/v1/journal/preview-csv"), {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -92,15 +112,22 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
       }
 
       const data = await res.json();
-      setDetectedFormat(data.detected_format);
-      setPreviewTrades(data.preview_trades || []);
-      setTotalRows(data.total_rows_parsed || 0);
-      setPreviewReview(data.import_review || null);
+      if (previewControllerRef.current === controller && !controller.signal.aborted) {
+        setDetectedFormat(data.detected_format);
+        setPreviewTrades(data.preview_trades || []);
+        setTotalRows(data.total_rows_parsed || 0);
+        setPreviewReview(data.import_review || null);
+      }
     } catch (err: any) {
-      setErrorMessage(err.message || t("csv_import.error_generic"));
-      setSelectedFile(null);
+      if (previewControllerRef.current === controller && !controller.signal.aborted) {
+        setErrorMessage(err.message || t("csv_import.error_generic"));
+        setSelectedFile(null);
+      }
     } finally {
-      setIsLoadingPreview(false);
+      if (previewControllerRef.current === controller) {
+        previewControllerRef.current = null;
+        if (!controller.signal.aborted) setIsLoadingPreview(false);
+      }
     }
   };
 
@@ -229,7 +256,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-mono select-none animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-mono select-none animate-fadeIn" aria-busy={isLoadingPreview || isImporting}>
       <div className="relative w-full max-w-2xl bg-[#0b0e14] border border-surface-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border bg-[#0d121c]">
@@ -247,8 +274,11 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
             </div>
           </div>
           <button
+            type="button"
             onClick={handleClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#162032] transition"
+            disabled={isImporting}
+            aria-label={t("common.close")}
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#162032] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="w-4 h-4" />
           </button>
@@ -257,7 +287,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
         {/* Content Body */}
         <div className="p-6 overflow-y-auto space-y-4 flex-1">
           {errorMessage && (
-            <div className="flex items-center space-x-2 p-3 bg-loss/15 border border-loss/30 rounded-lg text-loss text-xs">
+            <div role="alert" className="flex items-center space-x-2 p-3 bg-loss/15 border border-loss/30 rounded-lg text-loss text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
@@ -470,8 +500,11 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
             ) : (
               <>
                 <button
+                  type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] text-slate-300 font-semibold rounded-lg border border-surface-border transition cursor-pointer"
+                  data-testid="csv-import-cancel"
+                  disabled={isImporting}
+                  className="px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] text-slate-300 font-semibold rounded-lg border border-surface-border transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t("csv_import.cancel_btn")}
                 </button>
