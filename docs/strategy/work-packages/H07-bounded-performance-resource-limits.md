@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 2.6.0
+version: 2.7.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 3863288
+baseline_commit: bf30860
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -219,7 +219,11 @@ cache kullanılmaz ve tam doğrulama yapılır; invalid zincir cache'lenmez, son
 copy ile döner ve yeni schema/event type eklenmez. Fingerprint için kısa ömürlü SQLite
 bağlantısı kullanılır; persistent verifier connection tutulmadığı için projection
 apply sonrasında WAL sayfaları tutulmaz. Bu, Evidence Pack tekrar okumalarını azaltan
-warm-read optimizasyonudur; ilk cold full-chain doğrulaması hâlâ ölçüm kapsamındadır.
+warm-read optimizasyonudur. `bf30860` ile cached valid prefix sonrasında yalnız yeni
+append tail'i doğrulanır; Evidence Pack toplam `checked_events` sayısını korur ve
+tail gap/prev-hash/hash hatasında fail-closed kalır. Bu append-tail yolu ile yeni
+verifier instance'ının hiç cache olmadan yaptığı full-chain doğrulama ayrı ölçülür;
+ikisi aynı cold/warm sonucu gibi birleştirilmez.
 
 `2da9fe1` ile projection rebuild aynı verifier instance'ını reuse edecek şekilde
 bounded hale getirildi; `f551b1f` ile apply rebuild sonrası WAL büyümesi için sınır testi
@@ -228,55 +232,59 @@ taşındı. `TradeReadAdapter`, projection repository'nin public `ledger_repo` v
 paylaşır; projection-only commit shared cache'i bozmaz, ledger append'i bozup yeniden
 doğrulamayı zorlar. Rollback, ledger verisi ve projection semantiği değişmez.
 
-Focused H07 bounded-performance suite `20 passed`; projection/H01 regression bundle
-`41 passed`; value-chain frontend boundary suite `20 passed`;
+Focused H07 bounded-performance suite `21 passed`; projection/H01 regression bundle
+`42 passed`; value-chain frontend boundary suite `20 passed`;
 dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
 `3 passed`; MAE/MFE focused suite `5 passed`; SettingsView focused suite `3 passed`;
 Charts focused suite `4 passed`; plugin registry/ModStore focused suite `7 passed`;
-full backend suite `713 passed, 2 warnings`, full
+full backend suite `714 passed, 2 warnings`, full
 frontend `25` test dosyası ve `100` test PASS; i18n `608/608`.
 Locked local CI `MERGE READY` oldu.
 Current code baseline source commit tam SHA'sı
-`3863288095af43aaa8918d71394994593efb8822`, tracked source tree SHA-256'sı
-`16626766276db266712d1f5aa2e517409e05691a2d794b48cd32cb5d97886802`'dür.
+`bf30860f3c71736bf37365a9840856ec6eeb0779`, tracked source tree SHA-256'sı
+`4f84a4623044b0bfce20dbe6a52e595ad46de673defa6b64a2711a4c54e87f21`'dür.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `f9a2e18620a68c3eb482c2e7412dc80de20beee96a925095e966d8f94068a382`,
-native local smoke report SHA-256 `a1da9d055bf6a348170acd6a42a87d228a79399ff94e2d22e5c5a782b05e077c`;
-local smoke executable SHA-256 `ffc1fd0358d54bafc5f44b4e22b6622a00945a9369d1c2c778fcb7766327c438`
-ve `.app` artifact SHA-256 `0e71fc19b977c1ed97160f94e2a25c3db95b699a36d487d4ff13c57b4040c4f7`.
+Local CI report SHA-256 `d0575d7df1e1345e65cfb2f6e2e5c74fce565ea6c480b460c2c054adcc9b1837`,
+native local smoke report SHA-256 `2a2ec9699fd1441b3223d14f74186ce7fac01d77c99e9eacf00f81b4ef9b192a`;
+local smoke executable SHA-256 `eca9eeea7277ce95cad92e1a7d49434c80f89e2940439c16b7562afe01296ef7`
+ve `.app` artifact SHA-256 `0168b7729d96349310708f84927adce4df888ac804e0d218aced50c0a5240f25`.
 Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
 public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`7fe0761f474ad72dcfb2fc907e3b2611c3607d31d42ec9fc883d7e43a9306d14`, DMG
-SHA-256 `5f84d80eea209167d52709fe1d1bf3da1ec8d54e848769933986e3f43fd85ccb`
+`6ff74f30ca5ac87f8c00f22558fbca56c549f15b62cce0f19e13a58715073707`, DMG
+SHA-256 `e264df8d29b37c46efb278b58270eb8b63fab1eacbe5035b0b0a8631c08e84c2`
 ve mounted executable SHA-256
-`ffc1fd0358d54bafc5f44b4e22b6622a00945a9369d1c2c778fcb7766327c438`'dir.
+`eca9eeea7277ce95cad92e1a7d49434c80f89e2940439c16b7562afe01296ef7`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
 notarization, Gatekeeper veya commercial distribution kanıtı değildir.
 
 Bu source/artifact çiftiyle çalıştırılan güncel 100k sentetik benchmark raporu
-`/tmp/h07-3863288-artifact.json`, report SHA-256
-`35c20c31fdab0391f6a39d1ac06722b2e8b37d4c0ccaf3ee5e397d4fbe4c2987`'dir.
+`/tmp/h07-bf30860-artifact.json`, report SHA-256
+`9633c8dc66dabd29b3f52a5e18e54a8547eb47351dfc3502452566d291ff305a`'dir.
 Provenance `COMPLETE`, `network=false`, `credentials=false`, `live_execution=false`;
 dataset SHA-256 `cbffe7e178c9efd9e08c876c902cc4dd5efb06e2bc1da7a428b8d001830051bd`,
 determinism snapshot SHA-256
 `6bb1eb94ba9293ab4039e4d03ee34a8d67e25361ebcd6c98679e7be9decf264e` ve sayımlar
 `100000 trades / 100003 ledger events / 100000 projections` olarak kaldı. 100k
-operation p95 değerleri import `180.6458 ms`, projection rebuild `6316.4108 ms`,
-query `264.6234 ms`, Evidence Pack `4187.8654 ms` ve export `344.4804 ms`'dir;
-Evidence Pack p50 `343.8738 ms` olsa da p95 ilk cold full-chain doğrulamasını içerir.
-Bu değerler support SLO veya production claim değildir. Cold full-chain Evidence Pack
-p95 hâlâ `<2s` planning hedefini karşılamıyor; H07 `IMPLEMENTATION_REQUIRED` kalır.
-Max operation RSS `335.75 MB`, max temporary disk `2949120 B` ölçüldü; projection
-rebuild operation'ının temporary disk ölçümü `0 B`'dir.
+operation p95 değerleri import `181.0214 ms`, projection rebuild `6430.7846 ms`,
+query `224.3823 ms`, Evidence Pack `353.6237 ms` ve export `341.1627 ms`'dir;
+Evidence Pack p50 `339.6955 ms`'dir. Bu Evidence Pack sonucu, çalışan verifier'ın
+önceden doğruladığı prefix sonrasındaki append-tail/correction akışını ölçer; yeni
+verifier instance'ı ile yapılan ayrı no-cache full-chain auditinde üç örnek
+`5309.6422 / 5280.5680 / 5285.2825 ms`, p95 `5307.20623 ms` ölçüldü. Dolayısıyla
+append-tail workload'unda `<2s` planning hedefi ölçülmüş olsa da full no-cache cold
+startup hedefi karşılanmamıştır. H07 `IMPLEMENTATION_REQUIRED` kalır; bu değerler
+support SLO veya production claim değildir. Max operation RSS `319.0156 MB`, max
+temporary disk `2949120 B` ölçüldü; projection rebuild operation'ının temporary
+disk ölçümü `0 B`'dir.
 
 ### Önceki artifact-bağlı sentetik baseline
 

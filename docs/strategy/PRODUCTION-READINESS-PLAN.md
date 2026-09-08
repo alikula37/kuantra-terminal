@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.22
+version: 1.0.23
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 3863288
+reviewed_commit: bf30860
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -358,9 +358,11 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     plugin registry/ModStore read truth'i `950af74` ile, unchanged-ledger integrity
     verification cache'i `da9af9b` ile, projection verifier reuse'ı `2da9fe1` ile,
     post-write verifier connection release sınırı `f551b1f` ile ve ledger-only
-    fingerprint/shared verifier `3863288` ile eklendi. Safe-persona görünür read
-    listesi için bounded kanıt günceldir; cold 100k Evidence Pack
-    planning target kararı açık kaldığı için paket hâlâ aktif non-release iştir.
+    fingerprint/shared verifier `3863288` ile, append-tail incremental verification
+    `bf30860` ile eklendi. Safe-persona görünür read listesi için bounded kanıt
+    günceldir; append-tail workload'unda `<2s` ölçülse de no-cache full-chain cold
+    audit p95 `5307.20623 ms` kaldığı ve H07 acceptance gaps sürdüğü için paket hâlâ
+    aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -370,6 +372,28 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.23 — 2026-09-08
+
+- H07 `bf30860` ile valid cached ledger prefix sonrasında yalnız append tail'inin
+  doğrulanması eklendi. Evidence Pack toplam `checked_events` ve integrity sonucunu
+  koruyor; gap, prev-hash veya hash hatası fail-closed kalıyor. Yeni schema, event type,
+  funding/transfer kapsamı veya production capability'si açılmadı.
+- Red→green odak kanıtı H07 `21`, projection/H01 regression `42` test; full locked
+  local CI `MERGE READY`, backend `714` (2 warning), frontend `25/100`, i18n `608/608`,
+  Mac arm64 build/native WKWebView smoke ve exact disabled-market-data mounted DMG
+  smoke PASS oldu. Source `bf30860f3c71736bf37365a9840856ec6eeb0779`; local CI report
+  SHA `d0575d7df1e1345e65cfb2f6e2e5c74fce565ea6c480b460c2c054adcc9b1837`; exact DMG
+  smoke report SHA `6ff74f30ca5ac87f8c00f22558fbca56c549f15b62cce0f19e13a58715073707`;
+  DMG SHA `e264df8d29b37c46efb278b58270eb8b63fab1eacbe5035b0b0a8631c08e84c2`;
+  mounted executable SHA `eca9eeea7277ce95cad92e1a7d49434c80f89e2940439c16b7562afe01296ef7`.
+- Exact artifact-bound 100k benchmark report SHA
+  `9633c8dc66dabd29b3f52a5e18e54a8547eb47351dfc3502452566d291ff305a` ölçtü:
+  append-tail Evidence Pack p95 `353.6237 ms`, projection rebuild p95 `6430.7846 ms`,
+  export p95 `341.1627 ms`, projection operation temporary disk `0 B`. Ayrı no-cache
+  full-chain cold auditinde p95 `5307.20623 ms` ölçüldü; bu nedenle `<2s` hedefi
+  yalnız append-tail workload'unda karşılanmış, global cold-start hedefi açık kalmış
+  ve H07 `IMPLEMENTATION_REQUIRED` tutulmuştur.
 
 ### 1.0.22 — 2026-09-08
 
