@@ -287,6 +287,61 @@ def test_projection_only_commit_preserves_shared_ledger_verification_cache(
     assert iterator_calls == 1
 
 
+def test_evidence_pack_incremental_verification_reuses_cached_prefix(
+    tmp_path, monkeypatch
+):
+    db_path = tmp_path / "evidence-pack-incremental-verification.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    trade = generate_trade_snapshot(0, seed="H07-INCREMENTAL-PACK")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(trade, 0, seed="H07-INCREMENTAL-PACK"),
+    ])
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=False)
+    adapter = TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=projection,
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+        projection_venues=("h07-synthetic",),
+    )
+
+    ledger = EvidenceLedgerRepository(str(db_path))
+    ledger.append_event(
+        event_type="IntentRecorded",
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+        idempotency_key="h07:incremental-pack:intent",
+        normalized_payload={"trade": trade},
+        occurred_at=trade["entry_time"],
+        received_at=trade["entry_time"],
+        correlation_id=trade["id"],
+        provenance={"source": "h07-incremental-pack", "coverage": "COMPLETE"},
+        event_id="H07-INCREMENTAL-PACK-INTENT",
+    )
+
+    original_iter = projection._ledger_repo._iter_raw_verification_rows
+    rows_seen = 0
+
+    def count_verified_rows(*args, **kwargs):
+        nonlocal rows_seen
+        for row in original_iter(*args, **kwargs):
+            rows_seen += 1
+            yield row
+
+    monkeypatch.setattr(
+        projection._ledger_repo,
+        "_iter_raw_verification_rows",
+        count_verified_rows,
+    )
+
+    pack = adapter.get_evidence_pack(trade["id"])
+
+    assert pack["ledger_integrity"]["valid"] is True
+    assert pack["ledger_integrity"]["checked_events"] == 2
+    assert rows_seen == 1
+
+
 def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_ledger(tmp_path):
     db_path = tmp_path / "cancelled-batch.sqlite"
     driver = SQLiteDriver(str(db_path))

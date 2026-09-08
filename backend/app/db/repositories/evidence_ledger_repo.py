@@ -15,7 +15,7 @@ import uuid
 from copy import deepcopy
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, Tuple
 
 from app.core.paths import get_sqlite_path
 from app.db.evidence_schema import EVENT_TYPES, initialize_evidence_schema
@@ -196,6 +196,9 @@ class EvidenceLedgerRepository:
         # projection write.
         self._integrity_cache_key: Optional[Tuple[Any, ...]] = None
         self._integrity_cache_result: Optional[Dict[str, Any]] = None
+        self._integrity_cache_state: Optional[
+            Dict[Tuple[str, str], Tuple[int, int, int, str]]
+        ] = None
         # Restore verification must inspect the supplied snapshot as-is. It can
         # disable bootstrap schema creation so an incomplete/future snapshot is
         # rejected instead of being silently repaired during verification.
@@ -267,11 +270,85 @@ class EvidenceLedgerRepository:
             if conn is not None:
                 conn.close()
 
+    @staticmethod
+    def _fingerprint_state(
+        fingerprint: Tuple[Tuple[Any, ...], ...],
+    ) -> Dict[Tuple[str, str], Tuple[int, int, int, str]]:
+        """Normalize a ledger fingerprint for append-range verification."""
+
+        return {
+            (str(row[0]), str(row[1])): (
+                int(row[2]),
+                int(row[3]),
+                int(row[4]),
+                str(row[5]),
+            )
+            for row in fingerprint
+        }
+
+    def _cached_append_ranges(
+        self,
+        *,
+        account_id: Optional[str],
+        chain_date_utc: Optional[str],
+        current_fingerprint: Tuple[Tuple[Any, ...], ...],
+    ) -> Optional[Dict[Tuple[str, str], int]]:
+        """Return safe tail ranges when a valid cached prefix can be reused.
+
+        The previous verification was complete and valid, and ledger rows are
+        append-only. A scope can therefore be verified incrementally only when
+        its first sequence and prior last sequence are unchanged and the
+        current tail is strictly after the cached last sequence. Any other
+        shape falls back to a complete verification.
+        """
+
+        cache_key = self._integrity_cache_key
+        cached_result = self._integrity_cache_result
+        cached_state = self._integrity_cache_state
+        if (
+            cache_key is None
+            or cache_key[:2] != (account_id, chain_date_utc)
+            or cached_result is None
+            or not cached_result.get("valid")
+            or cached_state is None
+        ):
+            return None
+
+        current_state = self._fingerprint_state(current_fingerprint)
+        ranges: Dict[Tuple[str, str], int] = {}
+        for scope, previous in cached_state.items():
+            current = current_state.get(scope)
+            if current is None:
+                return None
+            previous_count, previous_first, previous_last, _previous_hash = previous
+            current_count, current_first, current_last, _current_hash = current
+            if current_first != previous_first or current_count < previous_count:
+                return None
+            if current_count == previous_count:
+                if current != previous:
+                    return None
+                continue
+            if current_last <= previous_last:
+                return None
+            # A valid cached prefix is contiguous. New rows must therefore be
+            # after its last sequence; the verifier below still rejects gaps or
+            # a wrong prev_hash in the appended tail.
+            if previous_last < previous_first:
+                return None
+            ranges[scope] = previous_last
+
+        for scope in current_state:
+            if scope not in cached_state:
+                ranges[scope] = 0
+
+        return ranges or None
+
     def close(self) -> None:
         """Invalidate the in-memory verification cache."""
 
         self._integrity_cache_key = None
         self._integrity_cache_result = None
+        self._integrity_cache_state = None
 
     def __del__(self) -> None:
         try:
@@ -765,6 +842,7 @@ class EvidenceLedgerRepository:
         *,
         account_id: Optional[str] = None,
         chain_date_utc: Optional[str] = None,
+        after_sequences: Optional[Mapping[Tuple[str, str], int]] = None,
     ) -> Generator[Dict[str, Any], None, None]:
         """Yield ledger rows without decoding JSON fields that verification does not reuse.
 
@@ -785,6 +863,18 @@ class EvidenceLedgerRepository:
             if chain_date_utc is not None:
                 query += " AND chain_date_utc = ?"
                 params.append(chain_date_utc)
+            if after_sequences is not None:
+                if not after_sequences:
+                    return
+                tail_clauses = []
+                for (scope_account, scope_date), after_sequence in sorted(
+                    after_sequences.items()
+                ):
+                    tail_clauses.append(
+                        "(account_id = ? AND chain_date_utc = ? AND chain_sequence > ?)"
+                    )
+                    params.extend([scope_account, scope_date, int(after_sequence)])
+                query += " AND (" + " OR ".join(tail_clauses) + ")"
             query += " ORDER BY account_id ASC, chain_date_utc ASC, chain_sequence ASC"
             for row in conn.execute(query, params):
                 yield dict(row)
@@ -818,10 +908,23 @@ class EvidenceLedgerRepository:
                 resource_check("after_ledger_integrity")
             return deepcopy(self._integrity_cache_result)
 
+        incremental_after_sequences = None
+        cached_state: Optional[Dict[Tuple[str, str], Tuple[int, int, int, str]]] = None
+        current_state: Optional[Dict[Tuple[str, str], Tuple[int, int, int, str]]] = None
+        if cache_fingerprint is not None:
+            current_state = self._fingerprint_state(cache_fingerprint)
+            incremental_after_sequences = self._cached_append_ranges(
+                account_id=account_id,
+                chain_date_utc=chain_date_utc,
+                current_fingerprint=cache_fingerprint,
+            )
+            if incremental_after_sequences is not None:
+                cached_state = self._integrity_cache_state
+
         duplicate_errors: List[str] = []
         chain_errors: List[str] = []
         seen_identities = set()
-        scopes = set()
+        scopes = set(current_state or {}) if incremental_after_sequences is not None else set()
         current_scope: Optional[Tuple[str, str]] = None
         expected_sequence = 1
         expected_prev_hash = GENESIS_HASH
@@ -830,6 +933,7 @@ class EvidenceLedgerRepository:
         for row in self._iter_raw_verification_rows(
             account_id=account_id,
             chain_date_utc=chain_date_utc,
+            after_sequences=incremental_after_sequences,
         ):
             if resource_check is not None:
                 resource_check("before_ledger_event")
@@ -838,8 +942,13 @@ class EvidenceLedgerRepository:
             scopes.add(row_scope)
             if row_scope != current_scope:
                 current_scope = row_scope
-                expected_sequence = 1
-                expected_prev_hash = GENESIS_HASH
+                cached_scope = cached_state.get(row_scope) if cached_state else None
+                if cached_scope is None:
+                    expected_sequence = 1
+                    expected_prev_hash = GENESIS_HASH
+                else:
+                    expected_sequence = cached_scope[2] + 1
+                    expected_prev_hash = cached_scope[3]
 
             identity = (row["account_id"], row["venue"], row["event_type"], row["idempotency_key"])
             if identity in seen_identities:
@@ -918,6 +1027,9 @@ class EvidenceLedgerRepository:
         if resource_check is not None:
             resource_check("after_ledger_integrity")
 
+        if incremental_after_sequences is not None and current_state is not None:
+            checked_events = sum(state[0] for state in current_state.values())
+
         result = {
             "valid": not duplicate_errors and not chain_errors,
             "checked_events": checked_events,
@@ -935,6 +1047,7 @@ class EvidenceLedgerRepository:
         ):
             self._integrity_cache_key = (account_id, chain_date_utc, cache_fingerprint)
             self._integrity_cache_result = deepcopy(result)
+            self._integrity_cache_state = current_state or {}
         return result
 
     def backfill_legacy_trades(
