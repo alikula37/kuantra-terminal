@@ -24,7 +24,8 @@ kalır. Bir kayıt hash'inin geçmesi, kaydın borsadaki bütün geçmişi içer
 Bu belge önceki [KRR-001 denetimini](../archive/strategy/ROADMAP-REVIEW-2026-09-08.md) ayrıntılandıran
 **plan teklifidir**. Yeni eşikler, teslimat tahminleri ve destek kapsamı henüz achieved
 veya kullanıcı tarafından ticari olarak onaylanmış değildir. Accepted ADR'ler ve
-mevcut güvenlik kapıları geçerlidir. İlk `Ready` iş P1-WP16 olarak kalır; aşağıdaki
+mevcut güvenlik kapıları geçerlidir. P1-WP16 ve P1-WP17 bounded doğruluk paketleri
+kanıtla kapatılmıştır; mevcut `Ready` iş P1-WP18'dir. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -85,15 +86,16 @@ recovery bakımı uzun testnet koşusundan önce gelir; ilk ürünün kritik yol
 
 ## 4. G0–G1: Doğruluk paketleri
 
-Kimlikler bu belgede kalıcı plan satırlarıdır. `D01` mevcut P1-WP16'ya bağlıdır;
-D02 ve sonrası `Draft` kapsamındadır. Hazır olmadan ayrı WP açılıp dosya/test sınırı
-yazılır. Tek pakette birden çok bağımsız hata varsa test edilebilir parçalara bölünür.
+Kimlikler bu belgede kalıcı plan satırlarıdır. `D01 / P1-WP16` ve `D02 / P1-WP17`
+kanıtla kapatılmıştır; `D03 / P1-WP18` mevcut bounded iştir. Sonraki işler hazır
+olmadan ayrı WP açılıp dosya/test sınırı yazılır. Tek pakette birden çok bağımsız hata
+varsa test edilebilir parçalara bölünür.
 
 | İş | Çıktı ve dosya alanı | Asgari acceptance / negative test | Bağımlılık |
 |---|---|---|---|
-| D01 / P1-WP16 | Read-only sync completeness; `read_only_broker_sync.py`, importer/API tests | Same timestamp > page size; full/short/repeated/unsorted page; until boundary; missing cursor; no false complete | Mevcut P1-WP11/12 |
-| D02 | Support/instrument/account identity contract; normalization/models | Venue + account + market + settlement + position side ayrımı; conflicting identity reject; unsupported mode explicit | D01; destek altkümesi kararı |
-| D03 | Decimal/precision ve fee unit contract; reconciliation | Missing ≠ zero; multi-currency fees ayrı; rebates; rounding/tick/step; string→numeric canonical roundtrip; known zero | D02 |
+| D01 / P1-WP16 | Read-only sync completeness; `read_only_broker_sync.py`, importer/API tests | Same timestamp > page size; full/short/repeated/unsorted page; until boundary; missing cursor; no false complete | Mevcut P1-WP11/12; verified `ef909d1` |
+| D02 / P1-WP17 | Read-only source identity/support contract; manifest/import provenance | Canonical venue ile source exchange id ve market type ayrımı; conflicting identity reject; same-venue idempotency separation; no new support | D01; verified `930d25a` |
+| D03 / P1-WP18 | Decimal/precision ve fee unit contract; reconciliation | Missing ≠ zero; multi-currency fees ayrı; rebates; rounding/tick/step; string→numeric canonical roundtrip; known zero | D02 |
 | D04 | Funding/corrections/account reconciliation kapsamı | Opening position/balance; realized/unrealized ayrımı; funding time; transfer ≠ PnL; liquidation/ADL varsa explicit event veya unsupported | D02–03 |
 | D05 | Economic dedup ve lifecycle trade grouping | Overlapping CSV/API imports; same fill/new source; late correction; partial fill; scale-in/out; flip; cancellation; orphan; multi-account ID collision | D02–04 |
 | D06 | Journal/projection/evidence propagation | Same input same projection; correction eski kanıtı silmez; incomplete downstream'de görünür; transactional rollback; replay as-of version | D05; P1-WP01–15 |
@@ -286,14 +288,14 @@ paketinden sonra test/implementation bulgularıyla yeniden tahmin edilir.
 
 Ürün sahibinden zamanı geldiğinde gerekenler: dar perps support scope, pilot kullanıcı
 erişimi ve consent, ödeme/teklif kararı, lisans/notices, signing hesabı/host erişimi,
-security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP16 fixture
+security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP18 fixture
 çalışmasını engellemez; yapılabilecek işi bırakıp tüm kararları peşinen istemeyiz.
 
 ## 13. İlk uygulama sırası ve raporlama
 
-1. P1-WP16: failing fixture → minimal fix → incomplete propagation → regression/full gate.
-2. D02: destek/kimlik sözleşmesi ve dar perps altkümesi kararı; ayrı bounded WP.
-3. D03: fee/precision/unknown doğruluğu; ardından D04 funding/account kapsamı.
+1. P1-WP16: failing fixture → minimal fix → incomplete propagation → regression/full gate; verified `ef909d1`.
+2. P1-WP17: source identity/support boundary; same-venue idempotency separation; verified `930d25a`.
+3. P1-WP18: fee/precision/unknown doğruluğu; ardından D04 funding/account kapsamı.
 4. D05–06: ekonomik dedup/lifecycle ve journal/evidence bağlantısı.
 5. U01–05; paralelde H01–07/N01–06 bağımlılığa göre; sonra kapalı pilot.
 

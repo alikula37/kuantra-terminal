@@ -7,21 +7,19 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**P1-WP16 — InProgress:**
-[Read-only snapshot completeness](work-packages/P1-WP16-read-only-snapshot-completeness.md).
-Same-timestamp pagination reproduction, inclusive overlap, deduplication and
-fail-closed ordering/timestamp/boundary tests are implemented. Final local CI and
-commit evidence remain open until the work package is closed. Current working-tree
-local CI reached `MERGE READY`; the smoke report still records `build_commit=UNKNOWN`,
-which remains the separate B4 provenance obligation.
-No other historical `Active` WP is automatically queued. Next: D02 identity/support
-contract → D03 fee/precision → D04 funding → D05/D06 lifecycle/evidence → review UX.
+**P1-WP18 — Ready:**
+[Fee, precision & unit contract](work-packages/P1-WP18-fee-precision-unit-contract.md).
+P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
+and support boundary was verified in `930d25a`. The next bounded implementation is
+fee/decimal/unit truth; it must not silently become full account PnL or new venue scope.
+No other historical `Active` WP is automatically queued. Next after P1-WP18: funding/
+corrections/account scope → economic dedup/lifecycle → journal/evidence propagation → UX.
 
 ## Current evidence, not completion claims
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `b1ceba6`; P1-WP16 local CI: 566 backend, 51 frontend, build/smoke passed. Smoke `build_commit=UNKNOWN`; exact provenance remains B4 |
+| Runtime baseline | `930d25a`; P1-WP17 local CI: 570 backend, 51 frontend, build/smoke passed. Smoke `build_commit=UNKNOWN`; exact provenance remains B4 |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac | Local build/smoke works; runtime offline, exact mounted-DMG provenance and fail-closed renderer verification remain open |
@@ -32,8 +30,8 @@ contract → D03 fee/precision → D04 funding → D05/D06 lifecycle/evidence �
 
 | ID | Obligation | Next handling |
 |---|---|---|
-| B1 | Timestamp pagination can skip records and overstate completeness | P1-WP16 implementation complete; final local CI/close evidence pending |
-| B2 | Fee currency/unknown handling, perps identity/accounting and economic dedup | Roadmap D02–D06; choose supported subset before implementation |
+| B1 | Timestamp pagination can skip records and overstate completeness | Closed by P1-WP16 / `ef909d1`; historical package retained in archive |
+| B2 | Fee currency/unknown handling, perps identity/accounting and economic dedup | P1-WP17 identity boundary closed; P1-WP18 fee/precision next; accounting remains open |
 | B3/M1 | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Before further long/24h soak; not primary product path |
 | B4 | Runtime offline ≠ uv offline; artifact hash ≠ mounted executable; UNKNOWN commit; Mac renderer gate | H03/N01/N02 |
 | WIN | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
@@ -48,16 +46,14 @@ registry records unchecked counts so accidental checkbox deletion is detected.
 
 ## Latest maintenance handoff
 
-This change: documentation consolidation, historical archive, one agent entry point,
-role registry and documentation gate. Runtime capabilities are unchanged. Exact
-commit is the Git commit containing this section; resolve it with file history.
-Validation: 11 documentation contract regression tests passed; isolated full backend
-suite **561 passed, 2 deprecation warnings** (11.06s). `check_docs.py`, release-truth,
-packaging preflight and `git diff --check` passed. Current/reference inline links:
-114 checked; an additional one-off archive link check resolved 200 targets.
-Frontend/build/native full local CI was not rerun: no application behavior changed.
-The full backend run used the locked offline dependency environment and a fresh
-temporary data directory; it is not runtime network-isolation proof.
+P1-WP17 source identity/support contract was implemented in `930d25a` and its
+historical evidence record is archived. Focused read-only/import tests passed **21**;
+full backend suite passed **570** with 2 deprecation warnings. Canonical Mac local CI
+passed with frontend **51**, production build, arm64 desktop build, WKWebView native
+smoke and packaging preflight; result `MERGE READY`. The smoke report still has
+`build_commit=UNKNOWN`, so B4/N01 provenance is not closed. The locked environment and
+fresh temporary data directory were used; this is not a claim of real-user data or
+runtime network-isolation evidence. Next active contract: P1-WP18.
 
 ## Update protocol
 

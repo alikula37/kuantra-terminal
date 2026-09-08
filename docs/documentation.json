@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP16-read-only-snapshot-completeness.md"
+    "docs/strategy/work-packages/P1-WP18-fee-precision-unit-contract.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -61,7 +61,9 @@
     "docs/archive/strategy/work-packages/P1-WP14-versioned-playbook-risk-policy-events.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP15-trade-evidence-pack-ui.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md": "archived",
-    "docs/strategy/work-packages/P1-WP16-read-only-snapshot-completeness.md": "current-work-package",
+    "docs/archive/strategy/work-packages/P1-WP16-read-only-snapshot-completeness.md": "archived",
+    "docs/archive/strategy/work-packages/P1-WP17-read-only-source-identity.md": "archived",
+    "docs/strategy/work-packages/P1-WP18-fee-precision-unit-contract.md": "current-work-package",
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md": "archived",
@@ -122,6 +124,8 @@
     "docs/archive/strategy/work-packages/P1-WP13-evidence-pack-export-restore-drill.md": 1,
     "docs/archive/strategy/work-packages/P1-WP14-versioned-playbook-risk-policy-events.md": 1,
     "docs/archive/strategy/work-packages/P1-WP15-trade-evidence-pack-ui.md": 1,
+    "docs/archive/strategy/work-packages/P1-WP16-read-only-snapshot-completeness.md": 0,
+    "docs/archive/strategy/work-packages/P1-WP17-read-only-source-identity.md": 0,
     "docs/archive/strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md": 1,
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": 1,
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": 1,
