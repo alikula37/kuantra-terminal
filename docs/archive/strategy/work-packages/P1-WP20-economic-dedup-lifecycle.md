@@ -1,12 +1,17 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
+> Historical reference only. Not a current work order. Acceptance evidence and remaining
+> boundaries are recorded here; see [current status](../../../strategy/STATUS.md).
+> Read only for a relevant task.
+
 # P1-WP20 — Economic Dedup & Lifecycle Trade Grouping Contract
 
 ```yaml
 work_package: P1-WP20
 version: 1.0.0
-status: InProgress
+status: Verified
 date: 2026-09-08
 baseline_commit: c1f131f
+implementation_commit: 5d691b9
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP19
@@ -69,10 +74,10 @@ complete account state olarak sunulmaz.
   suite `595 passed, 2 warnings` ve Mac local CI `MERGE READY` kanıtı kaydedildi:
   frontend `51`, i18n `480/480`, production build, arm64 desktop build, WKWebView
   native smoke ve packaging preflight geçti.
-- [ ] Exact commit, changed files, unsupported/unknown semantics ve sonraki P1-WP21
+- [x] Exact implementation commit `5d691b9`; changed files, unsupported/unknown semantics ve sonraki P1-WP21
   journal/evidence propagation bağımlılığı bu kayda yazılır.
 
-## Uygulama sınırı (InProgress)
+## Verified implementation notes
 
 - `EconomicGroupingService` source observation identity’yi account, venue, source
   exchange, market type, source document ve row hash ile scope’lar; economic group

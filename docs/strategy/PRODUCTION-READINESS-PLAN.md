@@ -24,8 +24,8 @@ kalır. Bir kayıt hash'inin geçmesi, kaydın borsadaki bütün geçmişi içer
 Bu belge önceki [KRR-001 denetimini](../archive/strategy/ROADMAP-REVIEW-2026-09-08.md) ayrıntılandıran
 **plan teklifidir**. Yeni eşikler, teslimat tahminleri ve destek kapsamı henüz achieved
 veya kullanıcı tarafından ticari olarak onaylanmış değildir. Accepted ADR'ler ve
-mevcut güvenlik kapıları geçerlidir. P1-WP16, P1-WP17, P1-WP18 ve P1-WP19 bounded doğruluk paketleri
-kanıtla kapatılmıştır; mevcut `Ready` iş P1-WP20'dir. Aşağıdaki
+mevcut güvenlik kapıları geçerlidir. P1-WP16, P1-WP17, P1-WP18, P1-WP19 ve P1-WP20 bounded doğruluk paketleri
+kanıtla kapatılmıştır; mevcut `Ready` iş P1-WP21'dir. Aşağıdaki
 diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -86,8 +86,8 @@ recovery bakımı uzun testnet koşusundan önce gelir; ilk ürünün kritik yol
 
 ## 4. G0–G1: Doğruluk paketleri
 
-Kimlikler bu belgede kalıcı plan satırlarıdır. `D01 / P1-WP16`, `D02 / P1-WP17` ve
-`D03 / P1-WP18` ve `D04 / P1-WP19` kanıtla kapatılmıştır; `D05 / P1-WP20` mevcut bounded iştir. Sonraki işler hazır
+Kimlikler bu belgede kalıcı plan satırlarıdır. `D01 / P1-WP16`, `D02 / P1-WP17`,
+`D03 / P1-WP18`, `D04 / P1-WP19` ve `D05 / P1-WP20` kanıtla kapatılmıştır; `D06 / P1-WP21` mevcut bounded iştir. Sonraki işler hazır
 olmadan ayrı WP açılıp dosya/test sınırı yazılır. Tek pakette birden çok bağımsız hata
 varsa test edilebilir parçalara bölünür.
 
@@ -97,8 +97,8 @@ varsa test edilebilir parçalara bölünür.
 | D02 / P1-WP17 | Read-only source identity/support contract; manifest/import provenance | Canonical venue ile source exchange id ve market type ayrımı; conflicting identity reject; same-venue idempotency separation; no new support | D01; verified `930d25a` |
 | D03 / P1-WP18 | Decimal/precision ve fee unit contract; reconciliation | Missing ≠ zero; multi-currency fees ayrı; rebates; rounding/tick/step; string→numeric canonical roundtrip; known zero | D02; verified `0c7d11f` |
 | D04 / P1-WP19 | Funding/corrections/account reconciliation kapsamı | Opening position/balance; realized/unrealized ayrımı; funding time; transfer ≠ PnL; liquidation/ADL varsa explicit event veya unsupported | D03; P1-WP18; verified `f67e732` |
-| D05 / P1-WP20 | Economic dedup ve lifecycle trade grouping | Overlapping CSV/API imports; same fill/new source; late correction; partial fill; scale-in/out; flip; cancellation; orphan; multi-account ID collision | D04; P1-WP19 |
-| D06 | Journal/projection/evidence propagation | Same input same projection; correction eski kanıtı silmez; incomplete downstream'de görünür; transactional rollback; replay as-of version | D05; P1-WP01–15 |
+| D05 / P1-WP20 | Economic dedup ve lifecycle trade grouping | Overlapping CSV/API imports; same fill/new source; late correction; partial fill; scale-in/out; flip; cancellation; orphan; multi-account ID collision | D04; P1-WP19; verified `5d691b9` |
+| D06 / P1-WP21 | Journal/projection/evidence propagation | Same input same projection; correction eski kanıtı silmez; incomplete downstream'de görünür; transactional rollback; replay as-of version | D05; P1-WP01–15 |
 
 **G1 release-blocking invariants:** curated supported fixture corpus'unda açıklanamayan
 fill/quantity/unit/PnL farkı sıfır; silently dropped veya double-counted economic fill
@@ -297,8 +297,8 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 2. P1-WP17: source identity/support boundary; same-venue idempotency separation; verified `930d25a`.
 3. P1-WP18: fee/precision/unknown doğruluğu; verified `0c7d11f`.
 4. P1-WP19: funding/corrections/account coverage; verified `f67e732`.
-5. P1-WP20: ekonomik dedup/lifecycle; ardından D06 journal/evidence bağlantısı.
-6. D06: journal/projection/evidence propagation.
+5. P1-WP20: ekonomik dedup/lifecycle; verified `5d691b9`.
+6. P1-WP21: journal/projection/evidence propagation.
 7. U01–05; paralelde H01–07/N01–06 bağımlılığa göre; sonra kapalı pilot.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,

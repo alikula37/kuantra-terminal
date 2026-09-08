@@ -54,6 +54,7 @@ Remote evidence, Windows host, latest-SHA and P2 operational gaps remain in STAT
 | [P1-WP17-read-only-source-identity](strategy/work-packages/P1-WP17-read-only-source-identity.md) | 0 |
 | [P1-WP18-fee-precision-unit-contract](strategy/work-packages/P1-WP18-fee-precision-unit-contract.md) | 0 |
 | [P1-WP19-funding-account-reconciliation](strategy/work-packages/P1-WP19-funding-account-reconciliation.md) | 0 |
+| [P1-WP20-economic-dedup-lifecycle](strategy/work-packages/P1-WP20-economic-dedup-lifecycle.md) | 0 |
 | [P2-WP01-sequence-gap-aware-market-context](strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md) | 1 |
 | [P2-WP02-binance-depth-sequence-validator](strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md) | 1 |
 | [P2-WP03-binance-depth-recovery-coordinator](strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | 1 |
