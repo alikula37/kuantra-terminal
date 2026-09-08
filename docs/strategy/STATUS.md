@@ -7,20 +7,21 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-**P1-WP19 — Ready:**
-[Funding, corrections & account reconciliation contract](work-packages/P1-WP19-funding-account-reconciliation.md).
+**P1-WP20 — Ready:**
+[Economic dedup & lifecycle trade grouping contract](work-packages/P1-WP20-economic-dedup-lifecycle.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
-verified in `0c7d11f`. The next bounded implementation is funding, corrections and
-account coverage; it must not silently become full tax/accounting scope or new venue scope.
-No other historical `Active` WP is automatically queued. Next after P1-WP19: economic
-dedup/lifecycle → journal/evidence propagation → UX.
+verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
+`f67e732`. The next bounded implementation is economic dedup and lifecycle grouping;
+it must not silently become full tax/accounting scope or new venue scope. No other
+historical `Active` WP is automatically queued. Next after P1-WP20: journal/evidence
+propagation → UX.
 
 ## Current evidence, not completion claims
 
 | Area | Evidence / remaining boundary |
 |---|---|
-| Runtime baseline | `0c7d11f`; P1-WP18 local CI: 579 backend, 51 frontend, build/smoke passed. Smoke `build_commit=UNKNOWN`; exact provenance remains B4 |
+| Runtime baseline | `f67e732`; P1-WP19 local CI: 587 backend, 51 frontend, build/smoke passed. Smoke `build_commit=UNKNOWN`; exact provenance remains B4 |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac | Local build/smoke works; runtime offline, exact mounted-DMG provenance and fail-closed renderer verification remain open |
@@ -32,7 +33,7 @@ dedup/lifecycle → journal/evidence propagation → UX.
 | ID | Obligation | Next handling |
 |---|---|---|
 | B1 | Timestamp pagination can skip records and overstate completeness | Closed by P1-WP16 / `ef909d1`; historical package retained in archive |
-| B2 | Fee currency/unknown handling, perps identity/accounting and economic dedup | P1-WP17 identity and P1-WP18 fee/precision boundaries closed; P1-WP19 funding/account coverage next; economic dedup remains open |
+| B2 | Fee currency/unknown handling, perps identity/accounting and economic dedup | P1-WP17 identity, P1-WP18 fee/precision and P1-WP19 funding/account boundaries closed; P1-WP20 economic dedup remains open |
 | B3/M1 | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Before further long/24h soak; not primary product path |
 | B4 | Runtime offline ≠ uv offline; artifact hash ≠ mounted executable; UNKNOWN commit; Mac renderer gate | H03/N01/N02 |
 | WIN | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
@@ -47,14 +48,16 @@ registry records unchecked counts so accidental checkbox deletion is detected.
 
 ## Latest maintenance handoff
 
-P1-WP18 fee/precision/unit contract was implemented in `0c7d11f` and its historical
-evidence record is archived. Focused WP11/WP12 tests passed **30**; full backend suite
-passed **579** with 2 deprecation warnings. Canonical Mac local CI passed with frontend
-**51**, production build, arm64 desktop build, WKWebView native smoke and packaging
-preflight; result `MERGE READY`. The smoke report still has `build_commit=UNKNOWN`, so
-B4/N01 provenance is not closed. The locked environment and fresh temporary data
-directory were used; this is not a claim of real-user data or runtime network-isolation
-evidence. Next active contract: P1-WP19.
+P1-WP19 funding/corrections/account contract was implemented in `f67e732` and its
+historical evidence record is archived. Focused WP19 tests passed **8**; full backend
+suite passed **587** with 2 deprecation warnings. Canonical Mac local CI passed with
+frontend **51**, production build, arm64 desktop build, WKWebView native smoke and
+packaging preflight; result `MERGE READY`. The smoke report still has
+`build_commit=UNKNOWN`, so B4/N01 provenance is not closed. Funding/transfer
+observations remain explicit `SCHEMA_EVENT_TYPE_PENDING` until a separately approved
+ledger-schema package; no account PnL claim was opened. The locked environment and
+fresh temporary data directory were used; this is not a claim of real-user data or
+runtime network-isolation evidence. Next active contract: P1-WP20.
 
 ## Update protocol
 

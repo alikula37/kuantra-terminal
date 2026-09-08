@@ -1,12 +1,17 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
+> Historical reference only. Not a current work order. Acceptance evidence and remaining
+> boundaries are recorded here; see [current status](../../../strategy/STATUS.md).
+> Read only for a relevant task.
+
 # P1-WP19 — Funding, Corrections & Account Reconciliation Contract
 
 ```yaml
 work_package: P1-WP19
 version: 1.0.0
-status: InProgress
+status: Verified
 date: 2026-09-08
 baseline_commit: e4ca324
+implementation_commit: f67e732
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP18
@@ -63,11 +68,13 @@ credential, canlı emir ve migration apply kullanılmaz.
   desteklenmeyen account claim’i production capability olarak açılmaz.
 - [x] Multi-account, source identity ve market type collision negative testleri geçer;
   P1-WP17/P1-WP18 regression yeşil kalır.
-- [ ] Odak testleri, tam backend suite ve uygun Mac local CI kanıtı kaydedilir.
-- [ ] Exact commit, changed files, accounting limitations ve sonraki P1-WP20 economic
+- [x] Odak testleri `8 passed`; tam backend suite `587 passed, 2 warnings`; Mac local CI
+  `MERGE READY` olarak kaydedildi: frontend `51`, production build, arm64 desktop build,
+  WKWebView native smoke ve packaging preflight geçti.
+- [x] Exact implementation commit `f67e732`; changed files, accounting limitations ve sonraki P1-WP20 economic
   dedup/lifecycle bağımlılığı bu kayda yazılır.
 
-## Uygulama sınırı (InProgress)
+## Verified implementation notes
 
 - `AccountReconciliationService` funding, transfer, trade fee, rebate, liquidation/ADL
   ve manual correction kayıtlarını ayrı `account_event_kind` değerleriyle normalize eder.
