@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 2.4.0
+version: 2.5.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: da9af9b
+baseline_commit: f551b1f
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -217,53 +217,60 @@ Cache sonucu defensive copy ile dönüyor, invalid zincir cache'lenmiyor ve cach
 yeni schema/event type eklenmiyor. Bu, Evidence Pack tekrar okumalarını azaltan bir
 warm-read optimizasyonudur; ilk cold full-chain doğrulaması hâlâ ölçüm kapsamındadır.
 
-Focused H07 backend suite `27 passed`; value-chain frontend boundary suite `20 passed`;
+`2da9fe1` ile projection rebuild aynı verifier instance'ını reuse edecek şekilde
+bounded hale getirildi; `f551b1f` ile apply rebuild sonrasında verifier read connection'ı
+kapatılarak SQLite WAL'ın geçici disk sınırı içinde kalması sağlandı. Başarılı apply
+sonrasında sonraki rebuild gerektiğinde verifier cache'i yeniden kurulur; rollback,
+ledger verisi ve projection semantiği değişmez.
+
+Focused H07 bounded-performance suite `19 passed`; projection/H01 regression bundle
+`40 passed`; value-chain frontend boundary suite `20 passed`;
 dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
 `3 passed`; MAE/MFE focused suite `5 passed`; SettingsView focused suite `3 passed`;
 Charts focused suite `4 passed`; plugin registry/ModStore focused suite `7 passed`;
-full backend suite `710 passed, 2 warnings`, full
+full backend suite `712 passed, 2 warnings`, full
 frontend `25` test dosyası ve `100` test PASS; i18n `608/608`.
 Locked local CI `MERGE READY` oldu.
 Current code baseline source commit tam SHA'sı
-`da9af9b82b2d32bb4d8aa9f0917988e1926305fb`, tracked source tree SHA-256'sı
-`d87be24ad6910ecdb3b87861f8e977862d741b2e2e209db5dbd5da90732a3710`'dir.
+`f551b1fbb53cf1676e136f2b01374a534d6aaaa0`, tracked source tree SHA-256'sı
+`e530d9b5a1b38ceb92ece0fe3659a0e7d29f600be94e19e0879452a133ed4d03`'dür.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `1a2544ae69c715ba71536befd84d08eeca9883b6aa9b4eb4a98e5e7e472c5795`,
-native local smoke report SHA-256 `99971b9da9df3401e58fbfdf0de294aca93f98d102c03933474c2e272023a5a5`;
-local smoke executable SHA-256 `2e23dd2298ac5ae1406bb6203a23f0982353ca1b595b49251d34282205326a9b`
-ve `.app` artifact SHA-256 `ed9760202d8b087a74e897237944c372d903e96d9dff38df54ddb7239923f742`.
+Local CI report SHA-256 `e114e7d074123fcf8efb1d2ababd921141a93f69005325fda52d5010fa946e9a`,
+native local smoke report SHA-256 `9c40feafee45ca3a96a2a44ee51e13748bb854a41b7263170353bf2c6cabbe8f`;
+local smoke executable SHA-256 `4a9da326153f08c0ec937f5dd68581a76886031dacdb35f60f5822c69a463ab2`
+ve `.app` artifact SHA-256 `0e6b6907008dd5f1ec8e610874dbd8b0092b615032080ef491e1caa414564ba0`.
 Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
 public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`7c5f74a3bb56baf53aa5acd27caf310cb206a2680759bab0ce08c5bc5d1afaf3`, DMG
-SHA-256 `5a7c6dd40ba2a453ebbe9cbca3377cea4664d0829e06473ed00f3efeb30d5940`
+`e083ad5de417f84e2d3d50428af4416890505036a3dd4e802231f96818173af8`, DMG
+SHA-256 `65e7da9933dcae78cf5d33045468d05dffda74fd8e4a73753b70487692db4895`
 ve mounted executable SHA-256
-`2e23dd2298ac5ae1406bb6203a23f0982353ca1b595b49251d34282205326a9b`'dir.
+`4a9da326153f08c0ec937f5dd68581a76886031dacdb35f60f5822c69a463ab2`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
 notarization, Gatekeeper veya commercial distribution kanıtı değildir.
 
 Bu source/artifact çiftiyle çalıştırılan güncel 100k sentetik benchmark raporu
-`/tmp/h07-da9af9b-artifact.json`, report SHA-256
-`3d2f3218f691b36fdcfc7fabb31b8bdbde614d66b784ef211d2208f64431ef55`'dir.
+`/tmp/h07-f551b1f-artifact.json`, report SHA-256
+`524954428e4a63ddca4620daaa8e1e78562f66b48f425685f58c71e24f48b6a1`'dir.
 Provenance `COMPLETE`, `network=false`, `credentials=false`, `live_execution=false`;
 dataset SHA-256 `cbffe7e178c9efd9e08c876c902cc4dd5efb06e2bc1da7a428b8d001830051bd`,
 determinism snapshot SHA-256
 `6bb1eb94ba9293ab4039e4d03ee34a8d67e25361ebcd6c98679e7be9decf264e` ve sayımlar
 `100000 trades / 100003 ledger events / 100000 projections` olarak kaldı. 100k
-operation p95 değerleri import `179.0969 ms`, projection rebuild `8093.7152 ms`,
-query `224.8434 ms`, Evidence Pack `4132.1722 ms` ve export `329.0577 ms`'dir;
+operation p95 değerleri import `180.4369 ms`, projection rebuild `6159.2185 ms`,
+query `225.7478 ms`, Evidence Pack `4162.4495 ms` ve export `328.6605 ms`'dir;
 Evidence Pack/export tekrarlarının cache-warm niteliği nedeniyle bu değerler support
 SLO veya production claim değildir. Cold full-chain Evidence Pack p95 hâlâ `<2s`
 planning hedefini karşılamıyor; H07 `IMPLEMENTATION_REQUIRED` kalır. Max operation
-RSS `335.4219 MB`, max temporary disk `2949120 B` ölçüldü.
+RSS `335.3438 MB`, max temporary disk `2949120 B` ölçüldü.
 
 ### Önceki artifact-bağlı sentetik baseline
 

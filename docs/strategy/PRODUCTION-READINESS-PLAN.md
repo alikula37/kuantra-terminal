@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.20
+version: 1.0.21
 status: Proposed
 date: 2026-09-08
-reviewed_commit: da9af9b
+reviewed_commit: f551b1f
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -355,10 +355,11 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     truth'i `42d67c6` ile, JournalView trade-list read truth'i `3de57c5` ile,
     MAE/MFE read truth'i `f57da9d` ile, SettingsView portfolio-summary read truth'i
     `3fa98a9` ile, Charts/TradingViewChart historical read truth'i `dd0639b` ile,
-    plugin registry/ModStore read truth'i `950af74` ile ve unchanged-ledger integrity
-    verification cache'i `da9af9b` ile eklendi. Safe-persona görünür read listesi için
-    bounded kanıt günceldir; cold 100k planning target kararı açık kaldığı için paket
-    hâlâ aktif non-release iştir.
+    plugin registry/ModStore read truth'i `950af74` ile, unchanged-ledger integrity
+    verification cache'i `da9af9b` ile, projection verifier reuse'ı `2da9fe1` ile ve
+    post-write verifier connection release'i `f551b1f` ile eklendi. Safe-persona
+    görünür read listesi için bounded kanıt günceldir; cold 100k Evidence Pack
+    planning target kararı açık kaldığı için paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -368,6 +369,17 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.21 — 2026-09-08
+
+- H07 projection verifier reuse/WAL boundary paketi `2da9fe1`/`f551b1f` ile kaydedildi:
+  aynı projection repository içindeki unchanged ledger verification tekrar kullanıldı;
+  apply rebuild sonrası verifier read connection'ı kapatılarak temporary WAL büyümesi
+  engellendi. Full locked local CI `MERGE READY`, 712 backend, 100 frontend,
+  i18n `608/608`, clean Mac arm64 build/native smoke ve exact disabled-market-data
+  mounted DMG smoke PASS oldu. Artifact-bound 100k projection rebuild p95
+  `6159.2185 ms`, temporary disk `0 B`; cold Evidence Pack p95 `4162.4495 ms` ve
+  `<2s` planning target karşılanmadı. H07 açık tutuldu.
 
 ### 1.0.20 — 2026-09-08
 
