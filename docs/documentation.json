@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/N02-macos-dmg-smoke.md"
+    "docs/strategy/work-packages/H03-market-data-degraded-boundary.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -68,7 +68,8 @@
     "docs/archive/strategy/work-packages/P1-WP20-economic-dedup-lifecycle.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP21-journal-evidence-propagation.md": "archived",
     "docs/archive/strategy/work-packages/N01-build-provenance.md": "archived",
-    "docs/strategy/work-packages/N02-macos-dmg-smoke.md": "current-work-package",
+    "docs/archive/strategy/work-packages/N02-macos-dmg-smoke.md": "archived",
+    "docs/strategy/work-packages/H03-market-data-degraded-boundary.md": "current-work-package",
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md": "archived",
@@ -136,6 +137,7 @@
     "docs/archive/strategy/work-packages/P1-WP20-economic-dedup-lifecycle.md": 0,
     "docs/archive/strategy/work-packages/P1-WP21-journal-evidence-propagation.md": 0,
     "docs/archive/strategy/work-packages/N01-build-provenance.md": 0,
+    "docs/archive/strategy/work-packages/N02-macos-dmg-smoke.md": 0,
     "docs/archive/strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md": 1,
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": 1,
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": 1,
