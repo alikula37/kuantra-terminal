@@ -116,6 +116,7 @@ jobs:
               powershell.exe -NoProfile -NonInteractive -Command '$p = Start-Process -FilePath $env:K_INSTALLER_PS -ArgumentList @("/S", "/D=$env:K_INSTALL_DIR_PS") -Wait -PassThru; if ($p.ExitCode -ne 0) { exit $p.ExitCode }'
               exe="$install_dir/Kuantra Terminal.exe"
               python scripts/smoke_desktop.py --executable "$exe" --artifact "$installer" --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-windows.json
+              python scripts/check_provenance.py --report dist/final-smoke-windows.json --release
               ;;
             macOS)
               dmg="dist/Kuantra-Terminal-${VERSION}-aarch64.dmg"
@@ -127,10 +128,12 @@ jobs:
               trap 'hdiutil detach "$mountpoint" -force >/dev/null 2>&1 || true' EXIT
               exe="$mountpoint/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal"
               python scripts/smoke_desktop.py --executable "$exe" --artifact "$dmg" --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-macos.json
+              python scripts/check_provenance.py --report dist/final-smoke-macos.json --release
               ;;
             Linux)
               appimage="dist/Kuantra-Terminal-${VERSION}-x86_64.AppImage"
               xvfb-run -a python scripts/smoke_desktop.py --executable "$appimage" --artifact "$appimage" --appimage --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-linux.json
+              python scripts/check_provenance.py --report dist/final-smoke-linux.json --release
               ;;
             *)
               echo "unsupported runner OS: $RUNNER_OS" >&2

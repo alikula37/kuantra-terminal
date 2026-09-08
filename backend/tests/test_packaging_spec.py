@@ -25,7 +25,7 @@ def test_spec_and_scripts_exist():
     assert (ROOT / "packaging" / "kuantra.spec").is_file()
     for f in ("icon.icns", "icon.ico", "icon.png"):
         assert (ROOT / "packaging" / "icons" / f).is_file(), f
-    for f in ("build_desktop.py", "smoke_desktop.py", "package_macos.sh", "package_windows.sh", "package_linux.sh"):
+    for f in ("build_desktop.py", "smoke_desktop.py", "check_provenance.py", "package_macos.sh", "package_windows.sh", "package_linux.sh"):
         assert (ROOT / "scripts" / f).is_file(), f
 
 
@@ -54,6 +54,7 @@ def test_build_and_smoke_scripts_target_host_os_outputs():
     assert "--smoke" in smoke and "--smoke-report" in smoke
     assert "--executable" in smoke and "--artifact" in smoke and "--appimage" in smoke and "--data-dir" in smoke
     assert "smoke_schema_version" in smoke and "executable_sha256" in smoke
+    assert "build_provenance" in smoke and "provenance_status" in smoke
     assert "KUANTRA_DATA_DIR" in smoke and "KUANTRA_GATEWAY_ENABLED" in smoke
 
 

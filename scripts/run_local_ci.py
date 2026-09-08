@@ -33,6 +33,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from build_provenance import ProvenanceError, validate_report
+
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DEFAULT = ROOT / "dist" / "local-ci-report.json"
@@ -195,6 +197,24 @@ def _validate_smoke_report(path: Path) -> tuple[str, dict[str, Any]]:
     }
 
 
+def _validate_smoke_provenance(path: Path) -> tuple[str, dict[str, Any]]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        provenance = validate_report(payload, release_facing=False)
+    except (OSError, json.JSONDecodeError, ProvenanceError) as exc:
+        return "FAIL", {"reason": f"smoke provenance is incomplete: {exc}"}
+    return "PASS", {
+        "provenance_status": provenance.get("provenance_status"),
+        "source_commit_sha": provenance.get("source_commit_sha"),
+        "tracked_source_tree_status": provenance.get("tracked_source_tree_status"),
+        "tracked_source_tree_sha256": provenance.get("tracked_source_tree_sha256"),
+        "lock_hashes": provenance.get("lock_hashes"),
+        "toolchain": provenance.get("toolchain"),
+        "executable_sha256": provenance.get("executable_sha256"),
+        "artifact_sha256": provenance.get("artifact_sha256"),
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the Kuantra local merge gate")
     parser.add_argument("--report", type=Path, default=REPORT_DEFAULT)
@@ -277,6 +297,14 @@ def main(argv: list[str] | None = None) -> int:
             "duration_seconds": 0,
             "details": renderer_details,
         })
+        provenance_status, provenance_details = _validate_smoke_provenance(smoke_report)
+        steps.append({
+            "name": "provenance-contract",
+            "status": provenance_status,
+            "returncode": 0 if provenance_status == "PASS" else 1,
+            "duration_seconds": 0,
+            "details": provenance_details,
+        })
     else:
         steps.append({
             "name": "desktop-smoke",
@@ -287,6 +315,14 @@ def main(argv: list[str] | None = None) -> int:
         })
 
     failed = [step["name"] for step in steps if step["status"] not in {"PASS"}]
+    smoke_provenance: dict[str, Any] = {}
+    if smoke_report.is_file():
+        try:
+            smoke_payload = json.loads(smoke_report.read_text(encoding="utf-8"))
+            if isinstance(smoke_payload, dict) and isinstance(smoke_payload.get("build_provenance"), dict):
+                smoke_provenance = smoke_payload["build_provenance"]
+        except (OSError, json.JSONDecodeError):
+            smoke_provenance = {}
     report = {
         "local_ci_schema_version": 1,
         "policy": "KDG-002@1.1.0",
@@ -298,6 +334,8 @@ def main(argv: list[str] | None = None) -> int:
         "python": sys.version.split()[0],
         "test_data_dir": str(test_data),
         "smoke_data_dir": str(smoke_data),
+        "provenance_status": smoke_provenance.get("provenance_status", "INCOMPLETE"),
+        "build_provenance": smoke_provenance,
         "merge_ready": not failed,
         "failed_steps": failed,
         "steps": steps,

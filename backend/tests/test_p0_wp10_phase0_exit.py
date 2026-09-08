@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -66,4 +67,7 @@ def test_smoke_report_enrichment_binds_hashes_and_truth_matrix(tmp_path, monkeyp
     assert report["truth_matrix"]["document_id"] == "KTR-001"
     assert report["truth_matrix"]["product_version"] == "1.4.0"
     assert report["truth_matrix"]["sha256"] == canonical_matrix_digest(load_matrix())
-    assert report["build_commit"] == "UNKNOWN"
+    assert re.fullmatch(r"[0-9a-f]{40}", report["build_commit"])
+    assert report["build_provenance"]["source_commit_sha"] == report["build_commit"]
+    assert report["provenance_status"] in {"COMPLETE", "DEVELOPER_DIRTY"}
+    assert report["build_provenance"]["tracked_source_tree_sha256"]

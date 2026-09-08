@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP21-journal-evidence-propagation.md"
+    "docs/strategy/work-packages/N01-build-provenance.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -66,7 +66,8 @@
     "docs/archive/strategy/work-packages/P1-WP18-fee-precision-unit-contract.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP19-funding-account-reconciliation.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP20-economic-dedup-lifecycle.md": "archived",
-    "docs/strategy/work-packages/P1-WP21-journal-evidence-propagation.md": "current-work-package",
+    "docs/archive/strategy/work-packages/P1-WP21-journal-evidence-propagation.md": "archived",
+    "docs/strategy/work-packages/N01-build-provenance.md": "current-work-package",
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md": "archived",
@@ -132,6 +133,7 @@
     "docs/archive/strategy/work-packages/P1-WP18-fee-precision-unit-contract.md": 0,
     "docs/archive/strategy/work-packages/P1-WP19-funding-account-reconciliation.md": 0,
     "docs/archive/strategy/work-packages/P1-WP20-economic-dedup-lifecycle.md": 0,
+    "docs/archive/strategy/work-packages/P1-WP21-journal-evidence-propagation.md": 0,
     "docs/archive/strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md": 1,
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": 1,
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": 1,

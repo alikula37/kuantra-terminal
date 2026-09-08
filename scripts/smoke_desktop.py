@@ -17,6 +17,10 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app.version import __version__  # noqa: E402
 
 sys.path.insert(0, str(ROOT / "scripts"))
+from build_provenance import (  # noqa: E402
+    collect_provenance,
+    default_artifact_for_executable,
+)
 from release_truth import DEFAULT_MATRIX_PATH, canonical_matrix_digest, load_matrix  # noqa: E402
 
 
@@ -40,15 +44,23 @@ def enrich_report(report: dict, executable_path: Path, artifact_path: Path | Non
     """Attach reproducible provenance to a successful or failed smoke report."""
     matrix = load_matrix(DEFAULT_MATRIX_PATH)
     product = matrix["product"]
+    artifact = artifact_path or default_artifact_for_executable(executable_path)
+    provenance = collect_provenance(
+        ROOT,
+        executable=executable_path,
+        artifact=artifact,
+    )
     report["smoke_schema_version"] = 2
     report["version_expected"] = __version__
     report["platform"] = platform.system().lower()
     report["architecture"] = platform.machine()
-    report["executable_path"] = str(executable_path.resolve())
-    report["executable_sha256"] = sha256(executable_path) if executable_path.is_file() else None
-    report["artifact_path"] = str(artifact_path.resolve()) if artifact_path else None
-    report["artifact_sha256"] = sha256(artifact_path) if artifact_path and artifact_path.is_file() else None
-    report["build_commit"] = os.environ.get("GITHUB_SHA") or os.environ.get("KUANTRA_BUILD_COMMIT", "UNKNOWN")
+    report["executable_path"] = provenance["executable_path"]
+    report["executable_sha256"] = provenance["executable_sha256"]
+    report["artifact_path"] = provenance["artifact_path"]
+    report["artifact_sha256"] = provenance["artifact_sha256"]
+    report["build_commit"] = provenance["source_commit_sha"] or "UNKNOWN"
+    report["provenance_status"] = provenance["provenance_status"]
+    report["build_provenance"] = provenance
     report["truth_matrix"] = {
         "document_id": matrix["document_id"],
         "version": matrix["version"],

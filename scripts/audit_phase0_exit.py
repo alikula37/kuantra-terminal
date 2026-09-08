@@ -15,6 +15,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+from build_provenance import ProvenanceError, validate_report  # noqa: E402
 from check_release_truth import TruthContractError, run_checks  # noqa: E402
 from release_truth import canonical_matrix_digest, load_matrix  # noqa: E402
 
@@ -113,6 +114,10 @@ def _validate_smoke_report(path: Path, matrix: dict[str, Any]) -> dict[str, Any]
         _fail(f"smoke report {path} has no build commit provenance")
     if not UTC_TIMESTAMP_RE.fullmatch(str(report.get("recorded_at_utc", ""))):
         _fail(f"smoke report {path} has no UTC recording timestamp")
+    try:
+        validate_report(report, release_facing=True)
+    except ProvenanceError as exc:
+        _fail(f"smoke report {path} has incomplete release provenance: {exc}")
     return report
 
 
