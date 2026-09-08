@@ -560,6 +560,37 @@ class EvidenceLedgerRepository:
                 result.append(event)
         return result
 
+    def list_events_for_economic_group(
+        self,
+        economic_group_id: str,
+        *,
+        account_id: str,
+        venue: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Return immutable propagation revisions for one economic group.
+
+        The group identity lives in the normalized evidence payload rather than
+        in a new ledger column.  Scanning the canonical export keeps this
+        helper compatible with the existing schema and makes corrections
+        discoverable without mutating historical rows.
+        """
+
+        group_id = _require_identifier(economic_group_id, "economic_group_id")
+        result: List[Dict[str, Any]] = []
+        for event in self.export_events(account_id=account_id):
+            if venue is not None and event.get("venue") != venue:
+                continue
+            payload = event.get("normalized_payload")
+            if not isinstance(payload, dict):
+                continue
+            trade = payload.get("trade")
+            evidence = trade.get("economic_evidence") if isinstance(trade, dict) else None
+            if not isinstance(evidence, dict):
+                continue
+            if str(evidence.get("economic_group_id") or "") == group_id:
+                result.append(event)
+        return result
+
     def count_events(self) -> int:
         conn = self._connect(write=False)
         try:

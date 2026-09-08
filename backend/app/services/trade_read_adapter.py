@@ -124,7 +124,30 @@ class TradeReadAdapter:
         integrity = self.ledger_repo.verify_chain(account_id=self.account_id)
         market_context = self.get_market_context(trade_id)
         safe_events = []
+        latest_economic_evidence = None
+        economic_revisions = []
         for event in events:
+            payload = event.get("normalized_payload")
+            trade_payload = payload.get("trade") if isinstance(payload, dict) else None
+            economic_evidence = (
+                trade_payload.get("economic_evidence")
+                if isinstance(trade_payload, dict)
+                else None
+            )
+            if isinstance(economic_evidence, dict):
+                latest_economic_evidence = economic_evidence
+                revision = economic_evidence.get("revision")
+                if isinstance(revision, dict):
+                    revision_view = dict(revision)
+                else:
+                    revision_view = {}
+                revision_view.update({
+                    "event_id": event.get("event_id"),
+                    "event_type": event.get("event_type"),
+                    "event_hash": event.get("event_hash"),
+                    "causation_id": event.get("causation_id"),
+                })
+                economic_revisions.append(revision_view)
             safe_events.append({
                 key: event.get(key)
                 for key in (
@@ -147,6 +170,13 @@ class TradeReadAdapter:
             },
             "events": safe_events,
             "event_count": len(safe_events),
+            "economic_evidence": latest_economic_evidence,
+            "economic_revisions": economic_revisions,
+            "account_coverage": (
+                latest_economic_evidence.get("account_coverage")
+                if isinstance(latest_economic_evidence, dict)
+                else None
+            ),
             "market_context": market_context,
         }
 

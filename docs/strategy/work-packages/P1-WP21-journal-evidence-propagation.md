@@ -4,9 +4,9 @@
 ```yaml
 work_package: P1-WP21
 version: 1.0.0
-status: Ready
+status: InProgress
 date: 2026-09-08
-baseline_commit: 5d691b9
+baseline_commit: 4f7e0f0
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP20

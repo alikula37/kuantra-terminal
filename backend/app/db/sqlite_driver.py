@@ -2,7 +2,7 @@ import sqlite3
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Sequence
 from app.core.paths import get_sqlite_path
 from app.db.evidence_schema import initialize_evidence_schema
 from app.db.projection_schema import initialize_trade_projection_schema
@@ -279,6 +279,113 @@ class SQLiteDriver:
             projection.upsert_event_in_transaction(conn, event)
             conn.commit()
             return dict(stored)
+        except Exception:
+            if conn.in_transaction:
+                conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    def record_grouped_evidence_batch(
+        self,
+        commands: Sequence[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """Persist economic-group journal/evidence commands in one transaction.
+
+        Each command carries a validated trade snapshot and its normalized
+        economic evidence context.  The compatibility row, canonical ledger
+        append and typed projection are deliberately coupled; a failure for any
+        command rolls back the complete bounded batch.
+        """
+
+        if not commands:
+            return []
+
+        from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+        from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
+
+        ledger = EvidenceLedgerRepository(self.db_path)
+        projection = EvidenceTradeProjectionRepository(self.db_path)
+        conn = self.get_connection()
+        persisted: List[Dict[str, Any]] = []
+        try:
+            conn.execute("PRAGMA synchronous=FULL")
+            conn.execute("BEGIN IMMEDIATE")
+            for command in commands:
+                if not isinstance(command, dict):
+                    raise TypeError("grouped evidence command must be an object")
+                trade = command.get("trade")
+                if not isinstance(trade, dict):
+                    raise ValueError("grouped evidence command trade must be an object")
+                resolved_id = str(trade.get("id") or "").strip()
+                if not resolved_id:
+                    raise ValueError("grouped evidence trade id is required")
+
+                existing = conn.execute(
+                    "SELECT * FROM trades WHERE id = ?", (resolved_id,)
+                ).fetchone()
+                if existing is not None:
+                    merged = dict(existing)
+                    merged.update({key: value for key, value in trade.items() if key != "id"})
+                    merged["id"] = resolved_id
+                    merged["created_at"] = existing["created_at"]
+                    merged["updated_at"] = datetime.utcnow().isoformat()
+                    prepared = self._prepare_trade(
+                        merged, trade_id=resolved_id, now=merged["updated_at"]
+                    )
+                else:
+                    prepared = self._prepare_trade(
+                        {**trade, "id": resolved_id},
+                        trade_id=resolved_id,
+                    )
+
+                self._upsert_trade_on_connection(conn, prepared)
+                stored = conn.execute(
+                    "SELECT * FROM trades WHERE id = ?", (resolved_id,)
+                ).fetchone()
+                if stored is None:
+                    raise RuntimeError("Grouped trade write is not readable inside its transaction")
+                snapshot = {
+                    field: stored[field] for field in self._TRADE_SNAPSHOT_FIELDS
+                }
+
+                normalized_payload = command.get("normalized_payload")
+                if not isinstance(normalized_payload, dict):
+                    raise ValueError("grouped evidence normalized_payload must be an object")
+                normalized_payload = dict(normalized_payload)
+                payload_trade = normalized_payload.get("trade")
+                if not isinstance(payload_trade, dict):
+                    raise ValueError("grouped evidence normalized_payload.trade is required")
+                payload_trade = dict(payload_trade)
+                payload_trade.update(snapshot)
+                normalized_payload["trade"] = payload_trade
+                # The source rows are intentionally never copied into the
+                # ledger.  Use the final normalized snapshot for the digest so
+                # deterministic replays cannot conflict on an intermediate
+                # pre-normalization object.
+                raw_payload = normalized_payload
+
+                event = ledger.append_event_in_transaction(
+                    conn,
+                    event_type=command["event_type"],
+                    account_id=command["account_id"],
+                    venue=command["venue"],
+                    idempotency_key=command["idempotency_key"],
+                    normalized_payload=normalized_payload,
+                    raw_payload=raw_payload,
+                    occurred_at=command.get("occurred_at"),
+                    received_at=command.get("received_at"),
+                    schema_version=command.get("schema_version", "1"),
+                    adapter_version=command.get("adapter_version", "unknown"),
+                    correlation_id=command.get("correlation_id") or resolved_id,
+                    causation_id=command.get("causation_id"),
+                    provenance=command.get("provenance") or {},
+                    event_id=command.get("event_id"),
+                )
+                projection.upsert_event_in_transaction(conn, event)
+                persisted.append({"trade": dict(stored), "event": event})
+            conn.commit()
+            return persisted
         except Exception:
             if conn.in_transaction:
                 conn.rollback()
