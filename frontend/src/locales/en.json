@@ -412,6 +412,24 @@
     "correction_required": "Enter at least one explicit correction value.",
     "correction_invalid": "Correction values must be finite numbers."
   },
+  "evidence_pack": {
+    "coverage_title": "Evidence coverage",
+    "overall": "Overall",
+    "trade_snapshot": "Trade snapshot",
+    "realized_pnl": "Realized PnL",
+    "fees": "Fee coverage",
+    "funding_transfer": "Funding / transfer",
+    "account_events": "Account events",
+    "market_context": "Market context",
+    "rules_title": "Applicable rule provenance",
+    "no_rules": "No applicable rule was recorded; this is not a PASS.",
+    "snapshot": "Canonical snapshot SHA-256",
+    "csv_export": "CSV",
+    "json_export": "JSON",
+    "html_export": "HTML",
+    "export_ready": "{format} export ready.",
+    "export_failed": "Export failed safely."
+  },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE SCORECARD",
     "subtitle": "Institutional Expectancy, Risk-Adjusted Ratios & Statistical Quality",

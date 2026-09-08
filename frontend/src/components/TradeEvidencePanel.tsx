@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FileCheck2, Hash, X, XCircle } from "lucide-react";
+import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { EvidenceEvent, TradeEvidencePack } from "../types";
 
@@ -71,10 +72,11 @@ function sourceLabel(pack: TradeEvidencePack): { label: string; className: strin
 }
 
 export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId, onClose }) => {
+  const { t } = useTranslation();
   const [pack, setPack] = useState<TradeEvidencePack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [exporting, setExporting] = useState<"json" | "html" | null>(null);
+  const [exporting, setExporting] = useState<"json" | "html" | "csv" | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -114,7 +116,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
   const ledgerVerified = Boolean(pack?.ledger_integrity.valid && pack.ledger_integrity.checked_events > 0);
   const contextSourceVerified = pack?.market_context.market_context?.source_verified === true;
 
-  const downloadExport = async (format: "json" | "html") => {
+  const downloadExport = async (format: "json" | "html" | "csv") => {
     setExporting(format);
     setExportMessage(null);
     try {
@@ -143,9 +145,9 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
       anchor.click();
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
-      setExportMessage(`${format.toUpperCase()} export ready.`);
+      setExportMessage(t("evidence_pack.export_ready", { format: format.toUpperCase() }));
     } catch (reason: unknown) {
-      setExportMessage(reason instanceof Error ? reason.message : "Export failed safely.");
+      setExportMessage(reason instanceof Error ? reason.message : t("evidence_pack.export_failed"));
     } finally {
       setExporting(null);
     }
@@ -195,15 +197,67 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
               <div className="bg-[#111722] border border-surface-border rounded p-3">
                 <span className="block text-[10px] text-slate-500 uppercase">Exports</span>
                 <div className="flex gap-2 mt-1">
-                  {(["json", "html"] as const).map((format) => (
+                  {(["json", "html", "csv"] as const).map((format) => (
                     <button key={format} type="button" onClick={() => downloadExport(format)} disabled={exporting !== null} className="inline-flex items-center gap-1 px-2 py-1 rounded border border-accent/50 text-accent hover:bg-accent/10 disabled:opacity-50">
-                      <Download className="w-3 h-3" />{exporting === format ? "…" : format.toUpperCase()}
+                      <Download className="w-3 h-3" />{exporting === format ? "…" : t(`evidence_pack.${format}_export`)}
                     </button>
                   ))}
                 </div>
                 {exportMessage && <span className="block text-[10px] text-slate-400 mt-1">{exportMessage}</span>}
               </div>
             </div>
+
+            {pack.coverage_summary && (
+              <section data-testid="trade-evidence-coverage" className="bg-[#0d121c] border border-amber-400/30 rounded-lg p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wide">{t("evidence_pack.coverage_title")}</h3>
+                    <p className="text-[11px] text-slate-500 mt-1">Unknown and unavailable values remain visible; they are not complete or zero.</p>
+                  </div>
+                  <span className="px-2 py-1 rounded border border-amber-400/40 bg-amber-400/10 text-amber-300 text-[10px] font-bold">
+                    {t("evidence_pack.overall")}: {pack.coverage_summary.overall}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3 text-[10px]">
+                  {([
+                    ["trade_snapshot", t("evidence_pack.trade_snapshot")],
+                    ["realized_pnl", t("evidence_pack.realized_pnl")],
+                    ["fees", t("evidence_pack.fees")],
+                    ["funding_transfer", t("evidence_pack.funding_transfer")],
+                    ["account_events", t("evidence_pack.account_events")],
+                    ["market_context", t("evidence_pack.market_context")],
+                  ] as const).map(([key, label]) => (
+                    <div key={key} className="border border-surface-border/70 bg-[#111722] rounded p-2">
+                      <span className="block text-slate-500">{label}</span>
+                      <span className="block mt-1 text-amber-300 font-bold">{pack.coverage_summary?.[key] || "UNKNOWN"}</span>
+                    </div>
+                  ))}
+                </div>
+                {pack.snapshot_sha256 && (
+                  <div className="mt-3 text-[10px] text-slate-500">
+                    {t("evidence_pack.snapshot")}: <span title={pack.snapshot_sha256}>{shortHash(pack.snapshot_sha256)}</span>
+                  </div>
+                )}
+              </section>
+            )}
+
+            <section data-testid="trade-evidence-rules" className="bg-[#0d121c] border border-surface-border rounded-lg p-4">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wide">{t("evidence_pack.rules_title")}</h3>
+              {pack.applicable_rules?.length ? (
+                <div className="mt-2 space-y-2">
+                  {pack.applicable_rules.map((rule) => (
+                    <div key={`${rule.kind}-${rule.rule_id}-${rule.event_hash || rule.snapshot_sha256}`} className="border border-surface-border/70 bg-[#111722] rounded p-2 text-[10px] text-slate-400">
+                      <span className="text-accent font-bold">{rule.rule_id}</span>
+                      <span className="ml-3">{rule.kind}</span>
+                      <span className="ml-3">v{rule.version}</span>
+                      {rule.snapshot_sha256 && <span className="ml-3">snapshot {shortHash(rule.snapshot_sha256)}</span>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-amber-300 mt-2">{t("evidence_pack.no_rules")}</p>
+              )}
+            </section>
 
             {pack.import_review && (
               <section data-testid="trade-evidence-import-review" className="bg-[#0d121c] border border-amber-400/30 rounded-lg p-4">

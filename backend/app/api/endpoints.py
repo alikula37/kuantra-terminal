@@ -94,7 +94,7 @@ def export_trade_evidence(
     trade_id: str,
     format: str = Query("json", min_length=1, max_length=8),
 ):
-    """Download a deterministic JSON or static HTML Evidence Pack artifact."""
+    """Download a deterministic JSON, CSV, or static HTML Evidence Pack artifact."""
     try:
         artifact = evidence_pack_export_service.export(trade_id, format)
     except EvidencePackNotFoundError as exc:

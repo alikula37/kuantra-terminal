@@ -307,6 +307,28 @@ export interface EvidenceImportReview {
   [key: string]: unknown;
 }
 
+export type EvidenceCoverageState = "COMPLETE" | "PARTIAL" | "UNKNOWN" | "NOT_AVAILABLE" | string;
+
+export interface EvidenceCoverageSummary {
+  overall: EvidenceCoverageState;
+  trade_snapshot: EvidenceCoverageState;
+  realized_pnl: EvidenceCoverageState;
+  fees: EvidenceCoverageState;
+  funding_transfer: EvidenceCoverageState;
+  account_events: EvidenceCoverageState;
+  market_context: EvidenceCoverageState;
+  [key: string]: unknown;
+}
+
+export interface EvidenceRuleReference {
+  kind: "risk" | "playbook" | string;
+  rule_id: string;
+  version: string;
+  snapshot_sha256: string;
+  event_id?: string;
+  event_hash?: string;
+}
+
 export interface TradeEvidencePack {
   trade_id: string;
   trade: Trade | null;
@@ -320,6 +342,9 @@ export interface TradeEvidencePack {
   import_review_history?: EvidenceImportReview[];
   reconciliation_review?: EvidenceImportReview | null;
   reconciliation_review_history?: EvidenceImportReview[];
+  coverage_summary?: EvidenceCoverageSummary;
+  applicable_rules?: EvidenceRuleReference[];
+  snapshot_sha256?: string;
 }
 
 export interface TradeDriftItem {

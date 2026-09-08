@@ -412,6 +412,24 @@
     "correction_required": "Geben Sie mindestens einen expliziten Korrekturwert ein.",
     "correction_invalid": "Korrekturwerte müssen endliche Zahlen sein."
   },
+  "evidence_pack": {
+    "coverage_title": "Evidenzabdeckung",
+    "overall": "Gesamt",
+    "trade_snapshot": "Trade-Snapshot",
+    "realized_pnl": "Realisierter PnL",
+    "fees": "Gebührenabdeckung",
+    "funding_transfer": "Funding / Transfer",
+    "account_events": "Kontoereignisse",
+    "market_context": "Marktkontext",
+    "rules_title": "Provenienz der anwendbaren Regel",
+    "no_rules": "Keine anwendbare Regel aufgezeichnet; dies ist kein PASS.",
+    "snapshot": "Canonical Snapshot SHA-256",
+    "csv_export": "CSV",
+    "json_export": "JSON",
+    "html_export": "HTML",
+    "export_ready": "{format}-Export bereit.",
+    "export_failed": "Export wurde sicher abgebrochen."
+  },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE-SCORECARD",
     "subtitle": "Institutionelle Erwartung, risikobereinigte Ratios & statistische Qualität",

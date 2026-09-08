@@ -412,6 +412,24 @@
     "correction_required": "En az bir açık düzeltme değeri girin.",
     "correction_invalid": "Düzeltme değerleri sonlu sayılar olmalıdır."
   },
+  "evidence_pack": {
+    "coverage_title": "Kanıt kapsamı",
+    "overall": "Genel",
+    "trade_snapshot": "İşlem snapshot'ı",
+    "realized_pnl": "Gerçekleşen PnL",
+    "fees": "Komisyon kapsamı",
+    "funding_transfer": "Funding / transfer",
+    "account_events": "Hesap olayları",
+    "market_context": "Piyasa bağlamı",
+    "rules_title": "Uygulanabilir kural provenance'ı",
+    "no_rules": "Uygulanabilir bir kural kaydedilmedi; bu PASS değildir.",
+    "snapshot": "Canonical snapshot SHA-256",
+    "csv_export": "CSV",
+    "json_export": "JSON",
+    "html_export": "HTML",
+    "export_ready": "{format} export hazır.",
+    "export_failed": "Export güvenli biçimde başarısız oldu."
+  },
   "analytics": {
     "title": "KANTİTATİF PERFORMANS SKOR KARTI",
     "subtitle": "Kurumsal Beklenti, Riske Uyarlanmış Oranlar & İstatistiksel Kalite",

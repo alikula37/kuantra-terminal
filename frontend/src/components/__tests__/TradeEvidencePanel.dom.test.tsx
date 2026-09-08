@@ -6,10 +6,16 @@ const mocks = vi.hoisted(() => ({ apiFetch: vi.fn() }));
 vi.mock("../../lib/backend", () => ({ apiUrl: (path: string) => path, apiFetch: mocks.apiFetch }));
 
 import { TradeEvidencePanel } from "../TradeEvidencePanel";
+import { I18nProvider } from "../../context/I18nContext";
 import { createRoot } from "react-dom/client";
 
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+const mockPanelResponse = (body: unknown, status = 200) => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(
+    path === "/api/v1/settings" ? response({ locale: "en" }) : response(body, status),
+  ));
+};
 
 const basePack = {
   trade_id: "TRD-1",
@@ -59,8 +65,8 @@ afterEach(async () => {
 });
 
 it("renders policy provenance, ledger integrity, and unverified market context", async () => {
-  mocks.apiFetch.mockResolvedValueOnce(response(basePack));
-  await act(async () => root.render(<TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} />));
+  mockPanelResponse(basePack);
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
   await flush();
 
   expect(host.textContent).toContain("Verified chain");
@@ -70,7 +76,7 @@ it("renders policy provenance, ledger integrity, and unverified market context",
 });
 
 it("renders an explicit import review boundary in the Evidence Pack", async () => {
-  mocks.apiFetch.mockResolvedValueOnce(response({
+  mockPanelResponse({
     ...basePack,
     import_review: {
       status: "PARTIAL",
@@ -79,8 +85,8 @@ it("renders an explicit import review boundary in the Evidence Pack", async () =
       coverage: { status: "PARTIAL" },
       source_file_sha256: "a".repeat(64),
     },
-  }));
-  await act(async () => root.render(<TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} />));
+  });
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
   await flush();
 
   expect(host.querySelector("[data-testid=trade-evidence-import-review]")?.textContent).toContain("USER_REVIEW_REQUIRED");
@@ -88,10 +94,37 @@ it("renders an explicit import review boundary in the Evidence Pack", async () =
 });
 
 it("shows a bounded error instead of implying evidence exists", async () => {
-  mocks.apiFetch.mockResolvedValueOnce(response({ detail: "trade evidence not found" }, 404));
-  await act(async () => root.render(<TradeEvidencePanel tradeId="MISSING" onClose={vi.fn()} />));
+  mockPanelResponse({ detail: "trade evidence not found" }, 404);
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="MISSING" onClose={vi.fn()} /></I18nProvider>));
   await flush();
 
   expect(host.textContent).toContain("trade evidence not found");
   expect(host.textContent).not.toContain("Verified chain");
+});
+
+it("renders explicit coverage, applicable rule provenance, snapshot identity, and CSV export", async () => {
+  mockPanelResponse({
+    ...basePack,
+    snapshot_sha256: "a".repeat(64),
+    coverage_summary: {
+      overall: "PARTIAL",
+      fees: "UNKNOWN",
+      funding_transfer: "NOT_AVAILABLE",
+      market_context: "PARTIAL",
+    },
+    applicable_rules: [{
+      kind: "risk",
+      rule_id: "risk-policy",
+      version: "3",
+      snapshot_sha256: "b".repeat(64),
+    }],
+  });
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  expect(host.textContent).toContain("Fee coverage");
+  expect(host.textContent).toContain("UNKNOWN");
+  expect(host.textContent).toContain("risk-policy");
+  expect(host.textContent).toContain("a".repeat(10));
+  expect(Array.from(host.querySelectorAll("button")).some((button) => button.textContent?.includes("CSV"))).toBe(true);
 });

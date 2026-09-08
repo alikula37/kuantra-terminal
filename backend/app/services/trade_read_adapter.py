@@ -9,14 +9,175 @@ silently incomplete.
 
 from __future__ import annotations
 
+import hashlib
 import logging
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
-from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository, canonical_json
 from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
 from app.db.sqlite_driver import SQLiteDriver, sqlite_driver
 
 logger = logging.getLogger(__name__)
+
+_COVERAGE_STATES = frozenset({"COMPLETE", "PARTIAL", "UNKNOWN", "NOT_AVAILABLE"})
+
+
+def _coverage_state(value: Any, *, default: str = "UNKNOWN") -> str:
+    text = str(value or "").strip().upper()
+    return text if text in _COVERAGE_STATES else default
+
+
+def _explicit_coverage(mapping: Any, keys: Sequence[str]) -> str:
+    if not isinstance(mapping, Mapping):
+        return "NOT_AVAILABLE"
+    for key in keys:
+        value = mapping.get(key)
+        if isinstance(value, str) and value.strip().upper() in _COVERAGE_STATES:
+            return value.strip().upper()
+        if isinstance(value, bool):
+            return "COMPLETE" if value else _coverage_state(mapping.get("status"), default="UNKNOWN")
+        complete = mapping.get(f"{key}_complete")
+        if complete is True:
+            return "COMPLETE"
+        if complete is False:
+            return _coverage_state(mapping.get("status"), default="UNKNOWN")
+    return "NOT_AVAILABLE"
+
+
+def _market_context_coverage(market_context: Any) -> str:
+    if not isinstance(market_context, Mapping):
+        return "NOT_AVAILABLE"
+    status = str(market_context.get("status") or "").strip().upper()
+    if status == "READY":
+        provenance = market_context.get("provenance")
+        return "COMPLETE" if isinstance(provenance, Mapping) and provenance.get("source_verified") is True else "PARTIAL"
+    if status in {"NO_DATA", "UNAVAILABLE"}:
+        return "NOT_AVAILABLE"
+    return _coverage_state(status, default="UNKNOWN")
+
+
+def _coverage_summary(
+    *,
+    trade: Any,
+    events: Sequence[Mapping[str, Any]],
+    import_review: Any,
+    reconciliation_review: Any,
+    account_coverage: Any,
+    market_context: Any,
+) -> Dict[str, str]:
+    import_coverage = import_review.get("coverage") if isinstance(import_review, Mapping) else None
+    reconciliation_coverage = (
+        reconciliation_review.get("coverage")
+        if isinstance(reconciliation_review, Mapping)
+        else None
+    )
+    fee_sources = (import_coverage, reconciliation_coverage, account_coverage)
+    fees = next(
+        (
+            _explicit_coverage(source, ("commission", "fees", "fee"))
+            for source in fee_sources
+            if isinstance(source, Mapping)
+            and _explicit_coverage(source, ("commission", "fees", "fee")) != "NOT_AVAILABLE"
+        ),
+        "NOT_AVAILABLE",
+    )
+    funding_transfer = next(
+        (
+            _explicit_coverage(source, ("funding_transfer", "funding", "transfers"))
+            for source in fee_sources
+            if isinstance(source, Mapping)
+            and _explicit_coverage(source, ("funding_transfer", "funding", "transfers")) != "NOT_AVAILABLE"
+        ),
+        "NOT_AVAILABLE",
+    )
+    account_events = next(
+        (
+            _explicit_coverage(source, ("account_events", "events_complete"))
+            for source in (account_coverage, import_coverage, reconciliation_coverage)
+            if isinstance(source, Mapping)
+            and _explicit_coverage(source, ("account_events", "events_complete")) != "NOT_AVAILABLE"
+        ),
+        "NOT_AVAILABLE",
+    )
+    realized_pnl = next(
+        (
+            _explicit_coverage(source, ("realized_pnl", "pnl"))
+            for source in (import_coverage, reconciliation_coverage, account_coverage)
+            if isinstance(source, Mapping)
+            and _explicit_coverage(source, ("realized_pnl", "pnl")) != "NOT_AVAILABLE"
+        ),
+        "NOT_AVAILABLE",
+    )
+    trade_snapshot = "COMPLETE" if isinstance(trade, Mapping) else "NOT_AVAILABLE"
+    market = _market_context_coverage(market_context)
+    states = (trade_snapshot, realized_pnl, fees, funding_transfer, account_events, market)
+    if not trade and not events:
+        overall = "NOT_AVAILABLE"
+    elif not trade and events:
+        overall = "PARTIAL"
+    elif "UNKNOWN" in states:
+        overall = "UNKNOWN"
+    elif any(state in {"PARTIAL", "NOT_AVAILABLE"} for state in states):
+        overall = "PARTIAL"
+    else:
+        overall = "COMPLETE"
+    return {
+        "overall": overall,
+        "trade_snapshot": trade_snapshot,
+        "realized_pnl": realized_pnl,
+        "fees": fees,
+        "funding_transfer": funding_transfer,
+        "account_events": account_events,
+        "market_context": market,
+    }
+
+
+def _applicable_rules(events: Sequence[Mapping[str, Any]]) -> List[Dict[str, str]]:
+    references: List[Dict[str, str]] = []
+    for event in events:
+        payload = event.get("normalized_payload")
+        provenance = event.get("provenance")
+        payload = payload if isinstance(payload, Mapping) else {}
+        provenance = provenance if isinstance(provenance, Mapping) else {}
+        sources = [
+            value
+            for value in (
+                payload.get("decision"),
+                payload.get("risk_policy"),
+                payload.get("playbook_version"),
+                provenance,
+            )
+            if isinstance(value, Mapping)
+        ]
+        risk_source = next((value for value in sources if value.get("policy_id")), None)
+        playbook_source = next((value for value in sources if value.get("playbook_id")), None)
+        if risk_source is not None:
+            references.append({
+                "kind": "risk",
+                "rule_id": str(risk_source.get("policy_id")),
+                "version": str(risk_source.get("policy_version") or risk_source.get("version") or "—"),
+                "snapshot_sha256": str(
+                    risk_source.get("policy_snapshot_sha256")
+                    or risk_source.get("snapshot_sha256")
+                    or ""
+                ),
+                "event_id": str(event.get("event_id") or ""),
+                "event_hash": str(event.get("event_hash") or ""),
+            })
+        elif playbook_source is not None:
+            references.append({
+                "kind": "playbook",
+                "rule_id": str(playbook_source.get("playbook_id")),
+                "version": str(playbook_source.get("playbook_version") or playbook_source.get("version") or "—"),
+                "snapshot_sha256": str(
+                    playbook_source.get("playbook_snapshot_sha256")
+                    or playbook_source.get("snapshot_sha256")
+                    or ""
+                ),
+                "event_id": str(event.get("event_id") or ""),
+                "event_hash": str(event.get("event_hash") or ""),
+            })
+    return references
 
 
 class TradeReadAdapter:
@@ -182,7 +343,7 @@ class TradeReadAdapter:
                     "event_hash",
                 )
             })
-        return {
+        pack = {
             "trade_id": trade_id,
             "trade": trade,
             "read_source": "typed_projection" if coverage["ready"] else "compatibility_legacy",
@@ -205,8 +366,25 @@ class TradeReadAdapter:
                 if isinstance(latest_economic_evidence, dict)
                 else None
             ),
+            "coverage_summary": _coverage_summary(
+                trade=trade,
+                events=safe_events,
+                import_review=latest_import_review,
+                reconciliation_review=latest_reconciliation_review,
+                account_coverage=(
+                    latest_economic_evidence.get("account_coverage")
+                    if isinstance(latest_economic_evidence, dict)
+                    else None
+                ),
+                market_context=market_context,
+            ),
+            "applicable_rules": _applicable_rules(safe_events),
             "market_context": market_context,
         }
+        pack["snapshot_sha256"] = hashlib.sha256(
+            canonical_json(pack).encode("utf-8")
+        ).hexdigest()
+        return pack
 
     def get_market_context(
         self,
