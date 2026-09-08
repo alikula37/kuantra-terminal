@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 2.2.0
+version: 2.3.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: dd0639b
+baseline_commit: 950af74
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -201,33 +201,42 @@ context ile live market data ayrımı korunuyor. Loading, cancelled, error ve re
 state'leri görünürdür. Yeni connector, schema, live execution veya AI order authority
 açılmadı.
 
+`950af74` ile backend-reported installed component registry/ModStore read'i bounded
+hale getirildi: plugin metadata envelope ve alanları strict doğrulanıyor; malformed
+veya backend-unavailable yanıt partial capability listesine dönüşmüyor. AbortSignal,
+kullanıcı cancel'i, request-generation/stale-response guard ve provider unmount cleanup
+eklendi. ModStore loading, cancelled, error ve retry state'lerini görünür kılıyor;
+remote registry/download, plugin activation, runtime mounting ve execution authority
+kapalı kalıyor. Yeni plugin capability, schema veya live execution açılmadı.
+
 Focused H07 backend suite `26 passed`; value-chain frontend boundary suite `20 passed`;
 dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
 `3 passed`; MAE/MFE focused suite `5 passed`; SettingsView focused suite `3 passed`;
-Charts focused suite `4 passed`; full backend suite `709 passed, 2 warnings`, full
-frontend `25` test dosyası ve `97` test PASS; i18n `608/608`.
+Charts focused suite `4 passed`; plugin registry/ModStore focused suite `7 passed`;
+full backend suite `709 passed, 2 warnings`, full
+frontend `25` test dosyası ve `100` test PASS; i18n `608/608`.
 Locked local CI `MERGE READY` oldu.
 Current code baseline source commit tam SHA'sı
-`dd0639b2a05ebc02f91c796e01629e904b494dc2`, tracked source tree SHA-256'sı
-`2f94c20602e3ae8ce8d676593fe7efdf0ffde0c08235190b5d23c3f817397b11`'dir.
+`950af746b69cb0d6325a1f2b020ff6150c1ba792`, tracked source tree SHA-256'sı
+`57d6ff8160450d1051622ca9ccb4568dcb20939883316f2b5e9c94f4416abdaf`'dır.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `9377d2545d17b5ac1eb984ad4578c40fd0c31abd6016211f06ad1563d2a63b4a`,
-native local smoke report SHA-256 `cf22a95f5c8dcec696d2a9f27a09f8ce628812b6fd7cebe8e9cec5b3a86cb5a3`;
-local smoke executable SHA-256 `82c700e4decd1120c43aa3bffd321ab31dcdd7b1c59c5d1761a03a66e5032f37`
-ve `.app` artifact SHA-256 `240537a27685bbc571d96e42d700838f541c9b97548b92f7dac9b030928f92b1`.
+Local CI report SHA-256 `985d478afe82803bc7a8a66e8fc009737d60f2d2824916432307db72681319d2`,
+native local smoke report SHA-256 `53c71847bc6c808399e479e6da6ee10b37fccfa8476ff99acdec01a2832101d6`;
+local smoke executable SHA-256 `caaf2d51ea5f782d417677cdcb0fc826e9f624d7533f819c3d2c5e4925cd08c1`
+ve `.app` artifact SHA-256 `b3efd7534020c305ea6a34a29fcae518f06808b0bcdec33647e215332582739d`.
 Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
 public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`96298f0ebfc357210459565d70e22915b66c9dab13e275eecbdd2644690a0d30`, DMG
-SHA-256 `cd50cb6225d5254dbcece7d87332912143820f8fd1d2fdd64bcc3f77253c8e04`
+`54478f145dd6a7f8e18f5588d7c0220af7afe05e3306a253da3c7b068ca2c139`, DMG
+SHA-256 `7825a56dd2d52ea559f6d30c04d0b29a47da73e114853fe89920f9e7a9d56c7a`
 ve mounted executable SHA-256
-`82c700e4decd1120c43aa3bffd321ab31dcdd7b1c59c5d1761a03a66e5032f37`'dir.
+`caaf2d51ea5f782d417677cdcb0fc826e9f624d7533f819c3d2c5e4925cd08c1`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,

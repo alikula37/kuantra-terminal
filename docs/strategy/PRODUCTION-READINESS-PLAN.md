@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.18
+version: 1.0.19
 status: Proposed
 date: 2026-09-08
-reviewed_commit: dd0639b
+reviewed_commit: 950af74
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -354,9 +354,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     error truth'i `27b3404` ile, Dashboard/Quant Analytics/Header portfolio read
     truth'i `42d67c6` ile, JournalView trade-list read truth'i `3de57c5` ile,
     MAE/MFE read truth'i `f57da9d` ile, SettingsView portfolio-summary read truth'i
-    `3fa98a9` ile ve Charts/TradingViewChart historical read truth'i `dd0639b` ile
-    eklendi. Diğer core read audit'i ve 100k planning target kararı açık kaldığı için
-    paket hâlâ aktif non-release iştir.
+    `3fa98a9` ile, Charts/TradingViewChart historical read truth'i `dd0639b` ile ve
+    plugin registry/ModStore read truth'i `950af74` ile eklendi. Diğer core read audit'i
+    ve 100k planning target kararı açık kaldığı için paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -366,6 +366,15 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.19 — 2026-09-08
+
+- H07 plugin registry/ModStore read paketi `950af74` ile kaydedildi: strict installed
+  metadata validation, explicit loading/cancel/error/retry truth, AbortSignal,
+  stale-response ve provider unmount cleanup eklendi. Full local CI `MERGE READY`,
+  709 backend, 100 frontend, i18n `608/608` ve explicit disabled market-data ile exact
+  mounted Mac DMG/WKWebView smoke PASS oldu. Remote plugin download, activation ve
+  runtime mounting kapalı kaldı; diğer core read yüzeyleri ve 100k planning target açık.
 
 ### 1.0.18 — 2026-09-08
 
