@@ -14,6 +14,10 @@ class SQLiteOperationCancelled(RuntimeError):
     """A cooperative write operation was cancelled before commit."""
 
 
+class SQLiteOperationResourceLimit(RuntimeError):
+    """A cooperative resource check rejected a write before commit."""
+
+
 class SQLiteDriver:
     """OLTP SQLite Database Driver configured with WAL mode and robust schema."""
 
@@ -292,6 +296,7 @@ class SQLiteDriver:
         provenance: Optional[Dict[str, Any]] = None,
         raw_payload: Any = None,
         event_id: Optional[str] = None,
+        resource_check: Optional[Callable[[str], None]] = None,
     ) -> Dict[str, Any]:
         """Persist a journal mutation and its evidence event atomically.
 
@@ -300,6 +305,9 @@ class SQLiteDriver:
         event is invalid, conflicting, or cannot be appended, the trade mutation
         is rolled back and the caller receives an error.
         """
+
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
 
         from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
         from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
@@ -311,6 +319,8 @@ class SQLiteDriver:
         try:
             conn.execute("PRAGMA synchronous=FULL")
             conn.execute("BEGIN IMMEDIATE")
+            if resource_check is not None:
+                resource_check("before_trade_upsert")
             existing = conn.execute(
                 "SELECT * FROM trades WHERE id = ?", (resolved_id,)
             ).fetchone()
@@ -327,6 +337,8 @@ class SQLiteDriver:
                 prepared = self._prepare_trade({**trade, "id": resolved_id}, trade_id=resolved_id)
 
             self._upsert_trade_on_connection(conn, prepared)
+            if resource_check is not None:
+                resource_check("after_trade_upsert")
             stored = conn.execute(
                 "SELECT * FROM trades WHERE id = ?", (resolved_id,)
             ).fetchone()
@@ -354,12 +366,18 @@ class SQLiteDriver:
                 event_id=event_id,
             )
             self._notify_transaction_hook("after_canonical_event", conn)
+            if resource_check is not None:
+                resource_check("after_canonical_event")
             # Keep the typed read model current in the same transaction as the
             # compatibility row and canonical ledger event.  A projection
             # validation/constraint error must roll back the whole journal write.
             projection.upsert_event_in_transaction(conn, event)
             self._notify_transaction_hook("after_projection_update", conn)
+            if resource_check is not None:
+                resource_check("after_projection_update")
             self._notify_transaction_hook("before_commit", conn)
+            if resource_check is not None:
+                resource_check("before_commit")
             conn.commit()
             self._notify_transaction_hook("after_commit_before_ack", conn)
             return dict(stored)
@@ -375,6 +393,7 @@ class SQLiteDriver:
         commands: Sequence[Dict[str, Any]],
         *,
         cancel_check: Optional[Callable[[], bool]] = None,
+        resource_check: Optional[Callable[[str], None]] = None,
     ) -> List[Dict[str, Any]]:
         """Persist economic-group journal/evidence commands in one transaction.
 
@@ -391,6 +410,8 @@ class SQLiteDriver:
             return []
         if cancel_check is not None and not callable(cancel_check):
             raise TypeError("cancel_check must be callable")
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
 
         from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
         from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
@@ -403,6 +424,8 @@ class SQLiteDriver:
             conn.execute("PRAGMA synchronous=FULL")
             conn.execute("BEGIN IMMEDIATE")
             for command in commands:
+                if resource_check is not None:
+                    resource_check("before_command")
                 if cancel_check is not None and cancel_check():
                     raise SQLiteOperationCancelled(
                         "grouped evidence batch cancelled before commit"
@@ -478,13 +501,19 @@ class SQLiteDriver:
                     event_id=command.get("event_id"),
                 )
                 self._notify_transaction_hook("after_canonical_event", conn)
+                if resource_check is not None:
+                    resource_check("after_canonical_event")
                 projection.upsert_event_in_transaction(conn, event)
                 self._notify_transaction_hook("after_projection_update", conn)
+                if resource_check is not None:
+                    resource_check("after_projection_update")
                 persisted.append({"trade": dict(stored), "event": event})
             if cancel_check is not None and cancel_check():
                 raise SQLiteOperationCancelled(
                     "grouped evidence batch cancelled before commit"
                 )
+            if resource_check is not None:
+                resource_check("before_commit")
             self._notify_transaction_hook("before_commit", conn)
             conn.commit()
             self._notify_transaction_hook("after_commit_before_ack", conn)

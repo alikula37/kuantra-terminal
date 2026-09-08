@@ -15,7 +15,7 @@ import html
 import io
 import re
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from app.db.repositories.evidence_ledger_repo import canonical_json
 from app.services.trade_read_adapter import TradeReadAdapter, trade_read_adapter
@@ -88,9 +88,23 @@ class EvidencePackExportService:
     def __init__(self, adapter: Optional[TradeReadAdapter] = None):
         self.adapter = adapter or trade_read_adapter
 
-    def _load_pack(self, trade_id: str) -> Dict[str, Any]:
+    def _load_pack(
+        self,
+        trade_id: str,
+        *,
+        resource_check: Optional[Callable[[str], None]] = None,
+    ) -> Dict[str, Any]:
         trade_id = _safe_trade_id(trade_id)
-        pack = self.adapter.get_evidence_pack(trade_id)
+        if resource_check is None:
+            # Preserve the small reader protocol used by compatibility and
+            # redaction fixtures; the optional guard is only passed when a
+            # caller explicitly requests dynamic resource enforcement.
+            pack = self.adapter.get_evidence_pack(trade_id)
+        else:
+            pack = self.adapter.get_evidence_pack(
+                trade_id,
+                resource_check=resource_check,
+            )
         if not isinstance(pack, dict):
             raise EvidencePackExportError("evidence pack must be an object")
         if pack.get("trade") is None and int(pack.get("event_count") or 0) == 0:
@@ -237,12 +251,23 @@ class EvidencePackExportService:
             artifact_sha256=hashlib.sha256(content).hexdigest(),
         )
 
-    def export(self, trade_id: str, artifact_format: str = "json") -> EvidencePackArtifact:
+    def export(
+        self,
+        trade_id: str,
+        artifact_format: str = "json",
+        *,
+        resource_check: Optional[Callable[[str], None]] = None,
+    ) -> EvidencePackArtifact:
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
         normalized_trade_id = _safe_trade_id(trade_id)
         normalized_format = str(artifact_format or "").strip().lower()
         if normalized_format not in {"json", "html", "csv"}:
             raise EvidencePackExportError("format must be json, html, or csv")
-        pack = self._load_pack(normalized_trade_id)
+        pack = self._load_pack(
+            normalized_trade_id,
+            resource_check=resource_check,
+        )
         if normalized_format == "json":
             return self._json_artifact(normalized_trade_id, pack)
         if normalized_format == "csv":

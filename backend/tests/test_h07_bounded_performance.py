@@ -6,6 +6,7 @@ import pytest
 
 from scripts.run_h07_benchmark import (
     BenchmarkContractError,
+    BenchmarkResourceLimitError,
     H07BenchmarkRunner,
     ResourceBudget,
     benchmark_snapshot_digest,
@@ -15,7 +16,14 @@ from scripts.run_h07_benchmark import (
     validate_benchmark_report,
 )
 from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
-from app.db.sqlite_driver import SQLiteDriver, SQLiteOperationCancelled
+from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
+from app.db.sqlite_driver import (
+    SQLiteDriver,
+    SQLiteOperationCancelled,
+    SQLiteOperationResourceLimit,
+)
+from app.services.evidence_pack_export import EvidencePackExportService
+from app.services.trade_read_adapter import TradeReadAdapter
 from scripts.run_h07_benchmark import _command_for_trade
 
 
@@ -178,3 +186,133 @@ def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_le
         assert connection.execute(
             "SELECT COUNT(*) FROM evidence_trade_projections"
         ).fetchone()[0] == 0
+
+
+def test_grouped_batch_resource_limit_rolls_back_before_commit(tmp_path):
+    db_path = tmp_path / "resource-limited-batch.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    commands = [
+        _command_for_trade(
+            generate_trade_snapshot(index, seed="H07-RESOURCE"),
+            index,
+            seed="H07-RESOURCE",
+        )
+        for index in range(2)
+    ]
+    phases = []
+
+    def resource_check(phase):
+        phases.append(phase)
+        if phase == "before_commit":
+            raise SQLiteOperationResourceLimit("RSS resource budget exceeded")
+
+    with pytest.raises(SQLiteOperationResourceLimit, match="resource budget"):
+        driver.record_grouped_evidence_batch(
+            commands,
+            resource_check=resource_check,
+        )
+
+    assert phases[-1] == "before_commit"
+    assert driver.list_trades(limit=10) == []
+    assert EvidenceLedgerRepository(str(db_path)).count_events() == 0
+    with sqlite3.connect(str(db_path)) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM evidence_trade_projections"
+        ).fetchone()[0] == 0
+
+
+def test_projection_rebuild_resource_limit_rolls_back_existing_projection(tmp_path):
+    db_path = tmp_path / "resource-limited-rebuild.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    commands = [
+        _command_for_trade(
+            generate_trade_snapshot(index, seed="H07-REBUILD"),
+            index,
+            seed="H07-REBUILD",
+        )
+        for index in range(3)
+    ]
+    driver.record_grouped_evidence_batch(commands)
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=False)
+    before = projection.get_projection(
+        commands[0]["trade"]["id"],
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+    )
+
+    phases = []
+
+    def resource_check(phase):
+        phases.append(phase)
+        if phase == "before_projection_commit":
+            raise SQLiteOperationResourceLimit("temporary disk resource budget exceeded")
+
+    with pytest.raises(SQLiteOperationResourceLimit, match="resource budget"):
+        projection.rebuild(
+            account_id="h07-synthetic-account",
+            dry_run=False,
+            resource_check=resource_check,
+        )
+
+    assert phases[-1] == "before_projection_commit"
+    after = projection.get_projection(
+        commands[0]["trade"]["id"],
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+    )
+    assert after == before
+    assert projection.coverage(
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+        venues=("h07-synthetic",),
+    )["ready"] is True
+
+
+def test_benchmark_resource_budget_aborts_import_before_commit(tmp_path):
+    db_path = tmp_path / "resource-limited-run.sqlite"
+    runner = H07BenchmarkRunner(
+        seed="H07-BUDGET",
+        batch_size=4,
+        operation_repetitions=3,
+        budget=ResourceBudget(max_temp_disk_bytes=0),
+    )
+
+    with pytest.raises(BenchmarkResourceLimitError, match="temporary disk"):
+        runner.run((4,), work_dir=tmp_path)
+
+    driver = SQLiteDriver(str(db_path))
+    assert driver.list_trades(limit=10) == []
+    assert EvidenceLedgerRepository(str(db_path)).count_events() == 0
+
+
+def test_evidence_pack_resource_limit_is_explicit_and_read_only(tmp_path):
+    db_path = tmp_path / "resource-limited-pack.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    trade = generate_trade_snapshot(0, seed="H07-PACK")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(trade, 0, seed="H07-PACK"),
+    ])
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=False)
+    adapter = TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=projection,
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+        projection_venues=("h07-synthetic",),
+    )
+    exporter = EvidencePackExportService(adapter)
+
+    def resource_check(phase):
+        if phase == "after_ledger_integrity":
+            raise SQLiteOperationResourceLimit("RSS resource budget exceeded")
+
+    with pytest.raises(SQLiteOperationResourceLimit, match="resource budget"):
+        exporter.export(
+            trade["id"],
+            "json",
+            resource_check=resource_check,
+        )
+
+    assert adapter.get_trade(trade["id"])["id"] == trade["id"]

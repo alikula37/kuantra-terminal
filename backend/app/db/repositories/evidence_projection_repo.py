@@ -6,7 +6,7 @@ import json
 import math
 import sqlite3
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from app.core.paths import get_sqlite_path
 from app.db.projection_schema import initialize_trade_projection_schema
@@ -231,6 +231,7 @@ class EvidenceTradeProjectionRepository:
         *,
         account_id: Optional[str] = None,
         dry_run: bool = True,
+        resource_check: Optional[Callable[[str], None]] = None,
     ) -> Dict[str, Any]:
         """Verify the ledger and rebuild projections deterministically.
 
@@ -239,16 +240,33 @@ class EvidenceTradeProjectionRepository:
         own projection semantics are introduced.
         """
 
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
+
+        def check_resources(phase: str) -> None:
+            if resource_check is not None:
+                resource_check(phase)
+
         ledger = EvidenceLedgerRepository(self.db_path)
-        integrity = ledger.verify_chain(account_id=account_id)
+        integrity = ledger.verify_chain(
+            account_id=account_id,
+            resource_check=resource_check,
+        )
         if not integrity["valid"]:
             raise EvidenceProjectionError(
                 "Cannot rebuild projection from invalid evidence ledger: "
                 + "; ".join(integrity["errors"][:5])
             )
+        check_resources("after_ledger_integrity")
 
-        events = list(ledger.export_events(account_id=account_id))
+        events = list(
+            ledger.export_events(
+                account_id=account_id,
+                resource_check=resource_check,
+            )
+        )
         events.sort(key=self._sort_key)
+        check_resources("after_event_snapshot")
         projected_at = _now_utc()
         latest: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
         ignored = 0
@@ -260,6 +278,7 @@ class EvidenceTradeProjectionRepository:
             record = self._projection_from_event(event, projected_at)
             latest[(record["account_id"], record["venue"], record["trade_id"])] = record
             projectable += 1
+            check_resources("after_projection_candidate")
 
         report = {
             "dry_run": dry_run,
@@ -272,11 +291,13 @@ class EvidenceTradeProjectionRepository:
             "ledger_valid": True,
         }
         if dry_run:
+            check_resources("before_projection_return")
             return report
 
         conn = self._connect(write=True)
         try:
             conn.execute("BEGIN IMMEDIATE")
+            check_resources("before_projection_delete")
             if account_id is None:
                 conn.execute("DELETE FROM evidence_trade_projections")
             else:
@@ -284,8 +305,12 @@ class EvidenceTradeProjectionRepository:
                     "DELETE FROM evidence_trade_projections WHERE account_id = ?",
                     (account_id,),
                 )
+            check_resources("after_projection_delete")
             for record in latest.values():
+                check_resources("before_projection_record")
                 self._insert_projection_record(conn, record)
+                check_resources("after_projection_record")
+            check_resources("before_projection_commit")
             conn.commit()
         except Exception:
             if conn.in_transaction:

@@ -271,18 +271,26 @@ def _summarize_samples(samples: Sequence[Mapping[str, Any]], *, expected_status:
 
 
 def _timed_call(
-    callback: Callable[[], Any],
+    callback: Callable[..., Any],
     *,
     storage_dir: Path,
     budget: ResourceBudget,
     expected_status: str = "SUCCESS",
+    dynamic_resource_check: bool = False,
 ) -> tuple[dict[str, Any], Any]:
     before_disk = _directory_size(storage_dir)
+
+    def check_resources(_phase: str = "operation") -> None:
+        budget.check(
+            rss_mb=_rss_mb(),
+            temp_disk_bytes=max(0, _directory_size(storage_dir) - before_disk),
+        )
+
     started = time.perf_counter()
     status = expected_status
     result: Any = None
     try:
-        result = callback()
+        result = callback(check_resources) if dynamic_resource_check else callback()
         if isinstance(result, Mapping) and result.get("status"):
             status = str(result["status"])
     except BenchmarkCancelled:
@@ -424,9 +432,13 @@ class H07BenchmarkRunner:
                 for index, trade in zip(range(start, end), trades)
             ]
             sample, persisted = _timed_call(
-                lambda commands=commands: driver.record_grouped_evidence_batch(commands),
+                lambda resource_check, commands=commands: driver.record_grouped_evidence_batch(
+                    commands,
+                    resource_check=resource_check,
+                ),
                 storage_dir=db_path.parent,
                 budget=self.budget,
+                dynamic_resource_check=True,
             )
             if not isinstance(persisted, list) or len(persisted) != len(commands):
                 raise BenchmarkContractError("synthetic import did not persist the complete batch")
@@ -451,9 +463,14 @@ class H07BenchmarkRunner:
         rebuild_reports: list[dict[str, Any]] = []
         for _ in range(self.operation_repetitions):
             sample, rebuild_report = _timed_call(
-                lambda: projection.rebuild(account_id=SYNTHETIC_ACCOUNT_ID, dry_run=True),
+                lambda resource_check: projection.rebuild(
+                    account_id=SYNTHETIC_ACCOUNT_ID,
+                    dry_run=True,
+                    resource_check=resource_check,
+                ),
                 storage_dir=db_path.parent,
                 budget=self.budget,
+                dynamic_resource_check=True,
             )
             rebuild_samples.append(sample)
             rebuild_reports.append(dict(rebuild_report))
@@ -461,9 +478,14 @@ class H07BenchmarkRunner:
             raise BenchmarkContractError("projection rebuild did not cover the synthetic history")
 
         apply_sample, apply_report = _timed_call(
-            lambda: projection.rebuild(account_id=SYNTHETIC_ACCOUNT_ID, dry_run=False),
+            lambda resource_check: projection.rebuild(
+                account_id=SYNTHETIC_ACCOUNT_ID,
+                dry_run=False,
+                resource_check=resource_check,
+            ),
             storage_dir=db_path.parent,
             budget=self.budget,
+            dynamic_resource_check=True,
         )
         rebuild_samples.append(apply_sample)
         rebuild_reports.append(dict(apply_report))
@@ -512,7 +534,10 @@ class H07BenchmarkRunner:
                 },
             })
 
-        def _persist_correction(spec: Mapping[str, Any]) -> dict[str, Any]:
+        def _persist_correction(
+            spec: Mapping[str, Any],
+            resource_check: Optional[Callable[[str], None]] = None,
+        ) -> dict[str, Any]:
             source_event = spec["source_event"]
             saved = driver.record_trade_with_evidence(
                 dict(spec["correction"]),
@@ -531,6 +556,7 @@ class H07BenchmarkRunner:
                     "coverage": "COMPLETE",
                 },
                 event_id=str(spec["event_id"]),
+                resource_check=resource_check,
             )
             return {"saved": saved}
 
@@ -538,9 +564,10 @@ class H07BenchmarkRunner:
         correction_records: list[dict[str, Any]] = []
         for spec in correction_specs:
             sample, result = _timed_call(
-                lambda spec=spec: _persist_correction(spec),
+                lambda resource_check, spec=spec: _persist_correction(spec, resource_check),
                 storage_dir=db_path.parent,
                 budget=self.budget,
+                dynamic_resource_check=True,
             )
             if not isinstance(result, dict) or not isinstance(result.get("saved"), dict):
                 raise BenchmarkContractError("synthetic correction did not return a trade snapshot")
@@ -570,9 +597,10 @@ class H07BenchmarkRunner:
         correction_replay_samples: list[dict[str, Any]] = []
         for spec in correction_specs:
             sample, result = _timed_call(
-                lambda spec=spec: _persist_correction(spec),
+                lambda resource_check, spec=spec: _persist_correction(spec, resource_check),
                 storage_dir=db_path.parent,
                 budget=self.budget,
+                dynamic_resource_check=True,
             )
             if not isinstance(result, dict) or not isinstance(result.get("saved"), dict):
                 raise BenchmarkContractError("synthetic correction replay did not return a trade snapshot")
@@ -613,9 +641,13 @@ class H07BenchmarkRunner:
         artifact: Optional[Any] = None
         for _ in range(self.operation_repetitions):
             sample, pack_value = _timed_call(
-                lambda: adapter.get_evidence_pack(representative_id),
+                lambda resource_check: adapter.get_evidence_pack(
+                    representative_id,
+                    resource_check=resource_check,
+                ),
                 storage_dir=db_path.parent,
                 budget=self.budget,
+                dynamic_resource_check=True,
             )
             if not isinstance(pack_value, dict) or not pack_value.get("snapshot_sha256"):
                 raise BenchmarkContractError("synthetic Evidence Pack has no snapshot digest")
@@ -626,9 +658,14 @@ class H07BenchmarkRunner:
             pack_samples.append(sample)
 
             sample, artifact_value = _timed_call(
-                lambda: exporter.export(representative_id, "json"),
+                lambda resource_check: exporter.export(
+                    representative_id,
+                    "json",
+                    resource_check=resource_check,
+                ),
                 storage_dir=db_path.parent,
                 budget=self.budget,
+                dynamic_resource_check=True,
             )
             if artifact is None:
                 artifact = artifact_value

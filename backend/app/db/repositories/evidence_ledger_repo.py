@@ -637,8 +637,12 @@ class EvidenceLedgerRepository:
         *,
         account_id: Optional[str] = None,
         chain_date_utc: Optional[str] = None,
+        resource_check: Optional[Callable[[str], None]] = None,
     ) -> Generator[Dict[str, Any], None, None]:
         """Yield immutable ledger rows in deterministic chain order."""
+
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
 
         conn = self._connect(write=False)
         try:
@@ -652,6 +656,8 @@ class EvidenceLedgerRepository:
                 params.append(chain_date_utc)
             query += " ORDER BY account_id ASC, chain_date_utc ASC, chain_sequence ASC"
             for row in conn.execute(query, params):
+                if resource_check is not None:
+                    resource_check("before_ledger_export")
                 yield self._row_to_dict(row, created=False)
         finally:
             conn.close()
@@ -701,7 +707,10 @@ class EvidenceLedgerRepository:
         *,
         account_id: Optional[str] = None,
         chain_date_utc: Optional[str] = None,
+        resource_check: Optional[Callable[[str], None]] = None,
     ) -> Dict[str, Any]:
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
         duplicate_errors: List[str] = []
         chain_errors: List[str] = []
         seen_identities = set()
@@ -715,6 +724,8 @@ class EvidenceLedgerRepository:
             account_id=account_id,
             chain_date_utc=chain_date_utc,
         ):
+            if resource_check is not None:
+                resource_check("before_ledger_event")
             checked_events += 1
             row_scope = (row["account_id"], row["chain_date_utc"])
             scopes.add(row_scope)
@@ -796,6 +807,9 @@ class EvidenceLedgerRepository:
             except (KeyError, EvidenceValidationError, TypeError) as exc:
                 chain_errors.append(f"{prefix}: hash recomputation failed ({exc})")
             expected_prev_hash = row["event_hash"]
+
+        if resource_check is not None:
+            resource_check("after_ledger_integrity")
 
         return {
             "valid": not duplicate_errors and not chain_errors,

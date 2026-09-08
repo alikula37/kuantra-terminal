@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
 
 from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository, canonical_json
 from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
@@ -272,18 +272,38 @@ class TradeReadAdapter:
             venues=self.projection_venues,
         )
 
-    def get_evidence_pack(self, trade_id: str) -> Dict[str, Any]:
+    def get_evidence_pack(
+        self,
+        trade_id: str,
+        *,
+        resource_check: Optional[Callable[[str], None]] = None,
+    ) -> Dict[str, Any]:
         """Build a read-only, source-linked evidence pack for one trade."""
 
+        if resource_check is not None and not callable(resource_check):
+            raise TypeError("resource_check must be callable")
+
+        def check_resources(phase: str) -> None:
+            if resource_check is not None:
+                resource_check(phase)
+
         coverage = self.coverage()
+        check_resources("after_coverage")
         trade = self.get_trade(trade_id)
+        check_resources("after_trade")
         events = self.ledger_repo.list_events_for_trade(
             trade_id,
             account_id=self.account_id,
             venues=self.projection_venues,
         )
-        integrity = self.ledger_repo.verify_chain(account_id=self.account_id)
+        check_resources("after_events")
+        integrity = self.ledger_repo.verify_chain(
+            account_id=self.account_id,
+            resource_check=resource_check,
+        )
+        check_resources("after_ledger_integrity")
         market_context = self.get_market_context(trade_id)
+        check_resources("after_market_context")
         safe_events = []
         latest_economic_evidence = None
         economic_revisions = []
@@ -292,6 +312,7 @@ class TradeReadAdapter:
         latest_reconciliation_review = None
         reconciliation_review_history = []
         for event in events:
+            check_resources("before_evidence_event")
             payload = event.get("normalized_payload")
             trade_payload = payload.get("trade") if isinstance(payload, dict) else None
             provenance = event.get("provenance")
@@ -343,6 +364,7 @@ class TradeReadAdapter:
                     "event_hash",
                 )
             })
+            check_resources("after_evidence_event")
         pack = {
             "trade_id": trade_id,
             "trade": trade,
@@ -384,6 +406,7 @@ class TradeReadAdapter:
         pack["snapshot_sha256"] = hashlib.sha256(
             canonical_json(pack).encode("utf-8")
         ).hexdigest()
+        check_resources("before_pack_return")
         return pack
 
     def get_market_context(
