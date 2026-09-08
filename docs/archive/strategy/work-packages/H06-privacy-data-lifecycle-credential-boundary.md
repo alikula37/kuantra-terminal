@@ -1,12 +1,15 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
+<!-- Historical evidence: this file is not a current implementation instruction. -->
 # H06 — Privacy, Data Lifecycle & Credential Availability Boundary
 
 ```yaml
 work_package: H06
-version: 1.0.0
-status: Ready
+version: 1.1.0
+status: Complete
 date: 2026-09-08
-baseline_commit: 4685747
+baseline_commit: a864d61
+implementation_commit: 4270d33
+evidence_commit: a7b99b7
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H05-machine-gate
@@ -78,18 +81,42 @@ iddiası kurulamaz.
 
 ## Acceptance criteria
 
-- [ ] Data directory ve generated support/telemetry files için platforma uygun
+- [x] Data directory ve generated support/telemetry files için platforma uygun
   private-permission contract red→green testlerle kanıtlandı.
-- [ ] Keychain unavailable/locked/missing durumları fail-closed; secret fallback
+- [x] Keychain unavailable/locked/missing durumları fail-closed; secret fallback
   veya SQLite/log/export sızıntısı yok.
-- [ ] Telemetry consent default opt-out; spool/flush/retention status deterministic
+- [x] Telemetry consent default opt-out; spool/flush/retention status deterministic
   ve network-denied fixture ile kanıtlı.
-- [ ] Redacted support/export archive secret, credential, PII ve absolute path
+- [x] Redacted support/export archive secret, credential, PII ve absolute path
   sızıntısı olmadan oluşturuluyor; failure partial success gibi görünmüyor.
-- [ ] UI ve native boundary local-first, unavailable/degraded ve credential scope'u
+- [x] UI ve native boundary local-first, unavailable/degraded ve credential scope'u
   doğru gösteriyor; live execution/AI authority açılmıyor.
-- [ ] Focused → full backend/frontend → local CI → Mac smoke ve docs checks PASS;
+- [x] Focused → full backend/frontend → local CI → Mac smoke ve docs checks PASS;
   gerçek kullanıcı verisi/credential kullanılmıyor.
+
+## Uygulama ve kanıt
+
+- Bounded implementation `4270d33`, keychain/UI truth coverage ve final evidence
+  `a7b99b7` üzerinde tamamlandı. H06 focused suite **8 passed**; full backend
+  **683 passed, 2 warnings**; frontend **19 files / 71 tests passed**; i18n
+  **574/574** ve production build PASS.
+- Temiz Mac local-CI source commit `a7b99b7c540629eb3d9b595c05691200c8c0b81e`:
+  **MERGE READY**, provenance **COMPLETE**, tracked source tree SHA-256
+  `837fee0b94e43cecb06b49195d20b1d13b3b1b235eb8f7e3c521fcc546527c52`, local-CI
+  report SHA-256 `ab71a75f8740a6ed444b14e2bfed429f3b6ad3197ddec8124289edde19220283`,
+  local smoke report SHA-256 `c20b7313069a1217b119989102903c5a6311432c798b2d5a090afe6ab0b16176`.
+  macOS arm64, Python `3.11.16`, Node `20.20.2`, npm `10.8.2`, uv `0.12.10`,
+  PyInstaller `6.22.2`; executable SHA-256
+  `967cf5db996b91bf948763b0d1fe0a003d8cee228883bfc3abe6599dce1815bc`, app SHA-256
+  `a0acd018b2366cb72209c4028473dbd2b5b31c7370f9b9c3c8c68f4e0e48f46e`.
+- Exact read-only mounted DMG/WKWebView smoke on the same source passed: DMG
+  SHA-256 `7ec5226771dc3b9619c37b17b179043412d140d84b5e89a0262b5ed4805eaca3`,
+  smoke report SHA-256 `5e4980ae1813eb36812d15032afe5d351060d5eb460ca7b41ca263c3603a1582`,
+  mounted executable SHA-256 matched the local smoke value, renderer `wkwebview`,
+  controller ready and clean detach PASS. The smoke used the configured public
+  Binance stream; it is not offline runtime proof.
+- `uv --offline` was dependency-preparation evidence only. No real user data,
+  credential, migration apply, live broker or remote telemetry delivery was used.
 
 ## Kapsam dışı ve yeniden açma koşulları
 
@@ -104,9 +131,10 @@ kanıtı ve unverified metadata owner/legal review'i tamamlanmalı, beş default
 Dependabot alert'i remediation veya süreli risk kabulüyle sonuçlandırılmalı ve tüm
 kanıtlar tek release source commit/artifact manifestine bağlanmalıdır.
 
-## Başlangıç kararı
+## Kapanış kararı
 
-H05'in machine-checkable supply-chain, SBOM ve secret boundary kanıtı geliştirme için
-yeterlidir. Ticari dağıtım kararlarının ertelenmesi açıkça kaydedildiği için H06, yalnız
-non-release privacy/data-lifecycle geliştirmesi olarak `Ready` seçilmiştir. Bu seçim
-H05'in release kapısını veya Kuantra'nın read-only, local-first ürün sınırını gevşetmez.
+H06'in bounded privacy/data-lifecycle ve credential availability sözleşmesi `4270d33`
+uygulaması ve `a7b99b7` kanıtı ile kapatılmıştır. Kapanış yalnız bu paketin belirtilen
+sentetik/test sınırları içindir; H05'in ticari dağıtım kapısını, production readiness'i
+veya Kuantra'nın read-only, local-first ürün sınırını gevşetmez. Sonraki aktif paket H07
+bounded performance/resource-limit kanıtıdır.

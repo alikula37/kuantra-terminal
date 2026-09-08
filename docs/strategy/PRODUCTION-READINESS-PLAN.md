@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.10
+version: 1.0.11
 status: Proposed
 date: 2026-09-08
-reviewed_commit: c089cd2
+reviewed_commit: a7b99b7
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -30,10 +30,12 @@ kanıtlarıyla kapatılmıştır. P1-WP23 / U02 de bounded kanıtla kapatılmı�
 U03, P1-WP25 / U04 ve P1-WP26 / U05 de bounded kanıtla kapatılmıştır. H01 canonical
 persistence/recovery bounded kanıtla kapatılmıştır. H02 schema upgrade/restore da
 `169c446` ile bounded kanıtla kapatılmıştır. H04 de `1cf486e` ile bounded kanıtla
-kapalıdır; H05 machine-checkable kanıtla `c089cd2` üzerinde uygulanmıştır. Ürün
-lisansı/notices ve default-branch alert disposition, ticari dağıtım öncesine kadar
-bilinçli olarak ertelenmiştir; bu release gate'i kapalı tutar, fakat H06 non-release
-privacy/data-lifecycle geliştirmesinin başlamasını engellemez. Aşağıdaki diğer iş
+kapalıdır; H05 machine-checkable kanıtla `c089cd2` üzerinde uygulanmıştır. H06
+privacy/data-lifecycle ve credential availability boundary `4270d33` ile uygulanıp
+`a7b99b7` üzerinde bounded kanıtla kapatılmıştır. Ürün lisansı/notices ve
+default-branch alert disposition, ticari dağıtım öncesine kadar bilinçli olarak
+ertelenmiştir; bu release gate'i kapalı tutar. H07 bounded performance/resource-limit
+paketi yalnız sentetik non-release ölçüm olarak sıradaki aktif pakettir. Aşağıdaki diğer iş
 kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
@@ -145,7 +147,8 @@ Mac local-CI kanıtıyla tamamlandı. H05 supply chain, SBOM, license ve secret
 boundary machine gate'i `c089cd2` ile PASS oldu. Ürün lisansı/notices ve
 default-branch Dependabot disposition geliştirme dönemi için ertelendi; bunlar ilk
 ticari/release adayı öncesi yeniden açılacak zorunlu kapılardır. H06 non-release
-privacy/data-lifecycle paketi bu kayıtlı erteleme ile başlayabilir; production
+privacy/data-lifecycle paketi `4270d33`/`a7b99b7` ile bounded olarak tamamlandı. H07
+bounded performance/resource-limit paketi sıradaki aktif non-release iştir; production
 iddiası yine açılamaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
@@ -343,9 +346,11 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     uygulandı `c089cd2`; lock/scan/artifact kanıtı PASS. Ürün lisansı/notices ve
     default-branch alert disposition geliştirme dönemi için `DEFERRED`; ticari veya
     production release adayı öncesi yeniden açılmaları zorunlu.
-16. H06: privacy/data-lifecycle ve credential availability boundary; non-release
-    geliştirme olarak sıradaki aktif paket.
-17. H07 ve N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
+16. H06: privacy/data-lifecycle ve credential availability boundary; bounded olarak
+    tamamlandı `4270d33`/`a7b99b7`.
+17. H07: deterministik sentetik performance/resource-limit baseline'ı; sıradaki aktif
+    non-release paket.
+18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -354,6 +359,15 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.11 — 2026-09-08
+
+- H06 privacy/data-lifecycle ve credential availability boundary `4270d33` ile
+  uygulanıp `a7b99b7` üzerinde bounded kanıtla kapatıldı: 683 backend, 71 frontend,
+  i18n 574/574, temiz Mac arm64 local CI ve exact mounted DMG/WKWebView smoke PASS.
+- H06 arşivlendi ve H07 deterministik sentetik performance/resource-limit paketi tek
+  güncel aktif non-release work package olarak seçildi. H05 ürün lisansı/notices ve
+  default-branch Dependabot kapıları ertelenmiş ve release öncesi zorunlu kalmıştır.
 
 ### 1.0.10 — 2026-09-08
 
