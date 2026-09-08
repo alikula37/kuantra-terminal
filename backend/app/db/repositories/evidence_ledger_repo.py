@@ -12,6 +12,7 @@ import json
 import re
 import sqlite3
 import uuid
+from copy import deepcopy
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
@@ -187,11 +188,65 @@ class EvidenceLedgerRepository:
         # This hook exists only for transaction rollback tests; production code
         # never supplies it.
         self._failure_injector = failure_injector
+        # A successful chain verification can be reused while the append-only
+        # database remains unchanged.  The connection is intentionally kept
+        # separate from read/write connections so SQLite's data_version can
+        # invalidate the cache when any other connection appends evidence.
+        self._integrity_cache_connection: Optional[sqlite3.Connection] = None
+        self._integrity_cache_key: Optional[Tuple[Optional[str], Optional[str], int]] = None
+        self._integrity_cache_result: Optional[Dict[str, Any]] = None
         # Restore verification must inspect the supplied snapshot as-is. It can
         # disable bootstrap schema creation so an incomplete/future snapshot is
         # rejected instead of being silently repaired during verification.
         if initialize_schema:
             self._ensure_schema()
+
+    def _integrity_data_version(self) -> Optional[int]:
+        """Return a connection-scoped SQLite version for integrity caching.
+
+        ``PRAGMA data_version`` changes when another connection commits.  The
+        ledger is append-only, so a cached verification is safe only while this
+        value remains stable.  If SQLite cannot provide the value, callers fall
+        back to a complete verification rather than weakening the boundary.
+        """
+
+        try:
+            if self._integrity_cache_connection is None:
+                Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
+                self._integrity_cache_connection = sqlite3.connect(
+                    self.db_path,
+                    check_same_thread=False,
+                    isolation_level=None,
+                )
+                self._integrity_cache_connection.execute("PRAGMA busy_timeout=5000")
+            row = self._integrity_cache_connection.execute(
+                "PRAGMA data_version"
+            ).fetchone()
+            return int(row[0]) if row else None
+        except (OSError, sqlite3.Error, TypeError, ValueError):
+            return None
+
+    def close(self) -> None:
+        """Release the read-only connection used by the verification cache."""
+
+        connection = self._integrity_cache_connection
+        self._integrity_cache_connection = None
+        self._integrity_cache_key = None
+        self._integrity_cache_result = None
+        if connection is not None:
+            try:
+                connection.close()
+            except sqlite3.Error:
+                pass
+
+    def __del__(self) -> None:
+        try:
+            self.close()
+        except Exception:
+            # Destructors must never mask the original exception or interpreter
+            # shutdown.  Explicit callers may use ``close`` for deterministic
+            # cleanup.
+            pass
 
     def _connect(self, *, write: bool = False) -> sqlite3.Connection:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
@@ -711,6 +766,21 @@ class EvidenceLedgerRepository:
     ) -> Dict[str, Any]:
         if resource_check is not None and not callable(resource_check):
             raise TypeError("resource_check must be callable")
+        cache_version = self._integrity_data_version()
+        cache_key = (
+            (account_id, chain_date_utc, cache_version)
+            if cache_version is not None
+            else None
+        )
+        if (
+            cache_key is not None
+            and self._integrity_cache_key == cache_key
+            and self._integrity_cache_result is not None
+        ):
+            if resource_check is not None:
+                resource_check("after_ledger_integrity")
+            return deepcopy(self._integrity_cache_result)
+
         duplicate_errors: List[str] = []
         chain_errors: List[str] = []
         seen_identities = set()
@@ -811,12 +881,17 @@ class EvidenceLedgerRepository:
         if resource_check is not None:
             resource_check("after_ledger_integrity")
 
-        return {
+        result = {
             "valid": not duplicate_errors and not chain_errors,
             "checked_events": checked_events,
             "scopes": [f"{account}/{day}" for account, day in sorted(scopes)],
             "errors": duplicate_errors + chain_errors,
         }
+        end_version = self._integrity_data_version()
+        if result["valid"] and cache_version is not None and end_version == cache_version:
+            self._integrity_cache_key = (account_id, chain_date_utc, cache_version)
+            self._integrity_cache_result = deepcopy(result)
+        return result
 
     def backfill_legacy_trades(
         self,

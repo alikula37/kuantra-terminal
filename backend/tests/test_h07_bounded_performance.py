@@ -155,6 +155,44 @@ def test_chain_verification_uses_raw_snapshot_without_read_path_json_decode(tmp_
     assert report["checked_events"] == 1
 
 
+def test_chain_verification_reuses_unchanged_append_only_snapshot_until_append(
+    tmp_path, monkeypatch
+):
+    db_path = tmp_path / "cached-verification.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    first_trade = generate_trade_snapshot(0, seed="H07-CACHE")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(first_trade, 0, seed="H07-CACHE"),
+    ])
+    ledger = EvidenceLedgerRepository(str(db_path))
+    original_iter = ledger._iter_raw_verification_rows
+    iterator_calls = 0
+
+    def count_iterator_calls(*args, **kwargs):
+        nonlocal iterator_calls
+        iterator_calls += 1
+        return original_iter(*args, **kwargs)
+
+    monkeypatch.setattr(ledger, "_iter_raw_verification_rows", count_iterator_calls)
+
+    first_report = ledger.verify_chain(account_id="h07-synthetic-account")
+    second_report = ledger.verify_chain(account_id="h07-synthetic-account")
+
+    assert first_report == second_report
+    assert iterator_calls == 1
+
+    second_trade = generate_trade_snapshot(1, seed="H07-CACHE")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(second_trade, 1, seed="H07-CACHE"),
+    ])
+
+    appended_report = ledger.verify_chain(account_id="h07-synthetic-account")
+
+    assert appended_report["valid"] is True
+    assert appended_report["checked_events"] == 2
+    assert iterator_calls == 2
+
+
 def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_ledger(tmp_path):
     db_path = tmp_path / "cancelled-batch.sqlite"
     driver = SQLiteDriver(str(db_path))
