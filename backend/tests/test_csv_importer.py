@@ -118,7 +118,7 @@ class TestCsvTradeImporterEngine:
         assert res2["imported"] == 0
         assert res2["duplicates_skipped"] == 1
 
-    def test_malformed_csv_error_handling(self):
+    def test_malformed_csv_blocks_partial_import(self):
         corrupt_csv = (
             "symbol,side,entry_price,qty,entry_time,pnl,commission\n"
             "BTCUSDT,BUY,invalid_number,1.0,2026-08-30T09:00:00Z,0,0\n"
@@ -127,9 +127,11 @@ class TestCsvTradeImporterEngine:
         )
 
         res = csv_trade_importer.parse_and_import_csv(corrupt_csv.encode("utf-8"), "corrupt.csv")
-        assert res["success"] is True
-        assert res["imported"] == 1  # Only NEARUSDT was valid
+        assert res["success"] is False
+        assert res["imported"] == 0  # Mixed input requires review before any write
         assert len(res["errors"]) == 2  # 2 rows had parsing/validation errors
+        assert res["import_review"]["status"] == "PARTIAL"
+        assert sqlite_driver.list_trades(limit=10, symbol="NEARUSDT") == []
 
     def test_csv_import_and_preview_endpoints(self):
         t_base = int(time.time()) + 500

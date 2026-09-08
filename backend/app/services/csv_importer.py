@@ -80,7 +80,10 @@ class CsvTradeImporterService:
         source_rows = len(trades) + len(errors)
         normalized_rows = len(trades)
         rejected_rows = len(errors)
-        if not trades and errors:
+        if not trades and not errors:
+            status = "REJECTED"
+            decision = "IMPORT_BLOCKED"
+        elif not trades and errors:
             status = "REJECTED"
             decision = "IMPORT_BLOCKED"
         elif errors:
@@ -110,6 +113,8 @@ class CsvTradeImporterService:
             status = "PARTIAL"
             decision = "USER_REVIEW_REQUIRED"
         discrepancies = []
+        if not trades and not errors:
+            discrepancies.append({"type": "CSV_NO_DATA"})
         for error in errors:
             prefix, _, _reason = str(error).partition(":")
             row_number = None
@@ -124,9 +129,13 @@ class CsvTradeImporterService:
                 unknown_fields.append("realized_pnl")
             if "ACCOUNTING_COMMISSION_UNKNOWN" in error_text:
                 unknown_fields.append("commission")
-            discrepancy = {
-                "type": "ACCOUNTING_COVERAGE_UNKNOWN" if unknown_fields else "CSV_ROW_REJECTED",
-            }
+            if unknown_fields:
+                discrepancy_type = "ACCOUNTING_COVERAGE_UNKNOWN"
+            elif "CSV_EXTRA_COLUMNS" in error_text or "CSV_FIELD_BYTES_EXCEEDED" in error_text:
+                discrepancy_type = "CSV_MALFORMED_ROW"
+            else:
+                discrepancy_type = "CSV_ROW_REJECTED"
+            discrepancy = {"type": discrepancy_type}
             if unknown_fields:
                 discrepancy["fields"] = unknown_fields
             if row_number is not None:
@@ -314,7 +323,11 @@ class CsvTradeImporterService:
         Parses CSV string into standardized trade dictionaries with error telemetry.
         """
         format_type, delimiter = cls.detect_format_and_dialect(content_str)
-        reader = csv.DictReader(io.StringIO(content_str), delimiter=delimiter)
+        reader = csv.DictReader(
+            io.StringIO(content_str),
+            delimiter=delimiter,
+            strict=True,
+        )
         
         normalized_trades = []
         parsing_errors = []
@@ -322,6 +335,27 @@ class CsvTradeImporterService:
         for idx, raw_row in enumerate(reader, start=2): # Line 2 is first data row
             if idx > MAX_CSV_ROWS + 1:
                 raise ValueError(f"CSV row count exceeds the safety limit of {MAX_CSV_ROWS} rows.")
+            extra_values = raw_row.get(None)
+            if extra_values:
+                parsing_errors.append(
+                    f"Row {idx}: CSV_EXTRA_COLUMNS: {len(extra_values)} unexpected column(s)."
+                )
+                continue
+
+            oversized_fields = [
+                str(key)
+                for key, value in raw_row.items()
+                if key is not None
+                and value is not None
+                and len(str(value).encode("utf-8")) > MAX_CSV_FIELD_BYTES
+            ]
+            if oversized_fields:
+                parsing_errors.append(
+                    f"Row {idx}: CSV_FIELD_BYTES_EXCEEDED: field(s) exceed the safety limit "
+                    f"of {MAX_CSV_FIELD_BYTES} bytes ({', '.join(oversized_fields)})."
+                )
+                continue
+
             # Case-insensitive column key access
             row = {k.strip().lower().replace('"', ''): v for k, v in raw_row.items() if k is not None}
 
@@ -559,9 +593,11 @@ class CsvTradeImporterService:
         try:
             return cls._parse_rows(content_str)
         except csv.Error as exc:
-            raise ValueError(
-                f"CSV field or record exceeds the safety limit of {MAX_CSV_FIELD_BYTES} bytes."
-            ) from exc
+            if "field larger than field limit" in str(exc).lower():
+                raise ValueError(
+                    f"CSV field or record exceeds the safety limit of {MAX_CSV_FIELD_BYTES} bytes."
+                ) from exc
+            raise ValueError(f"CSV parsing failed: {exc}") from exc
         finally:
             csv.field_size_limit(previous_field_limit)
 
@@ -624,7 +660,7 @@ class CsvTradeImporterService:
             source_file_sha256=source_file_sha256,
         )
         
-        if not trades and errors:
+        if review["status"] != "READY":
             return {
                 "success": False,
                 "detected_format": format_type,
@@ -635,7 +671,7 @@ class CsvTradeImporterService:
                 "duplicates_skipped": 0,
                 "errors": errors,
                 "import_review": review,
-                "message": "Failed to parse any valid trades from CSV file."
+                "message": "CSV import blocked: explicit user review is required before any trade is written."
             }
 
         # Fetch existing trades to build duplicate fingerprints

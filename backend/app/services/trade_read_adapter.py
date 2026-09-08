@@ -28,20 +28,34 @@ def _coverage_state(value: Any, *, default: str = "UNKNOWN") -> str:
 
 
 def _explicit_coverage(mapping: Any, keys: Sequence[str]) -> str:
+    declared = _declared_coverage(mapping, keys)
+    return declared if declared is not None else "NOT_AVAILABLE"
+
+
+def _declared_coverage(mapping: Any, keys: Sequence[str]) -> Optional[str]:
+    """Return an explicitly declared state, including NOT_AVAILABLE.
+
+    None means that the source did not declare any of the requested keys.
+    This distinction matters for a source that explicitly says
+    trade_snapshot=NOT_AVAILABLE: the presence of a compatibility row must
+    not silently upgrade that claim to COMPLETE.
+    """
+
     if not isinstance(mapping, Mapping):
-        return "NOT_AVAILABLE"
+        return None
     for key in keys:
-        value = mapping.get(key)
-        if isinstance(value, str) and value.strip().upper() in _COVERAGE_STATES:
-            return value.strip().upper()
-        if isinstance(value, bool):
-            return "COMPLETE" if value else _coverage_state(mapping.get("status"), default="UNKNOWN")
+        if key in mapping:
+            value = mapping.get(key)
+            if isinstance(value, str) and value.strip().upper() in _COVERAGE_STATES:
+                return value.strip().upper()
+            if isinstance(value, bool):
+                return "COMPLETE" if value else _coverage_state(mapping.get("status"), default="UNKNOWN")
         complete = mapping.get(f"{key}_complete")
         if complete is True:
             return "COMPLETE"
         if complete is False:
             return _coverage_state(mapping.get("status"), default="UNKNOWN")
-    return "NOT_AVAILABLE"
+    return None
 
 
 def _market_context_coverage(market_context: Any) -> str:
@@ -108,9 +122,31 @@ def _coverage_summary(
         ),
         "NOT_AVAILABLE",
     )
-    trade_snapshot = "COMPLETE" if isinstance(trade, Mapping) else "NOT_AVAILABLE"
+    trade_snapshot = next(
+        (
+            declared
+            for source in (import_coverage, reconciliation_coverage, account_coverage)
+            for declared in [_declared_coverage(source, ("trade_snapshot",))]
+            if declared is not None
+        ),
+        "COMPLETE" if isinstance(trade, Mapping) else "NOT_AVAILABLE",
+    )
     market = _market_context_coverage(market_context)
-    states = (trade_snapshot, realized_pnl, fees, funding_transfer, account_events, market)
+    declared_statuses = tuple(
+        declared
+        for source in (import_coverage, reconciliation_coverage, account_coverage)
+        for declared in [_declared_coverage(source, ("status",))]
+        if declared is not None
+    )
+    states = (
+        trade_snapshot,
+        realized_pnl,
+        fees,
+        funding_transfer,
+        account_events,
+        market,
+        *declared_statuses,
+    )
     if not trade and not events:
         overall = "NOT_AVAILABLE"
     elif not trade and events:
