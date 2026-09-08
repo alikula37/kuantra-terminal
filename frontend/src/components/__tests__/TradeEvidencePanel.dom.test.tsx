@@ -69,6 +69,24 @@ it("renders policy provenance, ledger integrity, and unverified market context",
   expect(host.textContent).toContain("Source unverified / descriptive");
 });
 
+it("renders an explicit import review boundary in the Evidence Pack", async () => {
+  mocks.apiFetch.mockResolvedValueOnce(response({
+    ...basePack,
+    import_review: {
+      status: "PARTIAL",
+      decision: "USER_REVIEW_REQUIRED",
+      reconciliation: { status: "NOT_PERFORMED" },
+      coverage: { status: "PARTIAL" },
+      source_file_sha256: "a".repeat(64),
+    },
+  }));
+  await act(async () => root.render(<TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} />));
+  await flush();
+
+  expect(host.querySelector("[data-testid=trade-evidence-import-review]")?.textContent).toContain("USER_REVIEW_REQUIRED");
+  expect(host.textContent).toContain("NOT_PERFORMED");
+});
+
 it("shows a bounded error instead of implying evidence exists", async () => {
   mocks.apiFetch.mockResolvedValueOnce(response({ detail: "trade evidence not found" }, 404));
   await act(async () => root.render(<TradeEvidencePanel tradeId="MISSING" onClose={vi.fn()} />));
@@ -77,4 +95,3 @@ it("shows a bounded error instead of implying evidence exists", async () => {
   expect(host.textContent).toContain("trade evidence not found");
   expect(host.textContent).not.toContain("Verified chain");
 });
-

@@ -290,6 +290,23 @@ export interface EvidenceMarketContext {
   [key: string]: unknown;
 }
 
+export interface EvidenceImportReview {
+  status: string;
+  decision: string;
+  source_type?: string;
+  source_file_sha256?: string;
+  reconciliation?: {
+    status?: string;
+    discrepancy_count?: number;
+    [key: string]: unknown;
+  };
+  coverage?: Record<string, unknown>;
+  discrepancies?: Array<Record<string, unknown>>;
+  event_id?: string;
+  event_hash?: string;
+  [key: string]: unknown;
+}
+
 export interface TradeEvidencePack {
   trade_id: string;
   trade: Trade | null;
@@ -299,6 +316,10 @@ export interface TradeEvidencePack {
   events: EvidenceEvent[];
   event_count: number;
   market_context: EvidenceMarketContext;
+  import_review?: EvidenceImportReview | null;
+  import_review_history?: EvidenceImportReview[];
+  reconciliation_review?: EvidenceImportReview | null;
+  reconciliation_review_history?: EvidenceImportReview[];
 }
 
 export interface TradeDriftItem {

@@ -11,6 +11,18 @@ interface CsvImportModalProps {
   onImportSuccess?: () => void;
 }
 
+type ImportReview = {
+  status: "READY" | "PARTIAL" | "REJECTED" | string;
+  decision: string;
+  reconciliation?: {
+    status: string;
+    discrepancy_count?: number;
+  };
+  coverage?: Record<string, string | number>;
+  discrepancies?: Array<{ type?: string; source_row_number?: number }>;
+  source_file_sha256?: string;
+};
+
 export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose, onImportSuccess }) => {
   const { t } = useTranslation();
   const { setTrades } = useTradeStore();
@@ -19,6 +31,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [detectedFormat, setDetectedFormat] = useState<string | null>(null);
   const [previewTrades, setPreviewTrades] = useState<any[]>([]);
+  const [previewReview, setPreviewReview] = useState<ImportReview | null>(null);
   const [totalRows, setTotalRows] = useState<number>(0);
   const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
   const [isImporting, setIsImporting] = useState<boolean>(false);
@@ -28,6 +41,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
     duplicates_skipped: number;
     errors: string[];
     message: string;
+    import_review?: ImportReview;
   } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
@@ -38,6 +52,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
     setSelectedFile(null);
     setDetectedFormat(null);
     setPreviewTrades([]);
+    setPreviewReview(null);
     setTotalRows(0);
     setIsLoadingPreview(false);
     setIsImporting(false);
@@ -80,6 +95,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
       setDetectedFormat(data.detected_format);
       setPreviewTrades(data.preview_trades || []);
       setTotalRows(data.total_rows_parsed || 0);
+      setPreviewReview(data.import_review || null);
     } catch (err: any) {
       setErrorMessage(err.message || t("csv_import.error_generic"));
       setSelectedFile(null);
@@ -131,6 +147,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
         duplicates_skipped: data.duplicates_skipped,
         errors: data.errors || [],
         message: data.message,
+        import_review: data.import_review || undefined,
       });
 
       // Refetch trades in store
@@ -174,6 +191,43 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
     }
   };
 
+  const importNeedsReview = Boolean(
+    importResult && (
+      !importResult.success ||
+      (importResult.import_review && importResult.import_review.status !== "READY")
+    ),
+  );
+
+  const renderReviewSummary = (review: ImportReview | null, testId: string) => {
+    if (!review) return null;
+    const coverage = review.coverage || {};
+    const statusClass = review.status === "READY"
+      ? "text-gain border-gain/40 bg-gain/10"
+      : "text-amber-300 border-amber-400/40 bg-amber-400/10";
+    return (
+      <div data-testid={testId} className="p-3 bg-[#111722] border border-surface-border rounded-lg text-[10px] space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-slate-400 uppercase">{t("csv_import.review_status")}</span>
+          <span className={`px-2 py-0.5 rounded border font-bold ${statusClass}`}>{review.status}</span>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400">
+          <span>{t("csv_import.review_decision")}: {review.decision}</span>
+          <span>{t("csv_import.review_reconciliation")}: {review.reconciliation?.status || "UNKNOWN"}</span>
+          <span>{t("csv_import.review_coverage")}: {String(coverage.status || "UNKNOWN")}</span>
+        </div>
+        {review.discrepancies && review.discrepancies.length > 0 && (
+          <div className="text-amber-300/90">
+            {review.discrepancies.map((item, index) => (
+              <div key={`${item.type || "discrepancy"}-${item.source_row_number || index}`}>
+                {item.type || "DISCREPANCY"}{item.source_row_number ? ` · row ${item.source_row_number}` : ""}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-mono select-none animate-fadeIn">
       <div className="relative w-full max-w-2xl bg-[#0b0e14] border border-surface-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -211,18 +265,20 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
 
           {importResult ? (
             /* Result Summary Card */
-            <div className="p-5 bg-[#0e1626] border border-accent/30 rounded-xl space-y-4 text-xs">
-              <div className="flex items-center space-x-3 text-gain">
-                <CheckCircle2 className="w-6 h-6 shrink-0" />
+            <div className={`p-5 bg-[#0e1626] rounded-xl space-y-4 text-xs ${importNeedsReview ? "border border-amber-400/40" : "border border-accent/30"}`}>
+              <div className={`flex items-center space-x-3 ${importNeedsReview ? "text-amber-300" : "text-gain"}`}>
+                {importNeedsReview ? <AlertTriangle className="w-6 h-6 shrink-0" /> : <CheckCircle2 className="w-6 h-6 shrink-0" />}
                 <div>
                   <h4 className="font-bold text-white text-sm">
-                    {t("csv_import.result_title")}
+                    {t(importNeedsReview ? "csv_import.result_review_title" : "csv_import.result_title")}
                   </h4>
                   <p className="text-slate-300 text-[11px]">
-                    {t("csv_import.result_success_msg")}
+                    {t(importNeedsReview ? "csv_import.result_review_msg" : "csv_import.result_success_msg")}
                   </p>
                 </div>
               </div>
+
+              {renderReviewSummary(importResult.import_review || null, "csv-import-result-review")}
 
               <div className="grid grid-cols-3 gap-3 pt-2 border-t border-surface-border/50">
                 <div className="p-3 bg-[#090d14] rounded-lg border border-surface-border">
@@ -323,6 +379,8 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
                   </span>
                 </div>
               )}
+
+              {renderReviewSummary(previewReview, "csv-import-preview-review")}
 
               {/* Preview Table */}
               {previewTrades.length > 0 && (

@@ -126,9 +126,33 @@ class TradeReadAdapter:
         safe_events = []
         latest_economic_evidence = None
         economic_revisions = []
+        latest_import_review = None
+        import_review_history = []
+        latest_reconciliation_review = None
+        reconciliation_review_history = []
         for event in events:
             payload = event.get("normalized_payload")
             trade_payload = payload.get("trade") if isinstance(payload, dict) else None
+            provenance = event.get("provenance")
+            if isinstance(provenance, dict):
+                import_review = provenance.get("import_review")
+                if isinstance(import_review, dict):
+                    review_view = dict(import_review)
+                    review_view.update({
+                        "event_id": event.get("event_id"),
+                        "event_hash": event.get("event_hash"),
+                    })
+                    latest_import_review = review_view
+                    import_review_history.append(review_view)
+                reconciliation_review = provenance.get("reconciliation_review")
+                if isinstance(reconciliation_review, dict):
+                    review_view = dict(reconciliation_review)
+                    review_view.update({
+                        "event_id": event.get("event_id"),
+                        "event_hash": event.get("event_hash"),
+                    })
+                    latest_reconciliation_review = review_view
+                    reconciliation_review_history.append(review_view)
             economic_evidence = (
                 trade_payload.get("economic_evidence")
                 if isinstance(trade_payload, dict)
@@ -172,6 +196,10 @@ class TradeReadAdapter:
             "event_count": len(safe_events),
             "economic_evidence": latest_economic_evidence,
             "economic_revisions": economic_revisions,
+            "import_review": latest_import_review,
+            "import_review_history": import_review_history,
+            "reconciliation_review": latest_reconciliation_review,
+            "reconciliation_review_history": reconciliation_review_history,
             "account_coverage": (
                 latest_economic_evidence.get("account_coverage")
                 if isinstance(latest_economic_evidence, dict)

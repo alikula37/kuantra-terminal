@@ -130,7 +130,7 @@ def test_local_csv_preview_remains_available_when_market_data_is_disabled(monkey
 
     response = client.post(
         "/api/v1/journal/preview-csv",
-        files={"file": ("trades.csv", b"symbol,side,qty,price,entry_time\nBTCUSDT,BUY,1,100,2026-09-01T00:00:00Z\n", "text/csv")},
+        files={"file": ("trades.csv", b"symbol,side,qty,price,entry_time,pnl,commission\nBTCUSDT,BUY,1,100,2026-09-01T00:00:00Z,0,0\n", "text/csv")},
     )
 
     assert response.status_code == 200

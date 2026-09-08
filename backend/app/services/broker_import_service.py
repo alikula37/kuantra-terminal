@@ -254,6 +254,62 @@ class BrokerImportService:
         self.ledger_repo = ledger_repo or EvidenceLedgerRepository()
 
     @staticmethod
+    def _coverage_summary(
+        report: Dict[str, Any],
+        *,
+        normalized_record_count: int,
+        rejected_row_count: int,
+    ) -> Dict[str, str]:
+        """Describe what the order/fill export proves, without widening scope."""
+
+        if report.get("status") == "RECONCILED" and normalized_record_count and not rejected_row_count:
+            lifecycle = "COMPLETE"
+        elif normalized_record_count:
+            lifecycle = "PARTIAL"
+        else:
+            lifecycle = "UNKNOWN"
+        return {
+            # A broker lifecycle snapshot never proves account balance, funding,
+            # transfer history, or market context.  Overall coverage therefore
+            # remains PARTIAL even when order/fill arithmetic reconciles.
+            "status": "PARTIAL" if normalized_record_count else "UNKNOWN",
+            "lifecycle": lifecycle,
+            "fees": str(report.get("fee_reconciliation_status") or "UNKNOWN"),
+            "account_events": "NOT_AVAILABLE",
+            "funding_transfer": "NOT_AVAILABLE",
+            "market_context": "NOT_AVAILABLE",
+        }
+
+    @classmethod
+    def _review_summary(
+        cls,
+        report: Dict[str, Any],
+        *,
+        coverage: Dict[str, str],
+        normalized_record_count: int,
+        rejected_row_count: int,
+    ) -> Dict[str, Any]:
+        discrepancy_types = sorted({
+            str(item.get("type"))
+            for item in report.get("discrepancies", [])
+            if isinstance(item, dict) and item.get("type")
+        })
+        ready = (
+            report.get("status") == "RECONCILED"
+            and normalized_record_count > 0
+            and rejected_row_count == 0
+        )
+        return {
+            "status": "READY_FOR_USER_REVIEW" if ready else "REVIEW_REQUIRED",
+            "source_type": "BROKER_ORDER_FILL_EXPORT",
+            "next_action": "USER_DECISION_REQUIRED_TO_CREATE_TRADE_SNAPSHOT",
+            "reconciliation_status": report.get("status"),
+            "coverage": coverage,
+            "discrepancy_count": len(report.get("discrepancies", [])),
+            "discrepancy_types": discrepancy_types,
+        }
+
+    @staticmethod
     def _validate_venue(venue: str) -> str:
         normalized = _required_text(venue, "venue").upper()
         if normalized not in SUPPORTED_VENUES:
@@ -627,6 +683,31 @@ class BrokerImportService:
                 expected_venue = SUPPORTED_SOURCE_EXCHANGES[source_exchange_id]["venue"]
                 if venue != expected_venue:
                     raise BrokerImportValidationError("snapshot_manifest source exchange and venue disagree")
+        report = self.reconcile(records)
+        if rejected:
+            report["status"] = "UNRECONCILED"
+            report["discrepancies"].append({
+                "type": "REJECTED_ROWS",
+                "count": len(rejected),
+            })
+        if snapshot_provenance and not snapshot_provenance["snapshot_complete"]:
+            report["status"] = "UNRECONCILED"
+            report["discrepancies"].append({
+                "type": "SNAPSHOT_INCOMPLETE",
+                "warning_count": snapshot_provenance["snapshot_warning_count"],
+            })
+        coverage = self._coverage_summary(
+            report,
+            normalized_record_count=len(records),
+            rejected_row_count=len(rejected),
+        )
+        review = self._review_summary(
+            report,
+            coverage=coverage,
+            normalized_record_count=len(records),
+            rejected_row_count=len(rejected),
+        )
+
         commands: List[Dict[str, Any]] = []
         for record in records:
             payload = record.payload()
@@ -657,24 +738,12 @@ class BrokerImportService:
                     "source_row_number": record.source_row_number,
                     "source_row_sha256": record.source_row_sha256,
                     "record_type": record.record_type,
+                    "reconciliation_review": review,
                 },
             })
             if snapshot_provenance:
                 commands[-1]["provenance"].update(snapshot_provenance)
         events = self.ledger_repo.append_events(commands) if commands else []
-        report = self.reconcile(records)
-        if rejected:
-            report["status"] = "UNRECONCILED"
-            report["discrepancies"].append({
-                "type": "REJECTED_ROWS",
-                "count": len(rejected),
-            })
-        if snapshot_provenance and not snapshot_provenance["snapshot_complete"]:
-            report["status"] = "UNRECONCILED"
-            report["discrepancies"].append({
-                "type": "SNAPSHOT_INCOMPLETE",
-                "warning_count": snapshot_provenance["snapshot_warning_count"],
-            })
         report.update({
             "venue": venue,
             "account_id": account_id,
@@ -687,6 +756,8 @@ class BrokerImportService:
             "ledger_created_count": sum(1 for event in events if event.get("created")),
             "ledger_duplicate_count": sum(1 for event in events if not event.get("created")),
             "event_ids": [event["event_id"] for event in events],
+            "coverage": coverage,
+            "review": review,
         })
         if snapshot_provenance:
             report.update({

@@ -47,9 +47,9 @@ class TestCsvTradeImporterEngine:
     def test_import_bybit_closed_pnl_csv(self):
         t_base = int(time.time()) + 100
         bybit_csv = (
-            "Contracts,Closing Direction,Entry Price,Exit Price,Qty,Closed P&L,Trade Time,Closed Time\n"
-            f"SOLUSDT,Close Long,142.50,154.20,10.0,117.00,2026-08-27 12:00:{t_base % 60:02d},2026-08-27 16:30:{t_base % 60:02d}\n"
-            f"ETHUSDT,Close Short,3500.00,3420.00,3.0,240.00,2026-08-28 08:00:{t_base % 60:02d},2026-08-28 14:00:{t_base % 60:02d}\n"
+            "Contracts,Closing Direction,Entry Price,Exit Price,Qty,Closed P&L,Fee,Trade Time,Closed Time\n"
+            f"SOLUSDT,Close Long,142.50,154.20,10.0,117.00,0.50,2026-08-27 12:00:{t_base % 60:02d},2026-08-27 16:30:{t_base % 60:02d}\n"
+            f"ETHUSDT,Close Short,3500.00,3420.00,3.0,240.00,0.40,2026-08-28 08:00:{t_base % 60:02d},2026-08-28 14:00:{t_base % 60:02d}\n"
         )
 
         format_type, delimiter = CsvTradeImporterService.detect_format_and_dialect(bybit_csv)
@@ -120,10 +120,10 @@ class TestCsvTradeImporterEngine:
 
     def test_malformed_csv_error_handling(self):
         corrupt_csv = (
-            "symbol,side,entry_price,qty,entry_time\n"
-            "BTCUSDT,BUY,invalid_number,1.0\n"
-            "ETHUSDT,SELL,3200.0,0.0\n"
-            "NEARUSDT,BUY,4.50,20.0,2026-08-30T10:00:00Z\n"
+            "symbol,side,entry_price,qty,entry_time,pnl,commission\n"
+            "BTCUSDT,BUY,invalid_number,1.0,2026-08-30T09:00:00Z,0,0\n"
+            "ETHUSDT,SELL,3200.0,0.0,2026-08-30T09:30:00Z,0,0\n"
+            "NEARUSDT,BUY,4.50,20.0,2026-08-30T10:00:00Z,0,0\n"
         )
 
         res = csv_trade_importer.parse_and_import_csv(corrupt_csv.encode("utf-8"), "corrupt.csv")
@@ -134,8 +134,8 @@ class TestCsvTradeImporterEngine:
     def test_csv_import_and_preview_endpoints(self):
         t_base = int(time.time()) + 500
         test_csv_content = (
-            "symbol,side,entry_price,exit_price,qty,entry_time,exit_time,status,pnl\n"
-            f"LINKUSDT,BUY,11.50,13.20,50.0,2026-08-29T12:00:{t_base % 60:02d}Z,2026-08-29T19:00:{t_base % 60:02d}Z,CLOSED,85.0\n"
+            "symbol,side,entry_price,exit_price,qty,entry_time,exit_time,status,pnl,commission\n"
+            f"LINKUSDT,BUY,11.50,13.20,50.0,2026-08-29T12:00:{t_base % 60:02d}Z,2026-08-29T19:00:{t_base % 60:02d}Z,CLOSED,85.0,0.2\n"
         )
 
         # Test Preview endpoint

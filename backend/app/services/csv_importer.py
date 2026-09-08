@@ -30,6 +30,133 @@ class CsvTradeImporterService:
 
     SUPPORTED_FORMATS = ["BINANCE", "BYBIT", "METATRADER", "GENERIC_KUANTRA"]
 
+    @staticmethod
+    def _has_value(row: Dict[str, Any], *keys: str) -> bool:
+        """Return whether one of the source fields was explicitly supplied.
+
+        Empty or missing accounting fields are intentionally different from an
+        explicit numeric zero.  The legacy trade compatibility row still uses
+        its existing numeric shape, while the review contract below carries the
+        authoritative coverage state so analytics cannot mistake a default for
+        an observed financial value.
+        """
+
+        return any(
+            key in row and row[key] is not None and str(row[key]).strip() != ""
+            for key in keys
+        )
+
+    @staticmethod
+    def _public_trade(trade: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove parser-only metadata before returning a preview or trade row."""
+
+        return {
+            key: value
+            for key, value in trade.items()
+            if not str(key).startswith("_")
+        }
+
+    @classmethod
+    def _build_import_review(
+        cls,
+        format_type: str,
+        trades: List[Dict[str, Any]],
+        errors: List[str],
+        *,
+        source_file_sha256: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Build a deterministic, non-financially-overclaiming import review.
+
+        A CSV journal snapshot is not an order/fill reconciliation.  This
+        contract says so explicitly while still making row rejection and
+        accounting coverage visible to the UI and the Evidence Pack.
+        """
+
+        source_rows = len(trades) + len(errors)
+        normalized_rows = len(trades)
+        rejected_rows = len(errors)
+        if not trades and errors:
+            status = "REJECTED"
+            decision = "IMPORT_BLOCKED"
+        elif errors:
+            status = "PARTIAL"
+            decision = "USER_REVIEW_REQUIRED"
+        else:
+            status = "READY"
+            decision = "IMPORT_ALLOWED"
+
+        accounting = [
+            trade.get("_accounting_coverage", {})
+            for trade in trades
+        ]
+        unknown_pnl = any("ACCOUNTING_PNL_UNKNOWN" in str(error) for error in errors)
+        unknown_commission = any("ACCOUNTING_COMMISSION_UNKNOWN" in str(error) for error in errors)
+        realized_pnl = (
+            "COMPLETE"
+            if not unknown_pnl and accounting and all(item.get("realized_pnl") == "COMPLETE" for item in accounting)
+            else "UNKNOWN"
+        )
+        commission = (
+            "COMPLETE"
+            if not unknown_commission and accounting and all(item.get("commission") == "COMPLETE" for item in accounting)
+            else "UNKNOWN"
+        )
+        if status == "READY" and (realized_pnl == "UNKNOWN" or commission == "UNKNOWN"):
+            status = "PARTIAL"
+            decision = "USER_REVIEW_REQUIRED"
+        discrepancies = []
+        for error in errors:
+            prefix, _, _reason = str(error).partition(":")
+            row_number = None
+            if prefix.startswith("Row "):
+                try:
+                    row_number = int(prefix.removeprefix("Row ").strip())
+                except ValueError:
+                    row_number = None
+            error_text = str(error)
+            unknown_fields = []
+            if "ACCOUNTING_PNL_UNKNOWN" in error_text:
+                unknown_fields.append("realized_pnl")
+            if "ACCOUNTING_COMMISSION_UNKNOWN" in error_text:
+                unknown_fields.append("commission")
+            discrepancy = {
+                "type": "ACCOUNTING_COVERAGE_UNKNOWN" if unknown_fields else "CSV_ROW_REJECTED",
+            }
+            if unknown_fields:
+                discrepancy["fields"] = unknown_fields
+            if row_number is not None:
+                discrepancy["source_row_number"] = row_number
+            discrepancies.append(discrepancy)
+
+        review = {
+            "status": status,
+            "decision": decision,
+            "source_type": "CSV_JOURNAL_SNAPSHOT",
+            "detected_format": format_type,
+            "reconciliation": {
+                "status": "NOT_PERFORMED",
+                "scope": "CSV_JOURNAL_SNAPSHOT",
+                "reason": "CSV_JOURNAL_SNAPSHOT_HAS_NO_ORDER_FILL_PAIRING",
+                "discrepancy_count": len(discrepancies),
+            },
+            "coverage": {
+                "status": "PARTIAL" if trades else "UNKNOWN",
+                "source_rows": source_rows,
+                "normalized_rows": normalized_rows,
+                "rejected_rows": rejected_rows,
+                "trade_snapshot": "COMPLETE" if trades and not errors else "PARTIAL" if trades else "UNKNOWN",
+                "realized_pnl": realized_pnl,
+                "commission": commission,
+                "account_scope": "NOT_AVAILABLE",
+                "funding_transfer": "NOT_AVAILABLE",
+                "market_context": "NOT_AVAILABLE",
+            },
+            "discrepancies": discrepancies,
+        }
+        if source_file_sha256:
+            review["source_file_sha256"] = source_file_sha256
+        return review
+
     @classmethod
     def detect_format_and_dialect(cls, content_str: str) -> Tuple[str, str]:
         """
@@ -221,6 +348,10 @@ class CsvTradeImporterService:
                         "commission": commission,
                         "notes": notes
                     }
+                    trade_dict["_accounting_coverage"] = {
+                        "realized_pnl": "COMPLETE" if cls._has_value(row, "realized profit", "realized pnl", "profit") else "UNKNOWN",
+                        "commission": "COMPLETE" if cls._has_value(row, "fee") else "UNKNOWN",
+                    }
 
                 elif format_type == "BYBIT":
                     # Bybit Closed PnL CSV
@@ -253,6 +384,10 @@ class CsvTradeImporterService:
                         "r_multiple": None,
                         "commission": commission,
                         "notes": notes
+                    }
+                    trade_dict["_accounting_coverage"] = {
+                        "realized_pnl": "COMPLETE" if cls._has_value(row, "closed p&l", "closed pnl", "realized pnl") else "UNKNOWN",
+                        "commission": "COMPLETE" if cls._has_value(row, "fee", "trading fee") else "UNKNOWN",
                     }
 
                 elif format_type == "METATRADER":
@@ -307,6 +442,10 @@ class CsvTradeImporterService:
                         "commission": commission,
                         "notes": notes
                     }
+                    trade_dict["_accounting_coverage"] = {
+                        "realized_pnl": "COMPLETE" if cls._has_value(row, "profit", "profit ($)", "net profit") else "UNKNOWN",
+                        "commission": "COMPLETE" if cls._has_value(row, "commission") and cls._has_value(row, "swap") else "UNKNOWN",
+                    }
 
                 else:
                     # Standard Generic Kuantra CSV
@@ -350,6 +489,10 @@ class CsvTradeImporterService:
                         "commission": commission,
                         "notes": notes
                     }
+                    trade_dict["_accounting_coverage"] = {
+                        "realized_pnl": "COMPLETE" if cls._has_value(row, "pnl", "profit") else "UNKNOWN",
+                        "commission": "COMPLETE" if cls._has_value(row, "commission", "fee") else "UNKNOWN",
+                    }
 
                 # Validation checks
                 if not trade_dict.get("symbol"):
@@ -368,6 +511,18 @@ class CsvTradeImporterService:
                     trade_dict.get("exit_price") is None or trade_dict["exit_price"] <= 0
                 ):
                     parsing_errors.append(f"Row {idx}: Closed trade requires a valid exit_price. Skipped.")
+                    continue
+
+                accounting_coverage = trade_dict.get("_accounting_coverage", {})
+                missing_accounting = []
+                if accounting_coverage.get("realized_pnl") != "COMPLETE":
+                    missing_accounting.append("ACCOUNTING_PNL_UNKNOWN")
+                if accounting_coverage.get("commission") != "COMPLETE":
+                    missing_accounting.append("ACCOUNTING_COMMISSION_UNKNOWN")
+                if missing_accounting:
+                    parsing_errors.append(
+                        f"Row {idx}: {','.join(missing_accounting)}: explicit accounting values are required; row skipped."
+                    )
                     continue
 
                 trade_dict["source_row_number"] = idx
@@ -396,6 +551,12 @@ class CsvTradeImporterService:
 
         format_type, trades, errors = cls.parse_rows(content_str)
         source_file_sha256 = hashlib.sha256(file_bytes).hexdigest()
+        review = cls._build_import_review(
+            format_type,
+            trades,
+            errors,
+            source_file_sha256=source_file_sha256,
+        )
         return {
             "detected_format": format_type,
             "filename": filename,
@@ -403,7 +564,8 @@ class CsvTradeImporterService:
             "total_rows_parsed": len(trades),
             "errors_count": len(errors),
             "errors": errors[:10],
-            "preview_trades": trades[:5]
+            "preview_trades": [cls._public_trade(trade) for trade in trades[:5]],
+            "import_review": review,
         }
 
     @classmethod
@@ -421,6 +583,12 @@ class CsvTradeImporterService:
 
         format_type, trades, errors = cls.parse_rows(content_str)
         source_file_sha256 = hashlib.sha256(file_bytes).hexdigest()
+        review = cls._build_import_review(
+            format_type,
+            trades,
+            errors,
+            source_file_sha256=source_file_sha256,
+        )
         
         if not trades and errors:
             return {
@@ -432,6 +600,7 @@ class CsvTradeImporterService:
                 "imported": 0,
                 "duplicates_skipped": 0,
                 "errors": errors,
+                "import_review": review,
                 "message": "Failed to parse any valid trades from CSV file."
             }
 
@@ -496,6 +665,7 @@ class CsvTradeImporterService:
                     "source_file_sha256": source_file_sha256,
                     "source_row_number": t["source_row_number"],
                     "source_row_sha256": t["source_row_sha256"],
+                    "import_review": review,
                 },
             )
             existing_fingerprints.add(fp)
@@ -520,6 +690,7 @@ class CsvTradeImporterService:
                 "source_file_sha256": source_file_sha256,
                 "source_rows_hashed": len(trades),
             },
+            "import_review": review,
             "trades": imported_records[:10],
             "message": f"Successfully imported {len(imported_records)} trades from {format_type} export."
         }

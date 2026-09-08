@@ -204,6 +204,28 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
               </div>
             </div>
 
+            {pack.import_review && (
+              <section data-testid="trade-evidence-import-review" className="bg-[#0d121c] border border-amber-400/30 rounded-lg p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wide">Import review boundary</h3>
+                    <p className="text-[11px] text-slate-500 mt-1">Source coverage is shown explicitly; a CSV journal snapshot is not broker order/fill reconciliation.</p>
+                  </div>
+                  <span className="px-2 py-1 rounded border border-amber-400/40 bg-amber-400/10 text-amber-300 text-[10px] font-bold">
+                    {pack.import_review.status}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[10px] text-slate-400">
+                  <span>Decision: {pack.import_review.decision}</span>
+                  <span>Reconciliation: {pack.import_review.reconciliation?.status || "UNKNOWN"}</span>
+                  <span>Coverage: {String(pack.import_review.coverage?.status || "UNKNOWN")}</span>
+                </div>
+                {pack.import_review.source_file_sha256 && (
+                  <div className="mt-2 text-[10px] text-slate-500">Source SHA-256: {shortHash(pack.import_review.source_file_sha256)}</div>
+                )}
+              </section>
+            )}
+
             <section className="bg-[#0d121c] border border-surface-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
