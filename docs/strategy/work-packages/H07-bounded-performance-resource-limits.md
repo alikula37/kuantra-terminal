@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 1.4.0
+version: 1.5.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 6af4fd9
+baseline_commit: 6748d96
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -77,8 +77,9 @@ pakete eklenmeyecektir.
 - [ ] Resource limit, cancellation, malformed/oversized input ve partial/unknown
   coverage durumları fail-closed; canonical veri ve evidence lineage korunuyor.
   Dynamic budget abort/rollback import, correction, projection rebuild ve Evidence
-  Pack sınırlarında red testlerle kanıtlandı; malformed/oversized input ve
-  partial/unknown coverage alt sınırları hâlâ açıktır.
+  Pack sınırlarında; malformed/oversized input ve partial/unknown coverage
+  propagation alt sınırlarında bounded backend kanıtı vardır. Frontend cancellation
+  ve query mid-operation abort hâlâ açıktır.
 - [ ] Backend correctness/performance regression suite ve frontend loading/cancel/error
   truth testleri geçiyor; yeni capability veya live execution yolu açılmıyor.
 - [x] Aynı host ve aynı source/dataset girdisinde rapor snapshot/hash deterministik;
@@ -123,20 +124,28 @@ bozmaması sağlandı: dynamic probe yalnız explicit budget'ta ölçüm yapıyo
 periodic ve commit/return sınırları korunuyor. Şema genişletilmedi, funding/transfer
 event type eklenmedi ve immutable correction lineage korunuyor.
 
-Focused H07 suite `14 passed`; correction/replay ve resource-boundary regression
-seti `37 passed, 2 warnings`; full backend suite `697 passed, 2 warnings`. Frontend
-değişmedi: `19` test dosyası ve `71` test PASS; i18n `574/574`. Locked local CI
-`MERGE READY` oldu. Current source commit tam SHA'sı
-`6af4fd9c0675f8b425b90c416a5940c05d74093b`, tracked source tree SHA-256'sı
-`6679e53ef6ecad53f1b946cd9c7d90f0260639a4da08693e20475c0aba7d3e9a`'dır.
+`6748d96` ile CSV import boundary'si strict parsing, extra-column rejection,
+UTF-8 byte-based field guard ve review-gated atomic import davranışıyla
+fail-closed hale getirildi. Header-only/empty input `CSV_NO_DATA` olarak
+reddediliyor; malformed veya mixed input hiçbir trade yazmadan
+`REJECTED` ya da `PARTIAL/USER_REVIEW_REQUIRED` dönüyor. Trade Evidence Pack
+coverage summary, source'un açık `PARTIAL`, `UNKNOWN` veya `NOT_AVAILABLE` trade
+snapshot değerini compatibility row varlığıyla `COMPLETE`'e yükseltmiyor.
+Funding/transfer schema'sı ve ledger event type'ları değişmedi.
+
+Focused H07 suite `24 passed`; full backend suite `707 passed, 2 warnings`.
+Frontend değişmedi: `19` test dosyası ve `71` test PASS; i18n `574/574`.
+Locked local CI `MERGE READY` oldu. Current source commit tam SHA'sı
+`6748d9681f1029700e68f9b719642da7df68a0ff`, tracked source tree SHA-256'sı
+`f9a425b15a37a4898c9b76c228926d72aaced4297c10e156972bcc053088c57e`'dir.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `9afc17b0e78c4da8fbf4518f5c7afff8f129b03960b9f20bb179178ef8218ed0`,
-native local smoke report SHA-256 `53c317308b6d3e5fa4e4b7b49bd29c1efc9b12c24f4abea5fd7b21830ce1549e`.
+Local CI report SHA-256 `114dc11651cbfb8cc5ca055666014b117896bdfb596add5d616ac31c8a6d0753`,
+native local smoke report SHA-256 `fd230a63f45fe3ffd80d4db27fbd31f78b679d352b1f58dfb6eafab4a719e493`.
 
 ### Artifact-bağlı sentetik baseline
 
@@ -177,13 +186,13 @@ değerlendirilmelidir.
 
 ### Mac artifact kanıtı
 
-`6af4fd9` source commit'i ile clean Mac arm64 build, native smoke ve exact read-only
+`6748d96` source commit'i ile clean Mac arm64 build, native smoke ve exact read-only
 DMG smoke PASS oldu. DMG smoke `KUANTRA_MARKET_DATA_ENABLED=false` ile çalıştırıldı;
 market-data stream başlatılmadı, gerçek veri/credential kullanılmadı ve mount güvenli
 biçimde detach edildi. DMG smoke report SHA-256
-`ee6d3b20dbaf3e0488856b0caac38418761c36b27b62dc8ebe354e7d96de3f8d`, DMG SHA-256
-`ac987578962a98d80bf4df34c13262ff486d13a804805ac9778e2c4ed9f1a0cb`, mounted
-executable SHA-256 `fc5a2ad9bc4ef79b6e9962fdd17f9e9f63aa5662ab6674920c05418a3f597c75`.
+`9d594ca4e437210fe52cdbf8c2a9ba7ee628c13f7d156df6329e49f0fa676bca`, DMG SHA-256
+`eb3949b5dc7cadcd713ccf1c85aa00b82c7cc2bb188da02f4e46765b9274096d`, mounted
+executable SHA-256 `76d83a74a0fa854f49b1c693e1064dbf2cd585879f46368f66299a21520d414c`.
 WKWebView controller identity, bridge, health, React mount, push sink ve plugin
 boundary kontrolleri PASS oldu. Bu artifact ad-hoc development artifact'ıdır;
 Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı değildir.
@@ -196,10 +205,12 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
   ayrı bir alt iştir.
 - Grouped canonical batch için cooperative cancellation ve rollback kanıtı vardır;
   frontend AbortSignal/cancel durumu bu backend boundary'sine bağlanmış değildir.
-- Malformed/oversized input, partial/unknown coverage ve UI loading/cancel/error
-  truth için H07 red testleri ve fail-closed implementation tamamlanmamıştır.
+- Malformed/oversized input ve partial/unknown coverage için bounded backend red/
+  green fixture ve fail-closed implementation tamamlandı: 10 yeni fixture PASS.
+- Query mid-operation budget abort ve frontend AbortSignal/loading/cancel/error
+  truth hâlâ açık; bu nedenle H07 tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı malformed/oversized ve partial/unknown coverage fail-closed
-fixture'larıdır; ardından frontend loading/cancel/error truth testleri gelecektir.
+Sonraki H07 adımı frontend loading/cancel/error truth ve query mid-operation
+budget abort sınırlarının ayrı red testlerle kapatılmasıdır.
 Bu sınırlar kapanmadan H07 tamamlanmış, production-ready veya desteklenen veri
 boyutu olarak işaretlenmeyecektir.
