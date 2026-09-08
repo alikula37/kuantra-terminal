@@ -40,7 +40,7 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac (latest local evidence) | H06 source `a7b99b7` passed clean arm64 local CI and exact read-only DMG/WKWebView smoke; DMG SHA `7ec5226771dc3b9619c37b17b179043412d140d84b5e89a0262b5ed4805eaca3`, smoke report SHA `5e4980ae1813eb36812d15032afe5d351060d5eb460ca7b41ca263c3603a1582`, mounted executable SHA `967cf5db996b91bf948763b0d1fe0a003d8cee228883bfc3abe6599dce1815bc`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
-| H07 bounded baseline | Code `5137383` on clean Mac arm64: 709 backend, 71 frontend, i18n 574/574, local CI `MERGE READY`; legacy and exact-coverage typed trade queries now abort mid-stream at the cooperative resource boundary without returning partial results. Exact DMG/WKWebView smoke is PASS with provenance COMPLETE. Previous artifact-bound 100k Evidence Pack p95 `4530.5968 ms`, export p95 `4545.3095 ms`, projection rebuild p95 `8347.3076 ms`, max operation RSS `336.3438 MB` remains a non-release baseline; the `<2s` planning target is not met and frontend cancellation/loading/error truth remains open |
+| H07 bounded baseline | Code `27b3404` on clean Mac arm64: 709 backend, 76 frontend, i18n 580/580, local CI `MERGE READY`; legacy and exact-coverage typed trade queries abort mid-stream at the cooperative resource boundary without returning partial results, and Evidence Pack/Reconciliation Inbox/Weekly Review/CSV preview read surfaces have bounded AbortSignal, cancel, stale-response and explicit loading/error truth. Exact DMG/WKWebView smoke is PASS with provenance COMPLETE: report `71436cad...`, DMG `dfa77879...`, mounted executable `60523b2e...`. Previous artifact-bound 100k Evidence Pack p95 `4530.5968 ms`, export p95 `4545.3095 ms`, projection rebuild p95 `8347.3076 ms`, max operation RSS `336.3438 MB` remains a non-release baseline; the `<2s` planning target is not met and dashboard/analytics cancellation/loading/error truth remains open |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -57,7 +57,7 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Deterministic 1k/10k/100k synthetic performance baselines, resource limits and explicit cancellation/failure truth | `f0b93ba` benchmark/index path, `779e2d7` atomic grouped-batch cancellation, `d2463b2` streamed integrity verification, `4e85e3f` correction/replay measurement, `46531e4`/`6af4fd9` dynamic budget boundary, `6748d96` bounded input/coverage fail-closed fixtures and `5137383` legacy/typed query mid-operation abort are present. 100k Evidence Pack/rebuild p95 exceeds planning target; frontend cancellation/loading/error truth remains open |
+| H07 | IMPLEMENTATION_REQUIRED | Deterministic 1k/10k/100k synthetic performance baselines, resource limits and explicit cancellation/failure truth | `f0b93ba` benchmark/index path, `779e2d7` atomic grouped-batch cancellation, `d2463b2` streamed integrity verification, `4e85e3f` correction/replay measurement, `46531e4`/`6af4fd9` dynamic budget boundary, `6748d96` bounded input/coverage fail-closed fixtures, `5137383` legacy/typed query mid-operation abort and `27b3404` bounded value-chain frontend cancellation are present. 100k Evidence Pack/rebuild p95 exceeds planning target; dashboard/analytics and other long-read cancellation/loading/error truth remains open |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -112,15 +112,16 @@ H07's current bounded evidence is recorded in
 1k/10k/100k synthetic reports, indexed trade lookup, atomic grouped-batch
 cancellation, streamed full-chain verification, correction/replay measurement,
 dynamic RSS/disk budget abort/rollback boundaries, `6748d96` malformed/oversized
-plus partial/unknown coverage fixtures and `5137383` legacy/typed query
-mid-operation abort fixtures are present. Exact Mac arm64 app/DMG/WKWebView
-evidence is tied to code baseline `5137383`; DMG smoke report SHA
-`3424e0b2346eed7af03c6ca223492de3093cea21390bec83bf044ffce39201eb`, mounted
-executable SHA `f0c2e927d75cf45d3c50c9b45af344f7732b68fccb635bcd836bda45726ba544`
-and DMG SHA `5f55202fc906bcfbc6c5933f2738f0a33512d3d3dd7cc0891c3ab1d6a01732b4`.
+plus partial/unknown coverage fixtures, `5137383` legacy/typed query
+mid-operation abort fixtures and `27b3404` value-chain frontend cancellation
+fixtures are present. Exact Mac arm64 app/DMG/WKWebView evidence is tied to code
+baseline `27b3404`; DMG smoke report SHA
+`71436cad1189f42c4ff9a12d541a1aa5ccf9434c1d94d7cec49332f09403f911`, mounted
+executable SHA `60523b2e74c4f41f58d977d610ffafb6bb72eb69c9c26fbd25c599b55754bfa8`
+and DMG SHA `dfa77879073bf2b5adb8ccb132fff9cb1b3ede66f60cb0b375fa287d9a9873d7`.
 The 100k Evidence Pack and projection rebuild p95 values do not meet the planning
-target, so H07 remains `IMPLEMENTATION_REQUIRED`. Next handoff is frontend
-loading/cancellation/error truth.
+target, so H07 remains `IMPLEMENTATION_REQUIRED`. Next handoff is dashboard/analytics
+and other long-read loading/cancellation/error truth audit.
 H05 license/notices and default-branch Dependabot remain deferred release gates;
 no production or commercial package claim is allowed.
 

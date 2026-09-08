@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 1.6.0
+version: 1.7.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 5137383
+baseline_commit: 27b3404
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -80,7 +80,9 @@ pakete eklenmeyecektir.
   Pack sınırlarında; malformed/oversized input ve partial/unknown coverage
   propagation alt sınırlarında bounded backend kanıtı vardır. Legacy SQLite ve
   coverage-ready typed projection query'lerinde mid-operation abort bounded olarak
-  uygulanmıştır; frontend cancellation/loading/error truth hâlâ açıktır.
+  uygulanmıştır. Evidence Pack, Reconciliation Inbox, Weekly Review ve CSV preview
+  read/loading yüzeylerinde frontend cancellation/loading/error truth bounded olarak
+  uygulanmıştır; genel analytics/dashboard yüzeyleri hâlâ açıktır.
 - [ ] Backend correctness/performance regression suite ve frontend loading/cancel/error
   truth testleri geçiyor; yeni capability veya live execution yolu açılmıyor.
 - [x] Aynı host ve aynı source/dataset girdisinde rapor snapshot/hash deterministik;
@@ -144,25 +146,34 @@ ayrı red testlerle doğrulandı; H07 benchmark query callback'i de aynı bounda
 bağlandı. Bu read-only abort yeni schema, event type veya funding/transfer
 kapsamı eklemiyor.
 
-Focused H07 suite `26 passed`; full backend suite `709 passed, 2 warnings`.
-Frontend değişmedi: `19` test dosyası ve `71` test PASS; i18n `574/574`.
+`27b3404` ile Evidence Pack, Reconciliation Inbox ve Weekly Review read request'leri
+explicit `AbortController`, kullanıcıya görünür cancel state'i, stale-response
+suppression ve unmount cleanup ile bounded hale getirildi. CSV preview aynı
+korumayı taşır; import mutation'ı native bridge rollback garantisi olmadığı için
+kullanıcıya iptal edilebilir gibi sunulmaz ve import sırasında modal kapanışı
+devre dışı kalır. Loading state'leri `role=status`, hata ve iptal state'leri
+`role=alert` ile görünürdür.
+
+Focused H07 backend suite `26 passed`; focused frontend boundary suite `20 passed`;
+full backend suite `709 passed, 2 warnings`, full frontend `19` test dosyası ve
+`76` test PASS; i18n `580/580`.
 Locked local CI `MERGE READY` oldu. Current code baseline source commit tam SHA'sı
-`513738312de7e0a5e4f2dddaa3c10eb22583c65a`, tracked source tree SHA-256'sı
-`401d3f3db75d6ec2cf34b87764b448a2633ba0d3d3a0e95c38f901256a02e87d`'dir.
+`27b34043dd0381461f3079d94044e30d10e1af18`, tracked source tree SHA-256'sı
+`1da4ab3a34a60a1fd1f2a6fb4cab9fdc7be43dada986865f5f71c51b00eccaca`'dır.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `8cf088277d58a8bc1dc74a7875f8e45e86ef345e228147cc969a4766c9554a79`,
-native local smoke report SHA-256 `bffae4ba001e8ca06a8462fa89743fea822606ed91de7367c3b6b575853c512a`.
+Local CI report SHA-256 `2ea24e2104fe909757dc60b629aeaa3c5f980f02fccb7f282fab11b7dbfaa08c`,
+native local smoke report SHA-256 `ab4490e4d005b1f735381a485240d3ad87fd4f03ba23da487ed67b0cca8e01aa`.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`3424e0b2346eed7af03c6ca223492de3093cea21390bec83bf044ffce39201eb`, DMG
-SHA-256 `5f55202fc906bcfbc6c5933f2738f0a33512d3d3dd7cc0891c3ab1d6a01732b4`
+`71436cad1189f42c4ff9a12d541a1aa5ccf9434c1d94d7cec49332f09403f911`, DMG
+SHA-256 `dfa77879073bf2b5adb8ccb132fff9cb1b3ede66f60cb0b375fa287d9a9873d7`
 ve mounted executable SHA-256
-`f0c2e927d75cf45d3c50c9b45af344f7732b68fccb635bcd836bda45726ba544`'dir.
+`60523b2e74c4f41f58d977d610ffafb6bb72eb69c9c26fbd25c599b55754bfa8`'dır.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
@@ -231,12 +242,17 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
   test edilmiştir; bu read-only yol rollback gerektirmediği için partial list
   döndürmeden connection'ı kapatır.
 - Grouped canonical batch için cooperative cancellation ve rollback kanıtı vardır;
-  frontend AbortSignal/cancel durumu bu backend boundary'sine bağlanmış değildir.
+  frontend read yüzeyleri kendi request'lerinde AbortSignal/cancel state'i taşır;
+  native bridge üzerinden yapılan import mutation'ı için rollback garantisi
+  olmadığı için kullanıcıya iptal edilebilir mutation sunulmaz.
 - Malformed/oversized input ve partial/unknown coverage için bounded backend red/
   green fixture ve fail-closed implementation tamamlandı: 10 yeni fixture PASS.
-- Frontend AbortSignal/loading/cancel/error truth hâlâ açıktır; bu nedenle H07
-  tamamlanmış veya production-ready değildir.
+- Evidence Pack, Reconciliation Inbox, Weekly Review ve CSV preview için frontend
+  AbortSignal/loading/cancel/error truth bounded olarak test edilmiştir; dashboard,
+  analytics ve diğer uzun süren read yüzeyleri henüz audit edilmemiştir. Bu nedenle
+  H07 tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı frontend loading/cancel/error truth sınırının ayrı red testlerle
-kapatılmasıdır. Bu sınır kapanmadan H07 tamamlanmış, production-ready veya
-desteklenen veri boyutu olarak işaretlenmeyecektir.
+Sonraki H07 adımı dashboard/analytics ve diğer uzun süren read yüzeylerinde
+loading/cancel/error truth için ayrı red testlerin eklenmesidir. Bu audit ve 100k
+planning target kararı kapanmadan H07 tamamlanmış, production-ready veya desteklenen
+veri boyutu olarak işaretlenmeyecektir.

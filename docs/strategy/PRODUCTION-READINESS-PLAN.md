@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.12
+version: 1.0.13
 status: Proposed
 date: 2026-09-08
-reviewed_commit: 5137383
+reviewed_commit: 27b3404
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -349,8 +349,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 16. H06: privacy/data-lifecycle ve credential availability boundary; bounded olarak
     tamamlandı `4270d33`/`a7b99b7`.
 17. H07: deterministik sentetik performance/resource-limit baseline'ı; query
-    mid-operation abort backend sınırı `5137383` ile bounded olarak eklendi; frontend
-    loading/cancel/error truth açık kaldığı için paket hâlâ aktif non-release iştir.
+    mid-operation abort backend sınırı `5137383` ile, Evidence Pack/Reconciliation
+    Inbox/Weekly Review/CSV preview read yüzeylerinin bounded cancellation/loading/
+    error truth'i `27b3404` ile eklendi. Dashboard/analytics audit'i ve 100k planning
+    target kararı açık kaldığı için paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -378,6 +380,16 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
 - H06 arşivlendi ve H07 deterministik sentetik performance/resource-limit paketi tek
   güncel aktif non-release work package olarak seçildi. H05 ürün lisansı/notices ve
   default-branch Dependabot kapıları ertelenmiş ve release öncesi zorunlu kalmıştır.
+
+### 1.0.13 — 2026-09-08
+
+- H07 frontend bounded cancellation paketi `27b3404` ile kaydedildi: Evidence Pack,
+  Reconciliation Inbox, Weekly Review ve CSV preview read/loading yüzeyleri
+  AbortSignal, cancel, stale-response suppression ve explicit error truth ile
+  doğrulandı. Import mutation'ı native bridge rollback garantisi olmadığı için
+  kullanıcıya iptal edilebilir gibi sunulmadı. Dashboard/analytics ve diğer uzun
+  read yüzeyleri ile 100k planning target kararı açık kaldı; local CI `MERGE READY`,
+  709 backend, 76 frontend ve i18n `580/580` kanıtı güncellendi.
 
 ### 1.0.10 — 2026-09-08
 
