@@ -56,6 +56,11 @@ class EvidenceTradeProjectionRepository:
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = str(db_path or get_sqlite_path())
         self._ensure_schema()
+        # Reuse the append-only verifier so repeated rebuilds can benefit from
+        # its data_version-bound integrity cache.  A commit from any other
+        # SQLite connection still invalidates that cache and forces a full
+        # verification before projection work continues.
+        self._ledger_repo = EvidenceLedgerRepository(self.db_path)
 
     def _connect(self, *, write: bool = False) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path, check_same_thread=False, isolation_level=None)
@@ -247,7 +252,7 @@ class EvidenceTradeProjectionRepository:
             if resource_check is not None:
                 resource_check(phase)
 
-        ledger = EvidenceLedgerRepository(self.db_path)
+        ledger = self._ledger_repo
         integrity = ledger.verify_chain(
             account_id=account_id,
             resource_check=resource_check,

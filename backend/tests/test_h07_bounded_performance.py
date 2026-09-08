@@ -193,6 +193,43 @@ def test_chain_verification_reuses_unchanged_append_only_snapshot_until_append(
     assert iterator_calls == 2
 
 
+def test_projection_rebuild_reuses_ledger_verification_for_unchanged_snapshot(
+    tmp_path, monkeypatch
+):
+    db_path = tmp_path / "projection-verification-cache.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    trade = generate_trade_snapshot(0, seed="H07-PROJECTION-CACHE")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(trade, 0, seed="H07-PROJECTION-CACHE"),
+    ])
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    original_iter = projection._ledger_repo._iter_raw_verification_rows
+    iterator_calls = 0
+
+    def count_iterator_calls(*args, **kwargs):
+        nonlocal iterator_calls
+        iterator_calls += 1
+        return original_iter(*args, **kwargs)
+
+    monkeypatch.setattr(
+        projection._ledger_repo,
+        "_iter_raw_verification_rows",
+        count_iterator_calls,
+    )
+
+    first = projection.rebuild(
+        account_id="h07-synthetic-account",
+        dry_run=True,
+    )
+    second = projection.rebuild(
+        account_id="h07-synthetic-account",
+        dry_run=True,
+    )
+
+    assert first == second
+    assert iterator_calls == 1
+
+
 def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_ledger(tmp_path):
     db_path = tmp_path / "cancelled-batch.sqlite"
     driver = SQLiteDriver(str(db_path))
