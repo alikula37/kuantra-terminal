@@ -29,9 +29,9 @@ from app.services.exchange.credentials_manager import (
 
 READ_ONLY_SCOPE = "READ_ONLY"
 SUPPORTED_API_EXCHANGES = {
-    "binance_spot": {"venue": "BINANCE", "ccxt_id": "binance"},
-    "binance_futures": {"venue": "BINANCE", "ccxt_id": "binanceusdm"},
-    "okx": {"venue": "OKX", "ccxt_id": "okx"},
+    "binance_spot": {"venue": "BINANCE", "ccxt_id": "binance", "market_type": "spot"},
+    "binance_futures": {"venue": "BINANCE", "ccxt_id": "binanceusdm", "market_type": "swap"},
+    "okx": {"venue": "OKX", "ccxt_id": "okx", "market_type": "swap"},
 }
 
 
@@ -178,11 +178,13 @@ class ReadOnlySnapshotManifest:
     warnings: Tuple[str, ...]
     captured_at_utc: str
     snapshot_sha256: str
+    source_exchange_id: Optional[str] = None
+    market_type: Optional[str] = None
 
     def stable_payload(self) -> Dict[str, Any]:
         """Return fields that identify source content, excluding run metadata."""
 
-        return {
+        payload = {
             "manifest_version": self.manifest_version,
             "exchange_id": self.exchange_id,
             "account_id": self.account_id,
@@ -196,14 +198,29 @@ class ReadOnlySnapshotManifest:
             "page_hashes": list(self.page_hashes),
             "complete": self.complete,
         }
+        if self.manifest_version == "2":
+            payload.update({
+                "source_exchange_id": self.source_exchange_id,
+                "market_type": self.market_type,
+            })
+        return payload
 
     def validate(self) -> None:
-        if self.manifest_version != "1":
+        if self.manifest_version not in {"1", "2"}:
             raise SnapshotManifestValidationError("unsupported snapshot manifest version")
         if self.exchange_id not in {"BINANCE", "OKX"}:
             raise SnapshotManifestValidationError("snapshot manifest has an unsupported venue")
         if self.permission_scope != READ_ONLY_SCOPE:
             raise SnapshotManifestValidationError("snapshot manifest is not READ_ONLY")
+        if self.manifest_version == "2":
+            if self.source_exchange_id not in SUPPORTED_API_EXCHANGES:
+                raise SnapshotManifestValidationError("snapshot source_exchange_id is unsupported")
+            expected_venue = SUPPORTED_API_EXCHANGES[self.source_exchange_id]["venue"]
+            expected_market_type = SUPPORTED_API_EXCHANGES[self.source_exchange_id]["market_type"]
+            if self.exchange_id != expected_venue:
+                raise SnapshotManifestValidationError("snapshot source exchange and venue disagree")
+            if self.market_type != expected_market_type:
+                raise SnapshotManifestValidationError("snapshot source exchange and market type disagree")
         if not self.account_id or len(self.account_id) > 128:
             raise SnapshotManifestValidationError("snapshot account_id is invalid")
         if self.requested_since_ms is not None and self.requested_since_ms < 0:
@@ -259,9 +276,12 @@ class ReadOnlySnapshotManifest:
         page_hashes: Sequence[str],
         complete: bool,
         warnings: Sequence[str] = (),
+        source_exchange_id: Optional[str] = None,
+        market_type: Optional[str] = None,
     ) -> "ReadOnlySnapshotManifest":
+        manifest_version = "2" if source_exchange_id is not None or market_type is not None else "1"
         draft = cls(
-            manifest_version="1",
+            manifest_version=manifest_version,
             exchange_id=exchange_id,
             account_id=account_id,
             permission_scope=READ_ONLY_SCOPE,
@@ -277,6 +297,8 @@ class ReadOnlySnapshotManifest:
             warnings=tuple(str(warning) for warning in warnings),
             captured_at_utc=_utc_now(),
             snapshot_sha256="0" * 64,
+            source_exchange_id=source_exchange_id,
+            market_type=market_type,
         )
         digest = hashlib.sha256(canonical_json(draft.stable_payload()).encode("utf-8")).hexdigest()
         manifest = cls(**{**draft.__dict__, "snapshot_sha256": digest})
@@ -301,6 +323,8 @@ class ReadOnlySnapshotManifest:
             "warnings": list(self.warnings),
             "captured_at_utc": self.captured_at_utc,
             "snapshot_sha256": self.snapshot_sha256,
+            "source_exchange_id": self.source_exchange_id,
+            "market_type": self.market_type,
         }
 
 
@@ -667,6 +691,8 @@ class ReadOnlyBrokerSyncService:
             page_hashes=orders.page_hashes + fills.page_hashes,
             complete=complete,
             warnings=warnings,
+            source_exchange_id=normalized_exchange,
+            market_type=metadata["market_type"],
         )
         manifest.validate()
 
@@ -683,6 +709,8 @@ class ReadOnlyBrokerSyncService:
         report["transport"] = {
             "adapter": "ccxt-read-only-v1",
             "exchange_id": normalized_exchange,
+            "venue": metadata["venue"],
+            "market_type": metadata["market_type"],
             "methods": ["fetch_orders", "fetch_my_trades"],
             "request_count": manifest.request_count,
         }

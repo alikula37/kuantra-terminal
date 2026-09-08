@@ -21,6 +21,13 @@ from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository, c
 
 
 SUPPORTED_VENUES = {"BINANCE", "OKX"}
+SUPPORTED_SOURCE_EXCHANGES = {
+    "binance_spot": {"venue": "BINANCE", "market_type": "spot"},
+    "binance_futures": {"venue": "BINANCE", "market_type": "swap"},
+    "okx": {"venue": "OKX", "market_type": "swap"},
+}
+SUPPORTED_SOURCE_EXCHANGE_IDS = set(SUPPORTED_SOURCE_EXCHANGES)
+SUPPORTED_MARKET_TYPES = {metadata["market_type"] for metadata in SUPPORTED_SOURCE_EXCHANGES.values()}
 ORDER_EVENT_STATUSES = {
     "NEW",
     "PARTIALLY_FILLED",
@@ -413,7 +420,7 @@ class BrokerImportService:
         if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
             raise BrokerImportValidationError("snapshot_manifest snapshot_sha256 must be lowercase SHA-256")
         version = str(snapshot_manifest.get("manifest_version") or "").strip()
-        if version != "1":
+        if version not in {"1", "2"}:
             raise BrokerImportValidationError("unsupported snapshot_manifest version")
         complete = snapshot_manifest.get("complete")
         if not isinstance(complete, bool):
@@ -425,6 +432,18 @@ class BrokerImportService:
             "snapshot_permission_scope": scope,
             "snapshot_complete": complete,
         }
+        if version == "2":
+            source_exchange_id = str(snapshot_manifest.get("source_exchange_id") or "").strip().lower()
+            market_type = str(snapshot_manifest.get("market_type") or "").strip().lower()
+            if source_exchange_id not in SUPPORTED_SOURCE_EXCHANGE_IDS:
+                raise BrokerImportValidationError("snapshot_manifest source_exchange_id is unsupported")
+            if market_type not in SUPPORTED_MARKET_TYPES:
+                raise BrokerImportValidationError("snapshot_manifest market_type is unsupported")
+            expected_market_type = SUPPORTED_SOURCE_EXCHANGES[source_exchange_id]["market_type"]
+            if market_type != expected_market_type:
+                raise BrokerImportValidationError("snapshot_manifest source exchange and market type disagree")
+            summary["source_exchange_id"] = source_exchange_id
+            summary["market_type"] = market_type
         for key in (
             "orders_page_count",
             "fills_page_count",
@@ -459,6 +478,12 @@ class BrokerImportService:
         source_document = source_bytes if source_bytes is not None else canonical_json({"orders": orders, "fills": fills}).encode("utf-8")
         source_file_sha256 = hashlib.sha256(source_document).hexdigest()
         snapshot_provenance = self._snapshot_provenance(snapshot_manifest)
+        if snapshot_provenance:
+            source_exchange_id = snapshot_provenance.get("source_exchange_id")
+            if source_exchange_id:
+                expected_venue = SUPPORTED_SOURCE_EXCHANGES[source_exchange_id]["venue"]
+                if venue != expected_venue:
+                    raise BrokerImportValidationError("snapshot_manifest source exchange and venue disagree")
         commands: List[Dict[str, Any]] = []
         for record in records:
             payload = record.payload()
@@ -467,7 +492,8 @@ class BrokerImportService:
             # later export may contain the same external ID with a corrected
             # state; it must become a new immutable observation rather than a
             # ledger conflict.  Re-importing the same bytes remains idempotent.
-            identity = f"broker:{venue}:{account_id}:{source_file_sha256}:{record.record_type}:{record.external_identity}:{record_hash}"
+            source_identity = snapshot_provenance.get("source_exchange_id", venue) if snapshot_provenance else venue
+            identity = f"broker:{source_identity}:{account_id}:{source_file_sha256}:{record.record_type}:{record.external_identity}:{record_hash}"
             commands.append({
                 "event_type": self._event_type(record),
                 "account_id": account_id,
@@ -524,6 +550,8 @@ class BrokerImportService:
                 "snapshot_manifest_sha256": snapshot_provenance["snapshot_manifest_sha256"],
                 "snapshot_complete": snapshot_provenance["snapshot_complete"],
                 "snapshot_request_count": snapshot_provenance["snapshot_request_count"],
+                "snapshot_source_exchange_id": snapshot_provenance.get("source_exchange_id"),
+                "snapshot_market_type": snapshot_provenance.get("market_type"),
             })
         return report
 

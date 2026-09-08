@@ -8,12 +8,13 @@ from fastapi.testclient import TestClient
 
 from main import create_app
 from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
-from app.services.broker_import_service import BrokerImportService
+from app.services.broker_import_service import BrokerImportService, BrokerImportValidationError
 from app.services.exchange.read_only_broker_sync import (
     ReadOnlyBrokerSyncService,
     ReadOnlyCredentialScopeError,
     ReadOnlyExchangeClient,
     ReadOnlySnapshotManifest,
+    SnapshotManifestValidationError,
 )
 from app.services.exchange.credentials_manager import ExchangeCredentialsManager
 from app.db.sqlite_driver import sqlite_driver
@@ -331,6 +332,117 @@ def test_full_page_at_until_boundary_is_incomplete_without_a_tie_breaker(tmp_pat
     assert report["snapshot_complete"] is False
     assert "ORDERS_UNTIL_BOUNDARY_UNCERTAIN" in report["snapshot_manifest"]["warnings"]
     assert "FILLS_UNTIL_BOUNDARY_UNCERTAIN" in report["snapshot_manifest"]["warnings"]
+
+
+def test_api_snapshot_preserves_source_exchange_identity_and_separates_same_venue(tmp_path):
+    ledger = EvidenceLedgerRepository(str(tmp_path / "ledger.sqlite"))
+
+    spot = ReadOnlyBrokerSyncService(
+        import_service=BrokerImportService(ledger),
+        sleeper=lambda _delay: None,
+        jitter_fn=lambda: 0.0,
+    ).sync(
+        exchange_id="binance_spot",
+        account_id="identity-account",
+        symbol="BTC/USDT",
+        page_limit=2,
+        client=_PagedClient(),
+    )
+    futures = ReadOnlyBrokerSyncService(
+        import_service=BrokerImportService(ledger),
+        sleeper=lambda _delay: None,
+        jitter_fn=lambda: 0.0,
+    ).sync(
+        exchange_id="binance_futures",
+        account_id="identity-account",
+        symbol="BTC/USDT",
+        page_limit=2,
+        client=_PagedClient(),
+    )
+
+    assert spot["snapshot_manifest"]["manifest_version"] == "2"
+    assert spot["snapshot_manifest"]["source_exchange_id"] == "binance_spot"
+    assert spot["snapshot_manifest"]["market_type"] == "spot"
+    assert futures["snapshot_manifest"]["source_exchange_id"] == "binance_futures"
+    assert futures["snapshot_manifest"]["market_type"] == "swap"
+    assert spot["snapshot_source_exchange_id"] == "binance_spot"
+    assert futures["snapshot_source_exchange_id"] == "binance_futures"
+    assert spot["transport"]["venue"] == futures["transport"]["venue"] == "BINANCE"
+    assert spot["transport"]["market_type"] == "spot"
+    assert futures["transport"]["market_type"] == "swap"
+    assert spot["ledger_created_count"] == 6
+    assert futures["ledger_created_count"] == 6
+
+    events = list(ledger.export_events(account_id="identity-account"))
+    assert len(events) == 12
+    assert {event["provenance"]["source_exchange_id"] for event in events} == {
+        "binance_spot",
+        "binance_futures",
+    }
+    assert {event["provenance"]["market_type"] for event in events} == {"spot", "swap"}
+
+
+def test_manifest_v2_rejects_source_exchange_and_market_mismatch():
+    with pytest.raises(SnapshotManifestValidationError, match="market type disagree"):
+        ReadOnlySnapshotManifest.build(
+            exchange_id="BINANCE",
+            account_id="account",
+            requested_since_ms=None,
+            requested_until_ms=None,
+            orders_page_count=0,
+            fills_page_count=0,
+            order_count=0,
+            fill_count=0,
+            request_count=0,
+            page_hashes=[],
+            complete=True,
+            source_exchange_id="binance_futures",
+            market_type="spot",
+        )
+
+
+def test_import_boundary_rejects_inconsistent_v2_source_identity(tmp_path):
+    service = BrokerImportService(EvidenceLedgerRepository(str(tmp_path / "ledger.sqlite")))
+    manifest = {
+        "manifest_version": "2",
+        "permission_scope": "READ_ONLY",
+        "snapshot_sha256": "a" * 64,
+        "complete": True,
+        "orders_page_count": 0,
+        "fills_page_count": 0,
+        "order_count": 0,
+        "fill_count": 0,
+        "request_count": 0,
+        "warnings": [],
+        "source_exchange_id": "binance_futures",
+        "market_type": "spot",
+    }
+    with pytest.raises(BrokerImportValidationError, match="market type disagree"):
+        service.import_records("BINANCE", snapshot_manifest=manifest)
+
+    manifest["market_type"] = "swap"
+    with pytest.raises(BrokerImportValidationError, match="venue disagree"):
+        service.import_records("OKX", snapshot_manifest=manifest)
+
+
+def test_import_boundary_keeps_v1_snapshot_manifest_compatible(tmp_path):
+    service = BrokerImportService(EvidenceLedgerRepository(str(tmp_path / "ledger.sqlite")))
+    manifest = ReadOnlySnapshotManifest.build(
+        exchange_id="BINANCE",
+        account_id="legacy-account",
+        requested_since_ms=None,
+        requested_until_ms=None,
+        orders_page_count=0,
+        fills_page_count=0,
+        order_count=0,
+        fill_count=0,
+        request_count=0,
+        page_hashes=[],
+        complete=True,
+    )
+    report = service.import_records("BINANCE", snapshot_manifest=manifest.as_dict())
+    assert manifest.manifest_version == "1"
+    assert report["snapshot_complete"] is True
 
 
 def test_scope_and_write_proxy_fail_closed():
