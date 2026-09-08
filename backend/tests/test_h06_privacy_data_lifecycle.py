@@ -12,6 +12,9 @@ import pytest
 from app.core import logging_config
 from app.core import paths
 from app.core.telemetry import PrivacyTelemetryManager
+from app.db.sqlite_driver import sqlite_driver
+from app.services.exchange.credentials_manager import ExchangeCredentialsManager
+from app.services.security.credential_store import CredentialStoreUnavailable, credential_store
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX permission contract")
@@ -99,6 +102,47 @@ def test_telemetry_queue_is_bounded_and_redacted(tmp_path):
     assert "secret-value-000000" not in json.dumps(payload)
     assert "secret-value-000001" not in json.dumps(payload)
     assert stat.S_IMODE(queue_file.stat().st_mode) == 0o600
+
+
+def test_keychain_failure_stays_structured_without_sqlite_secret_fallback(monkeypatch):
+    exchange_id = "okx"
+    with sqlite_driver.get_connection() as conn:
+        conn.execute("DELETE FROM exchange_credential_refs WHERE exchange_id = ?", (exchange_id,))
+        conn.execute(
+            """
+            INSERT INTO exchange_credential_refs (
+                exchange_id, name, api_key_ref, api_secret_ref, passphrase_ref,
+                permission_scope, is_testnet, is_active, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                exchange_id,
+                "H06 synthetic metadata",
+                "exchange/okx/api_key",
+                "exchange/okx/api_secret",
+                "exchange/okx/passphrase",
+                "READ_ONLY",
+                1,
+                1,
+                "2026-09-08T00:00:00Z",
+                "2026-09-08T00:00:00Z",
+            ),
+        )
+        conn.commit()
+
+    def keychain_locked(_account):
+        raise CredentialStoreUnavailable("synthetic keychain locked")
+
+    monkeypatch.setattr(credential_store, "get_secret", keychain_locked)
+    try:
+        item = next(item for item in ExchangeCredentialsManager().list_configured_exchanges() if item["exchange_id"] == exchange_id)
+        assert item["credentials_available"] is False
+        assert item["api_key_masked"] == "KEYCHAIN_UNAVAILABLE"
+        assert ExchangeCredentialsManager().get_decrypted_credentials(exchange_id) is None
+    finally:
+        with sqlite_driver.get_connection() as conn:
+            conn.execute("DELETE FROM exchange_credential_refs WHERE exchange_id = ?", (exchange_id,))
+            conn.commit()
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX permission contract")
