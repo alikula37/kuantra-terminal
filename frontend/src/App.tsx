@@ -119,7 +119,7 @@ const PersonaSelectorModal = lazy(() =>
 );
 
 export default function App() {
-  const { isLiteMode } = usePluginRegistry();
+  const { activePersona, isLiteMode } = usePluginRegistry();
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [activePreset, setActivePreset] = useState<string>("day_trader");
   const [replayTradeId, setReplayTradeId] = useState<string>("TRD-DEFAULT");
@@ -201,6 +201,9 @@ export default function App() {
   }
 
   const handlePresetSelect = (presetId: string) => {
+    if (activePersona === "kuantra_quant" && !["day_trader", "quant_lab"].includes(presetId)) {
+      return;
+    }
     setActivePreset(presetId);
     if (presetId === "day_trader") setActiveTab("dashboard");
     else if (presetId === "docking") setActiveTab("docking");
@@ -209,6 +212,7 @@ export default function App() {
   };
 
   const handlePopoutAll = () => {
+    if (activePersona === "kuantra_quant") return;
     popout("chart", "Live Chart Monitor", 1200, 800);
     popout("biometrics_studio", "Biometric Hardware Studio", 1200, 800);
     popout("fix_studio", "L2/L3 DOM & FIX Studio", 1200, 800);
@@ -234,8 +238,9 @@ export default function App() {
           <WorkspacePresetSelector
             currentPreset={activePreset}
             onSelectPreset={handlePresetSelect}
-            onPopoutAll={handlePopoutAll}
+            onPopoutAll={activePersona === "kuantra_quant" ? undefined : handlePopoutAll}
             onResetLayout={() => handlePresetSelect("day_trader")}
+            safeOnly={activePersona === "kuantra_quant"}
           />
         </Suspense>
       )}

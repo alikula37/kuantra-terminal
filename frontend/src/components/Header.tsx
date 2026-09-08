@@ -302,7 +302,7 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="text-accent font-bold">{formatEventAge(eventAgeMs)}</span>
         </div>
 
-        {!isLiteMode && onOpenVisionUploader && (
+        {isPluginActive("plugin_ai_swarm") && onOpenVisionUploader && (
           <button
             onClick={onOpenVisionUploader}
             className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white text-xs px-3 py-1.5 rounded transition"

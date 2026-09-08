@@ -2,7 +2,15 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), t: (key: string) => key }));
+const mocks = vi.hoisted(() => ({
+  apiFetch: vi.fn(),
+  t: (key: string) => key,
+  pluginState: {
+    activePersona: "kuantra_lite",
+    isLiteMode: true,
+    isPluginActive: () => false,
+  },
+}));
 vi.mock("../../lib/backend", () => ({ apiUrl: (path: string) => path, apiFetch: mocks.apiFetch }));
 vi.mock("../../context/ThemeContext", () => ({
   useTheme: () => ({ theme: "dark", toggleTheme: vi.fn() }),
@@ -12,7 +20,7 @@ vi.mock("../../context/I18nContext", () => ({
   useTranslation: () => ({ locale: "en", setLocale: vi.fn(), t: mocks.t }),
 }));
 vi.mock("../../context/PluginRegistryContext", () => ({
-  usePluginRegistry: () => ({ activePersona: "kuantra_lite", isLiteMode: true, isPluginActive: () => false }),
+  usePluginRegistry: () => mocks.pluginState,
 }));
 vi.mock("../../stores/marketStore", () => ({
   useMarketStore: () => ({ eventAgeMs: null, marketDataStatus: "UNAVAILABLE" }),
@@ -65,4 +73,18 @@ it("aborts the portfolio polling request when the header unmounts", async () => 
   await act(async () => root.unmount());
 
   expect(requestSignal?.aborted).toBe(true);
+});
+
+it("does not expose Chart Vision from the verified Quant persona", async () => {
+  mocks.pluginState.activePersona = "kuantra_quant";
+  mocks.pluginState.isLiteMode = false;
+  await act(async () => root.render(
+    <Header
+      {...props}
+      onOpenVisionUploader={vi.fn()}
+    />
+  ));
+  await flush();
+
+  expect(host.querySelector('button[title="Upload Chart Screenshot for Vision OCR"]')).toBeNull();
 });

@@ -21,6 +21,7 @@ vi.mock("../../context/PluginRegistryContext", () => ({
 
 import { PERSONA_DETAILS } from "../onboarding/PersonaSelectorModal";
 import { ModStoreStudio } from "../plugins/ModStoreStudio";
+import { WorkspacePresetSelector } from "../workspace/WorkspacePresetSelector";
 
 let host: HTMLDivElement;
 let root: Root;
@@ -78,5 +79,27 @@ describe("plugin and persona truth surfaces", () => {
     expect(host.querySelector("[data-testid=plugin-registry-error]")?.getAttribute("role")).toBe("alert");
     await act(async () => (host.querySelector("[data-testid=plugin-registry-retry]") as HTMLButtonElement).click());
     expect(mocks.refreshPlugins).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the verified Quant workspace on deterministic core presets", async () => {
+    await act(async () => root.render(
+      <WorkspacePresetSelector
+        currentPreset="day_trader"
+        onSelectPreset={vi.fn()}
+        onPopoutAll={vi.fn()}
+        onResetLayout={vi.fn()}
+        safeOnly
+      />
+    ));
+
+    expect(host.textContent).toContain("Day Trader");
+    expect(host.textContent).toContain("Quant Analytics");
+    expect(host.textContent).not.toContain("Docking Grid");
+    expect(host.textContent).not.toContain("AI Auditor Focus");
+    expect(host.textContent).not.toContain("POP-OUT MONITORS");
+    expect(host.querySelector('button[title="Dashboard, journal and reviewed market context"]')).not.toBeNull();
+    expect(host.querySelector('button[title="Deterministic analytics and MAE / MFE review"]')).not.toBeNull();
+    expect(host.querySelector('button[title*="Live Positions"]')).toBeNull();
+    expect(host.querySelector('button[title*="Prop Shield"]')).toBeNull();
   });
 });

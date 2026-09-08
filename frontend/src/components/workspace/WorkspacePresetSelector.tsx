@@ -6,6 +6,12 @@ interface WorkspacePresetSelectorProps {
   onSelectPreset: (preset: string) => void;
   onPopoutAll?: () => void;
   onResetLayout?: () => void;
+  /**
+   * Restrict the selector to the verified, deterministic core workspace.
+   * Experimental panels are not made production-capable by being present in
+   * a layout preset, so safe personas must not expose those presets.
+   */
+  safeOnly?: boolean;
 }
 
 export const WorkspacePresetSelector: React.FC<WorkspacePresetSelectorProps> = ({
@@ -13,6 +19,7 @@ export const WorkspacePresetSelector: React.FC<WorkspacePresetSelectorProps> = (
   onSelectPreset,
   onPopoutAll,
   onResetLayout,
+  safeOnly = false,
 }) => {
   const presets = [
     { id: "day_trader", label: "Day Trader", desc: "Chart, Order Flow & Live Positions" },
@@ -20,6 +27,16 @@ export const WorkspacePresetSelector: React.FC<WorkspacePresetSelectorProps> = (
     { id: "ai_focus", label: "AI Auditor Focus", desc: "Cognitive Auditor & Tilt Guardian" },
     { id: "quant_lab", label: "Quant Analytics", desc: "Pivot Grid, MAE/MFE & Prop Shield" },
   ];
+  const visiblePresets = safeOnly
+    ? presets
+        .filter((preset) => preset.id === "day_trader" || preset.id === "quant_lab")
+        .map((preset) => ({
+          ...preset,
+          desc: preset.id === "day_trader"
+            ? "Dashboard, journal and reviewed market context"
+            : "Deterministic analytics and MAE / MFE review",
+        }))
+    : presets;
 
   return (
     <div className="bg-[#0d121c] border-b border-surface-border px-4 py-1.5 flex items-center justify-between font-mono text-xs select-none">
@@ -30,7 +47,7 @@ export const WorkspacePresetSelector: React.FC<WorkspacePresetSelectorProps> = (
         </div>
 
         <div className="flex items-center space-x-1">
-          {presets.map((p) => {
+          {visiblePresets.map((p) => {
             const isActive = currentPreset === p.id;
             return (
               <button
@@ -62,7 +79,7 @@ export const WorkspacePresetSelector: React.FC<WorkspacePresetSelectorProps> = (
           </button>
         )}
 
-        {onPopoutAll && (
+        {onPopoutAll && !safeOnly && (
           <button
             onClick={onPopoutAll}
             className="flex items-center space-x-1 bg-accent/15 hover:bg-accent/30 border border-accent/40 text-accent font-bold px-2.5 py-0.5 rounded transition"
