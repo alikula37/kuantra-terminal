@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 1.1.0
+version: 1.2.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: 779e2d7
+baseline_commit: d2463b2
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -113,34 +113,36 @@ correlation-index üzerinden trade event lookup ve fail-closed benchmark report
 validator'ı eklendi. `779e2d7` ile grouped canonical batch'e cooperative
 `cancel_check` sınırı eklendi; iptal transaction commit'inden önce gerçekleşirse
 compatibility trade row, canonical ledger event ve typed projection birlikte rollback
-oluyor. Bu API yüzeyi UI'ya veya live execution'a açılmadı.
+oluyor. `d2463b2` ile `verify_chain` aynı tam hash/JSON doğrulamalarını tek SQLite
+read snapshot'ında, gereksiz decoded row listesi oluşturmadan yürütüyor. Bu API
+yüzeyleri UI'ya veya live execution'a açılmadı.
 
-Focused H07 suite `9 passed`; full backend suite `692 passed, 2 warnings`. Frontend
+Focused H07 suite `10 passed`; full backend suite `693 passed, 2 warnings`. Frontend
 değişmedi: `19` test dosyası ve `71` test PASS; i18n `574/574`. Bu commit'te
 `uv run --offline --no-project --with-requirements backend/requirements.lock
 python scripts/run_local_ci.py` sonucu **MERGE READY** oldu; local-ci report SHA-256
-`70486a35fb52f6a22488c6e01f71690e8bf722e84df3bb97b9710d60e4e398f1`, source commit
-`779e2d7fc58aa686b913909a4e311b85faa59a18`, tracked source tree SHA-256
-`0330ac5afafd3ba2b3c0c0dd5b1a96aec8a483208fbba7d91ed46f5b95e1c6b9` ve provenance
+`f675b1ff8122fa9bd341980dbdcc0de130db083fa31fd0368375036092e675a5`, source commit
+`d2463b203a9847560fbe6343ef0f04f12435946c`, tracked source tree SHA-256
+`f88bf83005b4a411d50a08670bb6774fef4c1f417533b138a28def4d6fe418b8` ve provenance
 `COMPLETE` olarak kaydedildi. Toolchain: Python `3.11.16`, Node `v20.20.2`, npm
 `10.8.2`, uv `0.12.10`, PyInstaller `6.22.2`; backend/frontend lock SHA'ları
 raporda kayıtlıdır.
 
 ### Sentetik baseline
 
-`/tmp/h07-benchmark-779e2d7.json` report SHA-256
-`94b7b4990ea4f05ff84aacd7d2caf930841b06bcbfb7589633f33eee3b4fa062` ile 1k/10k/100k
+`/tmp/h07-d2463b-artifact-benchmark.json` report SHA-256
+`ce93f1a9bed1a050544d7b0800112193c6877c59df6d7cb5ff7f743862e509cd` ile 1k/10k/100k
 koşuldu. 1k import için tek batch yüzünden percentile `UNKNOWN` kalmıştır; yeterli
 örnek almak üzere `--batch-size 100` ile ayrı 1k raporu üretildi. Bu raporun SHA-256'sı
-`0b0c39018813b3901a184c44c50225b066394388fd58106b2d361451a5b79390`'dır. Her iki
+`f11d29131150feecfb10dfa54f57700f9fde221a6837f948f7c9536864256d78`'dir. Her iki
 raporda da `real_data=false`, `credentials=false`, `network=false`,
 `live_execution=false` ve `support_limit_claim=false` sözleşmesi korunmuştur.
 
 | Sentetik geçmiş | Import p95 | Projection rebuild p95 | Query p95 | Evidence Pack p95 | Export p95 | Cancel p95 | Peak RSS | Temp disk |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1,000 | 16.4002 ms | 78.2435 ms | 3.2654 ms | 238.7106 ms | 60.0789 ms | 0.0319 ms | 117.6406 MB | 303,104 B |
-| 10,000 | 147.5002 ms | 812.8729 ms | 21.9377 ms | 518.5187 ms | 537.0838 ms | 0.0566 ms | 171.7500 MB | 2,899,968 B |
-| 100,000 | 186.1977 ms | 8,862.8957 ms | 229.4677 ms | 5,248.0007 ms | 5,255.8811 ms | 0.0491 ms | 337.8438 MB | 2,949,120 B |
+| 1,000 | 15.7145 ms | 72.1581 ms | 3.1059 ms | 261.2186 ms | 53.8550 ms | 0.0278 ms | 112.1250 MB | 303,104 B |
+| 10,000 | 146.8722 ms | 746.8787 ms | 21.4798 ms | 453.1828 ms | 454.8826 ms | 0.0480 ms | 164.5156 MB | 2,899,968 B |
+| 100,000 | 177.3521 ms | 8,067.4208 ms | 222.3159 ms | 4,523.3492 ms | 4,515.7266 ms | 0.0480 ms | 331.1406 MB | 2,949,120 B |
 
 Dataset SHA-256'ları sırasıyla `ac6a639a04c15e17abc36572087a1358ce5cde70dbb326c4443a3acd30d1d27a`,
 `f058faf806ea8f5c4f547dfe23005a5ab4c2eaeb7cf673cd6a019ffbc5c5af79` ve
@@ -150,23 +152,26 @@ SHA-256'ları sırasıyla `c41bfa653ebd2add989c0b3952aba9d4e84d7dc99a0eef3bd31ed
 `a6e337ba06dbe9030d9920c55e420f0fcdf3a32cc42fd13527ff7fe662c14a18`'dir.
 
 Bu ölçüm 100k için Evidence Pack p95'inin planlama hedefi olan `<2s` altında
-olmadığını ve projection rebuild p95'inin de yaklaşık `8.86s` olduğunu gösteriyor.
+olmadığını ve projection rebuild p95'inin de yaklaşık `8.07s` olduğunu gösteriyor.
 H07 **IMPLEMENTATION_REQUIRED** kalır; support limit, production SLO veya “fast”
 ürün iddiası çıkarılamaz. `verify_chain` bütün account ledger'ını doğruladığı için
-Evidence Pack yolu hâlâ doğruluk öncelikli pahalı bir boundary'dir. Correction/replay
+Evidence Pack yolu hâlâ doğruluk öncelikli pahalı bir boundary'dir. d2463b2 önceki
+ölçümdeki decoded-row maliyetini azalttı ve snapshot hash'ini değiştirmedi; ancak
+ölçüm host varyansı ve hedef dışı p95 nedeniyle bu bir support SLO değildir.
+Correction/replay
 ölçümü, gerçek import cancellation'ın API/UI'ya bağlanması, dinamik RSS/disk limitinde
 transaction abort davranışı ve frontend loading/cancel/error truth testleri bu
 paketin açık alt işleridir.
 
 ### Mac artifact kanıtı
 
-779e2d7 source commit'i ile clean Mac arm64 build ve native smoke PASS oldu. Exact
+d2463b2 source commit'i ile clean Mac arm64 build ve native smoke PASS oldu. Exact
 read-only DMG smoke `KUANTRA_MARKET_DATA_ENABLED=false` ile çalıştırıldı; public market
 stream başlatılmadı, gerçek veri/credential kullanılmadı, mount güvenli biçimde detach
 edildi. DMG smoke report SHA-256
-`665655f2cdc02d01c4bcb8092c87f16d94db4a5a3167db4ef56169dff737b8c6`, DMG SHA-256
-`cdf6da2bf9dd0a22ddfa8b8cb16fb6bef695f96f64f857b9fcb8bf5884a0c7e1`, mounted
-executable SHA-256 `8a38af367b43f48f7d237783752a74847ccdfc46220548cb56a9737753f69ec7`.
+`9cf42e65143d92b5e8008a3b33e74d8787a6db5ea3b51200389154f20fa0f2a5`, DMG SHA-256
+`43b25776976c20de88b69f0c3ac1d92c30172926bf8d4f27e6d98e763d79d8e2`, mounted
+executable SHA-256 `e13972922292092da1f4069d5c820a2a544bef3a0c0aea9f20ed22b4f8bc3556`.
 WKWebView controller identity, bridge, health, React mount, push sink ve plugin
 boundary kontrolleri PASS oldu. Bu artifact ad-hoc development artifact'ıdır;
 Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı değildir.
