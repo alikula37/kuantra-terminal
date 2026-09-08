@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.23
+version: 1.0.24
 status: Proposed
 date: 2026-09-08
-reviewed_commit: bf30860
+reviewed_commit: c095025
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -359,10 +359,12 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     verification cache'i `da9af9b` ile, projection verifier reuse'ı `2da9fe1` ile,
     post-write verifier connection release sınırı `f551b1f` ile ve ledger-only
     fingerprint/shared verifier `3863288` ile, append-tail incremental verification
-    `bf30860` ile eklendi. Safe-persona görünür read listesi için bounded kanıt
-    günceldir; append-tail workload'unda `<2s` ölçülse de no-cache full-chain cold
-    audit p95 `5307.20623 ms` kaldığı ve H07 acceptance gaps sürdüğü için paket hâlâ
-    aktif non-release iştir.
+    `bf30860` ile eklendi. `c095025` safe Quant persona altında deneysel workspace,
+    AI/pop-out ve Chart Vision surface'lerini görünmez tutan frontend boundary gate'ini
+    ekledi; safe-persona görünür core read listesi için bounded kanıt günceldir.
+    Append-tail workload'unda `<2s` ölçülse de aynı artifact dataset'inde no-cache
+    full-chain cold audit p95 `4560.05042 ms` kaldığı ve H07 resource acceptance gaps
+    sürdüğü için paket hâlâ aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
@@ -372,6 +374,29 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.24 — 2026-09-08
+
+- H07 safe-persona surface audit ve fail-closed UI gate'i `c095025` ile uygulandı:
+  `kuantra_quant` yalnız deterministik core workspace preset'lerini gösteriyor;
+  Docking/AI/pop-out preset'leri ve Chart Vision tetikleyicisi doğrulanmış production
+  capability'si olmadan görünmüyor. Yeni plugin, AI, order-flow, live execution,
+  schema veya connector eklenmedi.
+- Red→green odak kanıtı safe-persona/plugin surface ve Header `7` test; full locked
+  local CI `MERGE READY`, backend `714` (2 warning), frontend `25/102`, i18n
+  `608/608`, Mac arm64 build/native WKWebView smoke ve exact disabled-market-data
+  mounted DMG smoke PASS oldu. Source `c0950250430f3c57034703a7d601ce5f3c790118`;
+  tracked source tree SHA `33329015bb30b44fcf739a34d237e21790173e51662a559fbf20dce1652bae77`;
+  local CI report SHA `acd0215e8cc8f939314575b68bb2230c1e2b27e8d3ba4f7bf4a8a52e2adc936f`;
+  exact DMG smoke report SHA `d3f9bcfd55bd9642bd7b24f45e8571eb99b37be5fa4a7c08051a75840fd4159c`;
+  DMG SHA `9853bb8058b55e672ce9dc3e40ee4f4740d385fa6ae4204313d3af9dbe83bf25`;
+  mounted executable SHA `551107a4de39194956c4e0bd6f7cc80306b6a6ac918cec133c7293528a745624`.
+- Exact artifact-bound 100k benchmark report SHA
+  `7a1464a36f072cfb5fc5daf424ea0adbbc30cad1aafaae0d1120f83ff2466a5a` ölçtü:
+  append-tail Evidence Pack p95 `350.8862 ms`, projection rebuild p95 `6158.9151 ms`,
+  export p95 `342.8506 ms`, projection operation temporary disk `0 B`. Ayrı no-cache
+  full-chain cold audit p95 `4560.05042 ms` kaldı; `<2s` hedefi bu workload'ta global
+  olarak karşılanmadığı için H07 `IMPLEMENTATION_REQUIRED` tutuldu.
 
 ### 1.0.23 — 2026-09-08
 

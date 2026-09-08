@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 2.7.0
+version: 2.8.0
 status: InProgress
 date: 2026-09-08
-baseline_commit: bf30860
+baseline_commit: c095025
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -82,7 +82,10 @@ pakete eklenmeyecektir.
   coverage-ready typed projection query'lerinde mid-operation abort bounded olarak
   uygulanmıştır. Evidence Pack, Reconciliation Inbox, Weekly Review ve CSV preview
   read/loading yüzeylerinde frontend cancellation/loading/error truth bounded olarak
-  uygulanmıştır; diğer core read yüzeyleri hâlâ açıktır.
+  uygulanmıştır. Safe-persona görünür core read listesi ayrıca `c095025` ile audit
+  edilmiştir; `kuantra_quant` altında deneysel workspace/Chart Vision yüzeyleri
+  görünmez. H07'nin cold full-chain performans ve kalan resource acceptance boşlukları
+  halen açıktır.
 - [ ] Backend correctness/performance regression suite ve frontend loading/cancel/error
   truth testleri geçiyor; yeni capability veya live execution yolu açılmıyor.
 - [x] Aynı host ve aynı source/dataset girdisinde rapor snapshot/hash deterministik;
@@ -232,54 +235,67 @@ taşındı. `TradeReadAdapter`, projection repository'nin public `ledger_repo` v
 paylaşır; projection-only commit shared cache'i bozmaz, ledger append'i bozup yeniden
 doğrulamayı zorlar. Rollback, ledger verisi ve projection semantiği değişmez.
 
+`c095025` ile safe-persona surface audit'i tamamlandı. `kuantra_quant` yalnız
+doğrulanmış `day_trader` ve `quant_lab` preset'lerini görür; Docking Grid, AI Auditor,
+popup monitor ve deneysel panel içeren pop-out akışı bu persona altında render edilmez.
+Header'daki Chart Vision tetikleyicisi yalnız doğrulanmış aktif AI plugin capability'si
+raporlandığında gösterilir; mevcut production plugin allowlist'i boş olduğu için bu
+release'te görünmez. Preset callback'i de UI dışından çağrılsa aynı sınırı korur.
+Bu paket yeni plugin, AI, order-flow, live execution, schema veya connector açmaz;
+yalnızca yanlış capability izlenimini ve deneysel yüzeye erişim yolunu fail-closed
+keser. Bu, H07 frontend boundary audit'inin kapanış kanıtıdır; global cold-chain
+performans hedefinin kapanışı değildir.
+
 Focused H07 bounded-performance suite `21 passed`; projection/H01 regression bundle
 `42 passed`; value-chain frontend boundary suite `20 passed`;
 dashboard/analytics/header focused suite `8 passed`; JournalView focused suite
 `3 passed`; MAE/MFE focused suite `5 passed`; SettingsView focused suite `3 passed`;
-Charts focused suite `4 passed`; plugin registry/ModStore focused suite `7 passed`;
+Charts focused suite `4 passed`; plugin registry/ModStore/safe-persona focused suite
+`8 passed`;
 full backend suite `714 passed, 2 warnings`, full
-frontend `25` test dosyası ve `100` test PASS; i18n `608/608`.
+frontend `25` test dosyası ve `102` test PASS; i18n `608/608`.
 Locked local CI `MERGE READY` oldu.
 Current code baseline source commit tam SHA'sı
-`bf30860f3c71736bf37365a9840856ec6eeb0779`, tracked source tree SHA-256'sı
-`4f84a4623044b0bfce20dbe6a52e595ad46de673defa6b64a2711a4c54e87f21`'dür.
+`c0950250430f3c57034703a7d601ce5f3c790118`, tracked source tree SHA-256'sı
+`33329015bb30b44fcf739a34d237e21790173e51662a559fbf20dce1652bae77`'dir.
 Toolchain: Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
 `uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)`, PyInstaller `6.22.2`;
 backend/frontend lock SHA'ları sırasıyla
 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve
 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
 
-Local CI report SHA-256 `d0575d7df1e1345e65cfb2f6e2e5c74fce565ea6c480b460c2c054adcc9b1837`,
-native local smoke report SHA-256 `2a2ec9699fd1441b3223d14f74186ce7fac01d77c99e9eacf00f81b4ef9b192a`;
-local smoke executable SHA-256 `eca9eeea7277ce95cad92e1a7d49434c80f89e2940439c16b7562afe01296ef7`
-ve `.app` artifact SHA-256 `0168b7729d96349310708f84927adce4df888ac804e0d218aced50c0a5240f25`.
+Local CI report SHA-256 `acd0215e8cc8f939314575b68bb2230c1e2b27e8d3ba4f7bf4a8a52e2adc936f`,
+native local smoke report SHA-256 `72515c6a09be6b13019817d7937f43b69f7dbf8b1da980a818530f01f88f1f56`;
+local smoke executable SHA-256 `551107a4de39194956c4e0bd6f7cc80306b6a6ac918cec133c7293528a745624`
+ve `.app` artifact SHA-256 `0f613f846f51078538c5637e550ff1224370828a8a9951fe0798514722d3ba49`.
 Canonical local CI'nin varsayılan desktop smoke adımı mevcut network davranışı nedeniyle
 public Binance stream bağlantısını denedi; bu kayıt runtime offline kanıtı değildir.
 
 Bu source baseline üzerindeki exact read-only DMG smoke report SHA-256
-`6ff74f30ca5ac87f8c00f22558fbca56c549f15b62cce0f19e13a58715073707`, DMG
-SHA-256 `e264df8d29b37c46efb278b58270eb8b63fab1eacbe5035b0b0a8631c08e84c2`
+`d3f9bcfd55bd9642bd7b24f45e8571eb99b37be5fa4a7c08051a75840fd4159c`, DMG
+SHA-256 `9853bb8058b55e672ce9dc3e40ee4f4740d385fa6ae4204313d3af9dbe83bf25`
 ve mounted executable SHA-256
-`eca9eeea7277ce95cad92e1a7d49434c80f89e2940439c16b7562afe01296ef7`'dir.
+`551107a4de39194956c4e0bd6f7cc80306b6a6ac918cec133c7293528a745624`'dir.
 DMG smoke read-only mount ve `KUANTRA_MARKET_DATA_ENABLED=false` ile yapıldı;
 WKWebView/controller identity, React/bridge/health/push/plugin smoke kontrolleri
 ve detach PASS oldu. Bu, ad-hoc development artifact'ıdır; signing,
 notarization, Gatekeeper veya commercial distribution kanıtı değildir.
 
 Bu source/artifact çiftiyle çalıştırılan güncel 100k sentetik benchmark raporu
-`/tmp/h07-bf30860-artifact.json`, report SHA-256
-`9633c8dc66dabd29b3f52a5e18e54a8547eb47351dfc3502452566d291ff305a`'dir.
+`/tmp/h07-c095025-artifact.json`, report SHA-256
+`7a1464a36f072cfb5fc5daf424ea0adbbc30cad1aafaae0d1120f83ff2466a5a`'dir.
 Provenance `COMPLETE`, `network=false`, `credentials=false`, `live_execution=false`;
 dataset SHA-256 `cbffe7e178c9efd9e08c876c902cc4dd5efb06e2bc1da7a428b8d001830051bd`,
 determinism snapshot SHA-256
 `6bb1eb94ba9293ab4039e4d03ee34a8d67e25361ebcd6c98679e7be9decf264e` ve sayımlar
 `100000 trades / 100003 ledger events / 100000 projections` olarak kaldı. 100k
-operation p95 değerleri import `181.0214 ms`, projection rebuild `6430.7846 ms`,
-query `224.3823 ms`, Evidence Pack `353.6237 ms` ve export `341.1627 ms`'dir;
-Evidence Pack p50 `339.6955 ms`'dir. Bu Evidence Pack sonucu, çalışan verifier'ın
+operation p95 değerleri import `180.5539 ms`, projection rebuild `6158.9151 ms`,
+query `231.5765 ms`, Evidence Pack `350.8862 ms` ve export `342.8506 ms`'dir;
+Evidence Pack p50 `342.0452 ms`'dir. Bu Evidence Pack sonucu, çalışan verifier'ın
 önceden doğruladığı prefix sonrasındaki append-tail/correction akışını ölçer; yeni
 verifier instance'ı ile yapılan ayrı no-cache full-chain auditinde üç örnek
-`5309.6422 / 5280.5680 / 5285.2825 ms`, p95 `5307.20623 ms` ölçüldü. Dolayısıyla
+`4558.6977 / 4548.2708 / 4560.6704 ms`, p95 `4560.05042 ms` ölçüldü; her örnek
+`100003` event'i geçerli zincir olarak kontrol etti. Dolayısıyla
 append-tail workload'unda `<2s` planning hedefi ölçülmüş olsa da full no-cache cold
 startup hedefi karşılanmamıştır. H07 `IMPLEMENTATION_REQUIRED` kalır; bu değerler
 support SLO veya production claim değildir. Max operation RSS `319.0156 MB`, max
