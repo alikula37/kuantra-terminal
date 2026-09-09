@@ -44,14 +44,15 @@ only. The separate mounted-DMG smoke evidence remains valid for its recorded
 binary. The packaged cold/warm/append-tail protocol and its final two-run/20-sample
 campaign are recorded under `af8e2a1`; process-level resource capture and a fresh
 packaged `projection-rebuild` mode are implemented in `30be78d`, followed by the
-bounded projection batch writer in `67eafa2`. H07 remains open: the latest 100k
-cold Evidence Pack p95 is above the planning target, and measured RSS/temp
-footprint still has no owner-approved support disposition. The clean Mac locked
-local CI for `67eafa2` was `MERGE READY`: 757 backend tests with 2 deprecation
-warnings, frontend 25 files/102 tests, i18n 608/608, arm64 build and native
-WKWebView smoke PASS on macOS 26.6.2. This is development evidence, not a signed
-release artifact. Default smoke attempted public market data; the H07 campaign
-itself set network-disabled guards and used no credentials.
+bounded projection batch writer in `67eafa2` and the full-chain cold optimization
+in `670ee90`. H07 remains open: the latest 100k cold Evidence Pack p95 is above
+the planning target, and measured RSS/temp footprint still has no owner-approved
+support disposition. The clean Mac locked local CI for `670ee90` was `MERGE READY`:
+759 backend tests with 2 deprecation warnings, frontend 25 files/102 tests,
+i18n 608/608, arm64 build and native WKWebView smoke PASS on macOS 26.6.2. This
+is development evidence, not a signed release artifact. Default smoke attempted
+public market data; the H07 campaign itself set network-disabled guards and used
+no credentials.
 
 Measurement contract, **caef518**: source benchmark reports now explicitly record
 `SOURCE_PROCESS`, `artifact_executed=false`, `cold_process_measured=false` and
@@ -59,8 +60,8 @@ Measurement contract, **caef518**: source benchmark reports now explicitly recor
 Correction fixture count is fixed at three (or dataset size if smaller), independently
 of measurement repetitions. Three/five-repeat runs preserve counts and deterministic
 snapshots. Default report output is ignored `artifacts/evidence/h07/`.
-Focused H07/packaged-worker contract evidence: 64 tests; the current full backend
-suite is recorded above as 757 tests with 2 deprecation warnings. The earlier source benchmark
+Focused H07/packaged-worker contract evidence: 66 tests; the current full backend
+suite is recorded above as 759 tests with 2 deprecation warnings. The earlier source benchmark
 measurements and three-sample correction timing remain historical diagnostics; they
 are not promoted to packaged or 20-sample performance evidence.
 
@@ -81,7 +82,7 @@ events, matching its source snapshot. Its durable manifest is
 `artifacts/evidence/h07/packaged-worker-1000-v1/manifest.json`, file SHA
 `2f29069847b9d2b3c50a4e43ba7d1c3ba881abfc8a21fa88489037bad8d2f70f`; it remains
 prior diagnostic evidence, not the final campaign below. Current focused H07/worker
-coverage is 63 PASS and current full backend coverage is 756 PASS with 2 warnings;
+coverage is 66 PASS and current full backend coverage is 759 PASS with 2 warnings;
 the clean local-CI result and its exact artifact hashes are recorded in H07.
 Exact hashes, commands and platform limits are in active H07. New final DMG,
 signing and clean-release provenance are NOT claimed.
@@ -185,13 +186,84 @@ provenance is `UNKNOWN`. Local-CI provenance is `COMPLETE` for this development
 artifact. This evidence is not a DMG, signing/notarization, Windows/Linux or
 production claim.
 
+Full-chain cold optimization and measurement-boundary disposition, **670ee90**:
+the canonical JSON validator now takes an `orjson` fast path only after an exact
+canonical-byte match (with conservative exponent handling); the existing strict
+stdlib path remains authoritative for exponent, large-integer and other edge
+cases. `get_evidence_pack` now reuses its already evaluated coverage and trade
+snapshot and derives market context from that snapshot, preserving the public
+compatibility behavior without repeated read work. No schema, ledger semantics,
+funding/transfer event type or product authority changed. Two new red tests first
+failed (`2 failed, 40 passed`); after implementation the focused H07 file passed
+`42/42`, the combined H07/packaged-worker suite `66/66`, and the relevant H07,
+projection, Evidence Pack and persistence regression set `96/96`. A source-only
+cProfile diagnostic moved `get_evidence_pack` from about `5.720 s` to `4.677 s`
+and `verify_chain` from about `5.392 s` to `4.527 s`; this is diagnostic guidance,
+not a packaged SLA claim.
+
+The clean packaged campaign used two runs at 100k with 3 fresh-process cold,
+3 same-process warm, 3 fresh-process append-tail and 20 fresh-process
+projection-rebuild samples per run:
+
+| Mode | Operation p95 R1 / R2 (ms) | Process p95 R1 / R2 (ms) | Peak process RSS R1 / R2 (MB) | Peak isolated temp R1 / R2 (B) |
+|---|---:|---:|---:|---:|
+| `cold` | 2468.2571 / 2444.9360 | 3481.5726 / 3448.4742 | 163.3906 / 164.2188 | 287690752 / 287690752 |
+| `warm` | 143.1432 / 144.6606 | UNKNOWN (n=1) / UNKNOWN (n=1) | 162.9688 / 163.2969 | 287690752 / 287690752 |
+| `append-tail` | 25.9044 / 25.7300 | 3523.4416 / 3501.9004 | 163.4531 / 163.3750 | 287773184 / 287773184 |
+| `projection-rebuild` | 5639.9834 / 5709.4251 | 6747.8792 / 6822.3076 | 887.3594 / 887.8750 | 388370264 / 388370264 |
+
+All 54/54 manifests recorded `MEASURED` process resources. All 40 projection
+rebuilds were valid, wrote 100000 projections from `100000/100000/100003`
+trade/projection/ledger-event counts and produced the same snapshot
+`f7df42fa141e9a903141fce3f6121093f31f5924d1c58e77939c2d78c753e0d8`. The cold
+and projection p95 values are lower than the preceding packaged campaign in both
+runs, but OS page cache is `UNCONTROLLED` and the artifacts/runs do not establish
+an isolated causal percentage. The 100k cold operation p95 is still above the
+`<2s>` planning target; H07 is not closed.
+
+The explicit measurement boundary for this evidence is: one clean Mac
+26.6.2 arm64 packaged `.app` executable, synthetic `H07-SYNTHETIC-V1` data at
+100000 records, two runs, the sample counts above, network/credentials/real data/
+live execution disabled, and uncontrolled OS cache. This boundary is valid for
+reproducible development measurement only. It does not define a production SLO,
+maximum supported history, resource cap or commercial support limit; any such
+owner-approved disposition remains an explicit H07 gate. `UNKNOWN` warm process
+percentiles stay `UNKNOWN`, and no artifact, source-to-binary, release, DMG,
+signing/notarization, Windows or Linux claim is inferred.
+
+Evidence command:
+
+```text
+.venv/bin/python scripts/run_h07_measurement_campaign.py --executable "dist/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal" --artifact "dist/Kuantra Terminal.app" --output-dir artifacts/evidence/h07/cold-chain-670ee90-20260909 --sizes 100000 --runs 2 --cold-samples 3 --warm-samples 3 --append-samples 3 --projection-rebuild-samples 20 --batch-size 1000 --timeout 1800
+```
+
+Campaign report embedded SHA-256 is
+`65cb34aa9fdb982f109fc0d36b59c3e7e69d0d040e51bcb5da4a83162e458bde`; full
+report SHA-256 is `df590c955af7e7233176f4600f5f95ca2b17c75c78e1f9fbf6bb259d9361b3d8`
+and campaign manifest SHA-256 is
+`54dbdc13dfce353d068ee5ff9dc90e56457d9a342fa83668207f124c70137a4c`. The
+artifact is commit `670ee9016ecc133ed998c7274738ed1ec9d697fe`, tracked source
+tree SHA-256 `68dc4ed4f8d65756489fcd0f6c92d39bedfd7b067bfee7c24a8af728b4141be9`,
+with clean tracked status and local-CI provenance `COMPLETE`. The executed arm64
+executable SHA-256 is
+`301d366b2167b77604d8dfd610143de5b8924d2a728af42abc3e4d84c4f59836`; `.app`
+tree SHA-256 is
+`6b656164a7440c55099c10914189ede60744df3b940f26fb1b2e916cda6baad8`;
+local-CI report SHA-256 is
+`e72be9ad813bc7003608eebcc2d66caa543cf241775e1546dd94060e862760d0`; and
+local-CI smoke report SHA-256 is
+`7e6a29adceda53ad0b48700b99ec34c0614be578b492984ac30bb5fabfc9346b`. Backend
+and frontend lock hashes remain
+`6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` and
+`b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
+
 | Area | Evidence / remaining boundary |
 |---|---|
 | Runtime baseline | `a7b99b7`; fresh clean Mac local CI `MERGE READY`: 683 backend, 71 frontend, i18n 574/574, arm64 build and native smoke passed. Provenance is COMPLETE; H03 disabled/degraded tests and H06 privacy boundary tests are PASS; supply-chain audit remains an integrated step with commercial owner review explicitly deferred |
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac (historical clean DMG baseline) | H07 source `5a70f8b` passed clean arm64 locked local CI and exact read-only DMG/WKWebView smoke with provenance `COMPLETE`; local CI report SHA `c513b5f4ce3a14270277c1a9031bcf0b9d51a3271a84ebe59f7deb2daa06be01`, native smoke report SHA `413d5029e79276c66149ae4574be0ced14860a4ac72b7858e34490d6dc0e5c5e`, `.app` SHA `36c84e727a00c305176f7ee45f2f4c32b6693e76cd59021aaa889bc1a4554459`, exact DMG smoke report SHA `bc587f232c7f5d09c787412549d924aa8aa045524590bdcecdd3047490367963`, DMG SHA `f5183bee511352e97b6c4d6e363d0951fc32361d6a9d718ccfe3174752c45fc7`, mounted executable SHA `17508bbfa429689ab6adeeee419e166c604a15457a55a5f8a543bbb16b04cbc0`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
-| H07 bounded baseline | Canonical correctness `a97499b`, packaged worker/launcher and final cold/warm/append-tail campaign `af8e2a1`, process-resource/projection campaign `30be78d`, and bounded projection batch writer `67eafa2`. Latest 100k cold Evidence Pack p95 is `3350.5229 / 3152.2077 ms`; projection-rebuild process p95 is `7919.5035 / 7359.8019 ms`; all 54 packaged resource reports are measured, but `<2s>` and owner-approved resource disposition remain open. Old `5a70f8b` timings are historical source-process evidence, not current cold-chain performance or packaged benchmark proof. |
+| H07 bounded baseline | Canonical correctness `a97499b`, packaged worker/launcher and final cold/warm/append-tail campaign `af8e2a1`, process-resource/projection campaign `30be78d`, bounded projection batch writer `67eafa2` and full-chain cold optimization `670ee90`. Latest 100k cold Evidence Pack p95 is `2468.2571 / 2444.9360 ms`; projection-rebuild process p95 is `6747.8792 / 6822.3076 ms`; all 54 packaged resource reports are measured and deterministic. The `<2s>` target and owner-approved resource/support disposition remain open. Old `5a70f8b` timings are historical source-process evidence, not current cold-chain performance or packaged benchmark proof. |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -208,7 +280,7 @@ production claim.
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; source/packaged execution, cold/warm/append-tail/projection-rebuild distinction and process resource capture are implemented | `67eafa2` adds bounded 1,000-record projection rebuild writes; 54/54 packaged resource reports remain measured and deterministic, but 100k cold p95 still exceeds `<2s>` and no owner-approved resource disposition exists. Next: profile/optimize the remaining full-chain cost or make an explicit measured-boundary decision; Windows/Linux host evidence for the desktop change is still required. |
+| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; source/packaged execution, cold/warm/append-tail/projection-rebuild distinction and process resource capture are implemented | `670ee90` reduces repeated canonical/read work and records an explicit non-support measurement boundary. The clean campaign remains deterministic with 54/54 measured manifests, but 100k cold p95 still exceeds `<2s>` and no owner-approved production/resource/support disposition exists. Next: retain the target and either run another bounded evidence-led optimization or obtain the explicit owner decision; Windows/Linux host evidence for the desktop change is still required. |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -286,7 +358,9 @@ startup did not and resource acceptance gaps were not silently closed. The curre
 campaign supersedes those performance numbers; the safe-persona core read surface
 is bounded and experimental surfaces are not promoted; auxiliary/disabled surfaces
 remain outside the production capability claim. The current next handoff is the
-projection batch-write optimization and 100k target disposition recorded above.
+full-chain cold optimization and explicit non-support measurement-boundary
+disposition recorded above; the `<2s>` target and any production/resource support
+limit remain open.
 H05 license/notices and default-branch Dependabot remain deferred release gates;
 no production or commercial package claim is allowed.
 

@@ -96,7 +96,15 @@ pakete eklenmeyecektir.
   Temiz packaged tekrarında 100k cold p95 `3350.5229 / 3152.2077 ms`, projection
   rebuild p95 `6718.6024 / 6287.9183 ms` operation ve `7919.5035 / 7359.8019 ms`
   process oldu. Bu bounded optimizasyon hedefi veya resource acceptance'ı
-  kapatmadı; kriter açık kalır.
+  kapatmadı; kriter açık kalır. `670ee90` ile canonical validation/read tekrarları
+  azaltıldı ve temiz packaged tekrarında 100k cold p95 `2468.2571 / 2444.9360 ms`,
+  projection rebuild p95 `5639.9834 / 5709.4251 ms` operation ve
+  `6747.8792 / 6822.3076 ms` process oldu. 54/54 manifest ve 40 projection
+  sample deterministik/ölçülmüş olsa da `<2s>` karşılanmadı. Bu change ayrıca
+  kanıtın geçerli olduğu Mac arm64 + synthetic 100k + iki-run/sample-sayısı
+  sınırını açıkça kaydeder; production SLO, maksimum supported history veya
+  commercial support limit kararı vermez. Owner-approved resource/support
+  disposition halen açık olduğundan kriter açık kalır.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
 - [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
@@ -457,6 +465,104 @@ Windows/Linux or production evidence. The default local-CI desktop smoke
 attempted the existing public market-data behavior; that is separate from this
 network-disabled synthetic campaign and is not runtime-offline proof.
 
+### 2026-09-09 full-chain cold optimization ve ölçüm sınırı — 670ee90
+
+The remaining Evidence Pack cold path was optimized without changing the
+canonical contract or the product boundary. Canonical JSON validation now uses
+an `orjson` fast path only after an exact canonical-byte match, with conservative
+exponent handling; the strict stdlib path remains authoritative for exponent,
+large-integer and other edge cases. `get_evidence_pack` reuses the coverage and
+trade snapshot already evaluated for the request, then derives market context
+from that snapshot instead of repeating the public read path. No ledger schema,
+projection semantics, funding/transfer event type, correction lineage,
+transaction boundary or AI/order authority changed.
+
+The two new red tests failed before the implementation (`2 failed, 40 passed`):
+the exact `orjson` path was not used and Evidence Pack assembly repeated the
+coverage read. After the implementation, the focused H07 file passed `42/42`,
+the combined H07/packaged-worker suite passed `66/66`, and the relevant H07,
+P1-WP02 projection, Evidence Pack boundary and canonical persistence regression
+set passed `96/96`. A source-only cProfile diagnostic moved
+`get_evidence_pack` from about `5.720 s` to `4.677 s` and `verify_chain` from
+about `5.392 s` to `4.527 s`; these values guide optimization only and are not
+packaged SLA evidence.
+
+The clean packaged campaign used this command in a new ignored evidence
+directory:
+
+```text
+.venv/bin/python scripts/run_h07_measurement_campaign.py --executable "dist/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal" --artifact "dist/Kuantra Terminal.app" --output-dir artifacts/evidence/h07/cold-chain-670ee90-20260909 --sizes 100000 --runs 2 --cold-samples 3 --warm-samples 3 --append-samples 3 --projection-rebuild-samples 20 --batch-size 1000 --timeout 1800
+```
+
+It executed the explicit arm64 `.app` executable in two 100k runs with 3
+fresh-process cold, 3 same-process warm, 3 fresh-process append-tail and 20
+fresh-process projection-rebuild samples per run. The p95/resource summaries
+are:
+
+| Mode | Operation p95 R1 / R2 (ms) | Process p95 R1 / R2 (ms) | Peak process RSS R1 / R2 (MB) | Peak isolated temp R1 / R2 (B) |
+|---|---:|---:|---:|---:|
+| `cold` | 2468.2571 / 2444.9360 | 3481.5726 / 3448.4742 | 163.3906 / 164.2188 | 287690752 / 287690752 |
+| `warm` | 143.1432 / 144.6606 | UNKNOWN (n=1) / UNKNOWN (n=1) | 162.9688 / 163.2969 | 287690752 / 287690752 |
+| `append-tail` | 25.9044 / 25.7300 | 3523.4416 / 3501.9004 | 163.4531 / 163.3750 | 287773184 / 287773184 |
+| `projection-rebuild` | 5639.9834 / 5709.4251 | 6747.8792 / 6822.3076 | 887.3594 / 887.8750 | 388370264 / 388370264 |
+
+All 54/54 packaged manifests recorded `MEASURED` process resources. All 40
+projection-rebuild samples were valid, wrote 100000 projections from
+`100000/100000/100003` trade/projection/ledger-event counts and produced the
+same determinism snapshot
+`f7df42fa141e9a903141fce3f6121093f31f5924d1c58e77939c2d78c753e0d8`. The cold
+and projection p95 values are lower than the preceding packaged campaign in
+both runs, but OS page cache is `UNCONTROLLED`; the artifacts/runs do not
+establish an isolated causal percentage improvement. The 100k cold operation
+p95 remains above the `<2s>` planning target, so H07 remains open.
+
+This package records the following explicit measurement boundary: one clean
+Mac 26.6.2 arm64 packaged `.app` executable, synthetic `H07-SYNTHETIC-V1` data
+at 100000 records, two runs and the sample counts above, with network,
+credentials, real data and live execution disabled and OS page cache
+uncontrolled. The boundary is valid for reproducible development measurement
+only. It does not define a production SLO, maximum supported history, resource
+cap or commercial support limit; owner approval for any such production
+disposition remains a separate H07 gate. `UNKNOWN` warm process percentiles
+remain `UNKNOWN` and are not converted to PASS or zero. No source-to-binary
+attestation, release provenance, DMG, signing/notarization, Gatekeeper,
+Windows/Linux or production claim is inferred.
+
+Campaign report embedded SHA-256 is
+`65cb34aa9fdb982f109fc0d36b59c3e7e69d0d040e51bcb5da4a83162e458bde`; full
+`campaign-report.json` SHA-256 is
+`df590c955af7e7233176f4600f5f95ca2b17c75c78e1f9fbf6bb259d9361b3d8`; and
+`campaign-manifest.json` SHA-256 is
+`54dbdc13dfce353d068ee5ff9dc90e56457d9a342fa83668207f124c70137a4c`.
+The clean checkout is commit
+`670ee9016ecc133ed998c7274738ed1ec9d697fe` with tracked source tree SHA-256
+`68dc4ed4f8d65756489fcd0f6c92d39bedfd7b067bfee7c24a8af728b4141be9` and clean
+tracked status. Platform/toolchain is macOS 26.6.2 arm64 (Darwin 25.6.0),
+Python 3.11.16, Node v20.20.2, npm 10.8.2, uv 0.12.10 and PyInstaller 6.22.2;
+backend/frontend lock SHA-256 values are
+`6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` and
+`b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
+The executed arm64 executable SHA-256 is
+`301d366b2167b77604d8dfd610143de5b8924d2a728af42abc3e4d84c4f59836`; the
+`.app` tree SHA-256 is
+`6b656164a7440c55099c10914189ede60744df3b940f26fb1b2e916cda6baad8`;
+the clean local-CI report SHA-256 is
+`e72be9ad813bc7003608eebcc2d66caa543cf241775e1546dd94060e862760d0`; and
+the local-CI smoke report SHA-256 is
+`7e6a29adceda53ad0b48700b99ec34c0614be578b492984ac30bb5fabfc9346b`.
+Local CI was `MERGE READY` with 13/13 steps: 759 backend tests with 2
+deprecation warnings, frontend 25 files/102 tests, i18n 608/608, production
+build, arm64 PyInstaller build and native WKWebView smoke. Its supply-chain
+step still reports the deferred commercial notice owner review.
+
+Campaign contract is `real_data=false`, `credentials=false`, `network=false`,
+`live_execution=false`, `support_limit_claim=false`; fixture preparation is
+`SOURCE_PROCESS`, source-to-binary attestation is `NOT_VERIFIED` and release
+provenance is `UNKNOWN`. Local-CI provenance is `COMPLETE` for this development
+artifact. The default local-CI desktop smoke attempted the existing public
+market-data behavior; that is separate from this network-disabled synthetic
+campaign and is not runtime-offline proof.
+
 ### 2026-09-09 doğruluk düzeltmesi — a97499b
 
 `5a70f8b` payload/provenance hızlı kabulü, stdlib canonical sözleşmesinin reddettiği
@@ -781,17 +887,25 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
   Bu nedenle H07 tamamlanmış veya production-ready değildir.
 
 Process-level RSS/disk capture ve cold 100k projection rebuild maliyeti artık
-`30be78d`/`67eafa2` ile aynı packaged-process sınırında ölçülmüştür. `67eafa2`
-bounded batch writer, projection rebuild p95'ini önceki `30be78d` kampanyasına
-göre iki run'da da aşağı çekmiştir; ancak OS page cache uncontrolled olduğu için
-izole bir nedensel yüzde veya destek limiti iddiası yapılmamıştır. Bundan sonraki
-seçenekler yine bounded bir optimizasyon için red test → implementation veya bu
-host/workload'ta `<2s` hedefinin karşılanmadığına dair açık
-`OWNER_DECISION_REQUIRED`/destek sınırı sınıflandırmasıdır; hedef sessizce
-değiştirilmeyecektir. `f94ba8e` optimizasyonu historical source full-chain p95'i
-önceki `4560.05042 ms` ölçümünden `2920.32949 ms`'ye, `5a70f8b` ile
-`2216.36659 ms`'ye indirdi; ancak güncel packaged 100k cold Evidence Pack p95'i
-`3212.6465 / 3221.5029 ms` ile hâlâ `<2s` planning target'ını karşılamadı. Bu
-audit, resource acceptance ve 100k planning target kararı kapanmadan H07
-tamamlanmış, production-ready veya desteklenen veri boyutu olarak
-işaretlenmeyecektir.
+`30be78d`/`67eafa2`/`670ee90` ile aynı packaged-process sınırında ölçülmüştür.
+`670ee90` canonical validation/read tekrarlarını azaltmıştır; temiz kampanyada
+100k cold Evidence Pack operation p95'i `2468.2571 / 2444.9360 ms`, process p95'i
+`3481.5726 / 3448.4742 ms`, projection-rebuild process p95'i
+`6747.8792 / 6822.3076 ms` olmuştur. 54/54 manifestte RSS ve izole temporary
+disk `MEASURED`, 40/40 projection rebuild sample'ı valid ve aynı determinism
+snapshot'ındadır. OS page cache `UNCONTROLLED` olduğu için artifact'lar arasında
+izole nedensel yüzde veya destek limiti iddiası yapılmamıştır.
+
+Bu paket için ölçüm sınırı açıkça yazılmıştır: Mac arm64 packaged executable,
+`H07-SYNTHETIC-V1` 100k dataset, iki run, tanımlı sample sayıları, network/
+credential/real-data/live-execution disabled ve uncontrolled OS cache. Bu,
+reproducible development evidence sınırıdır; production SLO, maximum supported
+history, resource cap veya commercial support limit değildir. Owner-approved
+production/resource/support disposition ayrı H07 gate olarak kalır. `<2s>`
+planning target'ı sessizce değiştirilmemiştir ve güncel cold p95 hâlâ hedefin
+üzerindedir. Önümüzdeki güvenli seçenekler başka bir bounded red test →
+implementation optimizasyonu veya açık owner kararıdır; H07 bu kararlar
+kapanmadan tamamlanmış, production-ready ya da desteklenen veri boyutu olarak
+işaretlenmeyecektir. `f94ba8e` ve `5a70f8b` source-process iyileştirmeleri
+historical diagnostic olarak kalır; packaged cold-chain kanıtının yerine
+geçmez.
