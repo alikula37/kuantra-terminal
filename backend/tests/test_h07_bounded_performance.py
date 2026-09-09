@@ -317,6 +317,43 @@ def test_projection_rebuild_reuses_ledger_verification_for_unchanged_snapshot(
     assert iterator_calls == 1
 
 
+def test_projection_rebuild_uses_bounded_batch_writer(tmp_path, monkeypatch):
+    db_path = tmp_path / "projection-batch-writer.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    commands = [
+        _command_for_trade(
+            generate_trade_snapshot(index, seed="H07-PROJECTION-BATCH"),
+            index,
+            seed="H07-PROJECTION-BATCH",
+        )
+        for index in range(3)
+    ]
+    driver.record_grouped_evidence_batch(commands)
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    calls = []
+    original_writer = projection._insert_projection_records
+
+    def record_batch(conn, records):
+        records = list(records)
+        calls.append(len(records))
+        return original_writer(conn, records)
+
+    monkeypatch.setattr(projection, "_insert_projection_records", record_batch)
+
+    result = projection.rebuild(
+        account_id="h07-synthetic-account",
+        dry_run=False,
+    )
+
+    assert result["projections_written"] == 3
+    assert calls == [3]
+    assert projection.coverage(
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+        venues=("h07-synthetic",),
+    )["ready"] is True
+
+
 def test_projection_verifier_does_not_retain_sqlite_connection(tmp_path):
     db_path = tmp_path / "projection-verification-connection.sqlite"
     driver = SQLiteDriver(str(db_path))

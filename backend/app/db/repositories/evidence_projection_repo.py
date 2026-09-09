@@ -6,7 +6,7 @@ import json
 import math
 import sqlite3
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from app.core.paths import get_sqlite_path
 from app.db.projection_schema import initialize_trade_projection_schema
@@ -190,6 +190,22 @@ class EvidenceTradeProjectionRepository:
         "source_event_type", "source_event_hash", "occurred_at_utc", "received_at_utc",
         "is_tombstone", "snapshot_json", "projected_at_utc",
     )
+    _REBUILD_WRITE_BATCH_SIZE = 1_000
+
+    @classmethod
+    def _projection_upsert_sql(cls) -> str:
+        columns = cls._PROJECTION_COLUMNS
+        placeholders = ", ".join("?" for _ in columns)
+        update_columns = tuple(
+            column for column in columns if column not in {"account_id", "venue", "trade_id"}
+        )
+        update_clause = ", ".join(
+            f"{column} = excluded.{column}" for column in update_columns
+        )
+        return f"""INSERT INTO evidence_trade_projections ({', '.join(columns)})
+            VALUES ({placeholders})
+            ON CONFLICT(account_id, venue, trade_id) DO UPDATE SET
+            {update_clause}"""
 
     @classmethod
     def _insert_projection_record(
@@ -198,17 +214,26 @@ class EvidenceTradeProjectionRepository:
         record: Dict[str, Any],
     ) -> None:
         columns = cls._PROJECTION_COLUMNS
-        placeholders = ", ".join("?" for _ in columns)
-        update_columns = tuple(column for column in columns if column not in {"account_id", "venue", "trade_id"})
-        update_clause = ", ".join(
-            f"{column} = excluded.{column}" for column in update_columns
-        )
         conn.execute(
-            f"""INSERT INTO evidence_trade_projections ({', '.join(columns)})
-                VALUES ({placeholders})
-                ON CONFLICT(account_id, venue, trade_id) DO UPDATE SET
-                {update_clause}""",
+            cls._projection_upsert_sql(),
             tuple(record[column] for column in columns),
+        )
+
+    @classmethod
+    def _insert_projection_records(
+        cls,
+        conn: sqlite3.Connection,
+        records: Iterable[Dict[str, Any]],
+    ) -> None:
+        """Insert a rebuild batch without changing the transaction boundary."""
+
+        columns = cls._PROJECTION_COLUMNS
+        conn.executemany(
+            cls._projection_upsert_sql(),
+            (
+                tuple(record[column] for column in columns)
+                for record in records
+            ),
         )
 
     def upsert_event_in_transaction(
@@ -316,10 +341,12 @@ class EvidenceTradeProjectionRepository:
                     (account_id,),
                 )
             check_resources("after_projection_delete")
-            for record in latest.values():
-                check_resources("before_projection_record")
-                self._insert_projection_record(conn, record)
-                check_resources("after_projection_record")
+            records = list(latest.values())
+            for start in range(0, len(records), self._REBUILD_WRITE_BATCH_SIZE):
+                batch = records[start:start + self._REBUILD_WRITE_BATCH_SIZE]
+                check_resources("before_projection_batch")
+                self._insert_projection_records(conn, batch)
+                check_resources("after_projection_batch")
             check_resources("before_projection_commit")
             conn.commit()
         except Exception:
