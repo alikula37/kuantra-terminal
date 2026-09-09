@@ -105,6 +105,14 @@ Yeni bir teknik deneme ancak yeni, ölçülebilir bir darboğaz hipoteziyle ayr�
 bounded paket olarak seçilebilir; aksi yönde owner-approved measurement/resource/
 support disposition gerekir.
 
+Owner decision — 2026-09-09: `100k` sentetik geçmiş production support requirement
+değildir; yalnızca stress-test sınırıdır. Bu nedenle 100k cold sonucunu `<2s>` altına
+indirmek için yeni bir optimizasyon zorunlu değildir. `<2s>` ve resource/UI kabulü,
+gerçekçi kullanım için aday olan `1k/10k` bandında ayrı doğrulanacaktır. Bu karar
+henüz keyfi bir hard cap veya 10k için ticari garanti anlamına gelmez; 1k/10k native
+UI ve resource evidence tamamlandıktan sonra tested support boundary ayrıca
+kaydedilecektir.
+
 ## Red test kapsamı
 
 - Aynı seed ve aynı source commit ile dataset üretiminin, import/query/rebuild ve
@@ -167,14 +175,18 @@ pakete eklenmeyecektir.
   kanıtın geçerli olduğu Mac arm64 + synthetic 100k + iki-run/sample-sayısı
   sınırını açıkça kaydeder; production SLO, maksimum supported history veya
   commercial support limit kararı vermez. Owner-approved resource/support
-  disposition halen açık olduğundan kriter açık kalır. `4e761fa` ile aynı
+  disposition halen açık olduğundan kriter açık kalır. Owner decision ile 100k
+  production support requirement olmaktan çıkarılmış, stress-only sınır olarak
+  korunmuştur; bu nedenle sonraki kabul kanıtı aday 1k/10k support bandına
+  odaklanacaktır. `4e761fa` ile aynı
   packaged executable üzerinde iki run × `1k/10k/100k`, her modda 20 operation
   örneği (`cold`, `warm`, `append-tail`, `projection-rebuild`) yenilendi; toplam
   366 packaged manifest ve 120/120 geçerli projection sample kaydedildi. Güncel
   100k cold operation p95 `2321.8877 / 2332.4201 ms`, projection operation p95
   `5141.0606 / 5143.9399 ms`, projection process peak RSS yaklaşık
   `400.4 / 400.5 MB` ve isolated temp footprint `388370264 B` oldu. Bu ölçümler
-  `<2s>` hedefini veya production/resource/support disposition'ı kapatmaz.
+  `<2s>` hedefini veya aday 1k/10k bandının production/resource/support
+  disposition'ını kapatmaz.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
 - [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
@@ -737,10 +749,12 @@ diagnostic and are not a UI responsiveness PASS. Native report SHA-256 is
 `e04d10148e7f7bf7edffbafbbffde8faa0ddafe3d779246fde0fd0e02b0aa95d`.
 
 Accordingly the performance/resource acceptance criterion remains unchecked:
-the `<2s>` target, a statistically sufficient UI responsiveness boundary and an
-owner-approved production/resource/support disposition are still open. No
-maximum supported history, RAM limit, commercial support limit, release
-provenance, DMG/signing/notarization, Windows or Linux claim is inferred.
+the practical 1k/10k supported-band `<2s>` target, a statistically sufficient UI
+responsiveness boundary and the final tested resource disposition are still open.
+Owner decision is recorded: 100k is stress-only and not a production support
+requirement, so no further 100k optimization is required. No arbitrary maximum
+supported history, RAM limit, commercial support limit, release provenance,
+DMG/signing/notarization, Windows or Linux claim is inferred.
 
 ### 2026-09-09 doğruluk düzeltmesi — a97499b
 
