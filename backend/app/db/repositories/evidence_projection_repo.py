@@ -294,31 +294,36 @@ class EvidenceTradeProjectionRepository:
             )
         check_resources("after_ledger_integrity")
 
-        events = list(
-            ledger.export_events(
-                account_id=account_id,
-                resource_check=resource_check,
-            )
-        )
-        events.sort(key=self._sort_key)
-        check_resources("after_event_snapshot")
         projected_at = _now_utc()
         latest: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+        latest_keys: Dict[Tuple[str, str, str], Tuple[str, str]] = {}
+        events_seen = 0
         ignored = 0
         projectable = 0
-        for event in events:
+        for event in ledger.export_events(
+            account_id=account_id, resource_check=resource_check,
+        ):
+            events_seen += 1
             if event["event_type"] not in PROJECTABLE_EVENT_TYPES:
                 ignored += 1
                 continue
             record = self._projection_from_event(event, projected_at)
-            latest[(record["account_id"], record["venue"], record["trade_id"])] = record
+            identity = (record["account_id"], record["venue"], record["trade_id"])
+            order = self._sort_key(event)
+            # Export is in chain order, not received-time order. Preserve the
+            # previous sorted replay winner while retaining only latest records.
+            if identity not in latest_keys or order >= latest_keys[identity]:
+                latest[identity] = record
+                latest_keys[identity] = order
             projectable += 1
             check_resources("after_projection_candidate")
+
+        check_resources("after_event_snapshot")
 
         report = {
             "dry_run": dry_run,
             "account_id": account_id,
-            "events_seen": len(events),
+            "events_seen": events_seen,
             "projectable_events": projectable,
             "ignored_events": ignored,
             "projections_written": len(latest),

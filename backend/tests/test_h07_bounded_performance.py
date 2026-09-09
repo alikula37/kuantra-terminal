@@ -345,6 +345,55 @@ def test_projection_rebuild_reuses_ledger_verification_for_unchanged_snapshot(
     assert iterator_calls == 1
 
 
+def test_rebuild_does_not_retain_exported_event_objects(tmp_path, monkeypatch):
+    import weakref
+
+    driver = SQLiteDriver(str(tmp_path / 'stream.sqlite'))
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(generate_trade_snapshot(i), i, seed='H07-SYNTHETIC-V1')
+        for i in range(32)
+    ])
+    projection = EvidenceTradeProjectionRepository(driver.db_path)
+    original = projection._ledger_repo.export_events
+    refs = []
+
+    class Event(dict):
+        pass
+
+    def stream(**kwargs):
+        for row in original(**kwargs):
+            event = Event(row)
+            refs.append(weakref.ref(event))
+            # Allow the generator and consumer's current event, not the history.
+            assert sum(ref() is not None for ref in refs) <= 2
+            yield event
+
+    monkeypatch.setattr(projection._ledger_repo, 'export_events', stream)
+    assert projection.rebuild(dry_run=False)['projections_written'] == 32
+
+
+def test_streamed_rebuild_preserves_correction_winner_under_permutation(tmp_path, monkeypatch):
+    path = tmp_path / 'corrections.sqlite'
+    H07BenchmarkRunner(operation_repetitions=3)._run_size(3, path)
+    projection = EvidenceTradeProjectionRepository(str(path))
+    original = projection._ledger_repo.export_events
+    events = list(original())
+
+    def snapshot():
+        with sqlite3.connect(path) as conn:
+            return conn.execute(
+                'SELECT trade_id, source_event_id, snapshot_json '
+                'FROM evidence_trade_projections ORDER BY trade_id'
+            ).fetchall()
+
+    projection.rebuild(dry_run=False)
+    expected = snapshot()
+    for ordering in (events[::-1], events[1:] + events[:1]):
+        monkeypatch.setattr(projection._ledger_repo, 'export_events', lambda **kwargs: iter(ordering))
+        projection.rebuild(dry_run=False)
+        assert snapshot() == expected
+
+
 def test_projection_rebuild_uses_bounded_batch_writer(tmp_path, monkeypatch):
     db_path = tmp_path / "projection-batch-writer.sqlite"
     driver = SQLiteDriver(str(db_path))
