@@ -102,6 +102,34 @@ def test_metadata_validation_accepts_existing_canonical_contract(value):
     evidence_ledger_repo._validate_canonical_json_text(canonical_json(value), "provenance")
 
 
+def test_metadata_validation_uses_exact_orjson_fast_path(monkeypatch):
+    if evidence_ledger_repo.orjson is None:
+        pytest.skip("locked runtime does not provide orjson")
+
+    original_orjson = evidence_ledger_repo.orjson
+    calls = []
+
+    class TrackingOrjson:
+        OPT_SORT_KEYS = original_orjson.OPT_SORT_KEYS
+
+        @staticmethod
+        def loads(value):
+            calls.append(value)
+            return original_orjson.loads(value)
+
+        @staticmethod
+        def dumps(value, **kwargs):
+            return original_orjson.dumps(value, **kwargs)
+
+    monkeypatch.setattr(evidence_ledger_repo, "orjson", TrackingOrjson)
+    evidence_ledger_repo._validate_canonical_json_text.cache_clear()
+
+    value = canonical_json({"source": "h07-fast-path", "value": 1.25})
+    evidence_ledger_repo._validate_canonical_json_text(value, "provenance")
+
+    assert calls == [value]
+
+
 @pytest.mark.parametrize("value", [{"x": 1e-7}, {"x": [1e-7]}, {"x": 2**100}])
 def test_hash_serializer_preserves_contract_outside_fast_shape(value):
     assert _canonical_hash_json(value) == canonical_json(value)
@@ -464,6 +492,46 @@ def test_evidence_pack_incremental_verification_reuses_cached_prefix(
     assert pack["ledger_integrity"]["valid"] is True
     assert pack["ledger_integrity"]["checked_events"] == 2
     assert rows_seen == 1
+
+
+def test_evidence_pack_reuses_coverage_and_trade_snapshot(tmp_path, monkeypatch):
+    db_path = tmp_path / "evidence-pack-read-snapshot.sqlite"
+    driver = SQLiteDriver(str(db_path))
+    trade = generate_trade_snapshot(0, seed="H07-READ-SNAPSHOT")
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(trade, 0, seed="H07-READ-SNAPSHOT"),
+    ])
+    projection = EvidenceTradeProjectionRepository(str(db_path))
+    projection.rebuild(account_id="h07-synthetic-account", dry_run=False)
+    adapter = TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=projection,
+        account_id="h07-synthetic-account",
+        venue="h07-synthetic",
+        projection_venues=("h07-synthetic",),
+    )
+
+    coverage_calls = []
+    trade_calls = []
+    original_coverage = projection.coverage
+    original_trade_snapshot = projection.get_trade_snapshot
+
+    def count_coverage(*args, **kwargs):
+        coverage_calls.append(1)
+        return original_coverage(*args, **kwargs)
+
+    def count_trade_snapshot(*args, **kwargs):
+        trade_calls.append(1)
+        return original_trade_snapshot(*args, **kwargs)
+
+    monkeypatch.setattr(projection, "coverage", count_coverage)
+    monkeypatch.setattr(projection, "get_trade_snapshot", count_trade_snapshot)
+
+    pack = adapter.get_evidence_pack(trade["id"])
+
+    assert pack["trade"]["id"] == trade["id"]
+    assert coverage_calls == [1]
+    assert trade_calls == [1]
 
 
 def test_grouped_batch_cancellation_rolls_back_canonical_trade_projection_and_ledger(tmp_path):

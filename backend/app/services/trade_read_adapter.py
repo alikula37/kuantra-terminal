@@ -316,6 +316,22 @@ class TradeReadAdapter:
             venues=self.projection_venues,
         )
 
+    def _trade_from_coverage(
+        self,
+        trade_id: str,
+        coverage: Mapping[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Read one trade using an already-evaluated projection gate."""
+
+        if not coverage.get("ready"):
+            return self.legacy_driver.get_trade(trade_id)
+        return self.projection_repo.get_trade_snapshot(
+            trade_id,
+            account_id=self.account_id,
+            venue=self.venue,
+            venues=self.projection_venues,
+        )
+
     def get_open_trades(self) -> List[Dict[str, Any]]:
         if not self._projection_ready():
             return self.legacy_driver.get_open_trades()
@@ -344,7 +360,7 @@ class TradeReadAdapter:
 
         coverage = self.coverage()
         check_resources("after_coverage")
-        trade = self.get_trade(trade_id)
+        trade = self._trade_from_coverage(trade_id, coverage)
         check_resources("after_trade")
         events = self.ledger_repo.list_events_for_trade(
             trade_id,
@@ -357,7 +373,7 @@ class TradeReadAdapter:
             resource_check=resource_check,
         )
         check_resources("after_ledger_integrity")
-        market_context = self.get_market_context(trade_id)
+        market_context = self._market_context_from_trade(trade_id, trade)
         check_resources("after_market_context")
         safe_events = []
         latest_economic_evidence = None
@@ -474,6 +490,23 @@ class TradeReadAdapter:
         """Attach bounded, deterministic recorded-bar context to a trade."""
 
         trade = self.get_trade(trade_id)
+        return self._market_context_from_trade(
+            trade_id,
+            trade,
+            lookback_bars=lookback_bars,
+            lookforward_bars=lookforward_bars,
+        )
+
+    def _market_context_from_trade(
+        self,
+        trade_id: str,
+        trade: Optional[Mapping[str, Any]],
+        *,
+        lookback_bars: int = 30,
+        lookforward_bars: int = 20,
+    ) -> Dict[str, Any]:
+        """Build market context from a trade snapshot already read by a caller."""
+
         if trade is None:
             return {
                 "status": "NO_DATA",

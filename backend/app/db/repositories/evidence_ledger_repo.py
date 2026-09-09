@@ -155,6 +155,27 @@ def _validate_canonical_json_text(value: str, field_name: str) -> None:
     the cache bounded and preserving the strict canonical/secret checks.
     """
 
+    if orjson is not None:
+        try:
+            decoded = orjson.loads(value)
+            encoded = orjson.dumps(decoded, option=orjson.OPT_SORT_KEYS).decode("utf-8")
+        except (TypeError, ValueError):
+            # The stdlib fallback preserves the existing contract for values
+            # outside orjson's representable range, such as very large ints.
+            pass
+        else:
+            # orjson is used only when its bytes exactly match our canonical
+            # stdlib representation.  A mismatch (notably exponent formatting)
+            # must take the strict fallback below rather than changing hashes.
+            # orjson and the stdlib deliberately spell some exponent values
+            # differently.  The encoded-text guard is intentionally
+            # conservative: any exponent-shaped output takes the strict
+            # stdlib path below, while ordinary payloads avoid a Python-level
+            # scan of their complete JSON text.
+            if encoded == value and "e-" not in encoded and "e+" not in encoded:
+                _assert_no_secret_keys(decoded, field_name)
+                return
+
     # Round-tripping through another serializer is not proof of our canonical
     # format: exponent spellings differ even when the numeric value is equal.
     decoded = json.loads(value)
