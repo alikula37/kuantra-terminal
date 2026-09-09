@@ -23,10 +23,20 @@ The evidence does not close H07: 100k cold Evidence Pack operation p95 is
 observed single run has a maximum gap of about 1002 ms cold and 688 ms warm).
 The product owner has now decided that 100k is not a production support
 requirement; it remains a stress-test boundary. Therefore no further optimization
-is required solely to force 100k below `<2s>`. The next dependency is fresh native
-UI/resource evidence for the practical 1k/10k candidate support band, followed by
-an explicit tested support boundary. No arbitrary hard cap is being invented from
-the synthetic campaign. Commercial, signing, multi-host and pilot/release gates
+is required solely to force 100k below `<2s>`. Fresh native UI evidence for the
+1k/10k candidate band is now complete: both runs used the current `198e712`
+artifact, rendered through native `wkwebview`, observed loading, and returned
+HTTP 200 for concurrent health/read calls. The measured cold/warm elapsed pairs
+were `1689/830 ms` at 1k and `1748/888 ms` at 10k. The instrumentation still
+records `UNKNOWN_SINGLE_SAMPLE` timer percentiles and `NOT_VERIFIED` network
+isolation, so this is functional UI evidence, not a latency SLO.
+
+The tested candidate boundary is now recorded as `<=10k` synthetic history for
+this development/release candidate; larger histories are best-effort and 100k is
+stress-only, without adding a hard import cap. This boundary does not claim
+real-user performance or commercial support. H07 remains active only until its
+acceptance record is reconciled with this scope decision; no further 100k
+optimization is planned. Commercial, signing, multi-host and pilot/release gates
 remain open.
 
 **H07 — Active / IMPLEMENTATION_REQUIRED:**
@@ -140,6 +150,37 @@ they do not establish a maximum supported history, RAM limit, commercial support
 limit or release artifact claim. The supply-chain step is still the deferred
 commercial owner-review boundary; no Dependabot or license/notices change was
 made.
+
+2026-09-09 candidate support-band UI evidence, **198e712**: the diagnostic CLI
+now accepts only `1k`, `10k` or `100k` synthetic fixture declarations, preserving
+the previous 100k default and rejecting other sizes. Clean temporary fixtures at
+1k and 10k were run against the explicitly built arm64 executable with
+`KUANTRA_MARKET_DATA_ENABLED=false`; no real data, credentials or network market
+stream was used. Both reports recorded `status=MEASURED`, actual renderer
+`wkwebview`, loading observed, bridge/health/push/plugin smoke checks PASS and
+concurrent health/read HTTP 200 responses. Results were:
+
+| Synthetic history | Cold UI elapsed (ms) | Warm UI elapsed (ms) | Cold / warm max timer gap (ms) | Health / read (ms) |
+|---:|---:|---:|---:|---:|
+| 1,000 | 1689 | 830 | 1000 / 725 | 12 / 21 cold; 3 / 6 warm |
+| 10,000 | 1748 | 888 | 1000 / 783 | 18 / 33 cold; 1 / 18 warm |
+
+Each report correctly retains `process_cold=false`,
+`percentiles=UNKNOWN_SINGLE_SAMPLE` and `network_isolation=NOT_VERIFIED`.
+The timer-gap values are diagnostic observations from one cold/warm pair per
+fixture, not a responsiveness PASS or production SLO. Report SHA-256 values are
+`bc7b185d2deb077515e16ca73a372963567cbefe721abfd3a1001ef0f8f3a2c7` (1k) and
+`22283ed3e573bdaba3697024c5c3b57ecbb08e904cc81a15b70cec8ebdf03b7d` (10k).
+The clean local-CI report for the executable is
+`7a76291e38dd2dfe319ac147c3c8a4e145efc9838d628620632dcb4782887da0`; its
+executable SHA-256 is
+`76ee0b45f480230f2cf9e35aa50f966c8723d455702370f8d1c37c0fba665aa6` and its
+`.app` tree SHA-256 is
+`fe93212b32bfcc96cc4b43c820b627c3235eb74f8ca8ec2672ca94ad56aeba68`.
+The owner decision and tested boundary are recorded: 100k remains stress-only,
+no further 100k optimization is required, and `<=10k` is the current synthetic
+candidate band without a hard import cap. This is not a 100k performance claim
+or commercial support promise.
 
 Measurement contract, **caef518**: source benchmark reports now explicitly record
 `SOURCE_PROCESS`, `artifact_executed=false`, `cold_process_measured=false` and
@@ -353,7 +394,7 @@ and frontend lock hashes remain
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac (historical clean DMG baseline) | H07 source `5a70f8b` passed clean arm64 locked local CI and exact read-only DMG/WKWebView smoke with provenance `COMPLETE`; local CI report SHA `c513b5f4ce3a14270277c1a9031bcf0b9d51a3271a84ebe59f7deb2daa06be01`, native smoke report SHA `413d5029e79276c66149ae4574be0ced14860a4ac72b7858e34490d6dc0e5c5e`, `.app` SHA `36c84e727a00c305176f7ee45f2f4c32b6693e76cd59021aaa889bc1a4554459`, exact DMG smoke report SHA `bc587f232c7f5d09c787412549d924aa8aa045524590bdcecdd3047490367963`, DMG SHA `f5183bee511352e97b6c4d6e363d0951fc32361d6a9d718ccfe3174752c45fc7`, mounted executable SHA `17508bbfa429689ab6adeeee419e166c604a15457a55a5f8a543bbb16b04cbc0`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
-| H07 bounded baseline | Canonical correctness `a97499b`, packaged worker/launcher and final cold/warm/append-tail campaign `af8e2a1`, process-resource/projection campaign `30be78d`, bounded projection batch writer `67eafa2`, full-chain cold optimization `670ee90` and worker isolation/cache reuse `e3aacc8`→`4e761fa`. Latest 100k cold Evidence Pack p95 is `2321.8877 / 2332.4201 ms`; projection-rebuild process p95 is `6217.4225 / 6208.4966 ms`; all 366 packaged manifests and 120 projection samples are measured/valid and deterministic. Owner decision: 100k is stress-only, not a production support requirement. The candidate 1k/10k supported-band `<2s>` target, UI responsiveness boundary and final tested resource disposition remain open. Old `5a70f8b` timings are historical source-process evidence, not current cold-chain performance or packaged benchmark proof. |
+| H07 bounded baseline | Canonical correctness `a97499b`, packaged worker/launcher and final cold/warm/append-tail campaign `af8e2a1`, process-resource/projection campaign `30be78d`, bounded projection batch writer `67eafa2`, full-chain cold optimization `670ee90`, worker isolation/cache reuse `e3aacc8`→`4e761fa` and bounded native fixture sizing `198e712`. Latest 100k cold Evidence Pack p95 is `2321.8877 / 2332.4201 ms`; projection-rebuild process p95 is `6217.4225 / 6208.4966 ms`; all 366 packaged manifests and 120 projection samples are measured/valid and deterministic. Owner decision: 100k is stress-only, not a production support requirement. Native UI functional evidence for 1k/10k, the tested `<=10k` candidate boundary and the non-SLO timer instrumentation disposition are recorded; active-WP acceptance/archive reconciliation remains. Old `5a70f8b` timings are historical source-process evidence, not current cold-chain performance or packaged benchmark proof. |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -370,7 +411,7 @@ and frontend lock hashes remain
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; source/packaged execution, cold/warm/append-tail/projection-rebuild distinction and process resource capture are implemented | `e3aacc8`→`4e761fa` moves the heavy Evidence Pack read behind a bounded isolated worker with lazy pool/cache lifecycle. The final clean campaign is deterministic with 366 packaged manifests and 120/120 valid projection samples; 100k cold p95 remains `2321.8877 / 2332.4201 ms`, projection process peak RSS is `400.4 / 400.5 MB`, and native timer-gap percentiles remain `UNKNOWN`. Owner decision: 100k is stress-only, so no further 100k optimization is required. Next: fresh native UI/resource evidence for the practical 1k/10k candidate support band, then record the tested boundary; Windows/Linux host evidence remains separate. |
+| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; source/packaged execution, cold/warm/append-tail/projection-rebuild distinction and process resource capture are implemented | `e3aacc8`→`4e761fa` moves the heavy Evidence Pack read behind a bounded isolated worker with lazy pool/cache lifecycle; `198e712` makes native fixture sizing explicit. The final clean campaign is deterministic with 366 packaged manifests and 120/120 valid projection samples; 100k cold p95 remains `2321.8877 / 2332.4201 ms`, projection process peak RSS is `400.4 / 400.5 MB`, and native timer-gap percentiles remain `UNKNOWN`. Owner decision: 100k is stress-only, so no further 100k optimization is required. Native functional UI evidence for 1k/10k and the tested `<=10k` candidate boundary are recorded; timer instrumentation remains explicitly non-SLO. H07 acceptance/archive reconciliation is the remaining bookkeeping step; Windows/Linux host evidence remains separate. |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -449,10 +490,11 @@ campaign supersedes those performance numbers; the safe-persona core read surfac
 is bounded and experimental surfaces are not promoted; auxiliary/disabled surfaces
 remain outside the production capability claim. The current handoff is now the
 H07 disposition recorded above: the worker-isolation implementation and the
-two-run campaign are complete, while the `<2s>` target, statistically sufficient
-UI responsiveness evidence and any production/resource support limit remain open.
-No further optimization is presumed without a new bounded hypothesis or the
-explicit owner decision on the measurement/support boundary.
+two-run campaign are complete. The owner decision makes 100k stress-only; native
+functional UI evidence for the 1k/10k candidate band is complete, while timer-gap
+percentiles remain explicitly non-SLO/UNKNOWN. The remaining H07 close-out is
+reconciling the active-WP acceptance/archive record; no further 100k optimization
+is presumed.
 H05 license/notices and default-branch Dependabot remain deferred release gates;
 no production or commercial package claim is allowed.
 

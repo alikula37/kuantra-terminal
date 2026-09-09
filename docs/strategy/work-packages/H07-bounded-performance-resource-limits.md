@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 3.1.0
+version: 3.2.0
 status: InProgress
 date: 2026-09-09
-baseline_commit: 4e761fa
+baseline_commit: 198e712
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -37,8 +37,9 @@ ve release işlemleri H07'nin kapsamına alınmaz.
 - Resource budget aşımında işlem açık bir limit/error state ile duracak veya güvenli
   biçimde iptal olacak; kısmi başarı, sessiz veri kaybı veya `complete` sonucu
   üretilmeyecek. Canonical veriyi habersiz silen retention/cleanup eklenmeyecek.
-- Evidence Pack p95 `<2s` KPS hedefi planlama hedefidir; baseline ölçülmeden destek
-  limiti veya production SLO olarak ilan edilmeyecek.
+- Evidence Pack p95 `<2s` KPS hedefi aday `<=10k` kullanım bandı için planlama
+  hedefidir; `100k` yalnız stress testtir. Hedef baseline ölçülmeden destek limiti
+  veya production SLO olarak ilan edilmeyecek.
 - UI ölçümünde loading, cancel, error ve no-data/degraded durumları doğru görünür;
   network, AI order authority ve live execution yüzeyi açılmaz.
 
@@ -155,7 +156,9 @@ pakete eklenmeyecektir.
   startup'tan önce izole sentetik worker seçilir. PID/executable/pre-post artifact
   hash ve sonuç doğrulanır; worker/log manifest kalıcı yerel dizine yazılır.
   Source checkout gözlemi release build attestation sayılmaz.
-- [ ] Canonical doğruluk düzeltmesi sonrası 1k/10k/100k ölçümleri yenilenir;
+- [ ] Candidate `1k/10k` support bandının cold/UI/resource acceptance'ı
+  sonuçlandırılır; `100k` owner decision ile yalnız stress-test sınırıdır.
+  Canonical doğruluk düzeltmesi sonrası `1k/10k/100k` ölçümleri yenilenir;
   cold hedef ve resource acceptance ayrı kanıtlarla sonuçlandırılır. `af8e2a1`
   final packaged kampanyası ölçümleri yeniledi ve 100k cold p95'in `<2s` hedefini
   karşılamadığını gösterdi. `30be78d` ile 100k fresh-process resource capture
@@ -186,7 +189,11 @@ pakete eklenmeyecektir.
   `5141.0606 / 5143.9399 ms`, projection process peak RSS yaklaşık
   `400.4 / 400.5 MB` ve isolated temp footprint `388370264 B` oldu. Bu ölçümler
   `<2s>` hedefini veya aday 1k/10k bandının production/resource/support
-  disposition'ını kapatmaz.
+  disposition'ını kapatmaz. `198e712` ile aday 1k/10k fixture'larında native
+  `wkwebview`, loading ve concurrent health/read davranışı `MEASURED` olarak
+  doğrulandı; timer-gap percentile'ları `UNKNOWN_SINGLE_SAMPLE` kaldığı için
+  non-SLO olarak korunur. `<=10k` tested boundary kaydı yapılmıştır; kalan adım
+  active-WP acceptance/archive reconcile'dir, 100k cold optimizasyonu değildir.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
 - [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
@@ -748,13 +755,38 @@ correctly retains `process_cold=false`, `percentiles=UNKNOWN_SINGLE_SAMPLE` and
 diagnostic and are not a UI responsiveness PASS. Native report SHA-256 is
 `e04d10148e7f7bf7edffbafbbffde8faa0ddafe3d779246fde0fd0e02b0aa95d`.
 
+The follow-up native UI evidence for the practical candidate band was run after
+`198e712` added an explicit bounded fixture-size argument. Clean temporary
+`H07-SYNTHETIC-V1` fixtures at 1k and 10k were executed by the current arm64
+binary with `KUANTRA_MARKET_DATA_ENABLED=false`. Both reports recorded
+`status=MEASURED`, native `wkwebview`, loading observed, and concurrent
+health/read HTTP 200 responses:
+
+| Synthetic history | Cold UI elapsed (ms) | Warm UI elapsed (ms) | Cold / warm max timer gap (ms) | Health / read (ms) |
+|---:|---:|---:|---:|---:|
+| 1,000 | 1689 | 830 | 1000 / 725 | 12 / 21 cold; 3 / 6 warm |
+| 10,000 | 1748 | 888 | 1000 / 783 | 18 / 33 cold; 1 / 18 warm |
+
+The reports correctly retain `process_cold=false`,
+`percentiles=UNKNOWN_SINGLE_SAMPLE` and `network_isolation=NOT_VERIFIED`.
+Timer-gap values are diagnostic observations from one cold/warm pair per fixture,
+not a responsiveness PASS or production SLO. Report SHA-256 values are
+`bc7b185d2deb077515e16ca73a372963567cbefe721abfd3a1001ef0f8f3a2c7` (1k) and
+`22283ed3e573bdaba3697024c5c3b57ecbb08e904cc81a15b70cec8ebdf03b7d` (10k).
+The owner decision is explicit: 100k remains stress-only, no further 100k
+optimization is required, and the current tested candidate boundary is `<=10k`
+synthetic history without a new hard import cap. Histories above that band are
+best-effort/untested rather than a production performance promise.
+
 Accordingly the performance/resource acceptance criterion remains unchecked:
 the practical 1k/10k supported-band `<2s>` target, a statistically sufficient UI
-responsiveness boundary and the final tested resource disposition are still open.
-Owner decision is recorded: 100k is stress-only and not a production support
-requirement, so no further 100k optimization is required. No arbitrary maximum
-supported history, RAM limit, commercial support limit, release provenance,
-DMG/signing/notarization, Windows or Linux claim is inferred.
+responsiveness boundary and the final acceptance record are not being represented
+as an unqualified PASS. Owner decision is recorded: 100k is stress-only and not a
+production support requirement, so no further 100k optimization is required. The
+tested synthetic candidate boundary is `<=10k` without a hard import cap; timer
+instrumentation is explicitly non-SLO. No arbitrary RAM limit, commercial support
+limit, release provenance, DMG/signing/notarization, Windows or Linux claim is
+inferred.
 
 ### 2026-09-09 doğruluk düzeltmesi — a97499b
 
@@ -1097,12 +1129,13 @@ Bu paket için ölçüm sınırı açıkça yazılmıştır: Mac arm64 packaged 
 `H07-SYNTHETIC-V1` 100k dataset, iki run, tanımlı sample sayıları, network/
 credential/real-data/live-execution disabled ve uncontrolled OS cache. Bu,
 reproducible development evidence sınırıdır; production SLO, maximum supported
-history, resource cap veya commercial support limit değildir. Owner-approved
-production/resource/support disposition ayrı H07 gate olarak kalır. `<2s>`
-planning target'ı sessizce değiştirilmemiştir ve güncel cold p95 hâlâ hedefin
-üzerindedir. Worker isolation paketi tamamlanmıştır; H07 şimdi yeni bir bounded
-darboğaz hipotezi veya açık owner measurement/support kararı bekler. H07 bu
-karar kapanmadan tamamlanmış, production-ready ya da desteklenen veri boyutu
-olarak işaretlenmeyecektir. `f94ba8e` ve `5a70f8b` source-process iyileştirmeleri
+history, resource cap veya commercial support limit değildir. Owner decision ile
+100k stress-only olarak sınırlandırılmıştır; bu nedenle 100k için yeni optimizasyon
+zorunlu değildir. `<2s>` planning target'ı sessizce değiştirilmemiştir; aday
+`1k/10k` bandında native functional UI kanıtı tamamlanmıştır. Tested `<=10k`
+boundary sentetik performance scope kaydı olarak belirlenmiştir; timer
+instrumentation açıkça non-SLO'dur. H07 acceptance/archive kaydı bu scope ile
+reconcile edilene kadar aktif kalır; paket production-ready veya ticari
+desteklenen veri boyutu ilanı değildir. `f94ba8e` ve `5a70f8b` source-process iyileştirmeleri
 historical diagnostic olarak kalır; packaged cold-chain kanıtının yerine
 geçmez.

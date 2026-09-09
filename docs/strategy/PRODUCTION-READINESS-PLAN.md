@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.26
+version: 1.0.27
 status: Proposed
 date: 2026-09-09
-reviewed_commit: 5a70f8b
+reviewed_commit: 198e712
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -168,7 +168,7 @@ tamamlama, bir butona basmaktan ibaret olmayan açık bir olay sözleşmesine ba
 | H04 — Threat model ve boundary tests | Untrusted CSV/JSON/HTML, path traversal/symlink, archive extraction/resource limits, WebView bridge, external navigation, gateway auth/origin | Her trust boundary için misuse testi; render/import data kod değildir; secrets diagnostics/export'a girmez |
 | H05 — Supply chain ve build trust | Python/npm locks, transitive dependencies, SBOM/license notices, secret scan, build tooling ve artifact scan | Reachable critical/high açık yok; diğer bulgular owner/expiry/mitigation ile kayıtlı; güncel dependency raporu |
 | H06 — Privacy/data lifecycle | Data directory izinleri, keychain unavailable/locked davranışı, redacted support pack, export/retention | UI “local-first” kapsamını doğru anlatır; telemetry opt-in; missing credential prompt kontrollü; gerçek secret fixture yok |
-| H07 — Bounded performance | 1k/10k/100k trade history, ayrıca büyük dosya/resource-boundary fixtures; query/rebuild/import/cancel | Test host/dataset/percentile/RAM/disk baseline; Evidence Pack p95 <2s KPS hedefi; UI responsive; bütçe aşımında açık hata |
+| H07 — Bounded performance | 1k/10k aday kullanım bandı, 100k yalnız stress test, ayrıca büyük dosya/resource-boundary fixtures; query/rebuild/import/cancel | Aday band için test host/dataset/percentile/RAM/disk baseline; Evidence Pack p95 <2s KPS hedefi; loading/concurrent-read UI evidence; bütçe aşımında açık hata |
 
 Benchmark boyutları plan teklifidir, maksimum destek sözü değildir. Release support
 limitleri baseline ölçülmeden sabitlenmez. KPS'deki 10M market row/24h depth hedefleri
@@ -365,19 +365,26 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     Append-tail workload'unda `<2s` ölçülse de `5a70f8b` canonical JSON validation
     hızlı yolu sonrası aynı artifact dataset'inde no-cache full-chain cold audit p95
     `2216.36659 ms` kaldığı ve H07 resource acceptance gaps sürdüğü için paket hâlâ
-    aktif non-release iştir.
+    aktif non-release iştir. 2026-09-09 owner decision ile `100k` production support
+    requirement olmaktan çıkarıldı ve stress-only boundary olarak korundu; `1k/10k`
+    native functional UI evidence `198e712` ile alındı. Kapanış, 100k'yı optimize
+    etmek yerine tested `<=10k` boundary ve non-SLO timer instrumentation kaydına
+    bağlandı.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 ### 2026-09-09 onaylanan kalan uygulama sırası
 
 1. H07 canonical JSON uyumsuzluğunu gider; stdlib sözleşmesi ve hash byte eşitliği
-   için negative/regression kanıtı üret.
+   için negative/regression kanıtı üret. (Tamamlandı.)
 2. Benchmark execution kimliğini düzelt: source process / packaged executable,
    fresh-process cold / warm / append-tail ayrımı; tek percentile hesabı; ölçüm
    tekrarından bağımsız correction sayısı. 1k/10k/100k için 20 örnek ve iki koşu;
    raporları repo tarafından izlenmeyen `artifacts/evidence/h07/` altında sakla.
-3. H07 resource kabulünü alt kriterlere ayır; düzeltilmiş ölçümle tek bounded
-   optimizasyon paketi değerlendir. Hedef tutmazsa owner disposition olmadan kapatma.
+   (Tamamlandı.)
+3. H07 resource kabulünü alt kriterlere ayır; bounded worker-isolation, cache-reuse
+   ve fixture-size paketlerini tamamla; 100k'yı stress-only tut ve aday `<=10k`
+   bandında native functional UI/resource evidence ile tested boundary kaydını
+   tamamla. (Kanıt tamamlandı; aktif WP acceptance/archive reconcile adımı açık.)
 4. G0–G2 supported matrix, bağımsız oracle ve packaged import→review→export→reopen
    kabul denetimini tamamla; B2 kapsamını kanıtla netleştir.
 5. N03 temiz Mac profil/ikinci host; N04 sentetik update/uninstall veri koruma.
