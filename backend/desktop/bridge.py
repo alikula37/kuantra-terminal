@@ -17,8 +17,8 @@ import uuid
 import webbrowser
 from asyncio import CancelledError
 from concurrent.futures import CancelledError as FuturesCancelledError
+from concurrent.futures import Future, ProcessPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeoutError
-from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import quote, unquote, urlsplit
@@ -28,7 +28,7 @@ from app.core.paths import DATA_DIR, is_frozen
 from app.version import __version__
 from desktop import clipboard
 from desktop.push import PushChannel
-from desktop.runtime import BackendRuntime, RuntimeStopped
+from desktop.runtime import BackendRuntime, BridgeResponse, RuntimeStopped
 
 logger = logging.getLogger("desktop.bridge")
 
@@ -122,6 +122,50 @@ def _safe_filename(value: str, *, default: str = "download") -> str:
     return filename
 
 
+def _evidence_pack_worker(
+    db_path: str,
+    account_id: str,
+    venue: str,
+    projection_venues: tuple[str, ...],
+    trade_id: str,
+) -> BridgeResponse:
+    """Build one read-only Evidence Pack outside the desktop process.
+
+    The worker reconstructs only the existing local read adapter from the supplied SQLite path.
+    It does not start the app, market-data connector, gateway, or a second web server. Keeping
+    this function at module scope also makes its process-pool contract explicit and picklable on
+    macOS spawn.
+    """
+    from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+    from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
+    from app.db.sqlite_driver import SQLiteDriver
+    from app.services.trade_read_adapter import TradeReadAdapter
+
+    driver = SQLiteDriver(db_path)
+    ledger = EvidenceLedgerRepository(db_path)
+    projection = EvidenceTradeProjectionRepository(db_path)
+    adapter = TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=projection,
+        ledger_repo=ledger,
+        account_id=account_id,
+        venue=venue,
+        projection_venues=projection_venues,
+    )
+    pack = adapter.get_evidence_pack(trade_id)
+    if pack["trade"] is None and pack["event_count"] == 0:
+        return BridgeResponse(
+            status=404,
+            headers={"content-type": "application/json"},
+            content=b'{"detail":"Trade evidence not found"}',
+        )
+    return BridgeResponse(
+        status=200,
+        headers={"content-type": "application/json"},
+        content=json.dumps(pack, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8"),
+    )
+
+
 class DesktopBridge:
     _MAX_EVIDENCE_PACK_JOBS = 4
     _EVIDENCE_PACK_JOB_TTL_SECONDS = 300.0
@@ -150,7 +194,7 @@ class DesktopBridge:
         # pywebview bridge thread, but bound retained jobs so an aborted UI cannot grow memory.
         self._evidence_jobs: dict[str, tuple[Future, float]] = {}
         self._evidence_jobs_lock = threading.Lock()
-        self._evidence_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="kuantra-evidence")
+        self._evidence_executor = ProcessPoolExecutor(max_workers=1)
         self._evidence_jobs_closed = False
 
     # ---- HTTP-shaped requests, no HTTP ---------------------------------------------------
@@ -269,9 +313,29 @@ class DesktopBridge:
                     self._evidence_jobs.pop(job_id, None)
             if len(self._evidence_jobs) >= self._MAX_EVIDENCE_PACK_JOBS:
                 return {"job_id": "", "status": "REJECTED", "response": _bridge_error("evidence job queue is full", 429)}
+            from app.api import endpoints
+            adapter = endpoints.trade_read_adapter
+            ledger = getattr(adapter, "ledger_repo", None)
+            db_path = getattr(ledger, "db_path", None)
+            account_id = getattr(adapter, "account_id", None)
+            venue = getattr(adapter, "venue", None)
+            projection_venues = getattr(adapter, "projection_venues", None)
+            if not isinstance(db_path, str) or not db_path:
+                return {"job_id": "", "status": "REJECTED", "response": _bridge_error("backend unavailable", 503)}
+            if not isinstance(account_id, str) or not account_id or not isinstance(venue, str) or not venue:
+                return {"job_id": "", "status": "REJECTED", "response": _bridge_error("backend unavailable", 503)}
+            if not isinstance(projection_venues, tuple) or not all(isinstance(item, str) and item for item in projection_venues):
+                return {"job_id": "", "status": "REJECTED", "response": _bridge_error("backend unavailable", 503)}
             job_id = uuid.uuid4().hex
             try:
-                future = self._evidence_executor.submit(self._runtime.call, "GET", path)
+                future = self._evidence_executor.submit(
+                    _evidence_pack_worker,
+                    db_path,
+                    account_id,
+                    venue,
+                    projection_venues,
+                    trade_id,
+                )
             except RuntimeError:
                 return {"job_id": "", "status": "REJECTED", "response": _bridge_error("backend unavailable", 503)}
             self._evidence_jobs[job_id] = (future, now)

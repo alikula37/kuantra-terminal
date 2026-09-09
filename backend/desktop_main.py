@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import multiprocessing
 import os
 import sys
 import threading
@@ -317,6 +318,7 @@ def main(argv=None) -> int:
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     _code = main()
     # pywebview answers a js_api call by evaluating JS back into the window. A call still in
     # flight when the last window closes parks its (non-daemon) worker thread forever, so the
