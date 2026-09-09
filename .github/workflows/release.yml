@@ -168,9 +168,10 @@ jobs:
             --smoke-report dist/final-smoke-windows.json \
             --smoke-report dist/final-smoke-macos.json \
             --smoke-report dist/final-smoke-linux.json \
+            --n05-macos-report dist/n05-macos-distribution.json \
             --json | tee dist/PHASE0_EXIT_AUDIT.json
       - name: Build MANIFEST.json
-        run: python scripts/generate_release_manifest.py --dist dist --tag "${RELEASE_TAG}"
+        run: python scripts/generate_release_manifest.py --dist dist --tag "${RELEASE_TAG}" --macos-distribution-report dist/n05-macos-distribution.json
       - uses: actions/upload-artifact@v7
         with:
           name: phase0-exit-evidence

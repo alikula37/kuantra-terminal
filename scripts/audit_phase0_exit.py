@@ -11,13 +11,14 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from build_provenance import ProvenanceError, validate_report  # noqa: E402
 from check_release_truth import TruthContractError, run_checks  # noqa: E402
 from release_truth import canonical_matrix_digest, load_matrix  # noqa: E402
+from run_n05_macos_distribution_preflight import N05DistributionError, validate_n05_report  # noqa: E402
 
 
 # WP06 is intentionally split into two separately accepted contracts.  Keep the
@@ -69,6 +70,8 @@ def _check_workflows(root: Path) -> None:
     for required in (
         "workflow_dispatch",
         "Smoke test final packaged artifact",
+        "run_n05_macos_distribution_preflight.py",
+        "n05-macos-distribution.json",
         "scripts/audit_phase0_exit.py",
         "final-smoke-windows.json",
         "final-smoke-macos.json",
@@ -121,7 +124,29 @@ def _validate_smoke_report(path: Path, matrix: dict[str, Any]) -> dict[str, Any]
     return report
 
 
-def audit(root: Path, smoke_reports: list[Path] | None = None) -> dict[str, Any]:
+def _validate_n05_report(path: Path, macos_smoke: Mapping[str, Any]) -> dict[str, Any]:
+    try:
+        report = json.loads(_read(path))
+    except json.JSONDecodeError as exc:
+        _fail(f"invalid N05 report {path}: {exc}")
+    if not isinstance(report, dict):
+        _fail(f"N05 report {path} must be a JSON object")
+    try:
+        validate_n05_report(
+            report,
+            artifact_sha256=str(macos_smoke.get("artifact_sha256") or ""),
+            source_commit_sha=str(macos_smoke.get("build_commit") or ""),
+        )
+    except N05DistributionError as exc:
+        _fail(f"N05 report {path} is invalid: {exc}")
+    return report
+
+
+def audit(
+    root: Path,
+    smoke_reports: list[Path] | None = None,
+    n05_macos_report: Path | None = None,
+) -> dict[str, Any]:
     """Run the static and optional final-artifact evidence checks."""
     status = _read(root / "docs" / "strategy" / "PHASE-0-STATUS.md")
     _check_work_packages(status)
@@ -131,6 +156,7 @@ def audit(root: Path, smoke_reports: list[Path] | None = None) -> dict[str, Any]
     run_checks(root, matrix_path=matrix_path)
 
     reports = [_validate_smoke_report(path, matrix) for path in (smoke_reports or [])]
+    n05_report: dict[str, Any] | None = None
     if reports:
         platforms = {str(report.get("platform")) for report in reports}
         if platforms != REQUIRED_OS:
@@ -148,6 +174,15 @@ def audit(root: Path, smoke_reports: list[Path] | None = None) -> dict[str, Any]
         }
         if len(matrix_provenance) != 1:
             _fail("final artifact smoke reports disagree on truth-matrix provenance")
+        macos_reports = [report for report in reports if report.get("platform") == "darwin"]
+        if macos_reports:
+            if n05_macos_report is None:
+                _fail("Mac final artifact smoke requires an N05 distribution report")
+            n05_report = _validate_n05_report(n05_macos_report, macos_reports[0])
+        elif n05_macos_report is not None:
+            _fail("N05 macOS report supplied without a macOS final smoke report")
+    elif n05_macos_report is not None:
+        _fail("N05 macOS report requires final artifact smoke reports")
 
     return {
         "audit": "PHASE_0_EXIT",
@@ -155,6 +190,8 @@ def audit(root: Path, smoke_reports: list[Path] | None = None) -> dict[str, Any]
         "work_packages": REQUIRED_WORK_PACKAGES,
         "final_artifact_smoke_reports": [str(path) for path in smoke_reports or []],
         "report_count": len(reports),
+        "n05_macos_report": str(n05_macos_report) if n05_macos_report else None,
+        "n05_macos_status": n05_report.get("status") if n05_report else None,
         "external_execution_enabled": False,
     }
 
@@ -163,12 +200,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit Kuantra Phase 0 exit evidence")
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--smoke-report", action="append", type=Path, default=[])
+    parser.add_argument("--n05-macos-report", type=Path, default=None)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     reports = [path if path.is_absolute() else root / path for path in args.smoke_report]
+    n05_report = args.n05_macos_report
+    if n05_report is not None and not n05_report.is_absolute():
+        n05_report = root / n05_report
     try:
-        result = audit(root, reports)
+        result = audit(root, reports, n05_report)
     except (TruthContractError, ValueError) as exc:
         print(f"[phase0-exit] FAIL: {exc}", file=sys.stderr)
         return 1

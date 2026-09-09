@@ -11,6 +11,7 @@ import pytest
 from scripts.run_n05_macos_distribution_preflight import (
     CommandResult,
     N05DistributionError,
+    validate_n05_report,
     verify_mounted_distribution,
 )
 
@@ -135,6 +136,21 @@ def test_developer_id_hardened_runtime_and_ticket_can_pass_n05(tmp_path: Path) -
     assert result["signing"]["hardened_runtime"] is True
     assert result["notarization"]["release_gate_pass"] is True
     assert result["claims"]["production_ready"] is False
+
+
+def test_serialized_n05_pass_is_safe_to_bind_to_release_manifest(tmp_path: Path) -> None:
+    app, executable, dmg, report = _fixture(tmp_path)
+    result = verify_mounted_distribution(app, dmg, report, runner=_runner(developer_id=True))
+    result["mount"] = {"mode": "readonly", "attached": True, "detached": True}
+
+    validated = validate_n05_report(
+        result,
+        artifact_sha256=report["artifact_sha256"],
+        source_commit_sha=report["build_commit"],
+    )
+
+    assert validated["status"] == "PASS"
+    assert validated["commands"]["raw_output_recorded"] is False
 
 
 def test_unapproved_entitlement_is_fail_closed(tmp_path: Path) -> None:

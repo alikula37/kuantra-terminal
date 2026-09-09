@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.join(ROOT_DIR, "backend"))
 
 from app.version import __version__  # noqa: E402
 from release_truth import DEFAULT_MATRIX_PATH, load_matrix  # noqa: E402
+from run_n05_macos_distribution_preflight import N05DistributionError, validate_n05_report  # noqa: E402
 
 PRODUCT_NAME = "Kuantra Terminal"
 ARTIFACT_PREFIX = "Kuantra-Terminal-"
@@ -86,8 +87,39 @@ def collect_artifacts(dist_dir: str) -> List[Dict[str, Any]]:
     return artifacts
 
 
+def distribution_attestation(
+    report_path: str,
+    *,
+    dist_dir: str,
+    artifacts: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Bind the checked-in N05 report to the macOS artifact in MANIFEST.json."""
+
+    try:
+        with open(report_path, "r", encoding="utf-8") as handle:
+            report = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid macOS N05 report: {report_path}") from exc
+    macos = next((artifact for artifact in artifacts if artifact["platform"] == "macOS"), None)
+    if macos is None:
+        raise ValueError("macOS N05 report supplied but no macOS artifact exists")
+    try:
+        validate_n05_report(report, artifact_sha256=macos["sha256"])
+    except N05DistributionError as exc:
+        raise ValueError(f"macOS N05 report is not release-ready: {exc}") from exc
+    report_filename = os.path.relpath(report_path, dist_dir)
+    return {
+        "report_filename": report_filename,
+        "report_sha256": compute_sha256(report_path),
+        "artifact_sha256": report["artifacts"]["dmg_sha256"],
+        "source_commit_sha": report["source"]["commit_sha"],
+        "status": report["status"],
+    }
+
+
 def generate_manifest(dist_dir: str = "dist", tag: str | None = None,
-                      dry_run: bool = False) -> Dict[str, Any]:
+                      dry_run: bool = False,
+                      macos_distribution_report: str | None = None) -> Dict[str, Any]:
     """Builds the manifest for ``dist_dir`` and writes ``MANIFEST.json`` into it."""
     if not os.path.isabs(dist_dir):
         dist_dir = os.path.join(ROOT_DIR, dist_dir)
@@ -99,6 +131,17 @@ def generate_manifest(dist_dir: str = "dist", tag: str | None = None,
         raise ValueError(f"release tag {release_tag!r} does not match {expected_tag!r}")
     artifacts: List[Dict[str, Any]] = [] if dry_run else collect_artifacts(dist_dir)
 
+    attestations: Dict[str, Any] = {}
+    if macos_distribution_report is not None:
+        report_path = macos_distribution_report
+        if not os.path.isabs(report_path):
+            report_path = os.path.join(ROOT_DIR, report_path)
+        attestations["macOS"] = distribution_attestation(
+            report_path,
+            dist_dir=dist_dir,
+            artifacts=artifacts,
+        )
+
     manifest_data: Dict[str, Any] = {
         "release_tag": release_tag,
         "product_name": PRODUCT_NAME,
@@ -107,6 +150,7 @@ def generate_manifest(dist_dir: str = "dist", tag: str | None = None,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_artifacts": len(artifacts),
         "artifacts": artifacts,
+        "distribution_attestations": attestations,
     }
 
     os.makedirs(dist_dir, exist_ok=True)
@@ -143,9 +187,16 @@ def main(argv: List[str] | None = None) -> int:
                         help="Release tag to record (default: v<version>)")
     parser.add_argument("--dry-run", action="store_true",
                         help="Write a manifest with zero artifacts without scanning the dist dir")
+    parser.add_argument("--macos-distribution-report", default=None,
+                        help="Require and bind a PASS N05 macOS distribution report")
     args = parser.parse_args(argv)
 
-    generate_manifest(dist_dir=args.dist, tag=args.tag, dry_run=args.dry_run)
+    generate_manifest(
+        dist_dir=args.dist,
+        tag=args.tag,
+        dry_run=args.dry_run,
+        macos_distribution_report=args.macos_distribution_report,
+    )
     return 0
 
 

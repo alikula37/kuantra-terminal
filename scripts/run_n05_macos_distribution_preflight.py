@@ -51,6 +51,7 @@ DEFAULT_ALLOWED_ENTITLEMENTS = frozenset(
     }
 )
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 class N05DistributionError(ValueError):
@@ -229,6 +230,87 @@ def _validate_smoke_binding(
     if smoke_dmg.get("mount_mode") != "readonly" or smoke_dmg.get("executable_from_mount") is not True:
         raise N05DistributionError("smoke report does not prove a read-only mounted executable")
     return provenance
+
+
+def validate_n05_report(
+    report: Mapping[str, Any],
+    *,
+    artifact_sha256: str | None = None,
+    source_commit_sha: str | None = None,
+) -> Mapping[str, Any]:
+    """Validate a serialized N05 PASS before it enters a release dossier.
+
+    This validator is platform-independent.  The macOS command performs the live
+    read-only observations; release/audit jobs use this function to ensure the
+    resulting evidence cannot be detached from the exact Mac artifact.
+    """
+
+    if not isinstance(report, Mapping) or report.get("schema_version") != SCHEMA_VERSION:
+        raise N05DistributionError("N05 report schema is missing or unsupported")
+    if report.get("status") != "PASS" or report.get("acceptance_status") != "N05_COMPLETE":
+        raise N05DistributionError("N05 report is not a PASS")
+    platform_info = report.get("platform")
+    if not isinstance(platform_info, Mapping) or platform_info.get("os") != "darwin":
+        raise N05DistributionError("N05 report is not a macOS report")
+    source = report.get("source")
+    if not isinstance(source, Mapping):
+        raise N05DistributionError("N05 source provenance is missing")
+    commit_sha = str(source.get("commit_sha") or "")
+    if not COMMIT_RE.fullmatch(commit_sha):
+        raise N05DistributionError("N05 source commit SHA is missing or invalid")
+    if source_commit_sha is not None and commit_sha != source_commit_sha:
+        raise N05DistributionError("N05 source commit does not match final smoke")
+    if source.get("tracked_tree_status") != "clean" or source.get("provenance_status") != "COMPLETE":
+        raise N05DistributionError("N05 source provenance is not complete")
+
+    artifacts = report.get("artifacts")
+    if not isinstance(artifacts, Mapping):
+        raise N05DistributionError("N05 artifact hashes are missing")
+    for key in ("dmg_sha256", "app_tree_sha256", "executable_sha256"):
+        if not SHA256_RE.fullmatch(str(artifacts.get(key) or "")):
+            raise N05DistributionError(f"N05 {key} is missing or invalid")
+    if artifact_sha256 is not None and artifacts.get("dmg_sha256") != artifact_sha256:
+        raise N05DistributionError("N05 DMG SHA does not match release artifact")
+    if not isinstance(artifacts.get("dmg_size_bytes"), int) or artifacts["dmg_size_bytes"] <= 0:
+        raise N05DistributionError("N05 DMG size is missing or invalid")
+
+    signing = report.get("signing")
+    if not isinstance(signing, Mapping):
+        raise N05DistributionError("N05 signing evidence is missing")
+    if signing.get("codesign_verify") != "PASS":
+        raise N05DistributionError("N05 codesign verification is not PASS")
+    if signing.get("identity_type") != "DEVELOPER_ID_APPLICATION":
+        raise N05DistributionError("N05 Developer ID Application identity is missing")
+    if signing.get("hardened_runtime") is not True:
+        raise N05DistributionError("N05 hardened runtime is missing")
+    if signing.get("unapproved_entitlement_keys") != []:
+        raise N05DistributionError("N05 contains unapproved entitlements")
+
+    notarization = report.get("notarization")
+    if not isinstance(notarization, Mapping) or any(
+        notarization.get(key) != "PASS"
+        for key in ("gatekeeper_assessment", "dmg_ticket_validation")
+    ) or notarization.get("release_gate_pass") is not True:
+        raise N05DistributionError("N05 notarization/Gatekeeper evidence is incomplete")
+
+    mount = report.get("mount")
+    if not isinstance(mount, Mapping) or mount.get("mode") != "readonly" or mount.get("attached") is not True or mount.get("detached") is not True:
+        raise N05DistributionError("N05 does not prove a safe read-only mount lifecycle")
+    commands = report.get("commands")
+    if not isinstance(commands, Mapping) or commands.get("raw_output_recorded") is not False:
+        raise N05DistributionError("N05 signing evidence is not secretless")
+    claims = report.get("claims")
+    if not isinstance(claims, Mapping) or any(
+        claims.get(key) is not False for key in ("production_ready", "commercial_support", "live_execution")
+    ):
+        raise N05DistributionError("N05 report made an unsupported product claim")
+    contract = report.get("contract")
+    if not isinstance(contract, Mapping) or any(
+        contract.get(key) is not False
+        for key in ("user_data_read", "credentials_read", "signing_secret_read", "application_network_used", "live_execution")
+    ):
+        raise N05DistributionError("N05 report made an unsafe execution/data claim")
+    return report
 
 
 def verify_mounted_distribution(

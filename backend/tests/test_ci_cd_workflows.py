@@ -127,6 +127,8 @@ class TestCICDWorkflowsAndPackaging:
         assert "Package" in bp_names
         assert "Smoke test final packaged artifact" in bp_names
         assert "dist/final-smoke-*.json" in rel_raw
+        assert "scripts/run_n05_macos_distribution_preflight.py" in rel_raw
+        assert "dist/n05-macos-distribution.json" in rel_raw
 
         # Check publish-release job
         pub_job = rel_data["jobs"]["publish-release"]
