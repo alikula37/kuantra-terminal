@@ -72,17 +72,21 @@ pakete eklenmeyecektir.
   büyük tamsayı, Unicode/escape, duplicate/sırasız key, non-finite sayı ve nested
   secret regresyonları geçer. Hash hızlı yolu yalnız string-key/scalar string-int-null
   body için kullanılır. Bu değişiklik: 38 focused H07 testi PASS.
-- [ ] Kaynak süreç benchmark'ı ile gerçekten çalıştırılan packaged executable
+- [x] Kaynak süreç benchmark'ı ile gerçekten çalıştırılan packaged executable
   benchmark'ı ayrılır; fresh-process cold, warm ve append-tail koşulları ayrı ölçülür.
-  Source contract `caef518`; bu değişiklikte ayrı packaged worker/launcher var.
-  `cold`, `warm` ve `append-tail` worker/launcher modları bu değişiklikte ayrıldı;
-  final 20-sample/two-run evidence henüz yok.
+  Source contract `caef518`; packaged worker/launcher ve `cold`, `warm`,
+  `append-tail` modları `af8e2a1` ile ayrıldı. Final iki run × 20 sample kanıtı
+  aşağıdaki kampanyada tamamlandı; H07'nin performans hedefi ve resource acceptance
+  sonucu bu ayrımın dışında ayrıca değerlendirilir.
 - [x] Explicit executable gerçekten çalıştırılır; normal data/log/backend/WebView
   startup'tan önce izole sentetik worker seçilir. PID/executable/pre-post artifact
   hash ve sonuç doğrulanır; worker/log manifest kalıcı yerel dizine yazılır.
   Source checkout gözlemi release build attestation sayılmaz.
 - [ ] Canonical doğruluk düzeltmesi sonrası 1k/10k/100k ölçümleri yenilenir;
-  cold hedef ve resource acceptance ayrı kanıtlarla sonuçlandırılır.
+  cold hedef ve resource acceptance ayrı kanıtlarla sonuçlandırılır. `af8e2a1`
+  final packaged kampanyası ölçümleri yeniledi ve 100k cold p95'in `<2s` hedefini
+  karşılamadığını gösterdi; process-level RSS/disk kanıtı eksik olduğu için bu
+  kriter henüz kapanmaz.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
 - [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
@@ -133,9 +137,9 @@ H05 ticari dağıtım gate'i ve production iddiası değişmeden kalır. H07 tam
 sonuçlar ölçüm kanıtına göre sınıflandırılacak; hedef tutmadığında sınır sessizce
 gevşetilmeyecek ve sonraki paket STATUS üzerinden seçilecektir.
 
-## Güncel bounded uygulama ve ölçüm sonucu — 2026-09-08
+## Güncel bounded uygulama ve ölçüm sonucu — 2026-09-09
 
-### 2026-09-09 packaged worker — this change
+### 2026-09-09 packaged worker — a850e7d/af8e2a1
 
 `backend/desktop_main.py` diagnostic dispatch'i `app.core.paths` importundan önce
 yapar. `desktop/h07_worker.py` yalnız kendi temporary fixture'ını oluşturur; normal
@@ -147,12 +151,11 @@ output/evidence dizinine yazmaz; başarısız süreçte successful manifest üre
 PyInstaller yalnız worker ve mevcut H07 workload/provenance modüllerini ekler;
 benchmark içinde source provenance collector çalıştırılmaz.
 
-Red: 5 isolation/CLI test FAIL. Green: H07 worker + existing H07 56 PASS;
-son full backend 752 PASS (2 deprecation warning). Canonical locked local CI
-`MERGE READY`: o koşuda backend 737, frontend 25/102, i18n 608/608, production
-build, arm64 PyInstaller ve normal WKWebView smoke PASS. Sonradan eklenen launcher/
-guard, append-tail integrity ve campaign summary testleri ayrı full backend
-koşusundaki 752 sayısına dahildir.
+Red: 5 isolation/CLI test FAIL. Green: H07 worker + existing H07 **59 PASS**;
+son full backend **752 PASS** (2 deprecation warning). Canonical locked local CI
+`MERGE READY`: backend 752, frontend 25/102, i18n 608/608, production build,
+arm64 PyInstaller ve normal WKWebView smoke PASS. Launcher/guard, append-tail
+integrity ve campaign summary testleri bu 752 sayısına dahildir.
 Docs/link ve diff gate PASS. Bu desktop değişikliğinin Windows/Linux host gate'i
 henüz alınmadı; main merge/release yapılmaz.
 
@@ -183,13 +186,11 @@ provenance `UNKNOWN` kalır. Yeni DMG/final distribution kanıtı üretilmedi.
 
 Önceki mixed worker diagnostic'i `MIXED_AFTER_FIXTURE_IMPORT`, OS cache
 `UNCONTROLLED`, `cold_process_measured=false` olarak kalır; aşağıdaki yeni modlar
-bu sınırlamayı kaldırmadan koşul ayrımı sağlar. Bu alt paket henüz 20 cold örneği,
-iki 1k/10k/100k koşusu, performance hedefi veya H07 kapanışı değildir.
-Sıradaki iş bu protokol ile 1k/10k/100k için iki koşuda 20 cold örneği, warm
-örnekleri ve append-tail örneklerini üretmek; sonuçları H07 resource kabulüne göre
-sınıflandırmaktır.
+bu sınırlamayı kaldırmadan koşul ayrımı sağlar. Final campaign protokol ayrımını ve
+20×2 örnek yükünü tamamladı, ancak 100k cold hedefi ve process-level resource
+acceptance'ı kapatmadı.
 
-### 2026-09-09 cold/warm/append-tail protocol — this change
+### 2026-09-09 cold/warm/append-tail protocol — af8e2a1
 
 Fixture-backed packaged worker modları artık açıkça ayrıdır:
 
@@ -212,12 +213,85 @@ OS page cache `UNCONTROLLED`; bu bir OS firewall veya cache flush kanıtı deği
 Process-level RSS/disk ölçülmüyorsa `null` kalır.
 
 Red→green: mode/fixture/append-tail sınırları ve launcher percentile testleri
-focused H07/worker suite içinde **59 PASS**. 1k scale sanity campaign'i güncel
-arm64 `.app` ile iki run/3 sample olarak PASS; 10k/100k tek run/3 sample sanity
-de PASS. Bu küçük koşular final 20×2 gate değildir; çıktılar ignore edilmiş
-`artifacts/evidence/h07/measurement-campaign-*` altında non-release kanıt olarak
-kalır. Full campaign, güncel clean source commit ve final artifact ile ayrıca
-çalıştırılacaktır.
+focused H07/worker suite içinde **59 PASS**. Final packaged campaign, güncel clean
+source commit ve arm64 `.app` ile aşağıda tamamlandı. Önceki 1k/10k/100k sanity
+koşuları yalnız protokol ayrımını doğrulayan diagnostic kanıttır; final kabul için
+yerine geçmez.
+
+### 2026-09-09 final packaged campaign — af8e2a1
+
+Kampanya şu komutla, yeni ve yalnızca sentetik evidence dizininde çalıştırıldı:
+
+```text
+.venv/bin/python scripts/run_h07_measurement_campaign.py --executable "dist/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal" --artifact "dist/Kuantra Terminal.app" --output-dir artifacts/evidence/h07/measurement-campaign-af8e2a1 --sizes 1000,10000,100000 --runs 2 --cold-samples 20 --warm-samples 20 --append-samples 20 --batch-size 1000
+```
+
+Kampanya `H07-SYNTHETIC-V1` seed'iyle `1k/10k/100k`, iki run ve her boyutta
+`cold=20`, `warm=20`, `append-tail=20` operation örneği üretti. `cold` ve
+`append-tail` her örnekte yeni packaged process kullandı; `warm` tek process'te
+bir warm-up'ı dışarıda bırakarak 20 operation örneği topladı. Bu nedenle warm
+process elapsed summary'si bir process örneği içerir ve percentile olarak
+`UNKNOWN (n=1)` kalır. Toplam 246 packaged worker manifesti/raporu (120 cold,
+6 warm process ve 120 append-tail) bağımsız doğrulamalardan geçti. Her raporda
+`artifact_executed=true`, explicit executable/PID/path/outcome ve artifact/fixture
+pre/post hash kontrolleri PASS'tir; cold PID'leri sample'lar arasında tekrarlanmaz.
+
+| Sentetik geçmiş | Mod | Run 1 operation p50 / p95 / p99 (ms) | Run 2 operation p50 / p95 / p99 (ms) | Run 1 process p95 (ms) | Run 2 process p95 (ms) | Peak operation RSS R1 / R2 (MB) |
+|---:|---|---:|---:|---:|---:|---:|
+| 1,000 | cold | 36.0391 / 37.0081 / 37.1012 | 36.1552 / 36.5792 / 36.7293 | 843.6756 | 799.1822 | 113.2031 / 112.7656 |
+| 1,000 | warm | 7.7295 / 7.9814 / 8.0232 | 7.5532 / 7.9245 / 7.9836 | UNKNOWN (n=1) | UNKNOWN (n=1) | 112.3281 / 112.2500 |
+| 1,000 | append-tail | 0.9397 / 0.9750 / 0.9868 | 0.9227 / 0.9914 / 1.0666 | 835.6287 | 833.7728 | 112.5625 / 112.5625 |
+| 10,000 | cold | 313.4448 / 321.1551 / 348.6781 | 314.7394 / 317.5536 / 326.7266 | 1116.6733 | 1147.6363 | 120.2188 / 120.2812 |
+| 10,000 | warm | 32.7716 / 37.4768 / 65.4339 | 32.5240 / 33.1552 / 33.5258 | UNKNOWN (n=1) | UNKNOWN (n=1) | 119.9219 / 119.9062 |
+| 10,000 | append-tail | 3.1846 / 3.3783 / 3.4009 | 3.1871 / 3.2884 / 3.4538 | 1129.4907 | 1156.7504 | 120.2344 / 120.2344 |
+| 100,000 | cold | 3157.0720 / 3212.6465 / 3267.3199 | 3181.6296 / 3221.5029 / 3229.6554 | 4216.9276 | 4252.6488 | 164.1875 / 163.4062 |
+| 100,000 | warm | 334.6402 / 372.2994 / 633.3648 | 338.0782 / 342.2595 / 346.6211 | UNKNOWN (n=1) | UNKNOWN (n=1) | 163.0156 / 163.0781 |
+| 100,000 | append-tail | 25.4267 / 32.9072 / 58.5853 | 25.7336 / 26.4382 / 27.1972 | 4240.3164 | 4298.6460 | 164.1719 / 164.0625 |
+
+Operation ölçümü Evidence Pack assembly (`cold`/`warm`) veya warm-up sonrası tek
+immutable `TradeCorrected` append'in `verify_chain` maliyetidir (`append-tail`).
+Append-tail raporlarının tamamı `verification_mode=APPEND_TAIL` ve
+`verified_events_this_call=1` kaydetti; Evidence Pack'in scope toplamı olan
+`checked_events` bundan ayrı korunur. Base fixture sayımları `N trades / N
+projections / N+3 ledger events`, append-tail sonrası sayımlar `N / N / N+4` oldu.
+Run'lar arasında snapshot ve sayımlar deterministiktir. Böylece correction eski
+event'i silmeden yeni immutable lineage ekler; yeni schema veya funding/transfer
+event type açılmaz.
+
+100k packaged cold Evidence Pack operation p95'i iki run'da `3212.6465 ms` ve
+`3221.5029 ms` oldu; bu `<2s` planning hedefinin karşılanmadığı anlamına gelir.
+1k ve 10k cold operation p95'leri hedefin altındadır; warm ve append-tail sonuçları
+cache/işlem koşulu diagnostikleridir ve desteklenen maksimum history veya SLO
+ilanı değildir. Operation-level peak RSS raporlanmış, operation temporary disk
+artışı `0 B` kalmıştır; launcher process-level RSS/disk bu kampanyada ölçülmediği
+için `null`/`UNKNOWN` olarak korunur. OS page cache `UNCONTROLLED`'dır. Bu eksik
+resource kanıtı PASS sayılamaz; H07 `IMPLEMENTATION_REQUIRED` kalır.
+
+Kanıt bağlamı: commit
+`af8e2a1a3d4cc9e9afd22f83dc25537e930de7c6`, tracked source tree SHA-256
+`64587f9bf4747f44ffbd0dec608774d92d1faadf013f8b0de94c68472542c956` ve status
+`clean`; macOS 26.6.2 arm64, Python 3.11.16, Node v20.20.2, npm 10.8.2,
+uv 0.12.10, PyInstaller 6.22.2. Lock SHA-256'ları backend
+`6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399`, frontend
+`b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`;
+canonical local-CI report SHA-256
+`576160d93c1166ed1d899e9d93a8fff7e961512069cd8a5d4d9a54ef6d90daa3` ve
+13/13 step `MERGE READY`'dir. Çalıştırılan executable SHA-256
+`3a9cd6c237303e856ea3e0013003816a44fb48ceb24d6f847fdd879ba8b277a8`, `.app`
+artifact SHA-256
+`6c1457118b92d7e03a1fb12800591dcc6753dab9350b66f42153714d2054fa01`.
+
+Campaign report embedded body SHA-256
+`a691001a06cd3aa750a392aaaa981d4614255b3e66401530db02da530ef57617`, full
+`campaign-report.json` SHA-256
+`df3d469e9a50aa45e1f9fb36088dade5633ce192112f270507a0423489b36d7a`,
+`campaign-manifest.json` SHA-256
+`0d972ff81c96db4fbc43140ee2c5640a65544d1892eeb9abaa93407dbb11d6bd`.
+Campaign contract `real_data=false`, `credentials=false`, `network=false`,
+`live_execution=false`, `support_limit_claim=false`; `source_fixture_preparation`
+`SOURCE_PROCESS`, `source_to_binary_attestation=NOT_VERIFIED` ve
+`release_provenance=UNKNOWN`. Bu non-release `.app` kampanyası DMG mount,
+Developer ID, notarization, Gatekeeper veya Windows/Linux platform kanıtı değildir.
 
 ### 2026-09-09 doğruluk düzeltmesi — a97499b
 
@@ -542,11 +616,15 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
   reads ve disabled experimental surfaces production capability olarak açılmamıştır.
   Bu nedenle H07 tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı cold 100k projection rebuild ve Evidence Pack doğrulama maliyetini
-ayrı red testlerle bounded biçimde azaltmak veya hedefin bu host/workload için
-karşılanmadığını kanıtlı biçimde sınıflandırmaktır. `f94ba8e` optimizasyonu cold
-full-chain p95'i önceki `4560.05042 ms` ölçümünden `2920.32949 ms`'ye, `5a70f8b`
-ile `2216.36659 ms`'ye indirdi; ancak `<2s` planning target hâlâ karşılanmadı.
-Bu audit ve 100k planning target
-kararı kapanmadan H07 tamamlanmış, production-ready veya desteklenen veri boyutu
-olarak işaretlenmeyecektir.
+Sonraki H07 adımı process-level RSS/disk capture ile cold 100k projection rebuild
+ve Evidence Pack doğrulama maliyetinin aynı packaged-process sınırında ölçülmesidir.
+Bu kanıttan sonra seçenekler bounded bir optimizasyon için red test → implementation
+veya bu host/workload'ta `<2s` hedefinin karşılanmadığına dair açık
+`OWNER_DECISION_REQUIRED`/destek sınırı sınıflandırmasıdır; hedef sessizce
+değiştirilmeyecektir. `f94ba8e` optimizasyonu historical source full-chain p95'i
+önceki `4560.05042 ms` ölçümünden `2920.32949 ms`'ye, `5a70f8b` ile
+`2216.36659 ms`'ye indirdi; ancak güncel packaged 100k cold Evidence Pack p95'i
+`3212.6465 / 3221.5029 ms` ile hâlâ `<2s` planning target'ını karşılamadı. Bu
+audit, resource acceptance ve 100k planning target kararı kapanmadan H07
+tamamlanmış, production-ready veya desteklenen veri boyutu olarak
+işaretlenmeyecektir.

@@ -38,15 +38,17 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 the existing stdlib canonical JSON contract; scalar hash serialization has explicit
 type guards. Three new regression cases failed before the fix; all 38 focused H07
 tests pass afterward, including a rehashed noncanonical chain rejection.
-The performance figures below are historical source-process measurements, not
-packaged executable benchmarks: `--executable` only supplied hash metadata.
-The separate mounted-DMG smoke evidence remains valid for its recorded binary.
-The packaged cold/warm/append-tail protocol is implemented in the current change;
-the final two-run/20-sample campaign and H07 resource disposition remain pending.
-Validation: canonical locked local CI `MERGE READY`; backend 731 (2 deprecation
-warnings), frontend 25 files/102 tests, i18n 608/608, arm64 build/native WKWebView
-smoke PASS on macOS 26.6.2. This run used the tracked working diff before commit;
-it is not a clean release artifact. Default smoke attempted public market data.
+The historical performance figures below are source-process measurements, not
+packaged executable benchmarks: their `--executable` value supplied hash metadata
+only. The separate mounted-DMG smoke evidence remains valid for its recorded
+binary. The packaged cold/warm/append-tail protocol and its final two-run/20-sample
+campaign are now recorded under `af8e2a1`; H07 remains open because the 100k cold
+Evidence Pack p95 is above the planning target and process-level resource evidence
+is incomplete. The clean Mac locked local CI for this implementation commit was
+`MERGE READY`: 752 backend tests with 2 deprecation warnings, frontend 25 files/102
+tests, i18n 608/608, arm64 build and native WKWebView smoke PASS on macOS 26.6.2.
+This is development evidence, not a signed release artifact. Default smoke attempted
+public market data.
 
 Measurement contract, **caef518**: source benchmark reports now explicitly record
 `SOURCE_PROCESS`, `artifact_executed=false`, `cold_process_measured=false` and
@@ -54,12 +56,12 @@ Measurement contract, **caef518**: source benchmark reports now explicitly recor
 Correction fixture count is fixed at three (or dataset size if smaller), independently
 of measurement repetitions. Three/five-repeat runs preserve counts and deterministic
 snapshots. Default report output is ignored `artifacts/evidence/h07/`.
-Focused H07: 39 tests; full backend: 732 tests, 2 deprecation warnings.
-Pending: 20 fresh-process cold samples per size in two
-runs and final operation-specific resource evidence. Correction timing still
-has only three samples; it is not a completed 20-sample performance gate.
+Focused H07 contract evidence: 39 tests; the current full backend suite is recorded
+above as 752 tests with 2 deprecation warnings. The earlier source benchmark
+measurements and three-sample correction timing remain historical diagnostics; they
+are not promoted to packaged or 20-sample performance evidence.
 
-Packaged diagnostic, **this change**: `--h07-benchmark` dispatches before normal
+Packaged diagnostic, **a850e7d/af8e2a1**: `--h07-benchmark` dispatches before normal
 data-directory initialization, logging, backend and WebView. It creates only its own
 temporary synthetic database. A Python audit guard denies network/child-process
 operations (not an OS firewall). The launcher executes the explicit binary, validates
@@ -69,27 +71,31 @@ reports distinguish source from frozen execution. This workload imports its fixt
 before read measurements: cache state is mixed, NOT cold-chain evidence.
 Checkout observations are not embedded source-to-binary attestation; release
 provenance remains UNKNOWN. Windows/Linux host gates remain required for this
-desktop entry/build change. Next: fresh-process cold/warm/append-tail measurement
-protocol, then two 20-sample runs per size and the H07 resource acceptance audit.
-Evidence: 5 red isolation tests → 56 focused H07/worker tests PASS; latest full
-backend 749 PASS (2 warnings). Mac canonical CI MERGE READY (737 backend at that
-run, frontend 102, i18n 608/608, arm64 build/WKWebView smoke); the 12 later guard/
-launcher tests passed in the separate 752-test full suite. Actual packaged 1k
-worker produced 1000 trades/projections and 1003 ledger events, matching the source
-snapshot. Durable manifest: `artifacts/evidence/h07/packaged-worker-1000-v1/manifest.json`,
-file SHA `2f29069847b9d2b3c50a4e43ba7d1c3ba881abfc8a21fa88489037bad8d2f70f`.
+desktop entry/build change. The final measurement and resource disposition are
+recorded below and in the active H07 work package.
+The earlier packaged 1k diagnostic produced 1000 trades/projections and 1003 ledger
+events, matching its source snapshot. Its durable manifest is
+`artifacts/evidence/h07/packaged-worker-1000-v1/manifest.json`, file SHA
+`2f29069847b9d2b3c50a4e43ba7d1c3ba881abfc8a21fa88489037bad8d2f70f`; it remains
+prior diagnostic evidence, not the final campaign below. Current focused H07/worker
+coverage is 59 PASS and current full backend coverage is 752 PASS with 2 warnings;
+the clean local-CI result and its exact artifact hashes are recorded in H07.
 Exact hashes, commands and platform limits are in active H07. New final DMG,
 signing and clean-release provenance are NOT claimed.
 
-Cold/warm/append-tail protocol, **this change**: worker/launcher modes now keep
-fresh-process cold, same-process warm-up, and append-tail verification separate.
-The 1k two-run/3-sample and 10k/100k one-run/3-sample scale sanity campaigns
-passed on the updated arm64 packaged executable. Cold operation, warm Evidence
-Pack operation, and append-tail `verified_events_this_call=1` are recorded; OS
-cache remains `UNCONTROLLED`, process RSS/disk remains `null` where unmeasured.
-These are protocol evidence only, not the required 20-sample/two-run acceptance.
-Next: run the full 1k/10k/100k campaign from a clean implementation commit,
-then classify H07 without changing the `<2s` target silently.
+Cold/warm/append-tail final campaign, **af8e2a1**: two runs × `1k/10k/100k`, with
+20 fresh packaged-process samples for `cold`, 20 same-process post-warm-up
+operation samples for `warm`, and 20 fresh packaged-process append-tail samples
+per size. All 246 worker manifests passed packaged-process/path/hash/outcome checks;
+all append-tail reports recorded `verification_mode=APPEND_TAIL` and
+`verified_events_this_call=1`. The operation-level 100k cold Evidence Pack p95 was
+`3212.6465 ms` / `3221.5029 ms` (run 1 / run 2), so the `<2s` planning target is
+not met at that size. Warm and append-tail values are diagnostic only; OS page cache
+is `UNCONTROLLED`, and process-level RSS/disk are `null` where not measured. Campaign
+report embedded SHA-256 is `a691001a06cd3aa750a392aaaa981d4614255b3e66401530db02da530ef57617`;
+the full report and manifest file hashes are recorded in H07. H07 remains
+`IMPLEMENTATION_REQUIRED`; next is process-level resource capture plus a bounded
+100k projection/Evidence Pack target disposition, without silently changing `<2s>`.
 
 | Area | Evidence / remaining boundary |
 |---|---|
@@ -97,7 +103,7 @@ then classify H07 without changing the `<2s` target silently.
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac (historical clean DMG baseline) | H07 source `5a70f8b` passed clean arm64 locked local CI and exact read-only DMG/WKWebView smoke with provenance `COMPLETE`; local CI report SHA `c513b5f4ce3a14270277c1a9031bcf0b9d51a3271a84ebe59f7deb2daa06be01`, native smoke report SHA `413d5029e79276c66149ae4574be0ced14860a4ac72b7858e34490d6dc0e5c5e`, `.app` SHA `36c84e727a00c305176f7ee45f2f4c32b6693e76cd59021aaa889bc1a4554459`, exact DMG smoke report SHA `bc587f232c7f5d09c787412549d924aa8aa045524590bdcecdd3047490367963`, DMG SHA `f5183bee511352e97b6c4d6e363d0951fc32361d6a9d718ccfe3174752c45fc7`, mounted executable SHA `17508bbfa429689ab6adeeee419e166c604a15457a55a5f8a543bbb16b04cbc0`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
-| H07 bounded baseline | Canonical correctness `a97499b`, source measurement contract `caef518`, actual packaged worker/launcher and separate cold/warm/append-tail campaign protocol in this change. Final 20-sample/two-run evidence and resource disposition remain open. Old `5a70f8b` timings are historical source-process evidence, not current cold-chain performance or packaged benchmark proof. |
+| H07 bounded baseline | Canonical correctness `a97499b`, packaged worker/launcher and final cold/warm/append-tail campaign `af8e2a1`. The two-run/20-sample separation evidence is complete; 100k cold Evidence Pack p95 is `3212.6465 / 3221.5029 ms` and resource acceptance remains open because process-level RSS/disk was not captured. Old `5a70f8b` timings are historical source-process evidence, not current cold-chain performance or packaged benchmark proof. |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -114,7 +120,7 @@ then classify H07 without changing the `<2s` target silently.
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; source/packaged execution and cold/warm/append-tail distinction is implemented | Next: clean-commit full campaign with two 20-sample runs per size, then resource acceptance and target disposition. Historical/sanity timings do not close the target. Windows/Linux host evidence for the desktop change is still required. |
+| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; source/packaged execution and cold/warm/append-tail distinction is implemented | Final campaign `af8e2a1` is complete, but 100k cold p95 exceeds `<2s` and process-level RSS/disk acceptance is open. Next: bounded resource capture and target disposition/optimization; Windows/Linux host evidence for the desktop change is still required. |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -164,7 +170,8 @@ The five default-branch Dependabot alerts (1 critical, 1 high, 3 moderate) remai
 open and were not merged. Advisory scans used network and are not offline proof.
 No PnL, live execution, pilot, commercial package or production claim was opened.
 
-H07's current bounded evidence is recorded in
+Earlier H07 bounded evidence, superseded for the current performance disposition
+by the `af8e2a1` campaign above, is recorded in
 [H07](work-packages/H07-bounded-performance-resource-limits.md): deterministic
 1k/10k/100k synthetic reports, indexed trade lookup, atomic grouped-batch
 cancellation, streamed full-chain verification, correction/replay measurement,
@@ -179,19 +186,19 @@ smoke report SHA `413d5029e79276c66149ae4574be0ced14860a4ac72b7858e34490d6dc0e5c
 exact DMG smoke report SHA `bc587f232c7f5d09c787412549d924aa8aa045524590bdcecdd3047490367963`,
 mounted executable SHA `17508bbfa429689ab6adeeee419e166c604a15457a55a5f8a543bbb16b04cbc0`
 and DMG SHA `f5183bee511352e97b6c4d6e363d0951fc32361d6a9d718ccfe3174752c45fc7`.
-The exact 100k report SHA is
+At that historical baseline, the exact 100k report SHA was
 `c92200c37fe1db0e7d13727d818060998d112c54c049e1c9bd81201ee57f5087`; append-tail
 Evidence Pack p95 is `349.5183 ms`, export p95 is `340.3408 ms`, and projection
 rebuild p95 is `4153.3801 ms` with `0 B` temporary-disk growth in the rebuild
 operation. Separate no-cache full-chain audit samples were
 `2217.7044 / 2190.9482 / 2208.2548 ms`, p95 `2216.36659 ms`; every `100003` event
-was valid. H07 remains `IMPLEMENTATION_REQUIRED`: the append-tail path meets the
-measured `<2s` planning target, but true no-cache cold startup does not and remaining
-H07 resource acceptance gaps are not silently closed. The safe-persona core read
-surface is bounded and experimental surfaces are not promoted; auxiliary/disabled
-surfaces remain outside the production capability claim. Next handoff is the explicit
-cold-target decision or another bounded optimization, followed by the remaining H07
-resource acceptance audit.
+was valid. At that historical baseline H07 remained `IMPLEMENTATION_REQUIRED`: the
+append-tail path met the measured `<2s` planning target, but true no-cache cold
+startup did not and resource acceptance gaps were not silently closed. The current
+campaign supersedes those performance numbers; the safe-persona core read surface
+is bounded and experimental surfaces are not promoted; auxiliary/disabled surfaces
+remain outside the production capability claim. The current next handoff is the
+process-level resource capture and 100k target disposition recorded above.
 H05 license/notices and default-branch Dependabot remain deferred release gates;
 no production or commercial package claim is allowed.
 
