@@ -34,6 +34,21 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 
 ## Current evidence, not completion claims
 
+2026-09-09 correction, **this change**: payload/provenance validation again enforces
+the existing stdlib canonical JSON contract; scalar hash serialization has explicit
+type guards. Three new regression cases failed before the fix; all 38 focused H07
+tests pass afterward, including a rehashed noncanonical chain rejection.
+The performance figures below are historical source-process measurements, not
+packaged executable benchmarks: `--executable` only supplied hash metadata.
+Fresh-process cold measurement and percentile correction remain pending. The
+separate mounted-DMG smoke evidence remains valid for its recorded binary.
+Next dependency: implement the approved benchmark execution/measurement contract,
+then reassess H07 resource and performance acceptance on the corrected code.
+Validation: canonical locked local CI `MERGE READY`; backend 731 (2 deprecation
+warnings), frontend 25 files/102 tests, i18n 608/608, arm64 build/native WKWebView
+smoke PASS on macOS 26.6.2. This run used the tracked working diff before commit;
+it is not a clean release artifact. Default smoke attempted public market data.
+
 | Area | Evidence / remaining boundary |
 |---|---|
 | Runtime baseline | `a7b99b7`; fresh clean Mac local CI `MERGE READY`: 683 backend, 71 frontend, i18n 574/574, arm64 build and native smoke passed. Provenance is COMPLETE; H03 disabled/degraded tests and H06 privacy boundary tests are PASS; supply-chain audit remains an integrated step with commercial owner review explicitly deferred |

@@ -368,6 +368,28 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     aktif non-release iştir.
 18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
+### 2026-09-09 onaylanan kalan uygulama sırası
+
+1. H07 canonical JSON uyumsuzluğunu gider; stdlib sözleşmesi ve hash byte eşitliği
+   için negative/regression kanıtı üret.
+2. Benchmark execution kimliğini düzelt: source process / packaged executable,
+   fresh-process cold / warm / append-tail ayrımı; tek percentile hesabı; ölçüm
+   tekrarından bağımsız correction sayısı. 1k/10k/100k için 20 örnek ve iki koşu;
+   raporları repo tarafından izlenmeyen `artifacts/evidence/h07/` altında sakla.
+3. H07 resource kabulünü alt kriterlere ayır; düzeltilmiş ölçümle tek bounded
+   optimizasyon paketi değerlendir. Hedef tutmazsa owner disposition olmadan kapatma.
+4. G0–G2 supported matrix, bağımsız oracle ve packaged import→review→export→reopen
+   kabul denetimini tamamla; B2 kapsamını kanıtla netleştir.
+5. N03 temiz Mac profil/ikinci host; N04 sentetik update/uninstall veri koruma.
+6. Ticari dağıtım öncesi H05 license/notices/dependency disposition owner kapısını
+   yeniden aç; N05 signing/notarization sonrası final artifact'i yeniden doğrula.
+7. N06 Windows/Linux host kanıtı; G5 consent/metrik kararları sonrası formative ve
+   kontrollü pilot; G6–G7 owner release kararı ve sınırlı rollout.
+
+Aktif WP ve STATUS her pakette birlikte güncellenir; bu roadmap yalnız sıra/kapsam/
+bağımlılık değişince düzenlenir. H05 kararları şimdilik deferred kalır. Main merge,
+release/tag, signing erişimi ve gerçek pilot başlatma ayrı owner kapılarıdır.
+
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
 sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate geçmeden

@@ -94,7 +94,12 @@ def _canonical_hash_json(value: Any) -> str:
     rejects a value.
     """
 
-    if orjson is not None:
+    if (
+        orjson is not None
+        and type(value) is dict
+        and all(type(key) is str for key in value)
+        and all(item is None or type(item) in (str, int) for item in value.values())
+    ):
         try:
             return orjson.dumps(value, option=orjson.OPT_SORT_KEYS).decode("utf-8")
         except (TypeError, ValueError):
@@ -150,21 +155,8 @@ def _validate_canonical_json_text(value: str, field_name: str) -> None:
     the cache bounded and preserving the strict canonical/secret checks.
     """
 
-    if orjson is not None and isinstance(value, str):
-        raw = value.encode("utf-8")
-        try:
-            decoded = orjson.loads(raw)
-            if orjson.dumps(decoded, option=orjson.OPT_SORT_KEYS) == raw:
-                _assert_no_secret_keys(decoded, field_name)
-                return
-        except EvidenceValidationError:
-            raise
-        except (TypeError, ValueError):
-            # Keep the stdlib path as the compatibility and fail-closed
-            # fallback for values whose exact canonical representation is not
-            # byte-compatible with orjson (for example unusually large ints).
-            pass
-
+    # Round-tripping through another serializer is not proof of our canonical
+    # format: exponent spellings differ even when the numeric value is equal.
     decoded = json.loads(value)
     if canonical_json(decoded) != value:
         raise EvidenceValidationError(f"{field_name} is not canonical JSON")

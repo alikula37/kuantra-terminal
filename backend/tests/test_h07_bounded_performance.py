@@ -82,20 +82,46 @@ def test_event_hash_fast_path_matches_the_canonical_json_contract():
     assert _canonical_hash_json(body) == canonical_json(body)
 
 
-def test_canonical_metadata_validation_uses_orjson_byte_fast_path(monkeypatch):
-    if evidence_ledger_repo.orjson is None:
-        pytest.skip("locked runtime does not provide orjson")
-
+@pytest.mark.parametrize("value", [
+    '{"x":1e-7}', '{"x":1e20}', '{"x":NaN}', '{"x":Infinity}',
+    '{"x":1,"x":1}', '{"z":0,"a":1}', '{ "x":1}',
+    '{"nested":[{"api-key":"synthetic"}]}',
+])
+def test_metadata_validation_rejects_noncanonical_or_secret_text(value):
     evidence_ledger_repo._validate_canonical_json_text.cache_clear()
-    value = '{"coverage":"COMPLETE","source":"h07-validation-fast-path"}'
+    with pytest.raises(ValueError):
+        evidence_ledger_repo._validate_canonical_json_text(value, "provenance")
 
-    def stdlib_path_must_not_run(*_args, **_kwargs):
-        raise AssertionError("canonical metadata fast path fell back to stdlib")
 
-    monkeypatch.setattr(evidence_ledger_repo, "canonical_json", stdlib_path_must_not_run)
-    monkeypatch.setattr(evidence_ledger_repo.json, "loads", stdlib_path_must_not_run)
+@pytest.mark.parametrize("value", [
+    {"x": 1e-7}, {"x": 1e20}, {"x": 2**100},
+    {"text": 'Türkçe-😀-"-\\-\n', "nested": [None, True, -0.0]},
+])
+def test_metadata_validation_accepts_existing_canonical_contract(value):
+    evidence_ledger_repo._validate_canonical_json_text.cache_clear()
+    evidence_ledger_repo._validate_canonical_json_text(canonical_json(value), "provenance")
 
-    evidence_ledger_repo._validate_canonical_json_text(value, "provenance")
+
+@pytest.mark.parametrize("value", [{"x": 1e-7}, {"x": [1e-7]}, {"x": 2**100}])
+def test_hash_serializer_preserves_contract_outside_fast_shape(value):
+    assert _canonical_hash_json(value) == canonical_json(value)
+
+
+def test_chain_rejects_noncanonical_payload_even_with_matching_hashes(tmp_path, monkeypatch):
+    driver = SQLiteDriver(str(tmp_path / "canonical-chain.sqlite"))
+    driver.record_grouped_evidence_batch([
+        _command_for_trade(generate_trade_snapshot(0, seed="CANONICAL"), 0, seed="CANONICAL"),
+    ])
+    ledger = EvidenceLedgerRepository(driver.db_path)
+    rows = list(ledger._iter_raw_verification_rows())
+    rows[0]["normalized_payload_json"] = '{"x":1e-7}'
+    rows[0]["request_fingerprint_sha256"] = ledger._request_fingerprint(rows[0])
+    rows[0]["event_hash"] = ledger._event_hash(rows[0])
+    monkeypatch.setattr(ledger, "_iter_raw_verification_rows", lambda **_: iter(rows))
+    report = ledger.verify_chain()
+    assert report["valid"] is False
+    assert any("not canonical JSON" in error for error in report["errors"])
+    assert not any("hash mismatch" in error for error in report["errors"])
 
 
 def test_benchmark_report_rejects_missing_measurement_provenance():

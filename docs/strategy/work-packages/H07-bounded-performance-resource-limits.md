@@ -68,6 +68,14 @@ pakete eklenmeyecektir.
 
 ## Acceptance criteria
 
+- [x] Canonical JSON validation stdlib byte sözleşmesini korur; exponent yazımı,
+  büyük tamsayı, Unicode/escape, duplicate/sırasız key, non-finite sayı ve nested
+  secret regresyonları geçer. Hash hızlı yolu yalnız string-key/scalar string-int-null
+  body için kullanılır. Bu değişiklik: 38 focused H07 testi PASS.
+- [ ] Kaynak süreç benchmark'ı ile gerçekten çalıştırılan packaged executable
+  benchmark'ı ayrılır; fresh-process cold, warm ve append-tail koşulları ayrı ölçülür.
+- [ ] Canonical doğruluk düzeltmesi sonrası 1k/10k/100k ölçümleri yenilenir;
+  cold hedef ve resource acceptance ayrı kanıtlarla sonuçlandırılır.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
 - [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
@@ -119,6 +127,29 @@ sonuçlar ölçüm kanıtına göre sınıflandırılacak; hedef tutmadığında
 gevşetilmeyecek ve sonraki paket STATUS üzerinden seçilecektir.
 
 ## Güncel bounded uygulama ve ölçüm sonucu — 2026-09-08
+
+### 2026-09-09 doğruluk düzeltmesi — this change
+
+`5a70f8b` payload/provenance hızlı kabulü, stdlib canonical sözleşmesinin reddettiği
+`{"x":1e-7}` metnini kabul ediyordu. Payload validation stdlib'e döndürüldü;
+hash serializer hızlı yolu açık tür kontrolüyle sınırlandı. Scalar leaf traversal
+iyileştirmesi korunur. Üç red test önce başarısız oldu; düzeltme sonrası 38 H07 testi
+PASS. Yeniden hash'lenmiş noncanonical payload da chain verification'da reddedilir.
+Schema, event hash formatı veya veri migration'ı değişmedi.
+
+Komut: `uv run --offline --no-project --with-requirements backend/requirements.lock
+python scripts/run_local_ci.py`. Sonuç `MERGE READY`: backend 731 (2 deprecation
+warning), frontend 25/102, i18n 608/608, arm64 build ve native WKWebView smoke PASS.
+Host macOS 26.6.2 arm64; commit öncesi tracked diff ile koşuldu, clean release
+artifact kanıtı değildir. Varsayılan smoke public network bağlantısını denedi.
+
+**Önceki performans kanıtının sınırı:** aşağıdaki `5a70f8b` ölçümleri geçmiş kaynak
+Python süreci ölçümleridir. Benchmark executable/DMG hash'lerini kaydeder fakat
+executable'ı çalıştırmaz. Ayrı mounted DMG smoke geçerlidir; bu durum benchmark'ı
+packaged runtime performans kanıtına dönüştürmez. Manuel cold p95 hesabı canonical
+percentile fonksiyonuyla yeniden hesaplanmalıdır; yeni repository instance'ları
+module/OS cache'lerinin soğuk olduğunu kanıtlamaz. Bu düzeltmeden sonra geçmiş
+performans sayıları güncel davranışın veya `<2s` hedefinin kanıtı değildir.
 
 `46531e4` ile dynamic resource-check callback'leri SQLite journal write,
 projection rebuild, ledger verification/export ve Trade Evidence Pack assembly
