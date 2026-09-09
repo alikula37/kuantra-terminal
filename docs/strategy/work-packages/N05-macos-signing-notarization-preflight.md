@@ -41,6 +41,8 @@ production-ready veya commercial-support iddiası değildir.
   application call veya live execution kullanmamak.
 - Release workflow'a gate'i bağlamak; actual Apple signing/notarization sonucunu
   owner/host kanıtı gelmeden tamamlanmış saymamak.
+- `package_macos.sh` içinde ad-hoc geliştirme default'unu korurken explicit
+  `developer-id` signing mode, hardened runtime ve certificate-name guard sağlamak.
 
 ## Davranış sözleşmesi
 
@@ -63,6 +65,8 @@ production-ready veya commercial-support iddiası değildir.
       edildi; path/hash mismatch owner gate değil evidence failure olarak ayrıldı.
 - [x] Ad-hoc artifact, Developer ID+hardened-runtime fixture, unapproved entitlement
       ve raw-output redaction negatif/pozitif testleri green.
+- [x] macOS package script'i varsayılan ad-hoc davranışı koruyor; explicit `developer-id`
+      modu identity prefix, hardened runtime ve signature verification ile fail-closed.
 - [ ] Developer ID Application ile imzalanmış gerçek final artifact üzerinde
       Gatekeeper assessment ve hardened-runtime kanıtı.
 - [ ] Exact DMG üzerinde stapled notarization ticket kanıtı; Apple Developer

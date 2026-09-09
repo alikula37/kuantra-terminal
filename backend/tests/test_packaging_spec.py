@@ -63,6 +63,11 @@ def test_package_macos_script_builds_dmg():
     assert "hdiutil create" in sh
     assert "codesign" in sh
     assert ".dmg" in sh
+    assert 'KUANTRA_MACOS_SIGNING_MODE:-adhoc' in sh
+    assert 'KUANTRA_MACOS_SIGNING_IDENTITY' in sh
+    assert '--options runtime' in sh
+    assert 'codesign --verify --deep --strict' in sh
+    assert 'developer-id' in sh
 
 
 def test_macos_dmg_smoke_binds_mount_and_native_renderer():

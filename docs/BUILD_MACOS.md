@@ -81,6 +81,22 @@ bash scripts/package_macos.sh
 The script ad-hoc signs the bundle (`codesign --force --deep --sign -`), stages it next to an
 `/Applications` symlink and builds a compressed DMG with `hdiutil`.
 
+Ad-hoc is the safe development default. For an owner-approved distribution build, the caller
+must explicitly select a Developer ID certificate already available on the build host:
+
+```bash
+KUANTRA_MACOS_SIGNING_MODE=developer-id \
+KUANTRA_MACOS_SIGNING_IDENTITY='Developer ID Application: <Team Name> (<TEAMID>)' \
+bash scripts/package_macos.sh
+```
+
+Developer ID mode adds the hardened-runtime option and rejects an identity that is not named as
+a `Developer ID Application` certificate. An optional, owner-reviewed entitlements plist can be
+provided with `KUANTRA_MACOS_ENTITLEMENTS=/absolute/path/to/entitlements.plist`. The script never
+asks for, prints or stores a certificate password/private key. It verifies the signed app before
+creating the DMG; N05 must still verify the exact mounted DMG, Gatekeeper and stapled ticket.
+Notarization upload/stapling remains a separate owner-controlled Apple operation.
+
 Output: `dist/Kuantra-Terminal-<version>-aarch64.dmg`
 (`x86_64` on Intel — the arch suffix comes from `uname -m`.)
 
