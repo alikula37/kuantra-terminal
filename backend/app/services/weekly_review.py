@@ -282,10 +282,23 @@ class WeeklyReviewService:
             payload = event.get("normalized_payload")
             if not isinstance(payload, Mapping) or payload.get("review_id") != review_id:
                 continue
-            decisions.append((str(event.get("occurred_at_utc") or ""), str(event.get("event_id") or ""), payload, event))
+            # ``record_decision`` intentionally stores a bounded second-level
+            # timestamp.  Two user actions can therefore share the same
+            # occurred_at value.  UUID ordering is not append ordering and
+            # could make a later REOPEN appear older than COMPLETE.  The
+            # existing immutable chain sequence is the authoritative tie-break
+            # without adding a review table, column, or event type.
+            decisions.append((
+                str(event.get("occurred_at_utc") or ""),
+                str(event.get("chain_date_utc") or ""),
+                int(event.get("chain_sequence") or 0),
+                str(event.get("event_id") or ""),
+                payload,
+                event,
+            ))
         if not decisions:
             return None
-        _time, _event_id, payload, event = sorted(decisions)[-1]
+        _time, _chain_date, _chain_sequence, _event_id, payload, event = sorted(decisions)[-1]
         return {
             "decision": payload.get("decision"),
             "note": payload.get("decision_note"),

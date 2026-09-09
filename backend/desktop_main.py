@@ -25,6 +25,12 @@ if __name__ == "__main__" and "--h07-benchmark" in sys.argv[1:]:
     from desktop.h07_worker import main as h07_main
     raise SystemExit(h07_main(sys.argv[1:]))
 
+# The G0-G2 diagnostic must dispatch before app.core.paths initializes the
+# normal user-data boundary or the desktop/WebView lifecycle.
+if __name__ == "__main__" and "--g0-g2-audit" in sys.argv[1:]:
+    from desktop.g0_g2_worker import main as g0_g2_main
+    raise SystemExit(g0_g2_main(sys.argv[1:]))
+
 from app.core.paths import DATA_DIR, PROJECT_ROOT, bundle_root, is_frozen  # noqa: E402
 
 APP_TITLE = "Kuantra Terminal"

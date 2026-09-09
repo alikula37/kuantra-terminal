@@ -43,6 +43,7 @@ hiddenimports += [
     "main",
     "desktop", "desktop.bridge", "desktop.clipboard", "desktop.gateway",
     "desktop.push", "desktop.runtime", "desktop.smoke", "desktop.h07_worker",
+    "desktop.g0_g2_worker",
     # Narrow diagnostic workload; does not execute source provenance collection.
     "scripts.run_h07_benchmark", "scripts.build_provenance",
     "pydantic_settings", "dotenv",
