@@ -2,8 +2,8 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ apiFetch: vi.fn() }));
-vi.mock("../../lib/backend", () => ({ apiUrl: (path: string) => path, apiFetch: mocks.apiFetch }));
+const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), fetchEvidencePack: vi.fn() }));
+vi.mock("../../lib/backend", () => ({ apiUrl: (path: string) => path, apiFetch: mocks.apiFetch, fetchEvidencePack: mocks.fetchEvidencePack }));
 
 import { TradeEvidencePanel } from "../TradeEvidencePanel";
 import { I18nProvider } from "../../context/I18nContext";
@@ -57,6 +57,10 @@ beforeEach(() => {
   document.body.append(host);
   root = createRoot(host);
   mocks.apiFetch.mockReset();
+  mocks.fetchEvidencePack.mockReset();
+  mocks.fetchEvidencePack.mockImplementation((tradeId: string, init?: RequestInit) =>
+    mocks.apiFetch(`/api/v1/trades/${encodeURIComponent(tradeId)}/evidence`, init),
+  );
 });
 
 afterEach(async () => {
@@ -136,9 +140,9 @@ it("lets the user cancel a pending Evidence Pack load without showing partial su
   let resolvePack!: (value: Response) => void;
   let requestSignal: AbortSignal | undefined;
   const pending = new Promise<Response>((resolve) => { resolvePack = resolve; });
-  mocks.apiFetch.mockImplementation((path: string, init?: RequestInit) => {
-    if (path === "/api/v1/settings") return Promise.resolve(response({ locale: "en" }));
-    requestSignal = init?.signal;
+  mocks.apiFetch.mockResolvedValue(response({ locale: "en" }));
+  mocks.fetchEvidencePack.mockImplementation((_tradeId: string, signal?: AbortSignal) => {
+    requestSignal = signal;
     return pending;
   });
 

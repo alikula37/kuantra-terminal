@@ -7,6 +7,8 @@ export interface BridgeRequest {
   body: string | null; body_b64?: string | null; files: BridgeFile[]; fields: [string, string][];
 }
 export interface BridgeResponse { status: number; headers: Record<string, string>; body: string | null; body_b64: string | null; }
+export interface EvidencePackJobStart { job_id: string; status: "PENDING" | "REJECTED"; response?: BridgeResponse; }
+export interface EvidencePackJobPoll { job_id: string; status: "PENDING" | "COMPLETED" | "FAILED"; response?: BridgeResponse; }
 export interface StreamSnapshot {
   type: "SNAPSHOT";
   symbol: string;
@@ -27,6 +29,8 @@ export interface BridgeApi {
   copy_text(text: string): Promise<{ ok: boolean }>;
   open_external(url: string): Promise<{ ok: boolean }>;
   get_app_info(): Promise<AppInfo>;
+  start_evidence_pack(spec: { trade_id: string }): Promise<EvidencePackJobStart>;
+  get_evidence_pack_job(spec: { job_id: string }): Promise<EvidencePackJobPoll>;
 }
 
 function host(): any {

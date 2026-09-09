@@ -1,5 +1,7 @@
 import base64
 import json
+import threading
+import time
 import pytest
 from desktop.runtime import BackendRuntime
 from desktop.push import PushChannel
@@ -29,7 +31,8 @@ def bridge(runtime, tmp_path):
     dialog = FakeDialogWindow(str(tmp_path / "out.csv"))
     b = DesktopBridge(runtime, push, gateway=None, index_url="file:///tmp/index.html",
                       dialog_window_getter=lambda: dialog)
-    return b
+    yield b
+    b._close()
 
 
 def test_request_json(bridge):
@@ -60,6 +63,50 @@ def test_request_binary_body_is_base64(bridge, tmp_path):
     assert r["status"] in (200, 404, 500)
     if r["status"] == 200:
         assert r["body"] is None and r["body_b64"]
+
+
+def test_evidence_pack_job_is_async_and_completes(bridge, monkeypatch):
+    release = threading.Event()
+    original_call = bridge._runtime.call
+
+    def delayed_call(*args, **kwargs):
+        assert release.wait(5)
+        return original_call(*args, **kwargs)
+
+    monkeypatch.setattr(bridge._runtime, "call", delayed_call)
+    started_at = time.perf_counter()
+    started = bridge.start_evidence_pack({"trade_id": "MISSING"})
+    elapsed = time.perf_counter() - started_at
+
+    assert started["status"] == "PENDING"
+    assert len(started["job_id"]) == 32
+    assert elapsed < 0.5
+    assert bridge.get_evidence_pack_job({"job_id": started["job_id"]})["status"] == "PENDING"
+
+    release.set()
+    deadline = time.monotonic() + 5
+    result = None
+    while time.monotonic() < deadline:
+        result = bridge.get_evidence_pack_job({"job_id": started["job_id"]})
+        if result["status"] != "PENDING":
+            break
+        time.sleep(0.01)
+    assert result is not None and result["status"] == "COMPLETED"
+    assert result["response"]["status"] == 404
+
+
+def test_evidence_pack_job_rejects_invalid_or_unknown_requests(bridge):
+    rejected = bridge.start_evidence_pack({"trade_id": "../outside"})
+    assert rejected["status"] == "REJECTED"
+    assert rejected["response"]["status"] == 400
+
+    missing = bridge.get_evidence_pack_job({"job_id": "not-a-job"})
+    assert missing["status"] == "FAILED"
+    assert missing["response"]["status"] == 400
+
+    unknown = bridge.get_evidence_pack_job({"job_id": "0" * 32})
+    assert unknown["status"] == "FAILED"
+    assert unknown["response"]["status"] == 404
 
 
 def test_stream_open_returns_snapshot_and_attaches(bridge, runtime):
@@ -101,7 +148,8 @@ def test_only_intended_methods_are_exposed_to_js(bridge):
     public = {n for n in dir(bridge) if not n.startswith("_")}
     assert {n for n in public if callable(getattr(bridge, n))} == {
         "request", "stream_open", "open_popout", "save_file", "download",
-        "copy_text", "open_external", "get_app_info",
+        "copy_text", "open_external", "get_app_info", "start_evidence_pack",
+        "get_evidence_pack_job",
     }
     for name in public:
         value = getattr(bridge, name)

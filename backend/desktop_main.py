@@ -124,6 +124,7 @@ def shutdown(ctx: AppContext) -> None:
     for step in (
         lambda: ctx.push.stop(),
         lambda: ctx.gateway and ctx.gateway.stop(timeout=3.0),
+        lambda: ctx.bridge._close(),
         lambda: ctx.runtime.stop(timeout=5.0),
     ):
         try:

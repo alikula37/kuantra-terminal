@@ -11,13 +11,17 @@ import logging
 import mimetypes
 import re
 import sys
+import threading
+import time
+import uuid
 import webbrowser
 from asyncio import CancelledError
 from concurrent.futures import CancelledError as FuturesCancelledError
 from concurrent.futures import TimeoutError as FuturesTimeoutError
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import Callable, Optional
-from urllib.parse import unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
 
 from app.core.input_limits import MAX_BRIDGE_BODY_BYTES, MAX_BRIDGE_FILES, MAX_BRIDGE_TEXT_BYTES
 from app.core.paths import DATA_DIR, is_frozen
@@ -45,6 +49,24 @@ def _is_text(content_type: str) -> bool:
 
 def _passthrough_headers(headers) -> dict:
     return {k: v for k, v in headers.items() if k.lower() not in HOP_BY_HOP_HEADERS}
+
+
+def _bridge_response(resp) -> dict:
+    headers = _passthrough_headers(resp.headers)
+    content_type = resp.headers.get("content-type", "")
+    if _is_text(content_type) or not resp.content:
+        return {
+            "status": resp.status,
+            "headers": headers,
+            "body": resp.content.decode("utf-8", errors="replace"),
+            "body_b64": None,
+        }
+    return {
+        "status": resp.status,
+        "headers": headers,
+        "body": None,
+        "body_b64": base64.b64encode(resp.content).decode("ascii"),
+    }
 
 
 def _bridge_error(detail: str, status: int = 400) -> dict:
@@ -101,6 +123,10 @@ def _safe_filename(value: str, *, default: str = "download") -> str:
 
 
 class DesktopBridge:
+    _MAX_EVIDENCE_PACK_JOBS = 4
+    _EVIDENCE_PACK_JOB_TTL_SECONDS = 300.0
+    _EVIDENCE_PACK_JOB_ID = re.compile(r"^[0-9a-f]{32}$")
+
     def __init__(
         self,
         runtime: BackendRuntime,
@@ -120,6 +146,12 @@ class DesktopBridge:
         self._dialog_window = dialog_window_getter
         self._stream_attached = False
         self._popouts: dict[str, object] = {}
+        # Evidence Pack generation can verify a large append-only chain. Keep that work off the
+        # pywebview bridge thread, but bound retained jobs so an aborted UI cannot grow memory.
+        self._evidence_jobs: dict[str, tuple[Future, float]] = {}
+        self._evidence_jobs_lock = threading.Lock()
+        self._evidence_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="kuantra-evidence")
+        self._evidence_jobs_closed = False
 
     # ---- HTTP-shaped requests, no HTTP ---------------------------------------------------
     def request(self, req: dict) -> dict:
@@ -206,11 +238,85 @@ class DesktopBridge:
             logger.warning("request timed out: %s %s", req.get("method", "GET"), req.get("path", "/"))
             return {"status": 504, "headers": {"content-type": "application/json"},
                     "body": '{"detail":"backend timed out"}', "body_b64": None}
-        headers = _passthrough_headers(resp.headers)
-        content_type = resp.headers.get("content-type", "")
-        if _is_text(content_type) or not resp.content:
-            return {"status": resp.status, "headers": headers, "body": resp.content.decode("utf-8", errors="replace"), "body_b64": None}
-        return {"status": resp.status, "headers": headers, "body": None, "body_b64": base64.b64encode(resp.content).decode("ascii")}
+        return _bridge_response(resp)
+
+    # ---- asynchronous Evidence Pack reads ------------------------------------------------
+    def start_evidence_pack(self, spec: dict) -> dict:
+        """Queue one bounded read without holding the pywebview bridge thread.
+
+        This is deliberately a read-only, internal route. It does not add a ledger event type,
+        connector, or execution capability; it only changes how the existing Evidence Pack read
+        is scheduled in the desktop shell.
+        """
+        try:
+            if not isinstance(spec, dict):
+                raise ValueError("evidence job spec must be an object")
+            if set(spec) - {"trade_id"}:
+                raise ValueError("evidence job fields are not allowed")
+            trade_id = _bounded_text(spec.get("trade_id"), label="trade_id", limit=256).strip()
+            if not trade_id:
+                raise ValueError("trade_id must not be empty")
+            path = _safe_backend_path(f"/api/v1/trades/{quote(trade_id, safe='')}/evidence")
+        except (TypeError, ValueError) as exc:
+            return {"job_id": "", "status": "REJECTED", "response": _bridge_error(str(exc))}
+
+        now = time.monotonic()
+        with self._evidence_jobs_lock:
+            if self._evidence_jobs_closed:
+                return {"job_id": "", "status": "REJECTED", "response": _bridge_error("backend unavailable", 503)}
+            for job_id, (future, created_at) in list(self._evidence_jobs.items()):
+                if future.done() and now - created_at > self._EVIDENCE_PACK_JOB_TTL_SECONDS:
+                    self._evidence_jobs.pop(job_id, None)
+            if len(self._evidence_jobs) >= self._MAX_EVIDENCE_PACK_JOBS:
+                return {"job_id": "", "status": "REJECTED", "response": _bridge_error("evidence job queue is full", 429)}
+            job_id = uuid.uuid4().hex
+            try:
+                future = self._evidence_executor.submit(self._runtime.call, "GET", path)
+            except RuntimeError:
+                return {"job_id": "", "status": "REJECTED", "response": _bridge_error("backend unavailable", 503)}
+            self._evidence_jobs[job_id] = (future, now)
+        return {"job_id": job_id, "status": "PENDING"}
+
+    def get_evidence_pack_job(self, spec: dict) -> dict:
+        try:
+            if not isinstance(spec, dict):
+                raise ValueError("evidence job poll must be an object")
+            if set(spec) - {"job_id"}:
+                raise ValueError("evidence job poll fields are not allowed")
+            job_id = _bounded_text(spec.get("job_id"), label="job_id", limit=64)
+            if not self._EVIDENCE_PACK_JOB_ID.fullmatch(job_id):
+                raise ValueError("job_id is invalid")
+        except (TypeError, ValueError) as exc:
+            return {"job_id": "", "status": "FAILED", "response": _bridge_error(str(exc))}
+
+        with self._evidence_jobs_lock:
+            entry = self._evidence_jobs.get(job_id)
+        if entry is None:
+            return {"job_id": job_id, "status": "FAILED", "response": _bridge_error("evidence job not found", 404)}
+        future, _created_at = entry
+        if not future.done():
+            return {"job_id": job_id, "status": "PENDING"}
+
+        try:
+            response = _bridge_response(future.result())
+            status = "COMPLETED"
+        except (RuntimeStopped, CancelledError, FuturesCancelledError):
+            response = _bridge_error("backend unavailable", 503)
+            status = "FAILED"
+        except Exception:  # noqa: BLE001 - do not expose worker internals to the UI
+            logger.exception("Evidence Pack job failed")
+            response = _bridge_error("evidence job failed", 500)
+            status = "FAILED"
+        with self._evidence_jobs_lock:
+            self._evidence_jobs.pop(job_id, None)
+        return {"job_id": job_id, "status": status, "response": response}
+
+    def _close(self) -> None:
+        with self._evidence_jobs_lock:
+            if self._evidence_jobs_closed:
+                return
+            self._evidence_jobs_closed = True
+        self._evidence_executor.shutdown(wait=False, cancel_futures=True)
 
     # ---- live stream -----------------------------------------------------------------------
     def stream_open(self) -> dict:

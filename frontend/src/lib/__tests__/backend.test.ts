@@ -107,6 +107,39 @@ describe("apiFetch in desktop mode", () => {
     expect(apiUrl("/api/v1/x")).toBe("/api/v1/x");
     expect(apiBase()).toBe("");
   });
+
+  it("uses a bounded background job for desktop Evidence Pack reads", async () => {
+    const start_evidence_pack = vi.fn(async (spec: any) => ({ job_id: "a".repeat(32), status: "PENDING", spec }));
+    let polls = 0;
+    const get_evidence_pack_job = vi.fn(async () => {
+      polls += 1;
+      return polls === 1
+        ? { job_id: "a".repeat(32), status: "PENDING" }
+        : { job_id: "a".repeat(32), status: "COMPLETED", response: { status: 200, headers: { "content-type": "application/json" }, body: JSON.stringify({ event_count: 2 }), body_b64: null } };
+    });
+    installBridge({ request: vi.fn(), start_evidence_pack, get_evidence_pack_job });
+    const { fetchEvidencePack } = await import("../backend");
+
+    const result = await fetchEvidencePack("TRD/1");
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ event_count: 2 });
+    expect(start_evidence_pack).toHaveBeenCalledWith({ trade_id: "TRD/1" });
+    expect(get_evidence_pack_job).toHaveBeenCalledWith({ job_id: "a".repeat(32) });
+  });
+
+  it("aborts a pending desktop Evidence Pack job", async () => {
+    const controller = new AbortController();
+    installBridge({
+      request: vi.fn(),
+      start_evidence_pack: vi.fn(async () => ({ job_id: "b".repeat(32), status: "PENDING" })),
+      get_evidence_pack_job: vi.fn(() => new Promise(() => {})),
+    });
+    const { fetchEvidencePack } = await import("../backend");
+    const pending = fetchEvidencePack("TRD-1", controller.signal);
+    await Promise.resolve();
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  });
 });
 
 describe("apiFetch in browser dev mode", () => {

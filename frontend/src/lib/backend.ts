@@ -5,7 +5,7 @@
  * window.pywebview.api.request(); the reply is rebuilt into a real Response.
  * Browser dev (vite + `python backend/main.py`): plain fetch against DEFAULT_BASE.
  */
-import { getBridge, type BridgeFile } from "./bridge";
+import { getBridge, type BridgeFile, type BridgeResponse } from "./bridge";
 
 export const DEFAULT_BASE = "http://127.0.0.1:8000";
 
@@ -77,6 +77,12 @@ function raceAbort<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
 // 101 is intentionally absent: the clamp below already rewrites anything under 200 to 500.
 const NULL_BODY_STATUS = new Set([204, 205, 304]);
 
+function bridgeResponseToResponse(result: BridgeResponse): Response {
+  const status = result.status >= 200 && result.status <= 599 ? result.status : 500;
+  const payload: BodyInit | null = NULL_BODY_STATUS.has(status) ? null : result.body_b64 != null ? base64ToBytes(result.body_b64) : result.body ?? "";
+  return new Response(payload, { status, headers: result.headers });
+}
+
 export async function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
   const api = getBridge();
   // A third-party absolute URL (an exchange API, a CDN) is not ours to route through the bridge:
@@ -110,7 +116,48 @@ export async function apiFetch(input: string, init: RequestInit = {}): Promise<R
   const call = api.request({ method, path, query, headers, body, body_b64: bodyB64, files, fields });
   const result = init.signal ? await raceAbort(call, init.signal) : await call;
 
-  const status = result.status >= 200 && result.status <= 599 ? result.status : 500;
-  const payload: BodyInit | null = NULL_BODY_STATUS.has(status) ? null : result.body_b64 != null ? base64ToBytes(result.body_b64) : result.body ?? "";
-  return new Response(payload, { status, headers: result.headers });
+  return bridgeResponseToResponse(result);
+}
+
+const EVIDENCE_PACK_JOB_TIMEOUT_MS = 120_000;
+const EVIDENCE_PACK_JOB_POLL_MS = 25;
+
+function localErrorResponse(status: number, detail: string): Response {
+  return new Response(JSON.stringify({ detail }), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+/**
+ * Load an Evidence Pack without synchronously occupying the native pywebview bridge thread.
+ * Browser development keeps the ordinary fetch path; only the desktop bridge uses the job API.
+ */
+export async function fetchEvidencePack(tradeId: string, signal?: AbortSignal): Promise<Response> {
+  const path = `/api/v1/trades/${encodeURIComponent(tradeId)}/evidence`;
+  const api = getBridge();
+  if (!api || typeof api.start_evidence_pack !== "function" || typeof api.get_evidence_pack_job !== "function") {
+    return apiFetch(apiUrl(path), { signal });
+  }
+
+  const start = signal
+    ? await raceAbort(api.start_evidence_pack({ trade_id: tradeId }), signal)
+    : await api.start_evidence_pack({ trade_id: tradeId });
+  if (start.status !== "PENDING") {
+    return start.response ? bridgeResponseToResponse(start.response) : localErrorResponse(503, "Evidence Pack job was not accepted.");
+  }
+
+  const deadline = Date.now() + EVIDENCE_PACK_JOB_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const job = signal
+      ? await raceAbort(api.get_evidence_pack_job({ job_id: start.job_id }), signal)
+      : await api.get_evidence_pack_job({ job_id: start.job_id });
+    if (job.status !== "PENDING") {
+      return job.response ? bridgeResponseToResponse(job.response) : localErrorResponse(502, "Evidence Pack job returned no response.");
+    }
+    const pause = new Promise<void>((resolve) => window.setTimeout(resolve, EVIDENCE_PACK_JOB_POLL_MS));
+    if (signal) await raceAbort(pause, signal);
+    else await pause;
+  }
+  return localErrorResponse(504, "Evidence Pack job timed out.");
 }

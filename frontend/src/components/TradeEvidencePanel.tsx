@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FileCheck2, Hash, X, XCircle } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
-import { apiFetch, apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl, fetchEvidencePack } from "../lib/backend";
 import { EvidenceEvent, TradeEvidencePack } from "../types";
 import { useDialogAccessibility } from "../hooks/useDialogAccessibility";
 
@@ -93,7 +93,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
     setError(null);
     setCancelled(false);
     setPack(null);
-    apiFetch(apiUrl(`/api/v1/trades/${encodeURIComponent(tradeId)}/evidence`), { signal: controller.signal })
+    fetchEvidencePack(tradeId, controller.signal)
       .then(async (response) => {
         if (!response.ok) {
           let detail = `Evidence Pack request failed (${response.status}).`;
