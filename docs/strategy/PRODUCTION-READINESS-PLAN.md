@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.31
+version: 1.0.32
 status: Proposed
 date: 2026-09-10
-reviewed_commit: 9733874
+reviewed_commit: 657922b
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -440,6 +440,15 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
   güncellendi. N05 gerçek Apple hesabı, signing/notarization, N03/N06 veya H05
   commercial gate'lerini kapatmıyor. `9733874` Mac local-CI, mounted smoke ve
   beklenen ad-hoc N05 blocked kanıtının source commit'idir.
+
+### 1.0.32 — 2026-09-10
+
+- N05 package path, varsayılan ad-hoc geliştirme akışını korurken explicit
+  `developer-id` modunda `Developer ID Application:` identity prefix'i, hardened
+  runtime, optional entitlements ve codesign doğrulamasını fail-closed uygular.
+  `657922b` ile macOS arm64 local-CI, exact mounted-DMG smoke ve beklenen ad-hoc
+  N05 `BLOCKED` preflight kanıtı yeniden üretildi. Gerçek Apple signing,
+  notarization, Gatekeeper ve stapled-ticket kapıları owner/Apple host gerektirir.
 
 ### 1.0.28 — 2026-09-09
 
