@@ -86,7 +86,9 @@ def _sha256_path(path: Path) -> str:
             digest.update(b"\0")
         elif child.is_file():
             digest.update(b"file\0" + relative + b"\0")
-            digest.update(_sha256_file(child).encode("ascii"))
+            with child.open("rb") as source:
+                for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(chunk)
             digest.update(b"\0")
     return digest.hexdigest()
 
