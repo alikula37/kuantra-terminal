@@ -3,10 +3,10 @@
 
 ```yaml
 work_package: H07
-version: 3.0.0
+version: 3.1.0
 status: InProgress
 date: 2026-09-09
-baseline_commit: 5a70f8b
+baseline_commit: 4e761fa
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06
@@ -94,6 +94,17 @@ Bu doküman değişikliği runtime davranışı değiştirmez; `670ee90` ölçü
 artifact'a aittir. H05 lisans/notices ve Dependabot ertelemesi, platform host
 kanıtları ve ürünün read-only forensics kapsamı korunur.
 
+Bu sıranın ilk bounded uygulaması `e3aacc8` ile başladı ve `4e761fa` ile tamamlandı:
+Evidence Pack read bridge thread'inden ayrıldı, tek worker process içinde izole
+edildi, pool başlangıcı lazy yapıldı ve worker-local verifier/adaptor state'i
+bounded biçimde yeniden kullanıldı. Ardından aynı artifact ile planlanan iki-run
+`1k/10k/100k` kampanyası ve native UI/concurrent-read ölçümü tamamlandı. 100k cold
+operation p95 `<2s` hedefini karşılamadığı ve UI timer-gap percentile'ları
+kanıtlanmadığı için sonraki otomatik mikro-optimizasyon döngüsü başlatılmayacaktır.
+Yeni bir teknik deneme ancak yeni, ölçülebilir bir darboğaz hipoteziyle ayrı bir
+bounded paket olarak seçilebilir; aksi yönde owner-approved measurement/resource/
+support disposition gerekir.
+
 ## Red test kapsamı
 
 - Aynı seed ve aynı source commit ile dataset üretiminin, import/query/rebuild ve
@@ -156,7 +167,14 @@ pakete eklenmeyecektir.
   kanıtın geçerli olduğu Mac arm64 + synthetic 100k + iki-run/sample-sayısı
   sınırını açıkça kaydeder; production SLO, maksimum supported history veya
   commercial support limit kararı vermez. Owner-approved resource/support
-  disposition halen açık olduğundan kriter açık kalır.
+  disposition halen açık olduğundan kriter açık kalır. `4e761fa` ile aynı
+  packaged executable üzerinde iki run × `1k/10k/100k`, her modda 20 operation
+  örneği (`cold`, `warm`, `append-tail`, `projection-rebuild`) yenilendi; toplam
+  366 packaged manifest ve 120/120 geçerli projection sample kaydedildi. Güncel
+  100k cold operation p95 `2321.8877 / 2332.4201 ms`, projection operation p95
+  `5141.0606 / 5143.9399 ms`, projection process peak RSS yaklaşık
+  `400.4 / 400.5 MB` ve isolated temp footprint `388370264 B` oldu. Bu ölçümler
+  `<2s>` hedefini veya production/resource/support disposition'ı kapatmaz.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
 - [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
@@ -174,7 +192,10 @@ pakete eklenmeyecektir.
   uygulanmıştır. Safe-persona görünür core read listesi ayrıca `c095025` ile audit
   edilmiştir; `kuantra_quant` altında deneysel workspace/Chart Vision yüzeyleri
   görünmez. H07'nin cold full-chain performans ve kalan resource acceptance boşlukları
-  halen açıktır.
+  halen açıktır. `e3aacc8`→`4e761fa` ile native Evidence Pack read'i bounded async
+  job ve tek izole worker process arkasına alınmış, worker pool lazy lifecycle ve
+  bounded warm-state reuse kazanmıştır; bu UI isolation evidence'i bir RAM/support
+  limiti veya responsiveness PASS değildir.
 - [x] Backend correctness/performance regression suite ve frontend loading/cancel/error
   truth testleri geçiyor; yeni capability veya live execution yolu açılmıyor.
 - [x] Aynı host ve aynı source/dataset girdisinde rapor snapshot/hash deterministik;
@@ -615,6 +636,112 @@ artifact. The default local-CI desktop smoke attempted the existing public
 market-data behavior; that is separate from this network-disabled synthetic
 campaign and is not runtime-offline proof.
 
+### 2026-09-09 desktop worker isolation, cache reuse ve final ölçüm — 4e761fa
+
+The selected bounded implementation sequence was completed across `e3aacc8`,
+`dfa7252`, `5b82473` and `4e761fa`. The native Evidence Pack read now uses a
+strictly validated asynchronous bridge job, a single isolated worker process and
+a bounded four-job/300-second retention window. The process is created lazily,
+closed with the desktop runtime and reconstructs only the existing read adapters;
+it does not start the application runtime, connector or market stream. A small
+process-local adapter/verifier cache reuses warm state. This keeps heavy forensic
+work away from the bridge/UI process without changing the canonical ledger,
+projection, correction lineage, schema, funding/transfer boundary or authority
+model. The worker is a read-side implementation boundary, not a production RAM
+limit or support promise.
+
+Red→green evidence: the new bridge/job contract tests first failed because the
+API did not exist. After implementation the focused desktop bridge suite passed
+`12/12`, the frontend backend adapter suite `18/18`, and the relevant desktop,
+H07 and packaged-worker backend set `86/86`. The full backend suite passed
+`764` tests with two deprecation warnings; the full frontend suite passed `104`
+tests in `25` files; frontend production build and i18n parity passed `608/608`.
+
+The locked local gate was:
+
+```text
+uv run --offline --no-project --with-requirements backend/requirements.lock python scripts/run_local_ci.py
+```
+
+It returned **MERGE READY** with 13/13 steps on macOS 26.6.2 arm64 (Darwin
+25.6.0), Python 3.11.16, Node v20.20.2, npm 10.8.2, uv 0.12.10 and PyInstaller
+6.22.2. The local-CI report file SHA-256 is
+`28f13f08bafd3fa08dd211f9a30a34b3ce0b012fae69896bc8773b08314c17da`; its
+development provenance is `COMPLETE`, tracked source tree is clean, executable
+SHA-256 is
+`4052c8635f7dc1784ea328d52e3d66414476938b38a4b4210e045626df6d5f44`, and the
+`.app` tree SHA-256 is
+`92839bb06ec755d340e6368bc2643373ca6051a14051133c1efb8c44053ec843`.
+The local-CI smoke report SHA-256 is
+`dc5808335cb7002dd6504722726438add28342b75c34cbf9d16b5b655e2b1f08`.
+
+The packaged campaign used this command and a new ignored evidence directory:
+
+```text
+.venv/bin/python scripts/run_h07_measurement_campaign.py --executable "dist/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal" --artifact "dist/Kuantra Terminal.app" --output-dir artifacts/evidence/h07/full-chain-4e761fa-20260909 --sizes 1000,10000,100000 --runs 2 --cold-samples 20 --warm-samples 20 --append-samples 20 --projection-rebuild-samples 20 --batch-size 1000 --timeout 1800
+```
+
+The same explicit arm64 executable was run in two independent runs with 20
+operation samples for each of `cold`, `warm`, `append-tail` and
+`projection-rebuild` at each size. This produced 366 packaged manifests (cold,
+append-tail and projection-rebuild use fresh processes; warm uses one process
+per size/run after an excluded warm-up). All 120 projection-rebuild samples were
+valid, wrote the expected projections and retained the same deterministic
+snapshot. Operation p95 values are:
+
+| Synthetic history | `cold` R1 / R2 (ms) | `warm` R1 / R2 (ms) | `append-tail` R1 / R2 (ms) | `projection-rebuild` R1 / R2 (ms) |
+|---:|---:|---:|---:|---:|
+| 1,000 | 27.5070 / 27.9079 | 5.2767 / 5.2673 | 0.9973 / 0.9317 | 56.7655 / 52.7823 |
+| 10,000 | 234.3171 / 235.0934 | 15.8222 / 19.6310 | 3.2873 / 3.2656 | 515.8394 / 514.9843 |
+| 100,000 | 2321.8877 / 2332.4201 | 140.3421 / 140.4340 | 25.2783 / 25.2622 | 5141.0606 / 5143.9399 |
+
+For 100k, process/resource evidence is:
+
+| Mode | Process p95 R1 / R2 (ms) | Peak process RSS R1 / R2 (MB) | Peak isolated temp R1 / R2 (B) |
+|---|---:|---:|---:|
+| `cold` | 3303.9205 / 3318.6734 | 163.5000 / 163.4531 | 287690752 / 287690752 |
+| `warm` | UNKNOWN (n=1) / UNKNOWN (n=1) | 163.3281 / 163.3281 | 287690752 / 287690752 |
+| `append-tail` | 3374.3359 / 3361.3175 | 163.5312 / 163.4688 | 287777304 / 287773184 |
+| `projection-rebuild` | 6217.4225 / 6208.4966 | 400.4375 / 400.5156 | 388370264 / 388370264 |
+
+The current cold p95 remains above the `<2s>` planning target. The values are
+lower than the preceding `670ee90` campaign, but OS cache is `UNCONTROLLED`, so
+the runs do not prove an isolated causal percentage. The campaign report file
+SHA-256 is
+`108df12331909af500723427096cb828d2a0c92bd019105be4693ac3a09d605f`; its
+embedded report SHA-256 is
+`608424a3e2e6fb881aca309fefcd1cec5c763899b9e12b5fe211b7b2481837fb`; and the
+campaign manifest SHA-256 is
+`b2f96cbcd8c2eb3b435173dd4aae035b9f829b58424259f8f7332ce3a6ee2b9a`. The
+campaign checkout is `4e761fa028f92f72de8305516c2b844f130365cf` with tracked
+source tree SHA-256
+`07f70a19d29b0e4856e3fa376447d9e04f00d61478840bbf3e60ac0ce4f1d1a1`, backend
+lock SHA-256
+`6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` and
+frontend lock SHA-256
+`b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
+The campaign contract is `real_data=false`, `credentials=false`, `network=false`,
+`live_execution=false`, `support_limit_claim=false`, with
+`artifact_executed=true`, `source_to_binary_attestation=NOT_VERIFIED` and
+`release_provenance=UNKNOWN`.
+
+The native UI report was run against a clean 100k synthetic fixture with
+`KUANTRA_MARKET_DATA_ENABLED=false` and the explicit current executable. React,
+bridge, health, push-sink and plugin-boundary checks passed; loading was observed;
+concurrent health/read calls returned HTTP 200; and the renderer was actual native
+`wkwebview`. The cold sample took 4000 ms with a maximum observed timer gap of
+1002 ms, while the warm sample took 819 ms with a 688 ms maximum gap. The report
+correctly retains `process_cold=false`, `percentiles=UNKNOWN_SINGLE_SAMPLE` and
+`network_isolation=NOT_VERIFIED`; these single-run timer observations are
+diagnostic and are not a UI responsiveness PASS. Native report SHA-256 is
+`e04d10148e7f7bf7edffbafbbffde8faa0ddafe3d779246fde0fd0e02b0aa95d`.
+
+Accordingly the performance/resource acceptance criterion remains unchecked:
+the `<2s>` target, a statistically sufficient UI responsiveness boundary and an
+owner-approved production/resource/support disposition are still open. No
+maximum supported history, RAM limit, commercial support limit, release
+provenance, DMG/signing/notarization, Windows or Linux claim is inferred.
+
 ### 2026-09-09 doğruluk düzeltmesi — a97499b
 
 `5a70f8b` payload/provenance hızlı kabulü, stdlib canonical sözleşmesinin reddettiği
@@ -939,14 +1066,18 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
   Bu nedenle H07 tamamlanmış veya production-ready değildir.
 
 Process-level RSS/disk capture ve cold 100k projection rebuild maliyeti artık
-`30be78d`/`67eafa2`/`670ee90` ile aynı packaged-process sınırında ölçülmüştür.
-`670ee90` canonical validation/read tekrarlarını azaltmıştır; temiz kampanyada
-100k cold Evidence Pack operation p95'i `2468.2571 / 2444.9360 ms`, process p95'i
-`3481.5726 / 3448.4742 ms`, projection-rebuild process p95'i
-`6747.8792 / 6822.3076 ms` olmuştur. 54/54 manifestte RSS ve izole temporary
-disk `MEASURED`, 40/40 projection rebuild sample'ı valid ve aynı determinism
-snapshot'ındadır. OS page cache `UNCONTROLLED` olduğu için artifact'lar arasında
-izole nedensel yüzde veya destek limiti iddiası yapılmamıştır.
+`30be78d`/`67eafa2`/`670ee90`/`4e761fa` ile aynı packaged-process sınırında
+ölçülmüştür. Güncel `4e761fa` campaign'inde 366 packaged manifest, 120/120
+geçerli projection rebuild sample'ı ve aynı determinism snapshot'ı vardır; 100k
+cold Evidence Pack operation p95'i `2321.8877 / 2332.4201 ms`, process p95'i
+`3303.9205 / 3318.6734 ms`, projection-rebuild operation p95'i
+`5141.0606 / 5143.9399 ms` ve process p95'i `6217.4225 / 6208.4966 ms` oldu.
+Projection process peak RSS `400.4375 / 400.5156 MB`, isolated temporary disk
+`388370264 B` olarak ölçüldü. Native worker-cache UI raporu loading ve concurrent
+health/read davranışını gösterdi; ancak timer-gap percentile'ları
+`UNKNOWN_SINGLE_SAMPLE` ve network isolation `NOT_VERIFIED` kaldı. OS page cache
+`UNCONTROLLED` olduğu için artifact'lar arasında izole nedensel yüzde veya destek
+limiti iddiası yapılmamıştır.
 
 Bu paket için ölçüm sınırı açıkça yazılmıştır: Mac arm64 packaged executable,
 `H07-SYNTHETIC-V1` 100k dataset, iki run, tanımlı sample sayıları, network/
@@ -955,9 +1086,9 @@ reproducible development evidence sınırıdır; production SLO, maximum support
 history, resource cap veya commercial support limit değildir. Owner-approved
 production/resource/support disposition ayrı H07 gate olarak kalır. `<2s>`
 planning target'ı sessizce değiştirilmemiştir ve güncel cold p95 hâlâ hedefin
-üzerindedir. Önümüzdeki güvenli seçenekler başka bir bounded red test →
-implementation optimizasyonu veya açık owner kararıdır; H07 bu kararlar
-kapanmadan tamamlanmış, production-ready ya da desteklenen veri boyutu olarak
-işaretlenmeyecektir. `f94ba8e` ve `5a70f8b` source-process iyileştirmeleri
+üzerindedir. Worker isolation paketi tamamlanmıştır; H07 şimdi yeni bir bounded
+darboğaz hipotezi veya açık owner measurement/support kararı bekler. H07 bu
+karar kapanmadan tamamlanmış, production-ready ya da desteklenen veri boyutu
+olarak işaretlenmeyecektir. `f94ba8e` ve `5a70f8b` source-process iyileştirmeleri
 historical diagnostic olarak kalır; packaged cold-chain kanıtının yerine
 geçmez.
