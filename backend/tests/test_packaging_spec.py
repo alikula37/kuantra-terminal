@@ -25,7 +25,7 @@ def test_spec_and_scripts_exist():
     assert (ROOT / "packaging" / "kuantra.spec").is_file()
     for f in ("icon.icns", "icon.ico", "icon.png"):
         assert (ROOT / "packaging" / "icons" / f).is_file(), f
-    for f in ("build_desktop.py", "smoke_desktop.py", "smoke_macos_dmg.py", "run_n05_macos_distribution_preflight.py", "check_provenance.py", "package_macos.sh", "package_windows.sh", "package_linux.sh"):
+    for f in ("build_desktop.py", "smoke_desktop.py", "smoke_macos_dmg.py", "run_n05_macos_distribution_preflight.py", "notarize_macos.sh", "check_provenance.py", "package_macos.sh", "package_windows.sh", "package_linux.sh"):
         assert (ROOT / "scripts" / f).is_file(), f
 
 
@@ -89,6 +89,23 @@ def test_n05_distribution_preflight_is_read_only_and_secretless():
         '"signing_secret_read": False',
     ):
         assert needle in script
+
+
+def test_macos_notarization_wrapper_is_explicit_and_secretless():
+    script = (ROOT / "scripts" / "notarize_macos.sh").read_text()
+    for needle in (
+        "--submit",
+        "KUANTRA_MACOS_NOTARY_PROFILE",
+        "notarytool submit",
+        "--keychain-profile",
+        "stapler staple",
+        "smoke_macos_dmg.py",
+        "run_n05_macos_distribution_preflight.py",
+        "KUANTRA_MARKET_DATA_ENABLED=false",
+    ):
+        assert needle in script
+    for forbidden in ("--password", "--apple-id", "--api-key", "PRIVATE KEY"):
+        assert forbidden not in script
 
 
 def test_macos_migration_contract_is_checked_in():
