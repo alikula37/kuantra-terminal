@@ -194,7 +194,7 @@ class DesktopBridge:
         # pywebview bridge thread, but bound retained jobs so an aborted UI cannot grow memory.
         self._evidence_jobs: dict[str, tuple[Future, float]] = {}
         self._evidence_jobs_lock = threading.Lock()
-        self._evidence_executor = ProcessPoolExecutor(max_workers=1)
+        self._evidence_executor: Optional[ProcessPoolExecutor] = None
         self._evidence_jobs_closed = False
 
     # ---- HTTP-shaped requests, no HTTP ---------------------------------------------------
@@ -328,6 +328,8 @@ class DesktopBridge:
                 return {"job_id": "", "status": "REJECTED", "response": _bridge_error("backend unavailable", 503)}
             job_id = uuid.uuid4().hex
             try:
+                if self._evidence_executor is None:
+                    self._evidence_executor = ProcessPoolExecutor(max_workers=1)
                 future = self._evidence_executor.submit(
                     _evidence_pack_worker,
                     db_path,
@@ -380,7 +382,10 @@ class DesktopBridge:
             if self._evidence_jobs_closed:
                 return
             self._evidence_jobs_closed = True
-        self._evidence_executor.shutdown(wait=False, cancel_futures=True)
+            executor = self._evidence_executor
+            self._evidence_executor = None
+        if executor is not None:
+            executor.shutdown(wait=True, cancel_futures=True)
 
     # ---- live stream -----------------------------------------------------------------------
     def stream_open(self) -> dict:
