@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.30
+version: 1.0.31
 status: Proposed
 date: 2026-09-10
-reviewed_commit: 3f4ba82
+reviewed_commit: this change
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -207,7 +207,7 @@ izleme yaklaşımı NIST SSDF'den yararlanır; bu plan bir standart sertifikası
 | N02 | Mac smoke actual WKWebView/controller hazır; preflight ve report validation fail-closed; DMG içinden explicit executable smoke |
 | N03 | Temiz ikinci host/profilde quarantine dahil install → launch → import/review → close/reopen; geliştirici cache/data'sına bağımlı değil; final validation'a ertelendi |
 | N04 | Update önceki supported build'den; interrupted update; uninstall veriyi korur; restore ve schema rollback politikası kullanıcıya açık; bounded non-release audit tamamlandı |
-| N05 | Dağıtım imzası/notarization süreci, minimal entitlements, ticket/manifest verification, secretsiz signing logs |
+| N05 | Exact DMG üzerinde read-only signing/notarization preflight; minimal entitlements, ticket/manifest verification ve secretsiz signing logs. Actual Developer ID/notary kanıtı owner/Apple host kapısıdır |
 | N06 | Windows P0-WP11 host blocker ve Linux native final artifact suite ayrı host'larda; OS/arch/version support tablosu kanıtla eşleşir |
 
 Mac ad-hoc geliştirme DMG'si ticari distribution-signed artifact değildir. Apple'ın
@@ -385,8 +385,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     import→review→export→reopen acceptance audit; tamamlandı/arşivlendi `e042790`.
 19. N03–N06 owner/host bağımlılıkları çözülerek sırasıyla ilerler. N03 host çalıştırması
     final macOS distribution/pilot validation'a ertelenmiştir; N04 bounded audit'i
-    tamamlanıp arşivlenmiştir. N03, pilot/release öncesi yeniden açılacak tek seçili
-    final-validation paketidir.
+    tamamlanıp arşivlenmiştir. N05'in read-only artifact preflight kodu N03 host kanıtı
+    beklenmeden hazırlanabilir; gerçek Developer ID/notary ve N03/N06 kanıtı yine
+    final-validation kapılarında zorunludur.
 
 ### 2026-09-10 onaylanan kalan uygulama sırası
 
@@ -404,12 +405,14 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 4. P1-WP27 ile G0–G2 supported matrix, bağımsız oracle ve packaged
    import→review→export→reopen kabul denetimini tamamla; B2 kapsamını kanıtla
    netleştir. (Tamamlandı/arşivlendi `e042790`; bounded Mac kanıtı, release kanıtı değil.)
-5. N04 sentetik/manual update, interrupted-update recovery ve uninstall veri koruma
-   audit'ini tamamla/arşivle. N03 temiz Mac profil/ikinci host install-lifecycle
-   kanıtını son macOS distribution/pilot validation kapısında çalıştır; host kanıtı
-   gelene kadar `DEFERRED/HOST_REQUIRED` kalır. Ardından N05 ve N06 sırasını koru.
-6. Ticari dağıtım öncesi H05 license/notices/dependency disposition owner kapısını
-   yeniden aç; N05 signing/notarization sonrası final artifact'i yeniden doğrula.
+5. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son macOS
+   distribution/pilot validation kapısında çalıştır; host kanıtı gelene kadar
+   `DEFERRED/HOST_REQUIRED` kalır. N04 sentetik/manual update, interrupted-update
+   recovery ve uninstall veri koruma audit'i tamamlandı/arşivlendi.
+6. N05 exact-DMG read-only signing/notarization preflight kod kapısını uygula; gerçek
+   Developer ID/hardened-runtime/Gatekeeper/stapled-ticket kanıtını owner/Apple host
+   erişimiyle al. Ticari dağıtım öncesi H05 license/notices/dependency disposition
+   owner kapısını ayrıca yeniden aç; N05 bu kararı varsaymaz.
 7. N06 Windows/Linux host kanıtı; G5 consent/metrik kararları sonrası formative ve
    kontrollü pilot; G6–G7 owner release kararı ve sınırlı rollout.
 

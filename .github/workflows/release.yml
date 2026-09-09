@@ -123,6 +123,7 @@ jobs:
               if [ ! -f "$dmg" ]; then dmg="dist/Kuantra-Terminal-${VERSION}-x64.dmg"; fi
               [ -f "$dmg" ] || { echo "expected DMG missing: $dmg" >&2; exit 1; }
               python scripts/smoke_macos_dmg.py --dmg "$dmg" --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-macos.json
+              python scripts/run_n05_macos_distribution_preflight.py --dmg "$dmg" --smoke-report dist/final-smoke-macos.json --output dist/n05-macos-distribution.json
               ;;
             Linux)
               appimage="dist/Kuantra-Terminal-${VERSION}-x86_64.AppImage"
@@ -140,6 +141,7 @@ jobs:
           path: |
             dist/Kuantra-Terminal-*
             dist/final-smoke-*.json
+            dist/n05-macos-distribution.json
           if-no-files-found: error
 
   publish-release:

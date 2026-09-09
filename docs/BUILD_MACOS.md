@@ -95,7 +95,31 @@ the recorded Mac .app smoke + DMG preflight is not proof of clean-machine instal
 
 ---
 
-## 6. First Launch Notes
+## 6. N05 Distribution Signing / Notarization Preflight
+
+After the exact final DMG has passed the mounted-DMG smoke, run the read-only N05
+preflight against that same DMG and its smoke report:
+
+```bash
+python scripts/run_n05_macos_distribution_preflight.py \
+  --dmg dist/Kuantra-Terminal-<version>-aarch64.dmg \
+  --smoke-report dist/final-smoke-macos.json \
+  --output dist/n05-macos-distribution.json
+```
+
+The preflight verifies the app inside a read-only mount, binds its executable and
+DMG hashes to complete release provenance, and checks Developer ID identity,
+hardened runtime, approved entitlements, Gatekeeper and the DMG's stapled ticket.
+It records only parsed public metadata and statuses; raw `codesign`, `spctl` or
+`stapler` output and signing secrets are never written. Exit `2` means the evidence
+is structurally valid but the Apple distribution gate is still blocked; the current
+ad-hoc development DMG is expected to produce that result. The command does not
+sign, upload, notarize, or access Keychain credentials.
+
+N05 PASS is only a distribution-artifact gate. It does not make the product
+production-ready, does not close N03/N06/H05, and does not authorize a release.
+
+## 7. First Launch Notes
 
 - The app is **not notarized**. On first launch users must **right-click the app → Open** and
   confirm the Gatekeeper prompt; double-clicking shows "cannot be opened".
@@ -105,7 +129,7 @@ the recorded Mac .app smoke + DMG preflight is not proof of clean-machine instal
 
 ---
 
-## 7. Data Directory
+## 8. Data Directory
 
 User data lives outside the install location so upgrades never destroy it:
 
@@ -125,7 +149,7 @@ directory merely because a clean start is intended.
 
 ---
 
-## 8. Integrations Gateway (port 8765)
+## 9. Integrations Gateway (port 8765)
 
 The optional integrations gateway can bind a loopback listener (default port 8765)
 for programs outside the app, subject to its enablement/authentication contract:
@@ -139,7 +163,7 @@ starts normally. The frontend never talks to this port.
 
 ---
 
-## 9. Development Workflow
+## 10. Development Workflow
 
 Browser dev loop (hot reload, backend on uvicorn :8000):
 
@@ -161,7 +185,7 @@ KUANTRA_DATA_DIR="$(mktemp -d)" python -m pytest backend/tests -q
 npm --prefix frontend test
 ```
 
-## 10. Windows-to-macOS data migration
+## 11. Windows-to-macOS data migration
 
 Only after real user data exists, use the credential-safe, hash-verified migration tool before restoring a real
 user directory on the Mac. It carries the canonical SQLite ledger and Parquet

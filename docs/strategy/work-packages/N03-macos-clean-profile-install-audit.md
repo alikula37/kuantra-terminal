@@ -1,4 +1,5 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
+<!-- N03 remains an open final-validation obligation; it is not the current development work package. -->
 # N03 — macOS Temiz Profil / İkinci Host Install-Lifecycle Audit
 
 ```yaml

@@ -25,7 +25,7 @@ def test_spec_and_scripts_exist():
     assert (ROOT / "packaging" / "kuantra.spec").is_file()
     for f in ("icon.icns", "icon.ico", "icon.png"):
         assert (ROOT / "packaging" / "icons" / f).is_file(), f
-    for f in ("build_desktop.py", "smoke_desktop.py", "smoke_macos_dmg.py", "check_provenance.py", "package_macos.sh", "package_windows.sh", "package_linux.sh"):
+    for f in ("build_desktop.py", "smoke_desktop.py", "smoke_macos_dmg.py", "run_n05_macos_distribution_preflight.py", "check_provenance.py", "package_macos.sh", "package_windows.sh", "package_linux.sh"):
         assert (ROOT / "scripts" / f).is_file(), f
 
 
@@ -68,6 +68,21 @@ def test_package_macos_script_builds_dmg():
 def test_macos_dmg_smoke_binds_mount_and_native_renderer():
     script = (ROOT / "scripts" / "smoke_macos_dmg.py").read_text()
     for needle in ("-readonly", "-mountpoint", "hdiutil", "wkwebview", "--artifact"):
+        assert needle in script
+
+
+def test_n05_distribution_preflight_is_read_only_and_secretless():
+    script = (ROOT / "scripts" / "run_n05_macos_distribution_preflight.py").read_text()
+    for needle in (
+        "SCHEMA_VERSION = \"N05.macos-distribution.v1\"",
+        '"-readonly"',
+        '"hdiutil"',
+        '"codesign"',
+        '"spctl"',
+        '"stapler"',
+        '"raw_output_recorded": False',
+        '"signing_secret_read": False',
+    ):
         assert needle in script
 
 
