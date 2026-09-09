@@ -148,7 +148,9 @@ boundary machine gate'i `c089cd2` ile PASS oldu. Ürün lisansı/notices ve
 default-branch Dependabot disposition geliştirme dönemi için ertelendi; bunlar ilk
 ticari/release adayı öncesi yeniden açılacak zorunlu kapılardır. H06 non-release
 privacy/data-lifecycle paketi `4270d33`/`a7b99b7` ile bounded olarak tamamlandı. H07
-bounded performance/resource-limit paketi sıradaki aktif non-release iştir; production
+bounded performance/resource-limit paketi `4e761fa`/`198e712` kanıtlarıyla
+non-release ölçüm sınırı olarak tamamlandı ve arşivlendi. Sıradaki aktif non-release
+iş P1-WP27 G0–G2 supported-matrix ve packaged value-chain audit'tir; production
 iddiası yine açılamaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
@@ -369,8 +371,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     requirement olmaktan çıkarıldı ve stress-only boundary olarak korundu; `1k/10k`
     native functional UI evidence `198e712` ile alındı. Kapanış, 100k'yı optimize
     etmek yerine tested `<=10k` boundary ve non-SLO timer instrumentation kaydına
-    bağlandı.
-18. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
+    bağlandı; H07 acceptance/archive reconcile edilerek tamamlandı.
+18. P1-WP27: G0–G2 supported matrix, bağımsız oracle ve packaged
+    import→review→export→reopen acceptance audit.
+19. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
 
 ### 2026-09-09 onaylanan kalan uygulama sırası
 
@@ -384,9 +388,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 3. H07 resource kabulünü alt kriterlere ayır; bounded worker-isolation, cache-reuse
    ve fixture-size paketlerini tamamla; 100k'yı stress-only tut ve aday `<=10k`
    bandında native functional UI/resource evidence ile tested boundary kaydını
-   tamamla. (Kanıt tamamlandı; aktif WP acceptance/archive reconcile adımı açık.)
-4. G0–G2 supported matrix, bağımsız oracle ve packaged import→review→export→reopen
-   kabul denetimini tamamla; B2 kapsamını kanıtla netleştir.
+   tamamla. (Kanıt ve acceptance/archive reconcile tamamlandı; H07 arşivlendi.)
+4. P1-WP27 ile G0–G2 supported matrix, bağımsız oracle ve packaged
+   import→review→export→reopen kabul denetimini tamamla; B2 kapsamını kanıtla
+   netleştir.
 5. N03 temiz Mac profil/ikinci host; N04 sentetik update/uninstall veri koruma.
 6. Ticari dağıtım öncesi H05 license/notices/dependency disposition owner kapısını
    yeniden aç; N05 signing/notarization sonrası final artifact'i yeniden doğrula.

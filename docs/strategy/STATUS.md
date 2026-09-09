@@ -7,8 +7,9 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
-The selected H07 bounded implementation and evidence sequence is now executed on
-the current Mac artifact. Commits `e3aacc8`, `dfa7252`, `5b82473` and `4e761fa`
+H07'nin bounded implementation/evidence sequence'i mevcut Mac artifact'ında
+tamamlandı ve acceptance/archive kaydı uzlaştırılarak arşivlendi. Commits
+`e3aacc8`, `dfa7252`, `5b82473` and `4e761fa`
 move Evidence Pack reads behind a bounded asynchronous bridge job, isolate the
 heavy read in a single lazily-created worker process, and reuse bounded worker
 state for warm reads. The same `4e761fa` arm64 artifact completed the planned
@@ -16,7 +17,8 @@ two-run `1k/10k/100k` campaign with 20 operation samples per mode and a separate
 native UI/concurrent-read report. This is implementation and development evidence,
 not a production SLO or support-limit decision.
 
-The evidence does not close H07: 100k cold Evidence Pack operation p95 is
+H07 kapanışı bir production SLO veya support limiti değildir. 100k cold Evidence
+Pack operation p95 is
 `2321.8877 / 2332.4201 ms`, projection-rebuild operation p95 is
 `5141.0606 / 5143.9399 ms`, projection process peak RSS is about
 `400.4 / 400.5 MB`, and native UI timer-gap percentiles remain `UNKNOWN` (the
@@ -34,13 +36,13 @@ isolation, so this is functional UI evidence, not a latency SLO.
 The tested candidate boundary is now recorded as `<=10k` synthetic history for
 this development/release candidate; larger histories are best-effort and 100k is
 stress-only, without adding a hard import cap. This boundary does not claim
-real-user performance or commercial support. H07 remains active only until its
-acceptance record is reconciled with this scope decision; no further 100k
-optimization is planned. Commercial, signing, multi-host and pilot/release gates
-remain open.
+real-user performance or commercial support. H07 is archived as a completed
+non-release measurement/boundary package; its reopen condition is a new explicit
+performance SLO/resource-cap or wider-history support request. Commercial,
+signing, multi-host and pilot/release gates remain open.
 
-**H07 — Active / IMPLEMENTATION_REQUIRED:**
-[Bounded performance and resource limits](work-packages/H07-bounded-performance-resource-limits.md).
+**P1-WP27 — Active / IMPLEMENTATION_REQUIRED:**
+[G0–G2 supported matrix ve packaged value-chain audit](work-packages/P1-WP27-g0-g2-supported-matrix-audit.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
 verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
@@ -60,9 +62,10 @@ license/notices and default-branch alert disposition were explicitly deferred fo
 the non-production development period and remain release gates; the archived H05
 record preserves the reopen conditions. H06 privacy/data-lifecycle and credential
 availability is boundedly complete in `a7b99b7` and archived with its exact Mac
-evidence. H07 is now the sole active non-release package. Neither package silently
-became full tax/accounting scope or new venue scope. No other historical `Active` WP
-is automatically queued. Pilot/release claims remain blocked by their explicit gates.
+evidence. H07 is archived with its exact bounded evidence, and P1-WP27 is the sole
+active non-release package. Neither package silently became full tax/accounting scope
+or new venue scope. No other historical `Active` WP is automatically queued. Pilot/
+release claims remain blocked by their explicit gates.
 
 ## Current evidence, not completion claims
 
@@ -411,7 +414,7 @@ and frontend lock hashes remain
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; source/packaged execution, cold/warm/append-tail/projection-rebuild distinction and process resource capture are implemented | `e3aacc8`→`4e761fa` moves the heavy Evidence Pack read behind a bounded isolated worker with lazy pool/cache lifecycle; `198e712` makes native fixture sizing explicit. The final clean campaign is deterministic with 366 packaged manifests and 120/120 valid projection samples; 100k cold p95 remains `2321.8877 / 2332.4201 ms`, projection process peak RSS is `400.4 / 400.5 MB`, and native timer-gap percentiles remain `UNKNOWN`. Owner decision: 100k is stress-only, so no further 100k optimization is required. Native functional UI evidence for 1k/10k and the tested `<=10k` candidate boundary are recorded; timer instrumentation remains explicitly non-SLO. H07 acceptance/archive reconciliation is the remaining bookkeeping step; Windows/Linux host evidence remains separate. |
+| H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the current Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band operation/resource behavior, native `wkwebview` loading/concurrent-read evidence, and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -433,8 +436,8 @@ P1-WP25 U04 in `26751f7`; P1-WP26 U05 in `30dfcd7`; H01 canonical
 persistence/recovery in `006e86e`; H02 schema upgrade/restore in `169c446`; H04
 trust-boundary hardening in `1cf486e`; H05 machine-checkable supply-chain, SBOM and
 secret boundary in `c089cd2`; and H06 privacy/data-lifecycle in `4270d33` with final
-evidence `a7b99b7`. H04, deferred H05 and completed H06 are archived; H07 is the
-current package. H05's commercial distribution gate remains explicitly closed until
+evidence `a7b99b7`. H04, deferred H05, completed H06 and completed H07 are archived;
+P1-WP27 is the current package. H05's commercial distribution gate remains explicitly closed until
 it is reopened with the required license/notice and dependency dispositions.
 
 The 2026-09-08 H06 Mac evidence used locked dependencies and clean temporary data
@@ -463,7 +466,7 @@ No PnL, live execution, pilot, commercial package or production claim was opened
 
 Earlier H07 bounded evidence, superseded for the current performance disposition
 by the `af8e2a1` campaign above, is recorded in
-[H07](work-packages/H07-bounded-performance-resource-limits.md): deterministic
+[H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md): deterministic
 1k/10k/100k synthetic reports, indexed trade lookup, atomic grouped-batch
 cancellation, streamed full-chain verification, correction/replay measurement,
 dynamic RSS/disk budget abort/rollback boundaries, malformed/oversized plus
@@ -492,9 +495,9 @@ remain outside the production capability claim. The current handoff is now the
 H07 disposition recorded above: the worker-isolation implementation and the
 two-run campaign are complete. The owner decision makes 100k stress-only; native
 functional UI evidence for the 1k/10k candidate band is complete, while timer-gap
-percentiles remain explicitly non-SLO/UNKNOWN. The remaining H07 close-out is
-reconciling the active-WP acceptance/archive record; no further 100k optimization
-is presumed.
+percentiles remain explicitly non-SLO/UNKNOWN. H07 close-out is complete; no further
+100k optimization is presumed. P1-WP27 now owns the G0–G2 supported-matrix and
+packaged value-chain acceptance audit.
 H05 license/notices and default-branch Dependabot remain deferred release gates;
 no production or commercial package claim is allowed.
 

@@ -66,6 +66,7 @@ Remote evidence, Windows host, latest-SHA and P2 operational gaps remain in STAT
 | [H04-threat-model-trust-boundaries](strategy/work-packages/H04-threat-model-trust-boundaries.md) | 0 |
 | [H05-supply-chain-sbom-license-secret-boundary](strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md) | 1 |
 | [H06-privacy-data-lifecycle-credential-boundary](strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md) | 0 |
+| [H07-bounded-performance-resource-limits](strategy/work-packages/H07-bounded-performance-resource-limits.md) | 0 |
 | [P2-WP01-sequence-gap-aware-market-context](strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md) | 1 |
 | [P2-WP02-binance-depth-sequence-validator](strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md) | 1 |
 | [P2-WP03-binance-depth-recovery-coordinator](strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | 1 |
