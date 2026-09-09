@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: 9efd203
-implementation_commit: 133c2691a859630c0c50b5cd9841620612391fcf
+implementation_commit: 121a5cdaff2985245156875ffdd8e42ca79fceca
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: N01, N02, N03-final-validation, H04, H05
@@ -110,31 +110,33 @@ Apple distribution gate'inin kapandığını değil, gösterir.
 ## Kanıt günlüğü
 
 - Implementation source: `e4f8ba2` (preflight), `9733874` (release audit/manifest
-  binding), `657922b` (explicit Developer ID package mode) and `133c269`
-  (owner-controlled notarization wrapper), branch `codex/p1-wp01-evidence-ledger`.
-- Focused evidence on implementation `133c269`: N05 contract **6 passed** and
+  binding), `657922b` (explicit Developer ID package mode), `133c269`
+  (owner-controlled notarization wrapper) and `121a5cd` (pre-submit signing gate),
+  branch `codex/p1-wp01-evidence-ledger`.
+- Focused evidence on implementation `121a5cd`: N05 contract **6 passed** and
   package-spec contract **9 passed**; `python3.11 scripts/check_docs.py` PASS with
   108 documents and 141 local links.
-- Canonical locked local CI on macOS 26.6.2 arm64, source `a46d558` (which includes
-  implementation `133c269`): **13/13 PASS**,
-  backend **795 passed / 2 warnings**, frontend **25 files / 104 tests**, i18n
+- Canonical locked local CI on macOS 26.6.2 arm64, source `121a5cd`: **13/13 PASS**,
+  backend **796 passed / 2 warnings**, frontend **25 files / 104 tests**, i18n
   **608/608**, arm64 PyInstaller build, native `wkwebview` smoke and packaging
   provenance PASS. Report `dist/local-ci-report.json` SHA-256 is
-  `4ddab7563cf0f12acbf7f8662b5624a962fa933797790aa85cfe08a40523f01e`; tracked
+  `c50e4987287a2a6a017c358777d027e79cd8c272e266f6fed16cbdd73f1e5902`; tracked
   source tree SHA-256 is
-  `3c7c5d10cd144757ee75dc8e8383d91029bee456e46d1c9a5a0f16e88a29f11b`; executable
-  SHA-256 is `141a4714a43ed974fa036588ff48343752a94ec7667e9916d87c16494077e7cc`.
+  `c0cfebe57a0d437f5619590a5405cdba25b3040086f02eb65ecc5143a3cc4d82`; executable
+  SHA-256 is `b3d55891c14fadcad587b0cb2c4bcc777ae48db3b5309835881ce13c4787417c`.
   `uv --offline` here proves locked dependency resolution only; it is not runtime
   network isolation evidence.
 - Exact arm64 DMG `dist/Kuantra-Terminal-1.4.0-aarch64.dmg` SHA-256 is
-  `664bf5524864c04e3c149b300fd2bb84a33ef51f7d2b9e14e426c1a65637c4bf`; mounted
-  DMG smoke PASS report `dist/n05-final-smoke-a46d558.json` SHA-256 is
-  `c6840048acd925b15da16b67b77d41581d9c75c954038acf0cb81a854fa6f27c`.
-- N05 preflight report `dist/n05-macos-distribution-a46d558.json` SHA-256 is
-  `17f73178d3cef205f5e84beacd52ba518bd124af703f69451c85817d8efdc2c4`; it is
+  `87828fe3db6ea9b1af056454355058ef26cd489a52078060ca3b62454894d0c5`; mounted
+  DMG smoke PASS report `dist/candidate-final-smoke-121a5cd.json` SHA-256 is
+  `9eb9b97220b2d67ba2fb20efff70e3119bb4accb7549e60e2edc44aa18c0bc2d`.
+- N05 preflight report `dist/candidate-n05-121a5cd.json` SHA-256 is
+  `47f973863c3e67363c315140645e9f2d6e506575bd1cf18aead9e7cbb0588b31`; it is
   `BLOCKED`/`OWNER_REVIEW_REQUIRED` with read-only mount attach/detach PASS,
   codesign verification PASS, but `AD_HOC`, no hardened runtime, Gatekeeper FAIL
   and no DMG ticket. This is the expected development boundary, not release PASS.
+- Manual negative control: invoking `notarize_macos.sh --submit` against this ad-hoc
+  DMG exits `2` at the local Developer ID gate before `notarytool submit` is reached.
 - Platform: macOS arm64; no user data, credential, migration or live execution.
 - Actual final Developer ID, Gatekeeper, notarization-ticket, clean-profile and
   commercial H05 evidence remains open.
