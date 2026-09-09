@@ -41,8 +41,8 @@ non-release measurement/boundary package; its reopen condition is a new explicit
 performance SLO/resource-cap or wider-history support request. Commercial,
 signing, multi-host and pilot/release gates remain open.
 
-**P1-WP27 — Active / IMPLEMENTATION_REQUIRED:**
-[G0–G2 supported matrix ve packaged value-chain audit](work-packages/P1-WP27-g0-g2-supported-matrix-audit.md).
+**P1-WP27 — CLOSED / ARCHIVED:**
+[G0–G2 supported matrix ve packaged value-chain audit](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
 and support boundary was verified in `930d25a`; P1-WP18 fee/precision/unit truth was
 verified in `0c7d11f`; P1-WP19 funding/corrections/account coverage was verified in
@@ -62,12 +62,30 @@ license/notices and default-branch alert disposition were explicitly deferred fo
 the non-production development period and remain release gates; the archived H05
 record preserves the reopen conditions. H06 privacy/data-lifecycle and credential
 availability is boundedly complete in `a7b99b7` and archived with its exact Mac
-evidence. H07 is archived with its exact bounded evidence, and P1-WP27 is the sole
-active non-release package. Neither package silently became full tax/accounting scope
-or new venue scope. No other historical `Active` WP is automatically queued. Pilot/
-release claims remain blocked by their explicit gates.
+evidence. H07 and P1-WP27 are archived with their exact bounded evidence; N03 is
+the sole active non-release package. Neither package silently became full
+tax/accounting scope or new venue scope. No other historical `Active` WP is
+automatically queued. Pilot/release claims remain blocked by their explicit gates.
 
-## Current evidence, not completion claims
+P1-WP27 closeout evidence: implementation/evidence source is
+`e04279032a8554b8005fffa83242f108d9d2b4bc`; the independent packaged audit is
+`PASS` on Mac 26.6.2 arm64 and its report SHA-256 is
+`89d3d8d8332c1cf32fbc0c79dc437961add0a966d4371cfd530c772602eefad8`. The final
+locked local CI is `MERGE READY` with 13/13 steps, backend `769 passed`, frontend
+`25 files / 104 tests`, i18n `608/608`, native `wkwebview` smoke and provenance
+`COMPLETE`. This is not release/signing/second-host/Windows/Linux evidence.
+
+**N03 — Active / HOST_REQUIRED:**
+[macOS temiz profil / ikinci host install-lifecycle audit](work-packages/N03-macos-clean-profile-install-audit.md)
+is selected next. A second genuinely clean macOS profile or host is required;
+the current developer profile and a temporary data directory are insufficient.
+Until that host/profile evidence exists, N03 remains open and N04 is not selected.
+
+## Historical evidence retained for traceability
+
+The dated H07 records below are retained for audit traceability. The selected current
+state is recorded above; historical `IMPLEMENTATION_REQUIRED` wording does not reopen
+H07 or P1-WP27.
 
 2026-09-09 correction, **a97499b**: payload/provenance validation again enforces
 the existing stdlib canonical JSON contract; scalar hash serialization has explicit
@@ -406,7 +424,7 @@ and frontend lock hashes remain
 | ID | Classification | Obligation | Next handling |
 |---|---|---|---|
 | B1 | CLOSED | Timestamp pagination can skip records and overstate completeness | Closed by P1-WP16 / `ef909d1`; historical package retained in archive |
-| B2 | IMPLEMENTATION_REQUIRED | Fee currency/unknown handling, perps identity/accounting and economic dedup | P1-WP17–20 and P1-WP21 propagation are closed within their bounded contracts. Full account PnL/tax accounting remains out of scope |
+| B2 | CLOSED | Fee currency/unknown handling, perps identity/accounting and economic dedup are closed within the bounded P1-WP17–21 contracts; broader accounting remains outside scope | Keep full-account PnL/tax, funding/transfer completeness and unclaimed venue coverage as explicit `SCOPE_BOUNDARY`; reopen only with an approved scope package |
 | B3/M1 | DEFERRED | Gap recovery waits for stream completion; bounded shutdown/injection tests missing | Complete before another long/24h soak; not primary product path |
 | B4 | CLOSED | Mac runtime offline/degraded boundary, exact artifact provenance, mounted executable and WKWebView gate | N01 `05e826d`, N02 `cc0ad94`, H03 `62921f7`; Windows/Linux and distribution signing remain separate host/owner gates |
 | H01 | CLOSED | Canonical journal/event/projection persistence under crash, transaction, read-only, disk/busy and concurrent import conditions | Test-only transaction hooks plus real Mac temporary-fixture evidence in `006e86e`; H02 schema/restore boundary remains separate |
@@ -414,7 +432,9 @@ and frontend lock hashes remain
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the current Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band operation/resource behavior, native `wkwebview` loading/concurrent-read evidence, and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
+| H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
+| P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
+| N03 | HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Current developer profile/temp data directory is insufficient; execute only when a genuinely clean second profile/host is available, then record owner/host evidence before selecting N04 |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -436,8 +456,9 @@ P1-WP25 U04 in `26751f7`; P1-WP26 U05 in `30dfcd7`; H01 canonical
 persistence/recovery in `006e86e`; H02 schema upgrade/restore in `169c446`; H04
 trust-boundary hardening in `1cf486e`; H05 machine-checkable supply-chain, SBOM and
 secret boundary in `c089cd2`; and H06 privacy/data-lifecycle in `4270d33` with final
-evidence `a7b99b7`. H04, deferred H05, completed H06 and completed H07 are archived;
-P1-WP27 is the current package. H05's commercial distribution gate remains explicitly closed until
+evidence `a7b99b7`. H04, deferred H05, completed H06, completed H07 and completed
+P1-WP27 are archived; N03 is the current package. H05's commercial distribution gate
+remains explicitly closed until
 it is reopened with the required license/notice and dependency dispositions.
 
 The 2026-09-08 H06 Mac evidence used locked dependencies and clean temporary data
@@ -496,8 +517,9 @@ H07 disposition recorded above: the worker-isolation implementation and the
 two-run campaign are complete. The owner decision makes 100k stress-only; native
 functional UI evidence for the 1k/10k candidate band is complete, while timer-gap
 percentiles remain explicitly non-SLO/UNKNOWN. H07 close-out is complete; no further
-100k optimization is presumed. P1-WP27 now owns the G0–G2 supported-matrix and
-packaged value-chain acceptance audit.
+100k optimization is presumed. P1-WP27's G0–G2 supported-matrix and packaged
+value-chain acceptance audit is archived; N03 owns the current clean-profile/
+second-host dependency.
 H05 license/notices and default-branch Dependabot remain deferred release gates;
 no production or commercial package claim is allowed.
 

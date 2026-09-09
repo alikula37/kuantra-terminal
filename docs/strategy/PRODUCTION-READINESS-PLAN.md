@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.27
+version: 1.0.28
 status: Proposed
 date: 2026-09-09
-reviewed_commit: 198e712
+reviewed_commit: e042790
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -35,8 +35,11 @@ privacy/data-lifecycle ve credential availability boundary `4270d33` ile uygulan
 `a7b99b7` üzerinde bounded kanıtla kapatılmıştır. Ürün lisansı/notices ve
 default-branch alert disposition, ticari dağıtım öncesine kadar bilinçli olarak
 ertelenmiştir; bu release gate'i kapalı tutar. H07 bounded performance/resource-limit
-paketi yalnız sentetik non-release ölçüm olarak sıradaki aktif pakettir. Aşağıdaki diğer iş
-kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış WP değildir.
+paketi ve P1-WP27 G0–G2 packaged value-chain audit'i bounded non-release kanıtla
+tamamlanıp arşivlenmiştir. Sıradaki aktif paket N03 temiz Mac profil/ikinci host
+install-lifecycle kanıtıdır; ikinci host/profile olmadan PASS/production iddiası yoktur.
+Aşağıdaki diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış
+WP değildir.
 
 Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri gönderimi,
 sertifika satın alma, imzalama servislerine yükleme, pilot daveti, main merge, release
@@ -149,13 +152,15 @@ default-branch Dependabot disposition geliştirme dönemi için ertelendi; bunla
 ticari/release adayı öncesi yeniden açılacak zorunlu kapılardır. H06 non-release
 privacy/data-lifecycle paketi `4270d33`/`a7b99b7` ile bounded olarak tamamlandı. H07
 bounded performance/resource-limit paketi `4e761fa`/`198e712` kanıtlarıyla
-non-release ölçüm sınırı olarak tamamlandı ve arşivlendi. Sıradaki aktif non-release
-iş P1-WP27 G0–G2 supported-matrix ve packaged value-chain audit'tir; production
-iddiası yine açılamaz.
+non-release ölçüm sınırı olarak tamamlandı ve arşivlendi. P1-WP27 G0–G2
+supported-matrix, bağımsız oracle ve packaged value-chain audit'i `e042790` ile
+tamamlandı ve arşivlendi. Sıradaki aktif non-release iş N03 temiz Mac
+profil/ikinci host install-lifecycle audit'idir; production iddiası yine açılamaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
-→ trade pack → rule review → haftalık review → export → yeniden açma akışı tek packaged
-app'te tamamlanır. UI'da AI, live order veya plugin indirme success yolu oluşmaz.
+→ trade pack → rule review → haftalık review → export → yeniden açma akışı P1-WP27
+ile tek packaged app'te sentetik veri üzerinde bounded olarak doğrulandı. UI'da AI,
+live order veya plugin indirme success yolu oluşmaz.
 Analitik sonuçlar trade sayısı, dönem, exposure, fee/funding/context coverage ve ölçüm
 yöntemini gösterir; account balance bilinmiyorsa yüzde getiri uydurulmaz. Review
 tamamlama, bir butona basmaktan ibaret olmayan açık bir olay sözleşmesine bağlanır.
@@ -373,8 +378,8 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     etmek yerine tested `<=10k` boundary ve non-SLO timer instrumentation kaydına
     bağlandı; H07 acceptance/archive reconcile edilerek tamamlandı.
 18. P1-WP27: G0–G2 supported matrix, bağımsız oracle ve packaged
-    import→review→export→reopen acceptance audit.
-19. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla.
+    import→review→export→reopen acceptance audit; tamamlandı/arşivlendi `e042790`.
+19. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla; güncel seçili paket N03'tür.
 
 ### 2026-09-09 onaylanan kalan uygulama sırası
 
@@ -391,8 +396,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    tamamla. (Kanıt ve acceptance/archive reconcile tamamlandı; H07 arşivlendi.)
 4. P1-WP27 ile G0–G2 supported matrix, bağımsız oracle ve packaged
    import→review→export→reopen kabul denetimini tamamla; B2 kapsamını kanıtla
-   netleştir.
-5. N03 temiz Mac profil/ikinci host; N04 sentetik update/uninstall veri koruma.
+   netleştir. (Tamamlandı/arşivlendi `e042790`; bounded Mac kanıtı, release kanıtı değil.)
+5. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını tamamla; host
+   sağlanana kadar `HOST_REQUIRED` kalır. Sonra N04 sentetik update/uninstall veri
+   koruma paketine geç.
 6. Ticari dağıtım öncesi H05 license/notices/dependency disposition owner kapısını
    yeniden aç; N05 signing/notarization sonrası final artifact'i yeniden doğrula.
 7. N06 Windows/Linux host kanıtı; G5 consent/metrik kararları sonrası formative ve
@@ -409,6 +416,18 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.28 — 2026-09-09
+
+- P1-WP27 G0–G2 supported matrix, bağımsız golden oracle ve gerçek Mac arm64
+  packaged executable üzerinde sentetik import → review → Evidence Pack →
+  JSON/HTML/CSV export → reopen acceptance audit'i `e042790` ile tamamlanıp
+  arşivlendi. Coverage `PARTIAL`/`NOT_AVAILABLE` ve funding/transfer scope boundary
+  korunurken false-success kapısı doğrulandı.
+- P1-WP27 sonrası tek seçili aktif paket N03 olarak belirlendi. N03 temiz ikinci
+  macOS profil/host gerektirir; mevcut geliştirici profili veya geçici data directory
+  bu kanıtın yerine geçmez. H05 license/notices ve default-branch Dependabot
+  disposition geliştirme döneminde deferred release gate olarak korunur.
 
 ### 1.0.26 — 2026-09-09
 
