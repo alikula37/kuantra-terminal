@@ -74,6 +74,8 @@ pakete eklenmeyecektir.
   body için kullanılır. Bu değişiklik: 38 focused H07 testi PASS.
 - [ ] Kaynak süreç benchmark'ı ile gerçekten çalıştırılan packaged executable
   benchmark'ı ayrılır; fresh-process cold, warm ve append-tail koşulları ayrı ölçülür.
+  Source raporunun execution alanları ve validator'ı bu değişiklikte uygulandı;
+  native worker ve fresh-process ölçümü henüz uygulanmadı.
 - [ ] Canonical doğruluk düzeltmesi sonrası 1k/10k/100k ölçümleri yenilenir;
   cold hedef ve resource acceptance ayrı kanıtlarla sonuçlandırılır.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
@@ -150,6 +152,32 @@ packaged runtime performans kanıtına dönüştürmez. Manuel cold p95 hesabı 
 percentile fonksiyonuyla yeniden hesaplanmalıdır; yeni repository instance'ları
 module/OS cache'lerinin soğuk olduğunu kanıtlamaz. Bu düzeltmeden sonra geçmiş
 performans sayıları güncel davranışın veya `<2s` hedefinin kanıtı değildir.
+
+### 2026-09-09 ölçüm sözleşmesi — this change
+
+Canonical düzeltme `a97499b`'dir. Source benchmark raporu `SOURCE_PROCESS`,
+`artifact_executed=false`, `cold_process_measured=false`, `os_cache=UNCONTROLLED`
+alanlarını taşır. Artifact hash metadata'sı execution iddiasına yükseltilemez;
+validator sahte packaged execution değerini reddeder. Correction fixture sayısı
+ölçüm tekrarından ayrıldı (üç veya küçük dataset boyutu). 3/5 tekrar arasında sayım
+ve determinism snapshot aynı kalır. Default rapor yolu ignore edilmiş
+`artifacts/evidence/h07/` altındadır. Native benchmark worker ve kalıcı manifest,
+iki koşuda 20 fresh-process cold örneği ve güncel performance gate henüz açık.
+
+Komut `.venv/bin/python -m pytest backend/tests -q --tb=short`: 732 PASS,
+2 deprecation warning. Focused H07 39 PASS; diff/docs gate PASS. Bu alt paket yalnız
+benchmark harness/test/docs değiştirir; yeni native binary veya smoke kanıtı üretmez.
+
+Yerel diagnostic komut: `.venv/bin/python scripts/run_h07_benchmark.py --sizes 1000
+--batch-size 100 --repetitions 20 --output artifacts/evidence/h07/canonical-source-1000.json`.
+macOS 26.6.2 arm64 / Python 3.11.16 üzerinde MEASURED; 1000 trade/projection,
+1003 ledger event. Rapor kaynak commit `a97499b` ve dirty tracked tree kaydeder;
+artifact UNKNOWN/provenance INCOMPLETE korunur. Evidence Pack p95 12.3187 ms
+(20 örnek) yalnız bu kaynak süreç koşuluna aittir; cold/native gate değildir.
+Import 10, correction/replay 3 örnektir; `--repetitions 20` her operasyon için
+20 örnek garantisi değildir. Raporun embedded body digest'i
+`377cd4e856b0dc22c10bf0a039aa5b76b1850f2292598f4d13ff793e6d4a1bbb`;
+bu değer dosyanın tamamının SHA-256 değeri değildir. Rapor yereldir, Git'e eklenmez.
 
 `46531e4` ile dynamic resource-check callback'leri SQLite journal write,
 projection rebuild, ledger verification/export ve Trade Evidence Pack assembly

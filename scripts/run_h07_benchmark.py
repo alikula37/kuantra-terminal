@@ -43,6 +43,7 @@ from scripts.build_provenance import collect_provenance
 MAX_SYNTHETIC_TRADES = 100_000
 MAX_BATCH_SIZE = 5_000
 MIN_PERCENTILE_SAMPLES = 3
+CORRECTION_FIXTURE_COUNT = 3
 DEFAULT_SEED = "H07-SYNTHETIC-V1"
 DEFAULT_SIZES = (1_000, 10_000, 100_000)
 SYNTHETIC_ACCOUNT_ID = "h07-synthetic-account"
@@ -532,7 +533,7 @@ class H07BenchmarkRunner:
 
         ledger = EvidenceLedgerRepository(str(db_path))
         correction_specs: list[dict[str, Any]] = []
-        for offset in range(self.operation_repetitions):
+        for offset in range(min(size, CORRECTION_FIXTURE_COUNT)):
             correction_index = (size // 2 + offset) % size
             source_trade = generate_trade_snapshot(correction_index, seed=self.seed)
             source_events = ledger.list_events_for_trade(
@@ -612,7 +613,7 @@ class H07BenchmarkRunner:
             correction_samples.append(sample)
 
         corrected_ledger_count = self._table_count(db_path, "evidence_events")
-        expected_corrected_count = size + self.operation_repetitions
+        expected_corrected_count = size + len(correction_specs)
         if corrected_ledger_count != expected_corrected_count:
             raise BenchmarkContractError(
                 "synthetic correction count mismatch: "
@@ -834,6 +835,14 @@ def build_benchmark_report(
     report = {
         "schema_version": "H07.v1",
         "status": "MEASURED",
+        "execution": {
+            "mode": "SOURCE_PROCESS",
+            "artifact_executed": False,
+            "python_executable": sys.executable,
+            "pid": os.getpid(),
+            "os_cache": "UNCONTROLLED",
+            "cold_process_measured": False,
+        },
         "contract": {
             "real_data": False,
             "credentials": False,
@@ -909,6 +918,15 @@ def validate_benchmark_report(report: Mapping[str, Any]) -> Mapping[str, Any]:
         raise BenchmarkContractError("benchmark artifact provenance status is missing")
     if provenance.get("tracked_source_tree_status") not in {"clean", "dirty"}:
         raise BenchmarkContractError("benchmark tracked source tree status is invalid")
+    execution = report.get("execution", {})
+    if (
+        not isinstance(execution, Mapping)
+        or execution.get("mode") != "SOURCE_PROCESS"
+        or execution.get("artifact_executed") is not False
+        or execution.get("cold_process_measured") is not False
+        or execution.get("os_cache") != "UNCONTROLLED"
+    ):
+        raise BenchmarkContractError("benchmark execution must identify source-only measurement")
     runs = report.get("runs")
     if not isinstance(runs, Sequence) or isinstance(runs, (str, bytes)):
         raise BenchmarkContractError("benchmark runs are required")
@@ -941,10 +959,10 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", default=DEFAULT_SEED)
     parser.add_argument("--batch-size", type=int, default=1_000)
     parser.add_argument("--repetitions", type=int, default=3)
-    parser.add_argument("--output", type=Path, default=ROOT_DIR / "dist" / "h07-benchmark-report.json")
+    parser.add_argument("--output", type=Path, default=ROOT_DIR / "artifacts" / "evidence" / "h07" / "source-benchmark-report.json")
     parser.add_argument("--work-dir", type=Path, default=None)
-    parser.add_argument("--executable", type=Path, default=None)
-    parser.add_argument("--artifact", type=Path, default=None)
+    parser.add_argument("--executable", type=Path, default=None, help="Hash reference only; this executable is NOT run")
+    parser.add_argument("--artifact", type=Path, default=None, help="Hash reference only; not a packaged runtime measurement")
     parser.add_argument("--max-rss-mb", type=float, default=None)
     parser.add_argument("--max-temp-disk-bytes", type=int, default=None)
     return parser

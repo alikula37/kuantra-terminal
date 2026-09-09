@@ -165,6 +165,13 @@ def test_small_benchmark_exercises_import_rebuild_query_pack_export_and_cancel(t
     assert run["determinism"]["status"] == "COMPLETE"
     assert run["determinism"]["evidence_pack_snapshot_sha256"]
     assert run["determinism"]["evidence_artifact_sha256"]
+    assert report["execution"]["mode"] == "SOURCE_PROCESS"
+    assert report["execution"]["artifact_executed"] is False
+    assert report["execution"]["os_cache"] == "UNCONTROLLED"
+    report["execution"]["artifact_executed"] = True
+    with pytest.raises(BenchmarkContractError, match="execution"):
+        validate_benchmark_report(report)
+    report["execution"]["artifact_executed"] = False
     assert all(
         run["operations"][name]["status"] == "MEASURED"
         for name in (
@@ -184,6 +191,14 @@ def test_small_benchmark_exercises_import_rebuild_query_pack_export_and_cancel(t
 def test_explicit_resource_budget_fails_closed():
     with pytest.raises(BenchmarkContractError, match="RSS resource budget exceeded"):
         ResourceBudget(max_rss_mb=0).check(rss_mb=1, temp_disk_bytes=0)
+
+
+def test_measurement_repetitions_do_not_change_correction_fixture(tmp_path):
+    reports = [H07BenchmarkRunner(operation_repetitions=repetitions).run(
+        (12,), work_dir=tmp_path / str(repetitions),
+    ) for repetitions in (3, 5)]
+    assert reports[0]["runs"][0]["counts"] == reports[1]["runs"][0]["counts"]
+    assert reports[0]["runs"][0]["determinism"] == reports[1]["runs"][0]["determinism"]
 
 
 def test_trade_event_lookup_uses_correlation_index_for_canonical_events(tmp_path, monkeypatch):

@@ -34,7 +34,7 @@ is automatically queued. Pilot/release claims remain blocked by their explicit g
 
 ## Current evidence, not completion claims
 
-2026-09-09 correction, **this change**: payload/provenance validation again enforces
+2026-09-09 correction, **a97499b**: payload/provenance validation again enforces
 the existing stdlib canonical JSON contract; scalar hash serialization has explicit
 type guards. Three new regression cases failed before the fix; all 38 focused H07
 tests pass afterward, including a rehashed noncanonical chain rejection.
@@ -48,6 +48,17 @@ Validation: canonical locked local CI `MERGE READY`; backend 731 (2 deprecation
 warnings), frontend 25 files/102 tests, i18n 608/608, arm64 build/native WKWebView
 smoke PASS on macOS 26.6.2. This run used the tracked working diff before commit;
 it is not a clean release artifact. Default smoke attempted public market data.
+
+Measurement contract, **this change**: source benchmark reports now explicitly record
+`SOURCE_PROCESS`, `artifact_executed=false`, `cold_process_measured=false` and
+`os_cache=UNCONTROLLED`; the validator rejects a forged packaged-execution claim.
+Correction fixture count is fixed at three (or dataset size if smaller), independently
+of measurement repetitions. Three/five-repeat runs preserve counts and deterministic
+snapshots. Default report output is ignored `artifacts/evidence/h07/`.
+Focused H07: 39 tests; full backend: 732 tests, 2 deprecation warnings.
+Pending: packaged executable worker, 20 fresh-process cold samples per size in two
+runs, operation-specific cache metadata and durable manifests. Correction timing still
+has only three samples; it is not a completed 20-sample performance gate.
 
 | Area | Evidence / remaining boundary |
 |---|---|

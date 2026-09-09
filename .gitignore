@@ -22,6 +22,7 @@ node_modules/
 # Desktop build outputs
 dist/
 build/
+artifacts/evidence/h07/
 
 backend/data/
 .claude/*
