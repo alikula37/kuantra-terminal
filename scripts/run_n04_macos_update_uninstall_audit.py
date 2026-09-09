@@ -112,8 +112,28 @@ def _validate_provenance_report(report_path: Path, *, app_path: Path) -> dict[st
     if not report_path.is_file():
         raise N04AuditError("provenance report must be a regular file")
     report = _load_json(report_path, label="provenance report")
+    validation_report = report
+    # Older canonical local-CI reports keep the exact provenance only under
+    # ``build_provenance`` and do not duplicate the legacy top-level aliases
+    # emitted by desktop smoke.  Accept that known report shape by deriving the
+    # aliases from the same nested object; never invent a value.
+    if (
+        "build_commit" not in report
+        and "artifact_sha256" not in report
+        and "executable_sha256" not in report
+        and report.get("local_ci_schema_version") == 1
+    ):
+        nested = report.get("build_provenance")
+        if not isinstance(nested, Mapping):
+            raise N04AuditError("local-CI provenance report is missing build_provenance")
+        validation_report = {
+            **report,
+            "build_commit": nested.get("source_commit_sha"),
+            "artifact_sha256": nested.get("artifact_sha256"),
+            "executable_sha256": nested.get("executable_sha256"),
+        }
     try:
-        provenance = dict(validate_report(report, release_facing=False))
+        provenance = dict(validate_report(validation_report, release_facing=False))
     except ProvenanceError as exc:
         raise N04AuditError(f"provenance report is incomplete: {exc}") from exc
     if provenance.get("provenance_status") != "COMPLETE":
@@ -121,9 +141,9 @@ def _validate_provenance_report(report_path: Path, *, app_path: Path) -> dict[st
 
     artifact_sha256 = _sha256_path(app_path)
     executable_sha256 = _sha256_file(_app_executable(app_path))
-    if report.get("artifact_sha256") != artifact_sha256:
+    if validation_report.get("artifact_sha256") != artifact_sha256:
         raise N04AuditError("provenance artifact hash does not match selected .app")
-    if report.get("executable_sha256") != executable_sha256:
+    if validation_report.get("executable_sha256") != executable_sha256:
         raise N04AuditError("provenance executable hash does not match selected .app executable")
     return {
         "path": str(app_path),

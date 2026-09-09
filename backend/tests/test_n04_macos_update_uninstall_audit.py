@@ -13,6 +13,7 @@ from scripts.run_n04_macos_update_uninstall_audit import (
     N04AuditError,
     N04InjectedFailure,
     _sha256_path,
+    _validate_provenance_report,
     create_audit_sandbox,
     evaluate_schema_rollback,
     promote_update,
@@ -262,3 +263,27 @@ def test_full_isolated_audit_binds_two_artifacts_and_keeps_host_gate_open(tmp_pa
     assert report["host_artifact_evidence"] == "REQUIRED"
     assert report["update"]["active_is_current"] is True
     assert {item["failure_phase"] for item in report["interruptions"]} == set(FAILURE_PHASES)
+
+
+def test_local_ci_provenance_shape_is_normalized_without_inventing_hashes(tmp_path: Path) -> None:
+    app = _make_app(tmp_path / "app", "local-ci-build")
+    smoke_style_report = tmp_path / "smoke-style.json"
+    _write_provenance(smoke_style_report, app, "a" * 40)
+    original = json.loads(smoke_style_report.read_text(encoding="utf-8"))
+    local_ci_report = tmp_path / "local-ci.json"
+    local_ci_report.write_text(
+        json.dumps(
+            {
+                "local_ci_schema_version": 1,
+                "build_provenance": original["build_provenance"],
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    result = _validate_provenance_report(local_ci_report, app_path=app)
+
+    assert result["provenance_status"] == "COMPLETE"
+    assert result["artifact_sha256"] == _sha256_path(app)
+    assert result["executable_sha256"] == _sha256_path(app / "Contents" / "MacOS" / app.stem)
