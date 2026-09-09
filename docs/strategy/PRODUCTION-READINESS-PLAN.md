@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.29
+version: 1.0.30
 status: Proposed
 date: 2026-09-10
-reviewed_commit: fcb24d7
+reviewed_commit: 3f4ba82
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -39,8 +39,9 @@ paketi ve P1-WP27 G0–G2 packaged value-chain audit'i bounded non-release kanı
 tamamlanıp arşivlenmiştir. N03 temiz Mac profil/ikinci host install-lifecycle
 harness'ı uygulanmıştır; owner kararıyla host çalıştırması son macOS dağıtım/pilot
 validation kapısına ertelenmiştir ve ikinci host/profile kanıtı olmadan PASS/production
-iddiası yoktur. Sıradaki aktif geliştirme paketi N04 manual update/uninstall veri
-koruma audit'idir.
+iddiası yoktur. N04 manual update/uninstall veri koruma audit'i bounded non-release
+kanıtla tamamlanıp arşivlenmiştir; sıradaki seçili paket N03'ün final validation
+kanıtıdır.
 Aşağıdaki diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış
 WP değildir.
 
@@ -205,7 +206,7 @@ izleme yaklaşımı NIST SSDF'den yararlanır; bu plan bir standart sertifikası
 | N01 | Build source SHA, tree state, lock hashes, toolchain/OS/arch, artifact/executable SHA manifest'te; UNKNOWN/provenance mismatch fail |
 | N02 | Mac smoke actual WKWebView/controller hazır; preflight ve report validation fail-closed; DMG içinden explicit executable smoke |
 | N03 | Temiz ikinci host/profilde quarantine dahil install → launch → import/review → close/reopen; geliştirici cache/data'sına bağımlı değil; final validation'a ertelendi |
-| N04 | Update önceki supported build'den; interrupted update; uninstall veriyi korur; restore ve schema rollback politikası kullanıcıya açık; sıradaki implementation paketi |
+| N04 | Update önceki supported build'den; interrupted update; uninstall veriyi korur; restore ve schema rollback politikası kullanıcıya açık; bounded non-release audit tamamlandı |
 | N05 | Dağıtım imzası/notarization süreci, minimal entitlements, ticket/manifest verification, secretsiz signing logs |
 | N06 | Windows P0-WP11 host blocker ve Linux native final artifact suite ayrı host'larda; OS/arch/version support tablosu kanıtla eşleşir |
 
@@ -383,8 +384,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 18. P1-WP27: G0–G2 supported matrix, bağımsız oracle ve packaged
     import→review→export→reopen acceptance audit; tamamlandı/arşivlendi `e042790`.
 19. N03–N06 owner/host bağımlılıkları çözülerek sırasıyla ilerler. N03 host çalıştırması
-    final macOS distribution/pilot validation'a ertelenmiştir; güncel seçili geliştirme
-    paketi N04'tür. N03, pilot/release öncesi yeniden açılacaktır.
+    final macOS distribution/pilot validation'a ertelenmiştir; N04 bounded audit'i
+    tamamlanıp arşivlenmiştir. N03, pilot/release öncesi yeniden açılacak tek seçili
+    final-validation paketidir.
 
 ### 2026-09-10 onaylanan kalan uygulama sırası
 
@@ -403,9 +405,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    import→review→export→reopen kabul denetimini tamamla; B2 kapsamını kanıtla
    netleştir. (Tamamlandı/arşivlendi `e042790`; bounded Mac kanıtı, release kanıtı değil.)
 5. N04 sentetik/manual update, interrupted-update recovery ve uninstall veri koruma
-   paketini uygula. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son
-   macOS distribution/pilot validation kapısında çalıştır; host kanıtı gelene kadar
-   `DEFERRED/HOST_REQUIRED` kalır. Ardından N05 ve N06 sırasını koru.
+   audit'ini tamamla/arşivle. N03 temiz Mac profil/ikinci host install-lifecycle
+   kanıtını son macOS distribution/pilot validation kapısında çalıştır; host kanıtı
+   gelene kadar `DEFERRED/HOST_REQUIRED` kalır. Ardından N05 ve N06 sırasını koru.
 6. Ticari dağıtım öncesi H05 license/notices/dependency disposition owner kapısını
    yeniden aç; N05 signing/notarization sonrası final artifact'i yeniden doğrula.
 7. N06 Windows/Linux host kanıtı; G5 consent/metrik kararları sonrası formative ve
@@ -443,6 +445,14 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
 - N04 manual update/interrupted-update/uninstall data-preservation implementation
   paketi sıradaki seçili bounded geliştirme paketi olarak belirlendi; ürün kapsamına
   automatic updater veya gerçek data/migration işlemi eklenmedi.
+
+### 1.0.30 — 2026-09-10
+
+- N04 packaged manual update/uninstall audit'i önceki `ec162429...` ve güncel
+  `3f4ba822...` macOS arm64 artifact'leriyle PASS oldu; exact provenance, interruption,
+  data-preservation ve schema rollback kanıtı kaydedilip paket arşivlendi.
+- N03 clean-profile host execution kararı korunarak final distribution/pilot
+  validation'a ertelendi; N03 yeniden seçili current work package oldu.
 
 ### 1.0.26 — 2026-09-09
 

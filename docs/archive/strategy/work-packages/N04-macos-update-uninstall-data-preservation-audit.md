@@ -1,13 +1,14 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
+<!-- Historical evidence: this file is not a current implementation instruction. -->
 # N04 — macOS Manual Update / Uninstall Data-Preservation Audit
 
 ```yaml
 work_package: N04
 version: 1.0.0
-status: InProgress
+status: Complete
 date: 2026-09-10
 baseline_commit: f858321
-implementation_commit: fcb24d7bf8a197c5c592e8b421f04691e92dbe98
+implementation_commit: 3f4ba822cf367c588cc9e9fe13e6404a5a6d4512
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06, N01, N02, P1-WP27
@@ -51,19 +52,19 @@ checkbox'ları açık kalır ve production/pilot öncesi yeniden çalıştırıl
 
 ## Kabul kriterleri
 
-- [ ] Önceki ve güncel supported `.app` explicit seçilir; provenance, source commit,
+- [x] Önceki ve güncel supported `.app` explicit seçilir; provenance, source commit,
       tree state, executable hash ve artifact hash her ikisi için eşleşir. Eksik veya
       mismatch kanıt fail-closed olur.
-- [ ] Başarılı manual update active app hash'ini yeni artifact'e taşır; ayrı durable
+- [x] Başarılı manual update active app hash'ini yeni artifact'e taşır; ayrı durable
       data snapshot'ı değişmez.
-- [ ] Staging, backup veya promotion sonrasındaki injected/interrupted failure,
+- [x] Staging, backup veya promotion sonrasındaki injected/interrupted failure,
       eski app'i active konumda ve data'yı aynı snapshot'ta bırakır; yarım staging /
       backup kalıntısı bırakmaz.
-- [ ] App-only uninstall uygulama path'ini kaldırır; data directory ve hash'i
+- [x] App-only uninstall uygulama path'ini kaldırır; data directory ve hash'i
       değiştirmez. Gerçek kullanıcı path'i bu audit tarafından kabul edilmez.
-- [ ] Yeni schema karşısında eski executable için rollback kararı fail-closed'dur;
+- [x] Yeni schema karşısında eski executable için rollback kararı fail-closed'dur;
       otomatik downgrade yoktur ve güvenli seçenekler kullanıcıya açıkça raporlanır.
-- [ ] Focused red→green testler, `check_docs.py`, ilgili backend suite ve canonical
+- [x] Focused red→green testler, `check_docs.py`, ilgili backend suite ve canonical
       local CI sonucu kaydedilir. Bu sonuç N03 clean-profile veya signing kanıtı
       sayılmaz.
 
@@ -84,25 +85,31 @@ Bu bölüm gerçek komut/platform/artifact kanıtı oluştukça doldurulur. Sour
 transaction testleri N04 implementation kanıtıdır; önceki/current packaged artifact
 ve host evidence olmadan N04 production gate'i kapatılmaz.
 
-- Implementation commit: `fcb24d7bf8a197c5c592e8b421f04691e92dbe98`.
+- Implementation commit: `3f4ba822cf367c588cc9e9fe13e6404a5a6d4512`.
 - Platform/toolchain: macOS 26.6.2 arm64, Python 3.11.16, Node 20.20.2, npm
   10.8.2, uv 0.12.10, PyInstaller 6.22.2.
 - Focused tests: `uv run --offline --no-project --with-requirements
   backend/requirements.lock pytest -q
-  backend/tests/test_n04_macos_update_uninstall_audit.py` — **12 passed**;
-  N03 regression pairing (`...test_n04... ...test_n03...`) — **18 passed**.
-- Full suite/local CI: clean commit `fcb24d7bf8a197c5c592e8b421f04691e92dbe98`
-  passed the canonical default behavior gate: backend **787 passed, 2 warnings**,
+  backend/tests/test_n04_macos_update_uninstall_audit.py` — **13 passed**.
+- Full suite/local CI: clean commit `3f4ba822cf367c588cc9e9fe13e6404a5a6d4512`
+  passed the canonical default behavior gate: backend **788 passed, 2 warnings**,
   frontend **25 files / 104 tests**, i18n **608/608**, production build, arm64
   desktop build, native `wkwebview` smoke and packaging/provenance contract steps
-  PASS. Report: `dist/n04-local-ci-report-fcb24d7.json`, SHA-256
-  `312d3b2665f192e91b12880a38811974db1a2f4bceb1112a02cd410e4f099e7f`;
+  PASS. Report: `dist/n04-local-ci-report-3f4ba82.json`, SHA-256
+  `1990759706893589b7411133c51a624a3a265d3dadafc4a47d35955bf0777576`;
   provenance `COMPLETE`, tracked tree SHA-256
-  `c984912ecef812d9609b43579d14f32bd62971cb9edb85671b12439e9edf0db0`, app tree
-  SHA-256 `7250b2cafd16352851031f194a2972f640bce2f61eaac840c0e4de5f9d65c26b`,
+  `b200a27bc8ff110dd4ce13c7c2346771be8e0148c1d4cd80de4e527a2bfb0a0e`, app tree
+  SHA-256 `3d97e2a412662f5701d21eb4a8ab8bf0b2a809532ad1377e3b92c80b13f63b1f`,
   executable SHA-256
-  `e79ea0c9e882b0573ab93dcf591ca784eb114ccf4ae5eb988c5e5734df48a6c9`.
-- Previous artifact/provenance/hash: `TBD`
-- Current artifact/provenance/hash: `TBD`
+  `11d9e1085c306574a97c233f646b286e3a29ad8c9baf14d0431397d34a7fdb0a`.
+- Packaged audit: `dist/n04-packaged-audit-3f4ba82.json`, SHA-256
+  `24492ae5ff85047c2a979bcbdf1c85a987b9b5aeee885ededfb132407d987868`, Mac
+  26.6.2 arm64. Previous artifact commit `ec162429d4f79e9f6fd581d3e1c81e8cb8b48d42`,
+  app SHA-256 `d1b0041f57a41b3e6a819171e7f03254f15a469eaf5eb5298ee6444d2f331228`,
+  executable SHA-256 `1184f105364160ce19a915cf2336f3778b476886df442e198738e7e8353b1937`;
+  current artifact commit `3f4ba822cf367c588cc9e9fe13e6404a5a6d4512`, app SHA-256
+  `3d97e2a412662f5701d21eb4a8ab8bf0b2a809532ad1377e3b92c80b13f63b1f`, executable
+  SHA-256 `11d9e1085c306574a97c233f646b286e3a29ad8c9baf14d0431397d34a7fdb0a`;
+  both provenance statuses `COMPLETE`.
 - Known limits/blockers: N03 final clean-profile host evidence; H05 commercial
   license/notices and default-branch Dependabot disposition; signing/notarization.

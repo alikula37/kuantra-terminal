@@ -1,10 +1,10 @@
-<!-- doc-role: reference -->
+<!-- doc-role: current-work-package -->
 # N03 — macOS Temiz Profil / İkinci Host Install-Lifecycle Audit
 
 ```yaml
 work_package: N03
 version: 1.1.0
-status: Deferred
+status: Ready
 date: 2026-09-09
 baseline_commit: e042790
 implementation_commit: ec162429d4f79e9f6fd581d3e1c81e8cb8b48d42
@@ -167,11 +167,15 @@ install→launch→synthetic value-chain→close/reopen koşulları hâlâ gerek
 3. Temiz profile ilk launch ve synthetic import/review/export/reopen akışını çalıştır.
 4. Close/reopen, data-preservation ve no-secret/no-network sınırlarını doğrula.
 5. Red → green focused evidence, docs gate ve local CI sonuçlarını bu pakete yaz.
-6. Kanıt eksikse paketi açık bırak; kanıt tamamlanırsa STATUS üzerinden N04'ü seç.
+6. Kanıt eksikse paketi açık bırak; bu owner kararıyla final validation'a kadar
+   `DEFERRED/HOST_REQUIRED` kalır. Kanıt tamamlandığında STATUS ve roadmap üzerinden
+   N05/N06 dağıtım sırasını değerlendir.
 
 ## Sonraki bağımlılık
 
-N03 tamamlanmadan N04 update/uninstall data-preservation denetimi ve N05 signing/
-notarization final-artifact doğrulaması production kanıtı sayılamaz. H05 ticari
-license/notices ve default-branch Dependabot disposition gate'i deferred kalır;
-P1-WP27'nin packaged audit kanıtı bu kapıları kapatmaz.
+N04 manual update/uninstall data-preservation denetimi artık bounded non-release
+kanıtla tamamlanıp arşivlenmiştir. N03 clean-profile host kanıtı hâlâ final macOS
+distribution/pilot validation önkoşuludur; bu kanıt gelmeden N05 signing/notarization
+ve production/pilot iddiası yapılmaz. H05 ticari license/notices ve default-branch
+Dependabot disposition gate'i deferred kalır; P1-WP27 ve N04 packaged audit kanıtları
+bu kapıları kapatmaz.

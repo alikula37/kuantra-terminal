@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/N04-macos-update-uninstall-data-preservation-audit.md"
+    "docs/strategy/work-packages/N03-macos-clean-profile-install-audit.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -82,8 +82,8 @@
     "docs/archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md": "archived",
     "docs/archive/strategy/work-packages/H07-bounded-performance-resource-limits.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md": "archived",
-    "docs/strategy/work-packages/N03-macos-clean-profile-install-audit.md": "reference",
-    "docs/strategy/work-packages/N04-macos-update-uninstall-data-preservation-audit.md": "current-work-package",
+    "docs/strategy/work-packages/N03-macos-clean-profile-install-audit.md": "current-work-package",
+    "docs/archive/strategy/work-packages/N04-macos-update-uninstall-data-preservation-audit.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md": "archived",
@@ -165,6 +165,7 @@
     "docs/archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md": 0,
     "docs/archive/strategy/work-packages/H07-bounded-performance-resource-limits.md": 0,
     "docs/archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md": 0,
+    "docs/archive/strategy/work-packages/N04-macos-update-uninstall-data-preservation-audit.md": 0,
     "docs/archive/strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md": 1,
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": 1,
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": 1,

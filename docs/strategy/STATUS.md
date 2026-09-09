@@ -62,8 +62,8 @@ license/notices and default-branch alert disposition were explicitly deferred fo
 the non-production development period and remain release gates; the archived H05
 record preserves the reopen conditions. H06 privacy/data-lifecycle and credential
 availability is boundedly complete in `a7b99b7` and archived with its exact Mac
-evidence. H07 and P1-WP27 are archived with their exact bounded evidence; N03 is
-deferred and N04 is the sole active non-release development package. Neither package silently became full
+evidence. H07, P1-WP27 and N04 are archived with their exact bounded evidence; N03 is
+the sole current final-validation package. Neither package silently became full
 tax/accounting scope or new venue scope. No other historical `Active` WP is
 automatically queued. Pilot/release claims remain blocked by their explicit gates.
 
@@ -75,7 +75,7 @@ locked local CI is `MERGE READY` with 13/13 steps, backend `769 passed`, fronten
 `25 files / 104 tests`, i18n `608/608`, native `wkwebview` smoke and provenance
 `COMPLETE`. This is not release/signing/second-host/Windows/Linux evidence.
 
-**N03 — Deferred / HOST_REQUIRED:**
+**N03 — Ready / DEFERRED / HOST_REQUIRED:**
 [macOS temiz profil / ikinci host install-lifecycle audit](work-packages/N03-macos-clean-profile-install-audit.md)
 remains open for final validation. The process-only audit worker/launcher, explicit packaged
 executable/hash checks, provenance binding, source worker persistence tests and
@@ -94,34 +94,38 @@ host/profile audit is deferred until the final macOS distribution/pilot validati
 gate; it is not a PASS or COMPLETE. A second genuinely clean macOS profile or
 host is still required; the current developer profile and a temporary data
 directory are insufficient. Until that host/profile evidence exists, N03 remains
-`DEFERRED/HOST_REQUIRED`; N04 is selected as the next bounded development package.
+`DEFERRED/HOST_REQUIRED`; no clean-profile execution is scheduled during normal
+development by owner decision.
 The CI smoke retained default market-data behavior
 and may have attempted the public Binance stream, so it is not offline-runtime
 proof; H05 supply-chain owner review also remains deferred.
 
-**N04 — Active / IMPLEMENTATION_REQUIRED:**
-[macOS manual update/uninstall data-preservation audit](work-packages/N04-macos-update-uninstall-data-preservation-audit.md)
-is now the sole selected development package. It covers the bounded manual app
+**N04 — CLOSED / ARCHIVED:**
+[macOS manual update/uninstall data-preservation audit](../archive/strategy/work-packages/N04-macos-update-uninstall-data-preservation-audit.md)
+is complete as a bounded non-release audit. It covers the bounded manual app
 replacement transaction, interrupted-update recovery, app-only uninstall/data
 preservation, and the user-facing fail-closed schema rollback policy using isolated
 synthetic data. It does not add an automatic updater, perform a real migration, or
-touch the user's data directory. Exact previous/current packaged artifact evidence
-and any host-level launch/install evidence remain acceptance obligations.
+touch the user's data directory. Exact previous/current packaged artifacts and
+provenance were recorded; N03 remains the separate clean-profile launch/reopen gate.
 
-N04 source implementation/evidence commit is `fcb24d7bf8a197c5c592e8b421f04691e92dbe98`.
-Focused N04 tests passed **12**, and N03 regression pairing passed **18**. The clean
-commit canonical local CI report `dist/n04-local-ci-report-fcb24d7.json` is
-`MERGE READY`: backend **787 passed, 2 warnings**, frontend **25 files / 104 tests**,
+N04 source implementation/evidence commit is `3f4ba822cf367c588cc9e9fe13e6404a5a6d4512`.
+Focused N04 tests passed **13**. The clean commit canonical local CI report
+`dist/n04-local-ci-report-3f4ba82.json` is `MERGE READY`: backend **788 passed, 2 warnings**, frontend **25 files / 104 tests**,
 i18n **608/608**, arm64 desktop build, native `wkwebview` smoke and provenance
 `COMPLETE`. Report SHA-256 is
-`312d3b2665f192e91b12880a38811974db1a2f4bceb1112a02cd410e4f099e7f`; source commit
-is `fcb24d7bf8a197c5c592e8b421f04691e92dbe98`; tracked tree SHA-256 is
-`c984912ecef812d9609b43579d14f32bd62971cb9edb85671b12439e9edf0db0`; app tree
-SHA-256 is `7250b2cafd16352851031f194a2972f640bce2f61eaac840c0e4de5f9d65c26b`;
+`1990759706893589b7411133c51a624a3a265d3dadafc4a47d35955bf0777576`; source commit
+is `3f4ba822cf367c588cc9e9fe13e6404a5a6d4512`; tracked tree SHA-256 is
+`b200a27bc8ff110dd4ce13c7c2346771be8e0148c1d4cd80de4e527a2bfb0a0e`; app tree
+SHA-256 is `3d97e2a412662f5701d21eb4a8ab8bf0b2a809532ad1377e3b92c80b13f63b1f`;
 executable SHA-256 is
-`e79ea0c9e882b0573ab93dcf591ca784eb114ccf4ae5eb988c5e5734df48a6c9`. Previous/
-current supported packaged artifact acceptance and host-level update evidence are
-still open; this local result does not close N03 or N04's release gate.
+`11d9e1085c306574a97c233f646b286e3a29ad8c9baf14d0431397d34a7fdb0a`. The packaged
+audit `dist/n04-packaged-audit-3f4ba82.json` is `PASS` with SHA-256
+`24492ae5ff85047c2a979bcbdf1c85a987b9b5aeee885ededfb132407d987868`: previous
+artifact `ec162429...` and current artifact `3f4ba822...` both had `COMPLETE`
+provenance; update, all three interruption phases, app-only uninstall and the
+fail-closed schema rollback policy passed. This is bounded non-release evidence and
+does not close N03, H05 or signing/production gates.
 
 ## Historical evidence retained for traceability
 
@@ -477,7 +481,7 @@ and frontend lock hashes remain
 | H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
-| N04 | IMPLEMENTATION_REQUIRED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Complete bounded transaction harness and focused tests, then collect exact previous/current artifact evidence; no automatic updater or real migration |
+| N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
@@ -500,7 +504,7 @@ persistence/recovery in `006e86e`; H02 schema upgrade/restore in `169c446`; H04
 trust-boundary hardening in `1cf486e`; H05 machine-checkable supply-chain, SBOM and
 secret boundary in `c089cd2`; and H06 privacy/data-lifecycle in `4270d33` with final
 evidence `a7b99b7`. H04, deferred H05, completed H06, completed H07 and completed
-P1-WP27 are archived; N03 is deferred and N04 is the current package. H05's commercial distribution gate
+P1-WP27 and N04 are archived; N03 is the current final-validation package. H05's commercial distribution gate
 remains explicitly closed until
 it is reopened with the required license/notice and dependency dispositions.
 
