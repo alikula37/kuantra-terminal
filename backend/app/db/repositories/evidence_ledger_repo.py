@@ -97,8 +97,10 @@ def _canonical_hash_json(value: Any) -> str:
     if (
         orjson is not None
         and type(value) is dict
-        and all(type(key) is str for key in value)
-        and all(item is None or type(item) in (str, int) for item in value.values())
+        and all(
+            type(key) is str and (item is None or type(item) in (str, int))
+            for key, item in value.items()
+        )
     ):
         try:
             return orjson.dumps(value, option=orjson.OPT_SORT_KEYS).decode("utf-8")
