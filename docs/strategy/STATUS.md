@@ -17,17 +17,17 @@ ad-hoc and has no notarization ticket, so the expected result is `BLOCKED`/exit 
 this is not an N05 PASS and does not claim production readiness. Actual Apple
 signing/notarization remains an owner/host gate.
 
-Source `657922b` üzerinde canonical locked local CI **13/13 PASS** oldu: backend
+Source `a46d558` üzerinde (N05 implementation `133c269` dahil) canonical locked local CI **13/13 PASS** oldu: backend
 **795 passed / 2 warnings**, frontend **25 dosya / 104 test**, i18n **608/608**,
 arm64 PyInstaller build, native `wkwebview` smoke ve packaging/provenance PASS.
-Report SHA-256 `a38eb9c52862d6c7da78b1b47cff2c219de52f514b0fc6971be53c47821fe434`;
-tracked tree SHA-256 `7beecc548875ea7939b84cfc725639d1da149f5acf6b0cb1224e1a7afaf4564f`;
-executable SHA-256 `95ab6f23d9d9391d1d79e66ca6a77bb722928dc0f0da36a7637abd624f977da0`.
-Exact arm64 DMG SHA-256 `71512298fe3b02358e8fe2243c5a4c568c97104d9f8063d8ed1dbaa494b684dd`
+Report SHA-256 `4ddab7563cf0f12acbf7f8662b5624a962fa933797790aa85cfe08a40523f01e`;
+tracked tree SHA-256 `3c7c5d10cd144757ee75dc8e8383d91029bee456e46d1c9a5a0f16e88a29f11b`;
+executable SHA-256 `141a4714a43ed974fa036588ff48343752a94ec7667e9916d87c16494077e7cc`.
+Exact arm64 DMG SHA-256 `664bf5524864c04e3c149b300fd2bb84a33ef51f7d2b9e14e426c1a65637c4bf`
 ve mounted-DMG smoke report SHA-256
-`715d988ff338f8c3349feac06acad882346b6d37a8d9f302643e4b2530908a1d` olarak
+`c6840048acd925b15da16b67b77d41581d9c75c954038acf0cb81a854fa6f27c` olarak
 bağlandı. N05 preflight report SHA-256
-`1d9de0c80260ce613249c653ca9fb106dbab1514032150e008396c6a70f4a81e`; sonuç
+`17f73178d3cef205f5e84beacd52ba518bd124af703f69451c85817d8efdc2c4`; sonuç
 `BLOCKED/OWNER_REVIEW_REQUIRED`: read-only mount attach/detach ve codesign
 verification PASS, fakat artifact `AD_HOC`, hardened runtime yok, Gatekeeper FAIL
 ve DMG stapled ticket yok. `657922b` ayrıca varsayılan ad-hoc davranışı koruyan,
@@ -522,7 +522,7 @@ and frontend lock hashes remain
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
-| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `133c269` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current ad-hoc DMG is intentionally `BLOCKED` (report SHA `1d9de0...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/N06/H05 remain separate gates |
+| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `133c269` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current ad-hoc DMG is intentionally `BLOCKED` (report SHA `17f731...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/N06/H05 remain separate gates |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |

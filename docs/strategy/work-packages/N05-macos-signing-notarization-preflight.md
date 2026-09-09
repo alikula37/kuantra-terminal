@@ -112,25 +112,26 @@ Apple distribution gate'inin kapandığını değil, gösterir.
 - Implementation source: `e4f8ba2` (preflight), `9733874` (release audit/manifest
   binding), `657922b` (explicit Developer ID package mode) and `133c269`
   (owner-controlled notarization wrapper), branch `codex/p1-wp01-evidence-ledger`.
-- Focused evidence on source `133c269`: N05 contract **6 passed** and package-spec
-  contract **9 passed**; `python3.11 scripts/check_docs.py` PASS with 108 documents
-  and 141 local links.
-- Canonical locked local CI on macOS 26.6.2 arm64, source `657922b`: **13/13 PASS**,
+- Focused evidence on implementation `133c269`: N05 contract **6 passed** and
+  package-spec contract **9 passed**; `python3.11 scripts/check_docs.py` PASS with
+  108 documents and 141 local links.
+- Canonical locked local CI on macOS 26.6.2 arm64, source `a46d558` (which includes
+  implementation `133c269`): **13/13 PASS**,
   backend **795 passed / 2 warnings**, frontend **25 files / 104 tests**, i18n
   **608/608**, arm64 PyInstaller build, native `wkwebview` smoke and packaging
   provenance PASS. Report `dist/local-ci-report.json` SHA-256 is
-  `a38eb9c52862d6c7da78b1b47cff2c219de52f514b0fc6971be53c47821fe434`; tracked
+  `4ddab7563cf0f12acbf7f8662b5624a962fa933797790aa85cfe08a40523f01e`; tracked
   source tree SHA-256 is
-  `7beecc548875ea7939b84cfc725639d1da149f5acf6b0cb1224e1a7afaf4564f`; executable
-  SHA-256 is `95ab6f23d9d9391d1d79e66ca6a77bb722928dc0f0da36a7637abd624f977da0`.
+  `3c7c5d10cd144757ee75dc8e8383d91029bee456e46d1c9a5a0f16e88a29f11b`; executable
+  SHA-256 is `141a4714a43ed974fa036588ff48343752a94ec7667e9916d87c16494077e7cc`.
   `uv --offline` here proves locked dependency resolution only; it is not runtime
   network isolation evidence.
 - Exact arm64 DMG `dist/Kuantra-Terminal-1.4.0-aarch64.dmg` SHA-256 is
-  `71512298fe3b02358e8fe2243c5a4c568c97104d9f8063d8ed1dbaa494b684dd`; mounted
-  DMG smoke PASS report `dist/n05-final-smoke-657922b-r2.json` SHA-256 is
-  `715d988ff338f8c3349feac06acad882346b6d37a8d9f302643e4b2530908a1d`.
-- N05 preflight report `dist/n05-macos-distribution-657922b-r2.json` SHA-256 is
-  `1d9de0c80260ce613249c653ca9fb106dbab1514032150e008396c6a70f4a81e`; it is
+  `664bf5524864c04e3c149b300fd2bb84a33ef51f7d2b9e14e426c1a65637c4bf`; mounted
+  DMG smoke PASS report `dist/n05-final-smoke-a46d558.json` SHA-256 is
+  `c6840048acd925b15da16b67b77d41581d9c75c954038acf0cb81a854fa6f27c`.
+- N05 preflight report `dist/n05-macos-distribution-a46d558.json` SHA-256 is
+  `17f73178d3cef205f5e84beacd52ba518bd124af703f69451c85817d8efdc2c4`; it is
   `BLOCKED`/`OWNER_REVIEW_REQUIRED` with read-only mount attach/detach PASS,
   codesign verification PASS, but `AD_HOC`, no hardened runtime, Gatekeeper FAIL
   and no DMG ticket. This is the expected development boundary, not release PASS.
