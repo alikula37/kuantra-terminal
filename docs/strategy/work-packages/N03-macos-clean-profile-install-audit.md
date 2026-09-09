@@ -7,7 +7,7 @@ version: 1.1.0
 status: InProgress
 date: 2026-09-09
 baseline_commit: e042790
-implementation_commit: this change
+implementation_commit: ec162429d4f79e9f6fd581d3e1c81e8cb8b48d42
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP27, N01, N02, H01, H02, H04, H06
@@ -63,8 +63,37 @@ Red → green kanıtı:
 Bu sonuç source-level ve contract kanıtıdır; mevcut geliştirici profiliyle packaged
 N03 PASS üretilmedi. İkinci gerçekten temiz macOS profile/host, install root içindeki
 explicit packaged artifact, Gatekeeper gözlemi ve close/reopen kanıtı sağlanmadan
-N03 acceptance checkbox'ları kapatılmaz ve paket `HOST_REQUIRED` kalır. Commit sonrası
-canonical local CI exact artifact/provenance değerleri bu pakete eklenecektir.
+N03 acceptance checkbox'ları kapatılmaz ve paket `HOST_REQUIRED` kalır.
+
+## Implementation commit ve local CI kanıtı
+
+Implementation commit `ec162429d4f79e9f6fd581d3e1c81e8cb8b48d42` üzerinde canonical
+locked local CI raporu `dist/n03-local-ci-report-ec16242.json` olarak üretildi.
+Rapor SHA-256 `7bb4e9bdd2fbb67293de2ff1ab61ac4aed069f458e74d1d384bfce82ae79c4eb`;
+Mac `26.6.2`, `arm64`, Python `3.11.16`, Node `v20.20.2`, npm `10.8.2`, uv
+`0.12.10` ve PyInstaller `6.22.2` kullanıldı. Tracked source tree `clean`, source
+ve checkout commit eşleşmesi `ec162429d4f79e9f6fd581d3e1c81e8cb8b48d42`, provenance
+`COMPLETE` oldu. Lock hash'leri backend
+`6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` ve frontend
+`b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c` olarak
+raporlandı.
+
+13/13 local-CI adımı PASS oldu: backend **775 passed**, frontend **25 dosya / 104
+test**, i18n **608/608**, release truth, packaging preflight, arm64 PyInstaller
+build, native `wkwebview` smoke ve provenance contract PASS. Seçilen `.app` tree
+SHA-256 `d1b0041f57a41b3e6a819171e7f03254f15a469eaf5eb5298ee6444d2f331228`,
+executable SHA-256 `1184f105364160ce19a915cf2336f3778b476886df442e198738e7e8353b1937`,
+local-CI smoke report SHA-256
+`42c13bb8fc83776695d68900b20cab4b2b2cd6b85f85a0c160667a5e789baf78` oldu.
+Supply-chain adımı teknik olarak PASS/`OWNER_REVIEW_REQUIRED` raporu verdi; H05
+lisans/notices ve default-branch Dependabot kararı bilinçli olarak deferred kaldı.
+
+Bu local CI mevcut geliştirici profili ve izole geçici data directory üzerinde
+çalıştı; ikinci temiz profile/host kanıtı değildir. Smoke sırasında market-data
+enabled varsayılanı korundu ve public Binance stream bağlantısı denenmiş olabilir;
+bu nedenle rapor offline-runtime kanıtı sayılmaz. N03 launcher'ın gerçek packaged
+`.app`/DMG install-lifecycle PASS'ı için host-owner attestation ve explicit
+install→launch→synthetic value-chain→close/reopen koşulları hâlâ gereklidir.
 
 ## Kanıt ve kapsam sözleşmesi
 

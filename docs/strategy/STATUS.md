@@ -79,13 +79,22 @@ locked local CI is `MERGE READY` with 13/13 steps, backend `769 passed`, fronten
 [macOS temiz profil / ikinci host install-lifecycle audit](work-packages/N03-macos-clean-profile-install-audit.md)
 is selected next. The process-only audit worker/launcher, explicit packaged
 executable/hash checks, provenance binding, source worker persistence tests and
-scope guards are implemented in this change; the focused N03 plus related
-regression set is **37 passed with 2 deprecation warnings**. This is not host
-acceptance evidence. A second genuinely clean macOS profile or host is still
-required; the current developer profile and a temporary data directory are
-insufficient. Until that host/profile evidence exists, N03 remains open and N04
-is not selected. Canonical local-CI exact artifact/provenance evidence is the next
-documentation update after the implementation commit.
+scope guards were implemented in `ec162429d4f79e9f6fd581d3e1c81e8cb8b48d42`;
+the focused N03 plus related regression set was **37 passed with 2 deprecation
+warnings**. The same clean tracked checkout produced canonical local CI
+`dist/n03-local-ci-report-ec16242.json`: **13/13 PASS**, backend **775 passed**,
+frontend **25 files / 104 tests**, i18n **608/608**, arm64 build, native
+`wkwebview` smoke and provenance `COMPLETE`; report SHA-256 is
+`7bb4e9bdd2fbb67293de2ff1ab61ac4aed069f458e74d1d384bfce82ae79c4eb`, executable
+SHA-256 is `1184f105364160ce19a915cf2336f3778b476886df442e198738e7e8353b1937`
+and `.app` tree SHA-256 is
+`d1b0041f57a41b3e6a819171e7f03254f15a469eaf5eb5298ee6444d2f331228`.
+This is not host acceptance evidence. A second genuinely clean macOS profile or
+host is still required; the current developer profile and a temporary data
+directory are insufficient. Until that host/profile evidence exists, N03 remains
+open and N04 is not selected. The CI smoke retained default market-data behavior
+and may have attempted the public Binance stream, so it is not offline-runtime
+proof; H05 supply-chain owner review also remains deferred.
 
 ## Historical evidence retained for traceability
 
