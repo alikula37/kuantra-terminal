@@ -31,6 +31,13 @@ if __name__ == "__main__" and "--g0-g2-audit" in sys.argv[1:]:
     from desktop.g0_g2_worker import main as g0_g2_main
     raise SystemExit(g0_g2_main(sys.argv[1:]))
 
+# The N03 install-lifecycle diagnostic is also process-only.  It must run
+# before the normal user-data path or WebView lifecycle and only accepts an
+# explicitly empty synthetic data directory from its launcher.
+if __name__ == "__main__" and "--n03-audit" in sys.argv[1:]:
+    from desktop.n03_worker import main as n03_main
+    raise SystemExit(n03_main(sys.argv[1:]))
+
 from app.core.paths import DATA_DIR, PROJECT_ROOT, bundle_root, is_frozen  # noqa: E402
 
 APP_TITLE = "Kuantra Terminal"

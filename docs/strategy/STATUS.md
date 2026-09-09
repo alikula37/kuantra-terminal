@@ -77,9 +77,15 @@ locked local CI is `MERGE READY` with 13/13 steps, backend `769 passed`, fronten
 
 **N03 — Active / HOST_REQUIRED:**
 [macOS temiz profil / ikinci host install-lifecycle audit](work-packages/N03-macos-clean-profile-install-audit.md)
-is selected next. A second genuinely clean macOS profile or host is required;
-the current developer profile and a temporary data directory are insufficient.
-Until that host/profile evidence exists, N03 remains open and N04 is not selected.
+is selected next. The process-only audit worker/launcher, explicit packaged
+executable/hash checks, provenance binding, source worker persistence tests and
+scope guards are implemented in this change; the focused N03 plus related
+regression set is **37 passed with 2 deprecation warnings**. This is not host
+acceptance evidence. A second genuinely clean macOS profile or host is still
+required; the current developer profile and a temporary data directory are
+insufficient. Until that host/profile evidence exists, N03 remains open and N04
+is not selected. Canonical local-CI exact artifact/provenance evidence is the next
+documentation update after the implementation commit.
 
 ## Historical evidence retained for traceability
 

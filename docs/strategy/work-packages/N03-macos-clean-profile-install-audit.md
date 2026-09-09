@@ -3,10 +3,11 @@
 
 ```yaml
 work_package: N03
-version: 1.0.0
+version: 1.1.0
 status: InProgress
 date: 2026-09-09
 baseline_commit: e042790
+implementation_commit: this change
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP27, N01, N02, H01, H02, H04, H06
@@ -29,6 +30,41 @@ temiz ikinci profil/host kanıtı sayılmaz. Gerçek kullanıcı hesabı oluştu
 onayı, Gatekeeper/quarantine değişikliği veya başka host erişimi kullanıcı/host sahibi
 tarafından sağlanmalıdır. Bu paket, host hazır olmadan sonucu PASS/COMPLETE olarak
 işaretlemez.
+
+## Uygulanan audit harness — kabul kısmi, host blocker açık
+
+Bu değişiklikte N03 için process-only bir audit harness uygulandı. `desktop_main.py`
+normal desktop lifecycle'dan önce `--n03-audit` dispatch eder; PyInstaller spec
+`desktop.n03_worker` modülünü paketler. Worker, yalnızca absolute/owner-only ve seed
+aşamasında boş bir data directory kabul eder; Windows data'sını, credential'ı,
+connector'ı veya market stream'ini kullanmaz. `seed` sentetik preview → malformed
+preview → import → review decision lineage → Evidence Pack → JSON/HTML/CSV export
+akışını yazar; `reopen` yeni process'te aynı trade, source provenance, review ve
+Evidence Pack snapshot'ını doğrular. `PARTIAL`/`UNKNOWN` coverage `PASS` veya sıfıra
+çevrilmez; funding/transfer schema/event sınırı scope guard ile fail-closed kalır.
+
+`scripts/run_n03_macos_clean_profile_audit.py` explicit `.app` veya read-only mounted
+`.dmg` seçer, source artifact ile executable hash'ini provenance raporuna bağlar,
+quarantine/Gatekeeper sonucunu yalnız gözlemler, installed executable üzerinde
+WKWebView smoke çalıştırır ve packaged worker'ın gerçekten seçilen executable'dan
+çalıştığını doğrular. Final validator eksik provenance, hash mismatch, source-process
+worker, reopen identity farkı veya unsupported production/signing/network claim'ini
+PASS saymaz.
+
+Red → green kanıtı:
+
+- İlk focused test, henüz `desktop.n03_worker` yokken beklenen import failure verdi.
+- Sonrasında `test_n03_macos_clean_profile_audit.py` içindeki profile attestation,
+  report contract, source worker persistence ve iki ayrı Python process reopen
+  kontrolleri **6 passed** oldu.
+- İlgili N01/N02/H03/P1-WP27/desktop/packaging regression seti **37 passed, 2
+  deprecation warning** oldu.
+
+Bu sonuç source-level ve contract kanıtıdır; mevcut geliştirici profiliyle packaged
+N03 PASS üretilmedi. İkinci gerçekten temiz macOS profile/host, install root içindeki
+explicit packaged artifact, Gatekeeper gözlemi ve close/reopen kanıtı sağlanmadan
+N03 acceptance checkbox'ları kapatılmaz ve paket `HOST_REQUIRED` kalır. Commit sonrası
+canonical local CI exact artifact/provenance değerleri bu pakete eklenecektir.
 
 ## Kanıt ve kapsam sözleşmesi
 
