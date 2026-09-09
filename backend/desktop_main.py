@@ -42,13 +42,20 @@ class AppContext:
 def parse_args(argv=None):
     p = argparse.ArgumentParser(prog="kuantra-terminal")
     p.add_argument("--smoke", action="store_true", help="headless self-test, exit 0 on success")
+    p.add_argument("--h07-ui-fixture", type=Path, help="100k synthetic fixture for native smoke measurement")
     p.add_argument("--smoke-report", default=None, help="write smoke result JSON here")
     p.add_argument("--smoke-timeout", type=float, default=90.0)
     p.add_argument("--debug", action="store_true", help="enable webview devtools")
     p.add_argument("--dev-url", default=None, help="load a Vite dev server URL instead of the bundled frontend")
     p.add_argument("--gui", default=None, choices=["cocoa", "edgechromium", "qt", "gtk"])
     p.add_argument("--frontend-dir", default=None, help="directory containing index.html (dev only)")
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    if args.h07_ui_fixture is not None and (
+        not args.smoke or os.environ.get("KUANTRA_MARKET_DATA_ENABLED", "").lower() != "false"
+        or not os.environ.get("KUANTRA_DATA_DIR")
+    ):
+        p.error("H07 UI measurement requires --smoke, explicit data directory and disabled market data")
+    return args
 
 
 def resolve_frontend_index(frontend_dir: str | None = None) -> Path:
@@ -238,7 +245,7 @@ def main(argv=None) -> int:
         min_size=WINDOW["min_size"], text_select=True, background_color="#0b0e14",
         # WebView2 does not complete controller initialization for a hidden WinForms host on
         # some Windows builds. A visible smoke window is still closed immediately after checks.
-        hidden=_window_hidden_for_smoke(args.smoke, renderer),
+        hidden=_window_hidden_for_smoke(args.smoke, renderer) and args.h07_ui_fixture is None,
     )
 
     def on_start():
@@ -276,6 +283,13 @@ def main(argv=None) -> int:
             return
         from desktop.smoke import run_smoke
         result = run_smoke(window, ctx, timeout=args.smoke_timeout)
+        if result["ok"] and args.h07_ui_fixture is not None:
+            from desktop.smoke import measure_h07_ui
+            try:
+                result["h07_ui"] = measure_h07_ui(window, args.h07_ui_fixture)
+            except Exception as exc:
+                result["h07_ui"] = {"status": "FAILED", "reason": str(exc)}
+            result["ok"] = result["h07_ui"]["status"] == "MEASURED"
         result["version"] = ctx.bridge.get_app_info()["version"]
         result["renderer_expected"] = renderer
         result["renderer_actual"] = actual_renderer

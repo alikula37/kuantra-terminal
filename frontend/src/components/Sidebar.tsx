@@ -132,6 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           return (
             <button
               key={item.id}
+              data-testid={`nav-${item.id}`}
               onClick={() => onTabChange(item.id as NavTab)}
               className={`w-full flex items-center space-x-3 px-3 py-2 rounded text-xs font-medium transition ${
                 isActive

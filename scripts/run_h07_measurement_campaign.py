@@ -35,6 +35,7 @@ def _canonical(value) -> str:
 def _summary(values, *, expected_status="SUCCESS"):
     if not values:
         return {"status": "UNKNOWN", "reason": "NO_SAMPLES", "sample_count": 0,
+                "min_ms": None, "max_ms": None,
                 "p50_ms": None, "p95_ms": None, "p99_ms": None,
                 "peak_rss_mb": None, "peak_temp_disk_bytes": None,
                 "resource_status": "UNKNOWN", "resource_reason": "NO_SAMPLES"}
@@ -57,6 +58,7 @@ def _summary(values, *, expected_status="SUCCESS"):
         "status": "MEASURED" if measured else "UNKNOWN" if statuses == {expected_status} else "FAILED",
         "reason": None if measured else "INSUFFICIENT_SAMPLES" if statuses == {expected_status} else "UNEXPECTED_OPERATION_STATUS",
         "sample_count": len(values),
+        "min_ms": round(ordered[0], 4), "max_ms": round(ordered[-1], 4),
         "p50_ms": percentile(50), "p95_ms": percentile(95), "p99_ms": percentile(99),
         "peak_rss_mb": round(max(float(value["rss_mb"]) for value in resource_values), 4) if resource_values else None,
         "peak_temp_disk_bytes": max(int(value["temp_disk_bytes"]) for value in resource_values) if resource_values else None,

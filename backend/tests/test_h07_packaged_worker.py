@@ -157,6 +157,8 @@ def test_campaign_summary_uses_interpolated_percentiles_and_preserves_mode_truth
     summary = _summary(samples)
     assert summary["status"] == "MEASURED"
     assert summary["p95_ms"] == 9.2
+    assert summary["min_ms"] == 1.0
+    assert summary["max_ms"] == 10.0
     result = _mode_result([{
         "pid": 10, "operation_samples": samples, "process_elapsed_ms": 20.0,
         "manifest_path": "/tmp/campaign/run-01/cold/sample-01/manifest.json",

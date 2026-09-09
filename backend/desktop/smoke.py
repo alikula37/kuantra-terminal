@@ -27,6 +27,73 @@ def _eval(window, script, timeout=5.0):
 SMOKE_PLUGIN_ID = "plugin_orderflow"
 
 
+def measure_h07_ui(window, fixture):
+    """Measure the actual Journal/Evidence React path using an isolated fixture.
+
+    Only the read adapter is substituted; HTTP routing, native bridge and React
+    rendering remain real. This is synthetic diagnostic evidence, not onboarding
+    or import/export end-to-end acceptance.
+    """
+    from pathlib import Path
+    import tempfile
+    from desktop.h07_worker import _validate_fixture, _copy_fixture, _fixture_adapter
+    from app.api import endpoints
+
+    metadata = _validate_fixture(fixture, size=100000, seed="H07-SYNTHETIC-V1")
+    previous = endpoints.trade_read_adapter
+    with tempfile.TemporaryDirectory(prefix="h07-ui-") as directory:
+        copied = Path(directory) / "synthetic.sqlite"
+        _copy_fixture(fixture, copied)
+        _, ledger, _, adapter = _fixture_adapter(copied)
+        endpoints.trade_read_adapter = adapter
+        try:
+            # Fresh-profile persona prompt is dismissed through its own close handler.
+            window.evaluate_js("""(() => {
+              const heading = [...document.querySelectorAll('h2')].find(x => x.textContent === 'Select Architectural Persona');
+              if (heading) heading.parentElement.parentElement.parentElement.querySelector('button').click();
+              const nav = document.querySelector('[data-testid="nav-journal"]');
+              if (!nav) throw Error('journal navigation missing'); nav.click();
+            })()""")
+            samples = []
+            for mode in ("cold", "warm"):
+                if mode == "cold":
+                    ledger.close()
+                result = _eval(window, """new Promise((resolve) => {
+                  const deadline = performance.now() + 30000;
+                  const ready = setInterval(() => {
+                    const button = document.querySelector('button[title="Open source-linked Trade Evidence Pack"]');
+                    if (!button) { if(performance.now()>deadline) {clearInterval(ready);resolve({status:'FAILED',reason:'journal timeout'});} return; }
+                    clearInterval(ready);
+                    const start = performance.now(); let last=start, maxGap=0, ticks=0, loading=false;
+                    let health=null, read=null, renderedAt=null;
+                    button.click();
+                    const request = (path) => {const t=performance.now();return window.pywebview.api.request({method:'GET',path,query:'limit=1'}).then(r=>({status:r.status,elapsed_ms:performance.now()-t,completed_before_render:renderedAt===null}));};
+                    setTimeout(()=>{request('/health').then(r=>health=r);request('/api/v1/trades').then(r=>read=r);}, 20);
+                    const poll=setInterval(()=>{
+                      const now=performance.now();maxGap=Math.max(maxGap,now-last);last=now;ticks++;
+                      loading ||= !!document.querySelector('[data-testid="trade-evidence-cancel"]');
+                      const rendered=document.querySelector('[data-testid="trade-evidence-coverage"]');
+                      if(rendered && renderedAt===null) renderedAt=now;
+                      if(rendered && health && read) {
+                        clearInterval(poll);resolve({status:'MEASURED',elapsed_ms:renderedAt-start,max_timer_gap_ms:maxGap,timer_ticks:ticks,loading_observed:loading,health,read});
+                      } else if(now>deadline) {clearInterval(poll);resolve({status:'FAILED',reason:'evidence timeout'});}
+                    }, 25);
+                  },25);
+                })""", timeout=35)
+                if not isinstance(result, dict) or result.get("status") != "MEASURED":
+                    raise ValueError(f"native Evidence Pack measurement failed: {result}")
+                if result["health"]["status"] != 200 or result["read"]["status"] != 200:
+                    raise ValueError("concurrent local read failed")
+                samples.append({"mode": mode, **result})
+                window.evaluate_js("document.querySelector('[aria-label=\"Close Evidence Pack\"]').click()")
+                time.sleep(0.1)
+            return {"status": "MEASURED", "fixture": metadata, "samples": samples,
+                    "adapter": "ISOLATED_SYNTHETIC", "process_cold": False,
+                    "percentiles": "UNKNOWN_SINGLE_SAMPLE", "network_isolation": "NOT_VERIFIED"}
+        finally:
+            endpoints.trade_read_adapter = previous
+
+
 def _toggle_plugin(ctx, enable: bool):
     return ctx.runtime.call(
         "POST", "/api/v1/plugins/toggle",

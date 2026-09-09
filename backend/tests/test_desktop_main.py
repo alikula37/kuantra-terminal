@@ -23,6 +23,19 @@ def test_cli_parser_defaults():
     assert args.smoke and args.smoke_report == "r.json" and args.smoke_timeout == 5.0
 
 
+def test_h07_ui_measurement_requires_explicit_diagnostic_boundary(monkeypatch, tmp_path):
+    import desktop_main
+    fixture = str(tmp_path / 'synthetic.sqlite')
+    monkeypatch.delenv('KUANTRA_MARKET_DATA_ENABLED', raising=False)
+    with pytest.raises(SystemExit):
+        desktop_main.parse_args(['--smoke', '--h07-ui-fixture', fixture])
+    monkeypatch.setenv('KUANTRA_MARKET_DATA_ENABLED', 'false')
+    monkeypatch.setenv('KUANTRA_DATA_DIR', str(tmp_path))
+    with pytest.raises(SystemExit):
+        desktop_main.parse_args(['--h07-ui-fixture', fixture])
+    assert desktop_main.parse_args(['--smoke', '--h07-ui-fixture', fixture]).h07_ui_fixture == Path(fixture)
+
+
 def test_macos_uses_native_cocoa_renderer(monkeypatch):
     import desktop_main
 
