@@ -27,7 +27,7 @@ def _eval(window, script, timeout=5.0):
 SMOKE_PLUGIN_ID = "plugin_orderflow"
 
 
-def measure_h07_ui(window, fixture):
+def measure_h07_ui(window, fixture, *, size=100_000):
     """Measure the actual Journal/Evidence React path using an isolated fixture.
 
     Only the read adapter is substituted; HTTP routing, native bridge and React
@@ -39,7 +39,7 @@ def measure_h07_ui(window, fixture):
     from desktop.h07_worker import _validate_fixture, _copy_fixture, _fixture_adapter
     from app.api import endpoints
 
-    metadata = _validate_fixture(fixture, size=100000, seed="H07-SYNTHETIC-V1")
+    metadata = _validate_fixture(fixture, size=size, seed="H07-SYNTHETIC-V1")
     previous = endpoints.trade_read_adapter
     with tempfile.TemporaryDirectory(prefix="h07-ui-") as directory:
         copied = Path(directory) / "synthetic.sqlite"

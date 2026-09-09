@@ -43,7 +43,14 @@ class AppContext:
 def parse_args(argv=None):
     p = argparse.ArgumentParser(prog="kuantra-terminal")
     p.add_argument("--smoke", action="store_true", help="headless self-test, exit 0 on success")
-    p.add_argument("--h07-ui-fixture", type=Path, help="100k synthetic fixture for native smoke measurement")
+    p.add_argument("--h07-ui-fixture", type=Path, help="synthetic fixture for native smoke measurement")
+    p.add_argument(
+        "--h07-ui-fixture-size",
+        type=int,
+        choices=(1_000, 10_000, 100_000),
+        default=100_000,
+        help="declared synthetic fixture size for native H07 measurement",
+    )
     p.add_argument("--smoke-report", default=None, help="write smoke result JSON here")
     p.add_argument("--smoke-timeout", type=float, default=90.0)
     p.add_argument("--debug", action="store_true", help="enable webview devtools")
@@ -288,7 +295,9 @@ def main(argv=None) -> int:
         if result["ok"] and args.h07_ui_fixture is not None:
             from desktop.smoke import measure_h07_ui
             try:
-                result["h07_ui"] = measure_h07_ui(window, args.h07_ui_fixture)
+                result["h07_ui"] = measure_h07_ui(
+                    window, args.h07_ui_fixture, size=args.h07_ui_fixture_size,
+                )
             except Exception as exc:
                 result["h07_ui"] = {"status": "FAILED", "reason": str(exc)}
             result["ok"] = result["h07_ui"]["status"] == "MEASURED"

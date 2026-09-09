@@ -36,6 +36,23 @@ def test_h07_ui_measurement_requires_explicit_diagnostic_boundary(monkeypatch, t
     assert desktop_main.parse_args(['--smoke', '--h07-ui-fixture', fixture]).h07_ui_fixture == Path(fixture)
 
 
+def test_h07_ui_measurement_accepts_bounded_fixture_sizes(monkeypatch, tmp_path):
+    import desktop_main
+
+    monkeypatch.setenv('KUANTRA_MARKET_DATA_ENABLED', 'false')
+    monkeypatch.setenv('KUANTRA_DATA_DIR', str(tmp_path))
+    args = desktop_main.parse_args([
+        '--smoke', '--h07-ui-fixture', str(tmp_path / 'synthetic.sqlite'),
+        '--h07-ui-fixture-size', '10000',
+    ])
+    assert args.h07_ui_fixture_size == 10000
+    with pytest.raises(SystemExit):
+        desktop_main.parse_args([
+            '--smoke', '--h07-ui-fixture', str(tmp_path / 'synthetic.sqlite'),
+            '--h07-ui-fixture-size', '5000',
+        ])
+
+
 def test_macos_uses_native_cocoa_renderer(monkeypatch):
     import desktop_main
 
