@@ -74,8 +74,12 @@ pakete eklenmeyecektir.
   body için kullanılır. Bu değişiklik: 38 focused H07 testi PASS.
 - [ ] Kaynak süreç benchmark'ı ile gerçekten çalıştırılan packaged executable
   benchmark'ı ayrılır; fresh-process cold, warm ve append-tail koşulları ayrı ölçülür.
-  Source raporunun execution alanları ve validator'ı bu değişiklikte uygulandı;
-  native worker ve fresh-process ölçümü henüz uygulanmadı.
+  Source contract `caef518`; bu değişiklikte ayrı packaged worker/launcher var.
+  Fixture import aynı süreçte olduğu için fresh-process cold ölçümü henüz yok.
+- [x] Explicit executable gerçekten çalıştırılır; normal data/log/backend/WebView
+  startup'tan önce izole sentetik worker seçilir. PID/executable/pre-post artifact
+  hash ve sonuç doğrulanır; worker/log manifest kalıcı yerel dizine yazılır.
+  Source checkout gözlemi release build attestation sayılmaz.
 - [ ] Canonical doğruluk düzeltmesi sonrası 1k/10k/100k ölçümleri yenilenir;
   cold hedef ve resource acceptance ayrı kanıtlarla sonuçlandırılır.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
@@ -130,7 +134,57 @@ gevşetilmeyecek ve sonraki paket STATUS üzerinden seçilecektir.
 
 ## Güncel bounded uygulama ve ölçüm sonucu — 2026-09-08
 
-### 2026-09-09 doğruluk düzeltmesi — this change
+### 2026-09-09 packaged worker — this change
+
+`backend/desktop_main.py` diagnostic dispatch'i `app.core.paths` importundan önce
+yapar. `desktop/h07_worker.py` yalnız kendi temporary fixture'ını oluşturur; normal
+data directory, logging, runtime/market stream ve WebView başlamaz. Python audit
+guard network/child-process çağrılarını reddeder; OS firewall iddiası değildir.
+`scripts/run_h07_packaged_benchmark.py` explicit executable'ı gerçekten çalıştırır,
+PID/path/hash/outcome ve pre/post artifact hash eşitliğini kontrol eder. Mevcut
+output/evidence dizinine yazmaz; başarısız süreçte successful manifest üretmez.
+PyInstaller yalnız worker ve mevcut H07 workload/provenance modüllerini ekler;
+benchmark içinde source provenance collector çalıştırılmaz.
+
+Red: 5 isolation/CLI test FAIL. Green: H07 worker + existing H07 56 PASS;
+son full backend 749 PASS (2 deprecation warning). Canonical locked local CI
+`MERGE READY`: o koşuda backend 737, frontend 25/102, i18n 608/608, production
+build, arm64 PyInstaller ve normal WKWebView smoke PASS. Sonradan eklenen 12
+launcher/guard testi ayrı full backend koşusundaki 749 sayısına dahildir.
+Docs/link ve diff gate PASS. Bu desktop değişikliğinin Windows/Linux host gate'i
+henüz alınmadı; main merge/release yapılmaz.
+
+Gerçek `.app` diagnostic komutu:
+
+```text
+.venv/bin/python scripts/run_h07_packaged_benchmark.py --executable "dist/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal" --artifact "dist/Kuantra Terminal.app" --size 1000 --repetitions 3 --evidence-dir artifacts/evidence/h07/packaged-worker-1000-v1
+```
+
+macOS 26.6.2 arm64 / Python 3.11.16; Node 20.20.2, npm 10.8.2, uv 0.12.10,
+PyInstaller 6.22.2. `PACKAGED_PROCESS`, gerçek PID 9691, 1000 trade/projection ve
+1003 immutable ledger event. Snapshot
+`cf6a1ae220f083e0de63d4b8172fc860be9510555243af3072ace4a8a8f75d2e`
+önceki source fixture ile eşit. Executable SHA-256
+`a1ee09b5d2fdadaac2df35555c34a7ec78d370507d3f4acdcd90e7cdb2758b2c`;
+`.app` tree SHA-256
+`02a84893a239b652f1cecbe0ee1053fe01a4246767ec9c049f3581d5a2e09238`;
+worker dosya SHA-256
+`fb2eed5e167b217104229799e7958fb64fb16bef0b7303b3dedd8f29f5dec19f`;
+manifest dosya SHA-256
+`2f29069847b9d2b3c50a4e43ba7d1c3ba881abfc8a21fa88489037bad8d2f70f`.
+Aynı komut yeni `packaged-worker-1000-v1-repeat` evidence diziniyle tekrarlandı:
+ayrı PID 9742, aynı determinism snapshot ve sayımlar; pre/post hash kontrolü PASS.
+Bu iki küçük diagnostic koşu, planlanan iki tam 20-sample performans koşusu değildir.
+Manifest lock/toolchain ve `caef518` + dirty tree checkout gözlemini içerir.
+Embedded build attestation değildir: source-to-binary `NOT_VERIFIED`, release
+provenance `UNKNOWN` kalır. Yeni DMG/final distribution kanıtı üretilmedi.
+
+Fixture import aynı worker'da çalıştığı için ölçümler `MIXED_AFTER_FIXTURE_IMPORT`,
+OS cache `UNCONTROLLED`, `cold_process_measured=false` olarak kalır. Bu alt paket
+20 cold örneği, iki 1k/10k/100k koşusu, performance hedefi veya H07 kapanışı değildir.
+Sıradaki iş ayrı fresh-process cold/warm/append-tail protokolü ve ölçüm manifestidir.
+
+### 2026-09-09 doğruluk düzeltmesi — a97499b
 
 `5a70f8b` payload/provenance hızlı kabulü, stdlib canonical sözleşmesinin reddettiği
 `{"x":1e-7}` metnini kabul ediyordu. Payload validation stdlib'e döndürüldü;
@@ -153,7 +207,7 @@ percentile fonksiyonuyla yeniden hesaplanmalıdır; yeni repository instance'lar
 module/OS cache'lerinin soğuk olduğunu kanıtlamaz. Bu düzeltmeden sonra geçmiş
 performans sayıları güncel davranışın veya `<2s` hedefinin kanıtı değildir.
 
-### 2026-09-09 ölçüm sözleşmesi — this change
+### 2026-09-09 ölçüm sözleşmesi — caef518
 
 Canonical düzeltme `a97499b`'dir. Source benchmark raporu `SOURCE_PROCESS`,
 `artifact_executed=false`, `cold_process_measured=false`, `os_cache=UNCONTROLLED`

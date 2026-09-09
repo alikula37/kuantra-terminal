@@ -18,6 +18,12 @@ BACKEND_DIR = Path(__file__).resolve().parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+# This process-only diagnostic must dispatch before app.core.paths creates or
+# tightens the normal user data directory. It never enters the GUI lifecycle.
+if __name__ == "__main__" and "--h07-benchmark" in sys.argv[1:]:
+    from desktop.h07_worker import main as h07_main
+    raise SystemExit(h07_main(sys.argv[1:]))
+
 from app.core.paths import DATA_DIR, PROJECT_ROOT, bundle_root, is_frozen  # noqa: E402
 
 APP_TITLE = "Kuantra Terminal"

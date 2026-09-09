@@ -42,7 +42,9 @@ for pkg in ["app", "starlette", "fastapi", "uvicorn", "pydantic", "cryptography"
 hiddenimports += [
     "main",
     "desktop", "desktop.bridge", "desktop.clipboard", "desktop.gateway",
-    "desktop.push", "desktop.runtime", "desktop.smoke",
+    "desktop.push", "desktop.runtime", "desktop.smoke", "desktop.h07_worker",
+    # Narrow diagnostic workload; does not execute source provenance collection.
+    "scripts.run_h07_benchmark", "scripts.build_provenance",
     "pydantic_settings", "dotenv",
     "uvicorn.loops.auto", "uvicorn.protocols.http.auto", "uvicorn.protocols.websockets.auto",
     "uvicorn.lifespan.on",
@@ -77,7 +79,7 @@ else:
 
 a = Analysis(  # noqa: F821
     [os.path.join(BACKEND, "desktop_main.py")],
-    pathex=[BACKEND],
+    pathex=[BACKEND, ROOT],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
