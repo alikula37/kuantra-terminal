@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.28
+version: 1.0.29
 status: Proposed
-date: 2026-09-09
-reviewed_commit: e042790
+date: 2026-09-10
+reviewed_commit: f858321
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -36,8 +36,11 @@ privacy/data-lifecycle ve credential availability boundary `4270d33` ile uygulan
 default-branch alert disposition, ticari dağıtım öncesine kadar bilinçli olarak
 ertelenmiştir; bu release gate'i kapalı tutar. H07 bounded performance/resource-limit
 paketi ve P1-WP27 G0–G2 packaged value-chain audit'i bounded non-release kanıtla
-tamamlanıp arşivlenmiştir. Sıradaki aktif paket N03 temiz Mac profil/ikinci host
-install-lifecycle kanıtıdır; ikinci host/profile olmadan PASS/production iddiası yoktur.
+tamamlanıp arşivlenmiştir. N03 temiz Mac profil/ikinci host install-lifecycle
+harness'ı uygulanmıştır; owner kararıyla host çalıştırması son macOS dağıtım/pilot
+validation kapısına ertelenmiştir ve ikinci host/profile kanıtı olmadan PASS/production
+iddiası yoktur. Sıradaki aktif geliştirme paketi N04 manual update/uninstall veri
+koruma audit'idir.
 Aşağıdaki diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış
 WP değildir.
 
@@ -201,8 +204,8 @@ izleme yaklaşımı NIST SSDF'den yararlanır; bu plan bir standart sertifikası
 |---|---|
 | N01 | Build source SHA, tree state, lock hashes, toolchain/OS/arch, artifact/executable SHA manifest'te; UNKNOWN/provenance mismatch fail |
 | N02 | Mac smoke actual WKWebView/controller hazır; preflight ve report validation fail-closed; DMG içinden explicit executable smoke |
-| N03 | Temiz ikinci host/profilde quarantine dahil install → launch → import/review → close/reopen; geliştirici cache/data'sına bağımlı değil |
-| N04 | Update önceki supported build'den; interrupted update; uninstall veriyi korur; restore ve schema rollback politikası kullanıcıya açık |
+| N03 | Temiz ikinci host/profilde quarantine dahil install → launch → import/review → close/reopen; geliştirici cache/data'sına bağımlı değil; final validation'a ertelendi |
+| N04 | Update önceki supported build'den; interrupted update; uninstall veriyi korur; restore ve schema rollback politikası kullanıcıya açık; sıradaki implementation paketi |
 | N05 | Dağıtım imzası/notarization süreci, minimal entitlements, ticket/manifest verification, secretsiz signing logs |
 | N06 | Windows P0-WP11 host blocker ve Linux native final artifact suite ayrı host'larda; OS/arch/version support tablosu kanıtla eşleşir |
 
@@ -379,9 +382,11 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     bağlandı; H07 acceptance/archive reconcile edilerek tamamlandı.
 18. P1-WP27: G0–G2 supported matrix, bağımsız oracle ve packaged
     import→review→export→reopen acceptance audit; tamamlandı/arşivlendi `e042790`.
-19. N03–N06 owner/host bağımlılıkları çözüldükçe sırasıyla; güncel seçili paket N03'tür.
+19. N03–N06 owner/host bağımlılıkları çözülerek sırasıyla ilerler. N03 host çalıştırması
+    final macOS distribution/pilot validation'a ertelenmiştir; güncel seçili geliştirme
+    paketi N04'tür. N03, pilot/release öncesi yeniden açılacaktır.
 
-### 2026-09-09 onaylanan kalan uygulama sırası
+### 2026-09-10 onaylanan kalan uygulama sırası
 
 1. H07 canonical JSON uyumsuzluğunu gider; stdlib sözleşmesi ve hash byte eşitliği
    için negative/regression kanıtı üret. (Tamamlandı.)
@@ -397,9 +402,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 4. P1-WP27 ile G0–G2 supported matrix, bağımsız oracle ve packaged
    import→review→export→reopen kabul denetimini tamamla; B2 kapsamını kanıtla
    netleştir. (Tamamlandı/arşivlendi `e042790`; bounded Mac kanıtı, release kanıtı değil.)
-5. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını tamamla; host
-   sağlanana kadar `HOST_REQUIRED` kalır. Sonra N04 sentetik update/uninstall veri
-   koruma paketine geç.
+5. N04 sentetik/manual update, interrupted-update recovery ve uninstall veri koruma
+   paketini uygula. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son
+   macOS distribution/pilot validation kapısında çalıştır; host kanıtı gelene kadar
+   `DEFERRED/HOST_REQUIRED` kalır. Ardından N05 ve N06 sırasını koru.
 6. Ticari dağıtım öncesi H05 license/notices/dependency disposition owner kapısını
    yeniden aç; N05 signing/notarization sonrası final artifact'i yeniden doğrula.
 7. N06 Windows/Linux host kanıtı; G5 consent/metrik kararları sonrası formative ve
@@ -428,6 +434,15 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
   macOS profil/host gerektirir; mevcut geliştirici profili veya geçici data directory
   bu kanıtın yerine geçmez. H05 license/notices ve default-branch Dependabot
   disposition geliştirme döneminde deferred release gate olarak korunur.
+
+### 1.0.29 — 2026-09-10
+
+- Owner kararı kaydedildi: N03 clean-profile host çalıştırması günlük geliştirme
+  blocker'ı değildir; final macOS distribution/pilot validation kapısına ertelendi.
+  N03 acceptance checkbox'ları açık ve `DEFERRED/HOST_REQUIRED` kalır.
+- N04 manual update/interrupted-update/uninstall data-preservation implementation
+  paketi sıradaki seçili bounded geliştirme paketi olarak belirlendi; ürün kapsamına
+  automatic updater veya gerçek data/migration işlemi eklenmedi.
 
 ### 1.0.26 — 2026-09-09
 

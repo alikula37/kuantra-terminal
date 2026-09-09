@@ -1,10 +1,10 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # N03 — macOS Temiz Profil / İkinci Host Install-Lifecycle Audit
 
 ```yaml
 work_package: N03
 version: 1.1.0
-status: InProgress
+status: Deferred
 date: 2026-09-09
 baseline_commit: e042790
 implementation_commit: ec162429d4f79e9f6fd581d3e1c81e8cb8b48d42
@@ -12,6 +12,8 @@ branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: P1-WP27, N01, N02, H01, H02, H04, H06
 release_gate: H05-commercial-distribution-deferred
+deferred_until: G4/G5-pilot-validation
+decision_date: 2026-09-10
 ```
 
 ## Amaç
@@ -20,16 +22,25 @@ Mac arm64 üzerinde P1-WP27 ile doğrulanan sentetik değer zincirinin, gelişti
 profiline veya mevcut checkout/cache durumuna bağlı olmadığını ikinci bir temiz
 macOS profili ya da ikinci bir Mac host üzerinde kanıtlamak. Bu paket install →
 launch → temiz local data oluşturma → sentetik import/review/export → close/reopen
-akışının host/lifecycle kanıtıdır; imzalı dağıtım veya production readiness değildir.
+ akışının host/lifecycle kanıtıdır; imzalı dağıtım veya production readiness değildir.
+
+## Güncel karar
+
+Harness ve source-level testler korunur; ancak clean-profile host çalıştırması ürün
+sahibinin kararıyla günlük geliştirme blocker'ı olmaktan çıkarılmış ve son macOS
+dağıtım/pilot doğrulama kapısına (`G4/G5`) ertelenmiştir. Bu bir PASS veya COMPLETE
+değildir. N04 ve diğer bounded geliştirme paketleri önce ilerleyebilir; pilot ya da
+production doğrulamasından önce bu paket gerçek temiz profil/host ve hedef artifact
+ile çalıştırılmalı, tüm kabul kanıtı kaydedilmelidir.
 
 ## Mevcut blocker
 
-`HOST_REQUIRED`: mevcut hostta aynı geliştirici profiliyle yapılan packaged smoke,
+`HOST_REQUIRED` (ertelenmiş): mevcut hostta aynı geliştirici profiliyle yapılan packaged smoke,
 geçici `KUANTRA_DATA_DIR` kullanımı veya mevcut checkout'ın silinip yeniden açılması
 temiz ikinci profil/host kanıtı sayılmaz. Gerçek kullanıcı hesabı oluşturma, admin
 onayı, Gatekeeper/quarantine değişikliği veya başka host erişimi kullanıcı/host sahibi
 tarafından sağlanmalıdır. Bu paket, host hazır olmadan sonucu PASS/COMPLETE olarak
-işaretlemez.
+işaretlemez; host çalıştırması final validation aşamasına kadar bekletilir.
 
 ## Uygulanan audit harness — kabul kısmi, host blocker açık
 
@@ -63,7 +74,7 @@ Red → green kanıtı:
 Bu sonuç source-level ve contract kanıtıdır; mevcut geliştirici profiliyle packaged
 N03 PASS üretilmedi. İkinci gerçekten temiz macOS profile/host, install root içindeki
 explicit packaged artifact, Gatekeeper gözlemi ve close/reopen kanıtı sağlanmadan
-N03 acceptance checkbox'ları kapatılmaz ve paket `HOST_REQUIRED` kalır.
+N03 acceptance checkbox'ları kapatılmaz ve paket `DEFERRED/HOST_REQUIRED` kalır.
 
 ## Implementation commit ve local CI kanıtı
 
