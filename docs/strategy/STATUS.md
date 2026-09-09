@@ -40,10 +40,9 @@ type guards. Three new regression cases failed before the fix; all 38 focused H0
 tests pass afterward, including a rehashed noncanonical chain rejection.
 The performance figures below are historical source-process measurements, not
 packaged executable benchmarks: `--executable` only supplied hash metadata.
-Fresh-process cold measurement and percentile correction remain pending. The
-separate mounted-DMG smoke evidence remains valid for its recorded binary.
-Next dependency: implement the approved benchmark execution/measurement contract,
-then reassess H07 resource and performance acceptance on the corrected code.
+The separate mounted-DMG smoke evidence remains valid for its recorded binary.
+The packaged cold/warm/append-tail protocol is implemented in the current change;
+the final two-run/20-sample campaign and H07 resource disposition remain pending.
 Validation: canonical locked local CI `MERGE READY`; backend 731 (2 deprecation
 warnings), frontend 25 files/102 tests, i18n 608/608, arm64 build/native WKWebView
 smoke PASS on macOS 26.6.2. This run used the tracked working diff before commit;
@@ -57,7 +56,7 @@ of measurement repetitions. Three/five-repeat runs preserve counts and determini
 snapshots. Default report output is ignored `artifacts/evidence/h07/`.
 Focused H07: 39 tests; full backend: 732 tests, 2 deprecation warnings.
 Pending: 20 fresh-process cold samples per size in two
-runs and operation-specific cache metadata. Correction timing still
+runs and final operation-specific resource evidence. Correction timing still
 has only three samples; it is not a completed 20-sample performance gate.
 
 Packaged diagnostic, **this change**: `--h07-benchmark` dispatches before normal
@@ -75,12 +74,22 @@ protocol, then two 20-sample runs per size and the H07 resource acceptance audit
 Evidence: 5 red isolation tests → 56 focused H07/worker tests PASS; latest full
 backend 749 PASS (2 warnings). Mac canonical CI MERGE READY (737 backend at that
 run, frontend 102, i18n 608/608, arm64 build/WKWebView smoke); the 12 later guard/
-launcher tests passed in the separate 749-test full suite. Actual packaged 1k
+launcher tests passed in the separate 752-test full suite. Actual packaged 1k
 worker produced 1000 trades/projections and 1003 ledger events, matching the source
 snapshot. Durable manifest: `artifacts/evidence/h07/packaged-worker-1000-v1/manifest.json`,
 file SHA `2f29069847b9d2b3c50a4e43ba7d1c3ba881abfc8a21fa88489037bad8d2f70f`.
 Exact hashes, commands and platform limits are in active H07. New final DMG,
 signing and clean-release provenance are NOT claimed.
+
+Cold/warm/append-tail protocol, **this change**: worker/launcher modes now keep
+fresh-process cold, same-process warm-up, and append-tail verification separate.
+The 1k two-run/3-sample and 10k/100k one-run/3-sample scale sanity campaigns
+passed on the updated arm64 packaged executable. Cold operation, warm Evidence
+Pack operation, and append-tail `verified_events_this_call=1` are recorded; OS
+cache remains `UNCONTROLLED`, process RSS/disk remains `null` where unmeasured.
+These are protocol evidence only, not the required 20-sample/two-run acceptance.
+Next: run the full 1k/10k/100k campaign from a clean implementation commit,
+then classify H07 without changing the `<2s` target silently.
 
 | Area | Evidence / remaining boundary |
 |---|---|
@@ -88,7 +97,7 @@ signing and clean-release provenance are NOT claimed.
 | Roadmap baseline | `03b7791`: G0–G7 proposal; no production/pilot gate passed by publishing a document |
 | P1 foundations | Implementations recorded in historical packages; source completeness and financial accounting still open |
 | Mac (historical clean DMG baseline) | H07 source `5a70f8b` passed clean arm64 locked local CI and exact read-only DMG/WKWebView smoke with provenance `COMPLETE`; local CI report SHA `c513b5f4ce3a14270277c1a9031bcf0b9d51a3271a84ebe59f7deb2daa06be01`, native smoke report SHA `413d5029e79276c66149ae4574be0ced14860a4ac72b7858e34490d6dc0e5c5e`, `.app` SHA `36c84e727a00c305176f7ee45f2f4c32b6693e76cd59021aaa889bc1a4554459`, exact DMG smoke report SHA `bc587f232c7f5d09c787412549d924aa8aa045524590bdcecdd3047490367963`, DMG SHA `f5183bee511352e97b6c4d6e363d0951fc32361d6a9d718ccfe3174752c45fc7`, mounted executable SHA `17508bbfa429689ab6adeeee419e166c604a15457a55a5f8a543bbb16b04cbc0`; Developer ID/notarization/Gatekeeper/second-host evidence remains open |
-| H07 bounded baseline | Canonical correctness `a97499b`, source measurement contract `caef518`, and actual packaged worker/launcher in this change. See current evidence above and active H07 for exact commands/hashes. Old `5a70f8b` timings are historical source-process evidence, not current cold-chain performance or packaged benchmark proof. |
+| H07 bounded baseline | Canonical correctness `a97499b`, source measurement contract `caef518`, actual packaged worker/launcher and separate cold/warm/append-tail campaign protocol in this change. Final 20-sample/two-run evidence and resource disposition remain open. Old `5a70f8b` timings are historical source-process evidence, not current cold-chain performance or packaged benchmark proof. |
 | P2 | Short gaps-free Spot observations; controlled-disconnect observations INVALID. No source/live promotion |
 | Product | No real-user data/pilot evidence; Faz 1/2 user exits unfulfilled |
 
@@ -105,7 +114,7 @@ signing and clean-release provenance are NOT claimed.
 | H04 | CLOSED | Untrusted CSV/JSON/HTML, archive extraction, WebView bridge, gateway origin and redaction boundaries are fail-closed under bounded misuse tests | Code `1cf486e`, evidence source `ca94b83`; archived [H04](../archive/strategy/work-packages/H04-threat-model-trust-boundaries.md); 60 focused, 669 backend and 67 frontend tests PASS; exact DMG/WKWebView smoke PASS |
 | H05 | DEFERRED | Machine-checkable locked dependency, deterministic SBOM, secret scan and build trust evidence is PASS; commercial license/notices and default-branch alert disposition are deferred | Archived [H05](../archive/strategy/work-packages/H05-supply-chain-sbom-license-secret-boundary.md); reopen before first commercial/release candidate; no LICENSE assumption or Dependabot merge now |
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
-| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; current source/packaged execution distinction is implemented | Next: fresh-process cold/warm/append-tail protocol, two 20-sample runs per size, then resource acceptance and target disposition. Historical timings do not close the target. Windows/Linux host evidence for the desktop change is still required. |
+| H07 | IMPLEMENTATION_REQUIRED | Synthetic performance/resource boundaries; source/packaged execution and cold/warm/append-tail distinction is implemented | Next: clean-commit full campaign with two 20-sample runs per size, then resource acceptance and target disposition. Historical/sanity timings do not close the target. Windows/Linux host evidence for the desktop change is still required. |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |

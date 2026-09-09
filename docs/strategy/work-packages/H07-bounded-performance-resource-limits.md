@@ -75,7 +75,8 @@ pakete eklenmeyecektir.
 - [ ] Kaynak süreç benchmark'ı ile gerçekten çalıştırılan packaged executable
   benchmark'ı ayrılır; fresh-process cold, warm ve append-tail koşulları ayrı ölçülür.
   Source contract `caef518`; bu değişiklikte ayrı packaged worker/launcher var.
-  Fixture import aynı süreçte olduğu için fresh-process cold ölçümü henüz yok.
+  `cold`, `warm` ve `append-tail` worker/launcher modları bu değişiklikte ayrıldı;
+  final 20-sample/two-run evidence henüz yok.
 - [x] Explicit executable gerçekten çalıştırılır; normal data/log/backend/WebView
   startup'tan önce izole sentetik worker seçilir. PID/executable/pre-post artifact
   hash ve sonuç doğrulanır; worker/log manifest kalıcı yerel dizine yazılır.
@@ -147,10 +148,11 @@ PyInstaller yalnız worker ve mevcut H07 workload/provenance modüllerini ekler;
 benchmark içinde source provenance collector çalıştırılmaz.
 
 Red: 5 isolation/CLI test FAIL. Green: H07 worker + existing H07 56 PASS;
-son full backend 749 PASS (2 deprecation warning). Canonical locked local CI
+son full backend 752 PASS (2 deprecation warning). Canonical locked local CI
 `MERGE READY`: o koşuda backend 737, frontend 25/102, i18n 608/608, production
-build, arm64 PyInstaller ve normal WKWebView smoke PASS. Sonradan eklenen 12
-launcher/guard testi ayrı full backend koşusundaki 749 sayısına dahildir.
+build, arm64 PyInstaller ve normal WKWebView smoke PASS. Sonradan eklenen launcher/
+guard, append-tail integrity ve campaign summary testleri ayrı full backend
+koşusundaki 752 sayısına dahildir.
 Docs/link ve diff gate PASS. Bu desktop değişikliğinin Windows/Linux host gate'i
 henüz alınmadı; main merge/release yapılmaz.
 
@@ -179,10 +181,43 @@ Manifest lock/toolchain ve `caef518` + dirty tree checkout gözlemini içerir.
 Embedded build attestation değildir: source-to-binary `NOT_VERIFIED`, release
 provenance `UNKNOWN` kalır. Yeni DMG/final distribution kanıtı üretilmedi.
 
-Fixture import aynı worker'da çalıştığı için ölçümler `MIXED_AFTER_FIXTURE_IMPORT`,
-OS cache `UNCONTROLLED`, `cold_process_measured=false` olarak kalır. Bu alt paket
-20 cold örneği, iki 1k/10k/100k koşusu, performance hedefi veya H07 kapanışı değildir.
-Sıradaki iş ayrı fresh-process cold/warm/append-tail protokolü ve ölçüm manifestidir.
+Önceki mixed worker diagnostic'i `MIXED_AFTER_FIXTURE_IMPORT`, OS cache
+`UNCONTROLLED`, `cold_process_measured=false` olarak kalır; aşağıdaki yeni modlar
+bu sınırlamayı kaldırmadan koşul ayrımı sağlar. Bu alt paket henüz 20 cold örneği,
+iki 1k/10k/100k koşusu, performance hedefi veya H07 kapanışı değildir.
+Sıradaki iş bu protokol ile 1k/10k/100k için iki koşuda 20 cold örneği, warm
+örnekleri ve append-tail örneklerini üretmek; sonuçları H07 resource kabulüne göre
+sınıflandırmaktır.
+
+### 2026-09-09 cold/warm/append-tail protocol — this change
+
+Fixture-backed packaged worker modları artık açıkça ayrıdır:
+
+- `cold`: her sample ayrı packaged process, warm-up yok; Evidence Pack operation
+  ve launcher process elapsed ayrı kaydedilir.
+- `warm`: aynı process içinde bir warm-up dışarıda bırakılır; sonraki Evidence Pack
+  örnekleri aynı verifier/cache durumu altında ölçülür.
+- `append-tail`: warm-up sonrası synthetic `TradeCorrected` immutable event append
+  edilir; timed `verify_chain` çağrısı `APPEND_TAIL` ve
+  `verified_events_this_call=1` doğrular. `checked_events` toplam scope sayısı olarak
+  korunur; iki alan birbirine karıştırılmaz.
+
+Her fixture önce read-only contract ile doğrulanır, worker-owned temporary DB'ye
+kopyalanır ve normal application data directory'ye dokunulmaz. Launcher explicit
+executable'ı gerçekten çalıştırır; PID, path, worker outcome, pre/post executable/
+artifact/fixture hash'leri ve process elapsed kaydedilir. Existing output veya
+artifact içi evidence overwrite edilmez. Campaign scripti source process'te yalnız
+sentetik fixture hazırlayıp, modları ayrı packaged process'lerde çalıştırır.
+OS page cache `UNCONTROLLED`; bu bir OS firewall veya cache flush kanıtı değildir.
+Process-level RSS/disk ölçülmüyorsa `null` kalır.
+
+Red→green: mode/fixture/append-tail sınırları ve launcher percentile testleri
+focused H07/worker suite içinde **59 PASS**. 1k scale sanity campaign'i güncel
+arm64 `.app` ile iki run/3 sample olarak PASS; 10k/100k tek run/3 sample sanity
+de PASS. Bu küçük koşular final 20×2 gate değildir; çıktılar ignore edilmiş
+`artifacts/evidence/h07/measurement-campaign-*` altında non-release kanıt olarak
+kalır. Full campaign, güncel clean source commit ve final artifact ile ayrıca
+çalıştırılacaktır.
 
 ### 2026-09-09 doğruluk düzeltmesi — a97499b
 

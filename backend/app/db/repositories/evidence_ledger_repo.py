@@ -1083,12 +1083,21 @@ class EvidenceLedgerRepository:
         if resource_check is not None:
             resource_check("after_ledger_integrity")
 
+        tail_events_checked = checked_events
+        verification_mode = "FULL_CHAIN"
         if incremental_after_sequences is not None and current_state is not None:
             checked_events = sum(state[0] for state in current_state.values())
+            verification_mode = "APPEND_TAIL"
 
         result = {
             "valid": not duplicate_errors and not chain_errors,
             "checked_events": checked_events,
+            # ``checked_events`` is the total scope count kept for Evidence Pack
+            # compatibility. This separate field records the actual rows read
+            # by the current call so append-tail performance cannot be mistaken
+            # for a full-chain audit.
+            "verified_events_this_call": tail_events_checked,
+            "verification_mode": verification_mode,
             "scopes": [f"{account}/{day}" for account, day in sorted(scopes)],
             "errors": duplicate_errors + chain_errors,
         }
