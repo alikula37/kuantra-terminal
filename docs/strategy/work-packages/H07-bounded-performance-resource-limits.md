@@ -42,6 +42,58 @@ ve release işlemleri H07'nin kapsamına alınmaz.
 - UI ölçümünde loading, cancel, error ve no-data/degraded durumları doğru görünür;
   network, AI order authority ve live execution yüzeyi açılmaz.
 
+## Güncel teknik karar ve uygulama sırası
+
+Bu bölüm, kullanıcının teknik kararları değerlendirme ve seçme yetkisini devretmesi
+üzerine kaydedilmiştir. Aşağıdaki tarihsel "optimizasyon veya owner kararı" seçenekleri
+için güncel seçim budur; ticari destek limiti veya release onayı değildir.
+
+Puanlar ölçüm veya başarı olasılığı değil, mühendislik değerlendirmesidir.
+Ağırlıklar: doğruluk/güven %40, kullanıcı değeri %30, maliyet/bakım %20,
+kanıt kalitesi %10; her alt puan 1–5, yüksek daha iyi.
+
+| Seçenek | Doğruluk | Değer | Maliyet | Kanıt | Toplam / 5 |
+|---|---:|---:|---:|---:|---:|
+| Sınırsız mikro-optimizasyonla her cold çağrıyı 2s altına zorlama | 4 | 3 | 1 | 3 | 3.0 |
+| Mevcut üç cold örnekle hedefi gevşetip H07'yi kapatma | 2 | 2 | 5 | 1 | 2.5 |
+| Bir hedefli optimizasyon paketi, ardından yeterli örnek ve UI/resource ölçümü | 5 | 5 | 4 | 4 | 4.7 |
+| Full-chain doğrulamayı atlayarak hızlı sonuç verme | 1 | 2 | 4 | 1 | 1.9 |
+
+Seçim üçüncü yoldur. Güvenlik/doğruluk invariant'ları puandan bağımsız veto
+koşuludur. Sadece yeniden adlandırma, warm-up veya doğrulamayı erteleme ile cold
+hedef geçmiş sayılamaz. Mevcut `<2s>` Evidence Pack planning hedefi korunur.
+
+Sıra ve durma koşulları:
+
+1. H07 içinde bir bounded paket: kalan full-chain maliyetini profille; yalnız
+   doğruluğu aynı kalan, ölçümle gerekçelendirilmiş darboğazı optimize et.
+   Canonical edge cases, corruption, cache invalidation, concurrent changes ve
+   resource abort regresyonlarını koru. Kazanç yoksa denemeyi sonuçlandır;
+   otomatik olarak yeni mikro-optimizasyon döngüsü başlatma.
+2. Aynı temiz packaged artifact ile 1k/10k/100k için iki bağımsız run, her modda
+   en az 20 operation örneği al. Warm process percentile için bağımsız process
+   örneği gereklidir; tek process'in 20 operation'ı bu koşulu sağlamaz.
+   Raw samples/min/max ve p50/p95/p99 birlikte kalsın; 20 örnek production tail
+   garantisi değildir. OS cache uncontrolled sınırı korunur.
+3. Aynı adayda gerçek UI→API→render cold/warm sürelerini, işlem sırasında başka
+   local read/health isteğinin yanıtını ve loading/cancel/error davranışını ölç.
+   Worker operation süresi kullanıcı bekleme süresinin yerine geçmez.
+   UI'da pending verification, verified sonuç gibi sunulamaz. Async/job tasarımı
+   ancak bloklama kanıtlanırsa ayrı bounded implementation olarak seçilir.
+4. Projection-rebuild için yaklaşık 888 MB process peak RSS bulgusunu araştır;
+   mevcut snapshot/rollback sözleşmesini koruyan bounded-memory yolunu tercih et.
+   Repeated runs, concurrency ve düşük kaynak fixture'ları olmadan ölçülen peak'i
+   ürünün RAM/disk limiti yapma. 100k test hacmidir; import hard cap değildir.
+5. Kanıtı değerlendir: hedef karşılanırsa ilgili kriteri kapat; karşılanmazsa
+   performance açığını açık tutarak UX/resource bulgularıyla somut bir hedef
+   revizyonu gerekçelendir. Bu yetki devri teknik değerlendirme için yeterlidir;
+   kullanıcıdan aynı soyut kararı yeniden isteme. Ticari destek/release kararı
+   verilmiş sayılmaz. H07'nin tüm açık kabul koşulları sonuçlanmadan arşivleme.
+
+Bu doküman değişikliği runtime davranışı değiştirmez; `670ee90` ölçümleri önceki
+artifact'a aittir. H05 lisans/notices ve Dependabot ertelemesi, platform host
+kanıtları ve ürünün read-only forensics kapsamı korunur.
+
 ## Red test kapsamı
 
 - Aynı seed ve aynı source commit ile dataset üretiminin, import/query/rebuild ve

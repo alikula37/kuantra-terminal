@@ -7,6 +7,16 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 
 ## Selected next work
 
+Current technical decision (this change): the user delegated the engineering
+selection. Follow the scored decision and ordered steps in active H07: one more
+profile-guided optimization package, then two-run 1k/10k/100k measurements with
+at least 20 operation samples per mode, actual UI responsiveness evidence and
+projection memory analysis. Keep the `<2s>` planning target and integrity checks.
+The latest three-sample cold runs do not establish a production percentile or
+support limit. This selection supersedes the historical open-ended "optimize or
+ask owner" alternatives below; no further generic technical approval is needed.
+H07 stays IMPLEMENTATION_REQUIRED; commercial/release and host gates remain open.
+
 **H07 — Active / IMPLEMENTATION_REQUIRED:**
 [Bounded performance and resource limits](work-packages/H07-bounded-performance-resource-limits.md).
 P1-WP16 timestamp completeness was verified in `ef909d1`; P1-WP17 source identity
