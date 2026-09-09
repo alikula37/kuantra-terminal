@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+from functools import lru_cache
 import json
 import logging
 import mimetypes
@@ -122,6 +123,32 @@ def _safe_filename(value: str, *, default: str = "download") -> str:
     return filename
 
 
+@lru_cache(maxsize=4)
+def _evidence_pack_adapter(
+    db_path: str,
+    account_id: str,
+    venue: str,
+    projection_venues: tuple[str, ...],
+):
+    """Create a bounded, process-local read adapter for repeated pack reads."""
+    from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
+    from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
+    from app.db.sqlite_driver import SQLiteDriver
+    from app.services.trade_read_adapter import TradeReadAdapter
+
+    driver = SQLiteDriver(db_path)
+    ledger = EvidenceLedgerRepository(db_path)
+    projection = EvidenceTradeProjectionRepository(db_path)
+    return TradeReadAdapter(
+        legacy_driver=driver,
+        projection_repo=projection,
+        ledger_repo=ledger,
+        account_id=account_id,
+        venue=venue,
+        projection_venues=projection_venues,
+    )
+
+
 def _evidence_pack_worker(
     db_path: str,
     account_id: str,
@@ -136,22 +163,7 @@ def _evidence_pack_worker(
     this function at module scope also makes its process-pool contract explicit and picklable on
     macOS spawn.
     """
-    from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository
-    from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
-    from app.db.sqlite_driver import SQLiteDriver
-    from app.services.trade_read_adapter import TradeReadAdapter
-
-    driver = SQLiteDriver(db_path)
-    ledger = EvidenceLedgerRepository(db_path)
-    projection = EvidenceTradeProjectionRepository(db_path)
-    adapter = TradeReadAdapter(
-        legacy_driver=driver,
-        projection_repo=projection,
-        ledger_repo=ledger,
-        account_id=account_id,
-        venue=venue,
-        projection_venues=projection_venues,
-    )
+    adapter = _evidence_pack_adapter(db_path, account_id, venue, projection_venues)
     pack = adapter.get_evidence_pack(trade_id)
     if pack["trade"] is None and pack["event_count"] == 0:
         return BridgeResponse(

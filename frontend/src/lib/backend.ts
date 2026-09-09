@@ -120,7 +120,7 @@ export async function apiFetch(input: string, init: RequestInit = {}): Promise<R
 }
 
 const EVIDENCE_PACK_JOB_TIMEOUT_MS = 120_000;
-const EVIDENCE_PACK_JOB_POLL_MS = 25;
+const EVIDENCE_PACK_JOB_POLL_MS = 100;
 
 function localErrorResponse(status: number, detail: string): Response {
   return new Response(JSON.stringify({ detail }), {
