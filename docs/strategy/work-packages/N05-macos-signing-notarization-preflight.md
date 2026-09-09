@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: 9efd203
-implementation_commit: 657922b359be7e5d63e70b14508b299f42c3d90f
+implementation_commit: 133c2691a859630c0c50b5cd9841620612391fcf
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: N01, N02, N03-final-validation, H04, H05
@@ -43,6 +43,8 @@ production-ready veya commercial-support iddiası değildir.
   owner/host kanıtı gelmeden tamamlanmış saymamak.
 - `package_macos.sh` içinde ad-hoc geliştirme default'unu korurken explicit
   `developer-id` signing mode, hardened runtime ve certificate-name guard sağlamak.
+- Owner-approved Apple host için `notarize_macos.sh` explicit-submit wrapper'ı sağlamak;
+  final DMG'yi stapling sonrası yeniden smoke ederek N05'e exact hash zinciriyle vermek.
 
 ## Davranış sözleşmesi
 
@@ -67,6 +69,9 @@ production-ready veya commercial-support iddiası değildir.
       ve raw-output redaction negatif/pozitif testleri green.
 - [x] macOS package script'i varsayılan ad-hoc davranışı koruyor; explicit `developer-id`
       modu identity prefix, hardened runtime ve signature verification ile fail-closed.
+- [x] Notarization wrapper'ı varsayılan olarak upload yapmıyor; `--submit` olmadan duruyor,
+      Keychain profile dışında secret kabul etmiyor, stapling sonrası exact smoke ve N05
+      preflight çalıştırıyor.
 - [ ] Developer ID Application ile imzalanmış gerçek final artifact üzerinde
       Gatekeeper assessment ve hardened-runtime kanıtı.
 - [ ] Exact DMG üzerinde stapled notarization ticket kanıtı; Apple Developer
@@ -105,11 +110,11 @@ Apple distribution gate'inin kapandığını değil, gösterir.
 ## Kanıt günlüğü
 
 - Implementation source: `e4f8ba2` (preflight), `9733874` (release audit/manifest
-  binding) and `657922b` (explicit Developer ID package mode), branch
-  `codex/p1-wp01-evidence-ledger`.
-- Focused evidence on source `657922b`: N05 contract plus package-spec tests
-  **14 passed**; `python3.11 scripts/check_docs.py` PASS with 108 documents and
-  141 local links.
+  binding), `657922b` (explicit Developer ID package mode) and `133c269`
+  (owner-controlled notarization wrapper), branch `codex/p1-wp01-evidence-ledger`.
+- Focused evidence on source `133c269`: N05 contract **6 passed** and package-spec
+  contract **9 passed**; `python3.11 scripts/check_docs.py` PASS with 108 documents
+  and 141 local links.
 - Canonical locked local CI on macOS 26.6.2 arm64, source `657922b`: **13/13 PASS**,
   backend **795 passed / 2 warnings**, frontend **25 files / 104 tests**, i18n
   **608/608**, arm64 PyInstaller build, native `wkwebview` smoke and packaging

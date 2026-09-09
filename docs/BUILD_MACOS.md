@@ -135,6 +135,25 @@ sign, upload, notarize, or access Keychain credentials.
 N05 PASS is only a distribution-artifact gate. It does not make the product
 production-ready, does not close N03/N06/H05, and does not authorize a release.
 
+For an owner-approved release candidate, the repository also provides an explicit wrapper that
+uses an already configured Keychain notary profile. It submits and staples the exact DMG, reruns
+the mounted-DMG smoke after stapling (because stapling changes the DMG hash), and then runs N05
+against that final artifact:
+
+```bash
+KUANTRA_MACOS_NOTARY_PROFILE=<owner-configured-profile> \
+bash scripts/notarize_macos.sh --submit \
+  --dmg dist/Kuantra-Terminal-<version>-aarch64.dmg \
+  --smoke-report dist/final-smoke-macos.json \
+  --output dist/n05-macos-distribution.json
+```
+
+This command requires network access to Apple and is not an offline test. The profile must be
+created and approved by the owner outside the repository; the wrapper never accepts Apple ID,
+password, API key or private-key arguments, never prints/stores notary output, and uses an
+isolated temporary data directory for smoke. Do not run it for the ad-hoc development DMG or
+without the explicit `--submit` flag.
+
 ## 7. First Launch Notes
 
 - The app is **not notarized**. On first launch users must **right-click the app → Open** and

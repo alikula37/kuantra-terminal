@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.32
+version: 1.0.33
 status: Proposed
 date: 2026-09-10
-reviewed_commit: 657922b
+reviewed_commit: 133c269
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -449,6 +449,14 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
   `657922b` ile macOS arm64 local-CI, exact mounted-DMG smoke ve beklenen ad-hoc
   N05 `BLOCKED` preflight kanıtı yeniden üretildi. Gerçek Apple signing,
   notarization, Gatekeeper ve stapled-ticket kapıları owner/Apple host gerektirir.
+
+### 1.0.33 — 2026-09-10
+
+- N05 için `notarize_macos.sh` owner-controlled wrapper'ı eklendi. Upload yalnız
+  explicit `--submit` ve önceden yapılandırılmış Keychain profile ile yapılır;
+  stapling sonrası exact DMG smoke yeniden çalışır ve N05 final artifact hash zinciri
+  üzerinde yürür. Apple hesabı, profile oluşturma, signing secret ve gerçek upload
+  bu branch'te çalıştırılmadı; ad-hoc geliştirme artifact'ı hâlâ `BLOCKED` kalır.
 
 ### 1.0.28 — 2026-09-09
 
