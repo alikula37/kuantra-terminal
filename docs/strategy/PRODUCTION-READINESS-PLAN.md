@@ -6,7 +6,7 @@ document_id: KPR-001
 version: 1.0.29
 status: Proposed
 date: 2026-09-10
-reviewed_commit: f858321
+reviewed_commit: fcb24d7
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0

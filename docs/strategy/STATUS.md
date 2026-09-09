@@ -108,6 +108,21 @@ synthetic data. It does not add an automatic updater, perform a real migration, 
 touch the user's data directory. Exact previous/current packaged artifact evidence
 and any host-level launch/install evidence remain acceptance obligations.
 
+N04 source implementation/evidence commit is `fcb24d7bf8a197c5c592e8b421f04691e92dbe98`.
+Focused N04 tests passed **12**, and N03 regression pairing passed **18**. The clean
+commit canonical local CI report `dist/n04-local-ci-report-fcb24d7.json` is
+`MERGE READY`: backend **787 passed, 2 warnings**, frontend **25 files / 104 tests**,
+i18n **608/608**, arm64 desktop build, native `wkwebview` smoke and provenance
+`COMPLETE`. Report SHA-256 is
+`312d3b2665f192e91b12880a38811974db1a2f4bceb1112a02cd410e4f099e7f`; source commit
+is `fcb24d7bf8a197c5c592e8b421f04691e92dbe98`; tracked tree SHA-256 is
+`c984912ecef812d9609b43579d14f32bd62971cb9edb85671b12439e9edf0db0`; app tree
+SHA-256 is `7250b2cafd16352851031f194a2972f640bce2f61eaac840c0e4de5f9d65c26b`;
+executable SHA-256 is
+`e79ea0c9e882b0573ab93dcf591ca784eb114ccf4ae5eb988c5e5734df48a6c9`. Previous/
+current supported packaged artifact acceptance and host-level update evidence are
+still open; this local result does not close N03 or N04's release gate.
+
 ## Historical evidence retained for traceability
 
 The dated H07 records below are retained for audit traceability. The selected current

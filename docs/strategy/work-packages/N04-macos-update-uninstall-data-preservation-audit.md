@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: f858321
-implementation_commit: this change
+implementation_commit: fcb24d7bf8a197c5c592e8b421f04691e92dbe98
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: H01, H02, H04, H06, N01, N02, P1-WP27
@@ -84,20 +84,24 @@ Bu bölüm gerçek komut/platform/artifact kanıtı oluştukça doldurulur. Sour
 transaction testleri N04 implementation kanıtıdır; önceki/current packaged artifact
 ve host evidence olmadan N04 production gate'i kapatılmaz.
 
-- Implementation commit: `this change` (resolve from Git history when the next
-  bounded package starts).
+- Implementation commit: `fcb24d7bf8a197c5c592e8b421f04691e92dbe98`.
 - Platform/toolchain: macOS 26.6.2 arm64, Python 3.11.16, Node 20.20.2, npm
   10.8.2, uv 0.12.10, PyInstaller 6.22.2.
 - Focused tests: `uv run --offline --no-project --with-requirements
   backend/requirements.lock pytest -q
   backend/tests/test_n04_macos_update_uninstall_audit.py` — **12 passed**;
   N03 regression pairing (`...test_n04... ...test_n03...`) — **18 passed**.
-- Full suite/local CI: pre-commit working-tree run passed the canonical default
-  behavior gate: backend **787 passed, 2 warnings**, frontend **25 files / 104
-  tests**, i18n **608/608**, production build, arm64 desktop build, native
-  `wkwebview` smoke and packaging/provenance contract steps PASS. The report was
-  `DEVELOPER_DIRTY` because this package was not committed at measurement time;
-  a clean-commit run is required for exact release-facing provenance.
+- Full suite/local CI: clean commit `fcb24d7bf8a197c5c592e8b421f04691e92dbe98`
+  passed the canonical default behavior gate: backend **787 passed, 2 warnings**,
+  frontend **25 files / 104 tests**, i18n **608/608**, production build, arm64
+  desktop build, native `wkwebview` smoke and packaging/provenance contract steps
+  PASS. Report: `dist/n04-local-ci-report-fcb24d7.json`, SHA-256
+  `312d3b2665f192e91b12880a38811974db1a2f4bceb1112a02cd410e4f099e7f`;
+  provenance `COMPLETE`, tracked tree SHA-256
+  `c984912ecef812d9609b43579d14f32bd62971cb9edb85671b12439e9edf0db0`, app tree
+  SHA-256 `7250b2cafd16352851031f194a2972f640bce2f61eaac840c0e4de5f9d65c26b`,
+  executable SHA-256
+  `e79ea0c9e882b0573ab93dcf591ca784eb114ccf4ae5eb988c5e5734df48a6c9`.
 - Previous artifact/provenance/hash: `TBD`
 - Current artifact/provenance/hash: `TBD`
 - Known limits/blockers: N03 final clean-profile host evidence; H05 commercial
