@@ -75,9 +75,11 @@ pakete eklenmeyecektir.
 - [x] Kaynak süreç benchmark'ı ile gerçekten çalıştırılan packaged executable
   benchmark'ı ayrılır; fresh-process cold, warm ve append-tail koşulları ayrı ölçülür.
   Source contract `caef518`; packaged worker/launcher ve `cold`, `warm`,
-  `append-tail` modları `af8e2a1` ile ayrıldı. Final iki run × 20 sample kanıtı
-  aşağıdaki kampanyada tamamlandı; H07'nin performans hedefi ve resource acceptance
-  sonucu bu ayrımın dışında ayrıca değerlendirilir.
+  `append-tail` modları `af8e2a1` ile ayrıldı. `30be78d` ile fresh-process
+  `projection-rebuild` ve process-level resource capture da açık sözleşmeye alındı.
+  Final iki run × 20 sample kanıtı aşağıdaki kampanyalarda tamamlandı; H07'nin
+  performans hedefi ve resource acceptance sonucu bu ayrımın dışında ayrıca
+  değerlendirilir.
 - [x] Explicit executable gerçekten çalıştırılır; normal data/log/backend/WebView
   startup'tan önce izole sentetik worker seçilir. PID/executable/pre-post artifact
   hash ve sonuç doğrulanır; worker/log manifest kalıcı yerel dizine yazılır.
@@ -85,8 +87,11 @@ pakete eklenmeyecektir.
 - [ ] Canonical doğruluk düzeltmesi sonrası 1k/10k/100k ölçümleri yenilenir;
   cold hedef ve resource acceptance ayrı kanıtlarla sonuçlandırılır. `af8e2a1`
   final packaged kampanyası ölçümleri yeniledi ve 100k cold p95'in `<2s` hedefini
-  karşılamadığını gösterdi; process-level RSS/disk kanıtı eksik olduğu için bu
-  kriter henüz kapanmaz.
+  karşılamadığını gösterdi. `30be78d` ile 100k fresh-process resource capture
+  ve projection-rebuild kanıtı eklendi; 54/54 packaged manifestte RSS ve izole
+  temporary-disk alanları `MEASURED`. Ancak `<2s` hedefi karşılanmadı ve resource
+  acceptance için owner-approved bir limit/disposition henüz yoktur; kriter açık
+  kalır.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
 - [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
@@ -210,7 +215,8 @@ artifact/fixture hash'leri ve process elapsed kaydedilir. Existing output veya
 artifact içi evidence overwrite edilmez. Campaign scripti source process'te yalnız
 sentetik fixture hazırlayıp, modları ayrı packaged process'lerde çalıştırır.
 OS page cache `UNCONTROLLED`; bu bir OS firewall veya cache flush kanıtı değildir.
-Process-level RSS/disk ölçülmüyorsa `null` kalır.
+Process-level RSS/disk ölçülmüyorsa `null` kalır; sampler dosya sistemi veya süreç
+ölçüm hatasını `UNKNOWN` olarak bırakır ve sıfır değerle kapatmaz.
 
 Red→green: mode/fixture/append-tail sınırları ve launcher percentile testleri
 focused H07/worker suite içinde **59 PASS**. Final packaged campaign, güncel clean
@@ -292,6 +298,74 @@ Campaign contract `real_data=false`, `credentials=false`, `network=false`,
 `SOURCE_PROCESS`, `source_to_binary_attestation=NOT_VERIFIED` ve
 `release_provenance=UNKNOWN`. Bu non-release `.app` kampanyası DMG mount,
 Developer ID, notarization, Gatekeeper veya Windows/Linux platform kanıtı değildir.
+
+### 2026-09-09 process resource ve projection-rebuild kampanyası — 30be78d
+
+Önceki kampanyadaki process-level `null` boşluğunu kapatmak ve 100k projection
+rebuild'i gerçek packaged süreçte ölçmek için kod/test commit'i `30be78d` üzerinde
+şu bounded kampanya çalıştırıldı:
+
+```text
+.venv/bin/python scripts/run_h07_measurement_campaign.py --executable "dist/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal" --artifact "dist/Kuantra Terminal.app" --output-dir artifacts/evidence/h07/resource-projection-30be78d-20260909 --sizes 100000 --runs 2 --cold-samples 3 --warm-samples 3 --append-samples 3 --projection-rebuild-samples 20 --batch-size 1000 --timeout 1800
+```
+
+Her launch yeni packaged process'tir; `warm` yalnız aynı process'te warm-up sonrası
+operation örneklerini toplar. Launcher RSS'i `psutil.Process.memory_info().rss` ile,
+geçici disk footprint'ini ise yalnız launch'a ait izole temporary root içindeki
+regular-file occupancy olarak 10 ms örnekleme aralığıyla kaydeder. Bu değerler OS
+memory/disk allocation limiti, OS page-cache kontrolü veya production support limiti
+değildir; page cache `UNCONTROLLED` kalır.
+
+| Mod | Process örneği/run | Operation p95 R1 / R2 (ms) | Process p95 R1 / R2 (ms) | Peak process RSS R1 / R2 (MB) | Peak isolated temp R1 / R2 (B) |
+|---|---:|---:|---:|---:|---:|
+| `cold` | 3 / 3 | 3183.8090 / 3219.8153 | 4254.5621 / 4245.9253 | 164.1562 / 165.1250 | 287690752 / 287690752 |
+| `warm` | 1 / 1 | 343.6737 / 340.8124 | UNKNOWN (n=1) / UNKNOWN (n=1) | 163.0938 / 163.5312 | 287690752 / 287690752 |
+| `append-tail` | 3 / 3 | 25.9072 / 25.2780 | 4349.1619 / 4242.9028 | 165.2031 / 164.3125 | 287760824 / 287773184 |
+| `projection-rebuild` | 20 / 20 | 6877.9656 / 7336.8517 | 8009.7547 / 8501.7438 | 888.1719 / 888.2656 | 388370264 / 388370264 |
+
+İki run'da toplam 54/54 `H07.packaged-manifest.v2` manifesti ve resource report'u
+`MEASURED`'dir: 6 cold, 2 warm, 6 append-tail ve 40 projection-rebuild. Her
+projection-rebuild örneğinde `ledger_valid=true`, `projections_written=100000`,
+counts `100000 trades / 100000 projections / 100003 ledger events` ve snapshot
+`f7df42fa141e9a903141fce3f6121093f31f5924d1c58e77939c2d78c753e0d8` aynıdır.
+Operation-level projection-rebuild peak RSS'i run 1/run 2 için `304.2344 /
+300.0312 MB`, temporary disk artışı `0 B`'dır; process-level değerler yukarıdaki
+launch footprint'idir. `cold` 100k Evidence Pack operation p95'i
+`3183.8090 / 3219.8153 ms` ile `<2s` planning hedefini yine karşılamaz; bu
+sonuç hedefin gevşetildiği veya support limitinin belirlendiği anlamına gelmez.
+
+Red→green: process-resource/projection-rebuild için eklenen üç red test ve
+filesystem-error fail-closed testi düzeltme sonrası focused
+`test_h07_bounded_performance.py` + `test_h07_packaged_worker.py` içinde
+**63 PASS**; full backend **756 PASS / 2 deprecation warning**. Locked local CI
+`uv run --offline --no-project --with-requirements backend/requirements.lock
+python scripts/run_local_ci.py` ile 13/13 step `MERGE READY`: frontend 25/102,
+i18n 608/608, production build, arm64 PyInstaller ve native WKWebView smoke PASS.
+Local CI report SHA-256 `3433660d5e26433fe9f68f1b209c13911dbf4a9af147338ffbd7d199f92d6c47`,
+smoke report SHA-256 `73724c2e40820db1d87b5b17f95a72db11634c8cebfbc6439106b3f68fb2cdb5`.
+
+Provenance: source commit `30be78d46415923e308b716e2a267aa7f2ff5228`, tracked tree
+SHA-256 `d18591bc73560b7e31730d3b5ab801d48d2cab45fc584dd4f44b75a4c3f9ff9e` ve
+tracked status `clean`; macOS 26.6.2 arm64 (Darwin 25.6.0), Python 3.11.16,
+Node v20.20.2, npm 10.8.2, uv 0.12.10, PyInstaller 6.22.2. Backend lock SHA-256
+`6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399`, frontend
+lock SHA-256 `b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
+Çalıştırılan executable SHA-256
+`93475a6f2d29e4dad51bd6bdc20b9ffa5d6bff8edb734253af7f8350ead6bbff`, `.app`
+artifact SHA-256 `d27cbd9cdfb9c9cb4846d4284320b32cd5b4836ccd97a70ed6e4c2eb84c04991`.
+Campaign report embedded/body SHA-256
+`ad45ae7441250d40489e4c02208dfbc7f00cdeb78063a22fe31c8ee3a91f3470`, full
+`campaign-report.json` SHA-256 `c8e047f78979db3b7ec689365678071f624f8a3ddc9294b10665cc2e998835ef`,
+`campaign-manifest.json` SHA-256
+`f78f6d6a7adc32d625420ae2fbde0441425fb1be9c22de81442369a1dc3e6a42`.
+Campaign contract `real_data=false`, `credentials=false`, `network=false`,
+`live_execution=false`, `support_limit_claim=false`; `source_fixture_preparation`
+`SOURCE_PROCESS`, `source_to_binary_attestation=NOT_VERIFIED` ve
+`release_provenance=UNKNOWN`. Local CI provenance contract is `COMPLETE` for this
+development artifact; it is not Developer ID/notarization, DMG, Gatekeeper,
+Windows/Linux, or release evidence. H07 remains `IMPLEMENTATION_REQUIRED`; next
+decision is an explicit optimization or owner-approved measured boundary, without
+silently changing `<2s>`.
 
 ### 2026-09-09 doğruluk düzeltmesi — a97499b
 
