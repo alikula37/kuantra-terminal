@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: 9efd203
-implementation_commit: this change
+implementation_commit: 97338746573d548eb348220bb28d834cc86ee090
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPR-001@current
 depends_on: N01, N02, N03-final-validation, H04, H05
@@ -70,8 +70,8 @@ production-ready veya commercial-support iddiası değildir.
 - [ ] N03 temiz ikinci profil/host install-lifecycle kanıtı ve N06 diğer OS kanıtları.
 - [ ] License/notices ve default-branch Dependabot disposition; H05 ticari gate'i
       owner kararıyla ayrıca yeniden açılacak, bu paketin kapsamına alınmayacak.
-- [ ] Focused regression, `python3.11 scripts/check_docs.py` ve canonical local CI
-      aynı source commit/artifact ile yeniden çalıştırılıp kaydedilecek.
+- [x] Focused regression, `python3.11 scripts/check_docs.py` ve canonical local CI
+      aynı source commit/artifact ile yeniden çalıştırılıp kaydedildi.
 
 ## Kesinlikle kapsam dışı
 
@@ -100,11 +100,29 @@ Apple distribution gate'inin kapandığını değil, gösterir.
 
 ## Kanıt günlüğü
 
-- Implementation source: `this change` (N05 preflight + focused contract tests).
+- Implementation source: `e4f8ba2` (preflight) and `9733874` (release audit/manifest
+  binding), branch `codex/p1-wp01-evidence-ledger`.
+- Focused evidence: N05 contract `6 passed`; manifest `4 passed`; Phase-0/workflow
+  regression `6 passed`; `python3.11 scripts/check_docs.py` PASS with 108 documents
+  and 141 local links.
+- Canonical locked local CI on macOS 26.6.2 arm64, source `9733874`: **13/13 PASS**,
+  backend **795 passed / 2 warnings**, frontend **25 files / 104 tests**, i18n
+  **608/608**, arm64 PyInstaller build, native `wkwebview` smoke and packaging
+  provenance PASS. Report `dist/n05-local-ci-report-9733874.json` SHA-256 is
+  `f65a17dccaaf8a79a12759bc0fcc341620cd7738cae1ef793930e980d015e3a6`; tracked
+  source tree SHA-256 is
+  `2818ca6cf5748825086239ca7b543b3eaf8747b15e72c0b2d8c2aac4a924fb3f`; executable
+  SHA-256 is `46044a362074ce736f6e2d25ca81737c45b25ada792777eaaec10460d8d64a06`.
+- Exact DMG `dist/Kuantra-Terminal-1.4.0-aarch64.dmg` SHA-256 is
+  `f0f2661ef12f631d5bd8512dfaa1e92f19a170f5673f00b2eb99258c70905a41`; mounted
+  DMG smoke PASS report SHA-256 is
+  `b6ad5c42ea6c12ced67ac74312edaf0007f14d7852803b4a78bb47eb443a890a`.
+- N05 preflight report `dist/n05-macos-distribution-9733874.json` SHA-256 is
+  `ac646a668be84a2eb95d658538ca328e2b6deb46ad786135c93118d244a73b18`; it is
+  `BLOCKED`/`OWNER_REVIEW_REQUIRED` with read-only mount attach/detach PASS,
+  codesign verification PASS, but `AD_HOC`, no hardened runtime, Gatekeeper FAIL
+  and no DMG ticket. This is the expected development boundary, not release PASS.
 - Platform: macOS arm64; no user data, credential, migration or live execution.
-- Current ad-hoc artifact observation: `codesign` valid on disk but `Signature=adhoc`,
-  `TeamIdentifier=not set`; `spctl` rejected it and `stapler validate` found no ticket.
-  These are expected owner/distribution blockers, not PASS evidence.
 - Actual final Developer ID, Gatekeeper, notarization-ticket, clean-profile and
   commercial H05 evidence remains open.
 

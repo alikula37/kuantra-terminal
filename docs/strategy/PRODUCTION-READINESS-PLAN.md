@@ -6,7 +6,7 @@ document_id: KPR-001
 version: 1.0.31
 status: Proposed
 date: 2026-09-10
-reviewed_commit: this change
+reviewed_commit: 9733874
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -427,6 +427,19 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.31 — 2026-09-10
+
+- N05 için exact-DMG read-only signing/notarization preflight'i ve
+  `validate_n05_report` release binding'i eklendi. Final smoke/provenance ile
+  executable/DMG hash'leri bağlanıyor; Developer ID, hardened runtime, allowlisted
+  entitlements, Gatekeeper ve stapled ticket eksikleri `BLOCKED`/fail-closed kalıyor.
+  Raw signing output veya secret rapora yazılmıyor.
+- Release Phase-0 audit ve `MANIFEST.json`, Mac final artifact mevcut olduğunda
+  PASS N05 raporunu exact artifact/source commit bağlamında taşıyacak şekilde
+  güncellendi. N05 gerçek Apple hesabı, signing/notarization, N03/N06 veya H05
+  commercial gate'lerini kapatmıyor. `9733874` Mac local-CI, mounted smoke ve
+  beklenen ad-hoc N05 blocked kanıtının source commit'idir.
 
 ### 1.0.28 — 2026-09-09
 

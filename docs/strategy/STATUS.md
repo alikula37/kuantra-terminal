@@ -17,6 +17,22 @@ ad-hoc and has no notarization ticket, so the expected result is `BLOCKED`/exit 
 this is not an N05 PASS and does not claim production readiness. Actual Apple
 signing/notarization remains an owner/host gate.
 
+Source `9733874` üzerinde canonical locked local CI **13/13 PASS** oldu: backend
+**795 passed / 2 warnings**, frontend **25 dosya / 104 test**, i18n **608/608**,
+arm64 PyInstaller build, native `wkwebview` smoke ve packaging/provenance PASS.
+Report SHA-256 `f65a17dccaaf8a79a12759bc0fcc341620cd7738cae1ef793930e980d015e3a6`;
+tracked tree SHA-256 `2818ca6cf5748825086239ca7b543b3eaf8747b15e72c0b2d8c2aac4a924fb3f`;
+executable SHA-256 `46044a362074ce736f6e2d25ca81737c45b25ada792777eaaec10460d8d64a06`.
+Exact arm64 DMG SHA-256 `f0f2661ef12f631d5bd8512dfaa1e92f19a170f5673f00b2eb99258c70905a41`
+ve mounted-DMG smoke report SHA-256
+`b6ad5c42ea6c12ced67ac74312edaf0007f14d7852803b4a78bb47eb443a890a` olarak
+bağlandı. N05 preflight report SHA-256
+`ac646a668be84a2eb95d658538ca328e2b6deb46ad786135c93118d244a73b18`; sonuç
+`BLOCKED/OWNER_REVIEW_REQUIRED`: read-only mount attach/detach ve codesign
+verification PASS, fakat artifact `AD_HOC`, hardened runtime yok, Gatekeeper FAIL
+ve DMG stapled ticket yok. Bu beklenen development sonucu; N05 veya production PASS
+değildir.
+
 H07'nin bounded implementation/evidence sequence'i mevcut Mac artifact'ında
 tamamlandı ve acceptance/archive kaydı uzlaştırılarak arşivlendi. Commits
 `e3aacc8`, `dfa7252`, `5b82473` and `4e761fa`
@@ -503,7 +519,7 @@ and frontend lock hashes remain
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
-| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | Read-only verifier and focused contract tests are implemented; current ad-hoc DMG is intentionally `BLOCKED`. Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/N06/H05 remain separate gates |
+| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `9733874` implementation, 6 focused N05 tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current ad-hoc DMG is intentionally `BLOCKED` (report SHA `ac646a...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/N06/H05 remain separate gates |
 | WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
