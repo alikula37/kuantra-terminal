@@ -112,6 +112,28 @@ def test_fixture_modes_are_explicit_and_keep_cache_boundaries(tmp_path):
     assert fixture.is_file()
 
 
+def test_projection_rebuild_mode_is_explicit_and_fail_closed(tmp_path):
+    fixture = make_fixture(tmp_path)
+    result = invoke(
+        tmp_path, "--mode", "projection-rebuild", "--repetitions", "1",
+        "--fixture", str(fixture),
+    )
+    assert result.returncode == 0, result.stderr
+    report = json.loads((tmp_path / "worker.json").read_text())
+    assert report["mode"] == "projection-rebuild"
+    assert report["execution"]["cold_process_measured"] is True
+    assert report["execution"]["workload_cache"] == "PROJECTION_REBUILD_NO_WARMUP"
+    assert report["run"]["operations"]["projection_rebuild"]["sample_count"] == 1
+    assert report["run"]["rebuild"]["ledger_valid"] is True
+    assert report["run"]["rebuild"]["projections_written"] == 12
+    assert report["run"]["coverage"]["ready"] is True
+    assert report["run"]["counts"] == {
+        "trades": 12, "projections": 12, "ledger_events": 15,
+    }
+    assert not (tmp_path / "must-not-touch").exists()
+    assert fixture.is_file()
+
+
 def test_fixture_modes_reject_missing_or_invalid_contract(tmp_path):
     output = tmp_path / "worker.json"
     result = subprocess.run(
@@ -144,6 +166,70 @@ def test_campaign_summary_uses_interpolated_percentiles_and_preserves_mode_truth
     }], mode="cold", evidence_root=Path("/tmp/campaign"))
     assert result["fresh_process_per_sample"] is True
     assert result["warmup_excluded"] is False
+
+
+def test_campaign_summary_reports_process_resource_capture():
+    from scripts.run_h07_measurement_campaign import _mode_result
+
+    result = _mode_result([{
+        "pid": 10, "operation_samples": [{
+            "elapsed_ms": 1.0, "rss_mb": 10.0,
+            "temp_disk_bytes": 1, "status": "SUCCESS",
+        }], "process_elapsed_ms": 20.0,
+        "process_resource": {
+            "status": "MEASURED", "peak_rss_mb": 42.5,
+            "peak_temp_disk_bytes": 2048,
+        },
+        "manifest_path": "/tmp/campaign/run-01/cold/sample-01/manifest.json",
+        "worker_execution": {}, "warmup": None, "cache_state": "NEW_PROCESS_NO_WARMUP",
+        "counts": {}, "determinism": {}, "verification": None,
+        "worker_file_sha256": "a", "process_log_sha256": "b",
+    }], mode="cold", evidence_root=Path("/tmp/campaign"))
+    assert result["process"]["peak_rss_mb"] == 42.5
+    assert result["process"]["peak_temp_disk_bytes"] == 2048
+    assert result["process"]["resource_status"] == "MEASURED"
+
+
+def test_process_resource_sampler_records_rss_and_temp_scope(tmp_path, monkeypatch):
+    from scripts import run_h07_packaged_benchmark as launcher
+
+    class FakeMemoryInfo:
+        rss = 64 * 1024 * 1024
+
+    class FakeProcess:
+        def memory_info(self):
+            return FakeMemoryInfo()
+
+    monkeypatch.setattr(launcher.psutil, "Process", lambda pid: FakeProcess())
+    sampler = launcher._ProcessResourceSampler(123, tmp_path)
+    (tmp_path / "worker.sqlite").write_bytes(b"x" * 7)
+    sampler._sample_once()
+    result = sampler.report()
+    assert result["status"] == "MEASURED"
+    assert result["peak_rss_mb"] == 64.0
+    assert result["peak_temp_disk_bytes"] == 7
+    assert result["sample_count"] == 1
+
+
+def test_process_resource_sampler_keeps_filesystem_errors_unknown(tmp_path, monkeypatch):
+    from scripts import run_h07_packaged_benchmark as launcher
+
+    class FakeMemoryInfo:
+        rss = 64 * 1024 * 1024
+
+    class FakeProcess:
+        def memory_info(self):
+            return FakeMemoryInfo()
+
+    monkeypatch.setattr(launcher.psutil, "Process", lambda pid: FakeProcess())
+    monkeypatch.setattr(launcher, "_directory_size", lambda path: None)
+    sampler = launcher._ProcessResourceSampler(123, tmp_path)
+    sampler._sample_once()
+    result = sampler.report()
+    assert result["status"] == "UNKNOWN"
+    assert result["reason"] == "TEMP_DISK_UNAVAILABLE"
+    assert result["peak_rss_mb"] == 64.0
+    assert result["peak_temp_disk_bytes"] is None
 
 
 def packaged_report(executable):

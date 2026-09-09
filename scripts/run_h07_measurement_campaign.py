@@ -36,7 +36,8 @@ def _summary(values, *, expected_status="SUCCESS"):
     if not values:
         return {"status": "UNKNOWN", "reason": "NO_SAMPLES", "sample_count": 0,
                 "p50_ms": None, "p95_ms": None, "p99_ms": None,
-                "peak_rss_mb": None, "peak_temp_disk_bytes": None}
+                "peak_rss_mb": None, "peak_temp_disk_bytes": None,
+                "resource_status": "UNKNOWN", "resource_reason": "NO_SAMPLES"}
     ordered = sorted(float(value["elapsed_ms"]) for value in values)
 
     def percentile(percent):
@@ -47,7 +48,11 @@ def _summary(values, *, expected_status="SUCCESS"):
 
     statuses = {str(value.get("status") or "UNKNOWN") for value in values}
     measured = len(values) >= 3 and statuses == {expected_status}
-    resource_values = [value for value in values if "rss_mb" in value and "temp_disk_bytes" in value]
+    resource_values = [
+        value for value in values
+        if value.get("rss_mb") is not None and value.get("temp_disk_bytes") is not None
+    ]
+    resource_complete = len(resource_values) == len(values)
     return {
         "status": "MEASURED" if measured else "UNKNOWN" if statuses == {expected_status} else "FAILED",
         "reason": None if measured else "INSUFFICIENT_SAMPLES" if statuses == {expected_status} else "UNEXPECTED_OPERATION_STATUS",
@@ -55,6 +60,8 @@ def _summary(values, *, expected_status="SUCCESS"):
         "p50_ms": percentile(50), "p95_ms": percentile(95), "p99_ms": percentile(99),
         "peak_rss_mb": round(max(float(value["rss_mb"]) for value in resource_values), 4) if resource_values else None,
         "peak_temp_disk_bytes": max(int(value["temp_disk_bytes"]) for value in resource_values) if resource_values else None,
+        "resource_status": "MEASURED" if resource_complete else "UNKNOWN",
+        "resource_reason": None if resource_complete else "MISSING_RESOURCE_SAMPLES",
     }
 
 
@@ -77,7 +84,9 @@ def _read_sample(evidence_dir: Path, manifest: dict, *, mode: str) -> dict:
         "counts": run["counts"],
         "determinism": run["determinism"],
         "verification": run.get("verification"),
+        "rebuild": run.get("rebuild"),
         "process_elapsed_ms": manifest["process_elapsed_ms"],
+        "process_resource": manifest.get("process_resource"),
         "worker_file_sha256": manifest["worker_file_sha256"],
         "process_log_sha256": manifest["process_log_sha256"],
         "manifest_path": str(evidence_dir / "manifest.json"),
@@ -91,7 +100,12 @@ def _mode_result(samples: list[dict], *, mode: str, evidence_root: Path) -> dict
         for item in sample["operation_samples"]
     ]
     process_samples = [
-        {"elapsed_ms": sample["process_elapsed_ms"], "status": "SUCCESS"}
+        {
+            "elapsed_ms": sample["process_elapsed_ms"],
+            "status": "SUCCESS",
+            "rss_mb": (sample.get("process_resource") or {}).get("peak_rss_mb"),
+            "temp_disk_bytes": (sample.get("process_resource") or {}).get("peak_temp_disk_bytes"),
+        }
         for sample in samples
     ]
     return {
@@ -99,7 +113,7 @@ def _mode_result(samples: list[dict], *, mode: str, evidence_root: Path) -> dict
         "operation": _summary(operation_samples),
         "process": _summary(process_samples),
         "cache_policy": "UNCONTROLLED_OS_CACHE",
-        "fresh_process_per_sample": mode in {"cold", "append-tail"},
+        "fresh_process_per_sample": mode in {"cold", "append-tail", "projection-rebuild"},
         "warmup_excluded": mode in {"warm", "append-tail"},
         "samples": [
             {**{key: value for key, value in sample.items() if key != "operation_samples"},
@@ -127,6 +141,7 @@ def _prepare_fixture(path: Path, *, size: int, seed: str, batch_size: int) -> di
 
 def run_campaign(*, executable, artifact, output_dir, sizes=(1000, 10000, 100000),
                  runs=2, cold_samples=20, warm_samples=20, append_samples=20,
+                 projection_rebuild_samples=20,
                  seed=DEFAULT_SEED, batch_size=1000, timeout=1800):
     executable, artifact = Path(executable).resolve(), Path(artifact).resolve()
     output_dir = Path(output_dir).resolve()
@@ -139,7 +154,13 @@ def run_campaign(*, executable, artifact, output_dir, sizes=(1000, 10000, 100000
     normalized_sizes = tuple(sorted({int(size) for size in sizes}))
     if not normalized_sizes or any(size < 1 or size > 100_000 for size in normalized_sizes):
         raise ValueError("sizes must be between 1 and 100000")
-    if not 1 <= runs <= 2 or not 3 <= cold_samples <= 100 or not 3 <= warm_samples <= 100 or not 3 <= append_samples <= 100:
+    if (
+        not 1 <= runs <= 2
+        or not 3 <= cold_samples <= 100
+        or not 3 <= warm_samples <= 100
+        or not 3 <= append_samples <= 100
+        or not 3 <= projection_rebuild_samples <= 100
+    ):
         raise ValueError("campaign repetitions are outside the bounded protocol")
     if not 1 <= batch_size <= 5_000:
         raise ValueError("batch size is outside the bounded protocol")
@@ -196,12 +217,27 @@ def run_campaign(*, executable, artifact, output_dir, sizes=(1000, 10000, 100000
                         )
                         append.append(_read_sample(evidence_dir, manifest, mode="append-tail"))
 
+                    projection_rebuild = []
+                    for sample_number in range(1, projection_rebuild_samples + 1):
+                        evidence_dir = size_dir / "projection-rebuild" / f"sample-{sample_number:02d}"
+                        manifest = run_packaged_mode(
+                            executable=executable, artifact=artifact, evidence_dir=evidence_dir,
+                            size=size, repetitions=1, mode="projection-rebuild", fixture=fixture,
+                            timeout=timeout,
+                        )
+                        projection_rebuild.append(
+                            _read_sample(evidence_dir, manifest, mode="projection-rebuild")
+                        )
+
                     run_results.append({
                         "size": size,
                         "fixture": preparation,
                         "cold": _mode_result(cold, mode="cold", evidence_root=output_dir),
                         "warm": _mode_result(warm, mode="warm", evidence_root=output_dir),
                         "append_tail": _mode_result(append, mode="append-tail", evidence_root=output_dir),
+                        "projection_rebuild": _mode_result(
+                            projection_rebuild, mode="projection-rebuild", evidence_root=output_dir,
+                        ),
                     })
                 all_runs.append({"run": run_number, "sizes": run_results})
         finally:
@@ -212,13 +248,15 @@ def run_campaign(*, executable, artifact, output_dir, sizes=(1000, 10000, 100000
 
     checkout = collect_provenance(ROOT, executable=executable, artifact=artifact)
     report = {
-        "schema_version": "H07.measurement-campaign.v1",
+        "schema_version": "H07.measurement-campaign.v2",
         "status": "MEASURED",
         "execution": {
             "mode": "PACKAGED_PROCESS", "artifact_executed": True,
             "cold_samples_per_size": cold_samples, "warm_samples_per_size": warm_samples,
-            "append_tail_samples_per_size": append_samples, "runs": runs,
+            "append_tail_samples_per_size": append_samples,
+            "projection_rebuild_samples_per_size": projection_rebuild_samples, "runs": runs,
             "fresh_process_cold": True, "fresh_process_append_tail": True,
+            "fresh_process_projection_rebuild": True,
             "warmup_excluded_from_warm": True, "os_cache": "UNCONTROLLED",
             "source_fixture_preparation": "SOURCE_PROCESS",
             "source_to_binary_attestation": "NOT_VERIFIED",
@@ -240,7 +278,7 @@ def run_campaign(*, executable, artifact, output_dir, sizes=(1000, 10000, 100000
     report_path = output_dir / "campaign-report.json"
     report_path.write_text(_canonical(report), encoding="utf-8")
     file_manifest = {
-        "schema_version": "H07.measurement-campaign-manifest.v1",
+        "schema_version": "H07.measurement-campaign-manifest.v2",
         "status": "MEASURED",
         "report": str(report_path), "report_sha256": _sha256_file(report_path),
         "artifact": artifact_hashes,
@@ -270,6 +308,7 @@ def main():
     parser.add_argument("--cold-samples", type=int, default=20)
     parser.add_argument("--warm-samples", type=int, default=20)
     parser.add_argument("--append-samples", type=int, default=20)
+    parser.add_argument("--projection-rebuild-samples", type=int, default=20)
     parser.add_argument("--seed", default=DEFAULT_SEED)
     parser.add_argument("--batch-size", type=int, default=1000)
     parser.add_argument("--timeout", type=float, default=1800)
@@ -278,6 +317,7 @@ def main():
         executable=args.executable, artifact=args.artifact, output_dir=args.output_dir,
         sizes=args.sizes, runs=args.runs, cold_samples=args.cold_samples,
         warm_samples=args.warm_samples, append_samples=args.append_samples,
+        projection_rebuild_samples=args.projection_rebuild_samples,
         seed=args.seed, batch_size=args.batch_size, timeout=args.timeout,
     )
     print(json.dumps({"status": report["status"], "report": str(args.output_dir / "campaign-report.json"),

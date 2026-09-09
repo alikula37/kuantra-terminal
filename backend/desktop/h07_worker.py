@@ -109,13 +109,20 @@ def _fixture_adapter(path: Path):
         venue="h07-synthetic",
         projection_venues=("h07-synthetic",),
     )
-    return driver, ledger, adapter
+    return driver, ledger, projection, adapter
 
 
 def _measurement_run(mode: str, *, fixture: Path, size: int, seed: str, repetitions: int, storage_dir: Path):
-    from scripts.run_h07_benchmark import SYNTHETIC_ACCOUNT_ID, SYNTHETIC_VENUE, _summarize_samples, generate_trade_snapshot
+    from scripts.run_h07_benchmark import (
+        ResourceBudget,
+        SYNTHETIC_ACCOUNT_ID,
+        SYNTHETIC_VENUE,
+        _summarize_samples,
+        _timed_call,
+        generate_trade_snapshot,
+    )
 
-    driver, ledger, adapter = _fixture_adapter(fixture)
+    driver, ledger, projection, adapter = _fixture_adapter(fixture)
     trade_id = str(generate_trade_snapshot(0, seed=seed)["id"])
     if mode == "cold":
         sample, pack = _timed_pack(adapter, trade_id, storage_dir)
@@ -130,6 +137,61 @@ def _measurement_run(mode: str, *, fixture: Path, size: int, seed: str, repetiti
             "cache_state": "NEW_PROCESS_NO_WARMUP",
             "operation_samples": samples,
             "determinism": {"status": "COMPLETE", "snapshot_sha256": pack["snapshot_sha256"]},
+        }
+
+    if mode == "projection-rebuild":
+        sample, rebuild = _timed_call(
+            lambda resource_check: projection.rebuild(
+                account_id=SYNTHETIC_ACCOUNT_ID,
+                dry_run=False,
+                resource_check=resource_check,
+            ),
+            storage_dir=storage_dir,
+            budget=ResourceBudget(),
+            dynamic_resource_check=True,
+        )
+        if (not isinstance(rebuild, dict)
+                or rebuild.get("ledger_valid") is not True
+                or rebuild.get("projections_written") != size):
+            raise ValueError("projection rebuild did not cover the synthetic history")
+        coverage = adapter.coverage()
+        if not coverage.get("ready"):
+            raise ValueError("projection rebuild did not restore complete coverage")
+        snapshot_body = {
+            "size": size,
+            "counts": {
+                "trades": size,
+                "projections": int(coverage.get("projected_count", 0)),
+                "ledger_events": size + min(size, 3),
+            },
+            "rebuild": {
+                key: rebuild.get(key)
+                for key in (
+                    "account_id", "events_seen", "projectable_events", "ignored_events",
+                    "projections_written", "tombstones", "ledger_valid",
+                )
+            },
+            "coverage": coverage,
+        }
+        snapshot_sha256 = hashlib.sha256(
+            json.dumps(
+                snapshot_body,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        return {
+            "size": size,
+            "counts": {"trades": size, "projections": size, "ledger_events": size + min(size, 3)},
+            "operations": {"projection_rebuild": _summarize_samples([sample])},
+            "operation_samples": [sample],
+            "rebuild": rebuild,
+            "coverage": coverage,
+            "warmup": None,
+            "cache_state": "PROJECTION_REBUILD_NO_WARMUP",
+            "determinism": {"status": "COMPLETE", "snapshot_sha256": snapshot_sha256},
         }
 
     warmup_sample, warmup_pack = _timed_pack(adapter, trade_id, storage_dir)
@@ -185,12 +247,12 @@ def _measurement_run(mode: str, *, fixture: Path, size: int, seed: str, repetiti
             "coverage": "COMPLETE",
         }, event_id=f"H07-APPEND-TAIL-{os.getpid()}",
     )
-    sample, verification = __import__("scripts.run_h07_benchmark", fromlist=["_timed_call"])._timed_call(
+    sample, verification = _timed_call(
         lambda resource_check: ledger.verify_chain(
             account_id=SYNTHETIC_ACCOUNT_ID, resource_check=resource_check,
         ),
         storage_dir=storage_dir,
-        budget=__import__("scripts.run_h07_benchmark", fromlist=["ResourceBudget"]).ResourceBudget(),
+        budget=ResourceBudget(),
         dynamic_resource_check=True,
     )
     if not isinstance(verification, dict) or verification.get("valid") is not True:
@@ -220,7 +282,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="kuantra-terminal --h07-benchmark", allow_abbrev=False)
     parser.add_argument("--h07-benchmark", action="store_true", required=True)
     parser.add_argument("--size", type=bounded_int(1, 100_000), required=True)
-    parser.add_argument("--mode", choices=("mixed", "cold", "warm", "append-tail"), default="mixed")
+    parser.add_argument("--mode", choices=("mixed", "cold", "warm", "append-tail", "projection-rebuild"), default="mixed")
     parser.add_argument("--fixture", type=Path, default=None,
                         help="synthetic fixture supplied by the benchmark launcher")
     parser.add_argument("--seed", default="H07-SYNTHETIC-V1")
@@ -231,8 +293,8 @@ def main(argv=None):
         parser.error("mixed mode requires at least 3 repetitions")
     if args.mode != "mixed" and args.fixture is None:
         parser.error("fixture mode requires --fixture")
-    if args.mode == "cold" and args.repetitions != 1:
-        parser.error("cold mode requires exactly one repetition per process")
+    if args.mode in {"cold", "projection-rebuild"} and args.repetitions != 1:
+        parser.error(f"{args.mode} mode requires exactly one repetition per process")
     if args.output.exists() or args.output.is_symlink() or not args.output.parent.is_dir():
         parser.error("output must be a new file in an existing directory")
     if not getattr(sys, "frozen", False):
@@ -293,12 +355,14 @@ def main(argv=None):
                     "mode": "PACKAGED_PROCESS" if frozen else "SOURCE_PROCESS",
                     "artifact_executed": frozen, "pid": os.getpid(),
                     "executable": str(executable), "executable_sha256": digest.hexdigest(),
-                    "cold_process_measured": args.mode == "cold", "os_cache": "UNCONTROLLED",
+                    "cold_process_measured": args.mode in {"cold", "projection-rebuild"},
+                    "os_cache": "UNCONTROLLED",
                     "workload_cache": {
                         "mixed": "MIXED_AFTER_FIXTURE_IMPORT",
                         "cold": "NEW_PROCESS_NO_WARMUP",
                         "warm": "WARM_AFTER_WARMUP",
                         "append-tail": "APPEND_TAIL_AFTER_WARMUP",
+                        "projection-rebuild": "PROJECTION_REBUILD_NO_WARMUP",
                     }[args.mode],
                 },
                 "platform": {"os": platform.system(), "version": platform.release(),
