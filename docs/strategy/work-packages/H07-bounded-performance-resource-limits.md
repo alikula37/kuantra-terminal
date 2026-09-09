@@ -91,7 +91,12 @@ pakete eklenmeyecektir.
   ve projection-rebuild kanıtı eklendi; 54/54 packaged manifestte RSS ve izole
   temporary-disk alanları `MEASURED`. Ancak `<2s` hedefi karşılanmadı ve resource
   acceptance için owner-approved bir limit/disposition henüz yoktur; kriter açık
-  kalır.
+  kalır. `67eafa2` ile projection rebuild yazımı deterministik 1,000-record
+  `executemany` batch'lerine alındı; transaction/rollback ve schema değişmedi.
+  Temiz packaged tekrarında 100k cold p95 `3350.5229 / 3152.2077 ms`, projection
+  rebuild p95 `6718.6024 / 6287.9183 ms` operation ve `7919.5035 / 7359.8019 ms`
+  process oldu. Bu bounded optimizasyon hedefi veya resource acceptance'ı
+  kapatmadı; kriter açık kalır.
 - [x] Deterministic `1k/10k/100k` sentetik dataset ve tekrar üretilebilir benchmark
   raporu oluşturuluyor.
 - [x] Import/query/projection rebuild/correction/replay/cancel/Evidence Pack export
@@ -366,6 +371,91 @@ development artifact; it is not Developer ID/notarization, DMG, Gatekeeper,
 Windows/Linux, or release evidence. H07 remains `IMPLEMENTATION_REQUIRED`; next
 decision is an explicit optimization or owner-approved measured boundary, without
 silently changing `<2s>`.
+
+### 2026-09-09 projection rebuild batch-write optimization — 67eafa2
+
+The projection rebuild path now uses one reusable deterministic upsert statement
+and bounded 1,000-record `executemany` batches. The existing delete/write/commit
+transaction boundary is preserved; correction lineage, projection values,
+rollback behavior and schema are unchanged. Resource checks run before and after
+each bounded batch rather than once per row. No funding/transfer event type,
+ledger schema or new product capability was added.
+
+The red test `test_projection_rebuild_uses_bounded_batch_writer` failed before the
+implementation (`1 failed, 39 passed`). After the implementation, the focused H07
+file passed `40/40`, the combined H07/packaged-worker suite passed `64/64`, and
+the H07 plus P1-WP02 projection regression passed `52/52`. The source file also
+passed compileall and the tracked diff passed `git diff --check`.
+
+The clean packaged campaign used this command in a new ignored evidence directory:
+
+```text
+.venv/bin/python scripts/run_h07_measurement_campaign.py --executable "dist/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal" --artifact "dist/Kuantra Terminal.app" --output-dir artifacts/evidence/h07/resource-batch-67eafa2-20260909 --sizes 100000 --runs 2 --cold-samples 3 --warm-samples 3 --append-samples 3 --projection-rebuild-samples 20 --batch-size 1000 --timeout 1800
+```
+
+It executed the explicit arm64 `.app` binary in two 100k runs with 3 cold,
+3 append-tail and 20 fresh-process projection-rebuild samples per run, plus one
+same-process warm sample per run. The resulting p95/resource summaries are:
+
+| Mode | Operation p95 R1 / R2 (ms) | Process p95 R1 / R2 (ms) | Peak process RSS R1 / R2 (MB) | Peak isolated temp R1 / R2 (B) |
+|---|---:|---:|---:|---:|
+| `cold` | 3350.5229 / 3152.2077 | 4434.6318 / 4137.1279 | 165.2969 / 163.3281 | 287690752 / 287690752 |
+| `warm` | 329.9364 / 327.7377 | UNKNOWN (n=1) / UNKNOWN (n=1) | 163.1719 / 163.2812 | 287690752 / 287690752 |
+| `append-tail` | 28.3022 / 25.2925 | 4236.1840 / 4176.3699 | 165.3750 / 163.4219 | 287773184 / 287760824 |
+| `projection-rebuild` | 6718.6024 / 6287.9183 | 7919.5035 / 7359.8019 | 889.2812 / 888.3281 | 388370264 / 388370264 |
+
+All 54/54 packaged manifests recorded `MEASURED` process resources. All 40
+projection rebuilds reported `ledger_valid=true`, `projections_written=100000`,
+counts `100000 trades / 100000 projections / 100003 ledger events`, and the same
+deterministic snapshot
+`f7df42fa141e9a903141fce3f6121093f31f5924d1c58e77939c2d78c753e0d8`. Operation
+peak RSS for projection rebuild was `298.4062 / 294.9688 MB`, and operation
+temporary disk growth was `0 B`; process-level peak isolated temporary footprint
+was `388370264 B` in both runs. The lower projection p95 versus `30be78d` is
+directionally consistent in both runs, but OS page cache is `UNCONTROLLED` and
+the two artifact/runs do not provide an isolated causal percentage claim.
+
+The 100k cold Evidence Pack p95 remains above the `<2s>` planning target, so this
+optimization does not close H07 and does not define a supported history/resource
+limit. The target is not silently relaxed; the remaining choice is another
+evidence-led optimization of the full-chain cost or an explicit owner-approved
+measured-boundary decision.
+
+Campaign report embedded SHA-256 is
+`8b37e07392569b928d78da17b1e11818f1dc0cbf3438f469fc4d39405ae319f3`; full
+`campaign-report.json` SHA-256 is
+`faa90561bfc92d0f3286e516ded334d7c15573c6bf79070562868729f6ef58b2`; and
+`campaign-manifest.json` SHA-256 is
+`31b5c2327043404a3e7e2408805e1eb47bedb74dc45b8cd2d11769bc4b08e317`.
+The clean checkout is commit `67eafa2aaaa311ad8fb1488dec5f121c3e825f56` with
+tracked source tree SHA-256
+`f7925aab979cb164a92aeb8601e9a0edd0c5a5fc21f6a09e3da1f7c235346748`.
+Platform/toolchain is macOS 26.6.2 arm64 (Darwin 25.6.0), Python 3.11.16,
+Node v20.20.2, npm 10.8.2, uv 0.12.10 and PyInstaller 6.22.2. Backend/frontend
+lock SHA-256 values are
+`6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` and
+`b392a59d09ade73564ce082b1a5bc1236618ebeee11703a992980cfd1812882c`.
+The executed executable SHA-256 is
+`1e0905928070c32539f1f1b25fc0ba0d9f50ab0ea62c06c84ec1a79087e7ece8`, `.app`
+tree SHA-256 is
+`bcbac11a1981108e99195c9f7d2b38a0d22de189dfb1518f051108b838f10ffb`, local-CI
+report SHA-256 is
+`7f3f26724548695faa7756aa982689d44393b9edd6e42d93e0ae576c2686f268`, and
+local-CI smoke report SHA-256 is
+`04f74054b1f2ae9126005a7caeeb1e76ddca2972c386ad1d717bda0d042a8d13`.
+Local CI was `MERGE READY` with 13/13 steps: 757 backend tests with 2
+deprecation warnings, frontend 25 files/102 tests, i18n 608/608, production
+build, arm64 PyInstaller build and native WKWebView smoke. Its supply-chain step
+still reports the deferred commercial notice owner review.
+
+Campaign contract is `real_data=false`, `credentials=false`, `network=false`,
+`live_execution=false`, `support_limit_claim=false`; fixture preparation is
+`SOURCE_PROCESS`, source-to-binary attestation is `NOT_VERIFIED` and release
+provenance is `UNKNOWN`. Local-CI provenance is `COMPLETE` for this development
+artifact. The campaign is not DMG, signing/notarization, Gatekeeper,
+Windows/Linux or production evidence. The default local-CI desktop smoke
+attempted the existing public market-data behavior; that is separate from this
+network-disabled synthetic campaign and is not runtime-offline proof.
 
 ### 2026-09-09 doğruluk düzeltmesi — a97499b
 
@@ -690,10 +780,13 @@ Developer ID, notarization, Gatekeeper veya commercial distribution kanıtı de�
   reads ve disabled experimental surfaces production capability olarak açılmamıştır.
   Bu nedenle H07 tamamlanmış veya production-ready değildir.
 
-Sonraki H07 adımı process-level RSS/disk capture ile cold 100k projection rebuild
-ve Evidence Pack doğrulama maliyetinin aynı packaged-process sınırında ölçülmesidir.
-Bu kanıttan sonra seçenekler bounded bir optimizasyon için red test → implementation
-veya bu host/workload'ta `<2s` hedefinin karşılanmadığına dair açık
+Process-level RSS/disk capture ve cold 100k projection rebuild maliyeti artık
+`30be78d`/`67eafa2` ile aynı packaged-process sınırında ölçülmüştür. `67eafa2`
+bounded batch writer, projection rebuild p95'ini önceki `30be78d` kampanyasına
+göre iki run'da da aşağı çekmiştir; ancak OS page cache uncontrolled olduğu için
+izole bir nedensel yüzde veya destek limiti iddiası yapılmamıştır. Bundan sonraki
+seçenekler yine bounded bir optimizasyon için red test → implementation veya bu
+host/workload'ta `<2s` hedefinin karşılanmadığına dair açık
 `OWNER_DECISION_REQUIRED`/destek sınırı sınıflandırmasıdır; hedef sessizce
 değiştirilmeyecektir. `f94ba8e` optimizasyonu historical source full-chain p95'i
 önceki `4560.05042 ms` ölçümünden `2920.32949 ms`'ye, `5a70f8b` ile
