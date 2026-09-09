@@ -109,6 +109,42 @@ PROFILE="${KUANTRA_MACOS_NOTARY_PROFILE:-}"
 command -v xcrun >/dev/null 2>&1 || fail "xcrun is required"
 xcrun --find notarytool >/dev/null 2>&1 || fail "xcrun notarytool is unavailable"
 xcrun --find stapler >/dev/null 2>&1 || fail "xcrun stapler is unavailable"
+command -v hdiutil >/dev/null 2>&1 || fail "hdiutil is required"
+command -v codesign >/dev/null 2>&1 || fail "codesign is required"
+
+# Never submit an ad-hoc or non-hardened artifact to Apple. This local gate
+# inspects the exact app inside a read-only mount and keeps raw codesign output
+# transient; N05 still performs the complete post-staple evidence check.
+SIGNING_MOUNT="$(mktemp -d "${TMPDIR:-/tmp}/kuantra-notarize-signing.XXXXXX")"
+SIGNING_ATTACHED="false"
+cleanup_signing_mount() {
+  if [ "$SIGNING_ATTACHED" = "true" ]; then
+    hdiutil detach "$SIGNING_MOUNT" -force >/dev/null 2>&1 || true
+  fi
+  rm -rf -- "$SIGNING_MOUNT"
+}
+trap cleanup_signing_mount EXIT
+
+if ! hdiutil attach -nobrowse -readonly -mountpoint "$SIGNING_MOUNT" "$DMG" >/dev/null 2>&1; then
+  fail "exact DMG cannot be mounted read-only for signing preflight"
+fi
+SIGNING_ATTACHED="true"
+SIGNING_APP="$SIGNING_MOUNT/Kuantra Terminal.app"
+[ -d "$SIGNING_APP" ] || fail "exact DMG does not contain Kuantra Terminal.app"
+SIGNING_INFO="$(codesign -dv --verbose=4 "$SIGNING_APP" 2>&1 || true)"
+printf '%s\n' "$SIGNING_INFO" | grep -q '^Authority=Developer ID Application:' || {
+  fail "exact DMG is not signed with a Developer ID Application identity"
+}
+printf '%s\n' "$SIGNING_INFO" | grep -Eiq '^CodeDirectory.*flags=.*runtime' || {
+  fail "exact DMG app is missing the hardened runtime"
+}
+codesign --verify --deep --strict --verbose=0 "$SIGNING_APP" >/dev/null 2>&1 || {
+  fail "exact DMG app failed codesign verification"
+}
+hdiutil detach "$SIGNING_MOUNT" -force >/dev/null 2>&1 || fail "signing preflight mount detach failed"
+SIGNING_ATTACHED="false"
+rm -rf -- "$SIGNING_MOUNT"
+trap - EXIT
 
 if [ -x "$ROOT/.venv/bin/python" ]; then
   PYTHON_BIN="$ROOT/.venv/bin/python"
