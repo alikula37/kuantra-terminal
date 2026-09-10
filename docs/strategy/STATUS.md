@@ -542,7 +542,7 @@ and frontend lock hashes remain
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
 | PRODUCT | OWNER_DECISION_REQUIRED | Review/pilot metrics, product license/notices, signing/host access, support/incident readiness | G2–G7 and explicit product-owner decisions; root `LICENSE`, `NOTICE` and `THIRD_PARTY_NOTICES.md` remain intentionally absent until commercial distribution is prepared |
-| DEP | DEFERRED | Branch dependency audit is clean, but GitHub default branch retains six open npm alerts (1 critical, 1 high, 4 moderate) | No merge while development-only; before release, remediate or record a time-bounded owner risk acceptance with applicability/mitigation |
+| DEP | DEFERRED | Branch dependency audit is clean, but GitHub default branch currently retains eight open npm alerts (1 critical, 1 high, 6 moderate) | No merge while development-only; before release, remediate or record a time-bounded owner risk acceptance with applicability/mitigation |
 
 All historical unchecked criteria remain discoverable in the
 [archive obligation index](../archive/README.md). The archive is not a completed-work list.
