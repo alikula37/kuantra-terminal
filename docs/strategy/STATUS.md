@@ -61,19 +61,19 @@ current invocation is expected to remain `BLOCKED` because the GitHub account bi
 spending-limit blocker has not produced the x86_64 chain; no Release/tag or asset upload
 was performed.
 
-**Fresh arm64 evidence (2026-09-10, preceding implementation commit `d81d825`):** Clean
+**Fresh arm64 evidence (2026-09-10, preceding implementation commit `bfc422d`):** Clean
 Mac mini arm64 build and default local CI completed with backend **809 passed / 2 warnings**,
 frontend **25 files / 104 tests**, i18n **608/608**, and `MERGE READY`. Exact
 `Kuantra-Terminal-1.0.0-arm64.dmg` mounted read-only smoke passed with native `wkwebview`,
 controller identity, executable architecture and detach confirmation. The exact DMG
-SHA-256 is `a5381ab05cbe21a7f68731b7136dbf413c4048446ca98df6a7e2f844b1c5c64d`; executable
-SHA-256 is `e9ff730dc235d932b0df96440bea3ea761c2d962ed44af31083fbf362165739f`; final
-mounted smoke report SHA-256 is `12242b785b7adf3fe621d6fae5f7214409433e47e35796782b426632ca99b22f`.
-The N05 report SHA-256 is `36897f91236f38e49ccf4549ccb6bb905ca2da5dce7274d29f1f80a5a75e4887`;
+SHA-256 is `4482f17d7609f050ed8394c1a39f229d6ebbcdb563cb306723b6e4bf4952bed3`; executable
+SHA-256 is `ccca5e8117ae2e7c4db0c7de32b3bfd7ee24b00ee36dd512de852a61dfa858a8`; final
+mounted smoke report SHA-256 is `4f93a4f4b0e2f7c4ed2fdf6cabbeb4521a6c39a01b77d72b96128355dcfecfbc`.
+The N05 report SHA-256 is `944acec1f21deb2b9ee19ae1864ffdfff71c66562a30e0a0c98ea1bd83e803fa`;
 it is correctly `BLOCKED/OWNER_REVIEW_REQUIRED` because this zero-cost pilot artifact is
 ad-hoc and has no Developer ID, hardened runtime, Gatekeeper or stapled-ticket proof.
 The reports share tracked-tree SHA-256
-`f9293fc50a489e01f601f283b6dc26e7a6b8a0d8ae0c50d67fc805cb06499b94` and truth-matrix
+`58098c1a06f9653c43cf8da69d9b5a3d105323c770e0184f699dea72a2dc9c1f` and truth-matrix
 SHA-256 `740b33db5e73b3c9cd7d8fa078282e6d03d8f0c0cf690f0ac1cc2320a617bcf6`. This is
 arm64 evidence only; it does not close P1-WP28 or produce a pilot package without the
 native x86_64 chain.
