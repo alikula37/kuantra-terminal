@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT_DIR, "backend"))
 
 from app.version import __version__  # noqa: E402
-from release_truth import DEFAULT_MATRIX_PATH, load_matrix  # noqa: E402
+from release_truth import DEFAULT_MATRIX_PATH, canonical_matrix_digest, load_matrix  # noqa: E402
 from run_n05_macos_distribution_preflight import N05DistributionError, validate_n05_report  # noqa: E402
 
 PRODUCT_NAME = "Kuantra Terminal"
@@ -46,7 +46,7 @@ def truth_matrix_metadata() -> Dict[str, str]:
     return {
         "document_id": str(matrix["document_id"]),
         "version": str(matrix["version"]),
-        "sha256": compute_sha256(str(DEFAULT_MATRIX_PATH)),
+        "sha256": canonical_matrix_digest(matrix),
     }
 
 

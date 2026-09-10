@@ -6,6 +6,7 @@ import sys
 import pytest
 
 from app.version import __version__
+from scripts.release_truth import canonical_matrix_digest, load_matrix
 
 
 class TestReleaseManifestAndPackaging:
@@ -59,7 +60,7 @@ class TestReleaseManifestAndPackaging:
         assert manifest["product_name"] == "Kuantra Terminal"
         assert manifest["truth_matrix"]["document_id"] == "KTR-001"
         assert manifest["truth_matrix"]["version"] == "1.0.0"
-        assert len(manifest["truth_matrix"]["sha256"]) == 64
+        assert manifest["truth_matrix"]["sha256"] == canonical_matrix_digest(load_matrix())
         assert manifest["total_artifacts"] == 1
         assert len(manifest["artifacts"]) == 1
         assert all(a["filename"].startswith("Kuantra-Terminal-") for a in manifest["artifacts"])
