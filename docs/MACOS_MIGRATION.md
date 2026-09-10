@@ -1,9 +1,9 @@
 # Windows-to-macOS migration runbook
 
 Document ID: KMP-001
-Version: 1.2.0
+Version: 1.2.1
 Status: Accepted
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 ## Current transition decision: no-user-data path
 
@@ -25,7 +25,7 @@ logs, and credentials are never copied accidentally.
    the intended branch is pushed to the private GitHub repository.
 2. On Mac, authenticate with `gh auth login --web`; never paste a GitHub token
    into Codex chat or commit it to a file.
-3. Clone `codex/p1-wp01-evidence-ledger` with `gh repo clone` and confirm the
+3. Clone `main` with `gh repo clone` and confirm the
    remote branch contains the expected latest commit.
 4. Run the local merge gate, frontend tests/build, macOS desktop smoke, and DMG
    packaging with a fresh data directory.
@@ -141,7 +141,7 @@ directory before restoring user data:
 ```bash
 xcode-select --install
 gh auth login --web --git-protocol https
-gh repo clone alikula37/kuantra-terminal -- --branch codex/p1-wp01-evidence-ledger
+gh repo clone alikula37/kuantra-terminal -- --branch main
 cd kuantra-terminal
 npm --prefix frontend ci
 npm --prefix frontend test

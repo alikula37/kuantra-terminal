@@ -7,7 +7,7 @@ version: 1.0.34
 status: Proposed
 date: 2026-09-10
 reviewed_commit: f2d2c82
-branch: codex/p1-wp01-evidence-ledger
+branch: main
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
 ```

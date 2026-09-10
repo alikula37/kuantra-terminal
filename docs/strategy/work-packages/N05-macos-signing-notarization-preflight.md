@@ -8,7 +8,7 @@ status: InProgress
 date: 2026-09-10
 baseline_commit: 9efd203
 implementation_commit: 121a5cdaff2985245156875ffdd8e42ca79fceca
-branch: codex/p1-wp01-evidence-ledger
+branch: main
 strategy: KPR-001@current
 depends_on: N01, N02, N03-final-validation, H04, H05
 release_gate: owner-and-apple-account-required
@@ -114,7 +114,7 @@ Apple distribution gate'inin kapandığını değil, gösterir.
 - Implementation source: `e4f8ba2` (preflight), `9733874` (release audit/manifest
   binding), `657922b` (explicit Developer ID package mode), `133c269`
   (owner-controlled notarization wrapper) and `121a5cd` (pre-submit signing gate),
-  branch `codex/p1-wp01-evidence-ledger`.
+  branch `main`.
 - Focused evidence on implementation `121a5cd`: N05 contract **6 passed** and
   package-spec contract **9 passed**; `python3.11 scripts/check_docs.py` PASS with
   108 documents and 141 local links.

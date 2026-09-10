@@ -11,11 +11,13 @@ unmeasured performance or unimplemented capabilities must not become product cla
 
 ## 🌿 Git Branching Strategy
 
-- **`main`**: Release-bound branch. Every merge must pass the local KDG-002 gate; a release
-  additionally needs independently recorded Windows, macOS and Linux artifact evidence.
+- **`main`**: Release-bound branch. The current Mac-only v1 continuation is authorized
+  to work directly on `main`; every change must pass the local KDG-002 gate and a release
+  still requires exact macOS artifact evidence plus owner approval.
 - **`codex/<phase>-<work-package>-<short-name>`**: Bounded implementation branches.
-- Current Mac continuation stays on **`codex/p1-wp01-evidence-ledger`**. No direct main
-  work, merge, release or tag without explicit owner approval.
+- Future bounded work may still use `codex/*` branches when isolation is useful. The
+  current Mac continuation is on **`main`**; direct work is owner-approved, while merge,
+  release and tag actions remain separately gated.
 
 ---
 

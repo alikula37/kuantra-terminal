@@ -26,8 +26,9 @@ describe contracts; implemented behavior still requires inspection and tests.
 - Archive content, old checkboxes and historical `Active` metadata are not work orders.
   Unchecked historical acceptance items remain open until evidence or an explicit
   superseding decision closes them; archiving does not make them Verified.
-- Work on `codex/p1-wp01-evidence-ledger` for this continuation. No direct main work,
-  merge, release/tag or workflow/billing changes without explicit authorization.
+- The owner has moved this continuation to `main`; work directly on `main` for the
+  current Mac-only v1. No merge, release/tag or workflow/billing changes without
+  explicit authorization.
 - No real broker orders, requested exchange secrets or real Keychain credential writes.
   No user data reset/delete/migration apply without explicit approval. With no real
   migration data, start clean; do not copy Windows data or create migration bundles.

@@ -9,7 +9,7 @@ status: Ready
 date: 2026-09-09
 baseline_commit: e042790
 implementation_commit: ec162429d4f79e9f6fd581d3e1c81e8cb8b48d42
-branch: codex/p1-wp01-evidence-ledger
+branch: main
 strategy: KPR-001@current
 depends_on: P1-WP27, N01, N02, H01, H02, H04, H06
 release_gate: H05-commercial-distribution-deferred
