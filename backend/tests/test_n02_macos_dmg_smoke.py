@@ -63,6 +63,7 @@ def test_macos_dmg_script_contains_readonly_mount_explicit_executable_and_detach
     script = (ROOT / "scripts" / "smoke_macos_dmg.py").read_text(encoding="utf-8")
     for needle in (
         "hdiutil",
+        "verify",
         "-readonly",
         "-mountpoint",
         "hdiutil",

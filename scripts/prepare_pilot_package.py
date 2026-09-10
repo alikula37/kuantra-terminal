@@ -127,6 +127,7 @@ def _source_identity(report: Mapping[str, Any], *, architecture: str, dmg: Path)
     _require(isinstance(mounted, Mapping), f"{architecture} mounted-DMG smoke evidence is missing")
     for key, expected in (
         ("status", "PASS"),
+        ("dmg_image_integrity", "PASS"),
         ("mount_mode", "readonly"),
         ("renderer", "wkwebview"),
         ("architecture", architecture),
@@ -366,6 +367,11 @@ def prepare_pilot_package(
             "transport": "private GitHub Release",
             "repository_read_access_required": True,
             "apple_developer_id": False,
+            "download_integrity": {
+                "sha256sums_required": True,
+                "hdiutil_verify_required": True,
+                "github_immutable_release_recommended": True,
+            },
             "artifact_status": "AD_HOC_TRUSTED_PILOT_ONLY" if blocked else "N05_VERIFIED_PILOT",
             "production_ready": False,
             "commercial_support": False,

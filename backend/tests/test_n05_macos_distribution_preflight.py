@@ -65,6 +65,7 @@ def _report(dmg: Path, executable: Path, *, architecture: str = "arm64") -> dict
         "build_provenance": provenance,
         "macos_dmg_smoke": {
             "status": "PASS",
+            "dmg_image_integrity": "PASS",
             "mount_mode": "readonly",
             "executable_from_mount": True,
         },

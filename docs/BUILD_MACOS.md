@@ -112,6 +112,18 @@ bash scripts/package_macos.sh --architecture arm64
 bash scripts/package_macos.sh --architecture x86_64
 ```
 
+The package script runs `hdiutil verify` against the exact DMG after creation. If a
+DMG is copied through another channel, verify that downloaded file again before
+mounting it:
+
+```bash
+hdiutil verify dist/Kuantra-Terminal-<version>-arm64.dmg
+```
+
+`hdiutil verify` proves disk-image/container integrity only; it does not provide
+Apple malware, Developer ID or notarization trust. Keep the SHA-256 and Gatekeeper
+boundaries below in place.
+
 The version is read from the single source of truth, `backend/app/version.py`.
 
 **Evidence boundary:** `smoke_desktop.py --artifact <dmg>` only adds the artifact hash;

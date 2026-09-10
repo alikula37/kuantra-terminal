@@ -54,8 +54,9 @@ by P1-WP28 or P1-WP29.
 **P1-WP29 implementation evidence (this change):** `prepare_pilot_package.py` is
 fail-closed for missing x86_64 evidence, binds both architectures to the same source/tree/
 lock/truth identity, verifies exact mounted-DMG smoke plus either N05 PASS or explicit
-ad-hoc `BLOCKED` evidence, and writes DMGs, evidence JSON, manifest, instructions and
-SHA-256 checksums without reading user data or credentials. The research record is
+ad-hoc `BLOCKED` evidence, requires `hdiutil verify` image-integrity evidence before
+mounting, and writes DMGs, evidence JSON, manifest, instructions and SHA-256 checksums
+without reading user data or credentials. The research record is
 [`PILOT-DISTRIBUTION-RESEARCH.md`](../release/PILOT-DISTRIBUTION-RESEARCH.md). The
 current invocation is expected to remain `BLOCKED` because the GitHub account billing/
 spending-limit blocker has not produced the x86_64 chain; no Release/tag or asset upload

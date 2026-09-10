@@ -39,6 +39,10 @@ claim'i açmaz.
       kabul edilmez; build job write izni read ile sınırlandırılır.
 - [x] Private Release, Actions artifact, Apple Gatekeeper ve macOS model/OS sınırları
       [araştırma kaydında](../../release/PILOT-DISTRIBUTION-RESEARCH.md) açıkça ayrılır.
+- [x] DMG build ve exact mounted-DMG smoke öncesinde `hdiutil verify` ile image/container
+      bütünlüğü kontrol edilir; pilot talimatı indirilen DMG'de aynı kontrolü ister.
+      Bu kontrol Gatekeeper, malware taraması, Developer ID veya notarization yerine
+      geçmez; hiçbir güvenlik bypass'ı eklenmez.
 - [x] Mac mini üzerinde `bfc422d` source commit'i için arm64 exact DMG, read-only mounted
       WKWebView smoke ve ad-hoc N05 evidence zinciri yeniden üretildi; N05 sonucu bilinçli
       olarak `BLOCKED/OWNER_REVIEW_REQUIRED` kaldı.

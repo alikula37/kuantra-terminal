@@ -134,6 +134,14 @@ def main(argv: list[str] | None = None) -> int:
     payload: dict[str, Any] | None = None
     error: Exception | None = None
     try:
+        image_verify_result = subprocess.run(
+            ["hdiutil", "verify", str(dmg)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if image_verify_result.returncode != 0:
+            raise DmgSmokeError("DMG image integrity verification failed")
         attached_result = subprocess.run(
             ["hdiutil", "attach", "-nobrowse", "-readonly", "-mountpoint", str(mountpoint), str(dmg)],
             check=False,
@@ -173,6 +181,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         payload["macos_dmg_smoke"] = {
             "status": "PASS",
+            "dmg_image_integrity": "PASS",
             "mount_mode": "readonly",
             "executable_from_mount": True,
             "renderer": identity["renderer"],

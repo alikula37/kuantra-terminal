@@ -138,4 +138,7 @@ rm -f "$OUT"; mkdir -p "$(dirname "$OUT")"
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
 hdiutil create -volname "Kuantra Terminal" -srcfolder "$STAGE" -ov -format UDZO "$OUT"
+# Verify the exact image before it can leave the build workspace. This checks
+# DMG/container integrity; it does not replace Developer ID or notarization.
+hdiutil verify "$OUT"
 echo "[+] $OUT ($(du -h "$OUT" | cut -f1), architecture=$ACTUAL_ARCH, signing=$SIGNING_MODE)"

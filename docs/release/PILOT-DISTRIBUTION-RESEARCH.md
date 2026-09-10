@@ -26,6 +26,28 @@ macOS Gatekeeper güveni değildir. Ücretsiz pilot için uygulanabilir sınır:
 
 Bu yol public dağıtım, ticari satış veya production-ready iddiası değildir.
 
+## İndirme, DMG bütünlüğü ve macOS güveni aynı şey değildir
+
+Pilot güvenliği üç ayrı kontrol olarak ele alınmalıdır:
+
+1. GitHub Release erişim ve taşıma katmanıdır. `SHA256SUMS`, GitHub asset digest'i
+   ve mümkünse immutable Release, kullanıcının indirdiği dosyanın beklenen asset
+   olduğunu kontrol eder.
+2. `hdiutil verify`, DMG disk imajının/container'ının bozulmadığını doğrular. Kuantra
+   bunu build sonrasında ve final read-only mounted-DMG smoke öncesinde zorunlu kılar;
+   pilot talimatı indirilmiş dosyada tekrar çalıştırır.
+3. Developer ID + notarization, Apple'ın Gatekeeper trust katmanıdır. Developer ID
+   olmadan macOS uygulamayı Apple tarafından doğrulanmış geliştirici uygulaması olarak
+   kabul etmez; kullanıcıdan bilinçli bir istisna onayı istenebilir. Bu pilot için
+   kullanılan ad-hoc imza bu güven katmanını sağlamaz.
+
+Apple, bilinen malware tespitinde XProtect'in uygulamayı engelleyip Trash'e
+taşıyabileceğini; değiştirilmiş/bozuk uygulamanın da açılmayabileceğini belirtir.
+Bu davranışı devre dışı bırakmak için `xattr`, Gatekeeper kapatma veya benzeri bir
+bypass eklenmez. “Bilgisayarınıza zarar verecek” ya da “uygulama bozuk” uyarısı
+pilotta fail-closed durma sebebidir. [Apple XProtect](https://support.apple.com/en-ie/guide/security/sec469d47bd8/web)
+ve [Apple uygulamaları güvenle açma](https://support.apple.com/en-us/102445).
+
 ## Apple Developer ID alınmadan ne olur?
 
 Apple, App Store dışı Mac dağıtımında Developer ID imzasını Gatekeeper'ın tanıdığı

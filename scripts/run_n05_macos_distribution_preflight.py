@@ -227,6 +227,8 @@ def _validate_smoke_binding(
     smoke_dmg = report.get("macos_dmg_smoke")
     if not isinstance(smoke_dmg, Mapping) or smoke_dmg.get("status") != "PASS":
         raise N05DistributionError("exact mounted-DMG smoke evidence is missing")
+    if smoke_dmg.get("dmg_image_integrity") != "PASS":
+        raise N05DistributionError("DMG image integrity verification is missing")
     if smoke_dmg.get("mount_mode") != "readonly" or smoke_dmg.get("executable_from_mount") is not True:
         raise N05DistributionError("smoke report does not prove a read-only mounted executable")
     return provenance

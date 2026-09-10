@@ -20,6 +20,28 @@ uyarı gösterir; bu bilinçli ve geçici pilot sınırıdır.
 
    Her satır `OK` değilse uygulamayı açmayın; dosyayı silmeden önce pilot sahibine
    yalnızca dosya adı, Mac modeli/OS sürümü ve hata metnini bildirin.
+5. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
+
+   ```text
+   hdiutil verify Kuantra-Terminal-1.0.0-arm64.dmg
+   # Intel Mac için bunun yerine:
+   hdiutil verify Kuantra-Terminal-1.0.0-x86_64.dmg
+   ```
+
+   Yalnızca kullandığınız mimarinin çıktısı başarılı olmalıdır. Bu kontrol DMG
+   container'ının bozulmadığını doğrular; Apple malware taraması, Developer ID veya
+   notarization yerine geçmez.
+
+İsteğe bağlı olarak, immutable GitHub Release kullanıma açılmışsa release ve asset
+kanıtını GitHub CLI ile de kontrol edin:
+
+```text
+gh release verify v1.0.0 --repo alikula37/kuantra-terminal
+gh release verify-asset v1.0.0 Kuantra-Terminal-1.0.0-arm64.dmg --repo alikula37/kuantra-terminal
+```
+
+Bu GitHub kanıtı Apple Gatekeeper güveninin yerine geçmez. Release public değilse
+komutları çalıştıran hesabın repository read erişimi olmalıdır.
 
 ## Kurulum ve ilk açılış
 

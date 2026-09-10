@@ -88,6 +88,7 @@ def _chain(tmp_path: Path, architecture: str, *, commit: str = "a" * 40):
                 },
                 "macos_dmg_smoke": {
                     "status": "PASS",
+                    "dmg_image_integrity": "PASS",
                     "mount_mode": "readonly",
                     "executable_from_mount": True,
                     "renderer": "wkwebview",
@@ -181,6 +182,11 @@ def test_pilot_package_binds_two_architectures_and_generates_checksums(tmp_path)
 
     output = tmp_path / "pilot"
     assert manifest["distribution"]["artifact_status"] == "AD_HOC_TRUSTED_PILOT_ONLY"
+    assert manifest["distribution"]["download_integrity"] == {
+        "sha256sums_required": True,
+        "hdiutil_verify_required": True,
+        "github_immutable_release_recommended": True,
+    }
     assert manifest["claims"]["production_ready"] is False
     assert manifest["distribution"]["github_release_replaces_apple_notarization"] is False
     assert {item["architecture"] for item in manifest["artifacts"]} == {"arm64", "x86_64"}

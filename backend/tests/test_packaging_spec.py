@@ -72,11 +72,12 @@ def test_package_macos_script_builds_dmg():
     assert 'developer-id' in sh
     assert '--architecture' in sh and '--output' in sh and '--app' in sh
     assert 'lipo -archs' in sh
+    assert 'hdiutil verify' in sh
 
 
-def test_macos_dmg_smoke_binds_mount_and_native_renderer():
+def test_macos_dmg_smoke_binds_image_integrity_mount_and_native_renderer():
     script = (ROOT / "scripts" / "smoke_macos_dmg.py").read_text()
-    for needle in ("-readonly", "-mountpoint", "hdiutil", "wkwebview", "--artifact", "--expected-architecture"):
+    for needle in ("hdiutil", "verify", "-readonly", "-mountpoint", "wkwebview", "--artifact", "--expected-architecture"):
         assert needle in script
 
 
