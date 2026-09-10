@@ -43,9 +43,9 @@ claim'i açmaz.
       bütünlüğü kontrol edilir; pilot talimatı indirilen DMG'de aynı kontrolü ister.
       Bu kontrol Gatekeeper, malware taraması, Developer ID veya notarization yerine
       geçmez; hiçbir güvenlik bypass'ı eklenmez.
-- [x] Mac mini üzerinde `bfc422d` source commit'i için arm64 exact DMG, read-only mounted
-      WKWebView smoke ve ad-hoc N05 evidence zinciri yeniden üretildi; N05 sonucu bilinçli
-      olarak `BLOCKED/OWNER_REVIEW_REQUIRED` kaldı.
+- [x] Mac mini üzerinde `6646332` source commit'i için arm64 exact DMG, `hdiutil verify`
+      (`VALID`), read-only mounted WKWebView smoke ve ad-hoc N05 evidence zinciri yeniden
+      üretildi; N05 sonucu bilinçli olarak `BLOCKED/OWNER_REVIEW_REQUIRED` kaldı.
 - [ ] Gerçek x86_64 native runner job'ı, exact DMG ve smoke/N05 zincirini üretir. Mevcut
       GitHub billing/spending-limit durumu çözülmeden bu kriter kapanmaz.
 - [ ] N03 temiz ikinci Mac profil/host install → launch → import/review → close/reopen

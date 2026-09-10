@@ -62,6 +62,24 @@ current invocation is expected to remain `BLOCKED` because the GitHub account bi
 spending-limit blocker has not produced the x86_64 chain; no Release/tag or asset upload
 was performed.
 
+**Fresh arm64 download-integrity evidence (2026-09-10, preceding implementation commit
+`6646332`):** Local CI is **MERGE READY** with backend **810 passed / 2 warnings**, frontend
+**25 files / 104 tests**, i18n **608/608**, arm64 PyInstaller build and native WKWebView
+smoke PASS. The exact `Kuantra-Terminal-1.0.0-arm64.dmg` was rebuilt from source commit
+`66463327a469d88a79b9f48e7255d01afeaa75da`; its tracked-tree SHA-256 is
+`8650e83dfd179974372beb12cf9f3138a9b55655f92ee88b9abfea33d48322c6`, executable SHA-256
+is `66326dd635881b43d8d6a23bc9a1b56faf792e3d7805a0aa6cc8a76411579554`, and DMG SHA-256 is
+`a8501f796e8c4042fe420376258987452f027b84a4e97c345a0356a0c6d4bec4`. `hdiutil verify` on
+that exact DMG returned exit 0 and `checksum ... is VALID`. Exact read-only mounted-DMG
+smoke passed with `dmg_image_integrity: PASS`, native arm64 executable, native `wkwebview`,
+controller identity and detach confirmation; report SHA-256 is
+`921f1baa55c8688b9821fa7b356d4c289d9271a9208bf36bb1e23817e4e9fbfe`. The corresponding
+N05 report SHA-256 is `d4438bfc00497ebc2602b66b820638fe5a0e0614e59717e5aaedf0bd546c6c5e`
+and remains correctly `BLOCKED/OWNER_REVIEW_REQUIRED` because the artifact is ad-hoc and
+has no Developer ID, hardened runtime, Gatekeeper or stapled-ticket proof. The package
+builder was then invoked with this exact arm64 chain and correctly stopped at the missing
+native x86_64 DMG; no one-architecture pilot package or Release was created.
+
 **Fresh arm64 evidence (2026-09-10, preceding implementation commit `bfc422d`):** Clean
 Mac mini arm64 build and default local CI completed with backend **809 passed / 2 warnings**,
 frontend **25 files / 104 tests**, i18n **608/608**, and `MERGE READY`. Exact
