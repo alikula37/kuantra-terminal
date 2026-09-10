@@ -56,6 +56,13 @@ sentetik test akışında import preview → review → Evidence Pack → export
 sonuçları. Bu kayıtlar Intel cihazın runtime doğrulamasıdır; başka Mac modelleri için
 genel destek garantisi değildir.
 
+Pilot sahibi Intel Mac'i kontrollü native build hostu olarak da seçerse, checkout edilmiş
+onaylı source commit'inde [macOS build runbook'taki Intel lane](../BUILD_MACOS.md#controlled-intel-pilot-build-lane)
+çalıştırılabilir. `run_local_ci.py --expected-architecture x86_64` native host, executable
+ve provenance eşleşmesini zorunlu kılar; Rosetta altında çalışan süreç veya arm64 artifact
+başarılı kabul edilmez. Bu yol sonunda oluşan x86_64 DMG, exact mounted-DMG smoke ve N05
+raporları hazır olmadan pilot Release'a yüklenmez.
+
 Pilot sahibi teknik N03 install-lifecycle kanıtı istiyorsa, ayrı temiz bir macOS
 profilinde `run_n03_macos_clean_profile_audit.py` çalıştırılmalı ve
 `--expected-architecture x86_64` Intel cihazda açıkça verilmelidir. Normal kişisel

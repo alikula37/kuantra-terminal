@@ -81,6 +81,12 @@ def test_macos_dmg_smoke_binds_image_integrity_mount_and_native_renderer():
         assert needle in script
 
 
+def test_local_ci_can_require_native_macos_architecture():
+    script = (ROOT / "scripts" / "run_local_ci.py").read_text()
+    for needle in ("--expected-architecture", "native_host_matches", "build_host_translation"):
+        assert needle in script
+
+
 def test_n03_pilot_host_audit_verifies_dmg_and_native_architecture():
     script = (ROOT / "scripts" / "run_n03_macos_clean_profile_audit.py").read_text()
     for needle in ("hdiutil", "verify", "native_host_matches", "detect_executable_architecture", "--expected-architecture"):

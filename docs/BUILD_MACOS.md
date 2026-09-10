@@ -15,9 +15,10 @@ extra to install for end users. The app tree is frozen with **PyInstaller** (`--
 
 - **Native macOS build host** — the v1 target is macOS 12 Monterey or later with separate
   native arm64 and x86_64 builds. The Mac mini validates arm64 locally; x86_64 release
-  evidence is produced on a native Intel GitHub runner. A single-architecture build is
-  never presented as Universal2 or as the other architecture. Intel jobs fail if the
-  process is running through Rosetta or if native status cannot be proven.
+  evidence is preferably produced on a native Intel GitHub runner, or on the explicitly
+  controlled Intel Mac of the technical pilot group. A single-architecture build is never
+  presented as Universal2 or as the other architecture. Intel jobs fail if the process is
+  running through Rosetta or if native status cannot be proven.
 - **Xcode Command Line Tools**: `xcode-select --install`
 - **Python 3.11+** matching the native build host architecture
 - **Node.js 20+ & npm**
@@ -55,6 +56,33 @@ runs PyInstaller against the checked-in spec `packaging/kuantra.spec`. Pass `--s
 reuse an existing `frontend/dist`.
 
 Output: `dist/Kuantra Terminal.app`
+
+### Controlled Intel pilot build lane
+
+The pilot's Intel participant may be the native build host when the hosted Intel runner is
+unavailable. This is an owner-controlled technical validation lane, not a request for
+credentials or a production release. On the physical Intel Mac, confirm the host before
+building:
+
+```bash
+test "$(uname -m)" = "x86_64"
+test "$(sysctl -in sysctl.proc_translated 2>/dev/null || true)" = "0"
+```
+
+Then run the locked local gate with the architecture requirement enabled. The build and
+packaged smoke steps inherit the same native-host/executable guard:
+
+```bash
+uv run --offline --no-project --with-requirements backend/requirements.lock \
+  python scripts/run_local_ci.py \
+  --expected-architecture x86_64 \
+  --report dist/pilot-local-ci-x86_64.json
+```
+
+If the command passes, continue with `scripts/package_macos.sh --architecture x86_64`,
+the exact read-only mounted-DMG smoke, and the N05 preflight described below. Record the
+source commit, lock hashes, native host checks, executable hash, DMG hash and each report
+hash. A Rosetta process, a copied arm64 artifact or an unverified host is rejected.
 
 ---
 

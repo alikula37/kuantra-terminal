@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any
 
 from build_provenance import ProvenanceError, validate_report
+from macos_architecture import canonical_architecture, native_host_matches
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -197,13 +198,17 @@ def _validate_smoke_report(path: Path) -> tuple[str, dict[str, Any]]:
     }
 
 
-def _validate_smoke_provenance(path: Path) -> tuple[str, dict[str, Any]]:
+def _validate_smoke_provenance(
+    path: Path,
+    *,
+    expected_architecture: str | None = None,
+) -> tuple[str, dict[str, Any]]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         provenance = validate_report(payload, release_facing=False)
     except (OSError, json.JSONDecodeError, ProvenanceError) as exc:
         return "FAIL", {"reason": f"smoke provenance is incomplete: {exc}"}
-    return "PASS", {
+    details = {
         "provenance_status": provenance.get("provenance_status"),
         "source_commit_sha": provenance.get("source_commit_sha"),
         "tracked_source_tree_status": provenance.get("tracked_source_tree_status"),
@@ -216,6 +221,24 @@ def _validate_smoke_provenance(path: Path) -> tuple[str, dict[str, Any]]:
         "executable_sha256": provenance.get("executable_sha256"),
         "artifact_sha256": provenance.get("artifact_sha256"),
     }
+    if expected_architecture is not None:
+        observed_architecture = canonical_architecture(str(provenance.get("architecture") or ""))
+        host_architecture = canonical_architecture(str(provenance.get("build_host_architecture") or ""))
+        host_translation = provenance.get("build_host_translation")
+        if (
+            observed_architecture != expected_architecture
+            or host_architecture != expected_architecture
+            or host_translation != "native"
+        ):
+            return "FAIL", {
+                **details,
+                "reason": "expected native host/executable architecture was not proven",
+                "expected_architecture": expected_architecture,
+                "observed_architecture": observed_architecture,
+                "build_host_architecture": host_architecture,
+                "build_host_translation": host_translation,
+            }
+    return "PASS", details
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -223,7 +246,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report", type=Path, default=REPORT_DEFAULT)
     parser.add_argument("--smoke-timeout", type=float, default=90.0)
     parser.add_argument("--keep-data", action="store_true", help="keep isolated test/smoke data directories")
+    parser.add_argument(
+        "--expected-architecture",
+        default=None,
+        help="on macOS, require a native arm64 or x86_64 host and matching executable",
+    )
     args = parser.parse_args(argv)
+
+    expected_architecture = None
+    if args.expected_architecture is not None:
+        expected_architecture = canonical_architecture(args.expected_architecture)
+        if expected_architecture is None:
+            parser.error(f"unsupported expected architecture: {args.expected_architecture}")
+        if sys.platform != "darwin":
+            parser.error("--expected-architecture is only valid for macOS local CI")
+        native_ok, native_reason = native_host_matches(expected_architecture)
+        if not native_ok:
+            parser.error(f"native local-CI host check failed: {native_reason}")
 
     report_path = args.report if args.report.is_absolute() else ROOT / args.report
     report_path = report_path.resolve()
@@ -262,29 +301,30 @@ def main(argv: list[str] | None = None) -> int:
     steps.append(_run_step("frontend-tests", [npm, "--prefix", str(ROOT / "frontend"), "test"], env, 600))
     steps.append(_run_step("frontend-build", [npm, "--prefix", str(ROOT / "frontend"), "run", "build"], env, 600))
 
-    build_step = _run_step(
-        "desktop-build",
-        _python_command("scripts/build_desktop.py", "--skip-frontend"),
-        env,
-        1200,
-    )
+    build_command = _python_command("scripts/build_desktop.py", "--skip-frontend")
+    if expected_architecture is not None:
+        build_command.extend(["--expected-architecture", expected_architecture])
+    build_step = _run_step("desktop-build", build_command, env, 1200)
     steps.append(build_step)
 
     if build_step["status"] == "PASS":
         smoke_env = env.copy()
         smoke_env["KUANTRA_DATA_DIR"] = str(smoke_data)
         smoke_env["KUANTRA_GATEWAY_ENABLED"] = "0"
+        smoke_command = _python_command(
+            "scripts/smoke_desktop.py",
+            "--report",
+            str(smoke_report),
+            "--data-dir",
+            str(smoke_data),
+            "--timeout",
+            str(args.smoke_timeout),
+        )
+        if expected_architecture is not None:
+            smoke_command.extend(["--expected-architecture", expected_architecture])
         smoke_step = _run_step(
             "desktop-smoke",
-            _python_command(
-                "scripts/smoke_desktop.py",
-                "--report",
-                str(smoke_report),
-                "--data-dir",
-                str(smoke_data),
-                "--timeout",
-                str(args.smoke_timeout),
-            ),
+            smoke_command,
             smoke_env,
             args.smoke_timeout + 90,
         )
@@ -312,7 +352,10 @@ def main(argv: list[str] | None = None) -> int:
             "duration_seconds": 0,
             "details": renderer_details,
         })
-        provenance_status, provenance_details = _validate_smoke_provenance(smoke_report)
+        provenance_status, provenance_details = _validate_smoke_provenance(
+            smoke_report,
+            expected_architecture=expected_architecture,
+        )
         steps.append({
             "name": "provenance-contract",
             "status": provenance_status,
@@ -345,6 +388,7 @@ def main(argv: list[str] | None = None) -> int:
         "duration_seconds": round(time.monotonic() - started, 3),
         "product_version": _product_version(),
         "platform": platform.system().lower(),
+        "expected_architecture": expected_architecture,
         "architecture": smoke_provenance.get("architecture", platform.machine()),
         "build_host_architecture": smoke_provenance.get("build_host_architecture", platform.machine()),
         "python": sys.version.split()[0],
