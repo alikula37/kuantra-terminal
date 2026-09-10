@@ -76,7 +76,9 @@ production-ready veya commercial-support iddiası değildir.
       Gatekeeper assessment ve hardened-runtime kanıtı.
 - [ ] Exact DMG üzerinde stapled notarization ticket kanıtı; Apple Developer
       enrollment/certificate/notary profile owner/host tarafından sağlanmalı.
-- [ ] N03 temiz ikinci profil/host install-lifecycle kanıtı ve N06 diğer OS kanıtları.
+- [ ] N03 temiz ikinci profil/host install-lifecycle kanıtı. N06 Windows/Linux kanıtı
+      v1 Mac-only release kapsamı dışındadır ve yalnız multi-platform expansion kararıyla
+      yeniden açılır.
 - [ ] License/notices ve default-branch Dependabot disposition; H05 ticari gate'i
       owner kararıyla ayrıca yeniden açılacak, bu paketin kapsamına alınmayacak.
 - [x] Focused regression, `python3.11 scripts/check_docs.py` ve canonical local CI
@@ -143,8 +145,9 @@ Apple distribution gate'inin kapandığını değil, gösterir.
 
 ## Sonraki bağımlılık
 
-N05 code preflight'i green olduktan sonra gerçek final artifact için owner-provided
-Developer ID/notary access gerekir. N03 final clean-profile audit'i ve N06
-Windows/Linux host evidence'i tamamlanmadan üç-OS production release iddiası
-yapılmaz. H05 license/notices ve default-branch alert kararı da ticari dağıtım
+N05 code preflight'i green olduktan sonra v1 final artifact için owner-provided
+Developer ID/notary access gerekir. N03 final clean-profile audit'i Mac-only v1
+distribution/pilot validation'ın parçasıdır. N06 Windows/Linux host evidence'i v1
+kapsamında değildir; yalnız gelecekte üç-OS production release iddiası yapılacaksa
+yeniden açılır. H05 license/notices ve default-branch alert kararı da ticari dağıtım
 öncesine kadar deferred kalır.

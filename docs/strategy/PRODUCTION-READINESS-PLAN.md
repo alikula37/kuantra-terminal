@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.33
+version: 1.0.34
 status: Proposed
 date: 2026-09-10
-reviewed_commit: 133c269
+reviewed_commit: f2d2c82
 branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -49,6 +49,13 @@ Plan hazırlamak; gerçek hesap, API anahtarı, kullanıcı verisi, telemetri g�
 sertifika satın alma, imzalama servislerine yükleme, pilot daveti, main merge, release
 ve tag işlemlerini başlatmaz. Bunlar ilgili aşamada kapsam ve ürün sahibi onayı gerektirir.
 
+**Owner decision (2026-09-10):** İlk production sürümü yalnızca macOS için hedeflenir.
+İlk dağıtım yolu doğrudan Developer ID ile imzalanmış ve notarize edilmiş DMG'dir.
+Mevcut aday kanıtı macOS arm64 ile sınırlıdır; Intel Mac, Windows ve Linux için destek
+iddiası yoktur. Apple Developer üyeliği, signing erişimi ve gerçek notarization işlemi
+Release Candidate aşamasına kadar ertelenir. KDG-002'nin üç-OS politikası kaldırılmaz;
+yalnızca ileride açıkça onaylanan multi-platform release için yeniden devreye girer.
+
 ## 2. İlk sürümün sınırı
 
 | İlk production kapsamında | Koşullu / kapsam dışında |
@@ -58,7 +65,7 @@ ve tag işlemlerini başlatmaz. Bunlar ilgili aşamada kapsam ve ürün sahibi o
 | Partial/unknown durumlarını gösteren order/fill ve kapsamı belirli accounting reconciliation | Tam hesap doğrulaması yokken net account PnL onayı |
 | Trade ↔ kaynak lineage, coverage gösterimi, weekly review, versioned playbook | AI order, sinyal satışı, copy/bot, FIX/DMA |
 | Elde bulunan uygun market context ile sınırlı replay/analytics | Kesintisiz L2/depth, tick-exact MAE/MFE veya venue-grade latency vaadi |
-| Mac native pilot; release için mevcut üç-OS final artifact politikası | Mac başarısını Windows/Linux veya Intel başarısı sayma |
+| Mac native pilot; v1 için exact macOS final artifact ve doğrudan notarize DMG | Mac başarısını Windows/Linux veya Intel başarısı sayma; üç-OS politika yalnızca gelecek multi-platform release içindir |
 
 ### Destek matrisi, geliştirmeden önce sözleşme olmalı
 
@@ -208,7 +215,7 @@ izleme yaklaşımı NIST SSDF'den yararlanır; bu plan bir standart sertifikası
 | N03 | Temiz ikinci host/profilde quarantine dahil install → launch → import/review → close/reopen; geliştirici cache/data'sına bağımlı değil; final validation'a ertelendi |
 | N04 | Update önceki supported build'den; interrupted update; uninstall veriyi korur; restore ve schema rollback politikası kullanıcıya açık; bounded non-release audit tamamlandı |
 | N05 | Exact DMG üzerinde read-only signing/notarization preflight; minimal entitlements, ticket/manifest verification ve secretsiz signing logs. Actual Developer ID/notary kanıtı owner/Apple host kapısıdır |
-| N06 | Windows P0-WP11 host blocker ve Linux native final artifact suite ayrı host'larda; OS/arch/version support tablosu kanıtla eşleşir |
+| N06 | Gelecekteki multi-platform release için Windows P0-WP11 host blocker ve Linux native final artifact suite ayrı host'larda; v1 Mac-only release gate'i değildir |
 
 Mac ad-hoc geliştirme DMG'si ticari distribution-signed artifact değildir. Apple'ın
 doğrudan dağıtım akışı Developer ID signing/notarization ve distribution testi ayrımını
@@ -217,10 +224,11 @@ sertifika ve OS onayı kullanıcı sorumluluğudur; parola/sertifika secret'ı s
 [Apple notarization](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution),
 [Apple distribution testing](https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution).
 
-G4 Mac-only kapalı pilot olarak değerlendirilebilir; bu, mevcut KDG-002 üç-OS final
-release politikasını kaldırmaz. İlk production'ı Mac-only yapma kararı istenirse ayrı
-öneri/onay gerekir. Build çıktısının hash'i eşit olmayan imzalı artifact için eski
-unsigned smoke'u final artifact testi diye yeniden kullanmayız.
+G4 v1 için Mac-only kapalı pilot ve ardından Mac final release adayı olarak
+değerlendirilir. Owner kararıyla mevcut KDG-002 üç-OS final release politikası v1'in
+önkoşulu değildir; gelecekte Windows/Linux hedeflenirse N06 yeniden açılır ve her hedef
+platform için ayrı kanıt gerekir. Build çıktısının hash'i eşit olmayan imzalı artifact
+için eski unsigned smoke'u final artifact testi diye yeniden kullanmayız.
 
 ## 8. G5: Gerçek kullanıcı değeri, kontrollü pilot
 
@@ -256,7 +264,7 @@ Sadece tarihsel P0 Verified veya feature branch full CI sonucu dossier yerine ge
 | Correctness | G1 oracle/property/E2E raporları; açık discrepancy listesi | Bilinen silent loss/double count/wrong financial verdict |
 | Safety/privacy | Threat review, dependency/secret scan ve negatif boundary tests | Yetkisiz order/credential exposure/risk fail-open; açık relevant critical/high |
 | Durability | Crash/recovery, upgrade ve restore drill | ACK event kaybı, veri bozma, restore doğrulanamaması |
-| Native artifacts | Windows/Mac/Linux final smoke, renderer/signature/manifest, clean install/update | Eksik platform kanıtı, UNKNOWN commit veya artifact mismatch |
+| Native artifacts | v1 için Mac final smoke, WKWebView/signature/manifest, clean install/update; Windows/Linux gelecekteki kapsam için ayrı N06 | v1 Mac kanıtı eksikliği, UNKNOWN commit veya artifact mismatch; gelecekteki multi-platform release'te hedef platform kanıtı eksikliği |
 | Product | G5 ölçüm raporu, support kapsamı ve owner kararı | Kullanıcı kanıtı yokken doğrulanmış değer/paid readiness iddiası |
 | Distribution | Lisans metni/notices, privacy/support dokümanı, release notes, imza erişimi | Eksik dağıtım yetkisi/lisans veya güvenilir paketleme süreci |
 | Operations | Incident owner, stop-distribution ve patch/rollback drill, evidence retention | Kritik hatada müdahale edebilecek sorumlu/runbook yok |
@@ -383,11 +391,12 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     bağlandı; H07 acceptance/archive reconcile edilerek tamamlandı.
 18. P1-WP27: G0–G2 supported matrix, bağımsız oracle ve packaged
     import→review→export→reopen acceptance audit; tamamlandı/arşivlendi `e042790`.
-19. N03–N06 owner/host bağımlılıkları çözülerek sırasıyla ilerler. N03 host çalıştırması
+19. N03–N06 owner/host bağımlılıkları kapsamlarına göre ilerler. N03 host çalıştırması
     final macOS distribution/pilot validation'a ertelenmiştir; N04 bounded audit'i
     tamamlanıp arşivlenmiştir. N05'in read-only artifact preflight kodu N03 host kanıtı
-    beklenmeden hazırlanabilir; gerçek Developer ID/notary ve N03/N06 kanıtı yine
-    final-validation kapılarında zorunludur.
+    beklenmeden hazırlanabilir; v1 için gerçek Developer ID/notary ve N03 kanıtı final
+    validation'da zorunludur. N06 Windows/Linux kanıtı yalnızca gelecekteki
+    multi-platform release kapsamı onaylanırsa yeniden açılır.
 
 ### 2026-09-10 onaylanan kalan uygulama sırası
 
@@ -413,8 +422,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    Developer ID/hardened-runtime/Gatekeeper/stapled-ticket kanıtını owner/Apple host
    erişimiyle al. Ticari dağıtım öncesi H05 license/notices/dependency disposition
    owner kapısını ayrıca yeniden aç; N05 bu kararı varsaymaz.
-7. N06 Windows/Linux host kanıtı; G5 consent/metrik kararları sonrası formative ve
-   kontrollü pilot; G6–G7 owner release kararı ve sınırlı rollout.
+7. v1 için N05 gerçek Apple dağıtım kanıtı ve N03 Mac host/profile validation; ardından
+   G5 consent/metrik kararları, formative ve kontrollü pilot, G6–G7 owner release
+   kararı ve sınırlı rollout. N06 Windows/Linux host kanıtı yalnızca v1 sonrası
+   multi-platform genişleme onaylanırsa yürütülür.
 
 Aktif WP ve STATUS her pakette birlikte güncellenir; bu roadmap yalnız sıra/kapsam/
 bağımlılık değişince düzenlenir. H05 kararları şimdilik deferred kalır. Main merge,
@@ -427,6 +438,15 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.34 — 2026-09-10
+
+- Owner kararı kaydedildi: ilk production sürümü macOS-only olacak ve doğrudan
+  Developer ID imzalı/notarize DMG ile dağıtılacak. Mevcut kanıt macOS arm64 ile
+  sınırlıdır; Windows/Linux ve Intel Mac desteği v1 claim'i değildir.
+- KDG-002 üç-OS politikası gelecek multi-platform release için korunurken N06 v1
+  release gate'i olmaktan çıkarıldı. Apple Developer üyeliği ve gerçek signing/notary
+  işlemi Release Candidate aşamasına bırakıldı.
 
 ### 1.0.31 — 2026-09-10
 

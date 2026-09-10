@@ -5,6 +5,11 @@ Updated: 2026-09-10. Branch: `codex/p1-wp01-evidence-ledger`.
 Roadmap: [KPR-001](PRODUCTION-READINESS-PLAN.md), current planning source, still Proposed
 for new scope/estimates. Selecting one roadmap does not approve its commercial assumptions.
 
+**Owner decision (2026-09-10):** İlk production sürümü macOS-only olacak ve doğrudan
+Developer ID imzalı/notarize DMG ile dağıtılacak. Mevcut aday kanıtı macOS arm64'tir;
+Intel Mac, Windows ve Linux v1 claim'i değildir. Apple Developer üyeliği ve gerçek
+signing/notarization erişimi Release Candidate aşamasına kadar ertelenmiştir.
+
 ## Selected next work
 
 **N05 — IN PROGRESS: exact macOS distribution preflight.** The read-only verifier
@@ -36,6 +41,8 @@ package mode ekler; `133c269` ise yalnız explicit `--submit` ile çalışan, Ke
 profile kullanan ve stapling sonrası smoke/N05 zincirini yeniden kuran owner wrapper'ı
 ekler; `121a5cd` exact DMG'yi Apple'a göndermeden önce Developer ID + hardened runtime
 kapısını kontrol eder. Bu beklenen development sonucu; N05 veya production PASS değildir.
+N06 Windows/Linux host kanıtı v1 release gate'i değil, gelecekteki multi-platform
+genişleme koşuludur.
 
 **İç production-candidate audit (2026-09-10):** `uv pip check` PASS, backend/frontend
 compile/build PASS ve full testler PASS oldu. `npm audit --omit=dev --audit-level=moderate`
@@ -530,8 +537,8 @@ and frontend lock hashes remain
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
-| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current ad-hoc DMG is intentionally `BLOCKED` (report SHA `47f973...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/N06/H05 remain separate gates |
-| WIN | HOST_REQUIRED | Windows host/controller blocker | Historical P0-WP11 reference; verify on Windows before platform claim |
+| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current ad-hoc DMG is intentionally `BLOCKED` (report SHA `47f973...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |
+| WIN | DEFERRED / HOST_REQUIRED | Windows host/controller blocker and Linux final artifact evidence | Not a v1 Mac-only release gate or claim; reopen only after an explicit multi-platform expansion decision |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
 | PRODUCT | OWNER_DECISION_REQUIRED | Review/pilot metrics, product license/notices, signing/host access, support/incident readiness | G2–G7 and explicit product-owner decisions; root `LICENSE`, `NOTICE` and `THIRD_PARTY_NOTICES.md` remain intentionally absent until commercial distribution is prepared |

@@ -26,9 +26,15 @@ evaluation. Improved decision quality is a goal to measure, not a proven profita
   restore and exact-artifact verification require their own tests.
 - No real user migration data exists for the Mac move. No Windows data copy, migration
   ZIP, real credential transfer or destructive reset is authorized.
+- Owner decision (2026-09-10): the first production release is macOS-only and is planned
+  for direct distribution as a Developer ID-signed, notarized DMG. The current candidate
+  evidence is macOS arm64; Intel Mac, Windows and Linux support are not claimed until
+  separately tested. Apple membership/signing access is a release-candidate gate, not a
+  development prerequisite.
 - First-user and production readiness are unproven until the roadmap gates pass.
-  Current release claims are constrained by the release truth matrix. Same-candidate
-  three-OS final artifact evidence and owner release approval remain required.
+  Current release claims are constrained by the release truth matrix. For v1, exact
+  macOS artifact evidence and owner release approval remain required; the existing
+  three-OS policy is retained only for a future multi-platform release.
 - Commercial scope, license text, signing accounts, pilot consent and prices are owner
   decisions. `package.json` MIT metadata does not resolve the missing LICENSE file.
 

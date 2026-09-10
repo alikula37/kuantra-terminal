@@ -133,7 +133,9 @@ ad-hoc development DMG is expected to produce that result. The command does not
 sign, upload, notarize, or access Keychain credentials.
 
 N05 PASS is only a distribution-artifact gate. It does not make the product
-production-ready, does not close N03/N06/H05, and does not authorize a release.
+production-ready, does not close N03/H05, and does not authorize a release. N06
+Windows/Linux evidence is outside the Mac-only v1 scope and remains a future
+multi-platform gate.
 
 For an owner-approved release candidate, the repository also provides an explicit wrapper that
 uses an already configured Keychain notary profile. It submits and staples the exact DMG, reruns
