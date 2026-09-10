@@ -62,7 +62,7 @@ N05 remains the later owner-controlled signing/notarization gate and N03 remains
 deferred clean-profile/second-host final-validation obligation; neither is silently closed
 by P1-WP28 or P1-WP29.
 
-**P1-WP29 implementation evidence (this change):** `prepare_pilot_package.py` is
+**P1-WP29 implementation evidence (`a76f5b0`):** `prepare_pilot_package.py` is
 fail-closed for missing x86_64 evidence, binds both architectures to the same source/tree/
 lock/truth identity, verifies exact mounted-DMG smoke plus either N05 PASS or explicit
 ad-hoc `BLOCKED` evidence, requires `hdiutil verify` image-integrity evidence before
@@ -72,6 +72,21 @@ without reading user data or credentials. The research record is
 current invocation is expected to remain `BLOCKED` because neither the hosted Intel job nor
 a controlled Intel pilot build has produced the x86_64 chain; no Release/tag or asset
 upload was performed.
+
+**Native pilot-host local-CI evidence (`75a4188`):** `run_local_ci.py` now accepts
+`--expected-architecture arm64|x86_64`. With that option it rejects a non-native or
+translated macOS host before the build, passes the requirement to desktop build/smoke, and
+fails the provenance contract if executable architecture, build-host architecture or
+translation status do not match. On this Mac mini, the full locked arm64 gate passed with
+backend **813 passed / 2 warnings**, frontend **25 files / 104 tests**, i18n **608/608**,
+native PyInstaller build and native WKWebView smoke; report SHA-256 is
+`b2578aac4d3b8f46a9dd637d778fc2b7b829a171da1c5b2cd071646650be8cbe`, source commit is
+`75a4188c907757d564dad5dfd7a616ed98bae7e6`, tracked-tree SHA-256 is
+`bb70f41e3ef309cd5c0ec9d10d0c81d4da0e8804bd7a9fd34164c4d9ef7ca8f2`, and provenance is
+`COMPLETE` with `expected_architecture=arm64`. The same Mac's x86_64 request exited `2`
+with `expected x86_64, got arm64`; this is the intended negative control. No Intel artifact
+or x86_64 support claim was invented; a native Intel pilot Mac can now run the identical
+command with `--expected-architecture x86_64` and supply the missing host evidence.
 
 **Fresh arm64 download-integrity evidence (2026-09-10, preceding implementation commit
 `6646332`):** Local CI is **MERGE READY** with backend **810 passed / 2 warnings**, frontend

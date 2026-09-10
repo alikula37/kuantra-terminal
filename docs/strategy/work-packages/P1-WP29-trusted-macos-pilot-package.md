@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: this change
+implementation_commit: 75a4188
 branch: main
 depends_on: P1-WP28, N03, N05
 release_gate: owner-pilot-approval, exact-dual-architecture-evidence
@@ -46,7 +46,9 @@ install-lifecycle kanıtı sağlayabilir. Apple Developer ID alınmadığı sür
       geçmez; hiçbir güvenlik bypass'ı eklenmez.
 - [x] Pilot ekip yalnızca paket tüketicisi olarak değil, native Intel Mac runtime/N03
       doğrulama hostu olarak da kullanılabilir; expected architecture, source provenance
-      ve temiz profil koşulu kanıtlanmadan Intel veya production claim'i açılmaz.
+      ve temiz profil koşulu kanıtlanmadan Intel veya production claim'i açılmaz. `75a4188`
+      ile `run_local_ci.py --expected-architecture x86_64` native host/executable/provenance
+      zincirini fail-closed doğrular; Mac mini'de yanlış x86_64 isteği exit 2 ile reddedildi.
 - [x] Mac mini üzerinde `6646332` source commit'i için arm64 exact DMG, `hdiutil verify`
       (`VALID`), read-only mounted WKWebView smoke ve ad-hoc N05 evidence zinciri yeniden
       üretildi; N05 sonucu bilinçli olarak `BLOCKED/OWNER_REVIEW_REQUIRED` kaldı.
