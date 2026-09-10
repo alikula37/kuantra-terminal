@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: 75a4188
+implementation_commit: 25ce02a
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
@@ -55,9 +55,13 @@ olarak kalır; production veya commercial support claim'i açılmaz.
 - [x] Mac mini üzerinde `6646332` source commit'i için arm64 exact DMG, `hdiutil verify`
       (`VALID`), read-only mounted WKWebView smoke ve ad-hoc N05 evidence zinciri yeniden
       üretildi; N05 sonucu bilinçli olarak `BLOCKED/OWNER_REVIEW_REQUIRED` kaldı.
-- [ ] Güncel source commit'ten M-series arm64-only pilot paketi üretilir; manifest,
-      checksum doğrulaması ve standalone M-series talimatı aynı pakette bulunur. Paket
-      `dual_architecture_complete=false` ve `intel_support_claim=false` alanlarını taşır.
+- [x] Güncel source commit `25ce02a`'dan M-series arm64-only pilot paketi üretildi;
+      manifest, checksum doğrulaması ve standalone M-series talimatı aynı pakette bulunur.
+      Paket `dual_architecture_complete=false`, `intel_artifact_included=false` ve
+      `intel_support_claim=false` alanlarını taşır. Paket durumu
+      `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`'tır; manifest SHA-256
+      `88fe31e700b34f1a990dce427fe49dec1eb1914dde99fe7eb6580cea1362852b`,
+      `SHA256SUMS` SHA-256 `2791053bd8ebb11402e0f53083813d66db978e145ad6e5e40b3668ed2be4ffbd`.
 - [ ] Gerçek x86_64 native host (hosted runner veya açıkça seçilmiş pilot Intel Mac),
       exact DMG ve smoke/N05 zincirini üretir. GitHub billing/spending-limit durumu
       hosted yolu kapatırsa pilot Intel Mac kontrollü build hostu olabilir.
@@ -96,6 +100,23 @@ kapsamı ile başarılanabilir. İki zincir hazır olduğunda varsayılan dual �
 ```text
 shasum -a 256 -c dist/pilot-package-v1.0.0/SHA256SUMS
 ```
+
+### Güncel M-series çalıştırması
+
+2026-09-10 tarihinde `25ce02a` source commit'i ile aşağıdaki zincir PASS oldu:
+
+- `uv run --offline --no-project --with-requirements backend/requirements.lock python scripts/run_local_ci.py --expected-architecture arm64 --report dist/p1-wp29-local-ci-arm64-pilot.json --smoke-timeout 90` → **MERGE READY**; backend **815 passed / 2 warnings**, frontend **25/104**, i18n **608/608**, native arm64 build/smoke ve provenance `COMPLETE`. Local-CI report SHA-256: `4624f4f03c88cef8258c1158830556b21102f0e11fbf5e6b8d791485b51f192a`.
+- `bash scripts/package_macos.sh --architecture arm64 --output dist/Kuantra-Terminal-1.0.0-arm64.dmg` → **PASS**; `hdiutil verify` exact image için `VALID`. DMG SHA-256: `a8b5204f0bb37ead68566c63656d3f0908eba259c341e953591bf1a713ca1d99`.
+- `.venv/bin/python scripts/smoke_macos_dmg.py --dmg dist/Kuantra-Terminal-1.0.0-arm64.dmg --expected-architecture arm64 --report dist/final-smoke-arm64.json` → **PASS**; exact read-only mounted executable, native WKWebView/controller ve detach. Mounted executable SHA-256: `def6b706fd076b6048193380d55638100710b5466e718d30271d578c421b9d38`; report SHA-256: `6bace1057e2b776f9fda1bed4911ef09de59bf3b477e80f0679f657bc452108f`.
+- `.venv/bin/python scripts/run_n05_macos_distribution_preflight.py ...` → **BLOCKED/OWNER_REVIEW_REQUIRED** (exit 2), çünkü ad-hoc artifact Developer ID/notarization ticket taşımıyor. Report SHA-256: `c9bf62099d3b326908248539baa286fcdf1c4092899ba7f6e56266b42105d7a7`.
+- `.venv/bin/python scripts/prepare_pilot_package.py --architecture arm64 --dist dist --output dist/pilot-package-v1.0.0-arm64` → **PASS**; package type `TRUSTED_MACOS_PILOT_ARM64`, scope `APPLE_SILICON_M_SERIES_ONLY`, status `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`. Paket içindeki beş dosyanın `shasum -a 256 -c SHA256SUMS` doğrulaması **OK**.
+
+Paket yolu: `dist/pilot-package-v1.0.0-arm64/`. Bu çalışma kullanıcı verisi,
+credential, Keychain veya migration bundle kullanmadı; GitHub Release/tag/upload ve
+üç pilot cihazında gerçek install-lifecycle çalıştırması owner/host kapısı olarak açık
+kalır. Sistem `python3.11` ile yapılan ilk smoke denemesi PyInstaller metadata'sı
+olmadığı için provenance eksikliğiyle durdu; locked `.venv` Python ile tekrarlandığında
+PASS oldu. Bu, paket güvenlik veya DMG bütünlüğü hatası değildir.
 
 çalıştırılır. GitHub Release oluşturma/upload, Apple signing/notarization, pilot daveti
 ve clean-host yürütmesi bu work package'ın kod otomasyonuna dahil değildir; owner/host

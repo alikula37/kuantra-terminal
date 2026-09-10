@@ -79,6 +79,30 @@ default dual invocation remains `BLOCKED` because neither the hosted Intel job n
 controlled Intel pilot build has produced the x86_64 chain; the explicit M-series arm64
 invocation is the first pilot path. No Release/tag or asset upload was performed.
 
+**Fresh M-series arm64 pilot package evidence (2026-09-10, source commit `25ce02a`):**
+The locked arm64 local gate is **MERGE READY** on the Mac mini: backend **815 passed / 2
+warnings**, frontend **25 files / 104 tests**, i18n **608/608**, arm64 PyInstaller build,
+native WKWebView smoke and `COMPLETE` provenance. The local-CI report SHA-256 is
+`4624f4f03c88cef8258c1158830556b21102f0e11fbf5e6b8d791485b51f192a`; tracked source tree
+SHA-256 is `c94317aa09cc72da9c27823c073826e730cc2be03b613f7331309cbfb9fb7b98`; backend
+and frontend lock hashes are recorded in the report. The exact
+`Kuantra-Terminal-1.0.0-arm64.dmg` was rebuilt and passed `hdiutil verify`; DMG SHA-256 is
+`a8b5204f0bb37ead68566c63656d3f0908eba259c341e953591bf1a713ca1d99`, mounted executable
+SHA-256 is `def6b706fd076b6048193380d55638100710b5466e718d30271d578c421b9d38`, and the
+exact read-only mounted-DMG smoke passed native `arm64`, `wkwebview`, controller identity
+and detach confirmation. The final smoke report SHA-256 is
+`6bace1057e2b776f9fda1bed4911ef09de59bf3b477e80f0679f657bc452108f`; the corresponding
+N05 report SHA-256 is `c9bf62099d3b326908248539baa286fcdf1c4092899ba7f6e56266b42105d7a7` and
+is correctly `BLOCKED/OWNER_REVIEW_REQUIRED` because the package is ad-hoc and has no
+Developer ID/notarization proof. The explicit M-series package passed its internal
+five-file checksum verification; manifest SHA-256 is
+`88fe31e700b34f1a990dce427fe49dec1eb1914dde99fe7eb6580cea1362852b` and
+`SHA256SUMS` SHA-256 is `2791053bd8ebb11402e0f53083813d66db978e145ad6e5e40b3668ed2be4ffbd`.
+The package is `TRUSTED_MACOS_PILOT_ARM64` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`, scoped to
+`APPLE_SILICON_M_SERIES_ONLY`; it contains no Intel artifact or support claim. It is ready
+for the three-person M-series pilot after owner-controlled sharing, but no GitHub Release,
+tag or asset upload was performed.
+
 **Native pilot-host local-CI evidence (`75a4188`):** `run_local_ci.py` now accepts
 `--expected-architecture arm64|x86_64`. With that option it rejects a non-native or
 translated macOS host before the build, passes the requirement to desktop build/smoke, and
@@ -689,6 +713,7 @@ and frontend lock hashes remain
 | H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | P1-WP28 | IN PROGRESS | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and native-host release contract | `bb6ce7c` implements the guards and dual-runner contract; arm64 clean build/local CI/exact mounted-DMG smoke is PASS. Hosted Intel jobs are currently blocked before startup by GitHub account billing/spending-limit state; a controlled native Intel pilot Mac can provide the same build evidence or later runtime evidence, so x86_64 remains `PENDING_NATIVE_CI` until exact host provenance exists; Universal2, Windows/Linux and signing are separate gates. |
+| P1-WP29 | IN PROGRESS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums and user instructions | `25ce02a` produces and validates the M-series arm64-only package with exact current DMG/smoke/N05 chain; arm64 pilot path is ready. Default dual package remains blocked until native x86_64 evidence; N03 clean second profile/host, N05 signing/notarization and owner Release/access approval remain open. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; the pilot team's Intel Mac may be the selected host if clean-profile attestation is supplied. Current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
 | N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current v1.0.0 ad-hoc DMG is intentionally `BLOCKED` (report SHA `338e83e...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |
