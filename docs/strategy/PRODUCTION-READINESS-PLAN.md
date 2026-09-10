@@ -6,7 +6,7 @@ document_id: KPR-001
 version: 1.0.35
 status: Proposed
 date: 2026-09-10
-reviewed_commit: 859fe92
+reviewed_commit: c38db31
 branch: main
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0

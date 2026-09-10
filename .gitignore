@@ -23,6 +23,7 @@ node_modules/
 dist/
 build/
 artifacts/evidence/h07/
+artifacts/evidence/uat/
 
 backend/data/
 .claude/*

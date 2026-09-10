@@ -24,9 +24,9 @@ The release body is generated from this marker-delimited section. Historical not
 for repository audit only and are not included in a GitHub Release body. The prior v1.4.0
 publication is withdrawn and must not be used.
 
-Verification evidence for this release is recorded in `docs/strategy/PHASE-0-STATUS.md` and the
-P0-WP09 work-package record. The exact release tag is guarded by the canonical matrix at
-`docs/release/truth-matrix.v1.0.0.json`.
+Verification evidence for this candidate is recorded in the current
+`docs/strategy/STATUS.md` and N05 work-package record. The exact release tag is guarded by
+the canonical matrix at `docs/release/truth-matrix.v1.0.0.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)

@@ -23,7 +23,7 @@ from app.services.fix.fix_gateway import fix_session, FIXMessage
 from app.services.fix.dma_router import dma_router
 
 class KuantraLiveUATRunner:
-    """Automated Production UAT Scenario Executor & Audit Report Generator."""
+    """Truth-boundary UAT scenario executor and audit report generator."""
 
     def __init__(self):
         self.app = create_app()
@@ -220,7 +220,7 @@ class KuantraLiveUATRunner:
     # =========================================================================
     def execute_full_uat_suite(self):
         print("\n==================================================================================================")
-        print(f"              KUANTRA TERMINAL v{__version__} LIVE USER ACCEPTANCE TESTING (UAT) SUITE            ")
+        print(f"              KUANTRA TERMINAL v{__version__} TRUTH-BOUNDARY UAT SUITE            ")
         print("==================================================================================================")
         print(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())} | Target: Production Engine\n")
 
@@ -238,8 +238,16 @@ class KuantraLiveUATRunner:
         print(f"                    UAT EXECUTION COMPLETED: {total_pass}/{total_count} SCENARIOS PASSED ({pass_rate:.1f}%)                 ")
         print("==================================================================================================\n")
 
-        # Export audit artifact
-        audit_artifact_path = os.path.join(ROOT_DIR, "UAT_AUDIT_REPORT.json")
+        # Export only to the ignored evidence area. A generated UAT report is not a
+        # release truth source and must not sit at the repository root beside current
+        # product documents. An explicit path remains available for local audits.
+        audit_artifact_path = os.environ.get(
+            "KUANTRA_UAT_REPORT_PATH",
+            os.path.join("artifacts", "evidence", "uat", f"UAT_AUDIT_REPORT-v{__version__}.json"),
+        )
+        if not os.path.isabs(audit_artifact_path):
+            audit_artifact_path = os.path.join(ROOT_DIR, audit_artifact_path)
+        os.makedirs(os.path.dirname(audit_artifact_path) or ROOT_DIR, exist_ok=True)
         with open(audit_artifact_path, "w", encoding="utf-8") as f:
             json.dump({
                 "version": __version__,

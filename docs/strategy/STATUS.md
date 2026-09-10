@@ -12,9 +12,13 @@ signing/notarization erişimi Release Candidate aşamasına kadar ertelenmiştir
 
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmiş olarak korunacak; tag, assets ve eski truth matrix izlenebilirlik için silinmeyecek.
-Güncel release train `v1.0.0`'dır ve henüz yayımlanmamıştır. Yeni v1.0.0 artifact kanıtı
-oluşana kadar aşağıdaki v1.4.0 ad-hoc hash'leri yalnızca pre-reset historical evidence'tir;
-güncel release kanıtı olarak kullanılamaz.
+Güncel release train `v1.0.0`'dır ve henüz yayımlanmamıştır. Aşağıdaki v1.4.0 ad-hoc
+hash'leri yalnızca pre-reset historical evidence'tir; güncel release kanıtı olarak
+kullanılamaz.
+Eski kök `UAT_AUDIT_REPORT.json` raporu geri çekilmiş tarihsel kayıt olarak arşivlendi;
+güncel UAT çıktısı yalnızca ignore edilen `artifacts/evidence/uat/` altında tutulur.
+Son güvenli çalıştırmada 2 temel senaryo `PASSED`, 3 deneysel senaryo `DISABLED` oldu;
+komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production PASS değildir.
 
 ## Selected next work
 
@@ -25,29 +29,31 @@ hardened runtime, allowlisted entitlements, Gatekeeper and a stapled DMG ticket
 without reading user data, Keychain credentials or raw signing output. Focused
 contract tests are green. The current development artifact is intentionally
 ad-hoc and has no notarization ticket, so the expected result is `BLOCKED`/exit 2;
-this is not an N05 PASS and does not claim production readiness. The exact smoke/N05 chain
-must be regenerated for the v1.0.0 artifact before any release-candidate dossier. Actual Apple
+this is not an N05 PASS and does not claim production readiness. The exact v1.0.0 smoke/N05
+chain has now been regenerated; it must be regenerated again after any source or artifact
+change before a release-candidate dossier. Actual Apple
 signing/notarization remains an owner/host gate.
 
-Source `121a5cd` üzerinde canonical locked local CI **13/13 PASS** oldu: backend
-**796 passed / 2 warnings**, frontend **25 dosya / 104 test**, i18n **608/608**,
+Source `c38db31` üzerinde canonical locked local CI **13/13 PASS** oldu: backend
+**797 passed / 2 warnings**, frontend **25 dosya / 104 test**, i18n **608/608**,
 arm64 PyInstaller build, native `wkwebview` smoke ve packaging/provenance PASS.
-Report SHA-256 `c50e4987287a2a6a017c358777d027e79cd8c272e266f6fed16cbdd73f1e5902`;
-tracked tree SHA-256 `c0cfebe57a0d437f5619590a5405cdba25b3040086f02eb65ecc5143a3cc4d82`;
-executable SHA-256 `b3d55891c14fadcad587b0cb2c4bcc777ae48db3b5309835881ce13c4787417c`.
-Exact arm64 DMG SHA-256 `87828fe3db6ea9b1af056454355058ef26cd489a52078060ca3b62454894d0c5`
+Report SHA-256 `893d135e044d4b10706c9f48b2b5a686aad683871b3cac43b241e342ba0be766`;
+tracked tree SHA-256 `78d967e2cfed280b5ddc02629bd6e561d099ddeadee9b8dad9b200301d068331`;
+executable SHA-256 `b85789e75bbf86ec18a4b305a51254ec05f4b7a2a3dfe4fdc369ace59f6ea508`.
+Exact v1.0.0 arm64 DMG SHA-256 `2d9f3add8d3a93655dd7dd9f64d4a4938082cb987458fd6ca6c68d849b821b87`
 ve mounted-DMG smoke report SHA-256
-`9eb9b97220b2d67ba2fb20efff70e3119bb4accb7549e60e2edc44aa18c0bc2d` olarak
-bağlandı. N05 preflight report SHA-256
-`47f973863c3e67363c315140645e9f2d6e506575bd1cf18aead9e7cbb0588b31`; sonuç
+`e01a3fba48e74a3823f9c5e096eae5acbac0ab3b9af47d88e8925c6e1bf7a07a` olarak
+bağlandı. Report truth-matrix canonical digest'i
+`dcbe267d933634033eb7ef000118e28b910088f9ee9caeeeebdc2a107471d768` ve manifest
+development snapshot SHA-256 `bbadd3c57958b5eac1e615b37a60b5ba45009abc0324aa73544e29f453d633ab`.
+N05 preflight report SHA-256
+`0934e66dd783a55cacefb9a9b841ef9cddc6b0a4e5571d29e31f840a3c752cae`; sonuç
 `BLOCKED/OWNER_REVIEW_REQUIRED`: read-only mount attach/detach ve codesign
 verification PASS, fakat artifact `AD_HOC`, hardened runtime yok, Gatekeeper FAIL
-ve DMG stapled ticket yok. `657922b` ayrıca varsayılan ad-hoc davranışı koruyan,
-gerçek Developer ID identity prefix'i ve hardened runtime zorunluluğu olan explicit
-package mode ekler; `133c269` ise yalnız explicit `--submit` ile çalışan, Keychain
-profile kullanan ve stapling sonrası smoke/N05 zincirini yeniden kuran owner wrapper'ı
-ekler; `121a5cd` exact DMG'yi Apple'a göndermeden önce Developer ID + hardened runtime
-kapısını kontrol eder. Bu beklenen development sonucu; N05 veya production PASS değildir.
+ve DMG stapled ticket yok. Bu beklenen development sonucu; N05 veya production PASS değildir.
+`657922b`, `133c269` ve `121a5cd` ile gelen explicit Developer ID/hardened-runtime,
+owner-controlled notarization wrapper'ı ve pre-submit gate hâlâ bu v1.0.0 adayında
+uygulanır; gerçek Apple kanıtı owner/host kapısıdır.
 N06 Windows/Linux host kanıtı v1 release gate'i değil, gelecekteki multi-platform
 genişleme koşuludur.
 
@@ -184,7 +190,7 @@ does not close N03, H05 or signing/production gates.
 has a bounded read-only implementation and focused contract tests. The verifier
 returns `EVIDENCE_INVALID` for provenance/hash/smoke mismatch and `BLOCKED` for a
 valid but ad-hoc/ticketsiz artifact; raw command output is not persisted. The
-current ad-hoc artifact observation is expected to remain blocked (`Signature=adhoc`,
+current v1.0.0 ad-hoc artifact observation is expected to remain blocked (`Signature=adhoc`,
 `spctl` rejected, no stapled ticket). The unchecked Developer ID, hardened-runtime,
 Gatekeeper, stapled-ticket, N03 clean-profile, N06 host and H05 commercial criteria
 remain open and are not inferred from source tests.
@@ -544,12 +550,12 @@ and frontend lock hashes remain
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
-| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current ad-hoc DMG is intentionally `BLOCKED` (report SHA `47f973...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |
+| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current v1.0.0 ad-hoc DMG is intentionally `BLOCKED` (report SHA `0934e66...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |
 | WIN | DEFERRED / HOST_REQUIRED | Windows host/controller blocker and Linux final artifact evidence | Not a v1 Mac-only release gate or claim; reopen only after an explicit multi-platform expansion decision |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
 | PRODUCT | OWNER_DECISION_REQUIRED | Review/pilot metrics, product license/notices, signing/host access, support/incident readiness | G2–G7 and explicit product-owner decisions; root `LICENSE`, `NOTICE` and `THIRD_PARTY_NOTICES.md` remain intentionally absent until commercial distribution is prepared |
-| DEP | DEFERRED | Branch dependency audit is clean, but GitHub default branch currently retains eight open npm alerts (1 critical, 1 high, 6 moderate) | No merge while development-only; before release, remediate or record a time-bounded owner risk acceptance with applicability/mitigation |
+| DEP | DEFERRED | Branch dependency audit is clean, but GitHub default branch currently retains two open npm alerts for the Vitest/test-time dependency chain | No merge while development-only; before release, remediate or record a time-bounded owner risk acceptance with applicability/mitigation |
 
 All historical unchecked criteria remain discoverable in the
 [archive obligation index](../archive/README.md). The archive is not a completed-work list.

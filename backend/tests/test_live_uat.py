@@ -2,7 +2,7 @@ import pytest
 from scripts.run_live_uat import KuantraLiveUATRunner
 
 class TestLiveUserAcceptanceTesting:
-    """Automated Pytest wrapper for the Kuantra Terminal 5-Scenario UAT Suite."""
+    """Pytest wrapper for the five-scenario truth-boundary UAT suite."""
 
     def test_live_uat_scenario_1_in_process_backend(self):
         # Scenario 1 used to spawn the Tauri sidecar and read the KUANTRA_BACKEND_PORT
