@@ -38,7 +38,8 @@ class TestReleaseManifestAndPackaging:
 
         dist_dir = tmp_path / "dist"
         dist_dir.mkdir()
-        (dist_dir / f"Kuantra-Terminal-{__version__}-aarch64.dmg").write_bytes(b"D" * 4096)
+        (dist_dir / f"Kuantra-Terminal-{__version__}-arm64.dmg").write_bytes(b"A" * 4096)
+        (dist_dir / f"Kuantra-Terminal-{__version__}-x86_64.dmg").write_bytes(b"X" * 4096)
         # Files that do not match the artifact prefix must be ignored.
         (dist_dir / "smoke.json").write_text("{}", encoding="utf-8")
 
@@ -61,12 +62,13 @@ class TestReleaseManifestAndPackaging:
         assert manifest["truth_matrix"]["document_id"] == "KTR-001"
         assert manifest["truth_matrix"]["version"] == "1.0.0"
         assert manifest["truth_matrix"]["sha256"] == canonical_matrix_digest(load_matrix())
-        assert manifest["total_artifacts"] == 1
-        assert len(manifest["artifacts"]) == 1
+        assert manifest["total_artifacts"] == 2
+        assert len(manifest["artifacts"]) == 2
         assert all(a["filename"].startswith("Kuantra-Terminal-") for a in manifest["artifacts"])
 
         platforms = {a["platform"] for a in manifest["artifacts"]}
         assert platforms == {"macOS"}
+        assert {a["arch"] for a in manifest["artifacts"]} == {"arm64", "x86_64"}
 
         for art in manifest["artifacts"]:
             assert "filename" in art

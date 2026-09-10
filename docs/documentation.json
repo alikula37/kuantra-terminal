@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/N05-macos-signing-notarization-preflight.md"
+    "docs/strategy/work-packages/P1-WP28-macos-dual-architecture.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -84,7 +84,8 @@
     "docs/archive/strategy/work-packages/H07-bounded-performance-resource-limits.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md": "archived",
     "docs/strategy/work-packages/N03-macos-clean-profile-install-audit.md": "reference",
-    "docs/strategy/work-packages/N05-macos-signing-notarization-preflight.md": "current-work-package",
+    "docs/strategy/work-packages/N05-macos-signing-notarization-preflight.md": "reference",
+    "docs/strategy/work-packages/P1-WP28-macos-dual-architecture.md": "current-work-package",
     "docs/archive/strategy/work-packages/N04-macos-update-uninstall-data-preservation-audit.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": "archived",

@@ -41,6 +41,9 @@ def _report(dmg: Path, executable: Path, *, architecture: str = "arm64") -> dict
         "os": "darwin",
         "os_version": "macOS-26.6.2-arm64",
         "architecture": architecture,
+        "architecture_verified": True,
+        "architecture_source": "executable",
+        "executable_architectures": [architecture],
         "executable_path": "/private/temporary-mount/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal",
         "executable_sha256": executable_sha,
         "artifact_path": str(dmg.resolve()),
@@ -49,6 +52,7 @@ def _report(dmg: Path, executable: Path, *, architecture: str = "arm64") -> dict
     }
     return {
         "platform": "darwin",
+        "architecture": architecture,
         "ok": True,
         "renderer_actual": "wkwebview",
         "renderer_controller_ready": True,

@@ -30,13 +30,17 @@ concurrency:
 
 jobs:
   build-and-package:
-    name: Package (${{ matrix.os }})
+    name: Package (${{ matrix.os }} / ${{ matrix.architecture }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: macos-latest
+            architecture: arm64
+            package: bash scripts/package_macos.sh
+          - os: macos-15-intel
+            architecture: x86_64
             package: bash scripts/package_macos.sh
     steps:
       - uses: actions/checkout@v7
@@ -53,6 +57,16 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Verify native runner architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(uname -m)"
+          expected="${{ matrix.architecture }}"
+          [ "$actual" = "$expected" ] || {
+            echo "native runner architecture mismatch: expected $expected, got $actual" >&2
+            exit 1
+          }
       - name: Install Python dependencies
         run: python -m pip install --require-hashes -r backend/requirements.lock
       - name: Compile Python sources
@@ -71,35 +85,54 @@ jobs:
       - name: Build frontend
         run: npm --prefix frontend run build
       - name: Build desktop app
-        run: python scripts/build_desktop.py --skip-frontend
+        run: python scripts/build_desktop.py --skip-frontend --expected-architecture "${{ matrix.architecture }}"
       - name: Smoke test desktop app
         shell: bash
         run: |
-          python scripts/smoke_desktop.py
+          python scripts/smoke_desktop.py --expected-architecture "${{ matrix.architecture }}"
       - name: Package
         shell: bash
-        run: ${{ matrix.package }}
+        run: ${{ matrix.package }} --architecture "${{ matrix.architecture }}"
       - name: Smoke test final packaged artifact
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"
-          dmg="dist/Kuantra-Terminal-${VERSION}-aarch64.dmg"
-          [ -f "$dmg" ] || { echo "expected arm64 DMG missing: $dmg" >&2; exit 1; }
-          python scripts/smoke_macos_dmg.py --dmg "$dmg" --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data" --report dist/final-smoke-macos.json
-          python scripts/run_n05_macos_distribution_preflight.py --dmg "$dmg" --smoke-report dist/final-smoke-macos.json --output dist/n05-macos-distribution.json
+          arch="${{ matrix.architecture }}"
+          dmg="dist/Kuantra-Terminal-${VERSION}-${arch}.dmg"
+          smoke_report="dist/final-smoke-${arch}.json"
+          n05_report="dist/n05-macos-distribution-${arch}.json"
+          [ -f "$dmg" ] || { echo "expected $arch DMG missing: $dmg" >&2; exit 1; }
+          python scripts/smoke_macos_dmg.py \
+            --dmg "$dmg" \
+            --expected-architecture "$arch" \
+            --data-dir "$RUNNER_TEMP/kuantra-final-smoke-data-$arch" \
+            --report "$smoke_report"
+          set +e
+          python scripts/run_n05_macos_distribution_preflight.py \
+            --dmg "$dmg" \
+            --smoke-report "$smoke_report" \
+            --output "$n05_report"
+          n05_status=$?
+          set -e
+          if [ "$n05_status" -eq 2 ] && [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.publish }}" = "false" ]; then
+            echo "ad-hoc candidate: retaining blocked N05 evidence without publishing"
+            exit 0
+          fi
+          exit "$n05_status"
       - uses: actions/upload-artifact@v7
         with:
-          name: release-${{ matrix.os }}
+          name: release-macos-${{ matrix.architecture }}
           path: |
             dist/Kuantra-Terminal-*.dmg
-            dist/final-smoke-macos.json
-            dist/n05-macos-distribution.json
+            dist/final-smoke-${{ matrix.architecture }}.json
+            dist/n05-macos-distribution-${{ matrix.architecture }}.json
           if-no-files-found: error
 
   publish-release:
     name: Publish GitHub Release
     needs: build-and-package
+    if: github.event_name == 'push' || inputs.publish == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -118,11 +151,18 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/audit_phase0_exit.py \
-            --smoke-report dist/final-smoke-macos.json \
-            --n05-macos-report dist/n05-macos-distribution.json \
+            --smoke-report dist/final-smoke-arm64.json \
+            --smoke-report dist/final-smoke-x86_64.json \
+            --n05-macos-report dist/n05-macos-distribution-arm64.json \
+            --n05-macos-report dist/n05-macos-distribution-x86_64.json \
             --json | tee dist/PHASE0_EXIT_AUDIT.json
       - name: Build MANIFEST.json
-        run: python scripts/generate_release_manifest.py --dist dist --tag "${RELEASE_TAG}" --macos-distribution-report dist/n05-macos-distribution.json
+        run: |
+          python scripts/generate_release_manifest.py \
+            --dist dist \
+            --tag "${RELEASE_TAG}" \
+            --macos-distribution-report dist/n05-macos-distribution-arm64.json \
+            --macos-distribution-report dist/n05-macos-distribution-x86_64.json
       - uses: actions/upload-artifact@v7
         with:
           name: phase0-exit-evidence

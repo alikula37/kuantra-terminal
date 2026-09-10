@@ -13,11 +13,12 @@ extra to install for end users. The app tree is frozen with **PyInstaller** (`--
 
 ## 1. Prerequisites
 
-- **Native macOS build host** — current recorded validation is Mac mini Apple Silicon.
-  macOS 11+ and Intel compatibility must be tested separately before being advertised;
-  an arm64 build is not a universal or Intel artifact.
+- **Native macOS build host** — the v1 target is macOS 12 Monterey or later with separate
+  native arm64 and x86_64 builds. The Mac mini validates arm64 locally; x86_64 release
+  evidence is produced on a native Intel GitHub runner. A single-architecture build is
+  never presented as Universal2 or as the other architecture.
 - **Xcode Command Line Tools**: `xcode-select --install`
-- **Python 3.11+** (use an arm64 build on Apple Silicon)
+- **Python 3.11+** matching the native build host architecture
 - **Node.js 20+ & npm**
 
 No code-signing identity is required: the DMG is ad-hoc signed (`codesign -s -`).
@@ -97,8 +98,16 @@ asks for, prints or stores a certificate password/private key. It verifies the s
 creating the DMG; N05 must still verify the exact mounted DMG, Gatekeeper and stapled ticket.
 Notarization upload/stapling remains a separate owner-controlled Apple operation.
 
-Output: `dist/Kuantra-Terminal-<version>-aarch64.dmg`
-(`x86_64` on Intel — the arch suffix comes from `uname -m`.)
+Output: `dist/Kuantra-Terminal-<version>-arm64.dmg` or
+`dist/Kuantra-Terminal-<version>-x86_64.dmg`. The package script verifies the
+executable with `lipo -archs` and rejects a mismatch or Universal2 binary.
+
+To make the target explicit on a native runner:
+
+```bash
+bash scripts/package_macos.sh --architecture arm64
+bash scripts/package_macos.sh --architecture x86_64
+```
 
 The version is read from the single source of truth, `backend/app/version.py`.
 
@@ -118,9 +127,9 @@ preflight against that same DMG and its smoke report:
 
 ```bash
 python scripts/run_n05_macos_distribution_preflight.py \
-  --dmg dist/Kuantra-Terminal-<version>-aarch64.dmg \
-  --smoke-report dist/final-smoke-macos.json \
-  --output dist/n05-macos-distribution.json
+  --dmg dist/Kuantra-Terminal-<version>-arm64.dmg \
+  --smoke-report dist/final-smoke-arm64.json \
+  --output dist/n05-macos-distribution-arm64.json
 ```
 
 The preflight verifies the app inside a read-only mount, binds its executable and
@@ -145,9 +154,10 @@ against that final artifact:
 ```bash
 KUANTRA_MACOS_NOTARY_PROFILE=<owner-configured-profile> \
 bash scripts/notarize_macos.sh --submit \
-  --dmg dist/Kuantra-Terminal-<version>-aarch64.dmg \
-  --smoke-report dist/final-smoke-macos.json \
-  --output dist/n05-macos-distribution.json
+  --architecture arm64 \
+  --dmg dist/Kuantra-Terminal-<version>-arm64.dmg \
+  --smoke-report dist/final-smoke-arm64.json \
+  --output dist/n05-macos-distribution-arm64.json
 ```
 
 This command requires network access to Apple and is not an offline test. The profile must be

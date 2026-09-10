@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from macos_architecture import canonical_architecture, detect_executable_architecture, host_architecture  # noqa: E402
 sys.path.insert(0, str(ROOT / "backend"))
 from app.version import __version__  # noqa: E402
 
@@ -29,7 +31,29 @@ def output_path() -> Path:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-frontend", action="store_true", help="reuse the existing frontend/dist build")
+    ap.add_argument(
+        "--expected-architecture",
+        default=None,
+        help="on macOS, require a native arm64 or x86_64 build matching the runner",
+    )
     args = ap.parse_args()
+
+    expected_architecture = None
+    if args.expected_architecture is not None:
+        expected_architecture = canonical_architecture(args.expected_architecture)
+        if expected_architecture is None:
+            print(f"unsupported expected architecture: {args.expected_architecture}", file=sys.stderr)
+            return 1
+        if sys.platform != "darwin":
+            print("--expected-architecture is only valid for macOS builds", file=sys.stderr)
+            return 1
+        if host_architecture() != expected_architecture:
+            print(
+                f"native build runner architecture mismatch: expected {expected_architecture}, "
+                f"got {host_architecture()}",
+                file=sys.stderr,
+            )
+            return 1
 
     if not args.skip_frontend:
         npm = "npm.cmd" if sys.platform.startswith("win") else "npm"
@@ -50,6 +74,17 @@ def main() -> int:
     if not out.exists():
         print(f"expected output missing: {out}", file=sys.stderr)
         return 1
+    if expected_architecture is not None:
+        detected = detect_executable_architecture(
+            out / "Contents" / "MacOS" / "Kuantra Terminal"
+        )
+        if detected.get("verified") is not True or detected.get("architecture") != expected_architecture:
+            print(
+                "built executable architecture mismatch: "
+                f"expected {expected_architecture}, got {detected}",
+                file=sys.stderr,
+            )
+            return 1
     print(f"[+] built {out} (version {__version__})")
     return 0
 

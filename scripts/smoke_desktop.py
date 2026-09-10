@@ -21,6 +21,7 @@ from build_provenance import (  # noqa: E402
     collect_provenance,
     default_artifact_for_executable,
 )
+from macos_architecture import canonical_architecture, detect_executable_architecture  # noqa: E402
 from release_truth import DEFAULT_MATRIX_PATH, canonical_matrix_digest, load_matrix  # noqa: E402
 
 
@@ -53,7 +54,9 @@ def enrich_report(report: dict, executable_path: Path, artifact_path: Path | Non
     report["smoke_schema_version"] = 2
     report["version_expected"] = __version__
     report["platform"] = platform.system().lower()
-    report["architecture"] = platform.machine()
+    report["architecture"] = provenance["architecture"]
+    report["architecture_verified"] = provenance["architecture_verified"]
+    report["build_host_architecture"] = provenance["build_host_architecture"]
     report["executable_path"] = provenance["executable_path"]
     report["executable_sha256"] = provenance["executable_sha256"]
     report["artifact_path"] = provenance["artifact_path"]
@@ -134,12 +137,40 @@ def main() -> int:
     ap.add_argument("--artifact", default=None, help="installer/DMG/AppImage represented by this smoke")
     ap.add_argument("--appimage", action="store_true", help="run the executable through AppImage extraction")
     ap.add_argument("--data-dir", default=None, help="isolated writable data directory for the smoke run")
+    ap.add_argument(
+        "--expected-architecture",
+        default=None,
+        help="require the explicit executable to be one native arm64 or x86_64 binary",
+    )
     args = ap.parse_args()
 
     exe = Path(args.executable).resolve() if args.executable else executable()
     if not exe.exists():
         print(f"built executable missing: {exe} (run scripts/build_desktop.py first)", file=sys.stderr)
         return 1
+
+    if args.expected_architecture is not None:
+        expected_architecture = canonical_architecture(args.expected_architecture)
+        if expected_architecture is None:
+            print(
+                f"unsupported expected architecture: {args.expected_architecture}",
+                file=sys.stderr,
+            )
+            return 1
+        detected = detect_executable_architecture(exe)
+        if detected.get("verified") is not True:
+            print(
+                f"executable architecture is not independently verified: {detected}",
+                file=sys.stderr,
+            )
+            return 1
+        if detected.get("architecture") != expected_architecture:
+            print(
+                "executable architecture mismatch: "
+                f"expected {expected_architecture}, got {detected.get('architecture')}",
+                file=sys.stderr,
+            )
+            return 1
 
     artifact = Path(args.artifact).resolve() if args.artifact else None
     report = Path(args.report).resolve()

@@ -93,10 +93,12 @@ def test_release_workflow_gates_mac_candidate_packaging_and_publish():
     names = step_names(package_job)
     assert names.index("Smoke test desktop app") < names.index("Package")
     assert names.index("Package") < names.index("Smoke test final packaged artifact")
-    assert "final-smoke-macos.json" in package_job
+    assert "final-smoke-${{ matrix.architecture }}.json" in package_job
     assert "final-smoke-windows.json" not in package_job
     assert "final-smoke-linux.json" not in package_job
-    assert 'expected arm64 DMG missing' in package_job
+    assert 'expected $arch DMG missing' in package_job
+    assert '--expected-architecture' in package_job
+    assert 'macos-15-intel' in raw
     publish_job = job_block(raw, "publish-release")
     assert re.search(r"^    needs:\s*build-and-package$", publish_job, flags=re.MULTILINE)
     assert "Audit Phase 0 exit evidence" in publish_job

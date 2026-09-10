@@ -33,10 +33,11 @@ REQUIRED_WORK_PACKAGES = [
     "P0-WP09",
 ]
 REQUIRED_SMOKE_CHECKS = {"react_mounted", "bridge_roundtrip", "health", "push_sink", "plugin_boundary"}
-# v1.0.0 is intentionally a macOS arm64 release train. CI remains three-OS
-# engineering coverage, but the release workflow must not imply unsupported
-# Windows/Linux artifacts or final-smoke evidence.
+# v1.0.0 is intentionally a macOS dual-architecture release train. CI remains
+# three-OS engineering coverage, but the release workflow must not imply
+# unsupported Windows/Linux artifacts or final-smoke evidence.
 REQUIRED_OS = {"darwin"}
+REQUIRED_MAC_ARCHITECTURES = {"arm64", "x86_64"}
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 UTC_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
@@ -82,9 +83,11 @@ def _check_workflows(root: Path) -> None:
         "workflow_dispatch",
         "Smoke test final packaged artifact",
         "run_n05_macos_distribution_preflight.py",
-        "n05-macos-distribution.json",
+        "n05-macos-distribution-arm64.json",
+        "n05-macos-distribution-x86_64.json",
         "scripts/audit_phase0_exit.py",
-        "final-smoke-macos.json",
+        "final-smoke-arm64.json",
+        "final-smoke-x86_64.json",
     ):
         if required not in release:
             _fail(f"release workflow is missing {required!r}")
@@ -126,6 +129,8 @@ def _validate_smoke_report(path: Path, matrix: dict[str, Any]) -> dict[str, Any]
         _fail(f"smoke report {path} has no build commit provenance")
     if not UTC_TIMESTAMP_RE.fullmatch(str(report.get("recorded_at_utc", ""))):
         _fail(f"smoke report {path} has no UTC recording timestamp")
+    if report.get("platform") == "darwin" and report.get("architecture") not in REQUIRED_MAC_ARCHITECTURES:
+        _fail(f"smoke report {path} has unsupported or missing macOS architecture")
     try:
         validate_report(report, release_facing=True)
     except ProvenanceError as exc:
@@ -155,6 +160,7 @@ def audit(
     root: Path,
     smoke_reports: list[Path] | None = None,
     n05_macos_report: Path | None = None,
+    n05_macos_reports: list[Path] | None = None,
 ) -> dict[str, Any]:
     """Run the static and optional final-artifact evidence checks."""
     status = _read(root / "docs" / "strategy" / "PHASE-0-STATUS.md")
@@ -165,11 +171,23 @@ def audit(
     run_checks(root, matrix_path=matrix_path)
 
     reports = [_validate_smoke_report(path, matrix) for path in (smoke_reports or [])]
-    n05_report: dict[str, Any] | None = None
+    n05_paths = list(n05_macos_reports or [])
+    if n05_macos_report is not None:
+        n05_paths.append(n05_macos_report)
+    n05_reports: list[dict[str, Any]] = []
     if reports:
         platforms = {str(report.get("platform")) for report in reports}
         if platforms != REQUIRED_OS:
             _fail(f"final artifact smoke must cover {sorted(REQUIRED_OS)}, got {sorted(platforms)}")
+        architectures = {str(report.get("architecture")) for report in reports}
+        if architectures != REQUIRED_MAC_ARCHITECTURES:
+            _fail(
+                "final artifact smoke must cover "
+                f"{sorted(REQUIRED_MAC_ARCHITECTURES)}, got {sorted(architectures)}"
+            )
+        evidence = matrix.get("distribution", {}).get("architecture_evidence", {})
+        if evidence.get("x86_64") != "VERIFIED_CURRENT_CANDIDATE":
+            _fail("x86_64 final evidence is present but the truth matrix still marks it pending")
         versions = {str(report.get("version")) for report in reports}
         if len(versions) != 1:
             _fail("final artifact smoke reports disagree on product version")
@@ -185,12 +203,28 @@ def audit(
             _fail("final artifact smoke reports disagree on truth-matrix provenance")
         macos_reports = [report for report in reports if report.get("platform") == "darwin"]
         if macos_reports:
-            if n05_macos_report is None:
-                _fail("Mac final artifact smoke requires an N05 distribution report")
-            n05_report = _validate_n05_report(n05_macos_report, macos_reports[0])
-        elif n05_macos_report is not None:
+            if len(n05_paths) != len(macos_reports):
+                _fail("each Mac final artifact smoke requires one matching N05 distribution report")
+            unmatched_smoke = list(macos_reports)
+            for n05_path in n05_paths:
+                n05_candidate = json.loads(_read(n05_path))
+                if not isinstance(n05_candidate, dict):
+                    _fail(f"N05 report {n05_path} must be a JSON object")
+                candidate_sha = str(n05_candidate.get("artifacts", {}).get("dmg_sha256") or "")
+                matching = next(
+                    (
+                        report for report in unmatched_smoke
+                        if str(report.get("artifact_sha256") or "") == candidate_sha
+                    ),
+                    None,
+                )
+                if matching is None:
+                    _fail(f"N05 report {n05_path} does not match a final smoke artifact")
+                n05_reports.append(_validate_n05_report(n05_path, matching))
+                unmatched_smoke.remove(matching)
+        elif n05_paths:
             _fail("N05 macOS report supplied without a macOS final smoke report")
-    elif n05_macos_report is not None:
+    elif n05_paths:
         _fail("N05 macOS report requires final artifact smoke reports")
 
     return {
@@ -199,8 +233,9 @@ def audit(
         "work_packages": REQUIRED_WORK_PACKAGES,
         "final_artifact_smoke_reports": [str(path) for path in smoke_reports or []],
         "report_count": len(reports),
-        "n05_macos_report": str(n05_macos_report) if n05_macos_report else None,
-        "n05_macos_status": n05_report.get("status") if n05_report else None,
+        "n05_macos_reports": [str(path) for path in n05_paths],
+        "n05_macos_report": str(n05_paths[0]) if len(n05_paths) == 1 else None,
+        "n05_macos_statuses": [report.get("status") for report in n05_reports],
         "external_execution_enabled": False,
     }
 
@@ -209,16 +244,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit Kuantra Phase 0 exit evidence")
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--smoke-report", action="append", type=Path, default=[])
-    parser.add_argument("--n05-macos-report", type=Path, default=None)
+    parser.add_argument("--n05-macos-report", action="append", type=Path, default=[])
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     reports = [path if path.is_absolute() else root / path for path in args.smoke_report]
-    n05_report = args.n05_macos_report
-    if n05_report is not None and not n05_report.is_absolute():
-        n05_report = root / n05_report
+    n05_reports = [path if path.is_absolute() else root / path for path in args.n05_macos_report]
     try:
-        result = audit(root, reports, n05_report)
+        result = audit(root, reports, n05_macos_reports=n05_reports)
     except (TruthContractError, ValueError) as exc:
         print(f"[phase0-exit] FAIL: {exc}", file=sys.stderr)
         return 1

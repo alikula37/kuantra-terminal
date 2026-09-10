@@ -16,6 +16,19 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
+try:  # Support both `import scripts.build_provenance` and script-local imports.
+    from macos_architecture import (
+        SUPPORTED_ARCHITECTURES,
+        detect_executable_architecture,
+        host_architecture,
+    )
+except ModuleNotFoundError:  # pragma: no cover - import shape depends on the caller
+    from scripts.macos_architecture import (
+        SUPPORTED_ARCHITECTURES,
+        detect_executable_architecture,
+        host_architecture,
+    )
+
 
 COMMIT_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -140,8 +153,16 @@ def _validation_errors(provenance: Mapping[str, Any], *, release_facing: bool) -
 
     if not str(provenance.get("os") or "").strip():
         errors.append("operating system metadata is missing")
-    if not str(provenance.get("architecture") or "").strip():
+    architecture = str(provenance.get("architecture") or "").strip()
+    if not architecture:
         errors.append("architecture metadata is missing")
+    elif architecture not in SUPPORTED_ARCHITECTURES:
+        errors.append("architecture metadata is not a supported native architecture")
+    if release_facing:
+        if provenance.get("architecture_verified") is not True:
+            errors.append("verified executable architecture is required")
+        if provenance.get("architecture_source") != "executable":
+            errors.append("architecture provenance must come from the executable")
     for key in ("executable_sha256", "artifact_sha256"):
         if not SHA256_RE.fullmatch(str(provenance.get(key) or "")):
             errors.append(f"{key} is missing or invalid")
@@ -182,6 +203,11 @@ def validate_report(
     validate_provenance(provenance, release_facing=release_facing)
     if report.get("build_commit") != provenance.get("source_commit_sha"):
         raise ProvenanceError("legacy build_commit does not match source commit SHA")
+    reported_architecture = report.get("architecture")
+    if reported_architecture is not None and reported_architecture != provenance.get("architecture"):
+        raise ProvenanceError("report architecture does not match build provenance")
+    if release_facing and reported_architecture != provenance.get("architecture"):
+        raise ProvenanceError("release report architecture is missing or does not match build provenance")
     for report_key, provenance_key in (
         ("executable_sha256", "executable_sha256"),
         ("artifact_sha256", "artifact_sha256"),
@@ -215,6 +241,21 @@ def collect_provenance(
 
     executable = Path(executable).resolve() if executable is not None else None
     artifact = Path(artifact).resolve() if artifact is not None else executable
+    detected_architecture = detect_executable_architecture(executable) if executable else {
+        "architecture": None,
+        "architectures": [],
+        "verified": False,
+        "source": "no-executable",
+    }
+    detected_value = detected_architecture.get("architecture")
+    is_verified_architecture = detected_architecture.get("verified") is True
+    process_architecture = host_architecture() or platform.machine() or "unknown"
+    if isinstance(detected_value, str) and detected_value:
+        artifact_architecture = detected_value
+        architecture_source = "executable" if is_verified_architecture else str(detected_architecture.get("source"))
+    else:
+        artifact_architecture = process_architecture
+        architecture_source = "host_fallback"
     toolchain = {
         "python": platform.python_version(),
         "node": _command_version(("node",), root),
@@ -236,7 +277,15 @@ def collect_provenance(
         "toolchain": toolchain,
         "os": platform.system().lower(),
         "os_version": platform.platform(),
-        "architecture": platform.machine(),
+        # `architecture` describes the artifact target.  The host process is
+        # recorded separately because an arm64 host can launch x86_64 under
+        # Rosetta and must not mislabel the release artifact.
+        "architecture": artifact_architecture,
+        "architecture_verified": is_verified_architecture,
+        "architecture_source": architecture_source,
+        "architecture_detection_tool": detected_architecture.get("source"),
+        "executable_architectures": detected_architecture.get("architectures", []),
+        "build_host_architecture": process_architecture,
         "executable_path": str(executable) if executable else None,
         "executable_sha256": _sha256_path(executable),
         "artifact_path": str(artifact) if artifact else None,

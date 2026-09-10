@@ -6,9 +6,10 @@
 **Product identity:** Local-first Execution Intelligence & Trade Forensics Workstation
 
 This is the current Mac-only v1 release train, not a published release. The supported
-target is macOS arm64. Its eventual distribution artifact is a Developer ID-signed and
-notarized DMG; the current local artifact is ad-hoc and development-only until the owner
-provides Apple signing/notarization access.
+target is macOS 12 Monterey or later on native arm64 and x86_64 builds. Each architecture
+has a separate DMG; Universal2 is not a v1 artifact. The eventual distribution artifacts
+are Developer ID-signed and notarized DMGs; current local artifacts are ad-hoc and
+development-only until the owner provides Apple signing/notarization access.
 
 This release publishes the verified local core: trade journaling and forensics, deterministic
 risk checks, recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain
@@ -25,8 +26,9 @@ for repository audit only and are not included in a GitHub Release body. The pri
 publication is withdrawn and must not be used.
 
 Verification evidence for this candidate is recorded in the current
-`docs/strategy/STATUS.md` and N05 work-package record. The exact release tag is guarded by
-the canonical matrix at `docs/release/truth-matrix.v1.0.0.json`.
+`docs/strategy/STATUS.md` and P1-WP28 work-package record. N05 remains the later
+owner-controlled signing/notarization gate. The exact release tag is guarded by the
+canonical matrix at `docs/release/truth-matrix.v1.0.0.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)

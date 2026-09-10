@@ -93,9 +93,11 @@ class TestCICDWorkflowsAndPackaging:
         oses = [m["os"] for m in matrix_includes]
         packages = [m["package"] for m in matrix_includes]
 
-        assert oses == ["macos-latest"]
+        assert oses == ["macos-latest", "macos-15-intel"]
 
-        assert packages == ["bash scripts/package_macos.sh"]
+        assert packages == ["bash scripts/package_macos.sh", "bash scripts/package_macos.sh"]
+        architectures = [m["architecture"] for m in matrix_includes]
+        assert architectures == ["arm64", "x86_64"]
         assert "scripts/package_windows.sh" not in rel_raw
         assert "scripts/package_linux.sh" not in rel_raw
         assert "final-smoke-windows.json" not in rel_raw
@@ -123,9 +125,11 @@ class TestCICDWorkflowsAndPackaging:
         assert "Smoke test desktop app" in bp_names
         assert "Package" in bp_names
         assert "Smoke test final packaged artifact" in bp_names
-        assert "dist/final-smoke-*.json" in rel_raw
+        assert "dist/final-smoke-arm64.json" in rel_raw
+        assert "dist/final-smoke-x86_64.json" in rel_raw
         assert "scripts/run_n05_macos_distribution_preflight.py" in rel_raw
-        assert "dist/n05-macos-distribution.json" in rel_raw
+        assert "dist/n05-macos-distribution-arm64.json" in rel_raw
+        assert "dist/n05-macos-distribution-x86_64.json" in rel_raw
 
         # Check publish-release job
         pub_job = rel_data["jobs"]["publish-release"]

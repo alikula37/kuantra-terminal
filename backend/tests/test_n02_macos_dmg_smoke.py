@@ -21,9 +21,14 @@ def _report(tmp_path):
     provenance["tracked_source_tree_status"] = "clean"
     provenance["provenance_status"] = "COMPLETE"
     provenance["source_commit_matches_checkout"] = True
+    provenance["architecture"] = "arm64"
+    provenance["architecture_verified"] = True
+    provenance["architecture_source"] = "executable"
+    provenance["executable_architectures"] = ["arm64"]
     return (
         {
             "build_commit": provenance["source_commit_sha"],
+            "architecture": "arm64",
             "executable_sha256": provenance["executable_sha256"],
             "artifact_sha256": provenance["artifact_sha256"],
             "executable_path": str(executable.resolve()),

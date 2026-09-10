@@ -66,6 +66,27 @@ def _validate_matrix(matrix: dict[str, Any]) -> None:
     _require(product["release_tag"] == f"v{product['version']}",
              "matrix release_tag must equal v<product.version>")
 
+    distribution = matrix.get("distribution")
+    _require(isinstance(distribution, dict), "matrix distribution must be an object")
+    _require(distribution.get("release_scope") == "macOS arm64 and x86_64",
+             "v1 distribution scope must be macOS arm64 and x86_64")
+    _require(distribution.get("minimum_os") == "macOS 12 Monterey or later",
+             "v1 minimum macOS must be 12 Monterey or later")
+    _require(distribution.get("architectures") == ["arm64", "x86_64"],
+             "v1 distribution architectures must be arm64 and x86_64")
+    architecture_evidence = distribution.get("architecture_evidence")
+    _require(isinstance(architecture_evidence, dict), "v1 architecture evidence must be an object")
+    _require(
+        architecture_evidence.get("arm64") == "VERIFIED_CURRENT_CANDIDATE"
+        and architecture_evidence.get("x86_64") in {"PENDING_NATIVE_CI", "VERIFIED_CURRENT_CANDIDATE"},
+        "v1 architecture evidence must keep arm64 verified and x86_64 CI-gated",
+    )
+    unclaimed_platforms = distribution.get("unclaimed_platforms")
+    _require(
+        isinstance(unclaimed_platforms, list)
+        and set(unclaimed_platforms) == {"Windows", "Linux"},
+             "v1 unclaimed platforms must remain Windows and Linux")
+
     policy = matrix.get("policy")
     _require(isinstance(policy, dict), "matrix policy must be an object")
     for key in ("current_release_notes_start", "current_release_notes_end", "required_phrases",

@@ -11,11 +11,19 @@
     "positioning": "Local-first Execution Intelligence & Trade Forensics Workstation"
   },
   "distribution": {
-    "release_scope": "macOS arm64",
+    "release_scope": "macOS arm64 and x86_64",
+    "minimum_os": "macOS 12 Monterey or later",
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
     "artifact": "Developer ID signed and notarized DMG",
     "current_artifact_status": "AD_HOC_DEVELOPMENT_ONLY",
+    "architecture_evidence": {
+      "arm64": "VERIFIED_CURRENT_CANDIDATE",
+      "x86_64": "PENDING_NATIVE_CI"
+    },
     "unclaimed_platforms": [
-      "macOS x86_64",
       "Windows",
       "Linux"
     ]
@@ -125,7 +133,7 @@
     {
       "id": "local_desktop_shell",
       "status": "VERIFIED_CORE",
-      "claim": "React, FastAPI and pywebview run as the supported local macOS arm64 desktop shell with a reproducible build/smoke gate; other platforms are not v1 release claims.",
+      "claim": "React, FastAPI and pywebview are wired for native local macOS arm64 or x86_64 desktop shells on macOS 12 or later; each architecture requires its own reproducible build and exact mounted-DMG smoke evidence before it is claimed as current support.",
       "provenance": "LOCAL_BUILD_AND_SMOKE_EVIDENCE",
       "external_execution_authority": false
     },

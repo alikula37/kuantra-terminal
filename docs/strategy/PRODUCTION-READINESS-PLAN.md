@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.35
+version: 1.0.36
 status: Proposed
 date: 2026-09-10
-reviewed_commit: 00ce94e
+reviewed_commit: faf8d28
 branch: main
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -36,12 +36,12 @@ privacy/data-lifecycle ve credential availability boundary `4270d33` ile uygulan
 default-branch alert disposition, ticari dağıtım öncesine kadar bilinçli olarak
 ertelenmiştir; bu release gate'i kapalı tutar. H07 bounded performance/resource-limit
 paketi ve P1-WP27 G0–G2 packaged value-chain audit'i bounded non-release kanıtla
-tamamlanıp arşivlenmiştir. N03 temiz Mac profil/ikinci host install-lifecycle
-harness'ı uygulanmıştır; owner kararıyla host çalıştırması son macOS dağıtım/pilot
-validation kapısına ertelenmiştir ve ikinci host/profile kanıtı olmadan PASS/production
-iddiası yoktur. N04 manual update/uninstall veri koruma audit'i bounded non-release
-kanıtla tamamlanıp arşivlenmiştir; sıradaki seçili paket N03'ün final validation
-kanıtıdır.
+tamamlanıp arşivlenmiştir. N03 temiz Mac profil/ikinci host install-lifecycle harness'ı
+uygulanmıştır; owner kararıyla host çalıştırması son macOS dağıtım/pilot validation
+kapısına ertelenmiştir ve ikinci host/profile kanıtı olmadan PASS/production iddiası yoktur.
+N04 manual update/uninstall veri koruma audit'i bounded non-release kanıtla tamamlanıp
+arşivlenmiştir. Yeni seçili paket P1-WP28, macOS 12+ native arm64/x86_64 artifact ve
+provenance zincirini kapatır; Intel destek claim'i native Intel CI kanıtı olmadan açılmaz.
 Aşağıdaki diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış
 WP değildir.
 
@@ -50,11 +50,12 @@ sertifika satın alma, imzalama servislerine yükleme, pilot daveti, main merge,
 ve tag işlemlerini başlatmaz. Bunlar ilgili aşamada kapsam ve ürün sahibi onayı gerektirir.
 
 **Owner decision (2026-09-10):** İlk production sürümü yalnızca macOS için hedeflenir.
-İlk dağıtım yolu doğrudan Developer ID ile imzalanmış ve notarize edilmiş DMG'dir.
-Mevcut aday kanıtı macOS arm64 ile sınırlıdır; Intel Mac, Windows ve Linux için destek
-iddiası yoktur. Apple Developer üyeliği, signing erişimi ve gerçek notarization işlemi
-Release Candidate aşamasına kadar ertelenir. KDG-002'nin üç-OS politikası kaldırılmaz;
-yalnızca ileride açıkça onaylanan multi-platform release için yeniden devreye girer.
+Dağıtım macOS 12 Monterey veya üzeri için ayrı native arm64 ve x86_64 Developer ID imzalı,
+notarize edilmiş DMG'ler ile yapılır. Intel desteği native Intel CI build + exact mounted-DMG
+smoke kanıtıyla kapatılır; fiziksel Intel pilotu ek güven kanıtıdır. Apple Developer üyeliği,
+signing erişimi ve gerçek notarization işlemi Release Candidate aşamasına kadar ertelenir.
+KDG-002'nin üç-OS politikası kaldırılmaz; yalnızca ileride açıkça onaylanan multi-platform
+release için yeniden devreye girer.
 
 ## 2. İlk sürümün sınırı
 
@@ -65,7 +66,7 @@ yalnızca ileride açıkça onaylanan multi-platform release için yeniden devre
 | Partial/unknown durumlarını gösteren order/fill ve kapsamı belirli accounting reconciliation | Tam hesap doğrulaması yokken net account PnL onayı |
 | Trade ↔ kaynak lineage, coverage gösterimi, weekly review, versioned playbook | AI order, sinyal satışı, copy/bot, FIX/DMA |
 | Elde bulunan uygun market context ile sınırlı replay/analytics | Kesintisiz L2/depth, tick-exact MAE/MFE veya venue-grade latency vaadi |
-| Mac native pilot; v1 için exact macOS final artifact ve doğrudan notarize DMG | Mac başarısını Windows/Linux veya Intel başarısı sayma; üç-OS politika yalnızca gelecek multi-platform release içindir |
+| Mac native pilot; v1 için macOS 12+ arm64 ve x86_64 exact final artifact ve doğrudan notarize DMG | Mac başarısını Windows/Linux başarısı sayma; Universal2 ve macOS 11 altı v1 kapsamı değildir |
 
 ### Destek matrisi, geliştirmeden önce sözleşme olmalı
 
@@ -391,7 +392,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     bağlandı; H07 acceptance/archive reconcile edilerek tamamlandı.
 18. P1-WP27: G0–G2 supported matrix, bağımsız oracle ve packaged
     import→review→export→reopen acceptance audit; tamamlandı/arşivlendi `e042790`.
-19. N03–N06 owner/host bağımlılıkları kapsamlarına göre ilerler. N03 host çalıştırması
+19. P1-WP28 macOS 12+ native arm64/x86_64 compatibility, executable-derived provenance,
+    per-architecture exact DMG smoke ve dual-runner release contract'ını tamamla. Intel
+    claim'i native x86_64 CI kanıtı olmadan açılmaz; Universal2 kabul edilmez.
+20. N03–N06 owner/host bağımlılıkları kapsamlarına göre ilerler. N03 host çalıştırması
     final macOS distribution/pilot validation'a ertelenmiştir; N04 bounded audit'i
     tamamlanıp arşivlenmiştir. N05'in read-only artifact preflight kodu N03 host kanıtı
     beklenmeden hazırlanabilir; v1 için gerçek Developer ID/notary ve N03 kanıtı final
@@ -414,15 +418,19 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 4. P1-WP27 ile G0–G2 supported matrix, bağımsız oracle ve packaged
    import→review→export→reopen kabul denetimini tamamla; B2 kapsamını kanıtla
    netleştir. (Tamamlandı/arşivlendi `e042790`; bounded Mac kanıtı, release kanıtı değil.)
-5. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son macOS
+5. P1-WP28 ile macOS 12+ native arm64/x86_64 build, exact DMG smoke, executable-derived
+   provenance ve dual-runner release contract'ını tamamla. Native Intel CI kanıtı
+   gelmeden Intel supported claim'i açma; fiziksel Intel pilotunu ek güven kanıtı olarak
+   tut. Universal2/cross-build kullanma.
+6. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son macOS
    distribution/pilot validation kapısında çalıştır; host kanıtı gelene kadar
    `DEFERRED/HOST_REQUIRED` kalır. N04 sentetik/manual update, interrupted-update
    recovery ve uninstall veri koruma audit'i tamamlandı/arşivlendi.
-6. N05 exact-DMG read-only signing/notarization preflight kod kapısını uygula; gerçek
+7. N05 exact-DMG read-only signing/notarization preflight kod kapısını uygula; gerçek
    Developer ID/hardened-runtime/Gatekeeper/stapled-ticket kanıtını owner/Apple host
    erişimiyle al. Ticari dağıtım öncesi H05 license/notices/dependency disposition
    owner kapısını ayrıca yeniden aç; N05 bu kararı varsaymaz.
-7. v1 için N05 gerçek Apple dağıtım kanıtı ve N03 Mac host/profile validation; ardından
+8. v1 için N05 gerçek Apple dağıtım kanıtı ve N03 Mac host/profile validation; ardından
    G5 consent/metrik kararları, formative ve kontrollü pilot, G6–G7 owner release
    kararı ve sınırlı rollout. N06 Windows/Linux host kanıtı yalnızca v1 sonrası
    multi-platform genişleme onaylanırsa yürütülür.
@@ -448,6 +456,14 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
 - Current truth matrix, package metadata, release workflow ve release-facing notlar
   `v1.0.0` ile hizalanır. Yeni tag/release, Apple signing/notarization ve G6 release
   authority bu değişiklikle verilmez.
+
+### 1.0.36 — 2026-09-10
+
+- Owner-approved Mac scope, macOS 12+ üzerinde ayrı native arm64 ve x86_64 artifact'lara
+  genişletildi. Intel claim'i native Intel CI ve exact mounted-DMG smoke kanıtına bağlandı;
+  fiziksel Intel pilotu zorunlu release kapısı yapılmadı.
+- P1-WP28, executable-derived architecture provenance, Universal2/mismatch rejection,
+  dual-runner packaging ve per-architecture Phase 0 evidence sözleşmesi olarak seçildi.
 
 ### 1.0.34 — 2026-09-10
 

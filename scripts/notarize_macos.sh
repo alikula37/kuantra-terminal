@@ -7,6 +7,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DMG=""
 SMOKE_REPORT=""
 N05_REPORT=""
+EXPECTED_ARCH=""
 TIMEOUT="120"
 
 usage() {
@@ -14,9 +15,10 @@ usage() {
 Usage:
   KUANTRA_MACOS_NOTARY_PROFILE=<keychain-profile> \
     bash scripts/notarize_macos.sh --submit \
-      --dmg dist/Kuantra-Terminal-<version>-aarch64.dmg \
-      --smoke-report dist/final-smoke-macos.json \
-      --output dist/n05-macos-distribution.json
+      --architecture arm64 \
+      --dmg dist/Kuantra-Terminal-<version>-arm64.dmg \
+      --smoke-report dist/final-smoke-arm64.json \
+      --output dist/n05-macos-distribution-arm64.json
 
 The --submit flag is mandatory. The keychain profile must already exist on the
 owner-controlled macOS host; this wrapper never creates, reads or prints a
@@ -58,6 +60,15 @@ while [ "$#" -gt 0 ]; do
       DMG="$2"
       shift 2
       ;;
+    --architecture)
+      require_value "$1" "${2:-}"
+      case "$2" in
+        arm64|aarch64) EXPECTED_ARCH="arm64" ;;
+        x86_64|amd64) EXPECTED_ARCH="x86_64" ;;
+        *) fail "unsupported architecture: $2" ;;
+      esac
+      shift 2
+      ;;
     --smoke-report)
       require_value "$1" "${2:-}"
       SMOKE_REPORT="$2"
@@ -89,6 +100,7 @@ done
 [ -n "$DMG" ] || { usage; fail "--dmg is required"; }
 [ -n "$SMOKE_REPORT" ] || { usage; fail "--smoke-report is required"; }
 [ -n "$N05_REPORT" ] || { usage; fail "--output is required"; }
+[ -n "$EXPECTED_ARCH" ] || { usage; fail "--architecture is required"; }
 case "$DMG" in
   *.dmg) ;;
   *) fail "--dmg must point to a .dmg file" ;;
@@ -138,6 +150,9 @@ printf '%s\n' "$SIGNING_INFO" | grep -q '^Authority=Developer ID Application:' |
 printf '%s\n' "$SIGNING_INFO" | grep -Eiq '^CodeDirectory.*flags=.*runtime' || {
   fail "exact DMG app is missing the hardened runtime"
 }
+printf '%s\n' "$SIGNING_INFO" | grep -Eiq "^Format=.*(${EXPECTED_ARCH})" || {
+  fail "exact DMG app architecture does not match --architecture ${EXPECTED_ARCH}"
+}
 codesign --verify --deep --strict --verbose=0 "$SIGNING_APP" >/dev/null 2>&1 || {
   fail "exact DMG app failed codesign verification"
 }
@@ -177,7 +192,8 @@ fi
 echo "[notarize] re-running exact mounted-DMG smoke after stapling"
 env KUANTRA_MARKET_DATA_ENABLED=false KUANTRA_GATEWAY_ENABLED=false \
   "$PYTHON_BIN" "$ROOT/scripts/smoke_macos_dmg.py" \
-  --dmg "$DMG" --data-dir "$TEMP_DATA" --report "$SMOKE_REPORT" --timeout "$TIMEOUT"
+  --dmg "$DMG" --expected-architecture "$EXPECTED_ARCH" \
+  --data-dir "$TEMP_DATA" --report "$SMOKE_REPORT" --timeout "$TIMEOUT"
 
 echo "[notarize] running N05 read-only final-artifact preflight"
 set +e

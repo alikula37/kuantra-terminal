@@ -115,7 +115,7 @@ if IS_MAC:
             "CFBundleShortVersionString": __version__,
             "CFBundleVersion": __version__,
             "NSHighResolutionCapable": True,
-            "LSMinimumSystemVersion": "11.0",
+            "LSMinimumSystemVersion": "12.0",
             "NSRequiresAquaSystemAppearance": False,
             "LSApplicationCategoryType": "public.app-category.finance",
         },

@@ -55,11 +55,14 @@ def test_truth_matrix_has_unique_capabilities_and_explicit_authority_boundary():
     assert any(capability["status"] == "EXPERIMENTAL_DISABLED" for capability in capabilities)
 
 
-def test_v1_release_scope_is_mac_arm64_only():
+def test_v1_release_scope_is_mac_dual_architecture_only():
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     assert matrix["product"]["version"] == "1.0.0"
-    assert matrix["distribution"]["release_scope"] == "macOS arm64"
+    assert matrix["distribution"]["release_scope"] == "macOS arm64 and x86_64"
+    assert matrix["distribution"]["minimum_os"] == "macOS 12 Monterey or later"
+    assert matrix["distribution"]["architectures"] == ["arm64", "x86_64"]
+    assert matrix["distribution"]["architecture_evidence"]["x86_64"] == "PENDING_NATIVE_CI"
     assert matrix["distribution"]["current_artifact_status"] == "AD_HOC_DEVELOPMENT_ONLY"
     assert set(matrix["distribution"]["unclaimed_platforms"]) == {
-        "macOS x86_64", "Windows", "Linux"
+        "Windows", "Linux"
     }

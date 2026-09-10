@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 from typing import Any, Dict, List
@@ -26,6 +27,7 @@ from run_n05_macos_distribution_preflight import N05DistributionError, validate_
 
 PRODUCT_NAME = "Kuantra Terminal"
 ARTIFACT_PREFIX = "Kuantra-Terminal-"
+MACOS_ARCH_RE = re.compile(r"(?:^|[-_])(arm64|aarch64|x86_64)(?:[-_.]|$)", re.IGNORECASE)
 
 
 def compute_sha256(filepath: str) -> str:
@@ -56,7 +58,10 @@ def classify_artifact(filename: str) -> tuple[str, str]:
     if lower_name.endswith((".exe", ".msi")) or "windows" in lower_name:
         return "Windows", "x64"
     if lower_name.endswith(".dmg") or "darwin" in lower_name or "macos" in lower_name:
-        arch = "arm64" if ("aarch64" in lower_name or "arm64" in lower_name) else "x64"
+        match = MACOS_ARCH_RE.search(lower_name)
+        if not match:
+            return "macOS", "unknown"
+        arch = "arm64" if match.group(1).casefold() in {"arm64", "aarch64"} else "x86_64"
         return "macOS", arch
     if lower_name.endswith((".appimage", ".deb", ".rpm", ".tar.gz")) or "linux" in lower_name:
         return "Linux", "x64"
@@ -100,9 +105,17 @@ def distribution_attestation(
             report = json.load(handle)
     except (OSError, json.JSONDecodeError) as exc:
         raise ValueError(f"invalid macOS N05 report: {report_path}") from exc
-    macos = next((artifact for artifact in artifacts if artifact["platform"] == "macOS"), None)
+    report_artifact_sha = str(report.get("artifacts", {}).get("dmg_sha256") or "")
+    macos = next(
+        (
+            artifact
+            for artifact in artifacts
+            if artifact["platform"] == "macOS" and artifact["sha256"] == report_artifact_sha
+        ),
+        None,
+    )
     if macos is None:
-        raise ValueError("macOS N05 report supplied but no macOS artifact exists")
+        raise ValueError("macOS N05 report does not match a macOS artifact")
     try:
         validate_n05_report(report, artifact_sha256=macos["sha256"])
     except N05DistributionError as exc:
@@ -111,7 +124,9 @@ def distribution_attestation(
     return {
         "report_filename": report_filename,
         "report_sha256": compute_sha256(report_path),
-        "artifact_sha256": report["artifacts"]["dmg_sha256"],
+        "artifact_filename": macos["filename"],
+        "artifact_sha256": report_artifact_sha,
+        "architecture": macos["arch"],
         "source_commit_sha": report["source"]["commit_sha"],
         "status": report["status"],
     }
@@ -119,6 +134,7 @@ def distribution_attestation(
 
 def generate_manifest(dist_dir: str = "dist", tag: str | None = None,
                       dry_run: bool = False,
+                      macos_distribution_reports: List[str] | None = None,
                       macos_distribution_report: str | None = None) -> Dict[str, Any]:
     """Builds the manifest for ``dist_dir`` and writes ``MANIFEST.json`` into it."""
     if not os.path.isabs(dist_dir):
@@ -130,17 +146,27 @@ def generate_manifest(dist_dir: str = "dist", tag: str | None = None,
     if release_tag != expected_tag:
         raise ValueError(f"release tag {release_tag!r} does not match {expected_tag!r}")
     artifacts: List[Dict[str, Any]] = [] if dry_run else collect_artifacts(dist_dir)
+    invalid_macos = [
+        artifact["filename"]
+        for artifact in artifacts
+        if artifact["platform"] == "macOS" and artifact["arch"] not in {"arm64", "x86_64"}
+    ]
+    if invalid_macos:
+        raise ValueError(f"macOS artifact architecture is missing or unsupported: {invalid_macos}")
 
     attestations: Dict[str, Any] = {}
+    report_paths = list(macos_distribution_reports or [])
     if macos_distribution_report is not None:
-        report_path = macos_distribution_report
+        report_paths.append(macos_distribution_report)
+    for report_path in report_paths:
         if not os.path.isabs(report_path):
             report_path = os.path.join(ROOT_DIR, report_path)
-        attestations["macOS"] = distribution_attestation(
+        attestation = distribution_attestation(
             report_path,
             dist_dir=dist_dir,
             artifacts=artifacts,
         )
+        attestations[f"macOS-{attestation['architecture']}"] = attestation
 
     manifest_data: Dict[str, Any] = {
         "release_tag": release_tag,
@@ -187,15 +213,20 @@ def main(argv: List[str] | None = None) -> int:
                         help="Release tag to record (default: v<version>)")
     parser.add_argument("--dry-run", action="store_true",
                         help="Write a manifest with zero artifacts without scanning the dist dir")
-    parser.add_argument("--macos-distribution-report", default=None,
-                        help="Require and bind a PASS N05 macOS distribution report")
+    parser.add_argument(
+        "--macos-distribution-report",
+        action="append",
+        dest="macos_distribution_reports",
+        default=[],
+        help="Require and bind a PASS N05 macOS distribution report (repeat per architecture)",
+    )
     args = parser.parse_args(argv)
 
     generate_manifest(
         dist_dir=args.dist,
         tag=args.tag,
         dry_run=args.dry_run,
-        macos_distribution_report=args.macos_distribution_report,
+        macos_distribution_reports=args.macos_distribution_reports,
     )
     return 0
 

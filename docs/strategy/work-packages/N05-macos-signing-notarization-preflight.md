@@ -1,4 +1,4 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # N05 — macOS Signing / Notarization Preflight
 
 ```yaml

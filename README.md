@@ -22,10 +22,11 @@ risks, evidence limits and the remaining P1 delivery order.
 
 ## v1.0.0 scope
 
-The first supported release target is macOS arm64. The release artifact must be a
-Developer ID-signed and notarized DMG; the current local artifact remains ad-hoc and
-development-only until the owner supplies Apple signing/notarization access. Intel Mac,
-Windows and Linux are outside the v1.0.0 release claim and remain future expansion scope.
+The first supported release target is macOS 12 Monterey or later on arm64 and x86_64.
+Each architecture is built and distributed as its own native DMG; Universal2 is not a
+v1 artifact. The release artifact must be a Developer ID-signed and notarized DMG; the
+current local artifacts remain ad-hoc and development-only until the owner supplies Apple
+signing/notarization access. Windows and Linux are outside the v1.0.0 release claim.
 The old v1.4.0 publication is retained as a withdrawn historical record and must not be
 used.
 
@@ -41,8 +42,8 @@ used.
   Linux Secret Service). Plaintext SQLite credential fallback is not supported.
 - React + FastAPI + pywebview single-process desktop shell, with a browser
   development path and per-user data directory.
-- EN/TR/DE i18n parity and a reproducible local build/smoke gate for the macOS arm64
-  candidate; no v1 release claim is made for other operating systems.
+- EN/TR/DE i18n parity and a reproducible native build/smoke gate for the macOS arm64 and
+  x86_64 candidate artifacts; no v1 release claim is made for other operating systems.
 
 ## Explicitly experimental/disabled
 
@@ -58,8 +59,9 @@ they are not production capabilities:
 - remote ModStore download, hot-mount and arbitrary plugin execution.
 
 See [`docs/strategy/`](docs/strategy) for the decision log, ADRs, evidence
-gates and work-package status. N05 is the current macOS distribution preflight
-package; a disabled surface is a deliberate truth result, not a failed demo.
+gates and work-package status. P1-WP28 is the current macOS dual-architecture
+compatibility package; N05 remains the later owner-controlled distribution gate.
+A disabled surface is a deliberate truth result, not a failed demo.
 
 ## Runtime architecture
 

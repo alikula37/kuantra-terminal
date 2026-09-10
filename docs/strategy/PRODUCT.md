@@ -27,10 +27,11 @@ evaluation. Improved decision quality is a goal to measure, not a proven profita
 - No real user migration data exists for the Mac move. No Windows data copy, migration
   ZIP, real credential transfer or destructive reset is authorized.
 - Owner decision (2026-09-10): the first production release is macOS-only and is planned
-  for direct distribution as a Developer ID-signed, notarized DMG. The current candidate
-  evidence is macOS arm64; Intel Mac, Windows and Linux support are not claimed until
-  separately tested. Apple membership/signing access is a release-candidate gate, not a
-  development prerequisite.
+  for direct distribution as separate native arm64 and x86_64 DMGs on macOS 12 Monterey or
+  later. Intel support is closed by native Intel CI build and exact mounted-DMG smoke
+  evidence; a physical Intel pilot is useful additional confidence but is not a release
+  prerequisite. Universal2, Windows and Linux are not v1 artifacts. Apple membership/
+  signing access is a release-candidate gate, not a development prerequisite.
 - First-user and production readiness are unproven until the roadmap gates pass.
   Current release claims are constrained by the release truth matrix. For v1, exact
   macOS artifact evidence and owner release approval remain required; the existing

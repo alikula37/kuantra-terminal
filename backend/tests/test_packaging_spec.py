@@ -51,8 +51,10 @@ def test_build_and_smoke_scripts_target_host_os_outputs():
     assert "kuantra.spec" in build
     assert "--skip-frontend" in build
     assert "Kuantra Terminal.app" in build and "kuantra-terminal" in build
+    assert "--expected-architecture" in build
     assert "--smoke" in smoke and "--smoke-report" in smoke
     assert "--executable" in smoke and "--artifact" in smoke and "--appimage" in smoke and "--data-dir" in smoke
+    assert "--expected-architecture" in smoke
     assert "smoke_schema_version" in smoke and "executable_sha256" in smoke
     assert "build_provenance" in smoke and "provenance_status" in smoke
     assert "KUANTRA_DATA_DIR" in smoke and "KUANTRA_GATEWAY_ENABLED" in smoke
@@ -68,11 +70,13 @@ def test_package_macos_script_builds_dmg():
     assert '--options runtime' in sh
     assert 'codesign --verify --deep --strict' in sh
     assert 'developer-id' in sh
+    assert '--architecture' in sh and '--output' in sh and '--app' in sh
+    assert 'lipo -archs' in sh
 
 
 def test_macos_dmg_smoke_binds_mount_and_native_renderer():
     script = (ROOT / "scripts" / "smoke_macos_dmg.py").read_text()
-    for needle in ("-readonly", "-mountpoint", "hdiutil", "wkwebview", "--artifact"):
+    for needle in ("-readonly", "-mountpoint", "hdiutil", "wkwebview", "--artifact", "--expected-architecture"):
         assert needle in script
 
 
