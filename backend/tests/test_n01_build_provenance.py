@@ -198,6 +198,40 @@ def test_release_provenance_rejects_rosetta_host_metadata():
         )
 
 
+def test_release_provenance_rejects_cross_architecture_macos_host():
+    with pytest.raises(ProvenanceError, match="host architecture must match"):
+        validate_provenance(
+            {
+                "source_commit_sha": "a" * 40,
+                "checkout_commit_sha": "a" * 40,
+                "source_commit_matches_checkout": True,
+                "tracked_source_tree_status": "clean",
+                "tracked_source_tree_sha256": "b" * 64,
+                "lock_hashes": {
+                    "backend_requirements_lock_sha256": "c" * 64,
+                    "frontend_package_lock_sha256": "d" * 64,
+                },
+                "toolchain": {
+                    "python": "3.11",
+                    "node": "20",
+                    "npm": "10",
+                    "uv": "0.1",
+                    "pyinstaller": "6",
+                },
+                "os": "darwin",
+                "architecture": "x86_64",
+                "architecture_verified": True,
+                "architecture_source": "executable",
+                "build_host_architecture": "arm64",
+                "build_host_translation": "native",
+                "executable_sha256": "e" * 64,
+                "artifact_sha256": "f" * 64,
+                "provenance_status": "COMPLETE",
+            },
+            release_facing=True,
+        )
+
+
 def test_release_validator_rejects_dirty_or_incomplete_provenance():
     with pytest.raises(ProvenanceError, match="tracked source tree"):
         validate_provenance(

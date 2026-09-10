@@ -165,8 +165,11 @@ def _validation_errors(provenance: Mapping[str, Any], *, release_facing: bool) -
             errors.append("verified executable architecture is required")
         if provenance.get("architecture_source") != "executable":
             errors.append("architecture provenance must come from the executable")
-        if provenance.get("os") == "darwin" and provenance.get("build_host_translation") != "native":
-            errors.append("macOS build host must be proven native and not Rosetta-translated")
+        if provenance.get("os") == "darwin":
+            if provenance.get("build_host_architecture") != architecture:
+                errors.append("macOS build host architecture must match the artifact architecture")
+            if provenance.get("build_host_translation") != "native":
+                errors.append("macOS build host must be proven native and not Rosetta-translated")
     for key in ("executable_sha256", "artifact_sha256"):
         if not SHA256_RE.fullmatch(str(provenance.get(key) or "")):
             errors.append(f"{key} is missing or invalid")
