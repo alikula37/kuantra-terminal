@@ -61,6 +61,23 @@ current invocation is expected to remain `BLOCKED` because the GitHub account bi
 spending-limit blocker has not produced the x86_64 chain; no Release/tag or asset upload
 was performed.
 
+**Fresh arm64 evidence (2026-09-10, preceding implementation commit `d81d825`):** Clean
+Mac mini arm64 build and default local CI completed with backend **809 passed / 2 warnings**,
+frontend **25 files / 104 tests**, i18n **608/608**, and `MERGE READY`. Exact
+`Kuantra-Terminal-1.0.0-arm64.dmg` mounted read-only smoke passed with native `wkwebview`,
+controller identity, executable architecture and detach confirmation. The exact DMG
+SHA-256 is `a5381ab05cbe21a7f68731b7136dbf413c4048446ca98df6a7e2f844b1c5c64d`; executable
+SHA-256 is `e9ff730dc235d932b0df96440bea3ea761c2d962ed44af31083fbf362165739f`; final
+mounted smoke report SHA-256 is `12242b785b7adf3fe621d6fae5f7214409433e47e35796782b426632ca99b22f`.
+The N05 report SHA-256 is `36897f91236f38e49ccf4549ccb6bb905ca2da5dce7274d29f1f80a5a75e4887`;
+it is correctly `BLOCKED/OWNER_REVIEW_REQUIRED` because this zero-cost pilot artifact is
+ad-hoc and has no Developer ID, hardened runtime, Gatekeeper or stapled-ticket proof.
+The reports share tracked-tree SHA-256
+`f9293fc50a489e01f601f283b6dc26e7a6b8a0d8ae0c50d67fc805cb06499b94` and truth-matrix
+SHA-256 `740b33db5e73b3c9cd7d8fa078282e6d03d8f0c0cf690f0ac1cc2320a617bcf6`. This is
+arm64 evidence only; it does not close P1-WP28 or produce a pilot package without the
+native x86_64 chain.
+
 **N05 — IN PROGRESS: exact macOS distribution preflight.** The read-only verifier
 `run_n05_macos_distribution_preflight.py` binds an exact DMG, its mounted app and
 the final mounted-DMG smoke/provenance report; it checks Developer ID identity,
