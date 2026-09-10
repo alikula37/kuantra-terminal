@@ -33,7 +33,9 @@ a public or production distribution. Pilot operators should read
 [`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md) and the
 [distribution research](docs/release/PILOT-DISTRIBUTION-RESEARCH.md). A Mac must actually run
 macOS 12 or later; not every older Intel model can run Monterey, so “all Macs from the last ten
-years” is not a valid support claim.
+years” is not a valid support claim. The pilot team may also supply native Intel runtime/N03
+evidence when the x86_64 artifact is available; this does not turn a normal user profile into
+clean-profile evidence or broaden the support claim.
 The old v1.4.0 publication is retained as a withdrawn historical record and must not be
 used.
 

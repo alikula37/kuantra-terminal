@@ -8,10 +8,18 @@ for new scope/estimates. Selecting one roadmap does not approve its commercial a
 **Owner decision (2026-09-10):** İlk production sürümü macOS-only olacak ve macOS 12
 Monterey veya üzeri için ayrı native arm64 ve x86_64 DMG’ler olarak doğrudan Developer ID
 imzalı/notarize biçimde dağıtılacaktır. Intel desteği, fiziksel Intel Mac erişimi olmadan
-native Intel CI build + exact mounted-DMG smoke kanıtıyla kapatılacaktır; fiziksel Intel
-pilot ek güven kanıtıdır, zorunlu release kapısı değildir. Windows ve Linux v1 claim’i
-değildir. Apple Developer üyeliği ve gerçek signing/notarization erişimi Release Candidate
-aşamasına kadar ertelenmiştir.
+native Intel host/runner build + exact mounted-DMG smoke kanıtıyla kapatılacaktır. Üç
+kişilik pilot ekipten native Intel Mac sahibi olan kişi, hazır x86_64 artifact üzerinde
+runtime ve N03 install-lifecycle kanıtı sağlayabilir; istenirse aynı Mac kontrollü native
+build hostu da olabilir. Pilot host kanıtı build commit/tree/lock/provenance zincirini
+yerine geçmez. Windows ve Linux v1 claim’i değildir. Apple Developer üyeliği ve gerçek
+signing/notarization erişimi Release Candidate aşamasına kadar ertelenmiştir.
+
+**Pilot host decision (2026-09-10):** Pilot ekip yalnızca indiren kullanıcı olarak
+değil, kontrollü teknik doğrulama grubu olarak kullanılabilir. Native Intel Mac, x86_64
+DMG’nin gerçek cihaz açılışı, architecture, Gatekeeper gözlemi ve sentetik
+import→review→export→close/reopen akışını doğrulayabilir. Temiz profil attestation'ı
+varsa N03 kanıtına da bağlanır; normal kullanıcı profili yalnız runtime pilot kanıtıdır.
 
 **Pilot distribution decision (2026-09-10):** Apple Developer ID üyeliği satın alınmayacak.
 Üç kişilik kapalı pilot, iki native DMG ve hash/evidence bundle taşıyan private GitHub
@@ -42,10 +50,13 @@ DMGs and exact final smoke/N05 reports. The active work package is
 
 **P1-WP28 remains OPEN / HOST_REQUIRED:** native `arm64` and `x86_64` artifact contract,
 executable-derived provenance and exact mounted-DMG smoke are implemented, but Intel
-support is not claimed until the native x86_64 CI job produces its own locked
-test/build/package/smoke evidence. The Rosetta guard now rejects translated or unknown
-Intel host status. Its implementation evidence remains `bb6ce7c`; the separate package
-preparation change is recorded under P1-WP29.
+support is not claimed until a native x86_64 host produces its own locked
+test/build/package/smoke evidence. Hosted `macos-15-intel` is the reproducible default;
+an explicitly controlled native Intel pilot Mac can provide the same build evidence when
+the checkout, locks, commands and clean tree are recorded. Once an x86_64 artifact exists,
+the pilot Intel Mac can provide separate runtime/N03 evidence. The Rosetta guard rejects
+translated or unknown Intel host status. Its implementation evidence remains `bb6ce7c`;
+the separate package preparation change is recorded under P1-WP29.
 
 N05 remains the later owner-controlled signing/notarization gate and N03 remains the
 deferred clean-profile/second-host final-validation obligation; neither is silently closed
@@ -58,9 +69,9 @@ ad-hoc `BLOCKED` evidence, requires `hdiutil verify` image-integrity evidence be
 mounting, and writes DMGs, evidence JSON, manifest, instructions and SHA-256 checksums
 without reading user data or credentials. The research record is
 [`PILOT-DISTRIBUTION-RESEARCH.md`](../release/PILOT-DISTRIBUTION-RESEARCH.md). The
-current invocation is expected to remain `BLOCKED` because the GitHub account billing/
-spending-limit blocker has not produced the x86_64 chain; no Release/tag or asset upload
-was performed.
+current invocation is expected to remain `BLOCKED` because neither the hosted Intel job nor
+a controlled Intel pilot build has produced the x86_64 chain; no Release/tag or asset
+upload was performed.
 
 **Fresh arm64 download-integrity evidence (2026-09-10, preceding implementation commit
 `6646332`):** Local CI is **MERGE READY** with backend **810 passed / 2 warnings**, frontend
@@ -656,8 +667,8 @@ and frontend lock hashes remain
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
 | H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
-| P1-WP28 | IN PROGRESS | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and dual-runner release contract | `bb6ce7c` implements the guards and dual-runner contract; arm64 clean build/local CI/exact mounted-DMG smoke is PASS. Intel runner jobs are currently blocked before startup by GitHub account billing/spending-limit state, so x86_64 remains `PENDING_NATIVE_CI`; Universal2, Windows/Linux and signing are separate gates. |
-| N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
+| P1-WP28 | IN PROGRESS | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and native-host release contract | `bb6ce7c` implements the guards and dual-runner contract; arm64 clean build/local CI/exact mounted-DMG smoke is PASS. Hosted Intel jobs are currently blocked before startup by GitHub account billing/spending-limit state; a controlled native Intel pilot Mac can provide the same build evidence or later runtime evidence, so x86_64 remains `PENDING_NATIVE_CI` until exact host provenance exists; Universal2, Windows/Linux and signing are separate gates. |
+| N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; the pilot team's Intel Mac may be the selected host if clean-profile attestation is supplied. Current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
 | N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current v1.0.0 ad-hoc DMG is intentionally `BLOCKED` (report SHA `338e83e...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |
 | WIN | DEFERRED / HOST_REQUIRED | Windows host/controller blocker and Linux final artifact evidence | Not a v1 Mac-only release gate or claim; reopen only after an explicit multi-platform expansion decision |

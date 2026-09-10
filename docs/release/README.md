@@ -7,11 +7,12 @@ and which files are scanned before a build or GitHub Release.
 
 The current release train targets v1.0.0 on macOS 12+ with separate native arm64 and x86_64
 artifacts. At this revision arm64 is the verified current candidate; x86_64 remains
-`PENDING_NATIVE_CI` until a native Intel runner produces its own exact evidence. The previous
+`PENDING_NATIVE_CI` until a native Intel runner or explicitly controlled Intel pilot Mac
+produces its own exact evidence. The previous
 v1.4.0 matrix and publication are retained as immutable historical records, but v1.4.0 is
 withdrawn and must not be installed or used as a current product description.
 
-The three-person pilot distribution path is documented in
+The three-person pilot distribution and technical validation path is documented in
 [`PILOT-DISTRIBUTION-RESEARCH.md`](PILOT-DISTRIBUTION-RESEARCH.md) and
 [`PILOT-INSTRUCTIONS.md`](PILOT-INSTRUCTIONS.md). A private GitHub Release can carry the
 two DMGs, evidence and checksums for users with repository read access. That transport does

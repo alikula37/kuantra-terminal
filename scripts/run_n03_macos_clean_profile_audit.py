@@ -29,6 +29,12 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from build_provenance import ProvenanceError, validate_report  # noqa: E402
+from macos_architecture import (  # noqa: E402
+    canonical_architecture,
+    detect_executable_architecture,
+    host_translation_label,
+    native_host_matches,
+)
 from run_g0_g2_packaged_audit import SYNTHETIC_CSV  # noqa: E402
 
 
@@ -189,9 +195,21 @@ def _materialize_app(source: Path, install_root: Path) -> tuple[Path, dict[str, 
     source_kind = "APP"
     source_app = source
     mount_mode = "not_applicable"
+    dmg_image_integrity = "NOT_APPLICABLE"
     if source.suffix.lower() == ".dmg":
         source_kind = "DMG"
         mount_mode = "readonly"
+        verify_result = subprocess.run(
+            ["hdiutil", "verify", str(source)],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+        )
+        if verify_result.returncode != 0:
+            raise N03AuditError("DMG image integrity verification failed")
+        dmg_image_integrity = "PASS"
         mountpoint = Path(tempfile.mkdtemp(prefix="kuantra-n03-mount-"))
         attached_result = subprocess.run(
             ["hdiutil", "attach", "-nobrowse", "-readonly", "-mountpoint", str(mountpoint), str(source)],
@@ -216,6 +234,7 @@ def _materialize_app(source: Path, install_root: Path) -> tuple[Path, dict[str, 
             "source_kind": source_kind,
             "mount_mode": mount_mode,
             "mount_attached": attached,
+            "dmg_image_integrity": dmg_image_integrity,
             "source_app": str(source_app),
         }, mountpoint
     except Exception:
@@ -344,22 +363,26 @@ def _run_smoke(
     report_path: Path,
     timeout: float,
     env: Mapping[str, str],
+    expected_architecture: str | None,
 ) -> dict[str, Any]:
+    command = [
+        sys.executable,
+        str(SCRIPTS / "smoke_desktop.py"),
+        "--executable",
+        str(executable),
+        "--artifact",
+        str(artifact),
+        "--report",
+        str(report_path),
+        "--data-dir",
+        str(data_dir),
+        "--timeout",
+        str(timeout),
+    ]
+    if expected_architecture is not None:
+        command.extend(["--expected-architecture", expected_architecture])
     result = subprocess.run(
-        [
-            sys.executable,
-            str(SCRIPTS / "smoke_desktop.py"),
-            "--executable",
-            str(executable),
-            "--artifact",
-            str(artifact),
-            "--report",
-            str(report_path),
-            "--data-dir",
-            str(data_dir),
-            "--timeout",
-            str(timeout),
-        ],
+        command,
         cwd=str(ROOT),
         env=dict(env),
         capture_output=True,
@@ -420,6 +443,10 @@ def validate_n03_report(report: Mapping[str, Any]) -> Mapping[str, Any]:
     gatekeeper = installation.get("gatekeeper")
     if not isinstance(security, Mapping) or not isinstance(gatekeeper, Mapping):
         raise N03AuditError("N03 quarantine/Gatekeeper observations are missing")
+    source_kind = installation.get("source_kind")
+    expected_image_integrity = "PASS" if source_kind == "DMG" else "NOT_APPLICABLE"
+    if installation.get("dmg_image_integrity") != expected_image_integrity:
+        raise N03AuditError("N03 DMG image integrity evidence is missing or inconsistent")
     provenance = report.get("provenance")
     if not isinstance(provenance, Mapping) or provenance.get("provenance_status") != "COMPLETE":
         raise N03AuditError("N03 exact build provenance is not COMPLETE")
@@ -427,6 +454,18 @@ def validate_n03_report(report: Mapping[str, Any]) -> Mapping[str, Any]:
         raise N03AuditError("N03 provenance artifact hash is not bound to the selected artifact")
     if provenance.get("executable_sha256") != installation.get("executable_sha256"):
         raise N03AuditError("N03 provenance executable hash is not bound to the selected executable")
+    executable_architecture = canonical_architecture(str(installation.get("executable_architecture") or ""))
+    provenance_architecture = canonical_architecture(str(provenance.get("architecture") or ""))
+    if executable_architecture is None or executable_architecture != provenance_architecture:
+        raise N03AuditError("N03 executable architecture is not bound to provenance")
+    host_architecture = canonical_architecture(str(installation.get("host_architecture") or ""))
+    if host_architecture is None or installation.get("host_translation") != "native":
+        raise N03AuditError("N03 host architecture is not proven native")
+    expected_architecture = installation.get("expected_architecture")
+    if expected_architecture is not None:
+        expected_architecture = canonical_architecture(str(expected_architecture))
+        if expected_architecture is None or expected_architecture != executable_architecture or expected_architecture != host_architecture:
+            raise N03AuditError("N03 expected architecture is inconsistent")
     for key in ("first_smoke", "reopen_smoke"):
         if not isinstance(launches.get(key), Mapping) or launches[key].get("status") != "PASS":
             raise N03AuditError(f"N03 {key} is not PASS")
@@ -474,9 +513,23 @@ def run_audit(
     attestation: Path,
     output: Path,
     timeout: float,
+    expected_architecture: str | None = None,
 ) -> dict[str, Any]:
     if sys.platform != "darwin":
         raise N03HostRequired("N03 install-lifecycle audit requires macOS")
+    requested_architecture = expected_architecture
+    if requested_architecture is not None:
+        expected_architecture = canonical_architecture(requested_architecture)
+        if expected_architecture is None:
+            raise N03HostRequired(f"unsupported expected architecture: {requested_architecture}")
+    host_architecture = canonical_architecture(platform.machine())
+    host_translation = host_translation_label()
+    if host_architecture is None or host_translation != "native":
+        raise N03HostRequired("N03 host architecture is not proven native")
+    if expected_architecture is not None:
+        host_matches, reason = native_host_matches(expected_architecture)
+        if not host_matches:
+            raise N03HostRequired(reason)
     source = _require_existing(source, label="source artifact")
     if source.suffix.lower() != ".dmg" and not source.name.endswith(".app"):
         raise N03AuditError("source artifact must be a .app or .dmg")
@@ -497,6 +550,14 @@ def run_audit(
             raise N03AuditError("installed executable must be a regular file")
         executable_sha256 = _sha256_file(executable)
         installed_app_sha256 = _sha256_path(installed_app)
+        executable_identity = detect_executable_architecture(executable)
+        executable_architecture = canonical_architecture(str(executable_identity.get("architecture") or ""))
+        if executable_architecture is None or executable_identity.get("verified") is not True:
+            raise N03AuditError("installed executable architecture is not independently verified")
+        if expected_architecture is not None and executable_architecture != expected_architecture:
+            raise N03AuditError(
+                f"installed executable architecture mismatch: expected {expected_architecture}, got {executable_architecture}"
+            )
         installation.update(
             {
                 "installed_app": str(installed_app),
@@ -504,6 +565,10 @@ def run_audit(
                 "source_artifact_sha256": artifact_sha256,
                 "installed_app_sha256": installed_app_sha256,
                 "executable_sha256": executable_sha256,
+                "executable_architecture": executable_architecture,
+                "expected_architecture": expected_architecture,
+                "host_architecture": host_architecture,
+                "host_translation": host_translation,
             }
         )
         installation.update(_observe_security(installed_app))
@@ -513,6 +578,8 @@ def run_audit(
             artifact_sha256=artifact_sha256,
             executable_sha256=executable_sha256,
         )
+        if canonical_architecture(str(provenance.get("architecture") or "")) != executable_architecture:
+            raise N03AuditError("N03 provenance architecture does not match installed executable")
         env = os.environ.copy()
         env.update(
             {
@@ -546,6 +613,7 @@ def run_audit(
                 report_path=first_smoke_report_path,
                 timeout=timeout,
                 env=env,
+                expected_architecture=expected_architecture,
             )
             reopen = _validate_worker_phase(
                 _run_worker(
@@ -566,6 +634,7 @@ def run_audit(
                 report_path=reopen_smoke_report_path,
                 timeout=timeout,
                 env=env,
+                expected_architecture=expected_architecture,
             )
             seed_evidence = seed["evidence_pack"]
             reopen_evidence = reopen["evidence_pack"]
@@ -594,7 +663,8 @@ def run_audit(
                 "platform": {
                     "os": platform.system(),
                     "os_version": platform.platform(),
-                    "architecture": platform.machine(),
+                    "architecture": host_architecture,
+                    "translation": host_translation,
                     "python": platform.python_version(),
                 },
                 "profile_attestation": profile_attestation,
@@ -642,6 +712,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--profile-attestation", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--timeout", type=float, default=180.0)
+    parser.add_argument("--expected-architecture", default=None)
     args = parser.parse_args(argv)
     paths = [args.app or args.dmg, args.provenance_report, args.profile_attestation, args.output]
     if any(not Path(path).is_absolute() for path in paths):
@@ -655,6 +726,7 @@ def main(argv: list[str] | None = None) -> int:
             attestation=args.profile_attestation,
             output=args.output,
             timeout=args.timeout,
+            expected_architecture=args.expected_architecture,
         )
         _write_new_json(args.output, report)
     except (N03HostRequired, N03AuditError, OSError, subprocess.SubprocessError) as exc:

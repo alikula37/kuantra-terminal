@@ -43,6 +43,24 @@ gh release verify-asset v1.0.0 Kuantra-Terminal-1.0.0-arm64.dmg --repo alikula37
 Bu GitHub kanıtı Apple Gatekeeper güveninin yerine geçmez. Release public değilse
 komutları çalıştıran hesabın repository read erişimi olmalıdır.
 
+## Pilot ekibinin teknik doğrulama rolü
+
+Bu ekip yalnızca uygulamayı kullanmayacak; farklı Mac mimarilerinde gerçek cihaz
+kanıtı da sağlayabilir. Apple Silicon kullanan kişi `arm64`, Intel kullanan kişi
+`x86_64` DMG'yi indirmelidir. Intel Mac arm64 DMG'yi çalıştırmaz; iki mimari dosya
+birbirinin yerine kullanılmaz.
+
+Intel katılımcıdan şu bilgiler ve sonuçlar istenir: **About This Mac** ekranındaki
+model ve macOS sürümü, Terminal'de `uname -m` çıktısı, uygulamanın açılış sonucu ve
+sentetik test akışında import preview → review → Evidence Pack → export → close/reopen
+sonuçları. Bu kayıtlar Intel cihazın runtime doğrulamasıdır; başka Mac modelleri için
+genel destek garantisi değildir.
+
+Pilot sahibi teknik N03 install-lifecycle kanıtı istiyorsa, ayrı temiz bir macOS
+profilinde `run_n03_macos_clean_profile_audit.py` çalıştırılmalı ve
+`--expected-architecture x86_64` Intel cihazda açıkça verilmelidir. Normal kişisel
+profilde yapılan deneme pilot runtime kanıtıdır; temiz profil kanıtı olarak yazılmaz.
+
 ## Kurulum ve ilk açılış
 
 1. Doğru DMG'yi çift tıklayın.

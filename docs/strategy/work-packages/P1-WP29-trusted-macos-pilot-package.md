@@ -17,9 +17,10 @@ release_gate: owner-pilot-approval, exact-dual-architecture-evidence
 
 Üç kişilik kapalı macOS pilotu için iki native mimari DMG'yi, exact mounted-DMG
 smoke/N05 kanıtını, manifest/checksum dosyalarını ve teknik olmayan kullanıcı
-talimatını tek fail-closed paket akışına bağlamak. Apple Developer ID alınmadığı
-sürece paket **trusted pilot only** olarak kalır; production veya commercial support
-claim'i açmaz.
+talimatını tek fail-closed paket akışına bağlamak. Pilot ekip aynı zamanda kontrollü
+doğrulama grubudur: Intel katılımcı, hazır x86_64 DMG üzerinde runtime ve N03
+install-lifecycle kanıtı sağlayabilir. Apple Developer ID alınmadığı sürece paket
+**trusted pilot only** olarak kalır; production veya commercial support claim'i açmaz.
 
 ## Kabul kriterleri
 
@@ -43,13 +44,18 @@ claim'i açmaz.
       bütünlüğü kontrol edilir; pilot talimatı indirilen DMG'de aynı kontrolü ister.
       Bu kontrol Gatekeeper, malware taraması, Developer ID veya notarization yerine
       geçmez; hiçbir güvenlik bypass'ı eklenmez.
+- [x] Pilot ekip yalnızca paket tüketicisi olarak değil, native Intel Mac runtime/N03
+      doğrulama hostu olarak da kullanılabilir; expected architecture, source provenance
+      ve temiz profil koşulu kanıtlanmadan Intel veya production claim'i açılmaz.
 - [x] Mac mini üzerinde `6646332` source commit'i için arm64 exact DMG, `hdiutil verify`
       (`VALID`), read-only mounted WKWebView smoke ve ad-hoc N05 evidence zinciri yeniden
       üretildi; N05 sonucu bilinçli olarak `BLOCKED/OWNER_REVIEW_REQUIRED` kaldı.
-- [ ] Gerçek x86_64 native runner job'ı, exact DMG ve smoke/N05 zincirini üretir. Mevcut
-      GitHub billing/spending-limit durumu çözülmeden bu kriter kapanmaz.
+- [ ] Gerçek x86_64 native host (hosted runner veya açıkça seçilmiş pilot Intel Mac),
+      exact DMG ve smoke/N05 zincirini üretir. GitHub billing/spending-limit durumu
+      hosted yolu kapatırsa pilot Intel Mac kontrollü build hostu olabilir.
 - [ ] N03 temiz ikinci Mac profil/host install → launch → import/review → close/reopen
-      kanıtı tamamlanır. Bu paket kodla varsayılan olarak PASS ilan etmez.
+      kanıtı tamamlanır; pilot Intel Mac'i bu host olabilir. Bu paket kodla varsayılan
+      olarak PASS ilan etmez.
 - [ ] Owner, üç pilot için private repository read erişimi ve pilot Release/tag onayını
       verir. Bu çalışma sırasında Release/tag oluşturulmaz veya asset yüklenmez.
 

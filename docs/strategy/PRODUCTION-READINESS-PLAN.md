@@ -3,7 +3,7 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.37
+version: 1.0.38
 status: Proposed
 date: 2026-09-10
 reviewed_commit: this change
@@ -41,7 +41,7 @@ uygulanmıştır; owner kararıyla host çalıştırması son macOS dağıtım/p
 kapısına ertelenmiştir ve ikinci host/profile kanıtı olmadan PASS/production iddiası yoktur.
 N04 manual update/uninstall veri koruma audit'i bounded non-release kanıtla tamamlanıp
 arşivlenmiştir. P1-WP28 macOS 12+ native arm64/x86_64 artifact ve provenance zincirini
-kapatan teknik pakettir; Intel destek claim'i native Intel CI kanıtı olmadan açılmaz.
+kapatan teknik pakettir; Intel destek claim'i native Intel host kanıtı olmadan açılmaz.
 P1-WP29 bu iki mimari kanıtı Apple Developer ID olmadan yalnızca trusted pilot için
 dağıtılabilir ve hash'lenebilir bir pakete bağlar; ad-hoc paket production sayılmaz.
 Aşağıdaki diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış
@@ -53,9 +53,11 @@ ve tag işlemlerini başlatmaz. Bunlar ilgili aşamada kapsam ve ürün sahibi o
 
 **Owner decision (2026-09-10):** İlk production sürümü yalnızca macOS için hedeflenir.
 Dağıtım macOS 12 Monterey veya üzeri için ayrı native arm64 ve x86_64 Developer ID imzalı,
-notarize edilmiş DMG'ler ile yapılır. Intel desteği native Intel CI build + exact mounted-DMG
-smoke kanıtıyla kapatılır; fiziksel Intel pilotu ek güven kanıtıdır. Apple Developer üyeliği,
-signing erişimi ve gerçek notarization işlemi Release Candidate aşamasına kadar ertelenir.
+notarize edilmiş DMG'ler ile yapılır. Intel desteği native Intel host build + exact
+mounted-DMG smoke kanıtıyla kapatılır. Üç kişilik pilot ekipteki Intel Mac, hazır x86_64
+artifact için runtime/N03 doğrulaması sağlayabilir; kontrollü koşullar kaydedilirse native
+build hostu olarak da kullanılabilir. Apple Developer üyeliği, signing erişimi ve gerçek
+notarization işlemi Release Candidate aşamasına kadar ertelenir.
 KDG-002'nin üç-OS politikası kaldırılmaz; yalnızca ileride açıkça onaylanan multi-platform
 release için yeniden devreye girer.
 
@@ -398,8 +400,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 18. P1-WP27: G0–G2 supported matrix, bağımsız oracle ve packaged
     import→review→export→reopen acceptance audit; tamamlandı/arşivlendi `e042790`.
 19. P1-WP28 macOS 12+ native arm64/x86_64 compatibility, executable-derived provenance,
-    per-architecture exact DMG smoke ve dual-runner release contract'ını tamamla. Intel
-    claim'i native x86_64 CI kanıtı olmadan açılmaz; Universal2 kabul edilmez.
+    per-architecture exact DMG smoke ve native-host release contract'ını tamamla. Intel
+    claim'i native x86_64 host kanıtı olmadan açılmaz; hosted CI tercih edilir, kontrollü
+    pilot Intel Mac'i alternatif build/runtime hostu olabilir; Universal2 kabul edilmez.
 20. N03–N06 owner/host bağımlılıkları kapsamlarına göre ilerler. N03 host çalıştırması
     final macOS distribution/pilot validation'a ertelenmiştir; N04 bounded audit'i
     tamamlanıp arşivlenmiştir. N05'in read-only artifact preflight kodu N03 host kanıtı
@@ -424,9 +427,10 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    import→review→export→reopen kabul denetimini tamamla; B2 kapsamını kanıtla
    netleştir. (Tamamlandı/arşivlendi `e042790`; bounded Mac kanıtı, release kanıtı değil.)
 5. P1-WP28 ile macOS 12+ native arm64/x86_64 build, exact DMG smoke, executable-derived
-   provenance ve dual-runner release contract'ını tamamla. Native Intel CI kanıtı
-   gelmeden Intel supported claim'i açma; fiziksel Intel pilotunu ek güven kanıtı olarak
-   tut. Universal2/cross-build kullanma. Rosetta translation durumu native kanıt sayılmaz.
+   provenance ve native-host release contract'ını tamamla. Native Intel host kanıtı
+   gelmeden Intel supported claim'i açma. Hosted Intel CI tercih edilir; pilot ekibin Intel
+   Mac'i hazır artifact runtime/N03 testine veya kontrollü native build'e katkı sağlayabilir.
+   Universal2/cross-build kullanma. Rosetta translation durumu native kanıt sayılmaz.
 6. P1-WP29 ile iki native zinciri private GitHub Release'e taşınabilir trusted pilot
    paketine bağla; exact reports, manifest, SHA256SUMS ve kullanıcı talimatını üret.
    Intel zinciri eksikse paketleme exit 2 ile durur; GitHub Release/tag oluşturma veya
@@ -456,6 +460,14 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.38 — 2026-09-10
+
+- Pilot ekip teknik doğrulama grubu olarak tanımlandı. Native Intel Mac, hazır x86_64
+  artifact üzerinde runtime/N03 kanıtı sağlayabilir; kontrollü koşullar ve tam provenance
+  kaydı mevcutsa native build hostu olarak da kullanılabilir.
+- P1-WP28 ve N03 sırası, hosted Intel CI'nin tek yol olmadığı; Rosetta/arm64 kanıtının
+  Intel kanıtı sayılamayacağı açık kalacak şekilde güncellendi.
 
 ### 1.0.35 — 2026-09-10
 

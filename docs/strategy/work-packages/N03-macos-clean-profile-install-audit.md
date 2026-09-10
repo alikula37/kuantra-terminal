@@ -29,10 +29,12 @@ launch → temiz local data oluşturma → sentetik import/review/export → clo
 
 Harness ve source-level testler korunur; ancak clean-profile host çalıştırması ürün
 sahibinin kararıyla günlük geliştirme blocker'ı olmaktan çıkarılmış ve son macOS
-dağıtım/pilot doğrulama kapısına (`G4/G5`) ertelenmiştir. Bu bir PASS veya COMPLETE
-değildir. N04 ve diğer bounded geliştirme paketleri önce ilerleyebilir; pilot ya da
-production doğrulamasından önce bu paket gerçek temiz profil/host ve hedef artifact
-ile çalıştırılmalı, tüm kabul kanıtı kaydedilmelidir.
+dağıtım/pilot doğrulama kapısına (`G4/G5`) ertelenmiştir. Üç kişilik pilot ekipten
+native Intel Mac sahibi olan kişi bu host çalıştırmasını sağlayabilir; hazır x86_64
+artifact, source provenance ve açık host attestation ile test edilir. Bu bir PASS veya
+COMPLETE değildir. N04 ve diğer bounded geliştirme paketleri önce ilerleyebilir; pilot
+ya da production doğrulamasından önce bu paket gerçek temiz profil/host ve hedef
+artifact ile çalıştırılmalı, tüm kabul kanıtı kaydedilmelidir.
 
 ## Mevcut blocker
 
@@ -40,7 +42,9 @@ ile çalıştırılmalı, tüm kabul kanıtı kaydedilmelidir.
 geçici `KUANTRA_DATA_DIR` kullanımı veya mevcut checkout'ın silinip yeniden açılması
 temiz ikinci profil/host kanıtı sayılmaz. Gerçek kullanıcı hesabı oluşturma, admin
 onayı, Gatekeeper/quarantine değişikliği veya başka host erişimi kullanıcı/host sahibi
-tarafından sağlanmalıdır. Bu paket, host hazır olmadan sonucu PASS/COMPLETE olarak
+tarafından sağlanmalıdır. Pilot Intel Mac'i kullanılacaksa temiz ve dedicated bir profil
+attestation'ı N03 için gerekir; normal pilot hesabı runtime kanıtı sağlayabilir, fakat
+clean-profile PASS'ı değildir. Bu paket, host hazır olmadan sonucu PASS/COMPLETE olarak
 işaretlemez; host çalıştırması final validation aşamasına kadar bekletilir.
 
 ## Uygulanan audit harness — kabul kısmi, host blocker açık
@@ -56,12 +60,13 @@ Evidence Pack snapshot'ını doğrular. `PARTIAL`/`UNKNOWN` coverage `PASS` veya
 çevrilmez; funding/transfer schema/event sınırı scope guard ile fail-closed kalır.
 
 `scripts/run_n03_macos_clean_profile_audit.py` explicit `.app` veya read-only mounted
-`.dmg` seçer, source artifact ile executable hash'ini provenance raporuna bağlar,
-quarantine/Gatekeeper sonucunu yalnız gözlemler, installed executable üzerinde
-WKWebView smoke çalıştırır ve packaged worker'ın gerçekten seçilen executable'dan
-çalıştığını doğrular. Final validator eksik provenance, hash mismatch, source-process
-worker, reopen identity farkı veya unsupported production/signing/network claim'ini
-PASS saymaz.
+`.dmg` seçer, DMG ise mount öncesinde `hdiutil verify` çalıştırır, source artifact ile
+executable hash'ini provenance raporuna bağlar, expected architecture verilirse host ve
+installed executable mimarisini native olarak doğrular, quarantine/Gatekeeper sonucunu
+yalnız gözlemler, installed executable üzerinde WKWebView smoke çalıştırır ve packaged
+worker'ın gerçekten seçilen executable'dan çalıştığını doğrular. Final validator eksik
+provenance, hash mismatch, source-process worker, reopen identity farkı veya unsupported
+production/signing/network claim'ini PASS saymaz.
 
 Red → green kanıtı:
 
@@ -124,20 +129,24 @@ install→launch→synthetic value-chain→close/reopen koşulları hâlâ gerek
    notarization, stapled ticket veya commercial distribution iddiası N03'ten çıkmaz;
    bunlar N05 ve owner/release kapılarıdır.
 6. Test başarısı bu host/profile/lifecycle kanıtı ile sınırlıdır; Windows/Linux,
-   Intel Mac, kullanıcı pilotu, update/uninstall policy veya production support limiti
-   iddia edilmez.
+   Intel Mac pilot hostu, update/uninstall policy veya production support limiti ayrıca
+   kanıtlanmadan genellenmez.
 
 ## Acceptance criteria
 
 - [ ] İkinci temiz macOS profil/host, OS version/architecture ve temiz başlangıç
-  koşulları sahibi tarafından seçilip kanıtlanıyor; geliştirici cache/credential veya
-  önceki Kuantra data'sı bulunmadığı kaydediliyor.
+  koşulları sahibi tarafından seçilip kanıtlanıyor; bu host pilot ekibin native Intel
+  Mac'i olabilir. Geliştirici cache/credential veya önceki Kuantra data'sı bulunmadığı
+  kaydediliyor.
 - [ ] Seçilen packaged artifact'in source commit, provenance status, executable SHA-256
   ve artifact SHA-256 değerleri raporlanıyor; artifact mismatch veya eksik provenance
   fail-closed kalıyor.
 - [ ] App kopyalama/ilk açılış ve varsa quarantine/Gatekeeper davranışı gözlenip
   explicit sonuç olarak kaydediliyor; approval gerektiğinde kullanıcı/host sahibi
   onayı olmadan atlanmıyor.
+- [ ] DMG kullanılıyorsa mount öncesi `hdiutil verify` PASS ve expected architecture
+  verildiyse native host/executable eşleşmesi raporda yer alıyor; bu kontroller
+  Developer ID/notarization yerine sayılmıyor.
 - [ ] İlk launch temiz private data directory oluşturuyor; Windows/migration bundle,
   kullanıcı credential'ı veya mevcut checkout verisi okunmadan startup tamamlanıyor.
 - [ ] Sentetik import preview → import → review/discrepancy → Evidence Pack →
@@ -165,7 +174,9 @@ install→launch→synthetic value-chain→close/reopen koşulları hâlâ gerek
 1. Host/profile sahibi ve temiz koşul onayını kaydet; mevcut `.codex/` ve kullanıcı
    dosyalarını silmeden izole test alanını doğrula.
 2. P1-WP27 artifact/provenance hash'lerini doğrula ve quarantine davranışını gözle.
-3. Temiz profile ilk launch ve synthetic import/review/export/reopen akışını çalıştır.
+3. Seçilen architecture için temiz profile ilk launch ve synthetic
+   import/review/export/reopen akışını çalıştır; Intel pilot host kullanılıyorsa
+   `--expected-architecture x86_64` seçeneğini geçir.
 4. Close/reopen, data-preservation ve no-secret/no-network sınırlarını doğrula.
 5. Red → green focused evidence, docs gate ve local CI sonuçlarını bu pakete yaz.
 6. Kanıt eksikse paketi açık bırak; bu owner kararıyla final validation'a kadar

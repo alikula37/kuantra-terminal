@@ -42,9 +42,11 @@ paketin dışındadır. Windows/Linux release claim’i açılmaz.
 - [ ] Her artifact için read-only mounted-DMG smoke, native WKWebView identity,
       executable/DMG SHA-256 ve source commit aynı kanıt zincirindedir; arm64 PASS,
       x86_64 evidence bekliyor.
-- [ ] Intel job gerçek x86_64 GitHub macOS runner’ında build, test, package ve exact
-      smoke çalıştırır. Fiziksel Intel pilotu ek güven kanıtıdır; bu paket için zorunlu
-      değildir.
+- [ ] Native x86_64 build hostu (tercihen `macos-15-intel`, gerektiğinde açıkça seçilmiş
+      Intel pilot Mac) build, test, package ve exact smoke çalıştırır. Pilot ekibin Intel
+      Mac'i hazır x86_64 artifact üzerinde ayrıca runtime/N03 kanıtı sağlayabilir. Her iki
+      yol da source commit, lock hash, temiz tree, executable/DMG hash ve native host
+      kimliğini raporlar; Rosetta veya arm64 artifact Intel kanıtı sayılmaz.
 - [ ] Manifest ve Phase 0 audit iki macOS architecture raporunu eşleştirir; tek
       mimari eksikse release-facing audit geçmez. Kod/test sözleşmesi hazır, gerçek
       x86_64 raporu olmadan kriter kapanmaz.
@@ -63,9 +65,10 @@ Windows/Linux ve ticari lisans/notices kararı eklenmez.
 Önce architecture/provenance/packaging/workflow red testleri çalıştırılır. Sonra:
 
 1. Mac mini üzerinde arm64 locked local CI ve focused regression (**PASS**, `bb6ce7c`);
-2. `macos-15-intel` native runner üzerinde x86_64 locked dependency, test, build,
-   DMG ve mounted smoke (**BLOCKED before job startup**: GitHub account billing/
-   spending-limit condition);
+2. Native Intel host üzerinde x86_64 locked dependency, test, build, DMG ve mounted
+   smoke. Reproducible hosted path `macos-15-intel` (**BLOCKED before job startup**:
+   GitHub account billing/spending-limit condition); kontrollü pilot Intel Mac alternatif
+   host yoludur ve aynı provenance sözleşmesini karşılamalıdır;
 3. iki raporun truth matrix, manifest ve Phase 0 audit ile doğrulanması;
 4. docs/link registry ve tam backend/frontend gate.
 
@@ -73,8 +76,9 @@ Release-workflow app and final-DMG smoke steps explicitly set
 `KUANTRA_MARKET_DATA_ENABLED=false`; this is a test boundary, not a change to the
 runtime default (`true`).
 
-CI veya dependency kanıtı üretilemezse Intel durumu `HOST_REQUIRED/BLOCKED` kalır;
-destek matrisi sessizce PASS yapılmaz. Current arm64 exact evidence: executable
+Native Intel build veya dependency kanıtı üretilemezse Intel durumu `HOST_REQUIRED/BLOCKED`
+kalır; destek matrisi sessizce PASS yapılmaz. Hazır x86_64 artifact sonrasında pilot Intel
+Mac runtime/N03 kanıtı ayrıca kaydedilebilir. Current arm64 exact evidence: executable
 `cfb75d0a9b1aeb00bce657bb0b393284453ed8975856a5b50231312150c47924`, DMG
 `4801d3c14fc3ffd4ef07af88a3b36c7eb1ef03032cdd6684227c500bbe8a0eb2`, mounted smoke
 report `5ae96513963999df5284fb5b1d56d12fcaa2eda0d938e4942b287ac20e7d30eb` and

@@ -63,6 +63,11 @@ def _valid_report():
             "source_artifact_sha256": "a" * 64,
             "installed_app_sha256": "b" * 64,
             "executable_sha256": "c" * 64,
+            "dmg_image_integrity": "NOT_APPLICABLE",
+            "executable_architecture": "arm64",
+            "expected_architecture": None,
+            "host_architecture": "arm64",
+            "host_translation": "native",
             "quarantine": {"status": "NOT_PRESENT"},
             "gatekeeper": {"status": "OBSERVED"},
         },
@@ -70,6 +75,7 @@ def _valid_report():
             "provenance_status": "COMPLETE",
             "artifact_sha256": "a" * 64,
             "executable_sha256": "c" * 64,
+            "architecture": "arm64",
         },
         "launches": {
             "first_smoke": {"status": "PASS"},
@@ -126,6 +132,18 @@ def test_n03_report_requires_persistent_reopen_identity():
     report = _valid_report()
     report["value_chain"]["reopen"]["identity_preserved"] = False
     with pytest.raises(ValueError, match="identity"):
+        validate_n03_report(report)
+
+
+def test_n03_report_requires_verified_dmg_and_architecture_binding():
+    report = _valid_report()
+    report["installation"]["source_kind"] = "DMG"
+    with pytest.raises(ValueError, match="image integrity"):
+        validate_n03_report(report)
+
+    report = _valid_report()
+    report["installation"]["executable_architecture"] = "x86_64"
+    with pytest.raises(ValueError, match="architecture"):
         validate_n03_report(report)
 
 

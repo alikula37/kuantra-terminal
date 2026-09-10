@@ -139,9 +139,10 @@ olarak kalır.
 
 ## Üç pilot için önerilen işlem zinciri
 
-1. Aynı source commit üzerinde iki native job'ın locked dependency, backend/frontend
-   test, build, package ve exact read-only mounted-DMG WKWebView smoke sonuçları PASS
-   olur.
+1. Aynı source commit üzerinde iki native build zincirinin (hosted Intel runner veya
+   açıkça kontrollü Intel pilot Mac dahil) locked dependency, backend/frontend test,
+   build, package ve exact read-only mounted-DMG WKWebView smoke sonuçları PASS olur.
+   Arm64 Mac mini ve Intel pilot Mac farklı mimari dosyaları kullanır.
 2. `scripts/prepare_pilot_package.py` iki DMG'yi; iki final smoke raporunu; iki N05
    raporunu; standalone talimatı; `PILOT-MANIFEST.json` ve `SHA256SUMS` dosyasını
    üretir. Eksik Intel kanıtında exit 2 ile durur; arm64 tek başına paketlenmez. Aynı
@@ -159,8 +160,9 @@ olarak kalır.
    architecture DMG'si paylaşılır; kullanıcı `shasum -a 256 -c SHA256SUMS` çalıştırır
    ve ilk açılışta manuel Gatekeeper onayı verir.
 6. Pilot akışı import preview → reconciliation → review → Evidence Pack → export
-   olarak izlenir. Kullanıcı verisi consent/redaction sınırında tutulur; credential,
-   gerçek broker order veya transfer işlemi kullanılmaz.
+   olarak izlenir. Intel katılımcı, kendisine verilen x86_64 DMG üzerinde gerçek cihaz
+   açılışı ve close/reopen sonucunu da doğrular. Kullanıcı verisi consent/redaction
+   sınırında tutulur; credential, gerçek broker order veya transfer işlemi kullanılmaz.
 7. Sorun raporu yalnızca sürüm, architecture, OS/model, checksum sonucu ve redakte
    edilmiş hata bilgisi içerir. User-value, production veya ticari support sonucu
    bu küçük pilotun teknik paketinden türetilmez.
@@ -181,9 +183,11 @@ Bu araştırmanın kod karşılığı:
   checksum, kurulum, Gatekeeper ve veri sınırı talimatlarıdır.
 
 Şu an package assembly'nin kapanması için gerekli Intel `x86_64` DMG ve exact smoke/N05
-raporu yoktur. Mevcut GitHub billing/spending-limit blocker çözülmeden script bilinçli
-olarak paket üretmez. N03 temiz ikinci profil/host, Apple Developer ID/notarization ve
-owner pilot erişim/approval kararları da ayrı kapılardır.
+raporu yoktur. Mevcut GitHub billing/spending-limit blocker hosted yolu kapatmaktadır;
+script, kontrollü native Intel pilot Mac'inden aynı provenance kanıtı gelene kadar
+bilinçli olarak paket üretmez. Sonrasında Intel pilot hostu runtime/N03 kanıtını da
+sağlayabilir. N03 temiz ikinci profil/host, Apple Developer ID/notarization ve owner
+pilot erişim/approval kararları ayrı kapılardır.
 
 ## Açık kararlar ve sınırlar
 
