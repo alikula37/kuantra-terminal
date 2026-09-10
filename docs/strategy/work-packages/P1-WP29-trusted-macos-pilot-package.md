@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: 25ce02a
+implementation_commit: 6f8b1ed
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
@@ -55,21 +55,29 @@ olarak kalır; production veya commercial support claim'i açılmaz.
 - [x] Mac mini üzerinde `6646332` source commit'i için arm64 exact DMG, `hdiutil verify`
       (`VALID`), read-only mounted WKWebView smoke ve ad-hoc N05 evidence zinciri yeniden
       üretildi; N05 sonucu bilinçli olarak `BLOCKED/OWNER_REVIEW_REQUIRED` kaldı.
-- [x] Güncel source commit `25ce02a`'dan M-series arm64-only pilot paketi üretildi;
+- [x] Güncel source commit `6f8b1ed`'dan M-series arm64-only pilot paketi üretildi;
       manifest, checksum doğrulaması ve standalone M-series talimatı aynı pakette bulunur.
       Paket `dual_architecture_complete=false`, `intel_artifact_included=false` ve
       `intel_support_claim=false` alanlarını taşır. Paket durumu
-      `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`'tır; manifest SHA-256
-      `88fe31e700b34f1a990dce427fe49dec1eb1914dde99fe7eb6580cea1362852b`,
-      `SHA256SUMS` SHA-256 `2791053bd8ebb11402e0f53083813d66db978e145ad6e5e40b3668ed2be4ffbd`.
+      `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`'tır; pilot tag'i
+      `pilot-v1.0.0-arm64`, manifest SHA-256
+      `cdcb68b0cc662e2d54a2805b4d8672c258f1ad9f2df37d44420bca5c56594f10`,
+      `SHA256SUMS` SHA-256 `53610c49f7dd10e89cf13070e5d423e88fb1e50100352df90fa956967dcdeab9`.
+- [x] M-series private prerelease Release, `pilot-v1.0.0-arm64` tag'i ile
+      yayımlandı; altı asset'in GitHub SHA-256 digest'i local `SHA256SUMS` ve
+      manifest ile eşleşir. Release URL'si:
+      `https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`.
 - [ ] Gerçek x86_64 native host (hosted runner veya açıkça seçilmiş pilot Intel Mac),
       exact DMG ve smoke/N05 zincirini üretir. GitHub billing/spending-limit durumu
       hosted yolu kapatırsa pilot Intel Mac kontrollü build hostu olabilir.
 - [ ] N03 temiz ikinci Mac profil/host install → launch → import/review → close/reopen
       kanıtı tamamlanır; pilot Intel Mac'i bu host olabilir. Bu paket kodla varsayılan
       olarak PASS ilan etmez.
-- [ ] Owner, üç pilot için private repository read erişimi ve pilot Release/tag onayını
-      verir. Bu çalışma sırasında Release/tag oluşturulmaz veya asset yüklenmez.
+- [x] Owner-approved M-series pilot tag'i `pilot-v1.0.0-arm64` ile private prerelease
+      yayımlanır ve altı asset yüklenir. Canonical `v1.0.0` dual Release/tag'i bu paketle
+      oluşturulmaz.
+- [ ] Owner, üç pilot kullanıcı için private repository read erişimini verir; erişim
+      davetleri bu çalışma sırasında otomatik gönderilmez.
 
 ## Ürün ve güvenlik sınırı
 
@@ -103,21 +111,21 @@ shasum -a 256 -c dist/pilot-package-v1.0.0/SHA256SUMS
 
 ### Güncel M-series çalıştırması
 
-2026-09-10 tarihinde `25ce02a` source commit'i ile aşağıdaki zincir PASS oldu:
+2026-09-10 tarihinde `6f8b1ed` source commit'i ile aşağıdaki zincir PASS oldu:
 
-- `uv run --offline --no-project --with-requirements backend/requirements.lock python scripts/run_local_ci.py --expected-architecture arm64 --report dist/p1-wp29-local-ci-arm64-pilot.json --smoke-timeout 90` → **MERGE READY**; backend **815 passed / 2 warnings**, frontend **25/104**, i18n **608/608**, native arm64 build/smoke ve provenance `COMPLETE`. Local-CI report SHA-256: `4624f4f03c88cef8258c1158830556b21102f0e11fbf5e6b8d791485b51f192a`.
-- `bash scripts/package_macos.sh --architecture arm64 --output dist/Kuantra-Terminal-1.0.0-arm64.dmg` → **PASS**; `hdiutil verify` exact image için `VALID`. DMG SHA-256: `a8b5204f0bb37ead68566c63656d3f0908eba259c341e953591bf1a713ca1d99`.
-- `.venv/bin/python scripts/smoke_macos_dmg.py --dmg dist/Kuantra-Terminal-1.0.0-arm64.dmg --expected-architecture arm64 --report dist/final-smoke-arm64.json` → **PASS**; exact read-only mounted executable, native WKWebView/controller ve detach. Mounted executable SHA-256: `def6b706fd076b6048193380d55638100710b5466e718d30271d578c421b9d38`; report SHA-256: `6bace1057e2b776f9fda1bed4911ef09de59bf3b477e80f0679f657bc452108f`.
-- `.venv/bin/python scripts/run_n05_macos_distribution_preflight.py ...` → **BLOCKED/OWNER_REVIEW_REQUIRED** (exit 2), çünkü ad-hoc artifact Developer ID/notarization ticket taşımıyor. Report SHA-256: `c9bf62099d3b326908248539baa286fcdf1c4092899ba7f6e56266b42105d7a7`.
-- `.venv/bin/python scripts/prepare_pilot_package.py --architecture arm64 --dist dist --output dist/pilot-package-v1.0.0-arm64` → **PASS**; package type `TRUSTED_MACOS_PILOT_ARM64`, scope `APPLE_SILICON_M_SERIES_ONLY`, status `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`. Paket içindeki beş dosyanın `shasum -a 256 -c SHA256SUMS` doğrulaması **OK**.
+- `uv run --offline --no-project --with-requirements backend/requirements.lock python scripts/run_local_ci.py --expected-architecture arm64 --report dist/p1-wp29-local-ci-arm64-release.json --smoke-timeout 90` → **MERGE READY**; backend **816 passed / 2 warnings**, frontend **25/104**, i18n **608/608**, native arm64 build/smoke ve provenance `COMPLETE`. Local-CI report SHA-256: `d2dd6d663441c0202e8940018111a8190589ce82a3e1324c040ab6aea02595ae`.
+- `bash scripts/package_macos.sh --architecture arm64 --output dist/Kuantra-Terminal-1.0.0-arm64.dmg` → **PASS**; `hdiutil verify` exact image için `VALID`. DMG SHA-256: `d2f8151e24e29ae0a3800165d823dfd3e6f44a2ef3b95f04674a6ed9ead6e540`.
+- `.venv/bin/python scripts/smoke_macos_dmg.py --dmg dist/Kuantra-Terminal-1.0.0-arm64.dmg --expected-architecture arm64 --report dist/final-smoke-arm64-release.json` → **PASS**; exact read-only mounted executable, native WKWebView/controller ve detach. Mounted executable SHA-256: `c76315073ef72687bef2bb90dc9c0ec5adfdc1aff912898aa717562aaae2e870`; report SHA-256: `40573464091be5d43a3c31b973980559ebc4fe1112a4fa87948f37a428cda080`.
+- `.venv/bin/python scripts/run_n05_macos_distribution_preflight.py ...` → **BLOCKED/OWNER_REVIEW_REQUIRED** (exit 2), çünkü ad-hoc artifact Developer ID/notarization ticket taşımıyor. Report SHA-256: `19fa90a538db42d9a110b58359c2c55a33e87cb3a082f9494f25fa948a092eb4`.
+- `.venv/bin/python scripts/prepare_pilot_package.py --architecture arm64 --pilot-tag pilot-v1.0.0-arm64 --dist dist --output dist/pilot-package-pilot-v1.0.0-arm64` → **PASS**; package type `TRUSTED_MACOS_PILOT_ARM64`, scope `APPLE_SILICON_M_SERIES_ONLY`, status `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`. Paket içindeki beş dosyanın `shasum -a 256 -c SHA256SUMS` doğrulaması **OK**; manifest SHA-256 `cdcb68b0cc662e2d54a2805b4d8672c258f1ad9f2df37d44420bca5c56594f10`, `SHA256SUMS` SHA-256 `53610c49f7dd10e89cf13070e5d423e88fb1e50100352df90fa956967dcdeab9`.
 
-Paket yolu: `dist/pilot-package-v1.0.0-arm64/`. Bu çalışma kullanıcı verisi,
-credential, Keychain veya migration bundle kullanmadı; GitHub Release/tag/upload ve
-üç pilot cihazında gerçek install-lifecycle çalıştırması owner/host kapısı olarak açık
-kalır. Sistem `python3.11` ile yapılan ilk smoke denemesi PyInstaller metadata'sı
-olmadığı için provenance eksikliğiyle durdu; locked `.venv` Python ile tekrarlandığında
-PASS oldu. Bu, paket güvenlik veya DMG bütünlüğü hatası değildir.
+Paket yolu: `dist/pilot-package-pilot-v1.0.0-arm64/`. Bu çalışma kullanıcı verisi,
+credential, Keychain veya migration bundle kullanmadı. Release private prerelease olarak
+yayındadır; üç pilot kullanıcısının repository read erişimi ve gerçek cihazlarda
+install-lifecycle çalıştırması hâlâ owner/host kapısıdır. Canonical `v1.0.0` product
+Release/tag'i ve dual package bu işlemle oluşturulmadı.
 
-çalıştırılır. GitHub Release oluşturma/upload, Apple signing/notarization, pilot daveti
-ve clean-host yürütmesi bu work package'ın kod otomasyonuna dahil değildir; owner/host
-kapılarıdır.
+çalıştırılır. Dual GitHub Release, Apple signing/notarization, pilot kullanıcı erişimi ve
+clean-host yürütmesi bu work package'ın otomatik kod kapıları değildir; owner/host
+kapılarıdır. M-series private prerelease yayımlanmış olsa da canonical product Release
+yetkisi verilmiş değildir.

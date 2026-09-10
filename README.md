@@ -35,7 +35,9 @@ hash-verified ad-hoc DMGs and manual Gatekeeper approval; this is trusted-pilot-
 public or production distribution. Pilot operators should read
 [`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md), the
 [M-series instructions](docs/release/PILOT-INSTRUCTIONS-M-SERIES.md) for the arm64-only
-package, and the
+package, and the published
+[M-series pilot Release](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64),
+then read the
 [distribution research](docs/release/PILOT-DISTRIBUTION-RESEARCH.md). A Mac must actually run
 macOS 12 or later; not every older Intel model can run Monterey, so “all Macs from the last ten
 years” is not a valid support claim. The pilot team may also supply native Intel runtime/N03

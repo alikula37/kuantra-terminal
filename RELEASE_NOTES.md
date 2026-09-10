@@ -29,8 +29,10 @@ publication is withdrawn and must not be used.
 
 Verification evidence for this candidate is recorded in the current
 `docs/strategy/STATUS.md` and the P1-WP28/P1-WP29 work-package records. A private GitHub
-Release with the separate M-series pilot tag can be used for the three-person trusted pilot
-before the Intel chain exists; `PILOT-MANIFEST.json`, `SHA256SUMS` and the standalone
+Release with the separate M-series pilot tag is published for the three-person trusted pilot
+before the Intel chain exists at
+`https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`;
+`PILOT-MANIFEST.json`, `SHA256SUMS` and the standalone
 [`PILOT-INSTRUCTIONS-M-SERIES.md`](docs/release/PILOT-INSTRUCTIONS-M-SERIES.md) make that
 package explicit. The later dual-architecture pilot still requires the x86_64 chain. An
 ad-hoc pilot DMG still requires manual Gatekeeper approval and is not a production or

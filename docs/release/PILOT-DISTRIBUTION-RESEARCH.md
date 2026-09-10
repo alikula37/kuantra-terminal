@@ -5,7 +5,8 @@
 Developer ID satın almadan güvenli ve dürüst dağıtım sınırı.
 **Ürün sınırı:** Local-first Execution Intelligence & Trade Forensics Workstation.
 
-Bu belge teknik karar kaydıdır; release, tag, Apple hesabı veya pilot daveti oluşturmaz.
+Bu belge teknik karar kaydıdır; canonical product release/tag veya pilot daveti oluşturmaz.
+M-series arm64-only private prerelease, `pilot-v1.0.0-arm64` tag'iyle yayımlanmıştır.
 Kaynakların güncel koşulları değişebileceği için resmi bağlantılar aşağıda ayrıca
 listelenmiştir.
 
@@ -164,7 +165,8 @@ olarak kalır.
    `pilot-v1.0.0-arm64` olur; `v*` ile başlamadığı için dual production workflow'unu
    yanlışlıkla tetiklemez. Tüm asset'ler yüklenir, checksum ve manifest kontrol edilir;
    immutable release etkinse draft → tüm asset'ler → publish sırası kullanılır. Canonical
-   `v1.0.0` product tag'i dual release kapıları geçmeden kullanılmaz.
+   `v1.0.0` product tag'i dual release kapıları geçmeden kullanılmaz. Mevcut M-series
+   prerelease linki [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)'dir.
 5. Pilotlara yalnızca repository read erişimi verilir. Pilot sayfası ve doğru
    architecture DMG'si paylaşılır; kullanıcı `shasum -a 256 -c SHA256SUMS` çalıştırır
    ve ilk açılışta manuel Gatekeeper onayı verir.

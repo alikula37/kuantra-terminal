@@ -22,7 +22,9 @@ pilot-v1.0.0-arm64`; this package is not a dual-architecture release and carries
 support claim. The separate `pilot-v1.0.0-arm64` tag is a private prerelease transport
 identifier, not the canonical `v1.0.0` product release tag. That transport does not provide
 Apple Developer ID trust; an ad-hoc DMG remains trusted-pilot-only and requires manual
-Gatekeeper approval. No dual product Release or canonical `v1.0.0` tag has been created.
+Gatekeeper approval. The published M-series pilot Release is
+[`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
+No dual product Release or canonical `v1.0.0` tag has been created.
 
 The proposed end-to-end delivery and release-readiness plan is
 [KPR-001](../strategy/PRODUCTION-READINESS-PLAN.md). Its G6 checklist covers exact-source

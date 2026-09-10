@@ -29,8 +29,11 @@ Release ile yapılabilir; native x86_64 kanıtı gelmeden dual paket üretilmez.
 artifact manual Gatekeeper approval gerektirir ve yalnızca trusted-pilot-only olarak
 sınıflandırılır. Bu seçim public download, commercial support, production veya
 notarized-artifact claim'i açmaz. Pilot kullanıcılarının repository read erişimi owner
-tarafından ayrıca verilmelidir; bu çalışma sırasında erişim, Release/tag veya asset upload
-işlemi yapılmamıştır.
+tarafından ayrıca verilmelidir. M-series private prerelease Release
+[`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
+oluşturuldu ve arm64 DMG/evidence/checksum/instructions asset'leri yüklendi. Canonical
+`v1.0.0` product tag'i ve dual Release hâlâ oluşturulmadı; pilot kullanıcı erişimleri
+owner tarafından ayrıca verilmelidir.
 
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmiş olarak korunacak; tag, assets ve eski truth matrix izlenebilirlik için silinmeyecek.
@@ -66,7 +69,7 @@ N05 remains the later owner-controlled signing/notarization gate and N03 remains
 deferred clean-profile/second-host final-validation obligation; neither is silently closed
 by P1-WP28 or P1-WP29.
 
-**P1-WP29 implementation evidence (`a76f5b0`):** `prepare_pilot_package.py` is
+**P1-WP29 implementation evidence (`a76f5b0`/`6f8b1ed`):** `prepare_pilot_package.py` is
 fail-closed for missing x86_64 evidence in its default dual mode, while explicit
 `--architecture arm64` produces a visibly M-series-only package. Both modes bind their
 selected architectures to the same source/tree/lock/truth identity, verify exact
@@ -77,9 +80,11 @@ The research record is
 [`PILOT-DISTRIBUTION-RESEARCH.md`](../release/PILOT-DISTRIBUTION-RESEARCH.md). The
 default dual invocation remains `BLOCKED` because neither the hosted Intel job nor a
 controlled Intel pilot build has produced the x86_64 chain; the explicit M-series arm64
-invocation is the first pilot path. No Release/tag or asset upload was performed.
+invocation is the first pilot path. The M-series private prerelease is now published at
+[`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64);
+the canonical product Release/tag is not published.
 
-**Fresh M-series arm64 pilot package evidence (2026-09-10, source commit `25ce02a`):**
+**Previous local-only M-series arm64 package evidence (2026-09-10, source commit `25ce02a`):**
 The locked arm64 local gate is **MERGE READY** on the Mac mini: backend **815 passed / 2
 warnings**, frontend **25 files / 104 tests**, i18n **608/608**, arm64 PyInstaller build,
 native WKWebView smoke and `COMPLETE` provenance. The local-CI report SHA-256 is
@@ -100,8 +105,33 @@ five-file checksum verification; manifest SHA-256 is
 `SHA256SUMS` SHA-256 is `2791053bd8ebb11402e0f53083813d66db978e145ad6e5e40b3668ed2be4ffbd`.
 The package is `TRUSTED_MACOS_PILOT_ARM64` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`, scoped to
 `APPLE_SILICON_M_SERIES_ONLY`; it contains no Intel artifact or support claim. It is ready
-for the three-person M-series pilot after owner-controlled sharing, but no GitHub Release,
-tag or asset upload was performed.
+for the three-person M-series pilot before the private Release was created. The current
+published package evidence is recorded below.
+
+**Published M-series arm64 pilot package evidence (2026-09-10, source commit `6f8b1ed`):**
+The exact source-bound arm64 chain was rebuilt from commit
+`6f8b1ed2accdd3f5035a3cf5b0ee42671b4a3b4c` with tracked-tree SHA-256
+`4d0e9449f365df10ac09dc3851b12c12b6310ed076c98196d053e9f202e04ffd`. The locked local CI
+was **MERGE READY** with backend **816 passed / 2 warnings**, frontend **25 files / 104
+tests**, i18n **608/608**, native arm64 PyInstaller build, native WKWebView smoke and
+`COMPLETE` provenance; report SHA-256 is
+`d2dd6d663441c0202e8940018111a8190589ce82a3e1324c040ab6aea02595ae`. The exact
+`Kuantra-Terminal-1.0.0-arm64.dmg` passed `hdiutil verify` and exact read-only mounted-DMG
+smoke with native arm64, WKWebView/controller identity and detach confirmation. DMG
+SHA-256 is `d2f8151e24e29ae0a3800165d823dfd3e6f44a2ef3b95f04674a6ed9ead6e540`, mounted
+executable SHA-256 is `c76315073ef72687bef2bb90dc9c0ec5adfdc1aff912898aa717562aaae2e870`,
+and final smoke report SHA-256 is
+`40573464091be5d43a3c31b973980559ebc4fe1112a4fa87948f37a428cda080`. N05 remains
+`BLOCKED/OWNER_REVIEW_REQUIRED` as expected for an ad-hoc artifact; its report SHA-256 is
+`19fa90a538db42d9a110b58359c2c55a33e87cb3a082f9494f25fa948a092eb4`.
+The package manifest SHA-256 is
+`cdcb68b0cc662e2d54a2805b4d8672c258f1ad9f2df37d44420bca5c56594f10`; `SHA256SUMS`
+SHA-256 is `53610c49f7dd10e89cf13070e5d423e88fb1e50100352df90fa956967dcdeab9`. All five
+package files passed checksum verification. GitHub Release asset digests match these
+values and the published private prerelease is
+[`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
+The package is explicitly `TRUSTED_MACOS_PILOT_ARM64` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`;
+Intel, production, commercial support and notarization claims remain false.
 
 **Native pilot-host local-CI evidence (`75a4188`):** `run_local_ci.py` now accepts
 `--expected-architecture arm64|x86_64`. With that option it rejects a non-native or
@@ -713,7 +743,7 @@ and frontend lock hashes remain
 | H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | P1-WP28 | IN PROGRESS | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and native-host release contract | `bb6ce7c` implements the guards and dual-runner contract; arm64 clean build/local CI/exact mounted-DMG smoke is PASS. Hosted Intel jobs are currently blocked before startup by GitHub account billing/spending-limit state; a controlled native Intel pilot Mac can provide the same build evidence or later runtime evidence, so x86_64 remains `PENDING_NATIVE_CI` until exact host provenance exists; Universal2, Windows/Linux and signing are separate gates. |
-| P1-WP29 | IN PROGRESS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums and user instructions | `25ce02a` produces and validates the M-series arm64-only package with exact current DMG/smoke/N05 chain; arm64 pilot path is ready. Default dual package remains blocked until native x86_64 evidence; N03 clean second profile/host, N05 signing/notarization and owner Release/access approval remain open. |
+| P1-WP29 | IN PROGRESS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums and user instructions | `6f8b1ed` produces and validates the M-series arm64-only package with exact current DMG/smoke/N05 chain; private prerelease [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64) is published. Default dual package remains blocked until native x86_64 evidence; N03 clean second profile/host, N05 signing/notarization and pilot-user read access remain open. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; the pilot team's Intel Mac may be the selected host if clean-profile attestation is supplied. Current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
 | N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current v1.0.0 ad-hoc DMG is intentionally `BLOCKED` (report SHA `338e83e...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |
