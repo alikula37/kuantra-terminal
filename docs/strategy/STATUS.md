@@ -97,8 +97,8 @@ behavior is explicit. Focused and full frontend evidence is **25 test files / 11
 EN/TR/DE **670/670**, TypeScript clean and production build clean. The clean locked arm64
 local-CI evidence for this change is **MERGE READY** with backend **816 passed / 2
 warnings**, native PyInstaller/WKWebView smoke and `COMPLETE` provenance. Exact rebuilt
-DMG UI click-through export remains a manual pilot validation obligation; the existing
-This source commit is now the app artifact behind the existing private prerelease's
+DMG UI click-through export remains a manual pilot validation obligation. This source
+commit is now the app artifact behind the existing private prerelease's
 refreshed arm64 asset set; no new Release/tag was created.
 
 **Current private pilot Release asset refresh (2026-09-10, source commit `8da8019`):** The
