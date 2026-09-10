@@ -69,6 +69,10 @@ Windows/Linux ve ticari lisans/notices kararı eklenmez.
 3. iki raporun truth matrix, manifest ve Phase 0 audit ile doğrulanması;
 4. docs/link registry ve tam backend/frontend gate.
 
+Release-workflow app and final-DMG smoke steps explicitly set
+`KUANTRA_MARKET_DATA_ENABLED=false`; this is a test boundary, not a change to the
+runtime default (`true`).
+
 CI veya dependency kanıtı üretilemezse Intel durumu `HOST_REQUIRED/BLOCKED` kalır;
 destek matrisi sessizce PASS yapılmaz. Current arm64 exact evidence: executable
 `cfb75d0a9b1aeb00bce657bb0b393284453ed8975856a5b50231312150c47924`, DMG

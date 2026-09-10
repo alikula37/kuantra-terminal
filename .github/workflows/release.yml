@@ -88,6 +88,9 @@ jobs:
         run: python scripts/build_desktop.py --skip-frontend --expected-architecture "${{ matrix.architecture }}"
       - name: Smoke test desktop app
         shell: bash
+        env:
+          KUANTRA_MARKET_DATA_ENABLED: "false"
+          KUANTRA_GATEWAY_ENABLED: "0"
         run: |
           python scripts/smoke_desktop.py --expected-architecture "${{ matrix.architecture }}"
       - name: Package
@@ -95,6 +98,9 @@ jobs:
         run: ${{ matrix.package }} --architecture "${{ matrix.architecture }}"
       - name: Smoke test final packaged artifact
         shell: bash
+        env:
+          KUANTRA_MARKET_DATA_ENABLED: "false"
+          KUANTRA_GATEWAY_ENABLED: "0"
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"

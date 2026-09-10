@@ -58,6 +58,8 @@ arm64 PyInstaller build, native `wkwebview` smoke, renderer preflight and COMPLE
 provenance. This is not runtime-offline evidence; the default local-CI run attempted
 the public Binance stream without credentials, while the exact mounted-DMG smoke used
 `KUANTRA_MARKET_DATA_ENABLED=false` and an isolated temporary data directory.
+The release workflow's app and final-DMG smoke steps now set that flag explicitly, so
+candidate artifact smoke does not depend on public market-data availability.
 
 The clean Mac mini arm64 chain is independently verified: executable SHA-256
 `cfb75d0a9b1aeb00bce657bb0b393284453ed8975856a5b50231312150c47924`, exact DMG
