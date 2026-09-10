@@ -29,6 +29,7 @@ const review = {
   trade_count: 1,
   event_count: 1234,
   late_event_count: 0,
+  malformed_event_count: 0,
   excluded_future_rule_count: 0,
   applicable_rules: [],
   completion: null,
@@ -66,6 +67,17 @@ it("shows limited coverage and never presents it as PASS", async () => {
   expect(host.textContent).toContain("Fees remain UNKNOWN");
 });
 
+it("rejects a malformed successful review response instead of crashing the panel", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(
+    path === "/api/v1/settings" ? response({ locale: "en" }) : response({ review_id: "WR-1" }),
+  ));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain("Weekly review response was malformed.");
+  expect(host.querySelector('[data-testid="weekly-review-panel"]')).not.toBeNull();
+});
+
 it("requires explicit review inputs and exposes the as-of boundary", async () => {
   await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
   await flush();
@@ -74,6 +86,22 @@ it("requires explicit review inputs and exposes the as-of boundary", async () =>
   expect(host.querySelector("input[name=period_end]")).not.toBeNull();
   expect(host.querySelector("input[name=as_of_utc]")).not.toBeNull();
   expect(host.textContent).toContain("as-of");
+});
+
+it("disables a completion decision when review inputs no longer match the loaded snapshot", async () => {
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  const periodStart = host.querySelector("input[name=period_start]") as HTMLInputElement;
+  const setInputValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+  setInputValue?.call(periodStart, "2026-09-02");
+  await act(async () => periodStart.dispatchEvent(new Event("input", { bubbles: true })));
+  await act(async () => periodStart.dispatchEvent(new Event("change", { bubbles: true })));
+  await flush();
+
+  expect(host.querySelector("[data-testid=weekly-review-inputs-changed]")).not.toBeNull();
+  const complete = Array.from(host.querySelectorAll("button")).find((button) => button.textContent?.includes("Record review completion")) as HTMLButtonElement;
+  expect(complete?.disabled).toBe(true);
 });
 
 it("puts focus in the dialog and closes on Escape", async () => {

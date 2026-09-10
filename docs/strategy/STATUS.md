@@ -84,6 +84,19 @@ invocation is the first pilot path. The M-series private prerelease is now publi
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64);
 the canonical product Release/tag is not published.
 
+**Frontend pilot-flow hardening (`this change`):** Journal, CSV import, weekly review and
+Trade Evidence Pack surfaces now preserve unknown financial values, bind review decisions
+to the displayed period/timezone/as-of snapshot, reject malformed successful responses
+before rendering, use the native pywebview save bridge for Evidence Pack exports and
+report actual save/cancel outcomes. Journal pagination no longer silently stops at the
+first 200 records; CSV replacement clears stale preview state and modal/dropzone keyboard
+behavior is explicit. Focused and full frontend evidence is **25 test files / 116 tests**,
+EN/TR/DE **670/670**, TypeScript clean and production build clean. The clean locked arm64
+local-CI evidence for this change is **MERGE READY** with backend **816 passed / 2
+warnings**, native PyInstaller/WKWebView smoke and `COMPLETE` provenance. Exact rebuilt
+DMG UI click-through export remains a manual pilot validation obligation; the existing
+private prerelease has not been replaced and no new Release/tag was created.
+
 **Previous local-only M-series arm64 package evidence (2026-09-10, source commit `25ce02a`):**
 The locked arm64 local gate is **MERGE READY** on the Mac mini: backend **815 passed / 2
 warnings**, frontend **25 files / 104 tests**, i18n **608/608**, arm64 PyInstaller build,

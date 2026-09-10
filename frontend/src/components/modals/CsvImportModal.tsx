@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Upload, FileText, CheckCircle2, AlertTriangle, Download, X, RefreshCw } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
-import { useTradeStore } from "../../stores/tradeStore";
 import { apiFetch, apiUrl } from "../../lib/backend";
 import { downloadFromBackend } from "../../lib/desktop";
+import { useDialogAccessibility } from "../../hooks/useDialogAccessibility";
 
 interface CsvImportModalProps {
   isOpen: boolean;
@@ -17,17 +17,63 @@ type ImportReview = {
   reconciliation?: {
     status: string;
     discrepancy_count?: number;
-  };
-  coverage?: Record<string, string | number>;
-  discrepancies?: Array<{ type?: string; source_row_number?: number }>;
-  source_file_sha256?: string;
+  } | null;
+  coverage?: Record<string, string | number> | null;
+  discrepancies?: Array<{ type?: string; source_row_number?: number }> | null;
+  source_file_sha256?: string | null;
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isPreviewTrade(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const numeric = (candidate: unknown): boolean => typeof candidate === "number" && Number.isFinite(candidate);
+  return typeof value.symbol === "string"
+    && typeof value.side === "string"
+    && numeric(value.entry_price)
+    && numeric(value.qty)
+    && typeof value.entry_time === "string"
+    && (value.exit_price == null || numeric(value.exit_price))
+    && (value.pnl == null || numeric(value.pnl));
+}
+
+function isImportReview(value: unknown): value is ImportReview {
+  if (!isRecord(value) || typeof value.status !== "string" || typeof value.decision !== "string") return false;
+  if (value.reconciliation != null && (!isRecord(value.reconciliation)
+    || typeof value.reconciliation.status !== "string"
+    || (value.reconciliation.discrepancy_count != null
+      && (typeof value.reconciliation.discrepancy_count !== "number" || !Number.isFinite(value.reconciliation.discrepancy_count))))) {
+    return false;
+  }
+  if (value.coverage != null && (!isRecord(value.coverage)
+    || !Object.values(value.coverage).every((item) =>
+      typeof item === "string" || (typeof item === "number" && Number.isFinite(item))))) {
+    return false;
+  }
+  if (value.discrepancies != null && (!Array.isArray(value.discrepancies)
+    || !value.discrepancies.every((item) => isRecord(item)
+      && (item.type == null || typeof item.type === "string")
+      && (item.source_row_number == null
+        || (typeof item.source_row_number === "number" && Number.isFinite(item.source_row_number)))))) {
+    return false;
+  }
+  return value.source_file_sha256 == null || typeof value.source_file_sha256 === "string";
+}
+
+function isCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
 
 export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose, onImportSuccess }) => {
   const { t } = useTranslation();
-  const { setTrades } = useTradeStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const previewControllerRef = useRef<AbortController | null>(null);
+
+  useDialogAccessibility(dialogRef, onClose, closeRef);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [detectedFormat, setDetectedFormat] = useState<string | null>(null);
@@ -84,7 +130,14 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   const handleFileChange = async (file: File) => {
     previewControllerRef.current?.abort();
     previewControllerRef.current = null;
-    if (!file.name.endsWith(".csv") && !file.name.endsWith(".txt")) {
+    setSelectedFile(null);
+    setDetectedFormat(null);
+    setPreviewTrades([]);
+    setPreviewReview(null);
+    setTotalRows(0);
+    setIsLoadingPreview(false);
+    setImportResult(null);
+    if (!/\.(csv|txt)$/i.test(file.name)) {
       setErrorMessage(t("csv_import.error_invalid_format"));
       return;
     }
@@ -112,10 +165,18 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
       }
 
       const data = await res.json();
+      if (!isRecord(data)
+        || typeof data.detected_format !== "string"
+        || !Array.isArray(data.preview_trades)
+        || !data.preview_trades.every(isPreviewTrade)
+        || !isCount(data.total_rows_parsed)
+        || (data.import_review != null && !isImportReview(data.import_review))) {
+        throw new Error(t("csv_import.error_malformed_preview"));
+      }
       if (previewControllerRef.current === controller && !controller.signal.aborted) {
         setDetectedFormat(data.detected_format);
-        setPreviewTrades(data.preview_trades || []);
-        setTotalRows(data.total_rows_parsed || 0);
+        setPreviewTrades(data.preview_trades);
+        setTotalRows(data.total_rows_parsed);
         setPreviewReview(data.import_review || null);
       }
     } catch (err: any) {
@@ -168,6 +229,16 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
       }
 
       const data = await res.json();
+      if (!isRecord(data)
+        || typeof data.success !== "boolean"
+        || !isCount(data.imported)
+        || !isCount(data.duplicates_skipped)
+        || !Array.isArray(data.errors)
+        || !data.errors.every((item) => typeof item === "string")
+        || typeof data.message !== "string"
+        || (data.import_review != null && !isImportReview(data.import_review))) {
+        throw new Error(t("csv_import.error_malformed_result"));
+      }
       setImportResult({
         success: data.success,
         imported: data.imported,
@@ -176,16 +247,6 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
         message: data.message,
         import_review: data.import_review || undefined,
       });
-
-      // Refetch trades in store
-      apiFetch(apiUrl("/api/v1/trades?limit=200"))
-        .then((r) => r.json())
-        .then((tradesData) => {
-          if (Array.isArray(tradesData)) {
-            setTrades(tradesData);
-          }
-        })
-        .catch(() => {});
 
       if (onImportSuccess) {
         onImportSuccess();
@@ -246,7 +307,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
           <div className="text-amber-300/90">
             {review.discrepancies.map((item, index) => (
               <div key={`${item.type || "discrepancy"}-${item.source_row_number || index}`}>
-                {item.type || "DISCREPANCY"}{item.source_row_number ? ` · row ${item.source_row_number}` : ""}
+                {item.type || t("csv_import.discrepancy")}{item.source_row_number ? ` · ${t("csv_import.row", { count: item.source_row_number })}` : ""}
               </div>
             ))}
           </div>
@@ -256,8 +317,8 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-mono select-none animate-fadeIn" aria-busy={isLoadingPreview || isImporting}>
-      <div className="relative w-full max-w-2xl bg-[#0b0e14] border border-surface-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-mono select-none animate-fadeIn" aria-busy={isLoadingPreview || isImporting} role="dialog" aria-modal="true" aria-labelledby="csv-import-title" aria-describedby="csv-import-description">
+      <div ref={dialogRef} className="relative w-full max-w-2xl bg-[#0b0e14] border border-surface-border rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border bg-[#0d121c]">
           <div className="flex items-center space-x-3">
@@ -265,15 +326,16 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
               <Upload className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+              <h3 id="csv-import-title" className="text-sm font-bold text-white uppercase tracking-wider">
                 {t("csv_import.modal_title")}
               </h3>
-              <p className="text-[11px] text-slate-400">
+              <p id="csv-import-description" className="text-[11px] text-slate-400">
                 {t("csv_import.modal_subtitle")}
               </p>
             </div>
           </div>
           <button
+            ref={closeRef}
             type="button"
             onClick={handleClose}
             disabled={isImporting}
@@ -349,10 +411,19 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
             <>
               {/* Dropzone */}
               <div
+                role="button"
+                tabIndex={0}
+                aria-label={t("csv_import.select_file")}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
                 className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-2 ${
                   isDragOver
                     ? "border-accent bg-accent/10"
@@ -383,7 +454,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
                   <div>
                     <p className="text-xs font-bold text-white">{selectedFile.name}</p>
                     <p className="text-[10px] text-slate-400">
-                      {(selectedFile.size / 1024).toFixed(1)} KB &bull; {totalRows} Trades Found
+                      {(selectedFile.size / 1024).toFixed(1)} KB &bull; {t("csv_import.trades_found", { count: totalRows })}
                     </p>
                   </div>
                 ) : (
@@ -419,7 +490,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
                     <span className="font-semibold text-white">
                       {t("csv_import.preview_title")}
                     </span>
-                    <span>{totalRows} Total Records</span>
+                    <span>{t("csv_import.total_records", { count: totalRows })}</span>
                   </div>
                   <div className="overflow-x-auto rounded-lg border border-surface-border bg-[#090d14]">
                     <table className="w-full text-left text-[10px]">
@@ -454,16 +525,10 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
                               {pTrade.exit_price ? `$${Number(pTrade.exit_price).toFixed(2)}` : "-"}
                             </td>
                             <td className="px-2.5 py-1.5 text-slate-300">{pTrade.qty}</td>
-                            <td
-                              className={`px-2.5 py-1.5 font-bold ${
-                                pTrade.pnl > 0
-                                  ? "text-gain"
-                                  : pTrade.pnl < 0
-                                  ? "text-loss"
-                                  : "text-slate-400"
-                              }`}
-                            >
-                              ${Number(pTrade.pnl || 0).toFixed(2)}
+                            <td className={`px-2.5 py-1.5 font-bold ${
+                              pTrade.pnl == null ? "text-slate-400" : pTrade.pnl > 0 ? "text-gain" : pTrade.pnl < 0 ? "text-loss" : "text-slate-400"
+                            }`}>
+                              {pTrade.pnl == null ? t("csv_import.unknown_value") : `$${Number(pTrade.pnl).toFixed(2)}`}
                             </td>
                             <td className="px-2.5 py-1.5 text-slate-400 text-[9px]">
                               {String(pTrade.entry_time).slice(0, 16).replace("T", " ")}
@@ -482,6 +547,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
         {/* Footer Actions */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-surface-border bg-[#0d121c] text-xs">
           <button
+            type="button"
             onClick={handleDownloadTemplate}
             className="flex items-center space-x-1.5 text-slate-400 hover:text-white transition cursor-pointer"
           >

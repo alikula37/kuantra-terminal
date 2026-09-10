@@ -2,8 +2,9 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), fetchEvidencePack: vi.fn() }));
+const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), fetchEvidencePack: vi.fn(), download: vi.fn() }));
 vi.mock("../../lib/backend", () => ({ apiUrl: (path: string) => path, apiFetch: mocks.apiFetch, fetchEvidencePack: mocks.fetchEvidencePack }));
+vi.mock("../../lib/desktop", () => ({ downloadFromBackend: mocks.download }));
 
 import { TradeEvidencePanel } from "../TradeEvidencePanel";
 import { I18nProvider } from "../../context/I18nContext";
@@ -58,6 +59,7 @@ beforeEach(() => {
   root = createRoot(host);
   mocks.apiFetch.mockReset();
   mocks.fetchEvidencePack.mockReset();
+  mocks.download.mockReset();
   mocks.fetchEvidencePack.mockImplementation((tradeId: string, init?: RequestInit) =>
     mocks.apiFetch(`/api/v1/trades/${encodeURIComponent(tradeId)}/evidence`, init),
   );
@@ -136,6 +138,15 @@ it("keeps a failed Evidence Pack request recoverable", async () => {
   expect(host.textContent).toContain("Verified chain");
 });
 
+it("rejects a malformed successful Evidence Pack response instead of rendering a broken panel", async () => {
+  mockPanelResponse({ trade_id: "TRD-1", read_source: "typed_projection" });
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  expect(host.textContent).toContain("Evidence Pack response was malformed.");
+  expect(host.textContent).not.toContain("Verified chain");
+});
+
 it("lets the user cancel a pending Evidence Pack load without showing partial success", async () => {
   let resolvePack!: (value: Response) => void;
   let requestSignal: AbortSignal | undefined;
@@ -188,4 +199,36 @@ it("renders explicit coverage, applicable rule provenance, snapshot identity, an
   expect(host.textContent).toContain("risk-policy");
   expect(host.textContent).toContain("a".repeat(10));
   expect(Array.from(host.querySelectorAll("button")).some((button) => button.textContent?.includes("CSV"))).toBe(true);
+});
+
+it("uses the native download bridge and reports only an actual save as ready", async () => {
+  mockPanelResponse(basePack);
+  mocks.download.mockResolvedValue(true);
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  const csvButton = Array.from(host.querySelectorAll("button")).find((button) => button.textContent?.includes("CSV")) as HTMLButtonElement;
+  await act(async () => csvButton.click());
+  await flush();
+
+  expect(mocks.download).toHaveBeenCalledWith(
+    "/api/v1/trades/TRD-1/evidence/export",
+    "kuantra-evidence-TRD-1.csv",
+    "format=csv",
+  );
+  expect(host.textContent).toContain("CSV export ready.");
+});
+
+it("does not report a cancelled native export as ready", async () => {
+  mockPanelResponse(basePack);
+  mocks.download.mockResolvedValue(false);
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  const jsonButton = Array.from(host.querySelectorAll("button")).find((button) => button.textContent?.includes("JSON")) as HTMLButtonElement;
+  await act(async () => jsonButton.click());
+  await flush();
+
+  expect(host.textContent).toContain("Export cancelled or was not saved.");
+  expect(host.textContent).not.toContain("JSON export ready.");
 });

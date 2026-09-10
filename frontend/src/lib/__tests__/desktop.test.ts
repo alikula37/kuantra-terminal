@@ -37,6 +37,14 @@ it("downloadFromBackend falls back to window.open in the browser", async () => {
   expect(open).toHaveBeenCalledWith("http://127.0.0.1:8000/api/v1/journal/template-csv", "_blank");
 });
 
+it("passes export query parameters through the native download bridge", async () => {
+  const download = vi.fn(async () => ({ saved: true, path: "/tmp/evidence.csv", status: 200 }));
+  vi.stubGlobal("pywebview", { api: { request: async () => ({}), download } });
+  const { downloadFromBackend } = await import("../desktop");
+  await expect(downloadFromBackend("/api/v1/trades/TRD-1/evidence/export", "evidence.csv", "format=csv")).resolves.toBe(true);
+  expect(download).toHaveBeenCalledWith({ path: "/api/v1/trades/TRD-1/evidence/export", query: "format=csv", filename: "evidence.csv" });
+});
+
 it("downloadFromBackend returns false instead of rejecting when the bridge call fails", async () => {
   const download = vi.fn(async () => { throw new Error("no route"); });
   vi.stubGlobal("pywebview", { api: { request: async () => ({}), download } });

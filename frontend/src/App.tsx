@@ -131,6 +131,7 @@ export default function App() {
   const [isGPUModalOpen, setIsGPUModalOpen] = useState<boolean>(false);
   const [isPersonaModalOpen, setIsPersonaModalOpen] = useState<boolean>(false);
   const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] = useState<boolean>(false);
+  const [tradeRefreshNonce, setTradeRefreshNonce] = useState(0);
 
   useWebSocket();
   const { popout } = usePopoutWindow();
@@ -260,6 +261,7 @@ export default function App() {
               onOpenNewTrade={() => setIsModalOpen(true)}
               onOpenCsvImport={() => setIsCsvModalOpen(true)}
               onReplayTrade={handleLaunchReplay}
+              refreshNonce={tradeRefreshNonce}
             />
           )}
 
@@ -312,7 +314,13 @@ export default function App() {
             onOpenApiKeySettings={() => setIsApiKeyModalOpen(true)}
           />
         )}
-        {isCsvModalOpen && <CsvImportModal isOpen={isCsvModalOpen} onClose={() => setIsCsvModalOpen(false)} />}
+        {isCsvModalOpen && (
+          <CsvImportModal
+            isOpen={isCsvModalOpen}
+            onClose={() => setIsCsvModalOpen(false)}
+            onImportSuccess={() => setTradeRefreshNonce((current) => current + 1)}
+          />
+        )}
         {isApiKeyModalOpen && (
           <ApiKeySettingsModal isOpen={isApiKeyModalOpen} onClose={() => setIsApiKeyModalOpen(false)} />
         )}

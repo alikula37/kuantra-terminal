@@ -30,18 +30,19 @@ export async function saveTextFile(filename: string, text: string, mime = "text/
   }
 }
 
-export async function downloadFromBackend(path: string, filename?: string): Promise<boolean> {
+export async function downloadFromBackend(path: string, filename?: string, query = ""): Promise<boolean> {
   const api = getBridge();
   if (api) {
     try {
-      return (await api.download({ path, filename })).saved;
+      return (await api.download({ path, query, filename })).saved;
     } catch (e) {
       console.warn("download failed:", e);
       return false;
     }
   }
   try {
-    host().open(apiUrl(path), "_blank");
+    const separator = query ? (path.includes("?") ? "&" : "?") : "";
+    host().open(`${apiUrl(path)}${separator}${query}`, "_blank");
     return true;
   } catch (e) {
     console.warn("browser download failed:", e);

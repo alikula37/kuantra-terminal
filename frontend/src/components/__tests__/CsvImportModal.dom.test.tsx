@@ -157,3 +157,104 @@ it("keeps the modal close action disabled while an import mutation is pending", 
   resolveImport(response({ success: true, imported: 1, duplicates_skipped: 0, errors: [], message: "stored" }));
   await flush();
 });
+
+it("clears the previous preview when a new file is selected", async () => {
+  let resolveSecondPreview!: (value: Response) => void;
+  const secondPreview = new Promise<Response>((resolve) => { resolveSecondPreview = resolve; });
+  let previewCalls = 0;
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path !== "/api/v1/journal/preview-csv") return Promise.resolve(response([]));
+    previewCalls += 1;
+    if (previewCalls === 1) {
+      return Promise.resolve(response({
+        detected_format: "GENERIC_KUANTRA",
+        total_rows_parsed: 1,
+        preview_trades: [{ symbol: "BTCUSDT", side: "BUY", entry_price: 100, qty: 1, pnl: 1, entry_time: "2026-09-08T10:00:00Z" }],
+        import_review: review,
+      }));
+    }
+    return secondPreview;
+  });
+
+  await act(async () => root.render(<CsvImportModal isOpen onClose={vi.fn()} />));
+  const input = host.querySelector("input[type=file]") as HTMLInputElement;
+  const first = new File(["first"], "first.csv", { type: "text/csv" });
+  await act(async () => {
+    Object.defineProperty(input, "files", { value: [first], configurable: true });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await flush();
+  expect(host.querySelector("[data-testid=csv-import-preview-review]")).not.toBeNull();
+
+  const second = new File(["second"], "SECOND.CSV", { type: "text/csv" });
+  await act(async () => {
+    Object.defineProperty(input, "files", { value: [second], configurable: true });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  expect(host.textContent).toContain("SECOND.CSV");
+  expect(host.querySelector("[data-testid=csv-import-preview-review]")).toBeNull();
+  const importButton = Array.from(host.querySelectorAll("button")).find((button) => button.textContent?.includes("Import")) as HTMLButtonElement;
+  expect(importButton.disabled).toBe(true);
+
+  resolveSecondPreview(response({ detected_format: "GENERIC_KUANTRA", total_rows_parsed: 1, preview_trades: [] }));
+  await flush();
+});
+
+it("makes the CSV dropzone keyboard accessible", async () => {
+  await act(async () => root.render(<CsvImportModal isOpen onClose={vi.fn()} />));
+  const dropzone = host.querySelector('[role="button"]') as HTMLDivElement;
+  expect(dropzone).toBeTruthy();
+  expect(dropzone.tabIndex).toBe(0);
+  expect(dropzone.getAttribute("aria-label")).toBe("csv_import.select_file");
+});
+
+it("rejects a malformed successful preview response", async () => {
+  mocks.apiFetch.mockResolvedValue(response({
+    detected_format: "GENERIC_KUANTRA",
+    total_rows_parsed: 1,
+    preview_trades: [{}],
+  }));
+
+  await act(async () => root.render(<CsvImportModal isOpen onClose={vi.fn()} />));
+  const input = host.querySelector("input[type=file]") as HTMLInputElement;
+  const file = new File(["invalid"], "invalid.csv", { type: "text/csv" });
+  await act(async () => {
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await flush();
+
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain("csv_import.error_malformed_preview");
+  expect(host.textContent).not.toContain("csv_import.preview_title");
+});
+
+it("rejects a malformed successful import response instead of rendering a result", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path === "/api/v1/journal/preview-csv") {
+      return Promise.resolve(response({
+        detected_format: "GENERIC_KUANTRA",
+        total_rows_parsed: 1,
+        preview_trades: [{ symbol: "BTCUSDT", side: "BUY", entry_price: 100, qty: 1, pnl: null, entry_time: "2026-09-08T10:00:00Z" }],
+      }));
+    }
+    return Promise.resolve(response({ success: true, imported: 1, duplicates_skipped: 0, errors: [] }));
+  });
+
+  await act(async () => root.render(<CsvImportModal isOpen onClose={vi.fn()} />));
+  const input = host.querySelector("input[type=file]") as HTMLInputElement;
+  const file = new File(["valid"], "valid.csv", { type: "text/csv" });
+  await act(async () => {
+    Object.defineProperty(input, "files", { value: [file], configurable: true });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await flush();
+
+  const importButton = Array.from(host.querySelectorAll("button")).find((button) => button.textContent?.includes("Import 1 Trades")) as HTMLButtonElement;
+  expect(importButton).toBeTruthy();
+  await act(async () => importButton.click());
+  await flush();
+
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain("csv_import.error_malformed_result");
+  expect(host.textContent).not.toContain("csv_import.result_title");
+});

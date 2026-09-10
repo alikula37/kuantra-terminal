@@ -55,6 +55,52 @@ const shortHash = (value: string | undefined): string => {
   return value.length > 18 ? `${value.slice(0, 10)}…${value.slice(-6)}` : value;
 };
 
+const reviewInputKey = (periodStart: string, periodEnd: string, timezone: string, asOfUtc: string): string =>
+  JSON.stringify({ periodStart, periodEnd, timezone, asOfUtc });
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isFiniteCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isWeeklyReview(value: unknown): value is WeeklyReview {
+  if (!isRecord(value)
+    || typeof value.review_id !== "string"
+    || typeof value.review_status !== "string"
+    || typeof value.completion_allowed !== "boolean"
+    || value.is_pass !== false
+    || typeof value.as_of_utc !== "string"
+    || !isFiniteCount(value.trade_count)
+    || !isFiniteCount(value.event_count)
+    || !isFiniteCount(value.late_event_count)
+    || !isFiniteCount(value.malformed_event_count)
+    || !isFiniteCount(value.excluded_future_rule_count)) return false;
+  const period = value.period;
+  const coverage = value.coverage;
+  const rules = value.applicable_rules;
+  const warnings = value.warnings;
+  if (!isRecord(period)
+    || !["start_local", "end_local", "start_utc", "end_utc", "timezone"].every((key) => typeof period[key] === "string")
+    || !isRecord(coverage)
+    || !Object.values(coverage).every((item) => typeof item === "string")
+    || !Array.isArray(rules)
+    || !rules.every((rule) => isRecord(rule)
+      && Object.values(rule).every((item) => typeof item === "string" || item === null))
+    || !Array.isArray(warnings)
+    || !warnings.every((warning) => typeof warning === "string")) return false;
+  if (value.snapshot_sha256 != null && typeof value.snapshot_sha256 !== "string") return false;
+  if (value.source_event_hashes != null && (!Array.isArray(value.source_event_hashes)
+    || !value.source_event_hashes.every((hash) => typeof hash === "string"))) return false;
+  if (value.completion == null) return true;
+  return isRecord(value.completion)
+    && (value.completion.decision == null || typeof value.completion.decision === "string")
+    && (value.completion.note == null || typeof value.completion.note === "string")
+    && (value.completion.reviewed_at_utc == null || typeof value.completion.reviewed_at_utc === "string");
+}
+
 export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose }) => {
   const { t, locale } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -71,8 +117,17 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [decisionMessage, setDecisionMessage] = useState<string | null>(null);
+  const [loadedReviewKey, setLoadedReviewKey] = useState<string | null>(null);
   const loadControllerRef = useRef<AbortController | null>(null);
   const [cancelled, setCancelled] = useState(false);
+
+  const currentReviewKey = reviewInputKey(periodStart, periodEnd, timezone, asOfUtc);
+  const reviewIsCurrent = Boolean(review && loadedReviewKey === currentReviewKey);
+
+  const invalidateLoadedReview = () => {
+    setLoadedReviewKey(null);
+    setDecisionMessage(null);
+  };
 
   const loadReview = async () => {
     loadControllerRef.current?.abort();
@@ -83,6 +138,8 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
     setDecisionMessage(null);
     setCancelled(false);
     setReview(null);
+    setLoadedReviewKey(null);
+    const requestedReviewKey = reviewInputKey(periodStart, periodEnd, timezone, asOfUtc);
     const query = new URLSearchParams({
       period_start: periodStart,
       period_end: periodEnd,
@@ -101,8 +158,13 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
         }
         throw new Error(detail);
       }
-      const nextReview = await response.json() as WeeklyReview;
-      if (loadControllerRef.current === controller && !controller.signal.aborted) setReview(nextReview);
+      const payload = await response.json();
+      if (!isWeeklyReview(payload)) throw new Error(t("weekly_review.malformed"));
+      const nextReview = payload;
+      if (loadControllerRef.current === controller && !controller.signal.aborted) {
+        setReview(nextReview);
+        setLoadedReviewKey(requestedReviewKey);
+      }
     } catch (reason: unknown) {
       if (loadControllerRef.current === controller && !controller.signal.aborted) {
         setCancelled(false);
@@ -132,12 +194,13 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
     loadControllerRef.current = null;
     setLoading(false);
     setReview(null);
+    setLoadedReviewKey(null);
     setCancelled(true);
     setError(t("weekly_review.cancelled"));
   };
 
   const recordDecision = async (decision: "COMPLETE" | "REOPEN") => {
-    if (!review) return;
+    if (!review || !reviewIsCurrent) return;
     setSaving(true);
     setError(null);
     setDecisionMessage(null);
@@ -195,16 +258,16 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
         <form onSubmit={submit} className="p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-[10px] text-slate-400">
             <label htmlFor="weekly-period-start">{t("weekly_review.period_start")}
-              <input id="weekly-period-start" name="period_start" type="date" value={periodStart} onChange={(event) => setPeriodStart(event.target.value)} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+              <input id="weekly-period-start" name="period_start" type="date" value={periodStart} onChange={(event) => { setPeriodStart(event.target.value); invalidateLoadedReview(); }} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
             </label>
             <label htmlFor="weekly-period-end">{t("weekly_review.period_end")}
-              <input id="weekly-period-end" name="period_end" type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+              <input id="weekly-period-end" name="period_end" type="date" value={periodEnd} onChange={(event) => { setPeriodEnd(event.target.value); invalidateLoadedReview(); }} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
             </label>
             <label htmlFor="weekly-timezone">{t("weekly_review.timezone")}
-              <input id="weekly-timezone" name="timezone" value={timezone} onChange={(event) => setTimezone(event.target.value)} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+              <input id="weekly-timezone" name="timezone" value={timezone} onChange={(event) => { setTimezone(event.target.value); invalidateLoadedReview(); }} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
             </label>
             <label htmlFor="weekly-as-of">{t("weekly_review.as_of_label")}
-              <input id="weekly-as-of" name="as_of_utc" value={asOfUtc} onChange={(event) => setAsOfUtc(event.target.value)} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+              <input id="weekly-as-of" name="as_of_utc" value={asOfUtc} onChange={(event) => { setAsOfUtc(event.target.value); invalidateLoadedReview(); }} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
             </label>
           </div>
           <div className="flex justify-end">
@@ -216,6 +279,12 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
 
         {loading && <div role="status" className="p-8 text-center text-slate-400 text-xs space-y-3"><span className="block">{t("weekly_review.loading")}</span><button type="button" data-testid="weekly-review-cancel" onClick={cancelLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("weekly_review.cancel_load")}</button></div>}
         {!loading && error && <div role="alert" data-testid={cancelled ? "weekly-review-cancelled" : undefined} className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2"><XCircle className="w-4 h-4 shrink-0" /><div className="flex-1 space-y-2"><span className="block break-words">{error}</span><button type="button" data-testid="weekly-review-retry" onClick={() => void loadReview()} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("weekly_review.retry")}</button></div></div>}
+
+        {!loading && !error && review && !reviewIsCurrent && (
+          <div role="status" data-testid="weekly-review-inputs-changed" className="m-4 p-3 rounded border border-amber-400/40 bg-amber-400/10 text-amber-300 text-xs">
+            {t("weekly_review.inputs_changed")}
+          </div>
+        )}
 
         {!loading && !error && review && (
           <div className="px-4 pb-4 space-y-4">
@@ -264,7 +333,7 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
                 <textarea id="weekly-review-note" value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder={t("weekly_review.note_placeholder")} className="mt-1 w-full min-h-16 bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
               </label>
               <div className="flex flex-wrap items-center gap-2">
-                {review.completion?.decision === "COMPLETED" ? <button type="button" disabled={saving} onClick={() => void recordDecision("REOPEN")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-amber-400/50 text-amber-300 text-[10px] font-bold hover:bg-amber-400/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"><AlertTriangle className="w-3.5 h-3.5" />{t("weekly_review.reopen")}</button> : <button type="button" disabled={saving || !review.completion_allowed} onClick={() => void recordDecision("COMPLETE")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-accent/50 text-accent text-[10px] font-bold hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><CheckCircle2 className="w-3.5 h-3.5" />{t("weekly_review.record_complete")}</button>}
+                {review.completion?.decision === "COMPLETED" ? <button type="button" disabled={saving || !reviewIsCurrent} onClick={() => void recordDecision("REOPEN")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-amber-400/50 text-amber-300 text-[10px] font-bold hover:bg-amber-400/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"><AlertTriangle className="w-3.5 h-3.5" />{t("weekly_review.reopen")}</button> : <button type="button" disabled={saving || !review.completion_allowed || !reviewIsCurrent} onClick={() => void recordDecision("COMPLETE")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-accent/50 text-accent text-[10px] font-bold hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><CheckCircle2 className="w-3.5 h-3.5" />{t("weekly_review.record_complete")}</button>}
                 {decisionMessage && <span aria-live="polite" className="text-[10px] text-gain">{decisionMessage}</span>}
               </div>
             </div>

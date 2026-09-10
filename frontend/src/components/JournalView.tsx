@@ -12,6 +12,7 @@ interface JournalViewProps {
   onOpenNewTrade: () => void;
   onOpenCsvImport?: () => void;
   onReplayTrade?: (tradeId: string) => void;
+  refreshNonce?: number;
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -50,7 +51,7 @@ async function readTradeList(response: Response): Promise<Trade[]> {
   return payload;
 }
 
-export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onReplayTrade }) => {
+export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onReplayTrade, refreshNonce = 0 }) => {
   const { t } = useTranslation();
   const { trades, setTrades } = useTradeStore();
   const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
@@ -59,6 +60,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [reconciliationInboxOpen, setReconciliationInboxOpen] = useState(false);
   const [weeklyReviewOpen, setWeeklyReviewOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState(false);
   const loadControllerRef = useRef<AbortController | null>(null);
@@ -71,12 +75,15 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
     loadControllerRef.current = controller;
     setIsLoading(true);
     setError(null);
+    setLoadMoreError(null);
     setCancelled(false);
+    setHasMore(false);
 
     try {
-      const nextTrades = await apiFetch(apiUrl("/api/v1/trades?limit=200"), { signal: controller.signal }).then(readTradeList);
+      const nextTrades = await apiFetch(apiUrl("/api/v1/trades?limit=201&offset=0"), { signal: controller.signal }).then(readTradeList);
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
-      setTrades(nextTrades);
+      setTrades(nextTrades.slice(0, 200));
+      setHasMore(nextTrades.length > 200);
     } catch (cause) {
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
       console.warn("[JournalView] Failed to fetch trade list:", cause);
@@ -89,6 +96,32 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
     }
   }, [setTrades, t]);
 
+  const loadMoreTrades = async () => {
+    if (!hasMore || isLoadingMore || isLoading) return;
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
+    loadControllerRef.current = controller;
+    setIsLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const nextTrades = await apiFetch(apiUrl(`/api/v1/trades?limit=201&offset=${trades.length}`), { signal: controller.signal }).then(readTradeList);
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      const knownIds = new Set(trades.map((trade) => trade.id));
+      const uniqueTrades = nextTrades.slice(0, 200).filter((trade) => !knownIds.has(trade.id));
+      setTrades([...trades, ...uniqueTrades]);
+      setHasMore(nextTrades.length > 200);
+    } catch (cause) {
+      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      console.warn("[JournalView] Failed to load more trades:", cause);
+      setLoadMoreError(cause instanceof Error ? cause.message : t("journal.error"));
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsLoadingMore(false);
+        loadControllerRef.current = null;
+      }
+    }
+  };
+
   useEffect(() => {
     void loadTrades();
     return () => {
@@ -96,7 +129,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
       loadControllerRef.current?.abort();
       loadControllerRef.current = null;
     };
-  }, [loadTrades]);
+  }, [loadTrades, refreshNonce]);
 
   const cancelLoad = () => {
     const controller = loadControllerRef.current;
@@ -253,8 +286,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                 </tr>
               ) : (
               filteredTrades.map((tItem) => {
-                const pnl = tItem.pnl || 0;
-                const isWin = pnl > 0;
+                const pnl = tItem.pnl;
+                const hasPnl = pnl != null;
+                const isWin = hasPnl && pnl > 0;
                 return (
                   <tr key={tItem.id} className="hover:bg-[#111722] transition">
                     <td className="px-4 py-2.5 font-bold text-accent">{tItem.id}</td>
@@ -275,10 +309,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                       {tItem.exit_price != null ? `$${Number(tItem.exit_price).toFixed(2)}` : "-"}
                     </td>
                     <td className="px-4 py-2.5 text-slate-300">{tItem.qty}</td>
-                    <td className={`px-4 py-2.5 font-bold ${isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
-                      {tItem.status === "CLOSED" ? `${isWin ? "+" : ""}$${pnl.toFixed(2)}` : "-"}
+                    <td className={`px-4 py-2.5 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
+                      {tItem.status !== "CLOSED" ? "-" : hasPnl ? `${isWin ? "+" : ""}$${pnl.toFixed(2)}` : t("journal.unknown_value")}
                     </td>
-                    <td className={`px-4 py-2.5 font-bold ${isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
+                    <td className={`px-4 py-2.5 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
                       {tItem.r_multiple != null ? `${tItem.r_multiple > 0 ? "+" : ""}${tItem.r_multiple}R` : "-"}
                     </td>
                     <td className="px-4 py-2.5 text-slate-400 text-[10px]">
@@ -299,7 +333,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                       <button
                         onClick={() => onReplayTrade && onReplayTrade(tItem.id)}
                         className="inline-flex items-center space-x-1 px-2 py-0.5 bg-accent/15 hover:bg-accent/30 border border-accent/40 text-accent font-bold rounded text-[10px] transition"
-                        title="Replay this trade bar-by-bar"
+                        title={t("journal.replay_title")}
                       >
                         <PlayCircle className="w-3 h-3" />
                         <span>{t("journal.replay_btn")}</span>
@@ -307,10 +341,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                       <button
                         onClick={() => setEvidenceTradeId(tItem.id)}
                         className="inline-flex items-center space-x-1 px-2 py-0.5 ml-1 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-bold rounded text-[10px] transition"
-                        title="Open source-linked Trade Evidence Pack"
+                        title={t("journal.evidence_title")}
                       >
                         <FileCheck2 className="w-3 h-3 text-accent" />
-                        <span>Evidence</span>
+                        <span>{t("journal.evidence_action")}</span>
                       </button>
                     </td>
                   </tr>
@@ -319,6 +353,26 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
             )}
           </tbody>
         </table>
+        {loadMoreError && (
+          <div role="alert" className="flex items-center justify-center gap-3 border-t border-loss/30 p-3 text-xs text-loss">
+            <span className="break-words">{loadMoreError}</span>
+            <button type="button" onClick={() => void loadMoreTrades()} className="px-2 py-1 rounded border border-loss/50 font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">
+              {t("journal.retry")}
+            </button>
+          </div>
+        )}
+        {hasMore && (
+          <div className="flex justify-center border-t border-surface-border p-3">
+            <button
+              type="button"
+              onClick={() => void loadMoreTrades()}
+              disabled={isLoadingMore}
+              className="px-3 py-1.5 rounded border border-accent/50 text-accent text-xs font-bold hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              {isLoadingMore ? t("journal.loading_more") : t("journal.load_more")}
+            </button>
+          </div>
+        )}
       </div>
     )}
       {evidenceTradeId && (

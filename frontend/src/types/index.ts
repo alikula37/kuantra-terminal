@@ -13,7 +13,7 @@ export interface Trade {
   entry_time: string;
   exit_time?: string | null;
   status: TradeStatus;
-  pnl?: number;
+  pnl?: number | null;
   r_multiple?: number | null;
   commission?: number;
   notes?: string;

@@ -82,9 +82,11 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
             <tbody className="divide-y divide-surface-border/50">
               {positions.map((p) => {
                 const isLong = (p.side || "BUY").toUpperCase() === "BUY" || (p.side || "").toUpperCase() === "LONG";
-                const pnl = p.pnl || 0.0;
-                const isProfitable = pnl >= 0;
-                const rMult = p.r_multiple ?? 0.0;
+                const pnl = p.pnl;
+                const hasPnl = pnl != null;
+                const isProfitable = hasPnl && pnl >= 0;
+                const rMult = p.r_multiple;
+                const hasRMultiple = rMult != null;
 
                 return (
                   <tr key={p.id} className="hover:bg-[#0d121c] transition">
@@ -101,13 +103,13 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                     <td className="py-2.5 px-3 text-loss font-semibold">{p.stop_loss ? `$${p.stop_loss.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "-"}</td>
                     <td className="py-2.5 px-3 text-gain font-semibold">{p.take_profit ? `$${p.take_profit.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "-"}</td>
                     <td className="py-2.5 px-3">
-                      <span className={`font-bold ${isProfitable ? "text-gain" : "text-loss"}`}>
-                        {isProfitable ? "+" : ""}${pnl.toFixed(2)}
+                      <span className={`font-bold ${!hasPnl ? "text-slate-400" : isProfitable ? "text-gain" : "text-loss"}`}>
+                        {hasPnl ? `${isProfitable ? "+" : ""}$${pnl.toFixed(2)}` : t("open_positions.unknown_value")}
                       </span>
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className={`font-bold ${rMult >= 0 ? "text-purple-300" : "text-loss"}`}>
-                        {rMult >= 0 ? "+" : ""}{rMult.toFixed(2)}R
+                      <span className={`font-bold ${!hasRMultiple ? "text-slate-400" : rMult >= 0 ? "text-purple-300" : "text-loss"}`}>
+                        {hasRMultiple ? `${rMult >= 0 ? "+" : ""}${rMult.toFixed(2)}R` : t("open_positions.unknown_value")}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-right">
@@ -116,7 +118,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                           <button
                             onClick={() => onEditPosition(p)}
                             className="p-1 rounded bg-[#161f2e] hover:bg-[#1f2c42] text-slate-300 hover:text-white transition"
-                            title="SL/TP"
+                            title={t("open_positions.edit_btn")}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>

@@ -125,7 +125,41 @@ yayındadır; üç pilot kullanıcısının repository read erişimi ve gerçek 
 install-lifecycle çalıştırması hâlâ owner/host kapısıdır. Canonical `v1.0.0` product
 Release/tag'i ve dual package bu işlemle oluşturulmadı.
 
-çalıştırılır. Dual GitHub Release, Apple signing/notarization, pilot kullanıcı erişimi ve
+## Frontend pilot-flow hardening (this change)
+
+The pilot-facing import → review → Evidence Pack path now has an explicit truth and
+failure boundary in the UI:
+
+- [x] Missing or `null` PnL/R values remain visibly unknown in the journal, open-position
+      and CSV preview surfaces; they are never rendered as zero. Weekly review completion
+      and reopen actions are disabled when period, timezone or as-of inputs differ from
+      the loaded snapshot.
+- [x] Evidence Pack JSON responses, weekly review responses and CSV preview/import
+      responses are runtime-validated before rendering. Malformed successful responses
+      remain visible errors and cannot be interpreted as empty, complete or successful
+      evidence.
+- [x] Evidence Pack JSON/HTML/CSV export uses the native desktop save bridge on pywebview;
+      the UI reports ready only when the bridge confirms an actual save, and reports
+      cancellation/failure separately. Browser fallback behavior remains bounded.
+- [x] CSV file replacement clears the previous preview/review, accepts case-insensitive
+      `.csv`/`.txt` extensions, aborts stale preview requests and exposes a keyboard-
+      accessible dropzone/modal.
+- [x] Journal reads `201` records as a page sentinel, keeps the first `200`, loads older
+      pages with an offset, de-duplicates by trade ID and preserves the loaded page when
+      a load-more request fails.
+- [x] Journal, CSV import, weekly review and Evidence Pack additions are covered by the
+      synchronized EN/TR/DE translation contract.
+
+Verification for this bounded change is recorded by `this change`: frontend **25 test
+files / 116 tests**, i18n **670/670**, TypeScript `--noEmit` and production build pass;
+the locked arm64 local CI also passes backend **816 tests / 2 warnings**, native arm64
+PyInstaller build, WKWebView smoke and `COMPLETE` provenance on a clean commit. The
+native bridge/export path has focused unit/DOM coverage, but the exact rebuilt DMG still
+requires a manual pilot click-through of import → review → Evidence Pack → native
+JSON/HTML/CSV save before this package can be called end-to-end pilot-validated. This
+change does not publish or replace the existing private prerelease asset.
+
+Dual GitHub Release, Apple signing/notarization, pilot kullanıcı erişimi ve
 clean-host yürütmesi bu work package'ın otomatik kod kapıları değildir; owner/host
 kapılarıdır. M-series private prerelease yayımlanmış olsa da canonical product Release
 yetkisi verilmiş değildir.
