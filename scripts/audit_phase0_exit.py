@@ -33,7 +33,10 @@ REQUIRED_WORK_PACKAGES = [
     "P0-WP09",
 ]
 REQUIRED_SMOKE_CHECKS = {"react_mounted", "bridge_roundtrip", "health", "push_sink", "plugin_boundary"}
-REQUIRED_OS = {"windows", "darwin", "linux"}
+# v1.0.0 is intentionally a macOS arm64 release train. CI remains three-OS
+# engineering coverage, but the release workflow must not imply unsupported
+# Windows/Linux artifacts or final-smoke evidence.
+REQUIRED_OS = {"darwin"}
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 UTC_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
@@ -64,18 +67,24 @@ def _check_workflows(root: Path) -> None:
                 _fail(f"{label} workflow is missing {required!r}")
     if "windows-latest" not in ci or "macos-latest" not in ci or "ubuntu-22.04" not in ci:
         _fail("CI workflow does not cover all three operating systems")
-    for script in ("scripts/package_windows.sh", "scripts/package_macos.sh", "scripts/package_linux.sh"):
+    for script in ("scripts/package_macos.sh",):
         if script not in release:
             _fail(f"release workflow does not run {script}")
+    for forbidden in (
+        "scripts/package_windows.sh",
+        "scripts/package_linux.sh",
+        "final-smoke-windows.json",
+        "final-smoke-linux.json",
+    ):
+        if forbidden in release:
+            _fail(f"Mac-only v1 release workflow contains unsupported surface {forbidden}")
     for required in (
         "workflow_dispatch",
         "Smoke test final packaged artifact",
         "run_n05_macos_distribution_preflight.py",
         "n05-macos-distribution.json",
         "scripts/audit_phase0_exit.py",
-        "final-smoke-windows.json",
         "final-smoke-macos.json",
-        "final-smoke-linux.json",
     ):
         if required not in release:
             _fail(f"release workflow is missing {required!r}")
@@ -151,7 +160,7 @@ def audit(
     status = _read(root / "docs" / "strategy" / "PHASE-0-STATUS.md")
     _check_work_packages(status)
     _check_workflows(root)
-    matrix_path = root / "docs" / "release" / "truth-matrix.v1.4.0.json"
+    matrix_path = root / "docs" / "release" / "truth-matrix.v1.0.0.json"
     matrix = load_matrix(matrix_path)
     run_checks(root, matrix_path=matrix_path)
 

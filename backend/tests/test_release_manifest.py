@@ -22,11 +22,11 @@ class TestReleaseManifestAndPackaging:
         with open(notes_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        assert "Kuantra Terminal v1.4.0 — Truth & Safety Release" in content
+        assert "Kuantra Terminal v1.0.0 — Mac Candidate Truth & Safety" in content
         assert "CURRENT_RELEASE_NOTES:START" in content
         assert "CURRENT_RELEASE_NOTES:END" in content
         assert "Historical release archive (non-current)" in content
-        assert "docs/release/truth-matrix.v1.4.0.json" in content
+        assert "docs/release/truth-matrix.v1.0.0.json" in content
         # Historical notes remain auditable in the repository, but they are not the current
         # release body. The renderer/checker enforce that boundary before publishing.
         assert "v1.2.0-modular" in content
@@ -37,9 +37,7 @@ class TestReleaseManifestAndPackaging:
 
         dist_dir = tmp_path / "dist"
         dist_dir.mkdir()
-        (dist_dir / f"Kuantra-Terminal-{__version__}-Setup.exe").write_bytes(b"MZ" + b"W" * 2048)
         (dist_dir / f"Kuantra-Terminal-{__version__}-aarch64.dmg").write_bytes(b"D" * 4096)
-        (dist_dir / f"Kuantra-Terminal-{__version__}-x86_64.AppImage").write_bytes(b"A" * 1024)
         # Files that do not match the artifact prefix must be ignored.
         (dist_dir / "smoke.json").write_text("{}", encoding="utf-8")
 
@@ -60,14 +58,14 @@ class TestReleaseManifestAndPackaging:
         assert manifest["version"] == __version__
         assert manifest["product_name"] == "Kuantra Terminal"
         assert manifest["truth_matrix"]["document_id"] == "KTR-001"
-        assert manifest["truth_matrix"]["version"] == "1.0.1"
+        assert manifest["truth_matrix"]["version"] == "1.0.0"
         assert len(manifest["truth_matrix"]["sha256"]) == 64
-        assert manifest["total_artifacts"] == 3
-        assert len(manifest["artifacts"]) == 3
+        assert manifest["total_artifacts"] == 1
+        assert len(manifest["artifacts"]) == 1
         assert all(a["filename"].startswith("Kuantra-Terminal-") for a in manifest["artifacts"])
 
         platforms = {a["platform"] for a in manifest["artifacts"]}
-        assert platforms == {"Windows", "macOS", "Linux"}
+        assert platforms == {"macOS"}
 
         for art in manifest["artifacts"]:
             assert "filename" in art

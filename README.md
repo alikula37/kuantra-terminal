@@ -1,4 +1,4 @@
-# Kuantra Terminal v1.4.0
+# Kuantra Terminal v1.0.0 (Mac candidate)
 
 [![Local merge gate](https://img.shields.io/badge/merge%20gate-local%20CI%20required-0ea5e9)](docs/strategy/LOCAL-CI-POLICY.md)
 
@@ -15,10 +15,19 @@ transport, source, security, and reconciliation contracts are implemented.
 ## Implemented core and validation boundaries
 
 Implementation is not proof of complete perpetual-account reconciliation or improved
-trading outcomes. There is no real-user pilot evidence yet. The current branch is not
-automatically a new release of the version in this heading. See the
+trading outcomes. There is no real-user pilot evidence yet. This checkout is the
+Mac-only v1.0.0 release train; it is not yet a published or distributable release. See the
 [current status](docs/strategy/STATUS.md) for open correctness
 risks, evidence limits and the remaining P1 delivery order.
+
+## v1.0.0 scope
+
+The first supported release target is macOS arm64. The release artifact must be a
+Developer ID-signed and notarized DMG; the current local artifact remains ad-hoc and
+development-only until the owner supplies Apple signing/notarization access. Intel Mac,
+Windows and Linux are outside the v1.0.0 release claim and remain future expansion scope.
+The old v1.4.0 publication is retained as a withdrawn historical record and must not be
+used.
 
 - SQLite WAL journal and transactional settings/metadata.
 - DuckDB analytical projection for recorded candles/trades.
@@ -32,8 +41,8 @@ risks, evidence limits and the remaining P1 delivery order.
   Linux Secret Service). Plaintext SQLite credential fallback is not supported.
 - React + FastAPI + pywebview single-process desktop shell, with a browser
   development path and per-user data directory.
-- EN/TR/DE i18n parity and a reproducible local build/smoke merge gate; cross-OS evidence is
-  required before a release claim.
+- EN/TR/DE i18n parity and a reproducible local build/smoke gate for the macOS arm64
+  candidate; no v1 release claim is made for other operating systems.
 
 ## Explicitly experimental/disabled
 
@@ -49,7 +58,7 @@ they are not production capabilities:
 - remote ModStore download, hot-mount and arbitrary plugin execution.
 
 See [`docs/strategy/`](docs/strategy) for the decision log, ADRs, evidence
-gates and work-package status. P0-WP08 is the current experimental-containment
+gates and work-package status. N05 is the current macOS distribution preflight
 package; a disabled surface is a deliberate truth result, not a failed demo.
 
 ## Runtime architecture
@@ -113,8 +122,8 @@ bundle documented in [`docs/MACOS_MIGRATION.md`](docs/MACOS_MIGRATION.md). The
 bundle carries the canonical SQLite ledger and Parquet cold storage; DuckDB is
 rebuilt locally and OS keychain credentials are re-entered on the destination.
 
-Before merging to `main`, run the full local gate (the canonical CI source while GitHub
-Actions quota is unavailable):
+Before any release-candidate handoff, run the full local gate (the canonical CI source
+while GitHub Actions quota is unavailable):
 
 ```bash
 uv run --offline --no-project --with-requirements backend/requirements.lock python scripts/run_local_ci.py

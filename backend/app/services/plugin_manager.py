@@ -79,7 +79,7 @@ EXPERIMENTAL_PERSONA_PROFILES: Dict[str, List[str]] = {
 EXPERIMENTAL_PLUGIN_IDS = frozenset(
     plugin_id for profile in EXPERIMENTAL_PERSONA_PROFILES.values() for plugin_id in profile
 )
-# No dynamic plugin is part of the verified v1.4.0 core.  Keeping this allowlist
+# No dynamic plugin is part of the verified v1.0.0 core.  Keeping this allowlist
 # explicit prevents an arbitrary directory dropped into the user plugin path
 # from becoming executable merely because it has a manifest.
 PRODUCTION_PLUGIN_IDS = frozenset()

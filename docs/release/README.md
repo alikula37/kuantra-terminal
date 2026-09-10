@@ -1,9 +1,13 @@
 # Kuantra release truth contract
 
 Release-facing claims are governed by the versioned matrix in
-[`truth-matrix.v1.4.0.json`](truth-matrix.v1.4.0.json). The matrix is a contract, not a
+[`truth-matrix.v1.0.0.json`](truth-matrix.v1.0.0.json). The matrix is a contract, not a
 marketing inventory: it records what the current product can prove, what remains disabled,
 and which files are scanned before a build or GitHub Release.
+
+The current release train is v1.0.0 for macOS arm64 only. The previous v1.4.0 matrix and
+publication are retained as immutable historical records, but v1.4.0 is withdrawn and must
+not be installed or used as a current product description.
 
 The proposed end-to-end delivery and release-readiness plan is
 [KPR-001](../strategy/PRODUCTION-READINESS-PLAN.md). Its G6 checklist covers exact-source
@@ -11,9 +15,9 @@ final artifacts, recovery, security, product evidence and owner approval. It doe
 grant release authority or change this truth matrix; an engineering gate alone is
 not proof that the read-only product is ready for production.
 
-The current matrix revision is `KTR-001@1.0.1`. It records the 2026-09-07 decision that the
-local KDG-002 gate is canonical while GitHub Actions quota is unavailable; same-product wording
-revisions are kept as a matrix version increment rather than overwriting the historical decision.
+The current matrix is `KTR-001@1.0.0`. The prior `KTR-001@1.0.1` matrix remains bound to the
+withdrawn v1.4.0 publication; it is not overwritten because release truth is immutable per
+product version.
 
 ## Naming and versioning
 

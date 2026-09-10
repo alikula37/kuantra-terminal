@@ -1,2 +1,2 @@
 """Single source of truth for the product version. Everything else imports this."""
-__version__ = "1.4.0"
+__version__ = "1.0.0"

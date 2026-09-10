@@ -10,6 +10,12 @@ Developer ID imzalı/notarize DMG ile dağıtılacak. Mevcut aday kanıtı macOS
 Intel Mac, Windows ve Linux v1 claim'i değildir. Apple Developer üyeliği ve gerçek
 signing/notarization erişimi Release Candidate aşamasına kadar ertelenmiştir.
 
+**Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
+çekilmiş olarak korunacak; tag, assets ve eski truth matrix izlenebilirlik için silinmeyecek.
+Güncel release train `v1.0.0`'dır ve henüz yayımlanmamıştır. Yeni v1.0.0 artifact kanıtı
+oluşana kadar aşağıdaki v1.4.0 ad-hoc hash'leri yalnızca pre-reset historical evidence'tir;
+güncel release kanıtı olarak kullanılamaz.
+
 ## Selected next work
 
 **N05 — IN PROGRESS: exact macOS distribution preflight.** The read-only verifier
@@ -19,7 +25,8 @@ hardened runtime, allowlisted entitlements, Gatekeeper and a stapled DMG ticket
 without reading user data, Keychain credentials or raw signing output. Focused
 contract tests are green. The current development artifact is intentionally
 ad-hoc and has no notarization ticket, so the expected result is `BLOCKED`/exit 2;
-this is not an N05 PASS and does not claim production readiness. Actual Apple
+this is not an N05 PASS and does not claim production readiness. The exact smoke/N05 chain
+must be regenerated for the v1.0.0 artifact before any release-candidate dossier. Actual Apple
 signing/notarization remains an owner/host gate.
 
 Source `121a5cd` üzerinde canonical locked local CI **13/13 PASS** oldu: backend

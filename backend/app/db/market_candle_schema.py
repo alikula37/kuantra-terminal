@@ -50,7 +50,7 @@ def ensure_market_candle_schema(conn: Any) -> None:
         """
     )
 
-    # Additive, idempotent migration for v1.4.0-era nine-column databases.
+    # Additive, idempotent migration for legacy nine-column databases.
     # Columns are nullable during migration so a partially old file can still
     # be opened; the backfill below gives every pre-existing row an explicit
     # conservative value.

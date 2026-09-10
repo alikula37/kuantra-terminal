@@ -1,9 +1,14 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.4.0 — Truth & Safety Release
+# Kuantra Terminal v1.0.0 — Mac Candidate Truth & Safety
 
-**Release tag:** `v1.4.0`
+**Release tag:** `v1.0.0`
 **Release status:** `PHASE_0_TRUTH_SAFETY`
 **Product identity:** Local-first Execution Intelligence & Trade Forensics Workstation
+
+This is the current Mac-only v1 release train, not a published release. The supported
+target is macOS arm64. Its eventual distribution artifact is a Developer ID-signed and
+notarized DMG; the current local artifact is ad-hoc and development-only until the owner
+provides Apple signing/notarization access.
 
 This release publishes the verified local core: trade journaling and forensics, deterministic
 risk checks, recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain
@@ -16,17 +21,18 @@ These surfaces have no execution authority. A disabled or `NO_DATA` response is 
 fill, model decision or broker acknowledgement.
 
 The release body is generated from this marker-delimited section. Historical notes below remain
-for repository audit only and are not included in a GitHub Release body.
+for repository audit only and are not included in a GitHub Release body. The prior v1.4.0
+publication is withdrawn and must not be used.
 
 Verification evidence for this release is recorded in `docs/strategy/PHASE-0-STATUS.md` and the
 P0-WP09 work-package record. The exact release tag is guarded by the canonical matrix at
-`docs/release/truth-matrix.v1.4.0.json`.
+`docs/release/truth-matrix.v1.0.0.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)
 
 The material below is retained as an immutable product-history archive. It is not a description
-of the current v1.4.0 product and is never used as the GitHub Release body.
+of the current v1.0.0 product and is never used as the GitHub Release body.
 
 ---
 

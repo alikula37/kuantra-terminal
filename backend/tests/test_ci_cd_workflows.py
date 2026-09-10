@@ -80,7 +80,7 @@ class TestCICDWorkflowsAndPackaging:
         assert "push" in triggers
         assert triggers["push"]["tags"] == ["v*"]
         assert "workflow_dispatch" in triggers
-        assert triggers["workflow_dispatch"]["inputs"]["release_tag"]["default"] == "v1.4.0"
+        assert triggers["workflow_dispatch"]["inputs"]["release_tag"]["default"] == "v1.0.0"
         assert triggers["workflow_dispatch"]["inputs"]["publish"]["default"] is False
 
         # Jobs
@@ -93,16 +93,13 @@ class TestCICDWorkflowsAndPackaging:
         oses = [m["os"] for m in matrix_includes]
         packages = [m["package"] for m in matrix_includes]
 
-        assert "windows-latest" in oses
-        assert "macos-latest" in oses
-        assert "ubuntu-22.04" in oses
+        assert oses == ["macos-latest"]
 
-        for script in (
-            "scripts/package_windows.sh",
-            "scripts/package_macos.sh",
-            "scripts/package_linux.sh",
-        ):
-            assert any(script in p for p in packages), f"release.yml must run {script}"
+        assert packages == ["bash scripts/package_macos.sh"]
+        assert "scripts/package_windows.sh" not in rel_raw
+        assert "scripts/package_linux.sh" not in rel_raw
+        assert "final-smoke-windows.json" not in rel_raw
+        assert "final-smoke-linux.json" not in rel_raw
 
         # Check steps in build-and-package
         bp_steps = bp_job["steps"]

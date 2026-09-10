@@ -84,7 +84,7 @@ def test_ci_workflow_enforces_portable_truth_and_safety_gates():
     assert "audit ignore" not in raw.lower()
 
 
-def test_release_workflow_gates_packaging_and_publish_on_all_matrix_jobs():
+def test_release_workflow_gates_mac_candidate_packaging_and_publish():
     raw = load_workflow("release.yml")
     package_job = job_block(raw, "build-and-package")
     assert_isolated_data_dir(package_job)
@@ -93,11 +93,10 @@ def test_release_workflow_gates_packaging_and_publish_on_all_matrix_jobs():
     names = step_names(package_job)
     assert names.index("Smoke test desktop app") < names.index("Package")
     assert names.index("Package") < names.index("Smoke test final packaged artifact")
-    assert "final-smoke-windows.json" in package_job
     assert "final-smoke-macos.json" in package_job
-    assert "final-smoke-linux.json" in package_job
-    assert 'exe="$install_dir/Kuantra Terminal.exe"' in package_job
-    assert 'expected DMG missing' in package_job
+    assert "final-smoke-windows.json" not in package_job
+    assert "final-smoke-linux.json" not in package_job
+    assert 'expected arm64 DMG missing' in package_job
     publish_job = job_block(raw, "publish-release")
     assert re.search(r"^    needs:\s*build-and-package$", publish_job, flags=re.MULTILINE)
     assert "Audit Phase 0 exit evidence" in publish_job

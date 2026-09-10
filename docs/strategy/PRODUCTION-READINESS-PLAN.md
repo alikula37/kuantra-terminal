@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.34
+version: 1.0.35
 status: Proposed
 date: 2026-09-10
-reviewed_commit: f2d2c82
+reviewed_commit: 859fe92
 branch: main
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -428,8 +428,9 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    multi-platform genişleme onaylanırsa yürütülür.
 
 Aktif WP ve STATUS her pakette birlikte güncellenir; bu roadmap yalnız sıra/kapsam/
-bağımlılık değişince düzenlenir. H05 kararları şimdilik deferred kalır. Main merge,
-release/tag, signing erişimi ve gerçek pilot başlatma ayrı owner kapılarıdır.
+bağımlılık değişince düzenlenir. H05 kararları şimdilik deferred kalır. Release/tag,
+signing erişimi ve gerçek pilot başlatma ayrı owner kapılarıdır; mevcut owner kararıyla
+güncel çalışma branch'i doğrudan `main`'dir.
 
 Her teslim raporu: WP/scope, changed files, failing→passing test kanıtı, tam komutlar,
 platform/fixture/source SHA, açık acceptance kutuları, kalan risk, commit/push ve
@@ -438,6 +439,15 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.35 — 2026-09-10
+
+- Owner-approved version reset kaydedildi: kullanılamaz v1.4.0 publication/tag/assets
+  traceability için korunur ve geri çekilmiş olarak işaretlenir; ilk gerçek release train
+  `v1.0.0` macOS arm64 ve Developer ID imzalı/notarize DMG hedefidir.
+- Current truth matrix, package metadata, release workflow ve release-facing notlar
+  `v1.0.0` ile hizalanır. Yeni tag/release, Apple signing/notarization ve G6 release
+  authority bu değişiklikle verilmez.
 
 ### 1.0.34 — 2026-09-10
 

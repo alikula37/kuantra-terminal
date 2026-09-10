@@ -70,7 +70,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path, dict]:
     executable = app / "Contents" / "MacOS" / "Kuantra Terminal"
     executable.parent.mkdir(parents=True)
     executable.write_bytes(b"synthetic executable")
-    dmg = tmp_path / "Kuantra-Terminal-1.4.0-aarch64.dmg"
+    dmg = tmp_path / "Kuantra-Terminal-1.0.0-aarch64.dmg"
     dmg.write_bytes(b"synthetic dmg")
     report = _report(dmg, executable)
     return app, executable, dmg, report

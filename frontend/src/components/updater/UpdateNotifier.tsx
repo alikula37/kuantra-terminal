@@ -1,10 +1,15 @@
 import React, { useState } from "react";
 import { Download, RefreshCw, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
+import packageJson from "../../../package.json";
+
+const CURRENT_VERSION = `v${packageJson.version}`;
 
 export const UpdateNotifier: React.FC = () => {
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
-  const [statusMessage, setStatusMessage] = useState<string>("Current version: v1.3.0 (Latest Release)");
+  const [statusMessage, setStatusMessage] = useState<string>(
+    `Current version: ${CURRENT_VERSION} (Mac candidate)`,
+  );
 
   const checkForUpdates = async () => {
     setIsChecking(true);
@@ -13,7 +18,7 @@ export const UpdateNotifier: React.FC = () => {
     setTimeout(() => {
       setIsChecking(false);
       setUpdateAvailable(false);
-      setStatusMessage("Kuantra Terminal is up to date (v1.3.0).");
+      setStatusMessage(`Kuantra Terminal is up to date (${CURRENT_VERSION}).`);
     }, 1200);
   };
 
@@ -27,7 +32,7 @@ export const UpdateNotifier: React.FC = () => {
           </span>
         </div>
         <span className="text-[10px] text-accent bg-[#111722] px-2 py-0.5 rounded border border-surface-border font-bold">
-          v1.3.0-STABLE
+          {CURRENT_VERSION}-MAC-CANDIDATE
         </span>
       </div>
 
@@ -49,7 +54,7 @@ export const UpdateNotifier: React.FC = () => {
 
       {updateAvailable && (
         <div className="p-3 bg-accent/15 border border-accent/40 rounded flex items-center justify-between">
-          <span className="text-xs text-white font-bold">New release available: v1.4.0</span>
+          <span className="text-xs text-white font-bold">New release available</span>
           <button className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-3 py-1 rounded text-xs transition">
             <Download className="w-3.5 h-3.5" />
             <span>UPDATE & RESTART</span>
