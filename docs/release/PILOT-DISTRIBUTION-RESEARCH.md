@@ -21,8 +21,13 @@ Bu, Apple'ın “bu uygulama güvenilir geliştiriciden geldi ve değiştirilmed
 yerine geçmez. GitHub yalnızca erişim, sürümleme ve dosya bütünlüğü taşımasıdır;
 macOS Gatekeeper güveni değildir. Ücretsiz pilot için uygulanabilir sınır:
 
-> private GitHub Release + iki native DMG + SHA-256 doğrulaması + ad-hoc imza +
-> kullanıcının bilinçli Gatekeeper onayı = **trusted pilot only**.
+> private GitHub Release + açıkça kapsamlandırılmış native DMG(ler) + SHA-256 doğrulaması +
+> ad-hoc imza + kullanıcının bilinçli Gatekeeper onayı = **trusted pilot only**.
+
+İlk pilot sırası M-series arm64 ile başlayabilir: tek arm64 DMG, paket manifestinde
+`TRUSTED_MACOS_PILOT_ARM64` ve `APPLE_SILICON_M_SERIES_ONLY` olarak açıkça işaretlenir.
+Bu, Intel veya genel macOS desteği iddiası değildir. İki mimarili paket ayrı bir sonraki
+hedeftir ve native x86_64 kanıtı gelmeden üretilmez.
 
 Bu yol public dağıtım, ticari satış veya production-ready iddiası değildir.
 
@@ -139,16 +144,18 @@ olarak kalır.
 
 ## Üç pilot için önerilen işlem zinciri
 
-1. Aynı source commit üzerinde iki native build zincirinin (hosted Intel runner veya
-   açıkça kontrollü Intel pilot Mac dahil) locked dependency, backend/frontend test,
-   build, package ve exact read-only mounted-DMG WKWebView smoke sonuçları PASS olur.
-   Arm64 Mac mini ve Intel pilot Mac farklı mimari dosyaları kullanır.
-2. `scripts/prepare_pilot_package.py` iki DMG'yi; iki final smoke raporunu; iki N05
-   raporunu; standalone talimatı; `PILOT-MANIFEST.json` ve `SHA256SUMS` dosyasını
-   üretir. Eksik Intel kanıtında exit 2 ile durur; arm64 tek başına paketlenmez. Aynı
-   komut manual `publish=false` candidate workflow'unda da çalışır ve sonucu Release
-   oluşturmadan Actions artifact olarak verir; Actions artifact saklama süresi bitince
-   pilotun kalıcı taşıma kanalı değildir.
+1. M-series pilotu için aynı source commit üzerinde native arm64 locked dependency,
+   backend/frontend test, build, package ve exact read-only mounted-DMG WKWebView smoke
+   sonuçları PASS olur. `--architecture arm64` açıkça seçilerek tek mimarili paket üretilir;
+   paket manifesti Intel desteği iddia etmez. İki mimarili pilot için ayrıca hosted Intel
+   runner veya açıkça kontrollü Intel pilot Mac üzerinde native x86_64 zinciri tamamlanır.
+2. `scripts/prepare_pilot_package.py --architecture arm64` M-series DMG'yi, final smoke/N05
+   raporunu, standalone M-series talimatını, `PILOT-MANIFEST.json` ve `SHA256SUMS` dosyasını
+   üretir. Varsayılan `scripts/prepare_pilot_package.py` çağrısı ise iki DMG'yi, iki final
+   smoke raporunu ve iki N05 raporunu ister; Intel kanıtı eksikse exit 2 ile durur. Aynı
+   builder, dual package için arm64'ü tek başına paketlemez. Her iki mod da Release oluşturmadan
+   local candidate üretir; Actions artifact saklama süresi bitince pilotun kalıcı taşıma kanalı
+   değildir.
 3. Ad-hoc N05 raporu `AD_HOC_BLOCKED` olarak pakete yazılır. Bu durum pilotta
    beklenir; `production_ready`, `commercial_support`, `real_user_outcome` ve
    `live_broker_execution` her zaman false kalır.
@@ -171,9 +178,12 @@ olarak kalır.
 
 Bu araştırmanın kod karşılığı:
 
-- `scripts/prepare_pilot_package.py`: iki mimari exact artifact/evidence zincirini
-  doğrular; source/tree/lock/truth identity eşitliğini kontrol eder; ad-hoc N05'i
-  pilot-only olarak sınıflandırır; checksum üretir.
+- `scripts/prepare_pilot_package.py`: varsayılan dual modda iki mimari exact
+  artifact/evidence zincirini doğrular. Açık `--architecture arm64` modu M-series
+  pilotunun önce başlamasına izin verir; paket tipini, hardware scope'unu ve Intel
+  desteği yokluğunu manifestte görünür tutar. Her iki mod source/tree/lock/truth
+  identity eşitliğini kontrol eder; ad-hoc N05'i pilot-only olarak sınıflandırır;
+  checksum üretir.
 - `scripts/macos_architecture.py`: Rosetta translation durumunu fail-closed kontrol
   eder; x86_64 native host kanıtı yoksa build/package/smoke reddedilir.
 - `scripts/build_desktop.py`, `scripts/smoke_desktop.py`,
@@ -182,12 +192,13 @@ Bu araştırmanın kod karşılığı:
 - `docs/release/PILOT-INSTRUCTIONS.md`: teknik olmayan pilot kullanıcısı için
   checksum, kurulum, Gatekeeper ve veri sınırı talimatlarıdır.
 
-Şu an package assembly'nin kapanması için gerekli Intel `x86_64` DMG ve exact smoke/N05
-raporu yoktur. Mevcut GitHub billing/spending-limit blocker hosted yolu kapatmaktadır;
-script, kontrollü native Intel pilot Mac'inden aynı provenance kanıtı gelene kadar
-bilinçli olarak paket üretmez. Sonrasında Intel pilot hostu runtime/N03 kanıtını da
-sağlayabilir. N03 temiz ikinci profil/host, Apple Developer ID/notarization ve owner
-pilot erişim/approval kararları ayrı kapılardır.
+Dual package assembly'nin kapanması için gerekli Intel `x86_64` DMG ve exact smoke/N05
+raporu hâlâ yoktur. Mevcut GitHub billing/spending-limit blocker hosted yolu kapatmaktadır;
+dual mod script'i kontrollü native Intel pilot Mac'inden aynı provenance kanıtı gelene kadar
+bilinçli olarak paket üretmez. Bununla birlikte M-series için explicit arm64-only paket yolu
+bu dış kanıta bağlı değildir ve hardware scope'u daraltılmış trusted pilot olarak hazırlanabilir.
+Intel pilot hostu sonrasında runtime/N03 kanıtını da sağlayabilir. N03 temiz ikinci profil/host,
+Apple Developer ID/notarization ve owner pilot erişim/approval kararları ayrı kapılardır.
 
 ## Açık kararlar ve sınırlar
 

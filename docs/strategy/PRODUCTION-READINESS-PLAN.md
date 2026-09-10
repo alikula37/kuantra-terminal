@@ -3,7 +3,7 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.38
+version: 1.0.39
 status: Proposed
 date: 2026-09-10
 reviewed_commit: this change
@@ -43,7 +43,10 @@ N04 manual update/uninstall veri koruma audit'i bounded non-release kanıtla tam
 arşivlenmiştir. P1-WP28 macOS 12+ native arm64/x86_64 artifact ve provenance zincirini
 kapatan teknik pakettir; Intel destek claim'i native Intel host kanıtı olmadan açılmaz.
 P1-WP29 bu iki mimari kanıtı Apple Developer ID olmadan yalnızca trusted pilot için
-dağıtılabilir ve hash'lenebilir bir pakete bağlar; ad-hoc paket production sayılmaz.
+dağıtılabilir ve hash'lenebilir bir pakete bağlar. İlk M-series pilotu için açıkça
+arm64-only paket üretilebilir; bu paket dual release veya Intel desteği iddia etmez.
+Varsayılan dual paket native x86_64 kanıtı gelmeden fail-closed kalır; her iki ad-hoc
+paket production sayılmaz.
 Aşağıdaki diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış
 WP değildir.
 
@@ -431,10 +434,12 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    gelmeden Intel supported claim'i açma. Hosted Intel CI tercih edilir; pilot ekibin Intel
    Mac'i hazır artifact runtime/N03 testine veya kontrollü native build'e katkı sağlayabilir.
    Universal2/cross-build kullanma. Rosetta translation durumu native kanıt sayılmaz.
-6. P1-WP29 ile iki native zinciri private GitHub Release'e taşınabilir trusted pilot
-   paketine bağla; exact reports, manifest, SHA256SUMS ve kullanıcı talimatını üret.
-   Intel zinciri eksikse paketleme exit 2 ile durur; GitHub Release/tag oluşturma veya
-   upload owner onayı olmadan yapılmaz. Apple Developer ID olmadan production claim'i açma.
+6. P1-WP29 ile önce M-series için açık `--architecture arm64` modunda tek native zinciri
+   private GitHub Release'e taşınabilir trusted pilot paketine bağla; exact report, manifest,
+   SHA256SUMS ve M-series kullanıcı talimatını üret. Bu paket `APPLE_SILICON_M_SERIES_ONLY`
+   kapsamındadır ve Intel desteği iddia etmez. Varsayılan dual mode iki native zincir ister;
+   Intel zinciri eksikse exit 2 ile durur. GitHub Release/tag oluşturma veya upload owner
+   onayı olmadan yapılmaz. Apple Developer ID olmadan production claim'i açma.
 7. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son macOS
    distribution/pilot validation kapısında çalıştır; host kanıtı gelene kadar
    `DEFERRED/HOST_REQUIRED` kalır. N04 sentetik/manual update, interrupted-update
@@ -468,6 +473,13 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
   kaydı mevcutsa native build hostu olarak da kullanılabilir.
 - P1-WP28 ve N03 sırası, hosted Intel CI'nin tek yol olmadığı; Rosetta/arm64 kanıtının
   Intel kanıtı sayılamayacağı açık kalacak şekilde güncellendi.
+
+### 1.0.39 — 2026-09-10
+
+- M-series pilotunun native arm64 kanıtı hazır olduğunda, açık hardware scope ve Intel
+  desteği yokluğu taşıyan `TRUSTED_MACOS_PILOT_ARM64` paketiyle başlayabilmesi kararlaştırıldı.
+  Varsayılan dual-architecture package path ve x86_64 native-host blocker değişmedi;
+  arm64-only paket Intel veya production claim'i açmaz.
 
 ### 1.0.35 — 2026-09-10
 

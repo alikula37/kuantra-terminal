@@ -11,6 +11,7 @@ from scripts.prepare_pilot_package import (
     MANIFEST_NAME,
     MissingPilotEvidence,
     PilotPackageError,
+    prepare_arm64_pilot_package,
     prepare_pilot_package,
 )
 from scripts.release_truth import DEFAULT_MATRIX_PATH, canonical_matrix_digest, load_matrix
@@ -200,6 +201,31 @@ def test_pilot_package_binds_two_architectures_and_generates_checksums(tmp_path)
     assert set(checksums) == set(manifest["included_files"]) - {"SHA256SUMS"}
     for filename, digest in checksums.items():
         assert _sha256(output / filename) == digest
+
+
+def test_arm64_pilot_package_is_explicitly_m_series_only(tmp_path):
+    instructions = tmp_path / "instructions.md"
+    instructions.write_text("M-series pilot instructions", encoding="utf-8")
+    chain = _chain(tmp_path, "arm64")
+
+    manifest = prepare_arm64_pilot_package(
+        output=tmp_path / "pilot-arm64",
+        artifacts={"arm64": chain},
+        instructions=instructions,
+    )
+
+    output = tmp_path / "pilot-arm64"
+    assert manifest["package_type"] == "TRUSTED_MACOS_PILOT_ARM64"
+    assert manifest["pilot_scope"] == "APPLE_SILICON_M_SERIES_ONLY"
+    assert manifest["distribution"]["artifact_status"] == "AD_HOC_TRUSTED_PILOT_ONLY_ARM64"
+    assert manifest["distribution"]["architectures"] == ["arm64"]
+    assert manifest["distribution"]["dual_architecture_complete"] is False
+    assert manifest["distribution"]["intel_artifact_included"] is False
+    assert manifest["access_boundary"]["hardware_scope"] == "Apple Silicon M-series only (native arm64)"
+    assert manifest["access_boundary"]["intel_support_claim"] is False
+    assert {item["architecture"] for item in manifest["artifacts"]} == {"arm64"}
+    assert (output / "Kuantra-Terminal-1.0.0-arm64.dmg").is_file()
+    assert (output / INSTRUCTIONS_NAME).read_text(encoding="utf-8") == "M-series pilot instructions"
 
 
 def test_pilot_package_rejects_cross_architecture_source_mix(tmp_path):

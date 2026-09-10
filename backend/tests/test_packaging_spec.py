@@ -93,6 +93,14 @@ def test_n03_pilot_host_audit_verifies_dmg_and_native_architecture():
         assert needle in script
 
 
+def test_pilot_package_exposes_explicit_m_series_arm64_mode():
+    script = (ROOT / "scripts" / "prepare_pilot_package.py").read_text()
+    instructions = ROOT / "docs" / "release" / "PILOT-INSTRUCTIONS-M-SERIES.md"
+    assert instructions.is_file()
+    for needle in ("prepare_arm64_pilot_package", "--architecture", "TRUSTED_MACOS_PILOT_ARM64", "APPLE_SILICON_M_SERIES_ONLY"):
+        assert needle in script
+
+
 def test_n05_distribution_preflight_is_read_only_and_secretless():
     script = (ROOT / "scripts" / "run_n05_macos_distribution_preflight.py").read_text()
     for needle in (

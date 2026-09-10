@@ -27,10 +27,15 @@ Each architecture is built and distributed as its own native DMG; Universal2 is 
 v1 artifact. The release artifact must be a Developer ID-signed and notarized DMG; the
 current local artifacts remain ad-hoc and development-only until the owner supplies Apple
 signing/notarization access. Windows and Linux are outside the v1.0.0 release claim.
-For the three-person pilot, the repository provides a private GitHub Release preparation path
-with hash-verified ad-hoc DMGs and manual Gatekeeper approval; this is trusted-pilot-only, not
-a public or production distribution. Pilot operators should read
-[`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md) and the
+For the three-person pilot, the first usable lane is an explicitly scoped Apple Silicon /
+M-series arm64-only package. It is prepared with the package builder's
+`--architecture arm64` mode and contains no Intel support claim. The eventual dual-
+architecture pilot package still waits for exact native x86_64 evidence. Both paths use
+hash-verified ad-hoc DMGs and manual Gatekeeper approval; this is trusted-pilot-only, not a
+public or production distribution. Pilot operators should read
+[`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md), the
+[M-series instructions](docs/release/PILOT-INSTRUCTIONS-M-SERIES.md) for the arm64-only
+package, and the
 [distribution research](docs/release/PILOT-DISTRIBUTION-RESEARCH.md). A Mac must actually run
 macOS 12 or later; not every older Intel model can run Monterey, so “all Macs from the last ten
 years” is not a valid support claim. The pilot team may also supply native Intel runtime/N03

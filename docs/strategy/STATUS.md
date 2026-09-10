@@ -22,12 +22,15 @@ import→review→export→close/reopen akışını doğrulayabilir. Temiz profi
 varsa N03 kanıtına da bağlanır; normal kullanıcı profili yalnız runtime pilot kanıtıdır.
 
 **Pilot distribution decision (2026-09-10):** Apple Developer ID üyeliği satın alınmayacak.
-Üç kişilik kapalı pilot, iki native DMG ve hash/evidence bundle taşıyan private GitHub
-Release ile yapılabilir; ad-hoc artifact manual Gatekeeper approval gerektirir ve yalnızca
-`TRUSTED_PILOT_ONLY` olarak sınıflandırılır. Bu seçim public download, commercial support,
-production veya notarized-artifact claim'i açmaz. Pilot kullanıcılarının repository read
-erişimi owner tarafından ayrıca verilmelidir; bu çalışma sırasında erişim, Release/tag veya
-asset upload işlemi yapılmamıştır.
+Üç kişilik kapalı pilot M-series arm64-only paketle başlayabilir; bu paket manifestte
+`TRUSTED_MACOS_PILOT_ARM64` / `APPLE_SILICON_M_SERIES_ONLY` olarak açıkça sınırlanır.
+Sonraki dual pilot paketi iki native DMG ve hash/evidence bundle taşıyan private GitHub
+Release ile yapılabilir; native x86_64 kanıtı gelmeden dual paket üretilmez. Her iki ad-hoc
+artifact manual Gatekeeper approval gerektirir ve yalnızca trusted-pilot-only olarak
+sınıflandırılır. Bu seçim public download, commercial support, production veya
+notarized-artifact claim'i açmaz. Pilot kullanıcılarının repository read erişimi owner
+tarafından ayrıca verilmelidir; bu çalışma sırasında erişim, Release/tag veya asset upload
+işlemi yapılmamıştır.
 
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmiş olarak korunacak; tag, assets ve eski truth matrix izlenebilirlik için silinmeyecek.
@@ -42,10 +45,11 @@ komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production 
 ## Selected next work
 
 **P1-WP29 — IN PROGRESS: trusted macOS pilot package preparation.** The package adds the
-official-source-backed private GitHub Release decision, exact dual-architecture pilot
-package builder, standalone user instructions, checksum/evidence bundle and manual
-Gatekeeper boundary. It cannot emit a pilot package until P1-WP28 produces both native
-DMGs and exact final smoke/N05 reports. The active work package is
+official-source-backed private GitHub Release decision, an exact dual-architecture builder
+and an explicit arm64-only M-series pilot builder, standalone user instructions,
+checksum/evidence bundle and manual Gatekeeper boundary. The arm64-only package can be
+prepared from the current native arm64 chain; the dual package cannot emit until P1-WP28
+produces both native DMGs and exact final smoke/N05 reports. The active work package is
 [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
 **P1-WP28 remains OPEN / HOST_REQUIRED:** native `arm64` and `x86_64` artifact contract,
@@ -63,15 +67,17 @@ deferred clean-profile/second-host final-validation obligation; neither is silen
 by P1-WP28 or P1-WP29.
 
 **P1-WP29 implementation evidence (`a76f5b0`):** `prepare_pilot_package.py` is
-fail-closed for missing x86_64 evidence, binds both architectures to the same source/tree/
-lock/truth identity, verifies exact mounted-DMG smoke plus either N05 PASS or explicit
-ad-hoc `BLOCKED` evidence, requires `hdiutil verify` image-integrity evidence before
-mounting, and writes DMGs, evidence JSON, manifest, instructions and SHA-256 checksums
-without reading user data or credentials. The research record is
+fail-closed for missing x86_64 evidence in its default dual mode, while explicit
+`--architecture arm64` produces a visibly M-series-only package. Both modes bind their
+selected architectures to the same source/tree/lock/truth identity, verify exact
+mounted-DMG smoke plus either N05 PASS or explicit ad-hoc `BLOCKED` evidence, require
+`hdiutil verify` image-integrity evidence before mounting, and write DMGs, evidence JSON,
+manifest, instructions and SHA-256 checksums without reading user data or credentials.
+The research record is
 [`PILOT-DISTRIBUTION-RESEARCH.md`](../release/PILOT-DISTRIBUTION-RESEARCH.md). The
-current invocation is expected to remain `BLOCKED` because neither the hosted Intel job nor
-a controlled Intel pilot build has produced the x86_64 chain; no Release/tag or asset
-upload was performed.
+default dual invocation remains `BLOCKED` because neither the hosted Intel job nor a
+controlled Intel pilot build has produced the x86_64 chain; the explicit M-series arm64
+invocation is the first pilot path. No Release/tag or asset upload was performed.
 
 **Native pilot-host local-CI evidence (`75a4188`):** `run_local_ci.py` now accepts
 `--expected-architecture arm64|x86_64`. With that option it rejects a non-native or

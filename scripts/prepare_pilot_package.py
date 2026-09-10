@@ -1,9 +1,12 @@
 """Prepare a fail-closed, hash-verified macOS pilot package.
 
-The package is deliberately smaller than a production release.  It accepts only
-the exact native arm64 and x86_64 DMGs together with their final mounted-DMG
-smoke and N05 reports.  An ad-hoc N05 result is allowed for the trusted pilot
-path, but it is recorded as non-production and never promoted to a release claim.
+The package is deliberately smaller than a production release.  By default it
+accepts the exact native arm64 and x86_64 DMGs together with their final
+mounted-DMG smoke and N05 reports.  An explicit arm64-only mode is available
+for the first Apple Silicon/M-series pilot; that mode is visibly scoped to
+arm64 and never becomes a dual-architecture or production claim.  An ad-hoc
+N05 result is allowed for trusted pilot paths, but it is recorded as
+non-production and never promoted to a release claim.
 
 This command does not build, sign, notarize, publish, tag, access Keychain, or
 read application data.  It only validates and copies already-produced evidence
@@ -41,11 +44,13 @@ from run_n05_macos_distribution_preflight import (  # noqa: E402
 
 
 ARCHITECTURES = ("arm64", "x86_64")
+ARM64_ARCHITECTURES = ("arm64",)
 SMOKE_REPORT_NAMES = {arch: f"final-smoke-{arch}.json" for arch in ARCHITECTURES}
 N05_REPORT_NAMES = {arch: f"n05-macos-distribution-{arch}.json" for arch in ARCHITECTURES}
 MANIFEST_NAME = "PILOT-MANIFEST.json"
 CHECKSUMS_NAME = "SHA256SUMS"
 INSTRUCTIONS_NAME = "PILOT-INSTRUCTIONS.md"
+ARM64_INSTRUCTIONS = ROOT / "docs" / "release" / "PILOT-INSTRUCTIONS-M-SERIES.md"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 
@@ -241,9 +246,12 @@ def _validate_blocked_n05(
     return "AD_HOC_BLOCKED"
 
 
-def _validate_common_source(identities: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
-    baseline = identities[ARCHITECTURES[0]]
-    for architecture in ARCHITECTURES[1:]:
+def _validate_common_source(
+    identities: Mapping[str, Mapping[str, Any]],
+    architectures: tuple[str, ...],
+) -> dict[str, Any]:
+    baseline = identities[architectures[0]]
+    for architecture in architectures[1:]:
         candidate = identities[architecture]
         for key in ("source_commit_sha", "tracked_source_tree_sha256", "lock_hashes", "truth_matrix_sha256"):
             _require(candidate.get(key) == baseline.get(key),
@@ -264,23 +272,29 @@ def _copy_input(source: Path, destination: Path) -> None:
     shutil.copy2(source, destination)
 
 
-def prepare_pilot_package(
+def _prepare_pilot_package(
     *,
     output: Path,
     artifacts: Mapping[str, Mapping[str, Path]],
     instructions: Path,
+    architectures: tuple[str, ...],
 ) -> dict[str, Any]:
-    """Validate two exact architecture chains and write a pilot package."""
+    """Validate exact architecture chains and write a scoped pilot package."""
 
-    if set(artifacts) != set(ARCHITECTURES):
-        missing = sorted(set(ARCHITECTURES) - set(artifacts))
+    if not architectures or any(architecture not in ARCHITECTURES for architecture in architectures):
+        raise PilotPackageError("pilot package requested an unsupported architecture scope")
+    if set(artifacts) != set(architectures):
+        missing = sorted(set(architectures) - set(artifacts))
         if missing:
             raise MissingPilotEvidence(f"missing native pilot evidence: {', '.join(missing)}")
-        raise PilotPackageError("pilot package must contain exactly arm64 and x86_64 evidence")
+        raise PilotPackageError(
+            "pilot package contains architecture evidence outside the requested scope: "
+            f"{', '.join(sorted(set(artifacts) - set(architectures)))}"
+        )
 
     identities: dict[str, dict[str, Any]] = {}
     n05_states: dict[str, str] = {}
-    for architecture in ARCHITECTURES:
+    for architecture in architectures:
         values = artifacts[architecture]
         dmg = Path(values["dmg"]).resolve()
         smoke_path = Path(values["smoke_report"]).resolve()
@@ -302,7 +316,7 @@ def prepare_pilot_package(
             source_commit_sha=identities[architecture]["source_commit_sha"],
         )
 
-    common = _validate_common_source(identities)
+    common = _validate_common_source(identities, architectures)
     instructions = instructions.resolve()
     if instructions.is_symlink() or not instructions.is_file():
         raise PilotPackageError(f"pilot instructions are missing or symlinked: {instructions}")
@@ -316,7 +330,7 @@ def prepare_pilot_package(
 
     artifact_entries: list[dict[str, Any]] = []
     evidence_entries: list[dict[str, Any]] = []
-    for architecture in ARCHITECTURES:
+    for architecture in architectures:
         values = artifacts[architecture]
         source_dmg = Path(values["dmg"]).resolve()
         source_smoke = Path(values["smoke_report"]).resolve()
@@ -346,9 +360,19 @@ def prepare_pilot_package(
         ])
 
     blocked = any(state == "AD_HOC_BLOCKED" for state in n05_states.values())
+    arm64_only = architectures == ARM64_ARCHITECTURES
+    if arm64_only:
+        package_type = "TRUSTED_MACOS_PILOT_ARM64"
+        artifact_status = "AD_HOC_TRUSTED_PILOT_ONLY_ARM64" if blocked else "N05_VERIFIED_PILOT_ARM64"
+        hardware_scope = "Apple Silicon M-series only (native arm64)"
+    else:
+        package_type = "TRUSTED_MACOS_PILOT"
+        artifact_status = "AD_HOC_TRUSTED_PILOT_ONLY" if blocked else "N05_VERIFIED_PILOT"
+        hardware_scope = "macOS 12 Monterey or later, native arm64 and x86_64"
     manifest: dict[str, Any] = {
         "schema_version": "Kuantra.pilot-package.v1",
-        "package_type": "TRUSTED_MACOS_PILOT",
+        "package_type": package_type,
+        "pilot_scope": "APPLE_SILICON_M_SERIES_ONLY" if arm64_only else "MACOS_DUAL_NATIVE_ARCHITECTURES",
         "generated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "product": {
             "name": "Kuantra Terminal",
@@ -372,7 +396,10 @@ def prepare_pilot_package(
                 "hdiutil_verify_required": True,
                 "github_immutable_release_recommended": True,
             },
-            "artifact_status": "AD_HOC_TRUSTED_PILOT_ONLY" if blocked else "N05_VERIFIED_PILOT",
+            "artifact_status": artifact_status,
+            "architectures": list(architectures),
+            "dual_architecture_complete": not arm64_only,
+            "intel_artifact_included": "x86_64" in architectures,
             "production_ready": False,
             "commercial_support": False,
             "live_execution": False,
@@ -381,7 +408,9 @@ def prepare_pilot_package(
         },
         "access_boundary": {
             "supported_os": "macOS 12 Monterey or later",
-            "architectures": list(ARCHITECTURES),
+            "architectures": list(architectures),
+            "hardware_scope": hardware_scope,
+            "intel_support_claim": "x86_64" in architectures,
             "private_release_users_must_be_signed_in": True,
             "manual_gatekeeper_approval_required_for_ad_hoc": blocked,
             "no_public_download_claim": True,
@@ -419,6 +448,38 @@ def prepare_pilot_package(
     return manifest
 
 
+def prepare_pilot_package(
+    *,
+    output: Path,
+    artifacts: Mapping[str, Mapping[str, Path]],
+    instructions: Path,
+) -> dict[str, Any]:
+    """Validate both native architecture chains and write a dual pilot package."""
+
+    return _prepare_pilot_package(
+        output=output,
+        artifacts=artifacts,
+        instructions=instructions,
+        architectures=ARCHITECTURES,
+    )
+
+
+def prepare_arm64_pilot_package(
+    *,
+    output: Path,
+    artifacts: Mapping[str, Mapping[str, Path]],
+    instructions: Path,
+) -> dict[str, Any]:
+    """Write an explicitly Apple Silicon/M-series-only trusted pilot package."""
+
+    return _prepare_pilot_package(
+        output=output,
+        artifacts=artifacts,
+        instructions=instructions,
+        architectures=ARM64_ARCHITECTURES,
+    )
+
+
 def _arg_path(value: str | None, default: Path) -> Path:
     return Path(value) if value else default
 
@@ -427,15 +488,25 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Prepare a hash-verified Kuantra macOS pilot package")
     parser.add_argument("--dist", type=Path, default=ROOT / "dist")
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--instructions", type=Path, default=ROOT / "docs" / "release" / "PILOT-INSTRUCTIONS.md")
+    parser.add_argument(
+        "--architecture",
+        choices=("arm64",),
+        default=None,
+        help="prepare an explicit Apple Silicon/M-series arm64-only pilot package; omit for dual architecture",
+    )
+    parser.add_argument("--instructions", type=Path, default=None)
     for architecture in ARCHITECTURES:
         parser.add_argument(f"--{architecture}-dmg", dest=f"{architecture}_dmg", type=Path)
         parser.add_argument(f"--{architecture}-smoke-report", dest=f"{architecture}_smoke", type=Path)
         parser.add_argument(f"--{architecture}-n05-report", dest=f"{architecture}_n05", type=Path)
     args = parser.parse_args(argv)
     dist = args.dist.resolve()
+    selected_architectures = ARM64_ARCHITECTURES if args.architecture == "arm64" else ARCHITECTURES
+    instructions = args.instructions or (
+        ARM64_INSTRUCTIONS if args.architecture == "arm64" else ROOT / "docs" / "release" / "PILOT-INSTRUCTIONS.md"
+    )
     artifacts: dict[str, dict[str, Path]] = {}
-    for architecture in ARCHITECTURES:
+    for architecture in selected_architectures:
         artifacts[architecture] = {
             "dmg": _arg_path(
                 getattr(args, f"{architecture}_dmg"),
@@ -451,11 +522,8 @@ def main(argv: list[str] | None = None) -> int:
             ),
         }
     try:
-        manifest = prepare_pilot_package(
-            output=args.output,
-            artifacts=artifacts,
-            instructions=args.instructions,
-        )
+        prepare = prepare_arm64_pilot_package if args.architecture == "arm64" else prepare_pilot_package
+        manifest = prepare(output=args.output, artifacts=artifacts, instructions=instructions)
     except MissingPilotEvidence as exc:
         print(f"[pilot-package] BLOCKED: {exc}", file=sys.stderr)
         return 2

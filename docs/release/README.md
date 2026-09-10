@@ -15,9 +15,12 @@ withdrawn and must not be installed or used as a current product description.
 The three-person pilot distribution and technical validation path is documented in
 [`PILOT-DISTRIBUTION-RESEARCH.md`](PILOT-DISTRIBUTION-RESEARCH.md) and
 [`PILOT-INSTRUCTIONS.md`](PILOT-INSTRUCTIONS.md). A private GitHub Release can carry the
-two DMGs, evidence and checksums for users with repository read access. That transport does
-not provide Apple Developer ID trust; an ad-hoc DMG remains trusted-pilot-only and requires
-manual Gatekeeper approval. No pilot Release or tag has been created.
+eventual dual-architecture DMGs, evidence and checksums for users with repository read
+access. The M-series pilot may start earlier with the explicitly scoped arm64-only package
+prepared by `scripts/prepare_pilot_package.py --architecture arm64`; this package is not a
+dual-architecture release and carries no Intel support claim. That transport does not provide
+Apple Developer ID trust; an ad-hoc DMG remains trusted-pilot-only and requires manual
+Gatekeeper approval. No pilot Release or tag has been created.
 
 The proposed end-to-end delivery and release-readiness plan is
 [KPR-001](../strategy/PRODUCTION-READINESS-PLAN.md). Its G6 checklist covers exact-source
