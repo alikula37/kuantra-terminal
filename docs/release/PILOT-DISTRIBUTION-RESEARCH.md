@@ -6,9 +6,20 @@ Developer ID satın almadan güvenli ve dürüst dağıtım sınırı.
 **Ürün sınırı:** Local-first Execution Intelligence & Trade Forensics Workstation.
 
 Bu belge teknik karar kaydıdır; canonical product release/tag veya pilot daveti oluşturmaz.
-M-series arm64-only private prerelease, `pilot-v1.0.0-arm64` tag'iyle yayımlanmıştır.
+M-series arm64-only private prerelease, `pilot-v1.0.0-arm64` tag'iyle yayımlanmış ve
+2026-09-10 tarihinde uygulama kaynak commit'i `8da8019ae93513c474a3122d450cffb40f66261b`
+ile asset seti aynı tag üzerinde yenilenmiştir. Tag ve download URL değişmemiştir.
 Kaynakların güncel koşulları değişebileceği için resmi bağlantılar aşağıda ayrıca
 listelenmiştir.
+
+## Güncel Release durumu
+
+Mevcut private Release artık önceki `6f8b1ed` arm64 paketini değil, frontend pilot-flow
+hardening içeren `8da8019` kaynak commit'ine bağlı altı asset'li paketi sunar. Güncel DMG
+SHA-256 `900ce30ebe93bc9a1ded399c0067edfa2f7475b892da9193ff608e579f291a76` değeridir;
+`PILOT-MANIFEST.json`, `SHA256SUMS`, exact mounted-DMG smoke ve N05 raporu aynı kaynak ve
+artifact kimliğini taşır. Bu işlem yeni tag, canonical `v1.0.0` Release veya notarization
+oluşturmaz; yalnızca kapalı pilotun mevcut taşıma kanalını günceller.
 
 ## Sonuç — basit karar
 
@@ -161,12 +172,13 @@ olarak kalır.
    beklenir; `production_ready`, `commercial_support`, `real_user_outcome` ve
    `live_broker_execution` her zaman false kalır.
 4. Owner, source commit'i önceden doğrulanmış ayrı bir prerelease/pilot tag'iyle
-   eşleştirip draft private Release oluşturur. M-series arm64-only kanalında bu tag
+   eşleştirir. M-series arm64-only kanalında bu tag
    `pilot-v1.0.0-arm64` olur; `v*` ile başlamadığı için dual production workflow'unu
-   yanlışlıkla tetiklemez. Tüm asset'ler yüklenir, checksum ve manifest kontrol edilir;
-   immutable release etkinse draft → tüm asset'ler → publish sırası kullanılır. Canonical
-   `v1.0.0` product tag'i dual release kapıları geçmeden kullanılmaz. Mevcut M-series
-   prerelease linki [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)'dir.
+   yanlışlıkla tetiklemez. İlk yayın veya kontrollü bir asset yenilemesinde tüm asset'ler
+   yüklenir, checksum ve manifest kontrol edilir; immutable release etkinse mevcut
+   Release değiştirilemeyeceği için yeni pilot tag'i gerekir. Canonical `v1.0.0` product
+   tag'i dual release kapıları geçmeden kullanılmaz. Mevcut M-series prerelease linki
+   [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)'dir.
 5. Pilotlara yalnızca repository read erişimi verilir. Pilot sayfası ve doğru
    architecture DMG'si paylaşılır; kullanıcı `shasum -a 256 -c SHA256SUMS` çalıştırır
    ve ilk açılışta manuel Gatekeeper onayı verir.
@@ -215,8 +227,9 @@ Apple Developer ID/notarization ve owner pilot erişim/approval kararları ayrı
 - v1 macOS 12+ ile sınırlıdır; Windows/Linux veya macOS 11 ve altı iddia edilmez.
 - MIT/third-party notices kararı bu paket tarafından çözülmez; ticari dağıtım öncesi
   ayrı release gate'i olarak kalır.
-- Hiçbir release/tag, upload, user-data migration, credential veya canlı execution
-  bu araştırma ve implementasyonla yapılmamıştır.
+- Yeni release/tag oluşturulmamıştır; mevcut `pilot-v1.0.0-arm64` Release asset seti
+  owner'ın güncelleme talebi kapsamında doğrulanmış `8da8019` arm64 paketiyle yenilenmiştir.
+  Bu işlem user-data migration, credential veya canlı execution içermemiştir.
 
 ## Kaynaklar
 

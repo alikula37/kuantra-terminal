@@ -15,10 +15,11 @@ transport, source, security, and reconciliation contracts are implemented.
 ## Implemented core and validation boundaries
 
 Implementation is not proof of complete perpetual-account reconciliation or improved
-trading outcomes. There is no real-user pilot evidence yet. This checkout is the
-Mac-only v1.0.0 release train; it is not yet a published or distributable release. See the
-[current status](docs/strategy/STATUS.md) for open correctness
-risks, evidence limits and the remaining P1 delivery order.
+trading outcomes. There is no real-user pilot evidence yet. The current private
+`pilot-v1.0.0-arm64` prerelease is a closed, trusted-pilot transport for the verified
+Apple Silicon lane; it is not a public or production release. See the
+[current status](docs/strategy/STATUS.md) for open correctness risks, evidence limits
+and the remaining P1 delivery order.
 
 ## v1.0.0 scope
 
@@ -27,17 +28,16 @@ Each architecture is built and distributed as its own native DMG; Universal2 is 
 v1 artifact. The release artifact must be a Developer ID-signed and notarized DMG; the
 current local artifacts remain ad-hoc and development-only until the owner supplies Apple
 signing/notarization access. Windows and Linux are outside the v1.0.0 release claim.
-For the three-person pilot, the first usable lane is an explicitly scoped Apple Silicon /
-M-series arm64-only package. It is prepared with the package builder's
-`--architecture arm64` mode and contains no Intel support claim. The eventual dual-
-architecture pilot package still waits for exact native x86_64 evidence. Both paths use
-hash-verified ad-hoc DMGs and manual Gatekeeper approval; this is trusted-pilot-only, not a
-public or production distribution. Pilot operators should read
+For the three-person pilot, the current usable lane is an explicitly scoped Apple Silicon /
+M-series arm64-only package at the private
+[`pilot-v1.0.0-arm64` Release](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
+The current app artifact is bound to source commit `8da8019`; it contains no Intel support
+claim. The eventual dual-architecture pilot package still waits for exact native x86_64
+evidence. Both paths use hash-verified ad-hoc DMGs and manual Gatekeeper approval; this is
+trusted-pilot-only, not a public or production distribution. Pilot operators should read
 [`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md), the
 [M-series instructions](docs/release/PILOT-INSTRUCTIONS-M-SERIES.md) for the arm64-only
-package, and the published
-[M-series pilot Release](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64),
-then read the
+package, and the Release asset's `PILOT-MANIFEST.json` and `SHA256SUMS`, then read the
 [distribution research](docs/release/PILOT-DISTRIBUTION-RESEARCH.md). A Mac must actually run
 macOS 12 or later; not every older Intel model can run Monterey, so “all Macs from the last ten
 years” is not a valid support claim. The pilot team may also supply native Intel runtime/N03
@@ -75,9 +75,10 @@ they are not production capabilities:
 - remote ModStore download, hot-mount and arbitrary plugin execution.
 
 See [`docs/strategy/`](docs/strategy) for the decision log, ADRs, evidence
-gates and work-package status. P1-WP29 is the current trusted pilot package
-preparation; P1-WP28 remains open until native Intel evidence exists, and N05 remains the
-later owner-controlled distribution gate.
+gates and work-package status. P1-WP29 is the current trusted pilot package record; its
+arm64 asset set is refreshed in place on the private Release, while P1-WP28 remains open
+until native Intel evidence exists and N05 remains the later owner-controlled distribution
+gate.
 A disabled surface is a deliberate truth result, not a failed demo.
 
 ## Runtime architecture

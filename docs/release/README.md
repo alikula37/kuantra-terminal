@@ -8,7 +8,10 @@ and which files are scanned before a build or GitHub Release.
 The current release train targets v1.0.0 on macOS 12+ with separate native arm64 and x86_64
 artifacts. At this revision arm64 is the verified current candidate; x86_64 remains
 `PENDING_NATIVE_CI` until a native Intel runner or explicitly controlled Intel pilot Mac
-produces its own exact evidence. The previous
+produces its own exact evidence. The existing private pilot Release
+[`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
+has been refreshed in place from app source commit `8da8019`; it remains arm64-only,
+ad-hoc and trusted-pilot-only. The previous
 v1.4.0 matrix and publication are retained as immutable historical records, but v1.4.0 is
 withdrawn and must not be installed or used as a current product description.
 
@@ -22,9 +25,11 @@ pilot-v1.0.0-arm64`; this package is not a dual-architecture release and carries
 support claim. The separate `pilot-v1.0.0-arm64` tag is a private prerelease transport
 identifier, not the canonical `v1.0.0` product release tag. That transport does not provide
 Apple Developer ID trust; an ad-hoc DMG remains trusted-pilot-only and requires manual
-Gatekeeper approval. The published M-series pilot Release is
+Gatekeeper approval. The current published M-series pilot Release is
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
-No dual product Release or canonical `v1.0.0` tag has been created.
+Its asset set includes the exact DMG, mounted-DMG smoke/N05 evidence, manifest, instructions
+and checksums for source commit `8da8019`. No dual product Release or canonical `v1.0.0` tag
+has been created.
 
 The proposed end-to-end delivery and release-readiness plan is
 [KPR-001](../strategy/PRODUCTION-READINESS-PLAN.md). Its G6 checklist covers exact-source

@@ -1,8 +1,16 @@
 # Kuantra Terminal v1.0.0 — kapalı macOS pilotu
 
+**Güncel pilot Release:** [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)<br>
+**Güncel arm64 uygulama kaynak commit'i:** `8da8019ae93513c474a3122d450cffb40f66261b`
+
 Bu paket üç kişilik, davetli pilot içindir. Public bir indirme veya production
 ürünü değildir. Apple Developer ID imzası ve notarization yoksa macOS ilk açılışta
 uyarı gösterir; bu bilinçli ve geçici pilot sınırıdır.
+
+Mevcut private Release yalnızca Apple Silicon native `arm64` DMG taşır. Intel pilotu
+ayrı native `x86_64` artifact yayımlanana kadar beklemelidir; arm64 dosyasını Intel'de
+denemeyin. Aynı Release'teki `PILOT-MANIFEST.json`, `SHA256SUMS` ve evidence dosyaları
+DMG ile birlikte dağıtılan teknik kanıttır.
 
 ## İndirmeden önce
 
@@ -32,16 +40,15 @@ uyarı gösterir; bu bilinçli ve geçici pilot sınırıdır.
    container'ının bozulmadığını doğrular; Apple malware taraması, Developer ID veya
    notarization yerine geçmez.
 
-İsteğe bağlı olarak, immutable GitHub Release kullanıma açılmışsa release ve asset
-kanıtını GitHub CLI ile de kontrol edin:
+İsteğe bağlı olarak Release metadata'sını GitHub CLI ile de kontrol edebilirsiniz:
 
 ```text
-gh release verify v1.0.0 --repo alikula37/kuantra-terminal
-gh release verify-asset v1.0.0 Kuantra-Terminal-1.0.0-arm64.dmg --repo alikula37/kuantra-terminal
+gh release view pilot-v1.0.0-arm64 --repo alikula37/kuantra-terminal
 ```
 
-Bu GitHub kanıtı Apple Gatekeeper güveninin yerine geçmez. Release public değilse
-komutları çalıştıran hesabın repository read erişimi olmalıdır.
+GitHub metadata'sı Apple Gatekeeper güveninin yerine geçmez; asıl dosya doğrulaması
+`SHA256SUMS` ve `hdiutil verify` ile yapılır. Release private olduğu için komutu
+çalıştıran hesabın repository read erişimi olmalıdır.
 
 ## Pilot ekibinin teknik doğrulama rolü
 
@@ -87,7 +94,9 @@ kullanmayın**; kurulumu durdurup bildirin.
   `~/Library/Application Support/Kuantra Terminal`
 - İlk denemeye sentetik veya onaylanmış/redakte edilmiş CSV ile başlayın. Windows
   klasörleri, migration ZIP'leri, `.env`, API anahtarı veya credential taşımayın.
-- Import → reconciliation/review → Trade Evidence Pack → export akışını izleyin.
+- Import → reconciliation/review → Trade Evidence Pack → JSON/HTML/CSV export akışını
+  izleyin. Export ancak native save bridge gerçek kaydı onaylarsa başarılı kabul edilir;
+  cancel veya failure başarı değildir.
 - `PARTIAL`, `UNKNOWN`, `NOT_AVAILABLE` ve `NO_DATA` sonuçlarını başarı veya sıfır
   olarak yorumlamayın; eksik kanıtı not olarak işaretleyin.
 - Live broker order, para transferi, AI order authority ve gerçek execution bu pilotta

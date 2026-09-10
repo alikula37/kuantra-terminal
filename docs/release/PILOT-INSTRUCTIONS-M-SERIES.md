@@ -1,6 +1,15 @@
 <!-- doc-role: reference -->
 # Kuantra Terminal v1.0.0 — M-series arm64 pilotu
 
+**Güncel pilot Release:** [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)<br>
+**Uygulama kaynak commit'i:** `8da8019ae93513c474a3122d450cffb40f66261b`<br>
+**DMG SHA-256:** `900ce30ebe93bc9a1ded399c0067edfa2f7475b892da9193ff608e579f291a76`
+
+Bu belge Release asset'i olarak da dağıtılır. Aynı Release sayfasından DMG ile birlikte
+`PILOT-MANIFEST.json`, `SHA256SUMS`, `final-smoke-arm64.json`,
+`n05-macos-distribution-arm64.json` ve bu talimat dosyasını indirin. Tag ve indirme linki
+aynıdır; asset seti güncel frontend pilot hardening commit'ine göre yenilenmiştir.
+
 Bu paket yalnızca Apple Silicon **M işlemcili Mac'ler** içindir: M1, M2, M3,
 M4 ve aynı native `arm64` ailesindeki cihazlar. macOS 12 Monterey veya üzeri
 gerekir. Intel Mac bu paketin kapsamı değildir; Intel için ayrı `x86_64` DMG
@@ -9,7 +18,8 @@ beklenmelidir.
 Bu paket `TRUSTED_MACOS_PILOT_ARM64` kapsamındadır. Kapalı teknik pilot içindir;
 public dağıtım, production, ticari destek veya Apple tarafından doğrulanmış güven
 iddiası değildir. Apple Developer ID alınmadığı için ilk açılışta manuel Gatekeeper
-onayı gerekebilir.
+onayı gerekebilir. Bu Release Intel desteği iddia etmez; Intel katılımcı yalnızca ayrı
+native `x86_64` artifact verildiğinde Intel lane'ini izlemelidir.
 
 ## İndirmeden ve açmadan önce
 
@@ -60,8 +70,13 @@ Uygulama açıldıktan sonra yalnızca sentetik veya onaylanmış/redakte edilmi
 1. import preview;
 2. reconciliation/review;
 3. Trade Evidence Pack;
-4. export;
+4. JSON, HTML ve CSV export;
 5. uygulamayı kapatıp yeniden açma ve aynı review/Evidence Pack kimliğini kontrol etme.
+
+Review tamamla/yeniden aç kontrolleri period, timezone veya as-of snapshot değişmişse
+bilinçli olarak devre dışı kalabilir. Evidence Pack export'u yalnızca native save bridge
+gerçekten dosya kaydettiğini bildirdiğinde hazır görünür; kullanıcı iptali ile kayıt hatası
+başarı sayılmaz. Import edilen dosya değiştirildiğinde eski preview kullanılmaz.
 
 `PARTIAL`, `UNKNOWN`, `NOT_AVAILABLE` ve `NO_DATA` sonuçlarını başarı veya sıfır
 olarak yorumlamayın. Bu pilotta gerçek broker emri, para transferi, API credential,

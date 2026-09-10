@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: 6f8b1ed
+implementation_commit: 8da8019
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
@@ -55,7 +55,7 @@ olarak kalır; production veya commercial support claim'i açılmaz.
 - [x] Mac mini üzerinde `6646332` source commit'i için arm64 exact DMG, `hdiutil verify`
       (`VALID`), read-only mounted WKWebView smoke ve ad-hoc N05 evidence zinciri yeniden
       üretildi; N05 sonucu bilinçli olarak `BLOCKED/OWNER_REVIEW_REQUIRED` kaldı.
-- [x] Güncel source commit `6f8b1ed`'dan M-series arm64-only pilot paketi üretildi;
+- [x] İlk M-series arm64-only pilot paketi source commit `6f8b1ed`'dan üretildi;
       manifest, checksum doğrulaması ve standalone M-series talimatı aynı pakette bulunur.
       Paket `dual_architecture_complete=false`, `intel_artifact_included=false` ve
       `intel_support_claim=false` alanlarını taşır. Paket durumu
@@ -67,6 +67,10 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       yayımlandı; altı asset'in GitHub SHA-256 digest'i local `SHA256SUMS` ve
       manifest ile eşleşir. Release URL'si:
       `https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`.
+- [x] Mevcut `pilot-v1.0.0-arm64` private prerelease asset seti yeni tag oluşturmadan
+      source commit `8da8019`'a bağlı arm64 paketle in-place yenilendi. Altı asset,
+      güncel release body ve `PILOT-INSTRUCTIONS-M-SERIES.md` aynı pilot sınırını taşır;
+      canonical `v1.0.0` Release/tag'i oluşturulmadı.
 - [ ] Gerçek x86_64 native host (hosted runner veya açıkça seçilmiş pilot Intel Mac),
       exact DMG ve smoke/N05 zincirini üretir. GitHub billing/spending-limit durumu
       hosted yolu kapatırsa pilot Intel Mac kontrollü build hostu olabilir.
@@ -150,16 +154,35 @@ failure boundary in the UI:
 - [x] Journal, CSV import, weekly review and Evidence Pack additions are covered by the
       synchronized EN/TR/DE translation contract.
 
-Verification for this bounded change is recorded by `this change`: frontend **25 test
+Verification for this bounded change is recorded by `8da8019`: frontend **25 test
 files / 116 tests**, i18n **670/670**, TypeScript `--noEmit` and production build pass;
 the locked arm64 local CI also passes backend **816 tests / 2 warnings**, native arm64
 PyInstaller build, WKWebView smoke and `COMPLETE` provenance on a clean commit. The
 native bridge/export path has focused unit/DOM coverage, but the exact rebuilt DMG still
 requires a manual pilot click-through of import → review → Evidence Pack → native
-JSON/HTML/CSV save before this package can be called end-to-end pilot-validated. This
-change does not publish or replace the existing private prerelease asset.
+JSON/HTML/CSV save before this package can be called end-to-end pilot-validated. The
+existing private prerelease asset set was then refreshed in place from this source commit;
+no new Release/tag was created.
 
 Dual GitHub Release, Apple signing/notarization, pilot kullanıcı erişimi ve
 clean-host yürütmesi bu work package'ın otomatik kod kapıları değildir; owner/host
 kapılarıdır. M-series private prerelease yayımlanmış olsa da canonical product Release
 yetkisi verilmiş değildir.
+
+## Güncel private Release asset yenilemesi
+
+2026-09-10 tarihinde mevcut `pilot-v1.0.0-arm64` private prerelease, aynı tag korunarak
+source commit `8da8019ae93513c474a3122d450cffb40f66261b` ile üretilen arm64 paketle
+yenilendi. Güncel DMG SHA-256
+`900ce30ebe93bc9a1ded399c0067edfa2f7475b892da9193ff608e579f291a76`, mounted executable
+SHA-256 `6b3b9985058933f655b2a0e1ece69a41b7d51eb28f00c2c2c0023a7792e41ce1`, final smoke
+report SHA-256 `81eb80f7a77191325c43e313a4ce1664aefe4ba27f4f76292adaaaf97d34d6fd` ve N05
+report SHA-256 `5b24b09d1d42aef456777ab398a71e23d1e1a9ee42e0bfad8dc74840454b1ca3` olarak
+kanıtlandı. N05 ad-hoc artifact nedeniyle `BLOCKED/OWNER_REVIEW_REQUIRED` durumundadır;
+bu beklenen pilot sınırıdır. Release body, DMG, evidence JSON'ları, manifest, checksums ve
+standalone talimat asset'leri aynı arm64 pilot kapsamını taşır. Local-CI report SHA-256
+`cde81fe18e0346b534b4828589c462bc4d7381719611df959b5a7000f6bf0c79`, tracked source tree
+SHA-256 `964e672c8c05da2b490de83856a8a4e81e2c4b77f2a333751bdc783547f764cd`, package
+manifest SHA-256 `1b196a795a82d2dc7b9fea006f0e12e4cf55690956a75b797bbedce4235bc548` ve
+`SHA256SUMS` SHA-256 `5577f7ae8b69197b36b754a4290472ad9dcca8314c74d62fbce72911af67e89e` olarak
+doğrulandı.

@@ -1,43 +1,60 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.0.0 — Mac Candidate Truth & Safety
+# Kuantra Terminal v1.0.0 — M-series Trusted Pilot update
 
-**Release tag:** `v1.0.0`
-**Release status:** `PHASE_0_TRUTH_SAFETY`
+**Pilot Release tag:** `pilot-v1.0.0-arm64`
+**Artifact source commit:** `8da8019ae93513c474a3122d450cffb40f66261b`
+**Release status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`
 **Product identity:** Local-first Execution Intelligence & Trade Forensics Workstation
 
-This is the current Mac-only v1 product release train, not a production release. The
-supported target is macOS 12 Monterey or later on native arm64 and x86_64 builds. Each
-architecture has a separate DMG; Universal2 is not a v1 artifact. The eventual product
-distribution artifacts are Developer ID-signed and notarized DMGs; the closed M-series
-pilot uses a separate private prerelease tag `pilot-v1.0.0-arm64` and an ad-hoc arm64-only
-DMG. That pilot tag is not the canonical `v1.0.0` product release and does not claim Intel,
-production or commercial support.
+The existing private GitHub Release at
+[`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
+has been refreshed in place with the exact arm64 package built from the source commit above.
+The tag and download URL are unchanged; this is a closed trusted-pilot transport, not the
+canonical `v1.0.0` product Release, a public download or a production/commercial-support
+artifact. The package targets macOS 12 Monterey or later on native Apple Silicon `arm64`.
+Intel `x86_64` evidence is still pending and is not implied by this asset set.
 
-This release publishes the verified local core: trade journaling and forensics, deterministic
-risk checks, recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain
-credential references, and the React/FastAPI/pywebview desktop shell.
+The verified local core includes trade journaling and forensics, deterministic risk checks,
+recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain credential
+references, and the React/FastAPI/pywebview desktop shell. This update also hardens the pilot
+flow: unknown financial values stay visibly unknown, review decisions stay bound to the
+displayed period/timezone/as-of snapshot, malformed successful responses are rejected before
+rendering, journal pagination is non-destructive, and Evidence Pack JSON/HTML/CSV exports report
+the actual native save/cancel/failure outcome.
 
-`EXPERIMENTAL_DISABLED` surfaces are intentionally unavailable: live broker submission and
-reconciliation, FIX/DMA transport, venue-grade order-flow latency, local model/GPU telemetry,
-AI swarm, DEX/DeFAI, biometrics, external MCP retrieval, and remote plugin download/hot-mount.
-These surfaces have no execution authority. A disabled or `NO_DATA` response is not a quote,
-fill, model decision or broker acknowledgement.
+Current verification evidence:
+
+- Locked arm64 local CI: **MERGE READY**; backend **816 passed / 2 warnings**, frontend
+  **25 test files / 116 tests**, EN/TR/DE **670/670**, TypeScript and production build pass,
+  native PyInstaller/WKWebView smoke and `COMPLETE` provenance.
+- DMG `Kuantra-Terminal-1.0.0-arm64.dmg`: SHA-256
+  `900ce30ebe93bc9a1ded399c0067edfa2f7475b892da9193ff608e579f291a76`.
+- Exact mounted executable: SHA-256
+  `6b3b9985058933f655b2a0e1ece69a41b7d51eb28f00c2c2c0023a7792e41ce1`.
+- Final mounted-DMG smoke report: SHA-256
+  `81eb80f7a77191325c43e313a4ce1664aefe4ba27f4f76292adaaaf97d34d6fd`.
+- Pilot manifest SHA-256: `1b196a795a82d2dc7b9fea006f0e12e4cf55690956a75b797bbedce4235bc548`.
+- `SHA256SUMS` SHA-256: `5577f7ae8b69197b36b754a4290472ad9dcca8314c74d62fbce72911af67e89e`.
+- N05 distribution preflight: structurally valid but intentionally
+  `BLOCKED/OWNER_REVIEW_REQUIRED` because this zero-cost pilot DMG is ad-hoc and not
+  Developer ID signed/notarized.
+
+`PILOT-MANIFEST.json`, `SHA256SUMS` and the standalone
+[`PILOT-INSTRUCTIONS-M-SERIES.md`](https://github.com/alikula37/kuantra-terminal/blob/main/docs/release/PILOT-INSTRUCTIONS-M-SERIES.md)
+bind the package contents, source and hashes. Download integrity checks do not provide Apple
+malware or Gatekeeper trust; users must verify the checksums and follow the manual Gatekeeper
+procedure. `EXPERIMENTAL_DISABLED` surfaces remain unavailable and have no execution authority:
+live broker submission/reconciliation, FIX/DMA transport, venue-grade order-flow latency, local
+model/GPU telemetry, AI swarm, DEX/DeFAI, biometrics, external MCP retrieval and remote plugin
+download/hot-mount. `NO_DATA`, `UNKNOWN` and `UNAVAILABLE` are not success, quotes, fills or
+broker acknowledgements. OS keychain remains the only supported credential boundary; no
+plaintext credential fallback is introduced.
 
 The release body is generated from this marker-delimited section. Historical notes below remain
-for repository audit only and are not included in a GitHub Release body. The prior v1.4.0
-publication is withdrawn and must not be used.
-
-Verification evidence for this candidate is recorded in the current
-`docs/strategy/STATUS.md` and the P1-WP28/P1-WP29 work-package records. A private GitHub
-Release with the separate M-series pilot tag is published for the three-person trusted pilot
-before the Intel chain exists at
-`https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`;
-`PILOT-MANIFEST.json`, `SHA256SUMS` and the standalone
-[`PILOT-INSTRUCTIONS-M-SERIES.md`](docs/release/PILOT-INSTRUCTIONS-M-SERIES.md) make that
-package explicit. The later dual-architecture pilot still requires the x86_64 chain. An
-ad-hoc pilot DMG still requires manual Gatekeeper approval and is not a production or
-commercial-support artifact. N05 remains the later owner-controlled signing/notarization gate.
-The exact release tag is guarded by the canonical matrix at
+for repository audit only and are not included in the GitHub Release body. The prior v1.4.0
+publication is withdrawn and must not be used. The later dual-architecture pilot still requires
+native x86_64 evidence, and N05 remains the owner-controlled signing/notarization gate.
+The exact canonical product tag is guarded by
 `docs/release/truth-matrix.v1.0.0.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
