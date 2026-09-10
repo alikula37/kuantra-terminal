@@ -29,7 +29,7 @@ komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production 
 native `arm64` and `x86_64` artifact contract, executable-derived provenance, exact
 architecture-aware mounted-DMG smoke, and the two-runner release workflow. It does not
 claim Intel support until the native x86_64 CI job produces its own locked test/build/
-package/smoke evidence. The active work package is
+package/smoke evidence. Implementation is in `bb6ce7c`; the active work package is
 [P1-WP28](work-packages/P1-WP28-macos-dual-architecture.md).
 
 N05 remains the later owner-controlled signing/notarization gate and N03 remains the
@@ -47,6 +47,37 @@ this is not an N05 PASS and does not claim production readiness. The exact v1.0.
 chain has now been regenerated; it must be regenerated again after any source or artifact
 change before a release-candidate dossier. Actual Apple
 signing/notarization remains an owner/host gate.
+
+**P1-WP28 implementation evidence (2026-09-10, `bb6ce7c`):** Architecture/provenance/
+packaging red tests were first failing and then passed **41/41**; the complete backend
+suite is **800 passed / 2 warnings**, frontend is **25 files / 104 tests**, i18n is
+**608/608**, and `python3.11 scripts/check_docs.py`, release-truth, packaging preflight,
+shell syntax and workflow YAML checks pass. Canonical local CI was rerun with the
+default market-data behavior and is **MERGE READY**: all steps PASS, including the
+arm64 PyInstaller build, native `wkwebview` smoke, renderer preflight and COMPLETE
+provenance. This is not runtime-offline evidence; the default local-CI run attempted
+the public Binance stream without credentials, while the exact mounted-DMG smoke used
+`KUANTRA_MARKET_DATA_ENABLED=false` and an isolated temporary data directory.
+
+The clean Mac mini arm64 chain is independently verified: executable SHA-256
+`cfb75d0a9b1aeb00bce657bb0b393284453ed8975856a5b50231312150c47924`, exact DMG
+`Kuantra-Terminal-1.0.0-arm64.dmg` SHA-256
+`4801d3c14fc3ffd4ef07af88a3b36c7eb1ef03032cdd6684227c500bbe8a0eb2`, mounted smoke
+report SHA-256 `5ae96513963999df5284fb5b1d56d12fcaa2eda0d938e4942b287ac20e7d30eb`,
+and N05 report SHA-256 `9e92b104b27fcd30c31547a0b3c5ae9fdb30c5d4d89e159ae7cf55e9d315409e`.
+The reports bind source commit `bb6ce7cd34fced2e9dd7d3b6683182cb28174e27`, tracked
+tree SHA-256 `cd8ddc7e5de74372649de2d8a3bdf04ca8f3bfb1403d07d73300acfe635cbaf4`,
+and truth-matrix digest `740b33db5e73b3c9cd7d8fa078282e6d03d8f0c0cf690f0ac1cc2320a617bcf6`.
+N05 is correctly `BLOCKED/OWNER_REVIEW_REQUIRED` for the ad-hoc artifact: codesign
+verification and mount/detach passed, but Developer ID, hardened runtime, Gatekeeper
+and stapled ticket are absent.
+
+The manual release-candidate workflow `34463755562` was dispatched with
+`publish=false`, but both native jobs were rejected before startup because the GitHub
+account has a failed payment/spending-limit condition; the publish job was skipped.
+Therefore no x86_64 artifact or Intel CI evidence was invented, and the truth matrix
+remains `x86_64: PENDING_NATIVE_CI`. P1-WP28 is not closed and Intel support is not a
+current claim until that external billing/runner blocker is resolved.
 
 Source `00ce94e` üzerinde canonical locked local CI **13/13 PASS** oldu: backend
 **797 passed / 2 warnings**, frontend **25 dosya / 104 test**, i18n **608/608**,
@@ -562,7 +593,7 @@ and frontend lock hashes remain
 | H06 | CLOSED | Data directory permissions, keychain unavailable behavior, telemetry consent/spool, redacted support/export and privacy truth | Archived [H06](../archive/strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md); bounded code/evidence `4270d33`/`a7b99b7`; 683 backend and 71 frontend tests, exact Mac DMG smoke PASS |
 | H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
-| P1-WP28 | IN PROGRESS | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and dual-runner release contract | Implementation is in the current change. Intel support remains unclaimed until the native x86_64 CI evidence is complete; Universal2, Windows/Linux and signing are separate gates. |
+| P1-WP28 | IN PROGRESS | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and dual-runner release contract | `bb6ce7c` implements the guards and dual-runner contract; arm64 clean build/local CI/exact mounted-DMG smoke is PASS. Intel runner jobs are currently blocked before startup by GitHub account billing/spending-limit state, so x86_64 remains `PENDING_NATIVE_CI`; Universal2, Windows/Linux and signing are separate gates. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
 | N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current v1.0.0 ad-hoc DMG is intentionally `BLOCKED` (report SHA `338e83e...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |

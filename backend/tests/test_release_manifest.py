@@ -6,6 +6,7 @@ import sys
 import pytest
 
 from app.version import __version__
+from scripts import generate_release_manifest
 from scripts.release_truth import canonical_matrix_digest, load_matrix
 
 
@@ -98,6 +99,48 @@ class TestReleaseManifestAndPackaging:
         assert manifest["artifacts"] == []
         # No synthetic binaries may be written to disk.
         assert sorted(p.name for p in dist_dir.iterdir()) == ["MANIFEST.json"]
+
+    def test_manifest_binds_each_n05_report_to_the_exact_architecture_artifact(
+        self, tmp_path, monkeypatch
+    ):
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+        arm64 = dist_dir / f"Kuantra-Terminal-{__version__}-arm64.dmg"
+        x86_64 = dist_dir / f"Kuantra-Terminal-{__version__}-x86_64.dmg"
+        arm64.write_bytes(b"arm64 artifact")
+        x86_64.write_bytes(b"x86_64 artifact")
+
+        reports = []
+        for artifact in (arm64, x86_64):
+            report = tmp_path / f"{artifact.stem}-n05.json"
+            report.write_text(
+                json.dumps(
+                    {
+                        "status": "PASS",
+                        "source": {"commit_sha": "a" * 40},
+                        "artifacts": {
+                            "dmg_sha256": generate_release_manifest.compute_sha256(str(artifact)),
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            reports.append(str(report))
+
+        # The N05 contract is covered by its own suite; this test isolates the
+        # manifest's exact artifact/report binding and multi-architecture shape.
+        monkeypatch.setattr(generate_release_manifest, "validate_n05_report", lambda *args, **kwargs: None)
+        manifest = generate_release_manifest.generate_manifest(
+            dist_dir=str(dist_dir),
+            tag=f"v{__version__}",
+            macos_distribution_reports=reports,
+        )
+
+        assert set(manifest["distribution_attestations"]) == {"macOS-arm64", "macOS-x86_64"}
+        assert manifest["distribution_attestations"]["macOS-arm64"]["artifact_filename"] == arm64.name
+        assert manifest["distribution_attestations"]["macOS-x86_64"]["artifact_filename"] == x86_64.name
+        assert manifest["distribution_attestations"]["macOS-arm64"]["architecture"] == "arm64"
+        assert manifest["distribution_attestations"]["macOS-x86_64"]["architecture"] == "x86_64"
 
     def test_version_sync_across_manifests(self, root_dir):
         target_version = __version__

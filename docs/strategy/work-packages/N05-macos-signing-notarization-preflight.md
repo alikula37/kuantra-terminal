@@ -99,10 +99,10 @@ production-ready veya commercial-support iddiası değildir.
 Exact final mounted-DMG smoke sonrasında:
 
 ```text
-python scripts/run_n05_macos_distribution_preflight.py \
-  --dmg dist/Kuantra-Terminal-<version>-aarch64.dmg \
-  --smoke-report dist/final-smoke-macos.json \
-  --output dist/n05-macos-distribution.json
+python3.11 scripts/run_n05_macos_distribution_preflight.py \
+  --dmg dist/Kuantra-Terminal-<version>-arm64.dmg \
+  --smoke-report dist/final-smoke-arm64.json \
+  --output dist/n05-macos-distribution-arm64.json
 ```
 
 Geliştirme DMG'si ad-hoc ve notarization'sız olduğu için beklenen sonuç `BLOCKED`
