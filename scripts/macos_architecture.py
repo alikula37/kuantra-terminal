@@ -23,6 +23,7 @@ ARCHITECTURE_ALIASES = {
     "amd64": "x86_64",
 }
 ARCHITECTURE_TOKEN_RE = re.compile(r"\b(?:arm64|aarch64|x86_64|amd64)\b", re.IGNORECASE)
+_UNSET = object()
 
 
 def canonical_architecture(value: str | None) -> str | None:
@@ -37,6 +38,76 @@ def host_architecture() -> str | None:
     """Return the canonical architecture reported by the current process."""
 
     return canonical_architecture(platform.machine())
+
+
+def rosetta_translation_status(
+    *,
+    runner: CommandRunner | None = None,
+) -> bool | None:
+    """Return whether the current macOS process is running through Rosetta.
+
+    ``platform.machine()`` and ``uname -m`` describe the translated process as
+    ``x86_64`` on Apple Silicon.  That is useful for running an Intel process,
+    but it is not native Intel evidence.  macOS exposes the process translation
+    bit through ``sysctl.proc_translated``; an unavailable or malformed value is
+    deliberately treated as unknown so release-facing native checks can fail
+    closed.
+    """
+
+    if platform.system() != "Darwin":
+        return False
+    run = runner or _default_runner
+    returncode, stdout, _stderr = run(("sysctl", "-in", "sysctl.proc_translated"))
+    if returncode != 0:
+        return None
+    value = stdout.strip()
+    if value == "0":
+        return False
+    if value == "1":
+        return True
+    return None
+
+
+def host_translation_label() -> str:
+    """Return a serializable host-translation label for provenance reports."""
+
+    if platform.system() != "Darwin":
+        return "not_applicable"
+    status = rosetta_translation_status()
+    if status is True:
+        return "rosetta"
+    if status is False:
+        return "native"
+    return "unknown"
+
+
+def native_host_matches(
+    expected_architecture: str,
+    *,
+    observed_architecture: str | None = None,
+    translated: bool | None | object = _UNSET,
+) -> tuple[bool, str]:
+    """Validate that a macOS process can be used as native artifact evidence.
+
+    Intel builds are the sensitive case: an x86_64 process on Apple Silicon can
+    run under Rosetta and produce an x86_64 executable, but that does not prove
+    an Intel host installation.  The caller may provide observations for
+    deterministic tests; otherwise the real host and sysctl state are read.
+    """
+
+    expected = canonical_architecture(expected_architecture)
+    observed = canonical_architecture(observed_architecture) if observed_architecture is not None else host_architecture()
+    if expected is None:
+        return False, f"unsupported expected architecture: {expected_architecture}"
+    if observed != expected:
+        return False, f"expected {expected}, got {observed or 'unknown'}"
+    if expected == "x86_64":
+        translated_state = rosetta_translation_status() if translated is _UNSET else translated
+        if translated_state is True:
+            return False, "x86_64 process is running through Rosetta; native Intel host is required"
+        if translated_state is not False:
+            return False, "Rosetta translation status is unknown; native Intel host cannot be proven"
+    return True, f"native {expected} host verified"
 
 
 CommandRunner = Callable[[Sequence[str]], tuple[int, str, str]]

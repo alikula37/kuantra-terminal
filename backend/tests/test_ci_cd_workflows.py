@@ -73,7 +73,7 @@ class TestCICDWorkflowsAndPackaging:
 
         assert "name" in rel_data
         assert "permissions" in rel_data
-        assert rel_data["permissions"].get("contents") == "write"
+        assert rel_data["permissions"].get("contents") == "read"
 
         # Triggers: tag pushes plus an explicit, non-publishing candidate run.
         triggers = rel_data.get("on", rel_data.get(True, {}))
@@ -87,6 +87,7 @@ class TestCICDWorkflowsAndPackaging:
         assert "jobs" in rel_data
         assert "build-and-package" in rel_data["jobs"]
         assert "publish-release" in rel_data["jobs"]
+        assert "prepare-pilot-package" in rel_data["jobs"]
 
         bp_job = rel_data["jobs"]["build-and-package"]
         matrix_includes = bp_job["strategy"]["matrix"]["include"]
@@ -134,6 +135,7 @@ class TestCICDWorkflowsAndPackaging:
         # Check publish-release job
         pub_job = rel_data["jobs"]["publish-release"]
         assert pub_job.get("needs") == "build-and-package"
+        assert pub_job["permissions"].get("contents") == "write"
         pub_steps = pub_job["steps"]
         pub_uses = [s.get("uses", "") for s in pub_steps]
         pub_names = [s.get("name", "") for s in pub_steps]
@@ -148,6 +150,17 @@ class TestCICDWorkflowsAndPackaging:
         assert "scripts/render_current_release_notes.py" in rel_raw
         assert "body_path: dist/CURRENT_RELEASE_NOTES.md" in rel_raw
         assert "inputs.publish == true" in rel_raw
+        assert "sysctl.proc_translated" in rel_raw
+
+        pilot_job = rel_data["jobs"]["prepare-pilot-package"]
+        assert pilot_job.get("needs") == "build-and-package"
+        assert "inputs.publish == false" in str(pilot_job.get("if"))
+        pilot_uses = [s.get("uses", "") for s in pilot_job["steps"]]
+        pilot_runs = "\n".join(s.get("run", "") for s in pilot_job["steps"])
+        assert any("download-artifact" in u.lower() for u in pilot_uses)
+        assert any("upload-artifact" in u.lower() for u in pilot_uses)
+        assert "scripts/prepare_pilot_package.py" in pilot_runs
+        assert "SHA256SUMS" in pilot_runs
 
         # No Rust / Tauri leftovers in the release pipeline.
         assert "rust-toolchain" not in rel_raw

@@ -21,12 +21,14 @@ try:  # Support both `import scripts.build_provenance` and script-local imports.
         SUPPORTED_ARCHITECTURES,
         detect_executable_architecture,
         host_architecture,
+        host_translation_label,
     )
 except ModuleNotFoundError:  # pragma: no cover - import shape depends on the caller
     from scripts.macos_architecture import (
         SUPPORTED_ARCHITECTURES,
         detect_executable_architecture,
         host_architecture,
+        host_translation_label,
     )
 
 
@@ -163,6 +165,8 @@ def _validation_errors(provenance: Mapping[str, Any], *, release_facing: bool) -
             errors.append("verified executable architecture is required")
         if provenance.get("architecture_source") != "executable":
             errors.append("architecture provenance must come from the executable")
+        if provenance.get("os") == "darwin" and provenance.get("build_host_translation") != "native":
+            errors.append("macOS build host must be proven native and not Rosetta-translated")
     for key in ("executable_sha256", "artifact_sha256"):
         if not SHA256_RE.fullmatch(str(provenance.get(key) or "")):
             errors.append(f"{key} is missing or invalid")
@@ -286,6 +290,7 @@ def collect_provenance(
         "architecture_detection_tool": detected_architecture.get("source"),
         "executable_architectures": detected_architecture.get("architectures", []),
         "build_host_architecture": process_architecture,
+        "build_host_translation": host_translation_label(),
         "executable_path": str(executable) if executable else None,
         "executable_sha256": _sha256_path(executable),
         "artifact_path": str(artifact) if artifact else None,

@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP28-macos-dual-architecture.md"
+    "docs/strategy/work-packages/P1-WP29-trusted-macos-pilot-package.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -21,6 +21,8 @@
     "docs/strategy/DEVELOPMENT-GOVERNANCE.md": "reference",
     "docs/MACOS_MIGRATION.md": "reference",
     "docs/release/README.md": "reference",
+    "docs/release/PILOT-DISTRIBUTION-RESEARCH.md": "reference",
+    "docs/release/PILOT-INSTRUCTIONS.md": "reference",
     "docs/archive/audits/UAT_AUDIT_REPORT-v1.4.0-withdrawn.md": "archived",
     "docs/archive/strategy/KUANTRA-STRATEGY-001.md": "archived",
     "docs/strategy/LOCAL-CI-POLICY.md": "reference",
@@ -85,7 +87,8 @@
     "docs/archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md": "archived",
     "docs/strategy/work-packages/N03-macos-clean-profile-install-audit.md": "reference",
     "docs/strategy/work-packages/N05-macos-signing-notarization-preflight.md": "reference",
-    "docs/strategy/work-packages/P1-WP28-macos-dual-architecture.md": "current-work-package",
+    "docs/strategy/work-packages/P1-WP28-macos-dual-architecture.md": "reference",
+    "docs/strategy/work-packages/P1-WP29-trusted-macos-pilot-package.md": "current-work-package",
     "docs/archive/strategy/work-packages/N04-macos-update-uninstall-data-preservation-audit.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md": "archived",
     "docs/archive/strategy/work-packages/P2-WP04-binance-depth-payload-projection.md": "archived",

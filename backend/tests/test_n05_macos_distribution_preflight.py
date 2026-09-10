@@ -44,6 +44,8 @@ def _report(dmg: Path, executable: Path, *, architecture: str = "arm64") -> dict
         "architecture_verified": True,
         "architecture_source": "executable",
         "executable_architectures": [architecture],
+        "build_host_architecture": architecture,
+        "build_host_translation": "native",
         "executable_path": "/private/temporary-mount/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal",
         "executable_sha256": executable_sha,
         "artifact_path": str(dmg.resolve()),

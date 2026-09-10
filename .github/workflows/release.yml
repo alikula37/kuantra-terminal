@@ -17,7 +17,9 @@ on:
         type: boolean
 
 permissions:
-  contents: write
+  # Build jobs only need to read the checkout.  The publish job below narrows
+  # write access to the release step explicitly.
+  contents: read
 
 env:
   # Manual runs are release candidates by default. The truth checker still
@@ -67,6 +69,13 @@ jobs:
             echo "native runner architecture mismatch: expected $expected, got $actual" >&2
             exit 1
           }
+          if [ "$expected" = "x86_64" ]; then
+            translated="$(sysctl -in sysctl.proc_translated 2>/dev/null || true)"
+            [ "$translated" = "0" ] || {
+              echo "x86_64 job is not proven native Intel; Rosetta status is ${translated:-unknown}" >&2
+              exit 1
+            }
+          fi
       - name: Install Python dependencies
         run: python -m pip install --require-hashes -r backend/requirements.lock
       - name: Compile Python sources
@@ -140,6 +149,8 @@ jobs:
     needs: build-and-package
     if: github.event_name == 'push' || inputs.publish == true
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -186,3 +197,37 @@ jobs:
           files: |
             dist/Kuantra-Terminal-*
             dist/MANIFEST.json
+
+  prepare-pilot-package:
+    name: Prepare Trusted Pilot Package
+    needs: build-and-package
+    # A manual candidate run can produce a downloadable CI artifact without
+    # creating a GitHub Release or a tag.  Published releases still require the
+    # stricter N05 path above.
+    if: github.event_name == 'workflow_dispatch' && inputs.publish == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          pattern: release-macos-*
+          merge-multiple: true
+      - name: Build exact trusted pilot package
+        run: |
+          set -euo pipefail
+          python scripts/prepare_pilot_package.py \
+            --dist dist \
+            --output "dist/pilot-package-${RELEASE_TAG}"
+      - name: Verify pilot package checksums
+        run: |
+          set -euo pipefail
+          sha256sum -c "dist/pilot-package-${RELEASE_TAG}/SHA256SUMS"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: trusted-macos-pilot-package
+          path: dist/pilot-package-${{ inputs.release_tag }}
+          if-no-files-found: error

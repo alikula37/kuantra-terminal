@@ -5,9 +5,17 @@ Release-facing claims are governed by the versioned matrix in
 marketing inventory: it records what the current product can prove, what remains disabled,
 and which files are scanned before a build or GitHub Release.
 
-The current release train is v1.0.0 for macOS arm64 only. The previous v1.4.0 matrix and
-publication are retained as immutable historical records, but v1.4.0 is withdrawn and must
-not be installed or used as a current product description.
+The current release train is v1.0.0 for macOS 12+ on two separately proven native
+architectures: arm64 and x86_64. The previous v1.4.0 matrix and publication are retained as
+immutable historical records, but v1.4.0 is withdrawn and must not be installed or used as a
+current product description.
+
+The three-person pilot distribution path is documented in
+[`PILOT-DISTRIBUTION-RESEARCH.md`](PILOT-DISTRIBUTION-RESEARCH.md) and
+[`PILOT-INSTRUCTIONS.md`](PILOT-INSTRUCTIONS.md). A private GitHub Release can carry the
+two DMGs, evidence and checksums for users with repository read access. That transport does
+not provide Apple Developer ID trust; an ad-hoc DMG remains trusted-pilot-only and requires
+manual Gatekeeper approval. No pilot Release or tag has been created.
 
 The proposed end-to-end delivery and release-readiness plan is
 [KPR-001](../strategy/PRODUCTION-READINESS-PLAN.md). Its G6 checklist covers exact-source

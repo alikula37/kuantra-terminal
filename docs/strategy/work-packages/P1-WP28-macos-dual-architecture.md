@@ -1,4 +1,4 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # P1-WP28 — macOS Dual-Architecture Compatibility
 
 ```yaml

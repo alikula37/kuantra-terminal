@@ -15,7 +15,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from macos_architecture import canonical_architecture, detect_executable_architecture, host_architecture  # noqa: E402
+from macos_architecture import (  # noqa: E402
+    canonical_architecture,
+    detect_executable_architecture,
+    native_host_matches,
+)
 sys.path.insert(0, str(ROOT / "backend"))
 from app.version import __version__  # noqa: E402
 
@@ -47,10 +51,10 @@ def main() -> int:
         if sys.platform != "darwin":
             print("--expected-architecture is only valid for macOS builds", file=sys.stderr)
             return 1
-        if host_architecture() != expected_architecture:
+        native_ok, native_reason = native_host_matches(expected_architecture)
+        if not native_ok:
             print(
-                f"native build runner architecture mismatch: expected {expected_architecture}, "
-                f"got {host_architecture()}",
+                f"native build runner check failed: {native_reason}",
                 file=sys.stderr,
             )
             return 1

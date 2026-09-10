@@ -13,6 +13,14 @@ pilot ek güven kanıtıdır, zorunlu release kapısı değildir. Windows ve Lin
 değildir. Apple Developer üyeliği ve gerçek signing/notarization erişimi Release Candidate
 aşamasına kadar ertelenmiştir.
 
+**Pilot distribution decision (2026-09-10):** Apple Developer ID üyeliği satın alınmayacak.
+Üç kişilik kapalı pilot, iki native DMG ve hash/evidence bundle taşıyan private GitHub
+Release ile yapılabilir; ad-hoc artifact manual Gatekeeper approval gerektirir ve yalnızca
+`TRUSTED_PILOT_ONLY` olarak sınıflandırılır. Bu seçim public download, commercial support,
+production veya notarized-artifact claim'i açmaz. Pilot kullanıcılarının repository read
+erişimi owner tarafından ayrıca verilmelidir; bu çalışma sırasında erişim, Release/tag veya
+asset upload işlemi yapılmamıştır.
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmiş olarak korunacak; tag, assets ve eski truth matrix izlenebilirlik için silinmeyecek.
 Güncel release train `v1.0.0`'dır ve henüz yayımlanmamıştır. Aşağıdaki v1.4.0 ad-hoc
@@ -25,16 +33,33 @@ komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production 
 
 ## Selected next work
 
-**P1-WP28 — IN PROGRESS: macOS dual-architecture compatibility.** The package adds the
-native `arm64` and `x86_64` artifact contract, executable-derived provenance, exact
-architecture-aware mounted-DMG smoke, and the two-runner release workflow. It does not
-claim Intel support until the native x86_64 CI job produces its own locked test/build/
-package/smoke evidence. Implementation is in `bb6ce7c`; the active work package is
-[P1-WP28](work-packages/P1-WP28-macos-dual-architecture.md).
+**P1-WP29 — IN PROGRESS: trusted macOS pilot package preparation.** The package adds the
+official-source-backed private GitHub Release decision, exact dual-architecture pilot
+package builder, standalone user instructions, checksum/evidence bundle and manual
+Gatekeeper boundary. It cannot emit a pilot package until P1-WP28 produces both native
+DMGs and exact final smoke/N05 reports. The active work package is
+[P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**P1-WP28 remains OPEN / HOST_REQUIRED:** native `arm64` and `x86_64` artifact contract,
+executable-derived provenance and exact mounted-DMG smoke are implemented, but Intel
+support is not claimed until the native x86_64 CI job produces its own locked
+test/build/package/smoke evidence. The Rosetta guard now rejects translated or unknown
+Intel host status. Its implementation evidence remains `bb6ce7c`; the separate package
+preparation change is recorded under P1-WP29.
 
 N05 remains the later owner-controlled signing/notarization gate and N03 remains the
 deferred clean-profile/second-host final-validation obligation; neither is silently closed
-by P1-WP28.
+by P1-WP28 or P1-WP29.
+
+**P1-WP29 implementation evidence (this change):** `prepare_pilot_package.py` is
+fail-closed for missing x86_64 evidence, binds both architectures to the same source/tree/
+lock/truth identity, verifies exact mounted-DMG smoke plus either N05 PASS or explicit
+ad-hoc `BLOCKED` evidence, and writes DMGs, evidence JSON, manifest, instructions and
+SHA-256 checksums without reading user data or credentials. The research record is
+[`PILOT-DISTRIBUTION-RESEARCH.md`](../release/PILOT-DISTRIBUTION-RESEARCH.md). The
+current invocation is expected to remain `BLOCKED` because the GitHub account billing/
+spending-limit blocker has not produced the x86_64 chain; no Release/tag or asset upload
+was performed.
 
 **N05 — IN PROGRESS: exact macOS distribution preflight.** The read-only verifier
 `run_n05_macos_distribution_preflight.py` binds an exact DMG, its mounted app and

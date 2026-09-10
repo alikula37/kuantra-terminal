@@ -3,10 +3,10 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.36
+version: 1.0.37
 status: Proposed
 date: 2026-09-10
-reviewed_commit: faf8d28
+reviewed_commit: this change
 branch: main
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
@@ -40,8 +40,10 @@ tamamlanıp arşivlenmiştir. N03 temiz Mac profil/ikinci host install-lifecycle
 uygulanmıştır; owner kararıyla host çalıştırması son macOS dağıtım/pilot validation
 kapısına ertelenmiştir ve ikinci host/profile kanıtı olmadan PASS/production iddiası yoktur.
 N04 manual update/uninstall veri koruma audit'i bounded non-release kanıtla tamamlanıp
-arşivlenmiştir. Yeni seçili paket P1-WP28, macOS 12+ native arm64/x86_64 artifact ve
-provenance zincirini kapatır; Intel destek claim'i native Intel CI kanıtı olmadan açılmaz.
+arşivlenmiştir. P1-WP28 macOS 12+ native arm64/x86_64 artifact ve provenance zincirini
+kapatan teknik pakettir; Intel destek claim'i native Intel CI kanıtı olmadan açılmaz.
+P1-WP29 bu iki mimari kanıtı Apple Developer ID olmadan yalnızca trusted pilot için
+dağıtılabilir ve hash'lenebilir bir pakete bağlar; ad-hoc paket production sayılmaz.
 Aşağıdaki diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış
 WP değildir.
 
@@ -166,8 +168,10 @@ privacy/data-lifecycle paketi `4270d33`/`a7b99b7` ile bounded olarak tamamlandı
 bounded performance/resource-limit paketi `4e761fa`/`198e712` kanıtlarıyla
 non-release ölçüm sınırı olarak tamamlandı ve arşivlendi. P1-WP27 G0–G2
 supported-matrix, bağımsız oracle ve packaged value-chain audit'i `e042790` ile
-tamamlandı ve arşivlendi. Sıradaki aktif non-release iş N03 temiz Mac
-profil/ikinci host install-lifecycle audit'idir; production iddiası yine açılamaz.
+tamamlandı ve arşivlendi. P1-WP29 trusted macOS pilot package preparation iki native
+artifact zinciri hazır olana kadar fail-closed hazırlanır; N03 temiz Mac profil/ikinci
+host install-lifecycle audit'i son pilot validation kapısıdır ve production iddiası yine
+açılamaz.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı P1-WP27
@@ -216,6 +220,7 @@ izleme yaklaşımı NIST SSDF'den yararlanır; bu plan bir standart sertifikası
 | N03 | Temiz ikinci host/profilde quarantine dahil install → launch → import/review → close/reopen; geliştirici cache/data'sına bağımlı değil; final validation'a ertelendi |
 | N04 | Update önceki supported build'den; interrupted update; uninstall veriyi korur; restore ve schema rollback politikası kullanıcıya açık; bounded non-release audit tamamlandı |
 | N05 | Exact DMG üzerinde read-only signing/notarization preflight; minimal entitlements, ticket/manifest verification ve secretsiz signing logs. Actual Developer ID/notary kanıtı owner/Apple host kapısıdır |
+| P1-WP29 | İki native DMG + final mounted-DMG smoke/N05 zinciri aynı source/tree/lock/truth kimliğine bağlı; private GitHub Release taşıma, checksum ve manuel Gatekeeper talimatı; ad-hoc ise trusted-pilot-only |
 | N06 | Gelecekteki multi-platform release için Windows P0-WP11 host blocker ve Linux native final artifact suite ayrı host'larda; v1 Mac-only release gate'i değildir |
 
 Mac ad-hoc geliştirme DMG'si ticari distribution-signed artifact değildir. Apple'ın
@@ -421,16 +426,20 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
 5. P1-WP28 ile macOS 12+ native arm64/x86_64 build, exact DMG smoke, executable-derived
    provenance ve dual-runner release contract'ını tamamla. Native Intel CI kanıtı
    gelmeden Intel supported claim'i açma; fiziksel Intel pilotunu ek güven kanıtı olarak
-   tut. Universal2/cross-build kullanma.
-6. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son macOS
+   tut. Universal2/cross-build kullanma. Rosetta translation durumu native kanıt sayılmaz.
+6. P1-WP29 ile iki native zinciri private GitHub Release'e taşınabilir trusted pilot
+   paketine bağla; exact reports, manifest, SHA256SUMS ve kullanıcı talimatını üret.
+   Intel zinciri eksikse paketleme exit 2 ile durur; GitHub Release/tag oluşturma veya
+   upload owner onayı olmadan yapılmaz. Apple Developer ID olmadan production claim'i açma.
+7. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son macOS
    distribution/pilot validation kapısında çalıştır; host kanıtı gelene kadar
    `DEFERRED/HOST_REQUIRED` kalır. N04 sentetik/manual update, interrupted-update
    recovery ve uninstall veri koruma audit'i tamamlandı/arşivlendi.
-7. N05 exact-DMG read-only signing/notarization preflight kod kapısını uygula; gerçek
+8. N05 exact-DMG read-only signing/notarization preflight kod kapısını uygula; gerçek
    Developer ID/hardened-runtime/Gatekeeper/stapled-ticket kanıtını owner/Apple host
    erişimiyle al. Ticari dağıtım öncesi H05 license/notices/dependency disposition
    owner kapısını ayrıca yeniden aç; N05 bu kararı varsaymaz.
-8. v1 için N05 gerçek Apple dağıtım kanıtı ve N03 Mac host/profile validation; ardından
+9. v1 için N05 gerçek Apple dağıtım kanıtı ve N03 Mac host/profile validation; ardından
    G5 consent/metrik kararları, formative ve kontrollü pilot, G6–G7 owner release
    kararı ve sınırlı rollout. N06 Windows/Linux host kanıtı yalnızca v1 sonrası
    multi-platform genişleme onaylanırsa yürütülür.

@@ -16,12 +16,15 @@ extra to install for end users. The app tree is frozen with **PyInstaller** (`--
 - **Native macOS build host** — the v1 target is macOS 12 Monterey or later with separate
   native arm64 and x86_64 builds. The Mac mini validates arm64 locally; x86_64 release
   evidence is produced on a native Intel GitHub runner. A single-architecture build is
-  never presented as Universal2 or as the other architecture.
+  never presented as Universal2 or as the other architecture. Intel jobs fail if the
+  process is running through Rosetta or if native status cannot be proven.
 - **Xcode Command Line Tools**: `xcode-select --install`
 - **Python 3.11+** matching the native build host architecture
 - **Node.js 20+ & npm**
 
-No code-signing identity is required: the DMG is ad-hoc signed (`codesign -s -`).
+No code-signing identity is required for the closed pilot: the DMG is ad-hoc signed
+(`codesign -s -`). This is not Apple-trusted distribution; public/commercial/production
+delivery remains blocked until Developer ID signing and notarization are completed.
 
 ---
 
@@ -168,11 +171,18 @@ without the explicit `--submit` flag.
 
 ## 7. First Launch Notes
 
-- The app is **not notarized**. On first launch users must **right-click the app → Open** and
-  confirm the Gatekeeper prompt; double-clicking shows "cannot be opened".
+- The app is **not notarized** on the zero-cost pilot path. After verifying the
+  `SHA256SUMS` file, users must **right-click the app → Open** and confirm the Gatekeeper
+  prompt. If macOS still blocks it, use **System Settings → Privacy & Security → Open
+  Anyway** after trying to open it once. Never disable Gatekeeper or remove quarantine
+  with a command. Stop instead if macOS says the app will damage the computer or is damaged.
 - Launch duration depends on host, signing/quarantine and OS state; no measured universal
   launch-time guarantee is made. Administrator/Gatekeeper approval must be performed by
   the user in the OS UI, never bypassed by disabling system protections.
+
+The standalone three-person pilot procedure, private GitHub Release access boundary and
+checksum instructions are in [`docs/release/PILOT-INSTRUCTIONS.md`](release/PILOT-INSTRUCTIONS.md).
+The research decision record is [`docs/release/PILOT-DISTRIBUTION-RESEARCH.md`](release/PILOT-DISTRIBUTION-RESEARCH.md).
 
 ---
 

@@ -26,9 +26,14 @@ for repository audit only and are not included in a GitHub Release body. The pri
 publication is withdrawn and must not be used.
 
 Verification evidence for this candidate is recorded in the current
-`docs/strategy/STATUS.md` and P1-WP28 work-package record. N05 remains the later
-owner-controlled signing/notarization gate. The exact release tag is guarded by the
-canonical matrix at `docs/release/truth-matrix.v1.0.0.json`.
+`docs/strategy/STATUS.md` and the P1-WP28/P1-WP29 work-package records. A private GitHub
+Release can be used for the three-person trusted pilot only after both native architecture
+chains exist; `PILOT-MANIFEST.json`, `SHA256SUMS` and the standalone
+[`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md) make that package explicit.
+An ad-hoc pilot DMG still requires manual Gatekeeper approval and is not a production or
+commercial-support artifact. N05 remains the later owner-controlled signing/notarization gate.
+The exact release tag is guarded by the canonical matrix at
+`docs/release/truth-matrix.v1.0.0.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)

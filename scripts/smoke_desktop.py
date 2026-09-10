@@ -21,7 +21,11 @@ from build_provenance import (  # noqa: E402
     collect_provenance,
     default_artifact_for_executable,
 )
-from macos_architecture import canonical_architecture, detect_executable_architecture  # noqa: E402
+from macos_architecture import (  # noqa: E402
+    canonical_architecture,
+    detect_executable_architecture,
+    native_host_matches,
+)
 from release_truth import DEFAULT_MATRIX_PATH, canonical_matrix_digest, load_matrix  # noqa: E402
 
 
@@ -157,6 +161,11 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
+        if sys.platform == "darwin":
+            native_ok, native_reason = native_host_matches(expected_architecture)
+            if not native_ok:
+                print(f"native smoke host check failed: {native_reason}", file=sys.stderr)
+                return 1
         detected = detect_executable_architecture(exe)
         if detected.get("verified") is not True:
             print(

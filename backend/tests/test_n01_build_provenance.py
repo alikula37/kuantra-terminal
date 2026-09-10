@@ -12,7 +12,7 @@ from scripts.build_provenance import (
     collect_provenance,
     validate_provenance,
 )
-from scripts.macos_architecture import detect_executable_architecture
+from scripts.macos_architecture import detect_executable_architecture, native_host_matches
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -42,6 +42,7 @@ def test_collect_provenance_falls_back_to_checkout_and_binds_hashes(tmp_path, mo
     assert provenance["toolchain"]["npm"]
     assert provenance["toolchain"]["uv"]
     assert provenance["toolchain"]["pyinstaller"]
+    assert provenance["build_host_translation"] in {"native", "rosetta", "unknown", "not_applicable"}
     assert SHA256_RE.fullmatch(provenance["executable_sha256"])
     assert SHA256_RE.fullmatch(provenance["artifact_sha256"])
     assert provenance["provenance_status"] in {"COMPLETE", "DEVELOPER_DIRTY", "INCOMPLETE"}
@@ -122,6 +123,73 @@ def test_release_provenance_requires_verified_native_architecture():
                 "architecture": "x86_64",
                 "architecture_verified": False,
                 "architecture_source": "host_fallback",
+                "executable_sha256": "e" * 64,
+                "artifact_sha256": "f" * 64,
+                "provenance_status": "COMPLETE",
+            },
+            release_facing=True,
+        )
+
+
+def test_native_intel_guard_rejects_rosetta_and_unknown_translation():
+    ok, reason = native_host_matches(
+        "x86_64",
+        observed_architecture="x86_64",
+        translated=True,
+    )
+    assert ok is False
+    assert "Rosetta" in reason
+
+    ok, reason = native_host_matches(
+        "x86_64",
+        observed_architecture="x86_64",
+        translated=None,
+    )
+    assert ok is False
+    assert "unknown" in reason
+
+
+def test_native_arm_guard_accepts_arm64_without_translation_requirement():
+    assert native_host_matches(
+        "arm64",
+        observed_architecture="arm64",
+        translated=True,
+    ) == (True, "native arm64 host verified")
+
+
+def test_native_guard_canonicalizes_explicit_host_alias():
+    assert native_host_matches(
+        "x86_64",
+        observed_architecture="amd64",
+        translated=False,
+    ) == (True, "native x86_64 host verified")
+
+
+def test_release_provenance_rejects_rosetta_host_metadata():
+    with pytest.raises(ProvenanceError, match="Rosetta-translated"):
+        validate_provenance(
+            {
+                "source_commit_sha": "a" * 40,
+                "checkout_commit_sha": "a" * 40,
+                "source_commit_matches_checkout": True,
+                "tracked_source_tree_status": "clean",
+                "tracked_source_tree_sha256": "b" * 64,
+                "lock_hashes": {
+                    "backend_requirements_lock_sha256": "c" * 64,
+                    "frontend_package_lock_sha256": "d" * 64,
+                },
+                "toolchain": {
+                    "python": "3.11",
+                    "node": "20",
+                    "npm": "10",
+                    "uv": "0.1",
+                    "pyinstaller": "6",
+                },
+                "os": "darwin",
+                "architecture": "x86_64",
+                "architecture_verified": True,
+                "architecture_source": "executable",
+                "build_host_translation": "rosetta",
                 "executable_sha256": "e" * 64,
                 "artifact_sha256": "f" * 64,
                 "provenance_status": "COMPLETE",
