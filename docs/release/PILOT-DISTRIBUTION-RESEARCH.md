@@ -160,9 +160,11 @@ olarak kalır.
    beklenir; `production_ready`, `commercial_support`, `real_user_outcome` ve
    `live_broker_execution` her zaman false kalır.
 4. Owner, source commit'i önceden doğrulanmış ayrı bir prerelease/pilot tag'iyle
-   eşleştirip draft private Release oluşturur; tüm asset'leri yükler, checksum ve
-   manifest'i kontrol eder. Immutable release etkinse draft → tüm asset'ler → publish
-   sırası kullanılır. Bu çalışma tag/release oluşturmaz.
+   eşleştirip draft private Release oluşturur. M-series arm64-only kanalında bu tag
+   `pilot-v1.0.0-arm64` olur; `v*` ile başlamadığı için dual production workflow'unu
+   yanlışlıkla tetiklemez. Tüm asset'ler yüklenir, checksum ve manifest kontrol edilir;
+   immutable release etkinse draft → tüm asset'ler → publish sırası kullanılır. Canonical
+   `v1.0.0` product tag'i dual release kapıları geçmeden kullanılmaz.
 5. Pilotlara yalnızca repository read erişimi verilir. Pilot sayfası ve doğru
    architecture DMG'si paylaşılır; kullanıcı `shasum -a 256 -c SHA256SUMS` çalıştırır
    ve ilk açılışta manuel Gatekeeper onayı verir.

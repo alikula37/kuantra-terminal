@@ -53,6 +53,7 @@ INSTRUCTIONS_NAME = "PILOT-INSTRUCTIONS.md"
 ARM64_INSTRUCTIONS = ROOT / "docs" / "release" / "PILOT-INSTRUCTIONS-M-SERIES.md"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+PILOT_TAG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$")
 
 
 class PilotPackageError(ValueError):
@@ -278,11 +279,17 @@ def _prepare_pilot_package(
     artifacts: Mapping[str, Mapping[str, Path]],
     instructions: Path,
     architectures: tuple[str, ...],
+    pilot_tag: str | None = None,
 ) -> dict[str, Any]:
     """Validate exact architecture chains and write a scoped pilot package."""
 
     if not architectures or any(architecture not in ARCHITECTURES for architecture in architectures):
         raise PilotPackageError("pilot package requested an unsupported architecture scope")
+    if pilot_tag is not None:
+        _require(PILOT_TAG_RE.fullmatch(pilot_tag) is not None,
+                 "pilot tag contains unsupported characters or is too long")
+        _require(pilot_tag != f"v{__version__}",
+                 "pilot tag must remain distinct from the canonical product release tag")
     if set(artifacts) != set(architectures):
         missing = sorted(set(architectures) - set(artifacts))
         if missing:
@@ -397,6 +404,8 @@ def _prepare_pilot_package(
                 "github_immutable_release_recommended": True,
             },
             "artifact_status": artifact_status,
+            "release_channel": "PRIVATE_PRERELEASE_PILOT",
+            "pilot_tag": pilot_tag,
             "architectures": list(architectures),
             "dual_architecture_complete": not arm64_only,
             "intel_artifact_included": "x86_64" in architectures,
@@ -453,6 +462,7 @@ def prepare_pilot_package(
     output: Path,
     artifacts: Mapping[str, Mapping[str, Path]],
     instructions: Path,
+    pilot_tag: str | None = None,
 ) -> dict[str, Any]:
     """Validate both native architecture chains and write a dual pilot package."""
 
@@ -461,6 +471,7 @@ def prepare_pilot_package(
         artifacts=artifacts,
         instructions=instructions,
         architectures=ARCHITECTURES,
+        pilot_tag=pilot_tag,
     )
 
 
@@ -469,6 +480,7 @@ def prepare_arm64_pilot_package(
     output: Path,
     artifacts: Mapping[str, Mapping[str, Path]],
     instructions: Path,
+    pilot_tag: str | None = None,
 ) -> dict[str, Any]:
     """Write an explicitly Apple Silicon/M-series-only trusted pilot package."""
 
@@ -477,6 +489,7 @@ def prepare_arm64_pilot_package(
         artifacts=artifacts,
         instructions=instructions,
         architectures=ARM64_ARCHITECTURES,
+        pilot_tag=pilot_tag,
     )
 
 
@@ -493,6 +506,11 @@ def main(argv: list[str] | None = None) -> int:
         choices=("arm64",),
         default=None,
         help="prepare an explicit Apple Silicon/M-series arm64-only pilot package; omit for dual architecture",
+    )
+    parser.add_argument(
+        "--pilot-tag",
+        default=None,
+        help="bind the package to a distinct private pilot prerelease tag (never the canonical v1.0.0 tag)",
     )
     parser.add_argument("--instructions", type=Path, default=None)
     for architecture in ARCHITECTURES:
@@ -523,7 +541,12 @@ def main(argv: list[str] | None = None) -> int:
         }
     try:
         prepare = prepare_arm64_pilot_package if args.architecture == "arm64" else prepare_pilot_package
-        manifest = prepare(output=args.output, artifacts=artifacts, instructions=instructions)
+        manifest = prepare(
+            output=args.output,
+            artifacts=artifacts,
+            instructions=instructions,
+            pilot_tag=args.pilot_tag,
+        )
     except MissingPilotEvidence as exc:
         print(f"[pilot-package] BLOCKED: {exc}", file=sys.stderr)
         return 2

@@ -5,11 +5,13 @@
 **Release status:** `PHASE_0_TRUTH_SAFETY`
 **Product identity:** Local-first Execution Intelligence & Trade Forensics Workstation
 
-This is the current Mac-only v1 release train, not a published release. The supported
-target is macOS 12 Monterey or later on native arm64 and x86_64 builds. Each architecture
-has a separate DMG; Universal2 is not a v1 artifact. The eventual distribution artifacts
-are Developer ID-signed and notarized DMGs; current local artifacts are ad-hoc and
-development-only until the owner provides Apple signing/notarization access.
+This is the current Mac-only v1 product release train, not a production release. The
+supported target is macOS 12 Monterey or later on native arm64 and x86_64 builds. Each
+architecture has a separate DMG; Universal2 is not a v1 artifact. The eventual product
+distribution artifacts are Developer ID-signed and notarized DMGs; the closed M-series
+pilot uses a separate private prerelease tag `pilot-v1.0.0-arm64` and an ad-hoc arm64-only
+DMG. That pilot tag is not the canonical `v1.0.0` product release and does not claim Intel,
+production or commercial support.
 
 This release publishes the verified local core: trade journaling and forensics, deterministic
 risk checks, recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain
@@ -27,10 +29,11 @@ publication is withdrawn and must not be used.
 
 Verification evidence for this candidate is recorded in the current
 `docs/strategy/STATUS.md` and the P1-WP28/P1-WP29 work-package records. A private GitHub
-Release can be used for the three-person trusted pilot only after both native architecture
-chains exist; `PILOT-MANIFEST.json`, `SHA256SUMS` and the standalone
-[`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md) make that package explicit.
-An ad-hoc pilot DMG still requires manual Gatekeeper approval and is not a production or
+Release with the separate M-series pilot tag can be used for the three-person trusted pilot
+before the Intel chain exists; `PILOT-MANIFEST.json`, `SHA256SUMS` and the standalone
+[`PILOT-INSTRUCTIONS-M-SERIES.md`](docs/release/PILOT-INSTRUCTIONS-M-SERIES.md) make that
+package explicit. The later dual-architecture pilot still requires the x86_64 chain. An
+ad-hoc pilot DMG still requires manual Gatekeeper approval and is not a production or
 commercial-support artifact. N05 remains the later owner-controlled signing/notarization gate.
 The exact release tag is guarded by the canonical matrix at
 `docs/release/truth-matrix.v1.0.0.json`.

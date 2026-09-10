@@ -212,12 +212,15 @@ def test_arm64_pilot_package_is_explicitly_m_series_only(tmp_path):
         output=tmp_path / "pilot-arm64",
         artifacts={"arm64": chain},
         instructions=instructions,
+        pilot_tag="pilot-v1.0.0-arm64",
     )
 
     output = tmp_path / "pilot-arm64"
     assert manifest["package_type"] == "TRUSTED_MACOS_PILOT_ARM64"
     assert manifest["pilot_scope"] == "APPLE_SILICON_M_SERIES_ONLY"
     assert manifest["distribution"]["artifact_status"] == "AD_HOC_TRUSTED_PILOT_ONLY_ARM64"
+    assert manifest["distribution"]["release_channel"] == "PRIVATE_PRERELEASE_PILOT"
+    assert manifest["distribution"]["pilot_tag"] == "pilot-v1.0.0-arm64"
     assert manifest["distribution"]["architectures"] == ["arm64"]
     assert manifest["distribution"]["dual_architecture_complete"] is False
     assert manifest["distribution"]["intel_artifact_included"] is False
@@ -226,6 +229,19 @@ def test_arm64_pilot_package_is_explicitly_m_series_only(tmp_path):
     assert {item["architecture"] for item in manifest["artifacts"]} == {"arm64"}
     assert (output / "Kuantra-Terminal-1.0.0-arm64.dmg").is_file()
     assert (output / INSTRUCTIONS_NAME).read_text(encoding="utf-8") == "M-series pilot instructions"
+
+
+def test_pilot_package_rejects_canonical_product_tag(tmp_path):
+    instructions = tmp_path / "instructions.md"
+    instructions.write_text("M-series pilot instructions", encoding="utf-8")
+
+    with pytest.raises(PilotPackageError, match="canonical product release tag"):
+        prepare_arm64_pilot_package(
+            output=tmp_path / "pilot-arm64",
+            artifacts={"arm64": _chain(tmp_path, "arm64")},
+            instructions=instructions,
+            pilot_tag="v1.0.0",
+        )
 
 
 def test_pilot_package_rejects_cross_architecture_source_mix(tmp_path):

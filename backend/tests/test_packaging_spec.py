@@ -97,7 +97,7 @@ def test_pilot_package_exposes_explicit_m_series_arm64_mode():
     script = (ROOT / "scripts" / "prepare_pilot_package.py").read_text()
     instructions = ROOT / "docs" / "release" / "PILOT-INSTRUCTIONS-M-SERIES.md"
     assert instructions.is_file()
-    for needle in ("prepare_arm64_pilot_package", "--architecture", "TRUSTED_MACOS_PILOT_ARM64", "APPLE_SILICON_M_SERIES_ONLY"):
+    for needle in ("prepare_arm64_pilot_package", "--architecture", "--pilot-tag", "TRUSTED_MACOS_PILOT_ARM64", "APPLE_SILICON_M_SERIES_ONLY"):
         assert needle in script
 
 
