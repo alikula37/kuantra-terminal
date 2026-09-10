@@ -120,24 +120,24 @@ Apple distribution gate'inin kapandığını değil, gösterir.
   108 documents and 141 local links.
 - Pre-reset v1.4.0 artifact evidence is retained in the earlier history of this record
   and is historical only; it must not be used as current v1.0.0 release evidence.
-- Canonical locked local CI on macOS 26.6.2 arm64, source `c38db31`: **13/13 PASS**,
+- Canonical locked local CI on macOS 26.6.2 arm64, source `00ce94e`: **13/13 PASS**,
   backend **797 passed / 2 warnings**, frontend **25 files / 104 tests**, i18n
   **608/608**, arm64 PyInstaller build, native `wkwebview` smoke and packaging
   provenance PASS. Report `dist/local-ci-report.json` SHA-256 is
-  `893d135e044d4b10706c9f48b2b5a686aad683871b3cac43b241e342ba0be766`; tracked
+  `4a356229e77f611947d6b54877ad2dde095629dceee064e9cd2ff61879507611`; tracked
   source tree SHA-256 is
-  `78d967e2cfed280b5ddc02629bd6e561d099ddeadee9b8dad9b200301d068331`; executable
-  SHA-256 is `b85789e75bbf86ec18a4b305a51254ec05f4b7a2a3dfe4fdc369ace59f6ea508`.
+  `7e5d3cdd0976b024b2a80b9deb4b9c9c27f1d3f046736711638b746d06d4fd16`; executable
+  SHA-256 is `3971294f9b96aa85a3a0e9f185751098d42594da5e8fd616ff0f2f4e82f2c6b1`.
   `uv --offline` here proves locked dependency resolution only; it is not runtime
   network isolation evidence.
 - Exact v1.0.0 arm64 DMG `dist/Kuantra-Terminal-1.0.0-aarch64.dmg` SHA-256 is
-  `2d9f3add8d3a93655dd7dd9f64d4a4938082cb987458fd6ca6c68d849b821b87`; mounted
-  DMG smoke PASS report `dist/candidate-final-smoke-v1.0.0-c38db31.json` SHA-256 is
-  `e01a3fba48e74a3823f9c5e096eae5acbac0ab3b9af47d88e8925c6e1bf7a07a`.
+  `b759f1e2572d06bd9ffa7faf82949c9e06ee077711fb3067d715a29c58083bd3`; mounted
+  DMG smoke PASS report `dist/candidate-final-smoke-v1.0.0-00ce94e.json` SHA-256 is
+  `0bcf23e06419300f686d8863c565d30392ca8bb4a1a0fbb805f6cb3164b2e9c8`.
   The report binds canonical truth-matrix digest
   `dcbe267d933634033eb7ef000118e28b910088f9ee9caeeeebdc2a107471d768`.
-- N05 preflight report `dist/candidate-n05-v1.0.0-c38db31.json` SHA-256 is
-  `0934e66dd783a55cacefb9a9b841ef9cddc6b0a4e5571d29e31f840a3c752cae`; it is
+- N05 preflight report `dist/candidate-n05-v1.0.0-00ce94e.json` SHA-256 is
+  `338e83e77679633ecd1c16001690f3457fc243e17b7281032622e03c2d9d66d2`; it is
   `BLOCKED`/`OWNER_REVIEW_REQUIRED` with read-only mount attach/detach PASS,
   codesign verification PASS, but `AD_HOC`, no hardened runtime, Gatekeeper FAIL
   and no DMG ticket. This is the expected development boundary, not release PASS.

@@ -34,20 +34,20 @@ chain has now been regenerated; it must be regenerated again after any source or
 change before a release-candidate dossier. Actual Apple
 signing/notarization remains an owner/host gate.
 
-Source `c38db31` üzerinde canonical locked local CI **13/13 PASS** oldu: backend
+Source `00ce94e` üzerinde canonical locked local CI **13/13 PASS** oldu: backend
 **797 passed / 2 warnings**, frontend **25 dosya / 104 test**, i18n **608/608**,
 arm64 PyInstaller build, native `wkwebview` smoke ve packaging/provenance PASS.
-Report SHA-256 `893d135e044d4b10706c9f48b2b5a686aad683871b3cac43b241e342ba0be766`;
-tracked tree SHA-256 `78d967e2cfed280b5ddc02629bd6e561d099ddeadee9b8dad9b200301d068331`;
-executable SHA-256 `b85789e75bbf86ec18a4b305a51254ec05f4b7a2a3dfe4fdc369ace59f6ea508`.
-Exact v1.0.0 arm64 DMG SHA-256 `2d9f3add8d3a93655dd7dd9f64d4a4938082cb987458fd6ca6c68d849b821b87`
+Report SHA-256 `4a356229e77f611947d6b54877ad2dde095629dceee064e9cd2ff61879507611`;
+tracked tree SHA-256 `7e5d3cdd0976b024b2a80b9deb4b9c9c27f1d3f046736711638b746d06d4fd16`;
+executable SHA-256 `3971294f9b96aa85a3a0e9f185751098d42594da5e8fd616ff0f2f4e82f2c6b1`.
+Exact v1.0.0 arm64 DMG SHA-256 `b759f1e2572d06bd9ffa7faf82949c9e06ee077711fb3067d715a29c58083bd3`
 ve mounted-DMG smoke report SHA-256
-`e01a3fba48e74a3823f9c5e096eae5acbac0ab3b9af47d88e8925c6e1bf7a07a` olarak
+`0bcf23e06419300f686d8863c565d30392ca8bb4a1a0fbb805f6cb3164b2e9c8` olarak
 bağlandı. Report truth-matrix canonical digest'i
 `dcbe267d933634033eb7ef000118e28b910088f9ee9caeeeebdc2a107471d768` ve manifest
-development snapshot SHA-256 `bbadd3c57958b5eac1e615b37a60b5ba45009abc0324aa73544e29f453d633ab`.
+development snapshot SHA-256 `27fb9c146bfb0915845d6fbd7a79a8ba1d7dab3d33c053908b2d95487a750e86`.
 N05 preflight report SHA-256
-`0934e66dd783a55cacefb9a9b841ef9cddc6b0a4e5571d29e31f840a3c752cae`; sonuç
+`338e83e77679633ecd1c16001690f3457fc243e17b7281032622e03c2d9d66d2`; sonuç
 `BLOCKED/OWNER_REVIEW_REQUIRED`: read-only mount attach/detach ve codesign
 verification PASS, fakat artifact `AD_HOC`, hardened runtime yok, Gatekeeper FAIL
 ve DMG stapled ticket yok. Bu beklenen development sonucu; N05 veya production PASS değildir.
@@ -550,7 +550,7 @@ and frontend lock hashes remain
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
-| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current v1.0.0 ad-hoc DMG is intentionally `BLOCKED` (report SHA `0934e66...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |
+| N05 | IN PROGRESS / OWNER_REQUIRED | Exact macOS DMG signing/notarization preflight and secretless distribution evidence | `121a5cd` implementation, 6 N05 contract tests plus 9 package-spec tests, 4 manifest tests, 6 Phase-0/workflow tests, local CI and exact mounted smoke are recorded; current v1.0.0 ad-hoc DMG is intentionally `BLOCKED` (report SHA `338e83e...`). Developer ID, hardened runtime, Gatekeeper and stapled-ticket evidence require owner/Apple host access; N03/H05 remain v1 gates, N06 is future multi-platform scope |
 | WIN | DEFERRED / HOST_REQUIRED | Windows host/controller blocker and Linux final artifact evidence | Not a v1 Mac-only release gate or claim; reopen only after an explicit multi-platform expansion decision |
 | VERIFY | HOST_REQUIRED | Historical P1-WP01 latest-SHA verification checkbox and remote/multi-OS evidence gaps | Preserve exact source criteria; current local gate is not a historical remote pass |
 | OPS | HOST_REQUIRED / OWNER_DECISION_REQUIRED | Historical P2 network promotion, real disconnect, different-host bundle restore and remote verification | Reference archived open-item index; no automatic closure or permission for live work |
