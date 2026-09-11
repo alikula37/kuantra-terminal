@@ -31,8 +31,8 @@ signing/notarization access. Windows and Linux are outside the v1.0.0 release cl
 For the three-person pilot, the current usable lane is an explicitly scoped Apple Silicon /
 M-series arm64-only package at the private
 [`pilot-v1.0.0-arm64` Release](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
-The current app artifact is bound to source commit `7f1ad482d41c16f6ac8e7ddbe8dbb66e945f63be`
-and contains no Intel support claim. The eventual dual-architecture pilot package still waits for exact native x86_64
+The current app artifact is bound to source commit `119ae573ce4e4885c2c83e0e8619ebd6038131dd`
+and contains the manual pilot-release access action but no Intel support claim. The eventual dual-architecture pilot package still waits for exact native x86_64
 evidence. Both paths use hash-verified ad-hoc DMGs and manual Gatekeeper approval; this is
 trusted-pilot-only, not a public or production distribution. Pilot operators should read
 [`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md), the
@@ -85,8 +85,8 @@ they are not production capabilities:
 
 See [`docs/strategy/`](docs/strategy) for the decision log, ADRs, evidence
 gates and work-package status. P1-WP29 is the current trusted pilot distribution package;
-its refreshed arm64 Release asset is bound to source commit `7f1ad482` and includes the
-P1-WP30 journal/quote implementation. P1-WP30 is archived as the bounded free multi-asset
+its refreshed arm64 Release asset is bound to source commit `119ae57` and includes the
+P1-WP30 journal/quote implementation plus the manual update-page action. P1-WP30 is archived as the bounded free multi-asset
 journal/quote implementation. P1-WP28 remains open until native Intel evidence exists and
 N05 remains the later owner-controlled distribution gate.
 A disabled surface is a deliberate truth result, not a failed demo.

@@ -10,7 +10,7 @@ artifacts. At this revision arm64 is the verified current candidate; x86_64 rema
 `PENDING_NATIVE_CI` until a native Intel runner or explicitly controlled Intel pilot Mac
 produces its own exact evidence. The existing private pilot Release
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
-has been refreshed in place from app source commit `7f1ad482`; it remains arm64-only,
+has been refreshed in place from app source commit `119ae57`; it remains arm64-only,
 ad-hoc and trusted-pilot-only. The previous
 v1.4.0 matrix and historical documentation remain in the repository for audit context only.
 Its GitHub publication, tag and assets were removed on 2026-09-11; v1.4.0 is not a download
@@ -29,7 +29,7 @@ Apple Developer ID trust; an ad-hoc DMG remains trusted-pilot-only and requires 
 Gatekeeper approval. The current published M-series pilot Release is
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
 Its asset set includes the exact DMG, mounted-DMG smoke/N05 evidence, manifest, instructions
-and checksums for source commit `7f1ad482`. No dual product Release or canonical `v1.0.0` tag
+and checksums for source commit `119ae57`. No dual product Release or canonical `v1.0.0` tag
 has been created.
 
 The proposed end-to-end delivery and release-readiness plan is
