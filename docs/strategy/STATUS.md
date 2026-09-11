@@ -55,6 +55,10 @@ istenir. Ücretli veri servisi/API key eklenmez; TradingView alert'i fill değil
 onayına kadar `PENDING_REVIEW` immutable observation'dır. Biquote erişiminin ücretsiz
 olması, gelecekteki ticari yeniden dağıtım/lisans şartlarının otomatik olarak onaylandığı
 anlamına gelmez; bu dış kaynak H05 ticari notices/terms kapısında yeniden doğrulanacaktır.
+Yeni işlem ve Piyasa Grafikleri sembol araması aynı katalog kimliğini kullanır: arama
+sonucu seçilip ayrıca onaylanmadan sembol etkinleşmez, fiyat/mum isteği başlatılmaz ve
+serbest metin Enter ile başka bir ürüne dönüştürülmez. Katalogda doğrulanmayan semboller
+sessizce eklenmez; bu sınır kapsam dışı veri sağlayıcısı/yanlış eşleşme riskini önler.
 
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
@@ -81,14 +85,16 @@ open-position list. The Light/Dark control now applies theme tokens to the exist
 dark-first shell, updates the native root `color-scheme`, and updates chart canvas colors
 when the theme changes. The chart page is named and translated as `Market Charts` /
 `Piyasa Grafikleri` / `Marktcharts`; visible OHLCV and error content is localized in all
-three locales. The page now supports a persistent symbol watchlist, catalog search,
-custom exact ticker add and per-symbol remove controls. XAUUSD now uses an exact free
-Biquote OHLC fallback when Yahoo/Stooq cannot provide spot gold; it never becomes GC=F or
-PAXGUSDT. Focused Journal/Chart DOM tests are `12 passed`, the portfolio regression is
-`11 passed`, full frontend tests are `29 files / 135 tests`, and i18n parity is `742/742`.
-The new arm64 local candidate from source `e0e7b75` is built and exact-mounted-smoke
-validated; the private pilot Release still needs an explicit asset refresh before these
-changes are distributed to pilot users. No trade or user data was changed by the tests.
+three locales. The page now supports a persistent symbol watchlist, catalog search with
+explicit result selection and confirmation, and per-symbol remove controls. XAUUSD now
+uses an exact free Biquote OHLC fallback when Yahoo/Stooq cannot provide spot gold; it
+never becomes GC=F or PAXGUSDT. A typed `LINK` returns the explicit `LINKUSDT` Chainlink
+candidate, but Enter alone neither activates it nor starts a data request. Focused
+Journal/Chart DOM tests are `11 passed`, the portfolio regression is `11 passed`, full
+frontend tests are `29 files / 136 tests`, and i18n parity is `754/754`. The new arm64
+local candidate from source `d6c8c3a` is built and exact-mounted-smoke validated; the
+private pilot Release still needs an explicit asset refresh before these changes are
+distributed to pilot users. No trade or user data was changed by the tests.
 
 **Manual update page (this change):** Settings now opens the fixed private arm64 pilot
 Release in the system browser through the desktop bridge. The old timer-based false
@@ -111,8 +117,8 @@ the active work package is
 [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
 The arm64 private Release is the trusted-pilot transport for the clean package built from
-`e0e7b75`; it contains the completed P1-WP30 journal/quote changes plus the chart
-watchlist/XAUUSD fallback and remains arm64-only.
+`d6c8c3a`; it contains the completed P1-WP30 journal/quote changes plus the chart
+watchlist/XAUUSD fallback and confirmed-symbol selection boundary, and remains arm64-only.
 Dual architecture still waits for native x86_64 evidence; N03, N05 and pilot read access
 remain open.
 
@@ -132,6 +138,36 @@ dağıtım koşulları H05 notices/terms sahibi doğrulamasına tabidir.
 canonical ledger event and rebuildable projection. New Trade/onboarding do not expose
 live order routing or collect exchange/market-data credentials; TradingView alerts remain
 pending until explicit confirmation.
+
+**Current confirmed-symbol-selection candidate evidence (2026-09-11, source `d6c8c3a`):**
+The clean arm64 candidate is bound to source commit
+`d6c8c3a7c5c053e3c89e32af3195ab1262ae6219`, tracked source tree SHA-256
+`bd28325800c52d404e7257f20142b7a5c8ff6ebbd50176623916221b5d21d265`, backend lock
+SHA-256 `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399` and frontend
+lock SHA-256 `396c757d5733e9618aa71f665aa3f23f5d53fcdaa8d9ff67c11d172464fcc6bc`.
+The shared symbol catalog and both UI surfaces require search-result selection plus an
+explicit confirmation; typed `LINK` resolves only to the displayed `LINKUSDT` candidate,
+and Enter alone does not activate or fetch it. Unknown free-form input is not silently
+promoted to another instrument.
+
+`uv run --offline --no-project --with-requirements backend/requirements.lock python
+scripts/run_local_ci.py --expected-architecture arm64 --report
+dist/p1-wp29-confirmed-symbol-selection-clean-local-ci-arm64.json --smoke-timeout 90`
+returned **MERGE READY**: backend **832 passed / 2 warnings**, frontend **29 test files /
+136 tests**, i18n **754/754**, TypeScript, production build, native arm64 PyInstaller and
+native WKWebView smoke all passed; provenance was **COMPLETE**. The report SHA-256 is
+`2156c5fe343d704fd9263a5611364d4391ee7c7d125ab1881f397da06c4a6551`.
+
+The exact arm64 DMG
+`dist/Kuantra-Terminal-1.0.0-arm64-confirmed-symbol-selection.dmg` passed
+`hdiutil verify` with **VALID**; DMG SHA-256 is
+`2cdfbdb729ceae5e4ace4bf2c8eb8fcce2b6a6938e8fd8c134867b36152b920e`. Exact read-only
+mounted-DMG smoke passed native arm64, WKWebView/controller identity and detach;
+mounted executable SHA-256 is
+`4e24c7000fda993b0ac20dfc5126d3b4d76540edff84a5815e343ac6d8e3045e`, smoke report
+SHA-256 is `548c9a2becf499dbad62fdb31240d953c8d7fc9eaf60a9edb425a8ba8bbf53e5`.
+The private GitHub Release was not changed; its existing asset must be refreshed before
+pilot users receive this candidate. No trade, user data or credential was used.
 
 **Current arm64 pilot package evidence (2026-09-11, source `119ae57`):** The clean Mac
 candidate chain is bound to source commit `119ae573ce4e4885c2c83e0e8619ebd6038131dd`,
@@ -940,7 +976,7 @@ and frontend lock hashes remain
 | H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | P1-WP28 | IN PROGRESS | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and native-host release contract | `bb6ce7c` implements the guards and dual-runner contract; arm64 clean build/local CI/exact mounted-DMG smoke is PASS. Hosted Intel jobs are currently blocked before startup by GitHub account billing/spending-limit state; a controlled native Intel pilot Mac can provide the same build evidence or later runtime evidence, so x86_64 remains `PENDING_NATIVE_CI` until exact host provenance exists; Universal2, Windows/Linux and signing are separate gates. |
-| P1-WP29 | IN PROGRESS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums, user instructions and bounded pilot UI corrections | Source `e0e7b75` adds a persistent chart watchlist with localized catalog/custom search, add/remove controls, and exact free XAUUSD Biquote fallback while preserving the no-GC=F/PAXG substitution boundary. A clean arm64 candidate passed locked local CI (`832` backend, `29 files / 135` frontend, `742/742` i18n) and exact `hdiutil verify`/read-only mounted-DMG WKWebView smoke with `COMPLETE` provenance; DMG SHA-256 `3a4c8dcd...`, executable SHA-256 `9fefa2e5...`, local-CI report SHA-256 `679d9335...`, smoke report SHA-256 `d3ecc0ed...`. The private pilot Release still needs an explicit asset refresh before pilot users receive these fixes. Default dual package remains blocked until native x86_64 evidence; N03 clean second profile/host, N05 signing/notarization and pilot-user read access remain open. |
+| P1-WP29 | IN PROGRESS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums, user instructions and bounded pilot UI corrections | Source `d6c8c3a` adds a shared catalog and explicit search-result confirmation boundary to New Trade and Market Charts: `LINK` displays `LINKUSDT` and Enter alone cannot activate/fetch an instrument; exact free XAUUSD Biquote fallback and no-GC=F/PAXG substitution remain intact. A clean arm64 candidate passed locked local CI (`832` backend, `29 files / 136` frontend, `754/754` i18n) and exact `hdiutil verify`/read-only mounted-DMG WKWebView smoke with `COMPLETE` provenance; DMG SHA-256 `2cdfbdb7...`, executable SHA-256 `4e24c700...`, local-CI report SHA-256 `2156c5fe...`, smoke report SHA-256 `548c9a2b...`. The private pilot Release still needs an explicit asset refresh before pilot users receive these fixes. Default dual package remains blocked until native x86_64 evidence; N03 clean second profile/host, N05 signing/notarization and pilot-user read access remain open. |
 | P1-WP30 | CLOSED / BOUNDED COMPLETE | Free multi-asset journal entry, exact public quote provenance, explicit simulation and TradingView pending-observation boundary | Archived [P1-WP30](../archive/strategy/work-packages/P1-WP30-free-multi-asset-journal.md) with focused backend/regression **35 passed / 2 warnings** and current clean regression/local-CI evidence recorded above. No paid data/live order/release claim. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; the pilot team's Intel Mac may be the selected host if clean-profile attestation is supplied. Current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |

@@ -7,8 +7,8 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: e0e7b75
-latest_artifact_source_commit: e0e7b75dc1078221504cad84618bce828d818c56
+implementation_commit: d6c8c3a
+latest_artifact_source_commit: d6c8c3a7c5c053e3c89e32af3195ab1262ae6219
 latest_evidence_date: 2026-09-11
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
@@ -46,12 +46,22 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       list. The market-chart page is named and translated as `Market Charts` /
       `Piyasa Grafikleri` / `Marktcharts`, including its visible OHLCV and error content.
       Journal/Chart DOM coverage is `12 passed`; the portfolio regression is `11 passed`,
-      full frontend coverage is `29 files / 135 tests`, i18n is `742/742`, and the arm64
-      local candidate from source `e0e7b75` passed locked local CI plus exact mounted-DMG
+      full frontend coverage is `29 files / 136 tests`, i18n is `754/754`, and the arm64
+      local candidate from source `d6c8c3a` passed locked local CI plus exact mounted-DMG
       smoke with `COMPLETE` provenance. The chart page now has a persistent symbol
       watchlist with localized catalog search, add/remove controls and an exact free
-      XAUUSD OHLC fallback; the existing private Release asset still requires a later
-      package refresh before pilot distribution.
+      XAUUSD OHLC fallback. Both New Trade and Market Charts require a catalog result
+      selection followed by an explicit confirmation; Enter or an unknown free-form
+      ticker never silently activates or fetches another instrument. The existing private
+      Release asset still requires a later package refresh before pilot distribution.
+
+- [x] Market symbol identity is user-confirmed on both New Trade and Market Charts. A
+      typed `LINK` search returns the explicit `Chainlink (LINK/USDT)` / `LINKUSDT`
+      catalog candidate; selecting it opens a confirmation step, and only confirmation
+      changes the committed symbol and permits a quote/candle request. Enter alone does
+      not add, activate or fetch a symbol; unknown free-form input remains unavailable.
+      Focused DOM coverage is `11 passed`; full frontend coverage is `29 files / 136 tests`,
+      i18n is `754/754`, and no paid data service, credential or broker path was added.
 
 - [x] GitHub private Release'ın yalnızca repository read erişimi olan kullanıcılara
       dağıtım sağlayabildiği; Apple signing/notarization yerine geçmediği resmi kaynaklarla
@@ -189,7 +199,40 @@ uygulamada temiz geçici profille native olarak doğrulandı. Düğme Chrome'da 
 Release URL'sini açtı; otomatik sürüm karşılaştırması, indirme, kurulum veya veri migration'ı
 yapmaz. Bu click-through kanıtı kullanıcı verisine dokunmadı.
 
-### Current chart watchlist/XAU candidate evidence (2026-09-11)
+### Current confirmed-symbol-selection candidate evidence (2026-09-11)
+
+Source commit `d6c8c3a7c5c053e3c89e32af3195ab1262ae6219` ve tracked source tree
+`bd28325800c52d404e7257f20142b7a5c8ff6ebbd50176623916221b5d21d265` temizken:
+
+- `npm test` → **29 test files / 136 tests passed**; focused chart/New Trade DOM
+  coverage is **11 passed**. `npm run check:i18n` → **754/754** EN/TR/DE; `npx tsc
+  --noEmit` and `npm run build` → **PASS**.
+- `uv run --offline --no-project --with-requirements backend/requirements.lock python
+  scripts/run_local_ci.py --expected-architecture arm64 --report
+  dist/p1-wp29-confirmed-symbol-selection-clean-local-ci-arm64.json --smoke-timeout 90`
+  → **MERGE READY**; backend **832 passed / 2 warnings**, frontend **29 test files / 136
+  tests**, i18n **754/754**, TypeScript, production build, native arm64 PyInstaller,
+  WKWebView smoke and provenance **COMPLETE**. The `uv --offline` flag only describes
+  dependency-resolution mode; it is not runtime offline evidence. Report SHA-256:
+  `2156c5fe343d704fd9263a5611364d4391ee7c7d125ab1881f397da06c4a6551`.
+- `bash scripts/package_macos.sh --architecture arm64 --output
+  dist/Kuantra-Terminal-1.0.0-arm64-confirmed-symbol-selection.dmg` → **PASS**;
+  `hdiutil verify` → **VALID**. DMG SHA-256:
+  `2cdfbdb729ceae5e4ace4bf2c8eb8fcce2b6a6938e8fd8c134867b36152b920e`.
+- `.venv/bin/python scripts/smoke_macos_dmg.py --dmg
+  dist/Kuantra-Terminal-1.0.0-arm64-confirmed-symbol-selection.dmg --expected-architecture
+  arm64 --report dist/final-smoke-arm64-confirmed-symbol-selection.json` → **PASS** on
+  the exact read-only mounted executable; native `arm64`, WKWebView/controller identity
+  and detach passed. Executable SHA-256:
+  `4e24c7000fda993b0ac20dfc5126d3b4d76540edff84a5815e343ac6d8e3045e`; smoke report
+  SHA-256: `548c9a2becf499dbad62fdb31240d953c8d7fc9eaf60a9edb425a8ba8bbf53e5`.
+- No trade, user data or credentials were used or changed. The private GitHub Release was
+  not changed by this task; its existing asset must be refreshed explicitly before pilot
+  users receive this confirmed-symbol-selection build. The current installed app is the
+  local candidate at `/Applications/Kuantra Terminal.app` only after an explicit install;
+  this evidence does not create a notarization or production claim.
+
+### Previous chart watchlist/XAU candidate evidence (2026-09-11)
 
 Source commit `e0e7b75dc1078221504cad84618bce828d818c56` ve tracked source tree
 `86431a850220fcdbee714cf6fe112182ce0662efcc679057edbb209b8d3e2d8f` temizken:
