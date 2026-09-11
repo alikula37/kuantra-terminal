@@ -5,6 +5,12 @@ import { useTranslation } from "../context/I18nContext";
 import { getChartTheme, useTheme } from "../context/ThemeContext";
 import { RefreshCw, AlertCircle, BarChart2, Plus, X } from "lucide-react";
 import { apiBase, apiFetch } from "../lib/backend";
+import {
+  MARKET_SYMBOL_CATALOG,
+  getMarketSymbolDefinition,
+  resolveMarketSymbol,
+  searchMarketSymbols,
+} from "../lib/marketSymbols";
 
 export interface CandleDataPoint {
   timestamp: number;
@@ -37,43 +43,8 @@ function normalizeCandle(value: unknown): CandleDataPoint | null {
   };
 }
 
-interface ChartSymbolDefinition {
-  symbol: string;
-  labelKey: string;
-  aliases: string[];
-}
-
-const CHART_SYMBOL_CATALOG: ChartSymbolDefinition[] = [
-  { symbol: "BTCUSDT", labelKey: "market_chart.symbol_btc_usdt", aliases: ["btc", "bitcoin"] },
-  { symbol: "ETHUSDT", labelKey: "market_chart.symbol_eth_usdt", aliases: ["eth", "ethereum"] },
-  { symbol: "SOLUSDT", labelKey: "market_chart.symbol_sol_usdt", aliases: ["sol", "solana"] },
-  { symbol: "XAUUSD", labelKey: "market_chart.symbol_gold", aliases: ["xau", "gold", "altın"] },
-  { symbol: "EURUSD", labelKey: "market_chart.symbol_eur_usd", aliases: ["eur", "euro", "forex"] },
-  { symbol: "SPY", labelKey: "market_chart.symbol_sp500", aliases: ["sp500", "s&p", "spy"] },
-  { symbol: "NVDA", labelKey: "market_chart.symbol_nvidia", aliases: ["nvidia", "stock"] },
-];
-
-const DEFAULT_CHART_SYMBOLS = CHART_SYMBOL_CATALOG.map((item) => item.symbol);
+const DEFAULT_CHART_SYMBOLS = MARKET_SYMBOL_CATALOG.map((item) => item.symbol);
 const CHART_WATCHLIST_STORAGE_KEY = "kuantra.market-chart.symbols.v1";
-
-function normalizeChartSymbol(value: string): string | null {
-  const cleaned = value.trim().toUpperCase().replace(/[\s/_-]+/g, "");
-  if (!cleaned || cleaned.length > 32 || !/^[A-Z0-9.^=:]+$/.test(cleaned)) return null;
-  return cleaned;
-}
-
-function getChartSymbolDefinition(symbol: string): ChartSymbolDefinition | undefined {
-  return CHART_SYMBOL_CATALOG.find((item) => item.symbol === symbol);
-}
-
-function resolveChartSymbol(value: string): string | null {
-  const normalized = normalizeChartSymbol(value);
-  if (!normalized) return null;
-  const definition = CHART_SYMBOL_CATALOG.find((item) =>
-    item.symbol === normalized || item.aliases.some((alias) => normalizeChartSymbol(alias) === normalized)
-  );
-  return definition?.symbol || normalized;
-}
 
 function loadChartWatchlist(): string[] {
   if (typeof window === "undefined") return DEFAULT_CHART_SYMBOLS;
@@ -84,7 +55,7 @@ function loadChartWatchlist(): string[] {
     if (!Array.isArray(parsed)) return DEFAULT_CHART_SYMBOLS;
     const normalized = parsed
       .filter((item): item is string => typeof item === "string")
-      .map((item) => resolveChartSymbol(item))
+      .map((item) => resolveMarketSymbol(item))
       .filter((item): item is string => Boolean(item));
     return Array.from(new Set(normalized)).length > 0
       ? Array.from(new Set(normalized))
@@ -119,13 +90,14 @@ export const TradingViewChart: React.FC = () => {
   const [watchlist, setWatchlist] = useState<string[]>(() => loadChartWatchlist());
   const [activeSymbol, setActiveSymbol] = useState<string>(() => {
     const initialWatchlist = loadChartWatchlist();
-    const normalizedStoreSymbol = resolveChartSymbol(storeSymbol || "");
+    const normalizedStoreSymbol = resolveMarketSymbol(storeSymbol || "");
     return (normalizedStoreSymbol && initialWatchlist.includes(normalizedStoreSymbol))
       ? normalizedStoreSymbol
       : initialWatchlist[0] || normalizedStoreSymbol || "BTCUSDT";
   });
   const [activeTimeframe, setActiveTimeframe] = useState<string>("15m");
   const [customInput, setCustomInput] = useState<string>("");
+  const [pendingSymbol, setPendingSymbol] = useState<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -146,12 +118,7 @@ export const TradingViewChart: React.FC = () => {
   }, [watchlist]);
 
   const searchResults = useMemo(() => {
-    const query = customInput.trim().toLowerCase();
-    if (!query) return [];
-    return CHART_SYMBOL_CATALOG.filter((item) => {
-      const haystack = `${item.symbol} ${item.aliases.join(" ")} ${t(item.labelKey)}`.toLowerCase();
-      return haystack.includes(query);
-    }).slice(0, 8);
+    return searchMarketSymbols(customInput, t);
   }, [customInput, t]);
 
   // Initialize Lightweight Charts Canvas
@@ -410,17 +377,30 @@ export const TradingViewChart: React.FC = () => {
     setSearchError(null);
   };
 
-  const handleAddSymbol = (value: string) => {
-    const symbol = resolveChartSymbol(value);
-    if (!symbol) {
-      setSearchError(t("market_chart.invalid_symbol"));
+  const handleConfirmSymbol = () => {
+    if (!pendingSymbol) {
+      setSearchError(t("market_chart.select_result_to_confirm"));
       return;
     }
+    const symbol = pendingSymbol;
     if (!watchlist.includes(symbol)) {
       setWatchlist([...watchlist, symbol]);
     }
     handleSymbolChange(symbol);
     setCustomInput("");
+    setPendingSymbol(null);
+    setSearchError(null);
+  };
+
+  const handleSelectSearchResult = (symbol: string) => {
+    setPendingSymbol(symbol);
+    setSearchError(null);
+  };
+
+  const handleCustomSymbolSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customInput.trim()) return;
+    setSearchError(t("market_chart.select_result_to_confirm"));
   };
 
   const handleRemoveSymbol = (symbol: string) => {
@@ -433,11 +413,6 @@ export const TradingViewChart: React.FC = () => {
     if (activeSymbol === symbol) {
       handleSymbolChange(nextWatchlist[0]);
     }
-  };
-
-  const handleCustomSymbolSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customInput.trim()) handleAddSymbol(customInput);
   };
 
   const displayCandle = hoveredCandle || latestCandle;
@@ -459,8 +434,8 @@ export const TradingViewChart: React.FC = () => {
         {/* Symbol Selector Pills & Search */}
         <div className="relative flex items-center space-x-2 overflow-visible custom-scrollbar">
           <div data-testid="market-chart-watchlist" className="flex items-center space-x-1 overflow-x-auto custom-scrollbar">
-            {watchlist.map((symbol) => {
-              const definition = getChartSymbolDefinition(symbol);
+              {watchlist.map((symbol) => {
+                const definition = getMarketSymbolDefinition(symbol);
               const label = definition ? t(definition.labelKey) : symbol;
               return (
                 <div key={symbol} className="flex items-center shrink-0">
@@ -523,38 +498,46 @@ export const TradingViewChart: React.FC = () => {
                   type="button"
                   role="option"
                   data-testid={`market-chart-search-result-${item.symbol}`}
-                  onClick={() => handleAddSymbol(item.symbol)}
+                  onClick={() => handleSelectSearchResult(item.symbol)}
                   className="w-full flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-[11px] text-slate-200 hover:bg-[#1a2234]"
                 >
                   <span>{t(item.labelKey)}</span>
                   <span className="text-[10px] text-accent">
-                    {watchlist.includes(item.symbol) ? t("market_chart.already_added") : t("market_chart.add_symbol")}
+                    {watchlist.includes(item.symbol) ? t("market_chart.already_added") : t("market_chart.select_result")}
                   </span>
                 </button>
               ))}
-              {(() => {
-                const customSymbol = resolveChartSymbol(customInput);
-                const catalogMatch = searchResults.some((item) => item.symbol === customSymbol);
-                if (!customSymbol || catalogMatch) return null;
-                return (
-                  <button
-                    type="button"
-                    role="option"
-                    data-testid="market-chart-add-custom-symbol"
-                    onClick={() => handleAddSymbol(customInput)}
-                    className="w-full flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-[11px] text-slate-200 hover:bg-[#1a2234]"
-                  >
-                    <span>{t("market_chart.add_custom_symbol", { symbol: customSymbol })}</span>
-                    <Plus className="w-3.5 h-3.5 text-accent" />
-                  </button>
-                );
-              })()}
-              {!searchResults.length && !resolveChartSymbol(customInput) && (
+              {!searchResults.length && (
                 <div className="px-2 py-1.5 text-[11px] text-slate-400">{t("market_chart.no_search_results")}</div>
               )}
             </div>
           )}
           {searchError && <span role="alert" className="absolute left-0 top-full mt-1 z-30 rounded bg-rose-950/90 px-2 py-1 text-[10px] text-rose-200">{searchError}</span>}
+          {pendingSymbol && (
+            <div
+              role="dialog"
+              data-testid="market-chart-symbol-confirmation"
+              className="absolute left-0 top-[calc(100%+2rem)] z-20 flex items-center gap-2 rounded border border-accent/40 bg-[#111722] px-2 py-1.5 text-[10px] text-slate-200 shadow-xl"
+            >
+              <span>{t("market_chart.confirm_symbol", { symbol: t(getMarketSymbolDefinition(pendingSymbol)?.labelKey || "market_chart.unknown_symbol") })}</span>
+              <button
+                type="button"
+                data-testid="market-chart-confirm-symbol"
+                onClick={handleConfirmSymbol}
+                className="rounded bg-accent px-2 py-1 font-bold text-black hover:bg-sky-300"
+              >
+                {t("market_chart.confirm")}
+              </button>
+              <button
+                type="button"
+                data-testid="market-chart-cancel-symbol"
+                onClick={() => setPendingSymbol(null)}
+                className="rounded border border-surface-border px-2 py-1 text-slate-300 hover:text-white"
+              >
+                {t("market_chart.cancel")}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Timeframe Selector & Refresh */}

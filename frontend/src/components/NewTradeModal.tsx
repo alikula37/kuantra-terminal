@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { X, Check, RefreshCw, Zap, AlertTriangle } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
 import { useTranslation } from "../context/I18nContext";
 import { MarketQuote, TradeSide } from "../types";
 import { apiFetch, apiUrl } from "../lib/backend";
+import { MARKET_SYMBOL_CATALOG, resolveMarketSymbol, searchMarketSymbols } from "../lib/marketSymbols";
 
 const FREE_QUOTE_SOURCE_IDS = new Set([
   "binance_public",
   "bybit_public",
+  "biquote_public",
   "yahoo_public",
   "stooq_public",
 ]);
@@ -54,9 +56,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const { t } = useTranslation();
   const { symbol: defaultSymbol } = useMarketStore();
   const { addTrade } = useTradeStore();
+  const initialSymbol = resolveMarketSymbol(defaultSymbol || "") || "BTCUSDT";
 
   const [recordMode, setRecordMode] = useState<"EXTERNAL" | "SIMULATION">("EXTERNAL");
-  const [tradeSymbol, setTradeSymbol] = useState<string>(defaultSymbol || "BTCUSDT");
+  const [tradeSymbol, setTradeSymbol] = useState<string>(initialSymbol);
+  const [symbolInput, setSymbolInput] = useState<string>(initialSymbol);
+  const [pendingSymbol, setPendingSymbol] = useState<string | null>(null);
+  const [symbolSearchError, setSymbolSearchError] = useState<string | null>(null);
   const [side, setSide] = useState<TradeSide>("BUY");
   const [entryPrice, setEntryPrice] = useState<number>(0);
   const [qty, setQty] = useState<number>(1.0);
@@ -71,10 +77,15 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [quote, setQuote] = useState<MarketQuote | null>(null);
   const [priceOrigin, setPriceOrigin] = useState<"MANUAL" | "PUBLIC_QUOTE">("MANUAL");
+  const searchResults = useMemo(() => searchMarketSymbols(symbolInput, t), [symbolInput, t]);
 
   if (!isOpen) return null;
 
   const handleFetchLatestPrice = async () => {
+    if (symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase()) {
+      setSymbolSearchError(t("order_ticket.select_result_to_confirm"));
+      return;
+    }
     setIsFetchingPrice(true);
     setFetchNotice(null);
     setErrorMessage(null);
@@ -120,6 +131,35 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     }
   };
 
+  const handleSelectSearchResult = (symbol: string) => {
+    setPendingSymbol(symbol);
+    setSymbolInput(symbol);
+    setSymbolSearchError(null);
+    setQuote(null);
+    setPriceOrigin("MANUAL");
+    setFetchNotice(null);
+  };
+
+  const handleConfirmSymbol = () => {
+    if (!pendingSymbol) {
+      setSymbolSearchError(t("order_ticket.select_result_to_confirm"));
+      return;
+    }
+    setTradeSymbol(pendingSymbol);
+    setSymbolInput(pendingSymbol);
+    setPendingSymbol(null);
+    setSymbolSearchError(null);
+    setQuote(null);
+    setPriceOrigin("MANUAL");
+    setFetchNotice(null);
+  };
+
+  const handleCancelSymbolSelection = () => {
+    setPendingSymbol(null);
+    setSymbolInput(tradeSymbol);
+    setSymbolSearchError(null);
+  };
+
   const riskPerUnit = Math.abs(entryPrice - (stopLoss || entryPrice));
   const totalRisk = riskPerUnit * qty;
   const rewardPerUnit = Math.abs((takeProfit || entryPrice) - entryPrice);
@@ -134,6 +174,12 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
+
+    if (!symbolInput.trim() || symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase()) {
+      setErrorMessage(t("order_ticket.select_result_to_confirm"));
+      setIsSubmitting(false);
+      return;
+    }
 
     if (!Number.isFinite(entryPrice) || entryPrice <= 0 || !Number.isFinite(qty) || qty <= 0) {
       setErrorMessage(t("order_ticket.invalid_price_or_qty"));
@@ -269,11 +315,19 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
             <div className="flex items-center space-x-2">
               <input
                 type="text"
-                value={tradeSymbol}
+                value={symbolInput}
                 onChange={(e) => {
-                  setTradeSymbol(e.target.value.toUpperCase());
+                  setSymbolInput(e.target.value.toUpperCase());
+                  setPendingSymbol(null);
+                  setSymbolSearchError(null);
                   setQuote(null);
                   setPriceOrigin("MANUAL");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    setSymbolSearchError(t("order_ticket.select_result_to_confirm"));
+                  }
                 }}
                 placeholder={t("order_ticket.symbol_placeholder")}
                 className="flex-1 bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-white uppercase focus:outline-none focus:border-accent"
@@ -282,7 +336,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               <button
                 type="button"
                 onClick={handleFetchLatestPrice}
-                disabled={isFetchingPrice}
+                disabled={isFetchingPrice || symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase()}
                 className="px-2.5 py-1.5 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-accent rounded flex items-center space-x-1 transition disabled:opacity-50 cursor-pointer"
                 title={t("order_ticket.fetch_price_btn")}
               >
@@ -290,6 +344,48 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 <span className="text-[11px] font-semibold">{t("order_ticket.fetch_price_btn")}</span>
               </button>
             </div>
+            {symbolInput.trim() && symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase() && (
+              <div role="listbox" data-testid="new-trade-symbol-search-results" className="mt-1 rounded border border-surface-border bg-[#0b0e14] p-1 shadow-xl">
+                {searchResults.map((item) => (
+                  <button
+                    key={item.symbol}
+                    type="button"
+                    role="option"
+                    data-testid={`new-trade-symbol-search-result-${item.symbol}`}
+                    onClick={() => handleSelectSearchResult(item.symbol)}
+                    className="w-full flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-[11px] text-slate-200 hover:bg-[#1a2234]"
+                  >
+                    <span>{t(item.labelKey)}</span>
+                    <span className="text-[10px] text-accent">{t("order_ticket.select_result")}</span>
+                  </button>
+                ))}
+                {!searchResults.length && (
+                  <div className="px-2 py-1.5 text-[11px] text-slate-400">{t("order_ticket.no_symbol_matches")}</div>
+                )}
+              </div>
+            )}
+            {pendingSymbol && (
+              <div role="dialog" data-testid="new-trade-symbol-confirmation" className="mt-2 flex items-center gap-2 rounded border border-accent/40 bg-[#0b0e14] px-2 py-1.5 text-[10px] text-slate-200">
+                <span className="flex-1">{t("order_ticket.confirm_symbol", { symbol: t(MARKET_SYMBOL_CATALOG.find((item) => item.symbol === pendingSymbol)?.labelKey || "market_chart.unknown_symbol") })}</span>
+                <button
+                  type="button"
+                  data-testid="new-trade-confirm-symbol"
+                  onClick={handleConfirmSymbol}
+                  className="rounded bg-accent px-2 py-1 font-bold text-black hover:bg-sky-300"
+                >
+                  {t("order_ticket.confirm")}
+                </button>
+                <button
+                  type="button"
+                  data-testid="new-trade-cancel-symbol"
+                  onClick={handleCancelSymbolSelection}
+                  className="rounded border border-surface-border px-2 py-1 text-slate-300 hover:text-white"
+                >
+                  {t("order_ticket.cancel")}
+                </button>
+              </div>
+            )}
+            {symbolSearchError && <div role="alert" data-testid="new-trade-symbol-search-error" className="mt-1 text-[10px] text-rose-300">{symbolSearchError}</div>}
             {quote && (
               <div className="mt-2 text-[10px] text-slate-400" data-testid="trade-quote-status">
                 <span>{t("order_ticket.quote_status", { status: quote.status })}</span>

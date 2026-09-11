@@ -163,6 +163,56 @@ it("treats a malformed successful quote response as unavailable", async () => {
   expect(host.querySelector("[data-testid=trade-quote-status]")).toBeNull();
 });
 
+it("requires selecting and confirming LINKUSDT before fetching its quote", async () => {
+  const requestedQuoteUrls: string[] = [];
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.startsWith("/api/v1/market-data/quote")) {
+      requestedQuoteUrls.push(path);
+      return Promise.resolve(response({
+        requested_symbol: "LINKUSDT",
+        source_id: "binance_public",
+        source_symbol: "LINKUSDT",
+        price: 12.34,
+        status: "LIVE",
+        price_kind: "LAST",
+        observed_at: "2026-09-11T10:00:00Z",
+        reason: null,
+        free_source: true,
+        credentials_required: false,
+      }));
+    }
+    return Promise.resolve(response({}));
+  });
+
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  const symbolInput = host.querySelectorAll('input[type="text"]')[1] as HTMLInputElement;
+  const fetchButton = host.querySelector('button[title="order_ticket.fetch_price_btn"]') as HTMLButtonElement;
+
+  await act(async () => setInputValue(symbolInput, "LINK"));
+  await act(async () => symbolInput.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+  await flush();
+
+  expect(requestedQuoteUrls).toHaveLength(0);
+  expect(host.querySelector("[data-testid=new-trade-symbol-search-error]")?.textContent).toContain("order_ticket.select_result_to_confirm");
+  expect(host.querySelector("[data-testid=new-trade-symbol-search-result-LINKUSDT]")).not.toBeNull();
+  expect(fetchButton.disabled).toBe(true);
+
+  await act(async () => (host.querySelector("[data-testid=new-trade-symbol-search-result-LINKUSDT]") as HTMLButtonElement).click());
+  await flush();
+  expect(host.querySelector("[data-testid=new-trade-symbol-confirmation]")).not.toBeNull();
+  expect(requestedQuoteUrls).toHaveLength(0);
+
+  await act(async () => (host.querySelector("[data-testid=new-trade-confirm-symbol]") as HTMLButtonElement).click());
+  await flush();
+  expect(fetchButton.disabled).toBe(false);
+
+  await act(async () => fetchButton.click());
+  await flush();
+  expect(requestedQuoteUrls).toHaveLength(1);
+  expect(requestedQuoteUrls[0]).toContain("symbol=LINKUSDT");
+  expect(host.querySelector("[data-testid=trade-quote-status]")).not.toBeNull();
+});
+
 it("requires an explicit simulation choice and still posts only to the journal endpoint", async () => {
   let submittedBody: any;
   mocks.apiFetch.mockImplementation((path: string, init?: RequestInit) => {

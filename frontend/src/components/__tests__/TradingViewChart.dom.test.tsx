@@ -160,7 +160,7 @@ it("renders valid historical candles without promoting them to live ticks", asyn
   expect(mocks.updateTick).not.toHaveBeenCalled();
 });
 
-it("searches the catalog and re-adds a removed exact gold symbol", async () => {
+it("requires selecting and confirming a catalog result before re-adding gold", async () => {
   mocks.apiFetch.mockResolvedValue(response(candles));
 
   await act(async () => root.render(<TradingViewChart />));
@@ -179,27 +179,42 @@ it("searches the catalog and re-adds a removed exact gold symbol", async () => {
   expect(result).toBeTruthy();
   await act(async () => result.click());
   await flush();
+  expect(host.querySelector("[data-testid=market-chart-symbol-confirmation]")).not.toBeNull();
+  expect(host.querySelector("[data-testid=market-chart-symbol-XAUUSD]")).toBeNull();
+  await act(async () => (host.querySelector("[data-testid=market-chart-confirm-symbol]") as HTMLButtonElement).click());
+  await flush();
   expect(host.querySelector("[data-testid=market-chart-symbol-XAUUSD]")).not.toBeNull();
 });
 
-it("adds and removes a custom exact market symbol", async () => {
+it("does not auto-add LINK on Enter and requires explicit Chainlink confirmation", async () => {
   mocks.apiFetch.mockResolvedValue(response(candles));
 
   await act(async () => root.render(<TradingViewChart />));
   await flush();
 
+  const removeLink = host.querySelector("[data-testid=market-chart-remove-LINKUSDT]") as HTMLButtonElement;
+  await act(async () => removeLink.click());
+  await flush();
+  expect(host.querySelector("[data-testid=market-chart-symbol-LINKUSDT]")).toBeNull();
+
   const input = host.querySelector("[data-testid=market-chart-symbol-search]") as HTMLInputElement;
-  await act(async () => setInputValue(input, "GOOG"));
+  const callsBeforeEnter = mocks.apiFetch.mock.calls.length;
+  await act(async () => setInputValue(input, "LINK"));
   await flush();
 
-  const addCustom = host.querySelector("[data-testid=market-chart-add-custom-symbol]") as HTMLButtonElement;
-  expect(addCustom).toBeTruthy();
-  await act(async () => addCustom.click());
+  await act(async () => (host.querySelector('form button[type="submit"]') as HTMLButtonElement).click());
   await flush();
-  expect(host.querySelector("[data-testid=market-chart-symbol-GOOG]")).not.toBeNull();
+  expect(mocks.apiFetch.mock.calls.length).toBe(callsBeforeEnter);
+  expect(host.querySelector("[data-testid=market-chart-search-result-LINKUSDT]")).not.toBeNull();
+  expect(host.querySelector("[data-testid=market-chart-symbol-LINKUSDT]")).toBeNull();
 
-  const removeCustom = host.querySelector("[data-testid=market-chart-remove-GOOG]") as HTMLButtonElement;
-  await act(async () => removeCustom.click());
+  await act(async () => (host.querySelector("[data-testid=market-chart-search-result-LINKUSDT]") as HTMLButtonElement).click());
   await flush();
-  expect(host.querySelector("[data-testid=market-chart-symbol-GOOG]")).toBeNull();
+  expect(host.querySelector("[data-testid=market-chart-symbol-confirmation]")).not.toBeNull();
+  expect(host.querySelector("[data-testid=market-chart-symbol-LINKUSDT]")).toBeNull();
+
+  await act(async () => (host.querySelector("[data-testid=market-chart-confirm-symbol]") as HTMLButtonElement).click());
+  await flush();
+  expect(host.querySelector("[data-testid=market-chart-symbol-LINKUSDT]")).not.toBeNull();
+  expect(mocks.apiFetch.mock.calls.length).toBeGreaterThan(callsBeforeEnter);
 });
