@@ -4,6 +4,7 @@ import tempfile
 import os
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi.testclient import TestClient
+from app.api import endpoints
 from main import create_app
 from app.services.market_data.public_fetcher import (
     PublicMarketDataFetcher,
@@ -47,6 +48,75 @@ class TestPublicMarketDataFetcherAndCache:
         assert normalize_interval("4h") == "4h"
         assert normalize_interval("240m") == "4h"
         assert normalize_interval("1W") == "1w"
+
+    @pytest.mark.asyncio
+    async def test_instrument_search_merges_exact_binance_and_yahoo_candidates(self):
+        fetcher = PublicMarketDataFetcher()
+        binance_response = MagicMock(status_code=200)
+        binance_response.json.return_value = {
+            "symbols": [
+                {"symbol": "LINKUSDT", "baseAsset": "LINK", "quoteAsset": "USDT", "status": "TRADING", "isSpotTradingAllowed": True},
+                {"symbol": "LINKUSDC", "baseAsset": "LINK", "quoteAsset": "USDC", "status": "TRADING", "isSpotTradingAllowed": True},
+                {"symbol": "DEADUSDT", "baseAsset": "DEAD", "quoteAsset": "USDT", "status": "BREAK", "isSpotTradingAllowed": True},
+            ]
+        }
+        yahoo_response = MagicMock(status_code=200)
+        yahoo_response.json.return_value = {
+            "quotes": [
+                {"symbol": "LINK-USD", "shortname": "Chainlink USD", "quoteType": "CRYPTOCURRENCY", "exchDisp": "CCC"},
+                {"symbol": "AAPL", "longname": "Apple Inc.", "quoteType": "EQUITY", "exchDisp": "NasdaqGS"},
+            ]
+        }
+
+        async def mock_get(url, *args, **kwargs):
+            if "exchangeInfo" in url:
+                return binance_response
+            if "finance/search" in url:
+                return yahoo_response
+            raise AssertionError(f"unexpected search URL: {url}")
+
+        with patch("httpx.AsyncClient.get", new=AsyncMock(side_effect=mock_get)):
+            result = await fetcher.search_instruments("LINK", limit=10)
+
+        assert result["status"] == "READY"
+        assert set(result["sources"]) == {"binance_public", "yahoo_public"}
+        assert result["results"][0] == {
+            "symbol": "LINKUSDT",
+            "name": "LINK / USDT",
+            "exchange": "Binance Spot",
+            "asset_type": "CRYPTO",
+            "source_id": "binance_public",
+            "source_symbol": "LINKUSDT",
+        }
+        assert all(item["source_symbol"] != "LINK-USD" for item in result["results"])
+
+    @pytest.mark.asyncio
+    async def test_instrument_search_includes_exact_biquote_gold_candidate(self):
+        fetcher = PublicMarketDataFetcher()
+        with patch("httpx.AsyncClient.get", new=AsyncMock(side_effect=RuntimeError("network denied"))):
+            result = await fetcher.search_instruments("XAUUSD", limit=5)
+
+        assert result["status"] == "READY"
+        assert "biquote_public" in result["sources"]
+        assert result["results"] == [{
+            "symbol": "XAUUSD",
+            "name": "Gold / US Dollar",
+            "exchange": "Biquote Spot",
+            "asset_type": "COMMODITY",
+            "source_id": "biquote_public",
+            "source_symbol": "XAUUSD",
+        }]
+
+    @pytest.mark.asyncio
+    async def test_instrument_search_reports_provider_outage_separately_from_no_match(self):
+        fetcher = PublicMarketDataFetcher()
+        with patch("httpx.AsyncClient.get", new=AsyncMock(side_effect=RuntimeError("network denied"))):
+            result = await fetcher.search_instruments("UNLISTED", limit=5)
+
+        assert result["status"] == "UNAVAILABLE"
+        assert result["reason"] == "SEARCH_PROVIDERS_UNAVAILABLE"
+        assert result["results"] == []
+        assert result["provider_failures"] == ["binance_public:RuntimeError", "yahoo_public:RuntimeError"]
 
     def test_binance_klines_parsing(self):
         """Verifies parsing of raw Binance public kline JSON arrays."""
@@ -228,7 +298,24 @@ class TestPublicMarketDataFetcherAndCache:
             # 3. Third Call with force_refresh=True -> Should call fetcher again
             res3 = await temp_repo.get_or_fetch_candles(symbol="ETHUSDT", timeframe="1h", limit=2, force_refresh=True)
             assert len(res3) == 2
-            assert mock_fetch.call_count == 2
+        assert mock_fetch.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_generic_provider_ticker_is_not_rewritten_to_usdt(self, temp_repo):
+        mock_candles = [{
+            "timestamp": 1700000000000,
+            "open": 140.0,
+            "high": 142.0,
+            "low": 139.0,
+            "close": 141.0,
+            "volume": 100.0,
+        }]
+        with patch.object(public_market_fetcher, "fetch_macro_candles", AsyncMock(return_value=mock_candles)) as fetch_macro:
+            result = await temp_repo.get_or_fetch_candles(symbol="AAPL", timeframe="1d", limit=1)
+
+        assert result == mock_candles
+        assert fetch_macro.await_args.kwargs["symbol"] == "AAPL"
+        assert temp_repo.get_cached_candles(symbol="AAPL", timeframe="1d", limit=1) == mock_candles
 
     def test_market_data_api_endpoints(self):
         """Tests FastAPI REST endpoints for /api/v1/market-data/candles and /api/v1/market-data/status."""
@@ -263,6 +350,52 @@ class TestPublicMarketDataFetcherAndCache:
         assert res_clear.status_code == 200
         clear_data = res_clear.json()
         assert clear_data["status"] == "CLEARED"
+
+    def test_market_data_search_returns_provider_candidates_without_implicit_selection(self):
+        app = create_app()
+        client = TestClient(app)
+        payload = {
+            "status": "READY",
+            "reason": None,
+            "query": "AAPL",
+            "results": [{
+                "symbol": "AAPL",
+                "name": "Apple Inc.",
+                "exchange": "NasdaqGS",
+                "asset_type": "STOCK",
+                "source_id": "yahoo_public",
+                "source_symbol": "AAPL",
+            }],
+            "sources": ["yahoo_public"],
+            "provider_failures": [],
+        }
+        with patch.object(
+            endpoints.public_market_fetcher,
+            "search_instruments",
+            new=AsyncMock(return_value=payload),
+        ) as search:
+            response = client.get("/api/v1/market-data/search?query=AAPL&limit=10")
+
+        assert response.status_code == 200
+        assert response.json() == payload
+        search.assert_awaited_once_with("AAPL", limit=10)
+
+    def test_market_data_search_stays_unavailable_when_market_data_is_disabled(self, monkeypatch):
+        app = create_app()
+        client = TestClient(app)
+        monkeypatch.setattr(endpoints.binance_client, "market_data_enabled", False)
+        with patch.object(endpoints.public_market_fetcher, "search_instruments", new=AsyncMock()) as search:
+            response = client.get("/api/v1/market-data/search?query=GOLD")
+
+        assert response.status_code == 200
+        assert response.json() == {
+            "status": "UNAVAILABLE",
+            "reason": "MARKET_DATA_DISABLED",
+            "query": "GOLD",
+            "results": [],
+            "sources": [],
+        }
+        search.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_macro_symbol_routing_and_fetch(self):

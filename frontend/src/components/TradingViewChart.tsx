@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, HistogramData } from "lightweight-charts";
 import { useMarketStore } from "../stores/marketStore";
 import { useTranslation } from "../context/I18nContext";
@@ -7,10 +7,12 @@ import { RefreshCw, AlertCircle, BarChart2, Plus, X } from "lucide-react";
 import { apiBase, apiFetch } from "../lib/backend";
 import {
   MARKET_SYMBOL_CATALOG,
+  createManualMarketInstrument,
   getMarketSymbolDefinition,
   resolveMarketSymbol,
-  searchMarketSymbols,
 } from "../lib/marketSymbols";
+import { MarketInstrument } from "../lib/marketSymbols";
+import { useInstrumentSearch } from "../hooks/useInstrumentSearch";
 
 export interface CandleDataPoint {
   timestamp: number;
@@ -97,7 +99,7 @@ export const TradingViewChart: React.FC = () => {
   });
   const [activeTimeframe, setActiveTimeframe] = useState<string>("15m");
   const [customInput, setCustomInput] = useState<string>("");
-  const [pendingSymbol, setPendingSymbol] = useState<string | null>(null);
+  const [pendingInstrument, setPendingInstrument] = useState<MarketInstrument | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -117,9 +119,7 @@ export const TradingViewChart: React.FC = () => {
     }
   }, [watchlist]);
 
-  const searchResults = useMemo(() => {
-    return searchMarketSymbols(customInput, t);
-  }, [customInput, t]);
+  const { results: searchResults, status: searchStatus } = useInstrumentSearch(customInput);
 
   // Initialize Lightweight Charts Canvas
   useEffect(() => {
@@ -378,22 +378,23 @@ export const TradingViewChart: React.FC = () => {
   };
 
   const handleConfirmSymbol = () => {
-    if (!pendingSymbol) {
+    if (!pendingInstrument) {
       setSearchError(t("market_chart.select_result_to_confirm"));
       return;
     }
-    const symbol = pendingSymbol;
+    const symbol = pendingInstrument.symbol;
     if (!watchlist.includes(symbol)) {
       setWatchlist([...watchlist, symbol]);
     }
     handleSymbolChange(symbol);
     setCustomInput("");
-    setPendingSymbol(null);
+    setPendingInstrument(null);
     setSearchError(null);
   };
 
-  const handleSelectSearchResult = (symbol: string) => {
-    setPendingSymbol(symbol);
+  const handleSelectSearchResult = (instrument: MarketInstrument) => {
+    setPendingInstrument(instrument);
+    setCustomInput("");
     setSearchError(null);
   };
 
@@ -498,28 +499,56 @@ export const TradingViewChart: React.FC = () => {
                   type="button"
                   role="option"
                   data-testid={`market-chart-search-result-${item.symbol}`}
-                  onClick={() => handleSelectSearchResult(item.symbol)}
+                  onClick={() => handleSelectSearchResult(item)}
                   className="w-full flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-[11px] text-slate-200 hover:bg-[#1a2234]"
                 >
-                  <span>{t(item.labelKey)}</span>
-                  <span className="text-[10px] text-accent">
+                    <span>
+                      <span className="block">{item.name}</span>
+                      <span className="block text-[10px] text-slate-400">{item.symbol} · {item.exchange || item.source_id}</span>
+                    </span>
+                    <span className="text-[10px] text-accent">
                     {watchlist.includes(item.symbol) ? t("market_chart.already_added") : t("market_chart.select_result")}
                   </span>
                 </button>
               ))}
-              {!searchResults.length && (
+              {searchStatus === "SEARCHING" && (
+                <div className="px-2 py-1.5 text-[11px] text-slate-400">{t("market_chart.searching")}</div>
+              )}
+              {searchStatus === "UNAVAILABLE" && (
+                <div className="px-2 py-1.5 text-[11px] text-amber-300">{t("market_chart.search_unavailable")}</div>
+              )}
+              {searchStatus === "NO_MATCH" && (
                 <div className="px-2 py-1.5 text-[11px] text-slate-400">{t("market_chart.no_search_results")}</div>
               )}
+              {searchStatus !== "SEARCHING" && (() => {
+                const manualInstrument = createManualMarketInstrument(customInput);
+                if (!manualInstrument) return null;
+                return (
+                  <button
+                    type="button"
+                    role="option"
+                    data-testid="market-chart-manual-symbol-result"
+                    onClick={() => handleSelectSearchResult(manualInstrument)}
+                    className="mt-1 w-full rounded border border-amber-400/30 bg-amber-950/20 px-2 py-1.5 text-left text-[11px] text-amber-200 hover:bg-amber-950/40"
+                  >
+                    <span className="block">{t("market_chart.manual_symbol_option", { symbol: manualInstrument.symbol })}</span>
+                    <span className="block text-[10px] text-amber-300/80">{t("market_chart.manual_symbol_notice")}</span>
+                  </button>
+                );
+              })()}
             </div>
           )}
           {searchError && <span role="alert" className="absolute left-0 top-full mt-1 z-30 rounded bg-rose-950/90 px-2 py-1 text-[10px] text-rose-200">{searchError}</span>}
-          {pendingSymbol && (
+          {pendingInstrument && (
             <div
               role="dialog"
               data-testid="market-chart-symbol-confirmation"
               className="absolute left-0 top-[calc(100%+2rem)] z-20 flex items-center gap-2 rounded border border-accent/40 bg-[#111722] px-2 py-1.5 text-[10px] text-slate-200 shadow-xl"
             >
-              <span>{t("market_chart.confirm_symbol", { symbol: t(getMarketSymbolDefinition(pendingSymbol)?.labelKey || "market_chart.unknown_symbol") })}</span>
+              <span>
+                {t("market_chart.confirm_symbol", { symbol: pendingInstrument.name })} <span className="text-slate-400">({pendingInstrument.symbol})</span>
+                {pendingInstrument.source_id === "manual" && <span className="block text-amber-300">{t("market_chart.manual_symbol_notice")}</span>}
+              </span>
               <button
                 type="button"
                 data-testid="market-chart-confirm-symbol"
@@ -531,7 +560,7 @@ export const TradingViewChart: React.FC = () => {
               <button
                 type="button"
                 data-testid="market-chart-cancel-symbol"
-                onClick={() => setPendingSymbol(null)}
+                onClick={() => setPendingInstrument(null)}
                 className="rounded border border-surface-border px-2 py-1 text-slate-300 hover:text-white"
               >
                 {t("market_chart.cancel")}

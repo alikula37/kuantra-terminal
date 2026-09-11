@@ -21,7 +21,11 @@ const mocks = vi.hoisted(() => {
   return { apiFetch, createChart, remove, setData, setSymbol, updateTick, t: (key: string) => key };
 });
 
-vi.mock("../../lib/backend", () => ({ apiBase: () => "", apiFetch: mocks.apiFetch }));
+vi.mock("../../lib/backend", () => ({
+  apiBase: () => "",
+  apiUrl: (path: string) => path,
+  apiFetch: mocks.apiFetch,
+}));
 vi.mock("../../context/I18nContext", () => ({
   useTranslation: () => ({ t: mocks.t }),
 }));
@@ -64,6 +68,12 @@ const deferred = <T,>() => {
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 const flush = async () => { await act(async () => { await Promise.resolve(); await Promise.resolve(); }); };
+const waitForSearch = async () => {
+  await act(async () => {
+    await new Promise((resolve) => window.setTimeout(resolve, 350));
+  });
+  await flush();
+};
 const setInputValue = (input: HTMLInputElement, value: string) => {
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
   setter?.call(input, value);
@@ -161,7 +171,15 @@ it("renders valid historical candles without promoting them to live ticks", asyn
 });
 
 it("requires selecting and confirming a catalog result before re-adding gold", async () => {
-  mocks.apiFetch.mockResolvedValue(response(candles));
+  mocks.apiFetch.mockImplementation((url: string) => {
+    if (url.includes("/api/v1/market-data/search")) {
+      return Promise.resolve(response({
+        status: "READY",
+        results: [{ symbol: "XAUUSD", name: "Gold / US Dollar", exchange: "Spot", asset_type: "COMMODITY", source_id: "biquote_public", source_symbol: "XAUUSD" }],
+      }));
+    }
+    return Promise.resolve(response(candles));
+  });
 
   await act(async () => root.render(<TradingViewChart />));
   await flush();
@@ -173,7 +191,7 @@ it("requires selecting and confirming a catalog result before re-adding gold", a
 
   const input = host.querySelector("[data-testid=market-chart-symbol-search]") as HTMLInputElement;
   await act(async () => setInputValue(input, "gold"));
-  await flush();
+  await waitForSearch();
 
   const result = host.querySelector("[data-testid=market-chart-search-result-XAUUSD]") as HTMLButtonElement;
   expect(result).toBeTruthy();
@@ -187,7 +205,15 @@ it("requires selecting and confirming a catalog result before re-adding gold", a
 });
 
 it("does not auto-add LINK on Enter and requires explicit Chainlink confirmation", async () => {
-  mocks.apiFetch.mockResolvedValue(response(candles));
+  mocks.apiFetch.mockImplementation((url: string) => {
+    if (url.includes("/api/v1/market-data/search")) {
+      return Promise.resolve(response({
+        status: "READY",
+        results: [{ symbol: "LINKUSDT", name: "LINK / USDT", exchange: "Binance Spot", asset_type: "CRYPTO", source_id: "binance_public", source_symbol: "LINKUSDT" }],
+      }));
+    }
+    return Promise.resolve(response(candles));
+  });
 
   await act(async () => root.render(<TradingViewChart />));
   await flush();
@@ -198,9 +224,9 @@ it("does not auto-add LINK on Enter and requires explicit Chainlink confirmation
   expect(host.querySelector("[data-testid=market-chart-symbol-LINKUSDT]")).toBeNull();
 
   const input = host.querySelector("[data-testid=market-chart-symbol-search]") as HTMLInputElement;
-  const callsBeforeEnter = mocks.apiFetch.mock.calls.length;
   await act(async () => setInputValue(input, "LINK"));
-  await flush();
+  await waitForSearch();
+  const callsBeforeEnter = mocks.apiFetch.mock.calls.length;
 
   await act(async () => (host.querySelector('form button[type="submit"]') as HTMLButtonElement).click());
   await flush();
@@ -217,4 +243,33 @@ it("does not auto-add LINK on Enter and requires explicit Chainlink confirmation
   await flush();
   expect(host.querySelector("[data-testid=market-chart-symbol-LINKUSDT]")).not.toBeNull();
   expect(mocks.apiFetch.mock.calls.length).toBeGreaterThan(callsBeforeEnter);
+});
+
+it("offers an explicit manual symbol path when public search has no result", async () => {
+  mocks.apiFetch.mockImplementation((url: string) => {
+    if (url.includes("/api/v1/market-data/search")) {
+      return Promise.resolve(response({
+        status: "NO_MATCH",
+        results: [],
+        sources: ["binance_public", "yahoo_public"],
+      }));
+    }
+    return Promise.resolve(response(candles));
+  });
+
+  await act(async () => root.render(<TradingViewChart />));
+  await flush();
+  const input = host.querySelector("[data-testid=market-chart-symbol-search]") as HTMLInputElement;
+  await act(async () => setInputValue(input, "OTC:KUANTRA"));
+  await waitForSearch();
+
+  expect(host.textContent).toContain("market_chart.no_search_results");
+  const manual = host.querySelector("[data-testid=market-chart-manual-symbol-result]") as HTMLButtonElement;
+  expect(manual).not.toBeNull();
+  await act(async () => manual.click());
+  await flush();
+  expect(host.querySelector("[data-testid=market-chart-symbol-confirmation]")?.textContent).toContain("OTC:KUANTRA");
+  await act(async () => (host.querySelector("[data-testid=market-chart-confirm-symbol]") as HTMLButtonElement).click());
+  await flush();
+  expect(host.querySelector('[data-testid="market-chart-symbol-OTC:KUANTRA"]')).not.toBeNull();
 });

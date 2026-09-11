@@ -53,6 +53,13 @@ const flush = async () => {
   });
 };
 
+const waitForSearch = async () => {
+  await act(async () => {
+    await new Promise((resolve) => window.setTimeout(resolve, 350));
+  });
+  await flush();
+};
+
 const setInputValue = (input: HTMLInputElement, value: string) => {
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
   setter?.call(input, value);
@@ -166,6 +173,12 @@ it("treats a malformed successful quote response as unavailable", async () => {
 it("requires selecting and confirming LINKUSDT before fetching its quote", async () => {
   const requestedQuoteUrls: string[] = [];
   mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.startsWith("/api/v1/market-data/search")) {
+      return Promise.resolve(response({
+        status: "READY",
+        results: [{ symbol: "LINKUSDT", name: "Chainlink / Tether", exchange: "Binance Spot", asset_type: "CRYPTO", source_id: "binance_public", source_symbol: "LINKUSDT" }],
+      }));
+    }
     if (path.startsWith("/api/v1/market-data/quote")) {
       requestedQuoteUrls.push(path);
       return Promise.resolve(response({
@@ -190,7 +203,7 @@ it("requires selecting and confirming LINKUSDT before fetching its quote", async
 
   await act(async () => setInputValue(symbolInput, "LINK"));
   await act(async () => symbolInput.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
-  await flush();
+  await waitForSearch();
 
   expect(requestedQuoteUrls).toHaveLength(0);
   expect(host.querySelector("[data-testid=new-trade-symbol-search-error]")?.textContent).toContain("order_ticket.select_result_to_confirm");
@@ -211,6 +224,55 @@ it("requires selecting and confirming LINKUSDT before fetching its quote", async
   expect(requestedQuoteUrls).toHaveLength(1);
   expect(requestedQuoteUrls[0]).toContain("symbol=LINKUSDT");
   expect(host.querySelector("[data-testid=trade-quote-status]")).not.toBeNull();
+});
+
+it("allows an explicit manual symbol confirmation when providers return no match", async () => {
+  const requestedQuoteUrls: string[] = [];
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.startsWith("/api/v1/market-data/search")) {
+      return Promise.resolve(response({
+        status: "NO_MATCH",
+        results: [],
+        sources: ["binance_public", "yahoo_public"],
+      }));
+    }
+    if (path.startsWith("/api/v1/market-data/quote")) {
+      requestedQuoteUrls.push(path);
+      return Promise.resolve(response({
+        requested_symbol: "OTC:KUANTRA",
+        source_id: null,
+        source_symbol: null,
+        price: null,
+        status: "UNAVAILABLE",
+        price_kind: null,
+        observed_at: null,
+        reason: "NO_FREE_QUOTE_SOURCE",
+        free_source: true,
+        credentials_required: false,
+      }));
+    }
+    return Promise.resolve(response({}));
+  });
+
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  const symbolInput = host.querySelectorAll('input[type="text"]')[1] as HTMLInputElement;
+  await act(async () => setInputValue(symbolInput, "OTC:KUANTRA"));
+  await waitForSearch();
+
+  const manual = host.querySelector("[data-testid=new-trade-manual-symbol-result]") as HTMLButtonElement;
+  expect(manual).not.toBeNull();
+  await act(async () => manual.click());
+  await flush();
+  expect(host.querySelector("[data-testid=new-trade-symbol-confirmation]")?.textContent).toContain("OTC:KUANTRA");
+  await act(async () => (host.querySelector("[data-testid=new-trade-confirm-symbol]") as HTMLButtonElement).click());
+  await flush();
+
+  const fetchButton = host.querySelector('button[title="order_ticket.fetch_price_btn"]') as HTMLButtonElement;
+  expect(fetchButton.disabled).toBe(false);
+  await act(async () => fetchButton.click());
+  await flush();
+  expect(requestedQuoteUrls).toHaveLength(1);
+  expect(requestedQuoteUrls[0]).toContain("symbol=OTC%3AKUANTRA");
 });
 
 it("requires an explicit simulation choice and still posts only to the journal endpoint", async () => {

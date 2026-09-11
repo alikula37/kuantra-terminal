@@ -11,6 +11,7 @@ import io
 import logging
 import math
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
@@ -113,6 +114,8 @@ BIQUOTE_SYMBOL_MAP = {
     "XAUUSD=X": "XAUUSD",
 }
 
+BIQUOTE_SEARCH_ALIASES = {"XAU", "XAUUSD", "XAUUSD=X", "GOLD"}
+
 BIQUOTE_INTERVAL_MAP = {
     "1m": "1m",
     "5m": "5m",
@@ -153,6 +156,28 @@ class PublicQuote:
         }
 
 
+@dataclass(frozen=True)
+class InstrumentSearchResult:
+    """One exact, user-selectable instrument returned by a public provider."""
+
+    symbol: str
+    name: str
+    exchange: Optional[str]
+    asset_type: str
+    source_id: str
+    source_symbol: str
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "symbol": self.symbol,
+            "name": self.name,
+            "exchange": self.exchange,
+            "asset_type": self.asset_type,
+            "source_id": self.source_id,
+            "source_symbol": self.source_symbol,
+        }
+
+
 def normalize_crypto_symbol(symbol: str) -> str:
     """Normalizes raw input symbol into standard uppercase exchange pair string."""
     cleaned = re.sub(r"[\s/_\-]+", "", symbol).upper().strip()
@@ -188,17 +213,21 @@ class PublicMarketDataFetcher:
     """
 
     BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
+    BINANCE_EXCHANGE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo"
     BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
     BINANCE_FUTURES_URL = "https://fapi.binance.com/fapi/v1/klines"
     BYBIT_KLINES_URL = "https://api.bybit.com/v5/market/kline"
     BYBIT_TICKER_URL = "https://api.bybit.com/v5/market/tickers"
     BIQUOTE_OHLC_URL = "https://biquote.io/api/{symbol}/ohlc"
     YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
+    YAHOO_SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
     STOOQ_CSV_URL = "https://stooq.com/q/d/l/?s={ticker}&i=d"
 
     def __init__(self, timeout: float = 10.0):
         self.timeout = timeout
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+        self._binance_instrument_cache: List[Dict[str, Any]] = []
+        self._binance_instrument_cache_at = 0.0
 
     def _get_headers(self) -> Dict[str, str]:
         return {
@@ -207,6 +236,238 @@ class PublicMarketDataFetcher:
             "Accept-Language": "en-US,en;q=0.9",
             "Cache-Control": "no-cache"
         }
+
+    @staticmethod
+    def _search_text(value: Any) -> str:
+        return str(value or "").strip().casefold()
+
+    @staticmethod
+    def _valid_search_symbol(value: Any) -> Optional[str]:
+        if not isinstance(value, str):
+            return None
+        symbol = value.strip().upper()
+        if not symbol or len(symbol) > 64 or any(ord(character) < 32 for character in symbol):
+            return None
+        if not re.fullmatch(r"[A-Z0-9.^=:/_-]+", symbol):
+            return None
+        return symbol
+
+    @staticmethod
+    def _search_rank(query: str, result: InstrumentSearchResult) -> Tuple[int, str]:
+        needle = query.casefold()
+        symbol = result.symbol.casefold()
+        name = result.name.casefold()
+        if symbol == needle:
+            rank = 0
+        elif symbol.startswith(needle):
+            rank = 1
+        elif name.startswith(needle):
+            rank = 2
+        elif needle in symbol:
+            rank = 3
+        elif needle in name:
+            rank = 4
+        else:
+            rank = 5
+        return rank, symbol
+
+    @staticmethod
+    def _quote_priority(symbol: str) -> int:
+        """Prefer the usual USD-backed pair when a crypto base has several pairs."""
+        for index, quote in enumerate(("USDT", "USDC", "USD", "FDUSD", "BUSD", "TUSD", "EUR", "BTC", "ETH", "TRY")):
+            if symbol.endswith(quote) and len(symbol) > len(quote):
+                return index
+        return 99
+
+    async def _load_binance_instruments(self) -> List[Dict[str, Any]]:
+        now = time.monotonic()
+        if self._binance_instrument_cache and now - self._binance_instrument_cache_at < 600:
+            return self._binance_instrument_cache
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.get(self.BINANCE_EXCHANGE_INFO_URL, headers=self._get_headers())
+        if response.status_code != 200:
+            raise RuntimeError(f"Binance exchangeInfo returned HTTP {response.status_code}")
+        payload = response.json()
+        rows = payload.get("symbols") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            raise RuntimeError("Binance exchangeInfo response was malformed")
+        instruments = [
+            row for row in rows
+            if isinstance(row, dict)
+            and row.get("status") == "TRADING"
+            and row.get("isSpotTradingAllowed", True) is not False
+            and self._valid_search_symbol(row.get("symbol"))
+        ]
+        self._binance_instrument_cache = instruments
+        self._binance_instrument_cache_at = now
+        return instruments
+
+    async def _search_binance_instruments(self, query: str, limit: int) -> List[InstrumentSearchResult]:
+        rows = await self._load_binance_instruments()
+        needle = query.casefold()
+        candidates: List[InstrumentSearchResult] = []
+        for row in rows:
+            symbol = self._valid_search_symbol(row.get("symbol"))
+            base_asset = self._search_text(row.get("baseAsset"))
+            quote_asset = self._search_text(row.get("quoteAsset"))
+            if not symbol:
+                continue
+            haystack = " ".join((symbol.casefold(), base_asset, quote_asset))
+            if needle not in haystack:
+                continue
+            base_display = str(row.get("baseAsset") or symbol)
+            quote_display = str(row.get("quoteAsset") or "")
+            candidates.append(InstrumentSearchResult(
+                symbol=symbol,
+                name=f"{base_display} / {quote_display}" if quote_display else base_display,
+                exchange="Binance Spot",
+                asset_type="CRYPTO",
+                source_id="binance_public",
+                source_symbol=symbol,
+            ))
+        return sorted(
+            candidates,
+            key=lambda item: (*self._search_rank(query, item)[:1], self._quote_priority(item.symbol), item.symbol.casefold()),
+        )[:limit]
+
+    async def _search_biquote_instruments(self, query: str, limit: int) -> List[InstrumentSearchResult]:
+        """Expose the exact keyless spot-metal route without inventing a catalog."""
+        compact_query = re.sub(r"[\s/_-]+", "", query).upper()
+        if compact_query not in BIQUOTE_SEARCH_ALIASES:
+            return []
+        return [InstrumentSearchResult(
+            symbol="XAUUSD",
+            name="Gold / US Dollar",
+            exchange="Biquote Spot",
+            asset_type="COMMODITY",
+            source_id="biquote_public",
+            source_symbol="XAUUSD",
+        )][:limit]
+
+    async def _search_yahoo_instruments(self, query: str, limit: int) -> List[InstrumentSearchResult]:
+        params = {
+            "q": query,
+            "quotesCount": max(10, min(50, limit * 3)),
+            "newsCount": 0,
+            "enableFuzzyQuery": "false",
+        }
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.get(self.YAHOO_SEARCH_URL, params=params, headers=self._get_headers())
+        if response.status_code != 200:
+            raise RuntimeError(f"Yahoo search returned HTTP {response.status_code}")
+        payload = response.json()
+        rows = payload.get("quotes") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
+            raise RuntimeError("Yahoo search response was malformed")
+
+        type_map = {
+            "EQUITY": "STOCK",
+            "ETF": "ETF",
+            "CURRENCY": "FOREX",
+            "FUTURE": "FUTURE",
+            "INDEX": "INDEX",
+            "MUTUALFUND": "FUND",
+        }
+        results: List[InstrumentSearchResult] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            # Binance provides exact spot pairs for crypto. Yahoo's crypto
+            # symbols (for example LINK-USD) do not use the candle/quote
+            # routing contract, so they are not promoted from this provider.
+            quote_type = str(row.get("quoteType") or "").upper()
+            if quote_type == "CRYPTOCURRENCY":
+                continue
+            symbol = self._valid_search_symbol(row.get("symbol"))
+            if not symbol:
+                continue
+            name = str(row.get("longname") or row.get("shortname") or symbol).strip()
+            exchange = str(row.get("exchDisp") or row.get("exchange") or "").strip() or None
+            results.append(InstrumentSearchResult(
+                symbol=symbol,
+                name=name,
+                exchange=exchange,
+                asset_type=type_map.get(quote_type, quote_type or "OTHER"),
+                source_id="yahoo_public",
+                source_symbol=symbol,
+            ))
+        return sorted(results, key=lambda item: self._search_rank(query, item))[:limit]
+
+    async def search_instruments(self, query: str, limit: int = 20) -> Dict[str, Any]:
+        """Search exact instruments across free public inventories.
+
+        Search results are suggestions only. The UI must retain the exact
+        ``source_symbol`` and require an explicit user confirmation before a
+        quote or candle request is made.
+        """
+        cleaned_query = str(query or "").strip()
+        if not cleaned_query:
+            return {"status": "INVALID_QUERY", "reason": "QUERY_REQUIRED", "query": "", "results": [], "sources": []}
+        if len(cleaned_query) > 64 or any(ord(character) < 32 for character in cleaned_query):
+            return {"status": "INVALID_QUERY", "reason": "QUERY_INVALID", "query": cleaned_query[:64], "results": [], "sources": []}
+
+        clamped_limit = max(1, min(50, int(limit)))
+        provider_results: List[InstrumentSearchResult] = []
+        successful_sources: List[str] = []
+        failures: List[str] = []
+        provider_calls = (
+            ("binance_public", self._search_binance_instruments),
+            ("yahoo_public", self._search_yahoo_instruments),
+        )
+        responses = await asyncio.gather(
+            *(self._run_instrument_search_provider(source_id, provider, cleaned_query, clamped_limit) for source_id, provider in provider_calls),
+        )
+        for source_id, results, error in responses:
+            if error:
+                failures.append(f"{source_id}:{error}")
+            else:
+                successful_sources.append(source_id)
+                provider_results.extend(results)
+
+        biquote_results = await self._search_biquote_instruments(cleaned_query, clamped_limit)
+        if biquote_results:
+            successful_sources.append("biquote_public")
+            provider_results.extend(biquote_results)
+
+        deduplicated: Dict[Tuple[str, str, Optional[str]], InstrumentSearchResult] = {}
+        for result in provider_results:
+            key = (result.source_id, result.source_symbol, result.exchange)
+            deduplicated.setdefault(key, result)
+        ordered = sorted(
+            deduplicated.values(),
+            key=lambda item: (*self._search_rank(cleaned_query, item)[:1], self._quote_priority(item.symbol), item.symbol.casefold()),
+        )[:clamped_limit]
+        if ordered:
+            status = "READY"
+            reason = None
+        elif successful_sources:
+            status = "NO_MATCH"
+            reason = "NO_VERIFIED_INSTRUMENT_MATCH"
+        else:
+            status = "UNAVAILABLE"
+            reason = "SEARCH_PROVIDERS_UNAVAILABLE"
+        return {
+            "status": status,
+            "reason": reason,
+            "query": cleaned_query,
+            "results": [result.as_dict() for result in ordered],
+            "sources": successful_sources,
+            "provider_failures": failures,
+        }
+
+    async def _run_instrument_search_provider(
+        self,
+        source_id: str,
+        provider: Any,
+        query: str,
+        limit: int,
+    ) -> Tuple[str, List[InstrumentSearchResult], Optional[str]]:
+        try:
+            return source_id, await provider(query, limit), None
+        except Exception as exc:
+            logger.warning("[PUBLIC-FETCHER] Instrument search failed for %s: %s", source_id, exc)
+            return source_id, [], type(exc).__name__
 
     @staticmethod
     def _iso_from_timestamp_ms(timestamp_ms: Any) -> Optional[str]:

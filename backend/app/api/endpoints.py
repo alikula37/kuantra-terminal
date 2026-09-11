@@ -78,7 +78,7 @@ class TradeCreateSchema(BaseModel):
     execution_venue: Optional[str] = Field(default=None, max_length=120)
     price_source: Literal[
         "manual", "binance_public", "bybit_public", "yahoo_public",
-        "stooq_public", "tradingview_alert", "broker_import", "unknown",
+        "stooq_public", "biquote_public", "tradingview_alert", "broker_import", "unknown",
     ] = "manual"
     price_source_symbol: Optional[str] = Field(default=None, max_length=128)
     price_status: Literal["LIVE", "DELAYED", "EOD", "UNAVAILABLE"] = "UNAVAILABLE"
@@ -1836,6 +1836,36 @@ def get_system_storage_statistics():
 # ==============================================================================
 # ZERO-AUTH PUBLIC MARKET DATA & SQLITE CANDLE CACHE ENDPOINTS
 # ==============================================================================
+
+@router.get("/market-data/search")
+async def search_market_instruments(
+    query: str = Query(..., min_length=1, max_length=64, description="Instrument name, symbol or ticker fragment"),
+    limit: int = Query(20, ge=1, le=50, description="Maximum search results"),
+):
+    """Search exact public-provider instruments without selecting one implicitly.
+
+    The response is a candidate list only. The client must preserve the
+    selected provider symbol and require explicit user confirmation before
+    requesting a quote or candle series.
+    """
+    cleaned_query = query.strip()
+    if not cleaned_query or any(ord(character) < 32 for character in cleaned_query):
+        return {
+            "status": "INVALID_QUERY",
+            "reason": "QUERY_INVALID",
+            "query": cleaned_query,
+            "results": [],
+            "sources": [],
+        }
+    if not binance_client.market_data_enabled:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": "MARKET_DATA_DISABLED",
+            "query": cleaned_query,
+            "results": [],
+            "sources": [],
+        }
+    return await public_market_fetcher.search_instruments(cleaned_query, limit=limit)
 
 @router.get("/market-data/quote")
 async def get_market_quote(

@@ -65,6 +65,15 @@ class CandlesRepository:
             """)
             conn.commit()
 
+    @staticmethod
+    def _normalize_requested_symbol(symbol: str) -> str:
+        """Preserve generic provider tickers instead of inventing a USDT pair."""
+        raw = str(symbol or "").strip().upper()
+        if raw in MACRO_SYMBOL_MAP:
+            return raw
+        crypto_pair = public_market_fetcher._crypto_pair_symbol(raw)
+        return normalize_crypto_symbol(raw) if crypto_pair is not None else raw
+
     def save_candles_batch(
         self,
         candles: List[Dict[str, Any]],
@@ -78,7 +87,7 @@ class CandlesRepository:
         if not candles:
             return 0
 
-        norm_sym = normalize_crypto_symbol(symbol) if symbol not in MACRO_SYMBOL_MAP else symbol.upper().strip()
+        norm_sym = self._normalize_requested_symbol(symbol)
         norm_tf = normalize_interval(timeframe)
 
         records = []
@@ -125,7 +134,7 @@ class CandlesRepository:
         Retrieves cached OHLCV candles within specified time boundaries or recent limit.
         Always returns in ascending chronological order.
         """
-        norm_sym = normalize_crypto_symbol(symbol) if symbol not in MACRO_SYMBOL_MAP else symbol.upper().strip()
+        norm_sym = self._normalize_requested_symbol(symbol)
         norm_tf = normalize_interval(timeframe)
 
         query = """
@@ -202,7 +211,7 @@ class CandlesRepository:
         3. If cache miss, calls PublicMarketDataFetcher and writes to SQLite cache.
         4. Returns unified ascending candle array.
         """
-        norm_sym = normalize_crypto_symbol(symbol) if symbol not in MACRO_SYMBOL_MAP else symbol.upper().strip()
+        norm_sym = self._normalize_requested_symbol(symbol)
         norm_tf = normalize_interval(timeframe)
         clamped_limit = max(1, min(1000, limit))
 
@@ -220,8 +229,9 @@ class CandlesRepository:
                 return cached
 
         logger.info(f"[CANDLE-CACHE] Cache MISS/REFRESH for {norm_sym} ({norm_tf}). Initiating zero-auth public fetch...")
-        # Check if macro symbol
-        if norm_sym in MACRO_SYMBOL_MAP or symbol.upper() in MACRO_SYMBOL_MAP:
+        # Exact generic provider tickers use the Yahoo/Stooq macro-compatible
+        # path; only explicit crypto pairs go through exchange klines.
+        if norm_sym in MACRO_SYMBOL_MAP or public_market_fetcher._crypto_pair_symbol(symbol) is None:
             fetched = await public_market_fetcher.fetch_macro_candles(
                 symbol=norm_sym,
                 interval=norm_tf,
@@ -284,7 +294,7 @@ class CandlesRepository:
         query = "DELETE FROM market_candles_cache WHERE 1=1"
         params: List[Any] = []
         if symbol:
-            norm_sym = normalize_crypto_symbol(symbol) if symbol not in MACRO_SYMBOL_MAP else symbol.upper().strip()
+            norm_sym = self._normalize_requested_symbol(symbol)
             query += " AND symbol = ?"
             params.append(norm_sym)
         if timeframe:

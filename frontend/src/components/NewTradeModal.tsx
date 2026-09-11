@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { X, Check, RefreshCw, Zap, AlertTriangle } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
 import { useTranslation } from "../context/I18nContext";
 import { MarketQuote, TradeSide } from "../types";
 import { apiFetch, apiUrl } from "../lib/backend";
-import { MARKET_SYMBOL_CATALOG, resolveMarketSymbol, searchMarketSymbols } from "../lib/marketSymbols";
+import { createManualMarketInstrument, getMarketSymbolDefinition, resolveMarketSymbol } from "../lib/marketSymbols";
+import { MarketInstrument } from "../lib/marketSymbols";
+import { useInstrumentSearch } from "../hooks/useInstrumentSearch";
 
 const FREE_QUOTE_SOURCE_IDS = new Set([
   "binance_public",
@@ -56,12 +58,15 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const { t } = useTranslation();
   const { symbol: defaultSymbol } = useMarketStore();
   const { addTrade } = useTradeStore();
-  const initialSymbol = resolveMarketSymbol(defaultSymbol || "") || "BTCUSDT";
+  const resolvedDefaultSymbol = resolveMarketSymbol(defaultSymbol || "");
+  const initialSymbol = resolvedDefaultSymbol && getMarketSymbolDefinition(resolvedDefaultSymbol)
+    ? resolvedDefaultSymbol
+    : "BTCUSDT";
 
   const [recordMode, setRecordMode] = useState<"EXTERNAL" | "SIMULATION">("EXTERNAL");
   const [tradeSymbol, setTradeSymbol] = useState<string>(initialSymbol);
   const [symbolInput, setSymbolInput] = useState<string>(initialSymbol);
-  const [pendingSymbol, setPendingSymbol] = useState<string | null>(null);
+  const [pendingInstrument, setPendingInstrument] = useState<MarketInstrument | null>(null);
   const [symbolSearchError, setSymbolSearchError] = useState<string | null>(null);
   const [side, setSide] = useState<TradeSide>("BUY");
   const [entryPrice, setEntryPrice] = useState<number>(0);
@@ -77,7 +82,10 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [quote, setQuote] = useState<MarketQuote | null>(null);
   const [priceOrigin, setPriceOrigin] = useState<"MANUAL" | "PUBLIC_QUOTE">("MANUAL");
-  const searchResults = useMemo(() => searchMarketSymbols(symbolInput, t), [symbolInput, t]);
+  const { results: searchResults, status: searchStatus } = useInstrumentSearch(
+    symbolInput,
+    !pendingInstrument && symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase(),
+  );
 
   if (!isOpen) return null;
 
@@ -131,9 +139,9 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     }
   };
 
-  const handleSelectSearchResult = (symbol: string) => {
-    setPendingSymbol(symbol);
-    setSymbolInput(symbol);
+  const handleSelectSearchResult = (instrument: MarketInstrument) => {
+    setPendingInstrument(instrument);
+    setSymbolInput(instrument.symbol);
     setSymbolSearchError(null);
     setQuote(null);
     setPriceOrigin("MANUAL");
@@ -141,13 +149,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   };
 
   const handleConfirmSymbol = () => {
-    if (!pendingSymbol) {
+    if (!pendingInstrument) {
       setSymbolSearchError(t("order_ticket.select_result_to_confirm"));
       return;
     }
-    setTradeSymbol(pendingSymbol);
-    setSymbolInput(pendingSymbol);
-    setPendingSymbol(null);
+    setTradeSymbol(pendingInstrument.symbol);
+    setSymbolInput(pendingInstrument.symbol);
+    setPendingInstrument(null);
     setSymbolSearchError(null);
     setQuote(null);
     setPriceOrigin("MANUAL");
@@ -155,7 +163,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   };
 
   const handleCancelSymbolSelection = () => {
-    setPendingSymbol(null);
+    setPendingInstrument(null);
     setSymbolInput(tradeSymbol);
     setSymbolSearchError(null);
   };
@@ -318,7 +326,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 value={symbolInput}
                 onChange={(e) => {
                   setSymbolInput(e.target.value.toUpperCase());
-                  setPendingSymbol(null);
+                  setPendingInstrument(null);
                   setSymbolSearchError(null);
                   setQuote(null);
                   setPriceOrigin("MANUAL");
@@ -344,7 +352,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 <span className="text-[11px] font-semibold">{t("order_ticket.fetch_price_btn")}</span>
               </button>
             </div>
-            {symbolInput.trim() && symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase() && (
+            {symbolInput.trim() && symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase() && !pendingInstrument && (
               <div role="listbox" data-testid="new-trade-symbol-search-results" className="mt-1 rounded border border-surface-border bg-[#0b0e14] p-1 shadow-xl">
                 {searchResults.map((item) => (
                   <button
@@ -352,21 +360,49 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                     type="button"
                     role="option"
                     data-testid={`new-trade-symbol-search-result-${item.symbol}`}
-                    onClick={() => handleSelectSearchResult(item.symbol)}
+                    onClick={() => handleSelectSearchResult(item)}
                     className="w-full flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-[11px] text-slate-200 hover:bg-[#1a2234]"
                   >
-                    <span>{t(item.labelKey)}</span>
+                    <span>
+                      <span className="block">{item.name}</span>
+                      <span className="block text-[10px] text-slate-400">{item.symbol} · {item.exchange || item.source_id}</span>
+                    </span>
                     <span className="text-[10px] text-accent">{t("order_ticket.select_result")}</span>
                   </button>
                 ))}
-                {!searchResults.length && (
+                {searchStatus === "SEARCHING" && (
+                  <div className="px-2 py-1.5 text-[11px] text-slate-400">{t("order_ticket.searching")}</div>
+                )}
+                {searchStatus === "UNAVAILABLE" && (
+                  <div className="px-2 py-1.5 text-[11px] text-amber-300">{t("order_ticket.search_unavailable")}</div>
+                )}
+                {searchStatus === "NO_MATCH" && (
                   <div className="px-2 py-1.5 text-[11px] text-slate-400">{t("order_ticket.no_symbol_matches")}</div>
                 )}
+                {searchStatus !== "SEARCHING" && (() => {
+                  const manualInstrument = createManualMarketInstrument(symbolInput);
+                  if (!manualInstrument) return null;
+                  return (
+                    <button
+                      type="button"
+                      role="option"
+                      data-testid="new-trade-manual-symbol-result"
+                      onClick={() => handleSelectSearchResult(manualInstrument)}
+                      className="mt-1 w-full rounded border border-amber-400/30 bg-amber-950/20 px-2 py-1.5 text-left text-[11px] text-amber-200 hover:bg-amber-950/40"
+                    >
+                      <span className="block">{t("order_ticket.manual_symbol_option", { symbol: manualInstrument.symbol })}</span>
+                      <span className="block text-[10px] text-amber-300/80">{t("order_ticket.manual_symbol_notice")}</span>
+                    </button>
+                  );
+                })()}
               </div>
             )}
-            {pendingSymbol && (
+            {pendingInstrument && (
               <div role="dialog" data-testid="new-trade-symbol-confirmation" className="mt-2 flex items-center gap-2 rounded border border-accent/40 bg-[#0b0e14] px-2 py-1.5 text-[10px] text-slate-200">
-                <span className="flex-1">{t("order_ticket.confirm_symbol", { symbol: t(MARKET_SYMBOL_CATALOG.find((item) => item.symbol === pendingSymbol)?.labelKey || "market_chart.unknown_symbol") })}</span>
+                <span className="flex-1">
+                  {t("order_ticket.confirm_symbol", { symbol: pendingInstrument.name })} <span className="text-slate-400">({pendingInstrument.symbol})</span>
+                  {pendingInstrument.source_id === "manual" && <span className="block text-amber-300">{t("order_ticket.manual_symbol_notice")}</span>}
+                </span>
                 <button
                   type="button"
                   data-testid="new-trade-confirm-symbol"

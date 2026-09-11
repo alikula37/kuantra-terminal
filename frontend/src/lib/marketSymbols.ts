@@ -4,10 +4,19 @@ export interface MarketSymbolDefinition {
   aliases: string[];
 }
 
+export interface MarketInstrument {
+  symbol: string;
+  name: string;
+  exchange: string | null;
+  asset_type: string;
+  source_id: string;
+  source_symbol: string;
+}
+
 /**
- * The UI can only promote a symbol that has an explicit, human-readable
- * catalog entry.  Free-form input is intentionally not treated as a symbol
- * selection: a search result must be selected and then confirmed first.
+ * This small registry supplies the default watchlist and localized labels
+ * only. It is not the supported-instrument universe: provider search results
+ * and explicitly confirmed manual symbols can also be used.
  */
 export const MARKET_SYMBOL_CATALOG: MarketSymbolDefinition[] = [
   { symbol: "BTCUSDT", labelKey: "market_chart.symbol_btc_usdt", aliases: ["btc", "bitcoin"] },
@@ -21,9 +30,13 @@ export const MARKET_SYMBOL_CATALOG: MarketSymbolDefinition[] = [
 ];
 
 export function normalizeMarketSymbol(value: string): string | null {
-  const cleaned = value.trim().toUpperCase().replace(/[\s/_-]+/g, "");
-  if (!cleaned || cleaned.length > 32 || !/^[A-Z0-9.^=:]+$/.test(cleaned)) return null;
+  const cleaned = value.trim().toUpperCase();
+  if (!cleaned || cleaned.length > 64 || !/^[A-Z0-9.^=:/_-]+$/.test(cleaned) || !/[A-Z0-9]/.test(cleaned)) return null;
   return cleaned;
+}
+
+function compactMarketSymbol(value: string): string {
+  return value.replace(/[\s/_-]+/g, "");
 }
 
 export function getMarketSymbolDefinition(symbol: string): MarketSymbolDefinition | undefined {
@@ -37,20 +50,28 @@ export function getMarketSymbolDefinition(symbol: string): MarketSymbolDefinitio
 export function resolveMarketSymbol(value: string): string | null {
   const normalized = normalizeMarketSymbol(value);
   if (!normalized) return null;
+  const compact = compactMarketSymbol(normalized);
   const definition = MARKET_SYMBOL_CATALOG.find((item) =>
-    item.symbol === normalized || item.aliases.some((alias) => normalizeMarketSymbol(alias) === normalized)
+    item.symbol === normalized ||
+    compactMarketSymbol(item.symbol) === compact ||
+    item.aliases.some((alias) => {
+      const normalizedAlias = normalizeMarketSymbol(alias);
+      return normalizedAlias !== null && compactMarketSymbol(normalizedAlias) === compact;
+    })
   );
   return definition?.symbol || normalized;
 }
 
-export function searchMarketSymbols(
-  query: string,
-  translate: (key: string) => string,
-): MarketSymbolDefinition[] {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) return [];
-  return MARKET_SYMBOL_CATALOG.filter((item) => {
-    const haystack = `${item.symbol} ${item.aliases.join(" ")} ${translate(item.labelKey)}`.toLowerCase();
-    return haystack.includes(normalizedQuery);
-  }).slice(0, 8);
+/** Build an explicit, unverified candidate without inventing a provider pair. */
+export function createManualMarketInstrument(value: string): MarketInstrument | null {
+  const symbol = normalizeMarketSymbol(value);
+  if (!symbol) return null;
+  return {
+    symbol,
+    name: symbol,
+    exchange: null,
+    asset_type: "UNKNOWN",
+    source_id: "manual",
+    source_symbol: symbol,
+  };
 }
