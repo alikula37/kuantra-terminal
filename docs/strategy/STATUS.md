@@ -97,7 +97,18 @@ tests also exposed a native-host classification defect: Apple's documented
 The shared Python probe now reads errno directly; packaging and hosted workflow
 use that same guard. Focused architecture/packaging/workflow/release tests are
 **43 passed**; the real Mac mini accepts arm64 and rejects an x86_64 request.
-Full local CI for the combined corrections is pending.
+Combined source `957c328` passed canonical arm64 local CI (`MERGE READY`, all gates,
+frontend **141**, i18n **763/763**, native WKWebView, provenance `COMPLETE`). Report
+`dist/ux-intel-guard-local-ci-arm64.json` SHA-256:
+`e2ca4189f0694e85312f802e6fea41e7d6ea33b22b66f33b41f478cca5973d2a`.
+Exact read-only DMG smoke and `hdiutil verify` passed for
+`dist/Kuantra-Terminal-1.0.0-arm64-ux-intel-guard.dmg`, SHA-256
+`eccee8c4f571cd50c9e3d81de8ba7dd567d0be7bdacbaca3ab508035a9778b73`;
+mounted executable SHA-256
+`5b0ef8bbabaa576ee4d1590358dc743da9fb2bb90ee1d8e7c231cf3fc1c23e34`.
+DMG smoke used isolated data with market data/gateway disabled; local CI retained
+default network behavior. `uv --offline` describes dependency resolution only.
+Installed application and published Release remain unchanged pending the full UX package.
 The installed app was inspected read-only: its active chart shows `ARCLK.IS` prices
 with hardcoded dollar signs, another currency-display defect to resolve in this
 continuation. Spot persistence, New Trade UX, currency display and Intel work are

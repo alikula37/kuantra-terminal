@@ -36,7 +36,14 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       EN/TR/DE **763/763** on macOS arm64. Source `bea2bab` passed native build and
       WKWebView smoke with COMPLETE provenance; full local CI exposed two pre-existing
       Release-title assertion mismatches. These are corrected in this change;
-      the combined full local CI remains pending.
+      combined source `957c328` passed full local CI (`MERGE READY`, frontend **141**,
+      i18n **763/763**, native WKWebView and COMPLETE provenance). Exact read-only DMG
+      smoke with market data/gateway disabled also passed, including clean detach;
+      `hdiutil verify` was VALID. DMG SHA-256
+      `eccee8c4f571cd50c9e3d81de8ba7dd567d0be7bdacbaca3ab508035a9778b73`, executable
+      `5b0ef8bbabaa576ee4d1590358dc743da9fb2bb90ee1d8e7c231cf3fc1c23e34`.
+      Reports: `dist/ux-intel-guard-local-ci-arm64.json` and
+      `dist/ux-intel-guard-dmg-smoke.json`. This candidate is not installed/published yet.
 - [x] Native Intel host classification follows Apple's `sysctlbyname` contract:
       missing translation key (`ENOENT`) means native; Rosetta and other errors
       remain rejected. Packaging and workflow share the Python guard. Focused
