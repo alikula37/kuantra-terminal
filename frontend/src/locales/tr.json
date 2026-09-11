@@ -109,6 +109,7 @@
     }
   },
   "dashboard": {
+    "stale_snapshot": "Veriler yenilenemedi. Son başarıyla yüklenen veriler gösteriliyor.",
     "net_pnl": "Net Gerçekleşen Kâr/Zarar",
     "win_rate": "Kazanma Oranı",
     "profit_factor": "Kâr Faktörü",

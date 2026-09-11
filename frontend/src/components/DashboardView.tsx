@@ -116,14 +116,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [cancelled, setCancelled] = useState<boolean>(false);
   const loadControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+  const hasSnapshotRef = useRef(false);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (background = false) => {
+    // A slow read must be allowed to finish instead of being aborted each poll.
+    if (background && loadControllerRef.current) return;
     loadControllerRef.current?.abort();
     const controller = new AbortController();
     const requestId = ++requestIdRef.current;
     loadControllerRef.current = controller;
-    setLoading(true);
-    setError(null);
+    setLoading(!hasSnapshotRef.current);
+    if (!background) setIsRefreshing(true);
     setCancelled(false);
 
     try {
@@ -135,10 +138,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       ]);
 
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
+      hasSnapshotRef.current = true;
       setSummary(summary);
       setBreakdown(nextBreakdown);
       setEquityCurve(nextEquityCurve);
       setHeatmap(nextHeatmap);
+      setError(null);
     } catch (err) {
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
       console.warn("[DashboardView] Failed to fetch portfolio telemetry:", err);
@@ -154,7 +159,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   useEffect(() => {
     void fetchDashboardData();
-    const interval = setInterval(() => { void fetchDashboardData(); }, 4000);
+    const interval = setInterval(() => { void fetchDashboardData(true); }, 4000);
     return () => {
       clearInterval(interval);
       requestIdRef.current += 1;
@@ -238,7 +243,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {!loading && error && (
         <div role="alert" data-testid={cancelled ? "dashboard-cancelled" : "dashboard-error"} className="rounded border border-loss/50 bg-loss/10 px-3 py-2 text-xs text-loss flex items-center justify-between gap-3">
-          <span className="break-words">{error}</span>
+          <span className="break-words">{summary && <span>{t("dashboard.stale_snapshot")} </span>}{error}</span>
           <button type="button" data-testid="dashboard-retry" onClick={() => void fetchDashboardData()} className="shrink-0 px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">
             {t("dashboard.retry")}
           </button>
@@ -251,7 +256,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {!error && (
+      {(!error || summary !== null) && (
         <>
       {/* Section 1: Portfolio Key Performance Indicators (KPIs) */}
       <PortfolioKpiGrid 

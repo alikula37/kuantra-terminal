@@ -109,6 +109,7 @@
     }
   },
   "dashboard": {
+    "stale_snapshot": "Aktualisierung fehlgeschlagen. Die zuletzt erfolgreich geladenen Daten werden angezeigt.",
     "net_pnl": "Realisierter Netto-GuV",
     "win_rate": "Gewinnrate",
     "profit_factor": "Profitfaktor",

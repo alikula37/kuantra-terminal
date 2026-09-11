@@ -109,6 +109,7 @@ export const TradingViewChart: React.FC = () => {
   const candleControllerRef = useRef<AbortController | null>(null);
   const candleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const candleRequestIdRef = useRef(0);
+  const displayedCandleKeyRef = useRef<string | null>(null);
   const initialChartTheme = getChartTheme(theme);
 
   useEffect(() => {
@@ -229,15 +230,18 @@ export const TradingViewChart: React.FC = () => {
   }, [theme]);
 
   // Fetch 100% Real Historical Market Data from Backend with Timeout & AbortController Guard
-  const fetchMarketCandles = useCallback(async () => {
+  const fetchMarketCandles = useCallback(async (background = false) => {
+    if (background && candleControllerRef.current) return;
     candleControllerRef.current?.abort();
     if (candleTimeoutRef.current) clearTimeout(candleTimeoutRef.current);
     const requestId = ++candleRequestIdRef.current;
     const controller = new AbortController();
     candleControllerRef.current = controller;
     let timedOut = false;
-    setIsLoading(true);
-    setErrorMsg(null);
+    const candleKey = `${activeSymbol}:${activeTimeframe}`;
+    const hasCurrentChart = displayedCandleKeyRef.current === candleKey;
+    setIsLoading(!background || !hasCurrentChart);
+    if (!background) setErrorMsg(null);
     setIsCancelled(false);
 
     candleTimeoutRef.current = setTimeout(() => {
@@ -316,7 +320,8 @@ export const TradingViewChart: React.FC = () => {
       if (candleSeriesRef.current && volumeSeriesRef.current) {
         candleSeriesRef.current.setData(chartCandles);
         volumeSeriesRef.current.setData(chartVolumes);
-        chartRef.current?.timeScale().fitContent();
+        if (!hasCurrentChart) chartRef.current?.timeScale().fitContent();
+        displayedCandleKeyRef.current = candleKey;
       }
 
       const last = sortedCandles[sortedCandles.length - 1];
@@ -330,6 +335,7 @@ export const TradingViewChart: React.FC = () => {
         ? t("market_chart.fetch_timeout", { symbol: activeSymbol })
         : err.message || t("market_chart.fetch_failed", { symbol: activeSymbol });
       setErrorMsg(message);
+      displayedCandleKeyRef.current = null;
       if (candleSeriesRef.current && volumeSeriesRef.current) {
         candleSeriesRef.current.setData([]);
         volumeSeriesRef.current.setData([]);
@@ -348,7 +354,7 @@ export const TradingViewChart: React.FC = () => {
   // Trigger real data fetch on symbol or timeframe change
   useEffect(() => {
     void fetchMarketCandles();
-    const interval = setInterval(() => void fetchMarketCandles(), 8000);
+    const interval = setInterval(() => void fetchMarketCandles(true), 8000);
     return () => {
       clearInterval(interval);
       candleRequestIdRef.current += 1;

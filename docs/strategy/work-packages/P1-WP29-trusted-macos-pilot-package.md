@@ -28,6 +28,20 @@ olarak kalır; production veya commercial support claim'i açılmaz.
 
 ## Kabul kriterleri
 
+- [x] Periodic refresh UX regression: Dashboard retains validated cards during
+      background polls and shows an explicit stale-data notice after failure;
+      overlapping polls do not abort slow reads. Market Charts retain the visible
+      canvas and user zoom during successful background refresh. Three failing
+      regression scenarios now pass; focused DOM **13**, full frontend **141**,
+      EN/TR/DE **763/763** on macOS arm64. Source: this change. Native packaging
+      evidence for this source remains pending.
+- [ ] Complete current owner-requested New Trade symbol-search parity and explicit
+      spot journal persistence/round-trip validation.
+- [ ] Correct chart price currency presentation (installed ARCLK.IS chart incorrectly
+      labels values with dollars) and inspect related periodic refresh UX.
+- [ ] Rebuild and validate the corrected arm64 candidate, then prepare the native
+      Intel test artifact path without claiming unmeasured Intel runtime success.
+
 - [x] Settings manual pilot Release action replaces the fabricated update check;
       seven direct DOM tests cover native URL dispatch, browser link, failure/retry,
       missing bridge and timeout/late response. EN/TR/DE 742-key parity and build pass.

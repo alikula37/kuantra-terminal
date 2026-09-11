@@ -109,6 +109,7 @@
     }
   },
   "dashboard": {
+    "stale_snapshot": "Refresh failed. Showing the last successfully loaded data.",
     "net_pnl": "Net Realized PnL",
     "win_rate": "Win Rate",
     "profit_factor": "Profit Factor",

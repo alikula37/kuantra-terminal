@@ -9,16 +9,17 @@ const mocks = vi.hoisted(() => {
   const updateTick = vi.fn();
   const setSymbol = vi.fn();
   const remove = vi.fn();
+  const fitContent = vi.fn();
   const createChart = vi.fn(() => ({
     addCandlestickSeries: () => ({ setData, applyOptions: vi.fn() }),
     addHistogramSeries: () => ({ setData, applyOptions: vi.fn() }),
     applyOptions: vi.fn(),
     priceScale: () => ({ applyOptions: vi.fn() }),
-    timeScale: () => ({ fitContent: vi.fn() }),
+    timeScale: () => ({ fitContent }),
     subscribeCrosshairMove: vi.fn(),
     remove,
   }));
-  return { apiFetch, createChart, remove, setData, setSymbol, updateTick, t: (key: string) => key };
+  return { apiFetch, createChart, remove, setData, setSymbol, updateTick, fitContent, t: (key: string) => key };
 });
 
 vi.mock("../../lib/backend", () => ({
@@ -97,6 +98,7 @@ beforeEach(() => {
   mocks.setData.mockClear();
   mocks.setSymbol.mockClear();
   mocks.updateTick.mockClear();
+  mocks.fitContent.mockClear();
 });
 
 afterEach(async () => {
@@ -168,6 +170,22 @@ it("renders valid historical candles without promoting them to live ticks", asyn
     expect.objectContaining({ open: 100, high: 110, low: 90, close: 105 }),
   ]));
   expect(mocks.updateTick).not.toHaveBeenCalled();
+});
+
+it("refreshes candles without covering the chart or resetting the user's zoom", async () => {
+  vi.useFakeTimers();
+  mocks.apiFetch.mockImplementation(() => Promise.resolve(response(candles)));
+  await act(async () => root.render(<TradingViewChart />));
+  await flush();
+  expect(mocks.fitContent).toHaveBeenCalledTimes(1);
+  const pending = deferred<Response>();
+  mocks.apiFetch.mockImplementation(() => pending.promise);
+  await act(async () => vi.advanceTimersByTime(8000));
+  expect(host.querySelector("[data-testid=market-chart-cancel]")).toBeNull();
+  pending.resolve(response(candles));
+  await flush();
+  expect(mocks.fitContent).toHaveBeenCalledTimes(1);
+  expect(mocks.remove).not.toHaveBeenCalled();
 });
 
 it("requires selecting and confirming a catalog result before re-adding gold", async () => {

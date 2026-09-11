@@ -77,6 +77,25 @@ komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production 
 
 ## Selected next work
 
+**Current owner-requested UX / Intel continuation (2026-09-11):** Work is on
+`codex/p1-wp01-evidence-ledger`, following the current session branch instruction;
+the existing `main` checkout was the baseline. The full requested scope remains:
+New Trade provider search/confirmation parity, explicit spot journaling, periodic
+screen flicker and related usability defects, and a native Intel pilot build path.
+In this change, Dashboard no longer replaces valid cards with loading placeholders
+on every four-second poll, overlapping background reads are skipped, and failed
+refreshes retain the last validated snapshot with an EN/TR/DE stale-data notice.
+Market Charts no longer cover the canvas or reset user zoom on every eight-second
+successful refresh. Three new regression scenarios reproduced the defects before
+the fixes; focused tests are **13 passed**, full frontend **29 files / 141 passed**,
+and i18n **763/763**. Packaged/native validation is pending for this source.
+The installed app was inspected read-only: its active chart shows `ARCLK.IS` prices
+with hardcoded dollar signs, another currency-display defect to resolve in this
+continuation. Spot persistence, New Trade UX, currency display and Intel work are
+still open. GitHub read-only inspection found the existing Release workflow active,
+CI manually disabled, and no newer native Intel run than the failed historical
+`34463755562`; this does not establish current billing eligibility.
+
 **Pilot UI correction (this change):** The standard journal now has a visible, confirmed
 `İptal et` action for an existing trade. The action calls the bounded DELETE endpoint,
 which records a `CANCELED` tombstone; it does not physically remove the canonical row or

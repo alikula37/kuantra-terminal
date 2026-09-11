@@ -52,7 +52,62 @@ beforeEach(() => {
 
 afterEach(async () => {
   await act(async () => root.unmount());
+  vi.useRealTimers();
   host.remove();
+});
+
+const validSummary = Object.fromEntries([
+  "initial_balance", "total_equity", "net_pnl", "net_pnl_pct", "today_pnl", "today_pnl_pct",
+  "open_risk_usd", "open_risk_r", "active_positions_count", "total_closed_trades", "win_rate",
+  "profit_factor", "avg_r_multiple", "max_drawdown_usd", "max_drawdown_pct",
+].map((key) => [key, 0]));
+
+function readyDashboard() {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(
+    path.endsWith("/summary")
+      ? { ...validSummary, today_trades_count: { wins: 0, losses: 0, total: 0 } }
+      : [],
+  )));
+}
+
+it("keeps displayed cards mounted during background refresh and does not abort slow reads", async () => {
+  vi.useFakeTimers();
+  readyDashboard();
+  await act(async () => root.render(<DashboardView />));
+  await flush();
+  const card = host.querySelector("[data-testid=dashboard-equity]");
+  expect(card?.textContent).toBe("equity");
+  const signals: AbortSignal[] = [];
+  mocks.apiFetch.mockImplementation((_path: string, init: RequestInit) => {
+    signals.push(init.signal as AbortSignal);
+    return new Promise(() => {});
+  });
+  await act(async () => vi.advanceTimersByTime(4000));
+  expect(host.querySelector("[data-testid=dashboard-equity]")).toBe(card);
+  expect(card?.textContent).toBe("equity");
+  expect(host.querySelector("[data-testid=dashboard-loading]")).toBeNull();
+  await act(async () => vi.advanceTimersByTime(12000));
+  expect(signals).toHaveLength(4);
+  expect(signals.every((signal) => !signal.aborted)).toBe(true);
+});
+
+it("keeps the last valid snapshot with an explicit refresh error until recovery", async () => {
+  vi.useFakeTimers();
+  readyDashboard();
+  await act(async () => root.render(<DashboardView />));
+  await flush();
+  const card = host.querySelector("[data-testid=dashboard-equity]");
+  mocks.apiFetch.mockImplementation(() => Promise.resolve(response({ detail: "refresh unavailable" }, 503)));
+  await act(async () => vi.advanceTimersByTime(4000));
+  await flush();
+  expect(host.querySelector("[data-testid=dashboard-error]")?.textContent).toContain("refresh unavailable");
+  expect(host.querySelector("[data-testid=dashboard-equity]")).toBe(card);
+  expect(card?.textContent).toBe("equity");
+  readyDashboard();
+  await act(async () => vi.advanceTimersByTime(4000));
+  await flush();
+  expect(host.querySelector("[data-testid=dashboard-error]")).toBeNull();
+  expect(host.querySelector("[data-testid=dashboard-equity]")).toBe(card);
 });
 
 it("cancels all dashboard read requests without showing partial success", async () => {
