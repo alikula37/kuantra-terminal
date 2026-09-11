@@ -23,6 +23,7 @@
     "docking": "Pencereli Çalışma Alanı",
     "virtual_journal": "60 FPS Sanal Günlük",
     "journal": "Standart İşlem Günlüğü",
+    "charts": "Piyasa Grafikleri",
     "replay": "İşlem Tekrar Oynatma",
     "playbook": "Strateji El Kitabı",
     "drift": "Uygulama Sapması",
@@ -667,7 +668,10 @@
     "takeaway_desc": "Stop loss seviyesini 1.25R olarak belirlemek, kâr/risk beklentisini bozmadan hayatta kalma oranını %{rate}'ye yükseltir."
   },
   "market_chart": {
+    "title": "PİYASA GRAFİKLERİ",
+    "subtitle": "Herkese açık verilerden tarihsel OHLCV piyasa görünümü",
     "search_placeholder": "Sembol Ara...",
+    "search_label": "Piyasa sembolü ara",
     "refresh_tooltip": "Veriyi Yenile",
     "loading_candles": "Piyasa mumları alınıyor ({symbol})...",
     "error_title": "Piyasa Verisi Alınamadı",
@@ -675,8 +679,22 @@
     "cancel_request": "İsteği iptal et",
     "request_cancelled": "Piyasa verisi isteği iptal edildi.",
     "malformed": "Piyasa verisi yanıtı hatalı biçimde geldi.",
+    "http_error": "{symbol} piyasa verisi isteği başarısız oldu (HTTP {status}).",
+    "fetch_failed": "{symbol} piyasa verisi yüklenemedi.",
     "fetch_timeout": "{symbol} veri isteği zaman aşımına uğradı (6s).",
-    "no_candles": "Bu zaman diliminde {symbol} için mum verisi bulunamadı."
+    "no_candles": "Bu zaman diliminde {symbol} için mum verisi bulunamadı.",
+    "open": "Açılış",
+    "high": "En yüksek",
+    "low": "En düşük",
+    "close": "Kapanış",
+    "volume": "Hacim",
+    "symbol_btc_usdt": "BTC/USDT",
+    "symbol_eth_usdt": "ETH/USDT",
+    "symbol_sol_usdt": "SOL/USDT",
+    "symbol_gold": "Altın (XAU)",
+    "symbol_eur_usd": "EUR/USD",
+    "symbol_sp500": "S&P 500 (SPY)",
+    "symbol_nvidia": "NVIDIA (NVDA)"
   },
   "ai_coach": {
     "title": "DETERMİNİSTİK YAPAY ZEKA İŞLEM DENETÇİSİ & BİLİŞSEL AJAN",

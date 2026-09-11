@@ -10,8 +10,9 @@ const mocks = vi.hoisted(() => {
   const setSymbol = vi.fn();
   const remove = vi.fn();
   const createChart = vi.fn(() => ({
-    addCandlestickSeries: () => ({ setData }),
-    addHistogramSeries: () => ({ setData }),
+    addCandlestickSeries: () => ({ setData, applyOptions: vi.fn() }),
+    addHistogramSeries: () => ({ setData, applyOptions: vi.fn() }),
+    applyOptions: vi.fn(),
     priceScale: () => ({ applyOptions: vi.fn() }),
     timeScale: () => ({ fitContent: vi.fn() }),
     subscribeCrosshairMove: vi.fn(),
@@ -23,6 +24,22 @@ const mocks = vi.hoisted(() => {
 vi.mock("../../lib/backend", () => ({ apiBase: () => "", apiFetch: mocks.apiFetch }));
 vi.mock("../../context/I18nContext", () => ({
   useTranslation: () => ({ t: mocks.t }),
+}));
+vi.mock("../../context/ThemeContext", () => ({
+  useTheme: () => ({ theme: "dark" }),
+  getChartTheme: () => ({
+    layout: { background: { color: "#0b0e14" }, textColor: "#f8fafc" },
+    grid: { vertLines: { color: "#1e293b" }, horzLines: { color: "#1e293b" } },
+    candlestick: {
+      upColor: "#10b981",
+      downColor: "#f43f5e",
+      borderUpColor: "#10b981",
+      borderDownColor: "#f43f5e",
+      wickUpColor: "#10b981",
+      wickDownColor: "#f43f5e",
+    },
+    palette: { accent: "#38bdf8", surfaceBorder: "#1e293b" },
+  }),
 }));
 vi.mock("../../stores/marketStore", () => ({
   useMarketStore: () => ({ symbol: "BTCUSDT", setSymbol: mocks.setSymbol, updateTick: mocks.updateTick }),

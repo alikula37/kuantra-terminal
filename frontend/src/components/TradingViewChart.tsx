@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, HistogramData } from "lightweight-charts";
 import { useMarketStore } from "../stores/marketStore";
 import { useTranslation } from "../context/I18nContext";
+import { getChartTheme, useTheme } from "../context/ThemeContext";
 import { RefreshCw, AlertCircle, BarChart2 } from "lucide-react";
 import { apiBase, apiFetch } from "../lib/backend";
 
@@ -37,13 +38,13 @@ function normalizeCandle(value: unknown): CandleDataPoint | null {
 }
 
 const POPULAR_SYMBOLS = [
-  { symbol: "BTCUSDT", label: "BTC/USDT" },
-  { symbol: "ETHUSDT", label: "ETH/USDT" },
-  { symbol: "SOLUSDT", label: "SOL/USDT" },
-  { symbol: "XAUUSD", label: "GOLD (XAU)" },
-  { symbol: "EURUSD", label: "EUR/USD" },
-  { symbol: "SPY", label: "S&P 500 (SPY)" },
-  { symbol: "NVDA", label: "NVIDIA (NVDA)" },
+  { symbol: "BTCUSDT", labelKey: "market_chart.symbol_btc_usdt" },
+  { symbol: "ETHUSDT", labelKey: "market_chart.symbol_eth_usdt" },
+  { symbol: "SOLUSDT", labelKey: "market_chart.symbol_sol_usdt" },
+  { symbol: "XAUUSD", labelKey: "market_chart.symbol_gold" },
+  { symbol: "EURUSD", labelKey: "market_chart.symbol_eur_usd" },
+  { symbol: "SPY", labelKey: "market_chart.symbol_sp500" },
+  { symbol: "NVDA", labelKey: "market_chart.symbol_nvidia" },
 ];
 
 const TIMEFRAMES = [
@@ -55,8 +56,13 @@ const TIMEFRAMES = [
   { tf: "1d", label: "1D" },
 ];
 
+function getVolumeColor(theme: "dark" | "light"): string {
+  return theme === "light" ? "rgba(2, 132, 199, 0.25)" : "rgba(56, 189, 248, 0.25)";
+}
+
 export const TradingViewChart: React.FC = () => {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -74,32 +80,26 @@ export const TradingViewChart: React.FC = () => {
   const candleControllerRef = useRef<AbortController | null>(null);
   const candleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const candleRequestIdRef = useRef(0);
+  const initialChartTheme = getChartTheme(theme);
 
   // Initialize Lightweight Charts Canvas
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { color: "#0b0e14" },
-        textColor: "#94a3b8",
-        fontSize: 11,
-      },
-      grid: {
-        vertLines: { color: "rgba(30, 41, 59, 0.3)" },
-        horzLines: { color: "rgba(30, 41, 59, 0.3)" },
-      },
+      layout: { ...initialChartTheme.layout, fontSize: 11 },
+      grid: initialChartTheme.grid,
       crosshair: {
-        vertLine: { color: "#38bdf8", width: 1, style: 3 },
-        horzLine: { color: "#38bdf8", width: 1, style: 3 },
+        vertLine: { color: initialChartTheme.palette.accent, width: 1, style: 3 },
+        horzLine: { color: initialChartTheme.palette.accent, width: 1, style: 3 },
       },
       timeScale: {
-        borderColor: "#1e293b",
+        borderColor: initialChartTheme.palette.surfaceBorder,
         timeVisible: true,
         secondsVisible: false,
       },
       rightPriceScale: {
-        borderColor: "#1e293b",
+        borderColor: initialChartTheme.palette.surfaceBorder,
         scaleMargins: { top: 0.08, bottom: 0.2 },
       },
       handleScale: true,
@@ -107,15 +107,12 @@ export const TradingViewChart: React.FC = () => {
     });
 
     const candleSeries = chart.addCandlestickSeries({
-      upColor: "#10b981",
-      downColor: "#ef4444",
+      ...initialChartTheme.candlestick,
       borderVisible: false,
-      wickUpColor: "#10b981",
-      wickDownColor: "#ef4444",
     });
 
     const volumeSeries = chart.addHistogramSeries({
-      color: "rgba(56, 189, 248, 0.25)",
+      color: getVolumeColor(theme),
       priceFormat: { type: "volume" },
       priceScaleId: "",
     });
@@ -169,6 +166,29 @@ export const TradingViewChart: React.FC = () => {
     };
   }, []);
 
+  // Lightweight Charts owns its canvas, so update its palette explicitly when
+  // the application theme changes instead of relying on CSS variables alone.
+  useEffect(() => {
+    const chart = chartRef.current;
+    const candleSeries = candleSeriesRef.current;
+    const volumeSeries = volumeSeriesRef.current;
+    if (!chart || !candleSeries || !volumeSeries) return;
+
+    const nextChartTheme = getChartTheme(theme);
+    chart.applyOptions({
+      ...nextChartTheme.layout,
+      grid: nextChartTheme.grid,
+      crosshair: {
+        vertLine: { color: nextChartTheme.palette.accent, width: 1, style: 3 },
+        horzLine: { color: nextChartTheme.palette.accent, width: 1, style: 3 },
+      },
+      timeScale: { borderColor: nextChartTheme.palette.surfaceBorder },
+      rightPriceScale: { borderColor: nextChartTheme.palette.surfaceBorder },
+    });
+    candleSeries.applyOptions({ ...nextChartTheme.candlestick, borderVisible: false });
+    volumeSeries.applyOptions({ color: getVolumeColor(theme) });
+  }, [theme]);
+
   // Fetch 100% Real Historical Market Data from Backend with Timeout & AbortController Guard
   const fetchMarketCandles = useCallback(async () => {
     candleControllerRef.current?.abort();
@@ -201,7 +221,7 @@ export const TradingViewChart: React.FC = () => {
         } catch {
           // Keep the HTTP status as the bounded error when the body is not JSON.
         }
-        throw new Error(detail || `HTTP ${response.status}: ${activeSymbol} verisi alınamadı.`);
+        throw new Error(detail || t("market_chart.http_error", { status: response.status, symbol: activeSymbol }));
       }
 
       let jsonRes: unknown;
@@ -269,7 +289,7 @@ export const TradingViewChart: React.FC = () => {
       console.warn("[TradingViewChart] Real market data error:", err);
       const message = timedOut
         ? t("market_chart.fetch_timeout", { symbol: activeSymbol })
-        : err.message || `${activeSymbol} piyasa verisi alınamadı.`;
+        : err.message || t("market_chart.fetch_failed", { symbol: activeSymbol });
       setErrorMsg(message);
       if (candleSeriesRef.current && volumeSeriesRef.current) {
         candleSeriesRef.current.setData([]);
@@ -332,6 +352,13 @@ export const TradingViewChart: React.FC = () => {
 
   return (
     <div className="relative flex-1 w-full h-full bg-[#0b0e14] overflow-hidden flex flex-col font-mono select-none">
+      <div className="shrink-0 border-b border-surface-border bg-[#0b0e14] px-3 py-2">
+        <h1 data-testid="market-chart-page-title" className="text-sm font-bold text-white uppercase tracking-wider">
+          {t("market_chart.title")}
+        </h1>
+        <p className="mt-0.5 text-[10px] text-slate-400">{t("market_chart.subtitle")}</p>
+      </div>
+
       {/* Top Controls Bar */}
       <div className="flex flex-wrap items-center justify-between px-3 py-2 border-b border-surface-border bg-[#0d121c] gap-2 text-xs">
         {/* Symbol Selector Pills & Search */}
@@ -347,7 +374,7 @@ export const TradingViewChart: React.FC = () => {
                     : "bg-[#111722] text-slate-300 hover:text-white hover:bg-[#1a2234] border border-surface-border"
                 }`}
               >
-                {item.label}
+                {t(item.labelKey)}
               </button>
             ))}
           </div>
@@ -356,6 +383,7 @@ export const TradingViewChart: React.FC = () => {
             <input
               type="text"
               placeholder={t("market_chart.search_placeholder")}
+              aria-label={t("market_chart.search_label")}
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value.toUpperCase())}
               className="bg-[#111722] border border-surface-border rounded px-2 py-1 text-[11px] text-white w-24 focus:outline-none focus:border-accent uppercase"
@@ -404,19 +432,19 @@ export const TradingViewChart: React.FC = () => {
           {displayCandle && (
             <div className="flex items-center space-x-3">
               <span>
-                O: <span className="text-slate-200">${displayCandle.open.toFixed(2)}</span>
+                {t("market_chart.open")}: <span className="text-slate-200">${displayCandle.open.toFixed(2)}</span>
               </span>
               <span>
-                H: <span className="text-emerald-400">${displayCandle.high.toFixed(2)}</span>
+                {t("market_chart.high")}: <span className="text-emerald-400">${displayCandle.high.toFixed(2)}</span>
               </span>
               <span>
-                L: <span className="text-rose-400">${displayCandle.low.toFixed(2)}</span>
+                {t("market_chart.low")}: <span className="text-rose-400">${displayCandle.low.toFixed(2)}</span>
               </span>
               <span>
-                C: <span className="text-white font-bold">${displayCandle.close.toFixed(2)}</span>
+                {t("market_chart.close")}: <span className="text-white font-bold">${displayCandle.close.toFixed(2)}</span>
               </span>
               <span>
-                Vol: <span className="text-cyan-400">{displayCandle.volume.toLocaleString()}</span>
+                {t("market_chart.volume")}: <span className="text-cyan-400">{displayCandle.volume.toLocaleString()}</span>
               </span>
             </div>
           )}

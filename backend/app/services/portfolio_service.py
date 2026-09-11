@@ -226,6 +226,13 @@ class PortfolioAnalyticsService:
         )
 
         for t in trades:
+            status = str(t.get("status", "")).upper()
+            # CANCELED is an audit tombstone, not a performance observation.
+            # Keep it in the journal/evidence chain, but never create a zeroed
+            # asset bucket or count it in portfolio performance analytics.
+            if status not in {"OPEN", "CLOSED"}:
+                continue
+
             raw_sym = str(t.get("symbol", "UNKNOWN")).upper().strip()
             if not raw_sym:
                 continue
@@ -247,7 +254,6 @@ class PortfolioAnalyticsService:
             volume = entry_price * qty
             grouped[raw_sym]["total_volume"] += volume
 
-            status = str(t.get("status", "")).upper()
             if status == "CLOSED":
                 pnl = float(t.get("pnl") or 0.0)
                 grouped[raw_sym]["net_pnl"] += pnl

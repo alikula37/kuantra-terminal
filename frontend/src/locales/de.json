@@ -23,6 +23,7 @@
     "docking": "Docking-Arbeitsbereich",
     "virtual_journal": "60 FPS Virtuelles Journal",
     "journal": "Standard-Journal",
+    "charts": "Marktcharts",
     "replay": "Trade-Replay",
     "playbook": "Strategie-Playbook",
     "drift": "Ausführungsdrift",
@@ -667,7 +668,10 @@
     "takeaway_desc": "Ein Stop-Loss von 1.25R erhöht die Überlebensrate auf {rate}%, ohne das Chance-Risiko-Verhältnis wesentlich zu beeinträchtigen."
   },
   "market_chart": {
+    "title": "MARKTCHARTS",
+    "subtitle": "Historischer OHLCV-Marktkontext aus öffentlichen Daten",
     "search_placeholder": "Symbol suchen...",
+    "search_label": "Marktsymbol suchen",
     "refresh_tooltip": "Daten aktualisieren",
     "loading_candles": "Marktkerzen werden geladen ({symbol})...",
     "error_title": "Marktdaten-Abruf fehlgeschlagen",
@@ -675,8 +679,22 @@
     "cancel_request": "Anfrage abbrechen",
     "request_cancelled": "Marktdatenanfrage abgebrochen.",
     "malformed": "Die Marktdatenantwort ist fehlerhaft.",
+    "http_error": "Marktdatenanfrage für {symbol} fehlgeschlagen (HTTP {status}).",
+    "fetch_failed": "Marktdaten für {symbol} konnten nicht geladen werden.",
     "fetch_timeout": "Datenanfrage für {symbol} hat Zeitüberschreitung erreicht (6s).",
-    "no_candles": "Keine Kerzendaten für {symbol} in diesem Zeitrahmen gefunden."
+    "no_candles": "Keine Kerzendaten für {symbol} in diesem Zeitrahmen gefunden.",
+    "open": "Eröffnung",
+    "high": "Hoch",
+    "low": "Tief",
+    "close": "Schluss",
+    "volume": "Volumen",
+    "symbol_btc_usdt": "BTC/USDT",
+    "symbol_eth_usdt": "ETH/USDT",
+    "symbol_sol_usdt": "SOL/USDT",
+    "symbol_gold": "Gold (XAU)",
+    "symbol_eur_usd": "EUR/USD",
+    "symbol_sp500": "S&P 500 (SPY)",
+    "symbol_nvidia": "NVIDIA (NVDA)"
   },
   "ai_coach": {
     "title": "DETERMINISTISCHER KI-TRADE-AUDITOR & KOGNITIVER AGENT",

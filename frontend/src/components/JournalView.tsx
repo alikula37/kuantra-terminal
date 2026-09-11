@@ -53,7 +53,7 @@ async function readTradeList(response: Response): Promise<Trade[]> {
 
 export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onReplayTrade, refreshNonce = 0 }) => {
   const { t } = useTranslation();
-  const { trades, setTrades } = useTradeStore();
+  const { trades, setTrades, openPositions, updatePositionPnl } = useTradeStore();
   const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
@@ -176,6 +176,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
 
       // Keep the canonical row visible as a tombstone; the evidence chain is never physically deleted.
       setTrades(trades.map((trade) => trade.id === target.id ? canceledTrade : trade));
+      if (target.status === "OPEN") {
+        updatePositionPnl(openPositions.filter((position) => position.id !== target.id));
+      }
       setCancellationTarget(null);
       setCancellationNotice(t("journal.cancel_success"));
     } catch (cause) {

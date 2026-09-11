@@ -23,6 +23,7 @@
     "docking": "Docking Workspace",
     "virtual_journal": "60 FPS Virtual Journal",
     "journal": "Standard Journal",
+    "charts": "Market Charts",
     "replay": "Trade Replay",
     "playbook": "Strategy Playbook",
     "drift": "Execution Drift",
@@ -667,7 +668,10 @@
     "takeaway_desc": "Setting stop loss at 1.25R increases survival rate to {rate}% without significantly altering reward-to-risk expectancy."
   },
   "market_chart": {
+    "title": "MARKET CHARTS",
+    "subtitle": "Historical OHLCV market context from public data",
     "search_placeholder": "Search Symbol...",
+    "search_label": "Search market symbol",
     "refresh_tooltip": "Refresh Data",
     "loading_candles": "Fetching market candles ({symbol})...",
     "error_title": "Market Data Fetch Failed",
@@ -675,8 +679,22 @@
     "cancel_request": "Cancel request",
     "request_cancelled": "Market data request cancelled.",
     "malformed": "Market data response was malformed.",
+    "http_error": "Market data request for {symbol} failed (HTTP {status}).",
+    "fetch_failed": "Market data for {symbol} could not be loaded.",
     "fetch_timeout": "{symbol} data request timed out (6s).",
-    "no_candles": "No candle data found for {symbol} on this timeframe."
+    "no_candles": "No candle data found for {symbol} on this timeframe.",
+    "open": "Open",
+    "high": "High",
+    "low": "Low",
+    "close": "Close",
+    "volume": "Volume",
+    "symbol_btc_usdt": "BTC/USDT",
+    "symbol_eth_usdt": "ETH/USDT",
+    "symbol_sol_usdt": "SOL/USDT",
+    "symbol_gold": "Gold (XAU)",
+    "symbol_eur_usd": "EUR/USD",
+    "symbol_sp500": "S&P 500 (SPY)",
+    "symbol_nvidia": "NVIDIA (NVDA)"
   },
   "ai_coach": {
     "title": "DETERMINISTIC AI TRADE AUDITOR & NATURAL LANGUAGE COGNITIVE AGENT",

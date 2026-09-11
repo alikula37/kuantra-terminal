@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   apiFetch: vi.fn(),
   setTrades: vi.fn(),
   trades: [] as any[],
+  openPositions: [] as any[],
+  updatePositionPnl: vi.fn(),
   t: (key: string) => key,
 }));
 vi.mock("../../lib/backend", () => ({ apiUrl: (path: string) => path, apiFetch: mocks.apiFetch }));
@@ -13,7 +15,12 @@ vi.mock("../../context/I18nContext", () => ({
   useTranslation: () => ({ t: mocks.t }),
 }));
 vi.mock("../../stores/tradeStore", () => ({
-  useTradeStore: () => ({ trades: mocks.trades, setTrades: mocks.setTrades }),
+  useTradeStore: () => ({
+    trades: mocks.trades,
+    setTrades: mocks.setTrades,
+    openPositions: mocks.openPositions,
+    updatePositionPnl: mocks.updatePositionPnl,
+  }),
 }));
 
 import { JournalView } from "../JournalView";
@@ -34,7 +41,9 @@ beforeEach(() => {
   root = createRoot(host);
   mocks.apiFetch.mockReset();
   mocks.setTrades.mockReset();
+  mocks.updatePositionPnl.mockReset();
   mocks.trades = [];
+  mocks.openPositions = [];
   mocks.setTrades.mockImplementation((trades: any[]) => { mocks.trades = trades; });
 });
 
@@ -122,6 +131,7 @@ it("offers a confirmed audit-safe cancellation instead of physically deleting a 
     status: "OPEN",
   };
   const canceledTrade = { ...trade, status: "CANCELED" };
+  mocks.openPositions = [trade];
   mocks.apiFetch.mockImplementation((_path: string, init?: RequestInit) => (
     init?.method === "DELETE"
       ? Promise.resolve(response({ status: "canceled", id: trade.id, trade: canceledTrade }))
@@ -144,6 +154,7 @@ it("offers a confirmed audit-safe cancellation instead of physically deleting a 
 
   expect(mocks.apiFetch).toHaveBeenCalledWith(`/api/v1/trades/${trade.id}`, { method: "DELETE" });
   expect(mocks.setTrades).toHaveBeenCalledWith([canceledTrade]);
+  expect(mocks.updatePositionPnl).toHaveBeenCalledWith([]);
   expect(host.querySelector("[data-testid=journal-cancel-dialog]")).toBeNull();
   expect(host.querySelector("[data-testid=journal-cancel-success]")?.textContent).toContain("journal.cancel_success");
 });

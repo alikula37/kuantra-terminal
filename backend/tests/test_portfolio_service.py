@@ -98,6 +98,40 @@ class TestPortfolioAnalyticsService:
             assert by_symbol["SPY"]["asset_class"] == "equity"
             assert by_symbol["SPY"]["net_pnl"] == 300.0
 
+    def test_canceled_tombstones_are_excluded_from_performance_breakdown(self):
+        """Audit tombstones remain journal-visible but cannot create analytics buckets."""
+        service = PortfolioAnalyticsService()
+        mock_trades = [
+            {
+                "symbol": "BTCUSDT",
+                "status": "CLOSED",
+                "pnl": 125.0,
+                "entry_price": 60000.0,
+                "qty": 0.1,
+            },
+            {
+                "symbol": "BTCUSDT",
+                "status": "CANCELED",
+                "pnl": 125.0,
+                "entry_price": 60000.0,
+                "qty": 0.1,
+            },
+            {
+                "symbol": "XAUUSD",
+                "status": "CANCELED",
+                "pnl": 0.0,
+                "entry_price": 2500.0,
+                "qty": 1.0,
+            },
+        ]
+
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
+            breakdown = service.get_multi_asset_breakdown()
+
+        assert [item["symbol"] for item in breakdown] == ["BTCUSDT"]
+        assert breakdown[0]["net_pnl"] == 125.0
+        assert breakdown[0]["trade_count"] == 1
+
     def test_risk_exposure_and_r_multiple_calculation(self):
         """Validates stop loss risk summation for long, short, and unhedged open positions."""
         service = PortfolioAnalyticsService(default_initial_balance=100000.0)
