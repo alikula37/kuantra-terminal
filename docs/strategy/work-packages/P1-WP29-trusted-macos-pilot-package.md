@@ -40,9 +40,11 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       shell by applying light/dark DOM tokens, root `color-scheme` and a guarded settings
       sync; the standard journal exposes an explicit, confirmed `CANCELED` action for
       OPEN/CLOSED rows, preserves the tombstone instead of physically deleting evidence,
-      validates the response and exposes a CANCELED filter. Focused DOM coverage is
-      recorded by this change; the existing private Release asset still requires a later
-      package refresh before pilot distribution.
+      validates the response and exposes a CANCELED filter. Journal/Theme DOM coverage
+      is `10 passed`; full frontend coverage is `29 files / 133 tests`, i18n is `716/716`,
+      and the arm64 local candidate from source `e9f702b` passed locked local CI plus
+      exact mounted-DMG smoke with `COMPLETE` provenance. The existing private Release
+      asset still requires a later package refresh before pilot distribution.
 
 - [x] GitHub private Release'ın yalnızca repository read erişimi olan kullanıcılara
       dağıtım sağlayabildiği; Apple signing/notarization yerine geçmediği resmi kaynaklarla
@@ -179,6 +181,34 @@ Settings → Application updates → Open update page düğmesi, final mounted D
 uygulamada temiz geçici profille native olarak doğrulandı. Düğme Chrome'da sabit private
 Release URL'sini açtı; otomatik sürüm karşılaştırması, indirme, kurulum veya veri migration'ı
 yapmaz. Bu click-through kanıtı kullanıcı verisine dokunmadı.
+
+### Pilot UI correction candidate evidence (2026-09-11)
+
+Source commit `e9f702b6b49da41e6249a0044abb3f2f0363bfc7` ve tracked source tree
+`c1bdf652b2b84301ed7fa3eb33fc625e7c6f97b8176af5ac471296ab2a906509` temizken:
+
+- `uv run --offline --no-project --with-requirements backend/requirements.lock python
+  scripts/run_local_ci.py --expected-architecture arm64 --report
+  dist/p1-wp29-ui-corrections-clean-local-ci-arm64.json --smoke-timeout 90` →
+  **MERGE READY**; backend **829 passed / 2 warnings**, frontend **29 test files / 133
+  tests**, i18n **716/716**, TypeScript, production build, native arm64 PyInstaller,
+  WKWebView smoke and provenance **COMPLETE**. Report SHA-256:
+  `82d63f1193dc16e0e2c14fb48f07f86fb847863bcaa81bf628ee00f1266f1046`.
+- `bash scripts/package_macos.sh --architecture arm64 --output
+  dist/Kuantra-Terminal-1.0.0-arm64.dmg` → **PASS**; `hdiutil verify` **VALID**.
+  DMG SHA-256: `be1773896472e1827a359104954f4b025067959884ef01e890dac468b7b1b4b1`.
+- `.venv/bin/python scripts/smoke_macos_dmg.py --dmg
+  dist/Kuantra-Terminal-1.0.0-arm64.dmg --expected-architecture arm64 --report
+  dist/final-smoke-arm64-ui-corrections-clean.json` → **PASS** on the exact read-only
+  mounted executable; native `arm64`, WKWebView/controller identity and detach passed.
+  Mounted executable SHA-256: `155913f6ebc268d863a30977a0e48a889a29c5badab5f8afa43e8233d5e4902a`;
+  smoke report SHA-256: `cd76d0a9a26c6de6233b3b355445f6915d47251f7128a1d84bca4107fd657d90`.
+- Native app click-through showed the translated Light/Dark control and `İptal et`
+  action on existing OPEN/CLOSED rows. No real trade was canceled; the original dark
+  preference was restored. The candidate is installed locally at
+  `/Applications/Kuantra Terminal.app`; the previous app bundle was moved recoverably
+  to the user's Trash. The private GitHub Release was not changed in this code task, so
+  its assets must be refreshed explicitly before pilot distribution.
 
 ### Superseded M-series çalıştırması (2026-09-10)
 
