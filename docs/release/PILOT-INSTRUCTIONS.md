@@ -18,8 +18,16 @@ DMG ile birlikte dağıtılan teknik kanıttır.
 
 The New Trade screen defaults to **External Trade Record**. It records a trade that
 you executed elsewhere; Kuantra does not send a broker order. Any asset symbol may be
-entered for journaling. **Fetch Mark Price** tries only exact free public sources and
-shows the source identity plus `LIVE`, `DELAYED`, `EOD` or `UNAVAILABLE` status.
+entered for journaling. Search results must be reviewed and explicitly confirmed: check
+the candidate name, exchange and source, select the intended candidate, then confirm it.
+Until confirmation, the symbol is not activated and no quote/candle request starts;
+pressing Enter never silently selects another instrument. **Fetch Mark Price** tries only
+exact free public sources and shows the source identity plus `LIVE`, `DELAYED`, `EOD` or
+`UNAVAILABLE` status. Market Charts uses the same search → select → confirm flow.
+
+If public providers return no match, you may explicitly confirm the exact typed symbol as
+`UNKNOWN/manual`. This records your external symbol without inventing a provider mapping;
+it is not price evidence and does not silently turn the symbol into another asset.
 
 When the free quote is unavailable, enter the actual external fill price manually.
 Kuantra does not substitute another instrument and does not silently switch to

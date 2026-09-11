@@ -98,9 +98,17 @@ başarı sayılmaz. Import edilen dosya değiştirildiğinde eski preview kullan
 Yeni işlem ekranında varsayılan **Harici İşlem Kaydı** seçeneği, başka bir yerde
 gerçekleştirdiğiniz işlemi günlüğe yazar; Kuantra borsaya emir göndermez. Sembol alanına
 `BTCUSDT`, `EURUSD`, `XAUUSD`, `AAPL` veya kaydetmek istediğiniz başka bir varlığı
-girebilirsiniz. **Son Fiyatı Çek** yalnızca tam sembolü destekleyen ücretsiz public
+girebilirsiniz. Arama sonuçlarında görünen adayın adını, borsasını ve veri kaynağını
+kontrol edip önce adayı seçin, ardından açık onay düğmesine basın. Bu onay olmadan
+sembol etkinleşmez ve fiyat/mum isteği başlatılmaz; Enter tuşu başka bir ürünü sessizce
+seçmez. **Son Fiyatı Çek** yalnızca onaylanan tam sembolü destekleyen ücretsiz public
 kaynakları dener. Sonuçta kaynak sembolü ve `LIVE`, `DELAYED`, `EOD` ya da
 `UNAVAILABLE` durumu gösterilir.
+
+Public kaynaklar eşleşme döndürmezse, yazdığınız tam sembolü açıkça
+`UNKNOWN/manual` olarak onaylayabilirsiniz. Bu yol yalnızca dışarıda gerçekleşmiş
+işlemin sembolünü günlüğe kaydeder; fiyat kanıtı üretmez ve başka bir ürüne dönüştürme
+yapmaz. Market Charts sayfasında da aynı arama → aday seçimi → onay akışı geçerlidir.
 
 Ücretsiz kaynak sonucu `UNAVAILABLE` ise otomatik olarak simülasyona geçilmez ve başka
 bir varlık fiyatı kullanılmaz; dışarıda gerçekleşen işlemin gerçek fiyatını manuel girin.
