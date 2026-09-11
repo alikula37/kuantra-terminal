@@ -72,13 +72,19 @@ komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production 
 **Pilot UI correction (this change):** The standard journal now has a visible, confirmed
 `İptal et` action for an existing trade. The action calls the bounded DELETE endpoint,
 which records a `CANCELED` tombstone; it does not physically remove the canonical row or
-its evidence chain. Failed or malformed responses leave the confirmation open. The
-Light/Dark control now applies theme tokens to the existing dark-first shell, updates the
-native root `color-scheme`, and prevents a slow initial settings response from undoing a
-user toggle. Focused Journal/Theme DOM tests, full frontend tests and tri-locale parity
-are passing. The new arm64 local candidate is built and exact-mounted-smoke validated;
-the private pilot Release still needs an explicit asset refresh before these changes are
-distributed to pilot users. No trade data was changed by the tests.
+its evidence chain. Failed or malformed responses leave the confirmation open. Canceled
+tombstones remain in journal/evidence history but are excluded from the dashboard asset
+performance breakdown; canceling an OPEN row also removes it from the in-memory
+open-position list. The Light/Dark control now applies theme tokens to the existing
+dark-first shell, updates the native root `color-scheme`, and updates chart canvas colors
+when the theme changes. The chart page is named and translated as `Market Charts` /
+`Piyasa Grafikleri` / `Marktcharts`; visible OHLCV and error content is localized in all
+three locales. Focused Journal/Chart DOM tests are `12 passed`, the portfolio regression
+is `11 passed`, full frontend tests are `29 files / 133 tests`, and i18n parity is
+`734/734`. The new arm64 local candidate from source `8db2e53` is built and
+exact-mounted-smoke validated; the private pilot Release still needs an explicit asset
+refresh before these changes are distributed to pilot users. No trade or user data was
+changed by the tests.
 
 **Manual update page (this change):** Settings now opens the fixed private arm64 pilot
 Release in the system browser through the desktop bridge. The old timer-based false
@@ -927,7 +933,7 @@ and frontend lock hashes remain
 | H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | P1-WP28 | IN PROGRESS | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and native-host release contract | `bb6ce7c` implements the guards and dual-runner contract; arm64 clean build/local CI/exact mounted-DMG smoke is PASS. Hosted Intel jobs are currently blocked before startup by GitHub account billing/spending-limit state; a controlled native Intel pilot Mac can provide the same build evidence or later runtime evidence, so x86_64 remains `PENDING_NATIVE_CI` until exact host provenance exists; Universal2, Windows/Linux and signing are separate gates. |
-| P1-WP29 | IN PROGRESS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums, user instructions and bounded pilot UI corrections | Source `e9f702b` contains the theme compatibility/race guard and confirmed audit-safe journal cancellation action. A clean arm64 local candidate from that source passed locked local CI, exact `hdiutil verify` and read-only mounted-DMG WKWebView smoke; DMG SHA-256 `be177389...`, executable SHA-256 `155913f6...`, local-CI report SHA-256 `82d63f11...`, smoke report SHA-256 `cd76d0a9...`. The private pilot Release still needs an explicit asset refresh before pilot users receive these UI fixes. Default dual package remains blocked until native x86_64 evidence; N03 clean second profile/host, N05 signing/notarization and pilot-user read access remain open. |
+| P1-WP29 | IN PROGRESS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums, user instructions and bounded pilot UI corrections | Source `8db2e53` excludes `CANCELED` tombstones from dashboard asset-performance analytics while preserving journal/evidence history, removes canceled OPEN rows from the open-position list, and localizes the market-chart page in EN/TR/DE. A clean arm64 candidate passed locked local CI (`830` backend, `29 files / 133` frontend, `734/734` i18n) and exact `hdiutil verify`/read-only mounted-DMG WKWebView smoke with `COMPLETE` provenance; DMG SHA-256 `99c4849b...`, executable SHA-256 `615e4cc7...`, local-CI report SHA-256 `6dea4f5d...`, smoke report SHA-256 `1a1a1ddc...`. The private pilot Release still needs an explicit asset refresh before pilot users receive these fixes. Default dual package remains blocked until native x86_64 evidence; N03 clean second profile/host, N05 signing/notarization and pilot-user read access remain open. |
 | P1-WP30 | CLOSED / BOUNDED COMPLETE | Free multi-asset journal entry, exact public quote provenance, explicit simulation and TradingView pending-observation boundary | Archived [P1-WP30](../archive/strategy/work-packages/P1-WP30-free-multi-asset-journal.md) with focused backend/regression **35 passed / 2 warnings** and current clean regression/local-CI evidence recorded above. No paid data/live order/release claim. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; the pilot team's Intel Mac may be the selected host if clean-profile attestation is supplied. Current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |

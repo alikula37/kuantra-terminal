@@ -7,8 +7,8 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: 8da8019
-latest_artifact_source_commit: 119ae573ce4e4885c2c83e0e8619ebd6038131dd
+implementation_commit: 8db2e53
+latest_artifact_source_commit: 8db2e533f0dde972c0aba8ad6617da5ca722ec06
 latest_evidence_date: 2026-09-11
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
@@ -30,7 +30,7 @@ olarak kalır; production veya commercial support claim'i açılmaz.
 
 - [x] Settings manual pilot Release action replaces the fabricated update check;
       seven direct DOM tests cover native URL dispatch, browser link, failure/retry,
-      missing bridge and timeout/late response. EN/TR/DE 703-key parity and build pass.
+      missing bridge and timeout/late response. EN/TR/DE 734-key parity and build pass.
 - [x] Refreshed clean arm64 package includes the manual update action; native browser
       handoff and exact DMG evidence are recorded before Release asset replacement.
       Source `119ae573`, DMG SHA-256 `7a07847d`, mounted executable SHA-256
@@ -40,11 +40,16 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       shell by applying light/dark DOM tokens, root `color-scheme` and a guarded settings
       sync; the standard journal exposes an explicit, confirmed `CANCELED` action for
       OPEN/CLOSED rows, preserves the tombstone instead of physically deleting evidence,
-      validates the response and exposes a CANCELED filter. Journal/Theme DOM coverage
-      is `10 passed`; full frontend coverage is `29 files / 133 tests`, i18n is `716/716`,
-      and the arm64 local candidate from source `e9f702b` passed locked local CI plus
-      exact mounted-DMG smoke with `COMPLETE` provenance. The existing private Release
-      asset still requires a later package refresh before pilot distribution.
+      validates the response and exposes a CANCELED filter. Canceled tombstones remain
+      in the journal/evidence chain but are excluded from the dashboard asset-performance
+      breakdown; canceling an OPEN row also removes it from the in-memory open-position
+      list. The market-chart page is named and translated as `Market Charts` /
+      `Piyasa Grafikleri` / `Marktcharts`, including its visible OHLCV and error content.
+      Journal/Chart DOM coverage is `12 passed`; the portfolio regression is `11 passed`,
+      full frontend coverage is `29 files / 133 tests`, i18n is `734/734`, and the arm64
+      local candidate from source `8db2e53` passed locked local CI plus exact mounted-DMG
+      smoke with `COMPLETE` provenance. The existing private Release asset still requires
+      a later package refresh before pilot distribution.
 
 - [x] GitHub private Release'ın yalnızca repository read erişimi olan kullanıcılara
       dağıtım sağlayabildiği; Apple signing/notarization yerine geçmediği resmi kaynaklarla
@@ -182,7 +187,40 @@ uygulamada temiz geçici profille native olarak doğrulandı. Düğme Chrome'da 
 Release URL'sini açtı; otomatik sürüm karşılaştırması, indirme, kurulum veya veri migration'ı
 yapmaz. Bu click-through kanıtı kullanıcı verisine dokunmadı.
 
-### Pilot UI correction candidate evidence (2026-09-11)
+### Current analytics/chart correction candidate evidence (2026-09-11)
+
+Source commit `8db2e533f0dde972c0aba8ad6617da5ca722ec06` ve tracked source tree
+`42600b6fb58197473b29c968ad82b21e4e356abab5a23c834ed8c8ea19ae402e` temizken:
+
+- `uv run --offline --no-project --with-requirements backend/requirements.lock python
+  scripts/run_local_ci.py --expected-architecture arm64 --report
+  dist/p1-wp29-cancel-breakdown-chart-i18n-clean-local-ci-arm64.json --smoke-timeout 90`
+  → **MERGE READY**; backend **830 passed / 2 warnings**, frontend **29 test files / 133
+  tests**, i18n **734/734**, TypeScript, production build, native arm64 PyInstaller,
+  WKWebView smoke and provenance **COMPLETE**. Report SHA-256:
+  `6dea4f5dbec9bb98696031fdf0a5f7ebc517d017f98426f9be361e01d3cc4a31`.
+- `bash scripts/package_macos.sh --architecture arm64 --output
+  dist/Kuantra-Terminal-1.0.0-arm64-cancel-breakdown-chart.dmg` → **PASS**;
+  `hdiutil verify` **VALID**. DMG SHA-256:
+  `99c4849becfdb17472af035d05aa01ac6c815b1b1c7459e4776fad54d9b69fc9`.
+- `.venv/bin/python scripts/smoke_macos_dmg.py --dmg
+  dist/Kuantra-Terminal-1.0.0-arm64-cancel-breakdown-chart.dmg --expected-architecture
+  arm64 --report dist/final-smoke-arm64-cancel-breakdown-chart.json` → **PASS** on the
+  exact read-only mounted executable; native `arm64`, WKWebView/controller identity and
+  detach passed. Mounted executable SHA-256:
+  `615e4cc7933d3f8b50b1e2fcba618f704db0b96fb29af2ca2aa2b0a96eb15e1d`; smoke report
+  SHA-256: `1a1a1ddca0d5fff89767b9e3194f0ffe1c19e0be1a604c83e8334c2b89e7701b`.
+- Native click-through confirmed that existing `CANCELED` tombstones no longer create
+  dashboard performance buckets, while journal audit history is preserved. Turkish,
+  English and German market-chart navigation, title, subtitle, OHLCV labels and error
+  states were checked; light/dark chart rendering was toggled and restored. No real trade
+  or user data was changed. The candidate is installed at
+  `/Applications/Kuantra Terminal.app`; the previous bundle was moved recoverably to
+  `/Users/kula/.Trash/Kuantra Terminal.app.before-cancel-chart-fix`. The private GitHub
+  Release was not changed in this code task, so its assets must be refreshed explicitly
+  before pilot distribution.
+
+### Previous pilot UI correction candidate evidence (2026-09-11)
 
 Source commit `e9f702b6b49da41e6249a0044abb3f2f0363bfc7` ve tracked source tree
 `c1bdf652b2b84301ed7fa3eb33fc625e7c6f97b8176af5ac471296ab2a906509` temizken:
