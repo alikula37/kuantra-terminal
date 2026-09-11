@@ -1,7 +1,9 @@
 # Kuantra Terminal v1.0.0 — kapalı macOS pilotu
 
 **Güncel pilot Release:** [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)<br>
-**Güncel arm64 uygulama kaynak commit'i:** `8da8019ae93513c474a3122d450cffb40f66261b`
+**Kaynak ve artifact kimliği:** Release ile gelen `PILOT-MANIFEST.json` ve
+`SHA256SUMS` dosyaları authoritative'tir; source commit, mimari ve exact hash'ler
+bu dosyalardan doğrulanmalıdır.
 
 Bu paket üç kişilik, davetli pilot içindir. Public bir indirme veya production
 ürünü değildir. Apple Developer ID imzası ve notarization yoksa macOS ilk açılışta

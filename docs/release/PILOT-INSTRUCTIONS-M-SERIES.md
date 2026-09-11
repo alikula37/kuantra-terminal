@@ -2,8 +2,9 @@
 # Kuantra Terminal v1.0.0 — M-series arm64 pilotu
 
 **Güncel pilot Release:** [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)<br>
-**Uygulama kaynak commit'i:** `8da8019ae93513c474a3122d450cffb40f66261b`<br>
-**DMG SHA-256:** `900ce30ebe93bc9a1ded399c0067edfa2f7475b892da9193ff608e579f291a76`
+**Kaynak ve artifact kimliği:** Release ile gelen `PILOT-MANIFEST.json` ve
+`SHA256SUMS` dosyaları authoritative'tir; source commit, mimari ve exact hash'ler
+bu dosyalardan doğrulanmalıdır.
 
 Bu belge Release asset'i olarak da dağıtılır. Aynı Release sayfasından DMG ile birlikte
 `PILOT-MANIFEST.json`, `SHA256SUMS`, `final-smoke-arm64.json`,
