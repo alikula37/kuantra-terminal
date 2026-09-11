@@ -8,7 +8,7 @@ status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
 implementation_commit: 0a5b8aa
-latest_artifact_source_commit: 0a5b8aa2cbdc6528ba4b4b9ce52fb3d728ac6c00
+latest_artifact_source_commit: 876efe06fdac3e328d09b6ade429f792bf795314
 latest_evidence_date: 2026-09-11
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
@@ -115,7 +115,7 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       `SHA256SUMS` SHA-256 `53610c49f7dd10e89cf13070e5d423e88fb1e50100352df90fa956967dcdeab9`.
 - [x] Önceki `6f8b1ed` paket kanıtı superseded historical evidence olarak korunur; güncel
       M-series package doğrulamasında kullanılmaz.
-- [x] Güncel M-series arm64-only pilot paketi temiz source commit `119ae57`'dan üretildi;
+- [x] Önceki M-series arm64-only pilot paketi temiz source commit `119ae57`'dan üretildi;
       manifest, checksum doğrulaması ve standalone M-series talimatı aynı pakette bulunur.
       Paket `dual_architecture_complete=false`, `intel_artifact_included=false` ve
       `intel_support_claim=false` alanlarını taşır. Paket durumu
@@ -127,7 +127,7 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       manifest ile eşleşir. Release URL'si:
       `https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`.
 - [x] Mevcut `pilot-v1.0.0-arm64` private prerelease asset seti yeni tag oluşturmadan
-      source commit `119ae57`'ye bağlı arm64 paketle in-place yenilendi. Altı asset,
+      source commit `876efe0`'a bağlı arm64 paketle in-place yenilendi. Altı asset,
       güncel release body ve `PILOT-INSTRUCTIONS-M-SERIES.md` aynı pilot sınırını taşır;
       canonical `v1.0.0` Release/tag'i oluşturulmadı.
 - [ ] Gerçek x86_64 native host (hosted runner veya açıkça seçilmiş pilot Intel Mac),
@@ -252,6 +252,43 @@ SHA-256:
 `40ff61d3a668b002f49355f3fdaae18369bc7a4afaeabe37b232dfc855cedeee`. Provenance is
 `COMPLETE`; signing remains ad-hoc and this is not a notarization or production claim.
 The private GitHub Release was not changed by this task.
+
+### Current arm64 pilot Release refresh evidence (2026-09-11, source `876efe0`)
+
+The provider-backed symbol-search runtime and the clarified pilot instructions were rebuilt
+from source commit `876efe06fdac3e328d09b6ade429f792bf795314`. The tracked source tree was
+clean with SHA-256 `18dc9ab63d139df23c5d97912a68691c25d7ed5d7d636343dfe2246a42764b6c`;
+backend and frontend lock hashes remain `6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399`
+and `396c757d5733e9618aa71f665aa3f23f5d53fcdaa8d9ff67c11d172464fcc6bc`.
+
+- Locked arm64 local CI returned **MERGE READY**: backend **838 passed / 2 warnings**,
+  frontend **29 files / 138 tests**, EN/TR/DE **762/762**, TypeScript and production
+  build, native arm64 PyInstaller/WKWebView smoke and provenance **COMPLETE**. Report
+  SHA-256: `c30d9eb7930edc40d6468f38eb99b124dff59d65f1f605cc35dbb2f79f195e34`.
+- Canonical `dist/Kuantra-Terminal-1.0.0-arm64.dmg` passed `hdiutil verify` with
+  **VALID**. DMG SHA-256:
+  `9d4c7e44b83483ce794d6f628b710bd7c651b8f42ae8e98d4b40c5341d3f627d`.
+- Exact read-only mounted-DMG smoke passed native arm64 and WKWebView/controller identity;
+  mounted executable SHA-256:
+  `f6fef3f39e2e8d591c133ac1607a6ef62f1abffea186223a07c61f4086a26082`, smoke report
+  SHA-256: `fcb1a469bdfe2330c2c5093af984fbb4389153e83a7206a12efacfec2517fd5c`.
+- N05 preflight remains intentionally **BLOCKED/OWNER_REVIEW_REQUIRED** with exit 2
+  because the pilot DMG is ad-hoc and has no Developer ID/notarization proof. Report
+  SHA-256: `58dd0b39d298cedd8d4e5e28669e4c04c5595292d80f3242580cb5ce37ab6ddf`.
+- `prepare_pilot_package.py --architecture arm64 --pilot-tag pilot-v1.0.0-arm64`
+  returned **PASS**. The six-file package is
+  `dist/pilot-package-pilot-v1.0.0-arm64-current/`; manifest SHA-256 is
+  `04d220ff4bcef12fb4dfdc0ed8f9ccea1bea3e0f60e617f14c50167ed439886a`,
+  `SHA256SUMS` SHA-256 is
+  `6ca82cd3e36a8b879f2be234c2d846ead36cd5099ab064f858805f0677963d5a`, and all five
+  payload entries passed `shasum -a 256 -c SHA256SUMS` with `OK`.
+- The existing private `pilot-v1.0.0-arm64` prerelease was refreshed in place with
+  `gh release edit` and `gh release upload --clobber`; no tag was created and the
+  canonical `v1.0.0` Release was not changed. The installed
+  `/Applications/Kuantra Terminal.app` now has executable SHA-256
+  `f6fef3f39e2e8d591c133ac1607a6ef62f1abffea186223a07c61f4086a26082`; the previous
+  bundle was moved recoverably to the user's Trash and the application data directory
+  was not touched.
 
 ### Historical confirmed-symbol-selection candidate evidence (2026-09-11)
 

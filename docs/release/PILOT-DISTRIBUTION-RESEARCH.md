@@ -7,7 +7,7 @@ Developer ID satın almadan güvenli ve dürüst dağıtım sınırı.
 
 Bu belge teknik karar kaydıdır; canonical product release/tag veya pilot daveti oluşturmaz.
 M-series arm64-only private prerelease, `pilot-v1.0.0-arm64` tag'iyle yayımlanmış ve
-2026-09-11 tarihinde uygulama kaynak commit'i `119ae573ce4e4885c2c83e0e8619ebd6038131dd`
+2026-09-11 tarihinde uygulama kaynak commit'i `876efe06fdac3e328d09b6ade429f792bf795314`
 ile asset seti aynı tag üzerinde yenilenmiştir. Tag ve download URL değişmemiştir.
 Kaynakların güncel koşulları değişebileceği için resmi bağlantılar aşağıda ayrıca
 listelenmiştir.
@@ -15,8 +15,9 @@ listelenmiştir.
 ## Güncel Release durumu
 
 Mevcut private Release artık önceki paketleri değil, P1-WP30 free multi-asset journal/quote
-flow'unu ve manuel pilot güncelleme sayfası erişimini içeren `119ae57` kaynak commit'ine bağlı altı asset'li paketi sunar. Güncel DMG
-SHA-256 `7a07847da1134f6a098a491ee97a74db4e949b4ab373a99fa8bb086ada7f3e5d` değeridir;
+flow'unu, provider-backed exact-symbol search akışını ve manuel pilot güncelleme sayfası
+erişimini içeren `876efe0` kaynak commit'ine bağlı altı asset'li paketi sunar. Güncel DMG
+SHA-256 `9d4c7e44b83483ce794d6f628b710bd7c651b8f42ae8e98d4b40c5341d3f627d` değeridir;
 `PILOT-MANIFEST.json`, `SHA256SUMS`, exact mounted-DMG smoke ve N05 raporu aynı kaynak ve
 artifact kimliğini taşır. Bu işlem yeni tag, canonical `v1.0.0` Release veya notarization
 oluşturmaz; yalnızca kapalı pilotun mevcut taşıma kanalını günceller.
@@ -228,7 +229,7 @@ Apple Developer ID/notarization ve owner pilot erişim/approval kararları ayrı
 - MIT/third-party notices kararı bu paket tarafından çözülmez; ticari dağıtım öncesi
   ayrı release gate'i olarak kalır.
 - Yeni release/tag oluşturulmamıştır; mevcut `pilot-v1.0.0-arm64` Release asset seti
-  owner'ın güncelleme talebi kapsamında doğrulanmış `119ae57` arm64 paketiyle yenilenmiştir.
+  owner'ın güncelleme talebi kapsamında doğrulanmış `876efe0` arm64 paketiyle yenilenmiştir.
   Bu işlem user-data migration, credential veya canlı execution içermemiştir.
 
 ## Kaynaklar

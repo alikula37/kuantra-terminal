@@ -2,7 +2,7 @@
 # Kuantra Terminal v1.0.0 — Mac Candidate Truth & Safety — M-series Trusted Pilot update
 
 **Pilot Release tag:** `pilot-v1.0.0-arm64`
-**Artifact source commit:** `119ae573ce4e4885c2c83e0e8619ebd6038131dd`
+**Artifact source commit:** `876efe06fdac3e328d09b6ade429f792bf795314`
 **Release status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`
 **Product identity:** Local-first Execution Intelligence & Trade Forensics Workstation
 
@@ -15,7 +15,8 @@ artifact. The package targets macOS 12 Monterey or later on native Apple Silicon
 Intel `x86_64` evidence is still pending and is not implied by this asset set.
 
 The package contains the bounded P1-WP30 free multi-asset journal and quote provenance flow,
-plus a manual pilot-release update action in Settings. The action opens the fixed private
+provider-backed exact-symbol search with explicit candidate confirmation, plus a manual
+pilot-release update action in Settings. The action opens the fixed private
 Release URL in the system browser; it does not compare versions, download/install software,
 restart the app or migrate data.
 External journaling is the default; simulation is explicit only; exact free public quotes
@@ -33,19 +34,20 @@ the actual native save/cancel/failure outcome.
 
 Current verification evidence:
 
-- Locked arm64 local CI: **MERGE READY**; backend **829 passed / 2 warnings**, frontend
-  **28 test files / 128 tests**, EN/TR/DE **703/703**, TypeScript and production build pass,
+- Locked arm64 local CI: **MERGE READY**; backend **838 passed / 2 warnings**, frontend
+  **29 test files / 138 tests**, EN/TR/DE **762/762**, TypeScript and production build pass,
   native PyInstaller/WKWebView smoke and `COMPLETE` provenance.
 - DMG `Kuantra-Terminal-1.0.0-arm64.dmg`: SHA-256
-  `7a07847da1134f6a098a491ee97a74db4e949b4ab373a99fa8bb086ada7f3e5d`.
+  `9d4c7e44b83483ce794d6f628b710bd7c651b8f42ae8e98d4b40c5341d3f627d`.
 - Exact mounted executable: SHA-256
-  `9d70f2acfdd1b81b124323d0ad1c4b0f280ff76f526a462774c076791161a90b`.
+  `f6fef3f39e2e8d591c133ac1607a6ef62f1abffea186223a07c61f4086a26082`.
 - Final mounted-DMG smoke report: SHA-256
-  `b59489cdd444447297da51b249936ddf8ddb0d5054da4c11c60623fb6e54b3ef`.
-- Pilot manifest SHA-256: `4ed1e6cc4521223c6282257190d76deac50122c9763ccaa525f06bd1831cc9c2`.
-- `SHA256SUMS` SHA-256: `a0bbf709e4236738f3f980f3a1b99e31e01faf908fb2e499030c8d9345bba18c`.
-- Tracked source tree SHA-256: `2f907ceb265a2cf298f652c2f6a9261dbcaeb224eafc7eaf26a6a8716a8e5b6d`.
-- Local-CI report SHA-256: `9345f70dbe4b28ef419931faceb90f4650d06fc8e97dfa0f8afcc4e146d4715b`.
+  `fcb1a469bdfe2330c2c5093af984fbb4389153e83a7206a12efacfec2517fd5c`.
+- Pilot manifest SHA-256: `04d220ff4bcef12fb4dfdc0ed8f9ccea1bea3e0f60e617f14c50167ed439886a`.
+- `SHA256SUMS` SHA-256: `6ca82cd3e36a8b879f2be234c2d846ead36cd5099ab064f858805f0677963d5a`.
+- Tracked source tree SHA-256: `18dc9ab63d139df23c5d97912a68691c25d7ed5d7d636343dfe2246a42764b6c`.
+- Local-CI report SHA-256: `c30d9eb7930edc40d6468f38eb99b124dff59d65f1f605cc35dbb2f79f195e34`.
+- N05 preflight report SHA-256: `58dd0b39d298cedd8d4e5e28669e4c04c5595292d80f3242580cb5ce37ab6ddf`.
 - Native manual-update click-through: PASS from the exact mounted DMG and clean temporary
   profile; Chrome opened `https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`.
 - N05 distribution preflight: structurally valid but intentionally

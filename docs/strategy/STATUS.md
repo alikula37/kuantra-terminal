@@ -33,7 +33,8 @@ tarafından ayrıca verilmelidir. M-series private prerelease Release
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
 oluşturuldu ve arm64 DMG/evidence/checksum/instructions asset'leri yüklendi. Canonical
 `v1.0.0` product tag'i ve dual Release hâlâ oluşturulmadı. Bu mevcut Release asset seti
-2026-09-11 tarihinde P1-WP30 akışını ve manuel pilot güncelleme erişimini içeren `119ae57` source commit'ine bağlı güncel
+2026-09-11 tarihinde P1-WP30 akışını, provider-backed exact-symbol search ve manuel pilot
+güncelleme erişimini içeren `876efe0` source commit'ine bağlı güncel
 paketle aynı tag üzerinde yenilendi; pilot kullanıcı erişimleri owner tarafından ayrıca
 verilmelidir.
 
@@ -65,7 +66,7 @@ sessizce eklenmez; bu sınır kapsam dışı veri sağlayıcısı/yanlış eşle
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel
 canonical release train `v1.0.0`'dır; canonical product Release henüz yayımlanmamıştır.
 Kapalı pilot taşıma kanalı olan `pilot-v1.0.0-arm64` ayrı bir private prerelease'tir ve
-güncel arm64 asset seti `119ae57` source commit'ine bağlıdır. Aşağıdaki v1.4.0 ad-hoc
+güncel arm64 asset seti `876efe0` source commit'ine bağlıdır. Aşağıdaki v1.4.0 ad-hoc
 hash'leri yalnızca pre-reset historical evidence'tir; güncel release kanıtı olarak
 kullanılamaz.
 Eski kök `UAT_AUDIT_REPORT.json` raporu geri çekilmiş tarihsel kayıt olarak arşivlendi;
@@ -93,9 +94,9 @@ never becomes GC=F or PAXGUSDT. A typed `LINK` returns the explicit `LINKUSDT` C
 candidate, but Enter alone neither activates it nor starts a data request. Focused
 Journal/Chart DOM tests are `13 passed`, the portfolio regression is `11 passed`, full
 frontend tests are `29 files / 138 tests`, and i18n parity is `762/762`. The new arm64
-local candidate from source `0a5b8aa` is built and exact-mounted-smoke validated; the
-private pilot Release still needs an explicit asset refresh before these changes are
-distributed to pilot users. No trade or user data was changed by the tests.
+local candidate from source `0a5b8aa` is built and exact-mounted-smoke validated. The
+private pilot Release was refreshed in place from the newer `876efe0` package after this
+candidate evidence was recorded. No trade or user data was changed by the tests.
 
 **Manual update page (this change):** Settings now opens the fixed private arm64 pilot
 Release in the system browser through the desktop bridge. The old timer-based false
@@ -118,7 +119,7 @@ the active work package is
 [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
 The arm64 private Release is the trusted-pilot transport for the clean package built from
-`d6c8c3a`; it contains the completed P1-WP30 journal/quote changes plus the chart
+`876efe0`; it contains the completed P1-WP30 journal/quote changes plus the chart
 watchlist/XAUUSD fallback and confirmed-symbol selection boundary, and remains arm64-only.
 Dual architecture still waits for native x86_64 evidence; N03, N05 and pilot read access
 remain open.
@@ -170,7 +171,26 @@ Exact read-only mounted-DMG smoke passed native arm64 and WKWebView/controller i
 mounted executable SHA-256 `4eb94e83b54ff7f9c03878483d73f4469e18bf65437a9ed18538d3cca768f23e`,
 smoke report SHA-256 `40ff61d3a668b002f49355f3fdaae18369bc7a4afaeabe37b232dfc855cedeee`.
 The DMG remains ad-hoc trusted-pilot evidence, not notarization or production evidence;
-the private GitHub Release was not changed.
+this pre-refresh candidate checkpoint preceded the final private Release refresh.
+
+**Current pilot Release refresh evidence (2026-09-11, source `876efe0`):** The canonical
+arm64 DMG was rebuilt from the clarified pilot-instructions commit and the existing
+`pilot-v1.0.0-arm64` private prerelease was updated in place with the same six-file
+package: DMG, exact mounted-DMG smoke, N05 report, manifest, checksums and instructions.
+Local-CI returned **MERGE READY** with backend **838 passed / 2 warnings**, frontend
+**29 files / 138 tests**, i18n **762/762**, native arm64 WKWebView smoke and provenance
+`COMPLETE`. Local-CI report SHA-256 is
+`c30d9eb7930edc40d6468f38eb99b124dff59d65f1f605cc35dbb2f79f195e34`; DMG SHA-256 is
+`9d4c7e44b83483ce794d6f628b710bd7c651b8f42ae8e98d4b40c5341d3f627d`; mounted
+executable SHA-256 is `f6fef3f39e2e8d591c133ac1607a6ef62f1abffea186223a07c61f4086a26082`;
+smoke report SHA-256 is `fcb1a469bdfe2330c2c5093af984fbb4389153e83a7206a12efacfec2517fd5c`.
+The package manifest and `SHA256SUMS` hashes are
+`04d220ff4bcef12fb4dfdc0ed8f9ccea1bea3e0f60e617f14c50167ed439886a` and
+`6ca82cd3e36a8b879f2be234c2d846ead36cd5099ab064f858805f0677963d5a`; every payload
+entry passed checksum verification. The installed `/Applications/Kuantra Terminal.app`
+matches the mounted executable hash; the previous bundle was moved recoverably to Trash
+and the user data directory was not touched. N05 remains intentionally
+`BLOCKED/OWNER_REVIEW_REQUIRED` because signing/notarization was not purchased.
 
 **Historical confirmed-symbol-selection candidate evidence (2026-09-11, source `d6c8c3a`):**
 The clean arm64 candidate is bound to source commit
