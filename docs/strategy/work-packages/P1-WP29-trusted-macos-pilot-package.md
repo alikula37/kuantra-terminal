@@ -7,8 +7,8 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: d6c8c3a
-latest_artifact_source_commit: d6c8c3a7c5c053e3c89e32af3195ab1262ae6219
+implementation_commit: 0a5b8aa
+latest_artifact_source_commit: 0a5b8aa2cbdc6528ba4b4b9ce52fb3d728ac6c00
 latest_evidence_date: 2026-09-11
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
@@ -45,23 +45,36 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       breakdown; canceling an OPEN row also removes it from the in-memory open-position
       list. The market-chart page is named and translated as `Market Charts` /
       `Piyasa Grafikleri` / `Marktcharts`, including its visible OHLCV and error content.
-      Journal/Chart DOM coverage is `12 passed`; the portfolio regression is `11 passed`,
-      full frontend coverage is `29 files / 136 tests`, i18n is `754/754`, and the arm64
-      local candidate from source `d6c8c3a` passed locked local CI plus exact mounted-DMG
+      Journal/Chart DOM coverage is `13 passed`; the portfolio regression is `11 passed`,
+      full frontend coverage is `29 files / 138 tests`, i18n is `762/762`, and the arm64
+      local candidate from source `0a5b8aa` passed locked local CI plus exact mounted-DMG
       smoke with `COMPLETE` provenance. The chart page now has a persistent symbol
-      watchlist with localized catalog search, add/remove controls and an exact free
-      XAUUSD OHLC fallback. Both New Trade and Market Charts require a catalog result
-      selection followed by an explicit confirmation; Enter or an unknown free-form
-      ticker never silently activates or fetches another instrument. The existing private
+      watchlist with provider-backed search, add/remove controls and an exact free
+      XAUUSD OHLC fallback. Both New Trade and Market Charts require a candidate
+      selection followed by an explicit confirmation; Enter never silently activates or
+      fetches another instrument, while an unlisted exact symbol has an explicit
+      UNKNOWN/manual confirmation path. The existing private
       Release asset still requires a later package refresh before pilot distribution.
 
 - [x] Market symbol identity is user-confirmed on both New Trade and Market Charts. A
-      typed `LINK` search returns the explicit `Chainlink (LINK/USDT)` / `LINKUSDT`
-      catalog candidate; selecting it opens a confirmation step, and only confirmation
-      changes the committed symbol and permits a quote/candle request. Enter alone does
-      not add, activate or fetch a symbol; unknown free-form input remains unavailable.
-      Focused DOM coverage is `11 passed`; full frontend coverage is `29 files / 136 tests`,
-      i18n is `754/754`, and no paid data service, credential or broker path was added.
+      typed `LINK` search returns exact provider candidates with name, exchange and source
+      identity; selecting one opens a confirmation step, and only confirmation changes the
+      committed symbol and permits a quote/candle request. Enter alone does not add,
+      activate or fetch a symbol. The default catalog is only a starter watchlist, not the
+      supported-instrument universe; when providers return no result, an exact manual
+      symbol can be explicitly confirmed as `UNKNOWN/manual` without being rewritten.
+      Focused Chart/New Trade DOM coverage is `13 passed`; full frontend coverage is
+      `29 files / 138 tests`, i18n is `762/762`, and no paid data service, credential or
+      broker path was added.
+
+- [x] Provider-backed free instrument search is implemented for Binance Spot exchange
+      inventory, Yahoo public search results and the exact Biquote XAU/USD route. Provider
+      results preserve the exact source symbol and distinguish `READY`, `NO_MATCH` and
+      `UNAVAILABLE`; crypto pair ranking prefers the usual USDT pair without hiding other
+      exact candidates. Generic tickers such as `AAPL`, `BRK-B` and `MSFT` remain generic
+      Yahoo/Stooq symbols and are never invented as USDT pairs. Mac live read-only checks
+      returned results for `LINK`, `AAPL` and `XAUUSD`; no credential, trade or user data
+      was used.
 
 - [x] GitHub private Release'ın yalnızca repository read erişimi olan kullanıcılara
       dağıtım sağlayabildiği; Apple signing/notarization yerine geçmediği resmi kaynaklarla
@@ -199,7 +212,48 @@ uygulamada temiz geçici profille native olarak doğrulandı. Düğme Chrome'da 
 Release URL'sini açtı; otomatik sürüm karşılaştırması, indirme, kurulum veya veri migration'ı
 yapmaz. Bu click-through kanıtı kullanıcı verisine dokunmadı.
 
-### Current confirmed-symbol-selection candidate evidence (2026-09-11)
+### Current provider-backed instrument-search candidate evidence (2026-09-11)
+
+Implementation source commit `0a5b8aa2cbdc6528ba4b4b9ce52fb3d728ac6c00` is the exact
+artifact source. It adds the provider search endpoint and hook, preserves provider symbol
+identity through generic candle routing, keeps the static list as a default watchlist only,
+and offers an explicit `UNKNOWN/manual` confirmation path when public providers have no
+match. `LINK` is returned with Binance Spot `LINKUSDT`/`LINKUSDC` candidates and any exact
+Yahoo candidates separately; `XAUUSD` has a deterministic exact Biquote candidate. The
+Mac read-only provider check returned `READY` for `LINK`, `AAPL` and `XAUUSD`; it used no
+credential, trade, user data or paid service. `NO_MATCH` and provider `UNAVAILABLE` are
+different UI states, and Enter never activates a symbol.
+
+Focused backend/provider/API regression is **31 passed / 2 warnings**. Full backend is
+**838 passed / 2 warnings**. Focused New Trade/Market Charts DOM coverage is **13 passed**;
+full frontend is **29 files / 138 tests**. `npm run check:i18n` reports **762/762** EN/TR/DE;
+TypeScript and production build pass. The canonical local-CI command:
+
+```text
+uv run --offline --no-project --with-requirements backend/requirements.lock python
+scripts/run_local_ci.py --expected-architecture arm64 --report
+dist/p1-wp30-provider-backed-search-local-ci-arm64.json --smoke-timeout 90
+```
+
+returned **MERGE READY** on the Mac mini: backend **838 passed / 2 warnings**, frontend
+**29 files / 138 tests**, i18n **762/762**, native arm64 PyInstaller, native WKWebView
+smoke and provenance **COMPLETE**. The `uv --offline` flag records dependency-resolution
+mode only; it is not runtime offline evidence. Local-CI report SHA-256:
+`e0f094ae0fc9f1d6ed514b5329315db07f4f6837b6ea55e4e8128564acbfd5ab`.
+
+The exact arm64 DMG
+`dist/Kuantra-Terminal-1.0.0-arm64-provider-search.dmg` passed `hdiutil verify` with
+**VALID**. DMG SHA-256:
+`9b3eeb4a0e345010ebd9f089cd5eb90428867c4cbe902a937dc9afa9e960671b`. Exact read-only
+mounted-DMG smoke passed native arm64, WKWebView/controller identity and detach;
+mounted executable SHA-256:
+`4eb94e83b54ff7f9c03878483d73f4469e18bf65437a9ed18538d3cca768f23e`, smoke report
+SHA-256:
+`40ff61d3a668b002f49355f3fdaae18369bc7a4afaeabe37b232dfc855cedeee`. Provenance is
+`COMPLETE`; signing remains ad-hoc and this is not a notarization or production claim.
+The private GitHub Release was not changed by this task.
+
+### Historical confirmed-symbol-selection candidate evidence (2026-09-11)
 
 Source commit `d6c8c3a7c5c053e3c89e32af3195ab1262ae6219` ve tracked source tree
 `bd28325800c52d404e7257f20142b7a5c8ff6ebbd50176623916221b5d21d265` temizken:
