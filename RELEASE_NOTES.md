@@ -1,77 +1,39 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.0.0 — Mac Candidate Truth & Safety — M-series Trusted Pilot update
+# Kuantra Terminal v1.0.0 — M-series Trusted Pilot
 
 **Pilot Release tag:** `pilot-v1.0.0-arm64`
+
 **Artifact source commit:** `876efe06fdac3e328d09b6ade429f792bf795314`
-**Release status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`
-**Product identity:** Local-first Execution Intelligence & Trade Forensics Workstation
 
-The existing private GitHub Release at
-[`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
-is refreshed in place with the exact arm64 package built from the source commit above.
-The tag and download URL are unchanged; this is a closed trusted-pilot transport, not the
-canonical `v1.0.0` product Release, a public download or a production/commercial-support
-artifact. The package targets macOS 12 Monterey or later on native Apple Silicon `arm64`.
-Intel `x86_64` evidence is still pending and is not implied by this asset set.
+**Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`
 
-The package contains the bounded P1-WP30 free multi-asset journal and quote provenance flow,
-provider-backed exact-symbol search with explicit candidate confirmation, plus a manual
-pilot-release update action in Settings. The action opens the fixed private
-Release URL in the system browser; it does not compare versions, download/install software,
-restart the app or migrate data.
-External journaling is the default; simulation is explicit only; exact free public quotes
-remain source/status-bound; unavailable prices require manual entry; and TradingView alerts
-remain immutable `PENDING_REVIEW` observations until explicit user confirmation. No paid
-data service, live broker order or automatic simulation fallback is included.
+**Product:** Local-first Execution Intelligence & Trade Forensics Workstation
 
-The verified local core includes trade journaling and forensics, deterministic risk checks,
-recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain credential
-references, and the React/FastAPI/pywebview desktop shell. This update also hardens the pilot
-flow: unknown financial values stay visibly unknown, review decisions stay bound to the
-displayed period/timezone/as-of snapshot, malformed successful responses are rejected before
-rendering, journal pagination is non-destructive, and Evidence Pack JSON/HTML/CSV exports report
-the actual native save/cancel/failure outcome.
+This private Release is intentionally simplified for the pilot. It currently exposes
+one download: **`Kuantra-Terminal-1.0.0-arm64.dmg` for Apple Silicon M-series Macs**.
+It requires macOS 12 Monterey or later. Do not download it on an Intel Mac.
 
-Current verification evidence:
+An Intel `x86_64` DMG is **not published yet** because native Intel build and exact
+mounted-DMG evidence are still pending. An arm64 DMG must not be presented as Intel support.
 
-- Locked arm64 local CI: **MERGE READY**; backend **838 passed / 2 warnings**, frontend
-  **29 test files / 138 tests**, EN/TR/DE **762/762**, TypeScript and production build pass,
-  native PyInstaller/WKWebView smoke and `COMPLETE` provenance.
-- DMG `Kuantra-Terminal-1.0.0-arm64.dmg`: SHA-256
-  `9d4c7e44b83483ce794d6f628b710bd7c651b8f42ae8e98d4b40c5341d3f627d`.
-- Exact mounted executable: SHA-256
-  `f6fef3f39e2e8d591c133ac1607a6ef62f1abffea186223a07c61f4086a26082`.
-- Final mounted-DMG smoke report: SHA-256
-  `fcb1a469bdfe2330c2c5093af984fbb4389153e83a7206a12efacfec2517fd5c`.
-- Pilot manifest SHA-256: `04d220ff4bcef12fb4dfdc0ed8f9ccea1bea3e0f60e617f14c50167ed439886a`.
-- `SHA256SUMS` SHA-256: `6ca82cd3e36a8b879f2be234c2d846ead36cd5099ab064f858805f0677963d5a`.
-- Tracked source tree SHA-256: `18dc9ab63d139df23c5d97912a68691c25d7ed5d7d636343dfe2246a42764b6c`.
-- Local-CI report SHA-256: `c30d9eb7930edc40d6468f38eb99b124dff59d65f1f605cc35dbb2f79f195e34`.
-- N05 preflight report SHA-256: `58dd0b39d298cedd8d4e5e28669e4c04c5595292d80f3242580cb5ce37ab6ddf`.
-- Native manual-update click-through: PASS from the exact mounted DMG and clean temporary
-  profile; Chrome opened `https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`.
-- N05 distribution preflight: structurally valid but intentionally
-  `BLOCKED/OWNER_REVIEW_REQUIRED` because this zero-cost pilot DMG is ad-hoc and not
-  Developer ID signed/notarized.
+The DMG is an ad-hoc, trusted-pilot artifact without Apple Developer ID signing or
+notarization. On first launch, use Finder → right-click → **Open**. This is not a public,
+production or commercial-support release. The pilot instructions remain in the repository:
+[`M-series pilot instructions`](https://github.com/alikula37/kuantra-terminal/blob/main/docs/release/PILOT-INSTRUCTIONS-M-SERIES.md).
 
-`PILOT-MANIFEST.json`, `SHA256SUMS` and the standalone
-[`PILOT-INSTRUCTIONS-M-SERIES.md`](https://github.com/alikula37/kuantra-terminal/blob/main/docs/release/PILOT-INSTRUCTIONS-M-SERIES.md)
-bind the package contents, source and hashes. Download integrity checks do not provide Apple
-malware or Gatekeeper trust; users must verify the checksums and follow the manual Gatekeeper
-procedure. `EXPERIMENTAL_DISABLED` surfaces remain unavailable and have no execution authority:
-live broker submission/reconciliation, FIX/DMA transport, venue-grade order-flow latency, local
-model/GPU telemetry, AI swarm, DEX/DeFAI, biometrics, external MCP retrieval and remote plugin
-download/hot-mount. `NO_DATA`, `UNKNOWN` and `UNAVAILABLE` are not success, quotes, fills or
-broker acknowledgements. OS keychain remains the only supported credential boundary; no
-plaintext credential fallback is introduced.
+The current DMG SHA-256 is
+`9d4c7e44b83483ce794d6f628b710bd7c651b8f42ae8e98d4b40c5341d3f627d`.
+The exact mounted-DMG smoke passed native arm64/WKWebView checks; local CI passed with
+backend **838 tests**, frontend **138 tests**, EN/TR/DE **762/762**, and complete provenance.
+Technical JSON/manifest evidence is retained in the repository and local audit package,
+not shown as separate Release downloads.
 
-The release body is generated from this marker-delimited section. Historical notes below remain
-for repository audit only and are not included in the GitHub Release body. The prior v1.4.0
-publication, tag and assets were removed from GitHub on 2026-09-11 and must not be used; any
-remaining repository references are historical evidence only. The later dual-architecture
-pilot still requires native x86_64 evidence, and N05 remains the owner-controlled
-signing/notarization gate.
-The exact canonical product tag is guarded by
+No live broker order, paid data service, credential, migration or automatic update is
+included. Settings’ update button only opens this fixed Release page.
+
+The release body is generated from this marker-delimited section. Historical notes below are
+repository audit material only. The prior v1.4.0 publication, tag and assets were removed
+from GitHub on 2026-09-11 and must not be used. The exact canonical product tag is guarded by
 `docs/release/truth-matrix.v1.0.0.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 

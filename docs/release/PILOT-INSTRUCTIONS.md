@@ -1,9 +1,9 @@
 # Kuantra Terminal v1.0.0 — kapalı macOS pilotu
 
 **Güncel pilot Release:** [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)<br>
-**Kaynak ve artifact kimliği:** Release ile gelen `PILOT-MANIFEST.json` ve
-`SHA256SUMS` dosyaları authoritative'tir; source commit, mimari ve exact hash'ler
-bu dosyalardan doğrulanmalıdır.
+**Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
+ve local audit paketinde tutulur. Güncel Release indirme alanında pilot kullanıcıları
+için yalnızca doğrulanmış arm64 DMG bulunur.
 
 Bu paket üç kişilik, davetli pilot içindir. Public bir indirme veya production
 ürünü değildir. Apple Developer ID imzası ve notarization yoksa macOS ilk açılışta
@@ -11,8 +11,8 @@ uyarı gösterir; bu bilinçli ve geçici pilot sınırıdır.
 
 Mevcut private Release yalnızca Apple Silicon native `arm64` DMG taşır. Intel pilotu
 ayrı native `x86_64` artifact yayımlanana kadar beklemelidir; arm64 dosyasını Intel'de
-denemeyin. Aynı Release'teki `PILOT-MANIFEST.json`, `SHA256SUMS` ve evidence dosyaları
-DMG ile birlikte dağıtılan teknik kanıttır.
+denemeyin. Teknik manifest, checksum ve evidence dosyaları repository/local audit
+paketindedir; Release indirme alanında yalnızca DMG bulunur.
 
 ## Trade entry boundary
 
@@ -39,27 +39,20 @@ it is not quote or execution proof. No paid data service or quote API key is req
 
 1. GitHub hesabınızla giriş yapın ve size gönderilen private repository Release
    sayfasını açın. Bu sayfa yalnızca repository read erişimi olan pilotlara açıktır.
-2. Mac'inizi öğrenin: Apple menüsü → **Bu Mac Hakkında**. Apple Silicon için
-   `arm64`, Intel için `x86_64` DMG indirin. macOS 12 Monterey veya üzeri gerekir.
-3. Aynı Release içindeki `SHA256SUMS`, `PILOT-MANIFEST.json` ve ilgili kanıt
-   dosyalarını da indirin.
-4. Terminal'de indirme klasöründe şu kontrolü çalıştırın:
-
-   ```text
-   shasum -a 256 -c SHA256SUMS
-   ```
-
-   Her satır `OK` değilse uygulamayı açmayın; dosyayı silmeden önce pilot sahibine
-   yalnızca dosya adı, Mac modeli/OS sürümü ve hata metnini bildirin.
-5. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
+2. Mac'inizi öğrenin: Apple menüsü → **Bu Mac Hakkında**. Bu Release'te yalnızca
+   Apple Silicon M-serisi için `arm64` DMG bulunur. Intel için indirme yayımlanmadı.
+   macOS 12 Monterey veya üzeri gerekir.
+3. Pilot Release indirme alanında şu anda yalnızca doğrulanmış Apple Silicon `arm64`
+   DMG bulunur. Intel `x86_64` DMG henüz yayımlanmadı; Intel Mac'te arm64 dosyasını
+   denemeyin. Teknik manifest, checksum ve evidence dosyaları repository/local audit
+   paketindedir.
+4. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
 
    ```text
    hdiutil verify Kuantra-Terminal-1.0.0-arm64.dmg
-   # Intel Mac için bunun yerine:
-   hdiutil verify Kuantra-Terminal-1.0.0-x86_64.dmg
    ```
 
-   Yalnızca kullandığınız mimarinin çıktısı başarılı olmalıdır. Bu kontrol DMG
+   Çıktı başarılı olmalıdır. Bu kontrol DMG
    container'ının bozulmadığını doğrular; Apple malware taraması, Developer ID veya
    notarization yerine geçmez.
 
@@ -135,7 +128,7 @@ kullanmayın**; kurulumu durdurup bildirin.
 
 ## Sorun bildirme
 
-Şunları gönderin: Release etiketi, DMG dosya adı, `SHA256SUMS` sonucu, Mac modeli,
+Şunları gönderin: Release etiketi, DMG dosya adı, `hdiutil verify` sonucu, Mac modeli,
 macOS sürümü, ekran görüntüsü veya redakte edilmiş hata metni ve tekrar üretme
 adımları. API anahtarı, cookie, credential, kişisel işlem geçmişi veya tam log
 dosyası göndermeyin.

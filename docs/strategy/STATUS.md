@@ -31,7 +31,8 @@ sınıflandırılır. Bu seçim public download, commercial support, production 
 notarized-artifact claim'i açmaz. Pilot kullanıcılarının repository read erişimi owner
 tarafından ayrıca verilmelidir. M-series private prerelease Release
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
-oluşturuldu ve arm64 DMG/evidence/checksum/instructions asset'leri yüklendi. Canonical
+oluşturuldu ve pilot kullanıcılar için yalnızca arm64 DMG asset'i yüklendi; evidence,
+checksum ve instructions repository/local audit paketinde tutuluyor. Canonical
 `v1.0.0` product tag'i ve dual Release hâlâ oluşturulmadı. Bu mevcut Release asset seti
 2026-09-11 tarihinde P1-WP30 akışını, provider-backed exact-symbol search ve manuel pilot
 güncelleme erişimini içeren `876efe0` source commit'ine bağlı güncel
@@ -175,8 +176,9 @@ this pre-refresh candidate checkpoint preceded the final private Release refresh
 
 **Current pilot Release refresh evidence (2026-09-11, source `876efe0`):** The canonical
 arm64 DMG was rebuilt from the clarified pilot-instructions commit and the existing
-`pilot-v1.0.0-arm64` private prerelease was updated in place with the same six-file
-package: DMG, exact mounted-DMG smoke, N05 report, manifest, checksums and instructions.
+`pilot-v1.0.0-arm64` private prerelease was updated in place and its download area was
+simplified to the single verified arm64 DMG. The exact mounted-DMG smoke, N05 report,
+manifest, checksums and instructions remain in the repository/local audit package.
 Local-CI returned **MERGE READY** with backend **838 passed / 2 warnings**, frontend
 **29 files / 138 tests**, i18n **762/762**, native arm64 WKWebView smoke and provenance
 `COMPLETE`. Local-CI report SHA-256 is

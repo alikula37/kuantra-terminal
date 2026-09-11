@@ -28,9 +28,11 @@ identifier, not the canonical `v1.0.0` product release tag. That transport does 
 Apple Developer ID trust; an ad-hoc DMG remains trusted-pilot-only and requires manual
 Gatekeeper approval. The current published M-series pilot Release is
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
-Its asset set includes the exact DMG, mounted-DMG smoke/N05 evidence, manifest, instructions
-and checksums for source commit `876efe0`. No dual product Release or canonical `v1.0.0` tag
-has been created.
+For pilot-user clarity, its download area currently contains only the exact arm64 DMG.
+Technical smoke/N05 evidence, manifest, instructions and checksums remain in the repository
+and local audit package rather than as separate downloads. No Intel DMG has been published;
+the native x86_64 evidence gate remains open. No dual product Release or canonical `v1.0.0`
+tag has been created.
 
 The proposed end-to-end delivery and release-readiness plan is
 [KPR-001](../strategy/PRODUCTION-READINESS-PLAN.md). Its G6 checklist covers exact-source

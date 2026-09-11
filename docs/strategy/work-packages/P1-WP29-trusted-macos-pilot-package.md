@@ -122,13 +122,15 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`'tır; manifest SHA-256
       `4ed1e6cc4521223c6282257190d76deac50122c9763ccaa525f06bd1831cc9c2`,
       `SHA256SUMS` SHA-256 `a0bbf709e4236738f3f980f3a1b99e31e01faf908fb2e499030c8d9345bba18c`.
-- [x] M-series private prerelease Release, `pilot-v1.0.0-arm64` tag'i ile
-      yayımlandı; altı asset'in GitHub SHA-256 digest'i local `SHA256SUMS` ve
-      manifest ile eşleşir. Release URL'si:
+- [x] Önceki M-series private prerelease Release, `pilot-v1.0.0-arm64` tag'i ile
+      yayımlandı; o zamanki altı asset'in GitHub SHA-256 digest'i local `SHA256SUMS` ve
+      manifest ile eşleşti. Release URL'si:
       `https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`.
-- [x] Mevcut `pilot-v1.0.0-arm64` private prerelease asset seti yeni tag oluşturmadan
-      source commit `876efe0`'a bağlı arm64 paketle in-place yenilendi. Altı asset,
-      güncel release body ve `PILOT-INSTRUCTIONS-M-SERIES.md` aynı pilot sınırını taşır;
+- [x] Mevcut `pilot-v1.0.0-arm64` private prerelease yeni tag oluşturmadan source commit
+      `876efe0`'a bağlı arm64 DMG ile in-place yenilendi. Pilot kullanıcılarının kafasını
+      karıştırmamak için Release indirme alanında yalnızca DMG bırakıldı; teknik evidence,
+      manifest, checksum ve talimatlar repository/local audit paketinde tutulur. Güncel
+      release body aynı pilot sınırını taşır;
       canonical `v1.0.0` Release/tag'i oluşturulmadı.
 - [ ] Gerçek x86_64 native host (hosted runner veya açıkça seçilmiş pilot Intel Mac),
       exact DMG ve smoke/N05 zincirini üretir. GitHub billing/spending-limit durumu
