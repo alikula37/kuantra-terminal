@@ -184,7 +184,8 @@ artifact zinciri hazır olana kadar fail-closed hazırlanır; N03 temiz Mac prof
 host install-lifecycle audit'i son pilot validation kapısıdır ve production iddiası yine
 açılamaz. U06/P1-WP30, bu değer zincirinin yeni işlem giriş kapısını tamamlar: kullanıcı
 herhangi bir sembolü günlüğe alabilir; otomatik fiyat yalnızca Binance/Bybit public
-crypto veya exact Yahoo/Stooq public sembolünden ve açık freshness status ile gelir.
+crypto veya exact Yahoo/Stooq public sembolünden ve XAUUSD için exact Biquote public
+sembolünden açık freshness status ile gelir.
 `UNAVAILABLE` sonucu manuel fiyat girişine yönlendirir; simülasyon otomatik fallback
 değildir. TradingView webhook'u `PENDING_REVIEW` immutable observation olarak kalır ve
 kullanıcı onayı olmadan trade snapshot'ı oluşturmaz. Bu, Binance/OKX hesap import destek

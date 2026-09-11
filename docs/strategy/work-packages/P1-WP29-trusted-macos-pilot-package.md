@@ -7,8 +7,8 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: 8db2e53
-latest_artifact_source_commit: 8db2e533f0dde972c0aba8ad6617da5ca722ec06
+implementation_commit: e0e7b75
+latest_artifact_source_commit: e0e7b75dc1078221504cad84618bce828d818c56
 latest_evidence_date: 2026-09-11
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
@@ -30,7 +30,7 @@ olarak kalır; production veya commercial support claim'i açılmaz.
 
 - [x] Settings manual pilot Release action replaces the fabricated update check;
       seven direct DOM tests cover native URL dispatch, browser link, failure/retry,
-      missing bridge and timeout/late response. EN/TR/DE 734-key parity and build pass.
+      missing bridge and timeout/late response. EN/TR/DE 742-key parity and build pass.
 - [x] Refreshed clean arm64 package includes the manual update action; native browser
       handoff and exact DMG evidence are recorded before Release asset replacement.
       Source `119ae573`, DMG SHA-256 `7a07847d`, mounted executable SHA-256
@@ -46,10 +46,12 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       list. The market-chart page is named and translated as `Market Charts` /
       `Piyasa Grafikleri` / `Marktcharts`, including its visible OHLCV and error content.
       Journal/Chart DOM coverage is `12 passed`; the portfolio regression is `11 passed`,
-      full frontend coverage is `29 files / 133 tests`, i18n is `734/734`, and the arm64
-      local candidate from source `8db2e53` passed locked local CI plus exact mounted-DMG
-      smoke with `COMPLETE` provenance. The existing private Release asset still requires
-      a later package refresh before pilot distribution.
+      full frontend coverage is `29 files / 135 tests`, i18n is `742/742`, and the arm64
+      local candidate from source `e0e7b75` passed locked local CI plus exact mounted-DMG
+      smoke with `COMPLETE` provenance. The chart page now has a persistent symbol
+      watchlist with localized catalog search, add/remove controls and an exact free
+      XAUUSD OHLC fallback; the existing private Release asset still requires a later
+      package refresh before pilot distribution.
 
 - [x] GitHub private Release'ın yalnızca repository read erişimi olan kullanıcılara
       dağıtım sağlayabildiği; Apple signing/notarization yerine geçmediği resmi kaynaklarla
@@ -187,7 +189,38 @@ uygulamada temiz geçici profille native olarak doğrulandı. Düğme Chrome'da 
 Release URL'sini açtı; otomatik sürüm karşılaştırması, indirme, kurulum veya veri migration'ı
 yapmaz. Bu click-through kanıtı kullanıcı verisine dokunmadı.
 
-### Current analytics/chart correction candidate evidence (2026-09-11)
+### Current chart watchlist/XAU candidate evidence (2026-09-11)
+
+Source commit `e0e7b75dc1078221504cad84618bce828d818c56` ve tracked source tree
+`86431a850220fcdbee714cf6fe112182ce0662efcc679057edbb209b8d3e2d8f` temizken:
+
+- `uv run --offline --no-project --with-requirements backend/requirements.lock python
+  scripts/run_local_ci.py --expected-architecture arm64 --report
+  dist/p1-wp29-chart-watchlist-xauusd-clean-local-ci-arm64.json --smoke-timeout 90`
+  → **MERGE READY**; backend **832 passed / 2 warnings**, frontend **29 test files / 135
+  tests**, i18n **742/742**, TypeScript, production build, native arm64 PyInstaller,
+  WKWebView smoke and provenance **COMPLETE**. Report SHA-256:
+  `679d9335512324b749f1d9976cc1fcff5e2710b22d3c888101190046a8f8c126`.
+- `bash scripts/package_macos.sh --architecture arm64 --output
+  dist/Kuantra-Terminal-1.0.0-arm64-chart-watchlist-xauusd.dmg` → **PASS**;
+  `hdiutil verify` **VALID**. DMG SHA-256:
+  `3a4c8dcd48d72def7cd8b956f360335e384c1660c594315b67500709eb63558b`.
+- `.venv/bin/python scripts/smoke_macos_dmg.py --dmg
+  dist/Kuantra-Terminal-1.0.0-arm64-chart-watchlist-xauusd.dmg --expected-architecture
+  arm64 --report dist/final-smoke-arm64-chart-watchlist-xauusd.json` → **PASS** on the
+  exact read-only mounted executable; native `arm64`, WKWebView/controller identity and
+  detach passed. Mounted executable SHA-256:
+  `9fefa2e5a6d97a5ff07053fdcf352761fafa600ca21b8aef945a3746e0fd101c`; smoke report
+  SHA-256: `d3ecc0ed180ab7d0a0e6e61371d9c78bca8317191de10c4e6002affbea976cd9`.
+- Exact XAUUSD request was manually verified against the free public Biquote OHLC path;
+  a real 15-minute response returned **193** valid bars. The source identity stays
+  `XAUUSD`; no `GC=F` futures or `PAXGUSDT` substitution occurs. The native app was
+  installed at `/Applications/Kuantra Terminal.app`; the previous bundle was moved
+  recoverably to `/Users/kula/.Trash/Kuantra Terminal.app.before-chart-watchlist-xauusd`.
+  No real trade or user data was changed. The private GitHub Release was not changed;
+  its assets require an explicit refresh before pilot distribution.
+
+### Previous analytics/chart correction candidate evidence (2026-09-11)
 
 Source commit `8db2e533f0dde972c0aba8ad6617da5ca722ec06` ve tracked source tree
 `42600b6fb58197473b29c968ad82b21e4e356abab5a23c834ed8c8ea19ae402e` temizken:
