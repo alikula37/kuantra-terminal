@@ -103,9 +103,26 @@ QUOTE_STATUSES = frozenset({"LIVE", "DELAYED", "EOD", "UNAVAILABLE"})
 FREE_QUOTE_SOURCES = frozenset({
     "binance_public",
     "bybit_public",
+    "biquote_public",
     "yahoo_public",
     "stooq_public",
 })
+
+BIQUOTE_SYMBOL_MAP = {
+    "XAUUSD": "XAUUSD",
+    "XAUUSD=X": "XAUUSD",
+}
+
+BIQUOTE_INTERVAL_MAP = {
+    "1m": "1m",
+    "5m": "5m",
+    "15m": "15m",
+    "30m": "30m",
+    "1h": "1h",
+    "4h": "4h",
+    "1d": "1d",
+    "1w": "1w",
+}
 
 
 @dataclass(frozen=True)
@@ -175,6 +192,7 @@ class PublicMarketDataFetcher:
     BINANCE_FUTURES_URL = "https://fapi.binance.com/fapi/v1/klines"
     BYBIT_KLINES_URL = "https://api.bybit.com/v5/market/kline"
     BYBIT_TICKER_URL = "https://api.bybit.com/v5/market/tickers"
+    BIQUOTE_OHLC_URL = "https://biquote.io/api/{symbol}/ohlc"
     YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
     STOOQ_CSV_URL = "https://stooq.com/q/d/l/?s={ticker}&i=d"
 
@@ -300,6 +318,40 @@ class PublicMarketDataFetcher:
     ) -> PublicQuote:
         yahoo_ticker, stooq_ticker = MACRO_SYMBOL_MAP[macro_key]
         failures: List[str] = []
+
+        # XAU/USD has no reliable Yahoo spot ticker in the free public path.
+        # Biquote is an exact XAUUSD public source; it is preferred for this
+        # instrument and never changes the requested asset into a token or a
+        # futures contract.
+        biquote_symbol = BIQUOTE_SYMBOL_MAP.get(macro_key)
+        if source in {"auto", "biquote_public"} and biquote_symbol:
+            candles = await self._fetch_biquote_candles(biquote_symbol, interval="1h", limit=1)
+            if candles:
+                latest = candles[-1]
+                values = self._quote_candle_values(latest)
+                if values is not None:
+                    price, observed_at = values
+                    return PublicQuote(
+                        requested_symbol=requested_symbol,
+                        source_id="biquote_public",
+                        source_symbol=biquote_symbol,
+                        price=price,
+                        status="LIVE",
+                        price_kind="LAST",
+                        observed_at=observed_at,
+                    )
+            failures.append("BIQUOTE_QUOTE_UNAVAILABLE")
+            if source == "biquote_public":
+                return self._unavailable_quote(
+                    requested_symbol,
+                    ";".join(failures),
+                    source_id="biquote_public",
+                    source_symbol=biquote_symbol,
+                )
+
+        if source == "biquote_public":
+            return self._unavailable_quote(requested_symbol, "SOURCE_NOT_APPLICABLE_TO_SYMBOL")
+
         candidates = ("yahoo_public", "stooq_public") if source == "auto" else (source,)
 
         if "yahoo_public" in candidates:
@@ -697,14 +749,33 @@ class PublicMarketDataFetcher:
         period: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
-        Fetches historical macro/forex/indices candles from public Yahoo Finance v8 or Stooq.
+        Fetches historical macro/forex/indices candles from free public sources.
+        XAUUSD uses the exact Biquote XAUUSD path before Yahoo/Stooq fallback.
         Zero API keys required.  A source failure never falls back to a
-        materially different instrument such as PAXGUSDT for spot gold.
+        materially different instrument such as PAXGUSDT or GC=F for spot gold.
         """
         clean_sym = symbol.upper().strip()
         yahoo_ticker, stooq_ticker = MACRO_SYMBOL_MAP.get(clean_sym, (clean_sym, clean_sym.lower()))
 
         yahoo_interval, auto_range = self._map_yahoo_interval_and_range(interval, period)
+
+        # Prefer the exact free XAU/USD path. Yahoo's XAUUSD=X endpoint is not
+        # consistently available, while a futures/token substitute would
+        # silently change the instrument identity.
+        biquote_symbol = BIQUOTE_SYMBOL_MAP.get(clean_sym)
+        if biquote_symbol:
+            candles = await self._fetch_biquote_candles(
+                biquote_symbol,
+                interval=interval,
+                limit=500,
+            )
+            if candles:
+                logger.info(
+                    "[PUBLIC-FETCHER] Successfully fetched %s exact %s candles via Biquote.",
+                    len(candles),
+                    biquote_symbol,
+                )
+                return candles
 
         # 1. Try Yahoo Finance Chart API
         try:
@@ -744,6 +815,101 @@ class PublicMarketDataFetcher:
 
         logger.error(f"[PUBLIC-FETCHER] Failed to fetch macro candles for {clean_sym}.")
         return []
+
+    async def _fetch_biquote_candles(
+        self,
+        symbol: str,
+        *,
+        interval: str = "1h",
+        limit: int = 500,
+    ) -> List[Dict[str, Any]]:
+        """Fetch exact XAU/USD OHLC from the free, keyless Biquote endpoint."""
+        clean_symbol = str(symbol or "").strip().upper()
+        if clean_symbol not in BIQUOTE_SYMBOL_MAP.values():
+            return []
+        normalized_interval = normalize_interval(interval)
+        biquote_interval = BIQUOTE_INTERVAL_MAP.get(normalized_interval)
+        if biquote_interval is None:
+            return []
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(
+                    self.BIQUOTE_OHLC_URL.format(symbol=clean_symbol),
+                    params={
+                        "interval": biquote_interval,
+                        "limit": max(1, min(500, int(limit))),
+                    },
+                    headers=self._get_headers(),
+                )
+            if response.status_code != 200:
+                logger.warning(
+                    "[PUBLIC-FETCHER] Biquote returned status %s for %s.",
+                    response.status_code,
+                    clean_symbol,
+                )
+                return []
+            return self._parse_biquote_ohlc(response.json())
+        except Exception as exc:
+            logger.warning("[PUBLIC-FETCHER] Biquote fetch failed for %s: %s", clean_symbol, exc)
+            return []
+
+    @staticmethod
+    def _timestamp_ms(value: Any) -> Optional[int]:
+        """Normalize an ISO-8601 or epoch timestamp into milliseconds."""
+        try:
+            if isinstance(value, (int, float)) and math.isfinite(float(value)):
+                numeric = float(value)
+                return int(numeric * 1000 if numeric < 10_000_000_000 else numeric)
+            if isinstance(value, str) and value.strip():
+                normalized = value.strip().replace("Z", "+00:00")
+                parsed = datetime.fromisoformat(normalized)
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                return int(parsed.timestamp() * 1000)
+        except (TypeError, ValueError, OverflowError, OSError):
+            return None
+        return None
+
+    def _parse_biquote_ohlc(self, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Parse Biquote bars while retaining zero volume for spot metals."""
+        if not isinstance(payload, dict) or not isinstance(payload.get("bars"), list):
+            return []
+
+        candles: List[Dict[str, Any]] = []
+        for bar in payload["bars"]:
+            if not isinstance(bar, dict):
+                continue
+            timestamp = self._timestamp_ms(bar.get("openTime"))
+            try:
+                open_price = float(bar["open"])
+                high = float(bar["high"])
+                low = float(bar["low"])
+                close = float(bar["close"])
+                volume = float(bar.get("volume", 0) or 0)
+            except (KeyError, TypeError, ValueError):
+                continue
+            prices = (open_price, high, low, close)
+            if (
+                timestamp is None
+                or timestamp <= 0
+                or not all(math.isfinite(price) and price > 0 for price in prices)
+                or not math.isfinite(volume)
+                or volume < 0
+                or high < max(open_price, low, close)
+                or low > min(open_price, high, close)
+            ):
+                continue
+            candles.append({
+                "timestamp": timestamp,
+                "open": open_price,
+                "high": high,
+                "low": low,
+                "close": close,
+                "volume": volume,
+            })
+        candles.sort(key=lambda candle: candle["timestamp"])
+        return candles
 
     def _parse_yahoo_chart(self, payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Parses Yahoo Finance v8 chart JSON response."""

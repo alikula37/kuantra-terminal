@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, HistogramData } from "lightweight-charts";
 import { useMarketStore } from "../stores/marketStore";
 import { useTranslation } from "../context/I18nContext";
 import { getChartTheme, useTheme } from "../context/ThemeContext";
-import { RefreshCw, AlertCircle, BarChart2 } from "lucide-react";
+import { RefreshCw, AlertCircle, BarChart2, Plus, X } from "lucide-react";
 import { apiBase, apiFetch } from "../lib/backend";
 
 export interface CandleDataPoint {
@@ -37,15 +37,62 @@ function normalizeCandle(value: unknown): CandleDataPoint | null {
   };
 }
 
-const POPULAR_SYMBOLS = [
-  { symbol: "BTCUSDT", labelKey: "market_chart.symbol_btc_usdt" },
-  { symbol: "ETHUSDT", labelKey: "market_chart.symbol_eth_usdt" },
-  { symbol: "SOLUSDT", labelKey: "market_chart.symbol_sol_usdt" },
-  { symbol: "XAUUSD", labelKey: "market_chart.symbol_gold" },
-  { symbol: "EURUSD", labelKey: "market_chart.symbol_eur_usd" },
-  { symbol: "SPY", labelKey: "market_chart.symbol_sp500" },
-  { symbol: "NVDA", labelKey: "market_chart.symbol_nvidia" },
+interface ChartSymbolDefinition {
+  symbol: string;
+  labelKey: string;
+  aliases: string[];
+}
+
+const CHART_SYMBOL_CATALOG: ChartSymbolDefinition[] = [
+  { symbol: "BTCUSDT", labelKey: "market_chart.symbol_btc_usdt", aliases: ["btc", "bitcoin"] },
+  { symbol: "ETHUSDT", labelKey: "market_chart.symbol_eth_usdt", aliases: ["eth", "ethereum"] },
+  { symbol: "SOLUSDT", labelKey: "market_chart.symbol_sol_usdt", aliases: ["sol", "solana"] },
+  { symbol: "XAUUSD", labelKey: "market_chart.symbol_gold", aliases: ["xau", "gold", "altın"] },
+  { symbol: "EURUSD", labelKey: "market_chart.symbol_eur_usd", aliases: ["eur", "euro", "forex"] },
+  { symbol: "SPY", labelKey: "market_chart.symbol_sp500", aliases: ["sp500", "s&p", "spy"] },
+  { symbol: "NVDA", labelKey: "market_chart.symbol_nvidia", aliases: ["nvidia", "stock"] },
 ];
+
+const DEFAULT_CHART_SYMBOLS = CHART_SYMBOL_CATALOG.map((item) => item.symbol);
+const CHART_WATCHLIST_STORAGE_KEY = "kuantra.market-chart.symbols.v1";
+
+function normalizeChartSymbol(value: string): string | null {
+  const cleaned = value.trim().toUpperCase().replace(/[\s/_-]+/g, "");
+  if (!cleaned || cleaned.length > 32 || !/^[A-Z0-9.^=:]+$/.test(cleaned)) return null;
+  return cleaned;
+}
+
+function getChartSymbolDefinition(symbol: string): ChartSymbolDefinition | undefined {
+  return CHART_SYMBOL_CATALOG.find((item) => item.symbol === symbol);
+}
+
+function resolveChartSymbol(value: string): string | null {
+  const normalized = normalizeChartSymbol(value);
+  if (!normalized) return null;
+  const definition = CHART_SYMBOL_CATALOG.find((item) =>
+    item.symbol === normalized || item.aliases.some((alias) => normalizeChartSymbol(alias) === normalized)
+  );
+  return definition?.symbol || normalized;
+}
+
+function loadChartWatchlist(): string[] {
+  if (typeof window === "undefined") return DEFAULT_CHART_SYMBOLS;
+  try {
+    const raw = window.localStorage.getItem(CHART_WATCHLIST_STORAGE_KEY);
+    if (!raw) return DEFAULT_CHART_SYMBOLS;
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_CHART_SYMBOLS;
+    const normalized = parsed
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => resolveChartSymbol(item))
+      .filter((item): item is string => Boolean(item));
+    return Array.from(new Set(normalized)).length > 0
+      ? Array.from(new Set(normalized))
+      : DEFAULT_CHART_SYMBOLS;
+  } catch {
+    return DEFAULT_CHART_SYMBOLS;
+  }
+}
 
 const TIMEFRAMES = [
   { tf: "1m", label: "1m" },
@@ -69,9 +116,17 @@ export const TradingViewChart: React.FC = () => {
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
 
   const { symbol: storeSymbol, setSymbol: setStoreSymbol } = useMarketStore();
-  const [activeSymbol, setActiveSymbol] = useState<string>(storeSymbol || "BTCUSDT");
+  const [watchlist, setWatchlist] = useState<string[]>(() => loadChartWatchlist());
+  const [activeSymbol, setActiveSymbol] = useState<string>(() => {
+    const initialWatchlist = loadChartWatchlist();
+    const normalizedStoreSymbol = resolveChartSymbol(storeSymbol || "");
+    return (normalizedStoreSymbol && initialWatchlist.includes(normalizedStoreSymbol))
+      ? normalizedStoreSymbol
+      : initialWatchlist[0] || normalizedStoreSymbol || "BTCUSDT";
+  });
   const [activeTimeframe, setActiveTimeframe] = useState<string>("15m");
   const [customInput, setCustomInput] = useState<string>("");
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isCancelled, setIsCancelled] = useState<boolean>(false);
@@ -81,6 +136,23 @@ export const TradingViewChart: React.FC = () => {
   const candleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const candleRequestIdRef = useRef(0);
   const initialChartTheme = getChartTheme(theme);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CHART_WATCHLIST_STORAGE_KEY, JSON.stringify(watchlist));
+    } catch {
+      // Local persistence is a convenience; chart selection must still work if storage is unavailable.
+    }
+  }, [watchlist]);
+
+  const searchResults = useMemo(() => {
+    const query = customInput.trim().toLowerCase();
+    if (!query) return [];
+    return CHART_SYMBOL_CATALOG.filter((item) => {
+      const haystack = `${item.symbol} ${item.aliases.join(" ")} ${t(item.labelKey)}`.toLowerCase();
+      return haystack.includes(query);
+    }).slice(0, 8);
+  }, [customInput, t]);
 
   // Initialize Lightweight Charts Canvas
   useEffect(() => {
@@ -335,14 +407,37 @@ export const TradingViewChart: React.FC = () => {
   const handleSymbolChange = (sym: string) => {
     setActiveSymbol(sym.toUpperCase());
     setStoreSymbol(sym.toUpperCase());
+    setSearchError(null);
+  };
+
+  const handleAddSymbol = (value: string) => {
+    const symbol = resolveChartSymbol(value);
+    if (!symbol) {
+      setSearchError(t("market_chart.invalid_symbol"));
+      return;
+    }
+    if (!watchlist.includes(symbol)) {
+      setWatchlist([...watchlist, symbol]);
+    }
+    handleSymbolChange(symbol);
+    setCustomInput("");
+  };
+
+  const handleRemoveSymbol = (symbol: string) => {
+    if (watchlist.length <= 1) {
+      setSearchError(t("market_chart.keep_one_symbol"));
+      return;
+    }
+    const nextWatchlist = watchlist.filter((item) => item !== symbol);
+    setWatchlist(nextWatchlist);
+    if (activeSymbol === symbol) {
+      handleSymbolChange(nextWatchlist[0]);
+    }
   };
 
   const handleCustomSymbolSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (customInput.trim()) {
-      handleSymbolChange(customInput.trim());
-      setCustomInput("");
-    }
+    if (customInput.trim()) handleAddSymbol(customInput);
   };
 
   const displayCandle = hoveredCandle || latestCandle;
@@ -362,33 +457,104 @@ export const TradingViewChart: React.FC = () => {
       {/* Top Controls Bar */}
       <div className="flex flex-wrap items-center justify-between px-3 py-2 border-b border-surface-border bg-[#0d121c] gap-2 text-xs">
         {/* Symbol Selector Pills & Search */}
-        <div className="flex items-center space-x-2 overflow-x-auto custom-scrollbar">
-          <div className="flex items-center space-x-1">
-            {POPULAR_SYMBOLS.map((item) => (
-              <button
-                key={item.symbol}
-                onClick={() => handleSymbolChange(item.symbol)}
-                className={`px-2 py-1 rounded text-[11px] font-bold transition ${
-                  activeSymbol === item.symbol
-                    ? "bg-accent text-black shadow-sm shadow-cyan-500/30"
-                    : "bg-[#111722] text-slate-300 hover:text-white hover:bg-[#1a2234] border border-surface-border"
-                }`}
-              >
-                {t(item.labelKey)}
-              </button>
-            ))}
+        <div className="relative flex items-center space-x-2 overflow-visible custom-scrollbar">
+          <div data-testid="market-chart-watchlist" className="flex items-center space-x-1 overflow-x-auto custom-scrollbar">
+            {watchlist.map((symbol) => {
+              const definition = getChartSymbolDefinition(symbol);
+              const label = definition ? t(definition.labelKey) : symbol;
+              return (
+                <div key={symbol} className="flex items-center shrink-0">
+                  <button
+                    type="button"
+                    data-testid={`market-chart-symbol-${symbol}`}
+                    aria-pressed={activeSymbol === symbol}
+                    aria-label={t("market_chart.select_symbol", { symbol: label })}
+                    onClick={() => handleSymbolChange(symbol)}
+                    className={`px-2 py-1 rounded-l text-[11px] font-bold transition ${
+                      activeSymbol === symbol
+                        ? "bg-accent text-black shadow-sm shadow-cyan-500/30"
+                        : "bg-[#111722] text-slate-300 hover:text-white hover:bg-[#1a2234] border border-surface-border"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid={`market-chart-remove-${symbol}`}
+                    aria-label={t("market_chart.remove_symbol", { symbol: label })}
+                    title={t("market_chart.remove_symbol", { symbol: label })}
+                    onClick={() => handleRemoveSymbol(symbol)}
+                    className={`px-1 py-1 rounded-r border-y border-r border-surface-border text-slate-500 hover:text-rose-300 hover:bg-rose-950/40 transition ${
+                      activeSymbol === symbol ? "bg-accent/80 text-slate-800" : "bg-[#111722]"
+                    }`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
-          <form onSubmit={handleCustomSymbolSubmit} className="flex items-center">
+          <form onSubmit={handleCustomSymbolSubmit} className="flex items-center shrink-0">
             <input
               type="text"
               placeholder={t("market_chart.search_placeholder")}
               aria-label={t("market_chart.search_label")}
+              data-testid="market-chart-symbol-search"
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value.toUpperCase())}
-              className="bg-[#111722] border border-surface-border rounded px-2 py-1 text-[11px] text-white w-24 focus:outline-none focus:border-accent uppercase"
+              className="bg-[#111722] border border-surface-border rounded-l px-2 py-1 text-[11px] text-white w-28 focus:outline-none focus:border-accent uppercase"
             />
+            <button
+              type="submit"
+              aria-label={t("market_chart.add_symbol")}
+              title={t("market_chart.add_symbol")}
+              className="p-1.5 rounded-r bg-[#111722] hover:bg-[#1a2234] border-y border-r border-surface-border text-accent transition"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
           </form>
+
+          {customInput.trim() && (
+            <div role="listbox" data-testid="market-chart-search-results" className="absolute left-0 top-full mt-1 z-30 min-w-64 max-w-80 rounded border border-surface-border bg-[#111722] p-1 shadow-xl">
+              {searchResults.map((item) => (
+                <button
+                  key={item.symbol}
+                  type="button"
+                  role="option"
+                  data-testid={`market-chart-search-result-${item.symbol}`}
+                  onClick={() => handleAddSymbol(item.symbol)}
+                  className="w-full flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-[11px] text-slate-200 hover:bg-[#1a2234]"
+                >
+                  <span>{t(item.labelKey)}</span>
+                  <span className="text-[10px] text-accent">
+                    {watchlist.includes(item.symbol) ? t("market_chart.already_added") : t("market_chart.add_symbol")}
+                  </span>
+                </button>
+              ))}
+              {(() => {
+                const customSymbol = resolveChartSymbol(customInput);
+                const catalogMatch = searchResults.some((item) => item.symbol === customSymbol);
+                if (!customSymbol || catalogMatch) return null;
+                return (
+                  <button
+                    type="button"
+                    role="option"
+                    data-testid="market-chart-add-custom-symbol"
+                    onClick={() => handleAddSymbol(customInput)}
+                    className="w-full flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left text-[11px] text-slate-200 hover:bg-[#1a2234]"
+                  >
+                    <span>{t("market_chart.add_custom_symbol", { symbol: customSymbol })}</span>
+                    <Plus className="w-3.5 h-3.5 text-accent" />
+                  </button>
+                );
+              })()}
+              {!searchResults.length && !resolveChartSymbol(customInput) && (
+                <div className="px-2 py-1.5 text-[11px] text-slate-400">{t("market_chart.no_search_results")}</div>
+              )}
+            </div>
+          )}
+          {searchError && <span role="alert" className="absolute left-0 top-full mt-1 z-30 rounded bg-rose-950/90 px-2 py-1 text-[10px] text-rose-200">{searchError}</span>}
         </div>
 
         {/* Timeframe Selector & Refresh */}

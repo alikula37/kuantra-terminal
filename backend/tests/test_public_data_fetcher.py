@@ -281,7 +281,7 @@ class TestPublicMarketDataFetcherAndCache:
 
     @pytest.mark.asyncio
     async def test_gold_does_not_fallback_to_a_different_instrument_when_yahoo_fails(self):
-        """A spot-gold failure stays unavailable instead of becoming token gold."""
+        """Gold stays unavailable if every exact free source is unavailable."""
         fetcher = PublicMarketDataFetcher()
 
         # Simulate Yahoo HTTP 403 and a final Stooq failure. There must be no
@@ -296,3 +296,60 @@ class TestPublicMarketDataFetcherAndCache:
         with patch("httpx.AsyncClient.get", side_effect=mock_get):
             candles = await fetcher.fetch_macro_candles("XAUUSD", interval="15m")
             assert candles == []
+
+    @pytest.mark.asyncio
+    async def test_xauusd_uses_exact_keyless_biquote_ohlc_before_unreliable_fallbacks(self):
+        """Spot gold can use an exact XAUUSD source without becoming GC=F/PAXG."""
+        fetcher = PublicMarketDataFetcher()
+        biquote = MagicMock(status_code=200)
+        biquote.json.return_value = {
+            "symbol": "XAUUSD",
+            "interval": "15m",
+            "bars": [{
+                "openTime": "2026-09-11T16:30:00Z",
+                "open": 4355.08,
+                "high": 4363.149,
+                "low": 4353.344,
+                "close": 4362.537,
+                "volume": 0,
+            }],
+        }
+
+        with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=biquote)) as get:
+            candles = await fetcher.fetch_macro_candles("XAUUSD", interval="15m")
+
+        assert candles == [{
+            "timestamp": 1789144200000,
+            "open": 4355.08,
+            "high": 4363.149,
+            "low": 4353.344,
+            "close": 4362.537,
+            "volume": 0.0,
+        }]
+        request_url = get.await_args.args[0]
+        assert request_url == "https://biquote.io/api/XAUUSD/ohlc"
+        assert get.await_args.kwargs["params"] == {"interval": "15m", "limit": 500}
+
+    @pytest.mark.asyncio
+    async def test_xauusd_quote_reports_exact_biquote_provenance(self):
+        fetcher = PublicMarketDataFetcher()
+        biquote = MagicMock(status_code=200)
+        biquote.json.return_value = {
+            "symbol": "XAUUSD",
+            "bars": [{
+                "openTime": "2026-09-11T16:30:00Z",
+                "open": 4355.08,
+                "high": 4363.149,
+                "low": 4353.344,
+                "close": 4362.537,
+                "volume": 0,
+            }],
+        }
+
+        with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=biquote)):
+            quote = await fetcher.fetch_quote("XAUUSD")
+
+        assert quote.source_id == "biquote_public"
+        assert quote.source_symbol == "XAUUSD"
+        assert quote.price == 4362.537
+        assert quote.status == "LIVE"

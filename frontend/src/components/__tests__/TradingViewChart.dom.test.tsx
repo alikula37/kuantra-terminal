@@ -64,9 +64,16 @@ const deferred = <T,>() => {
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 const flush = async () => { await act(async () => { await Promise.resolve(); await Promise.resolve(); }); };
+const setInputValue = (input: HTMLInputElement, value: string) => {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+  setter?.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+};
 
 beforeEach(() => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+  window.localStorage.clear();
   (globalThis as any).ResizeObserver = class {
     observe() {}
     disconnect() {}
@@ -151,4 +158,48 @@ it("renders valid historical candles without promoting them to live ticks", asyn
     expect.objectContaining({ open: 100, high: 110, low: 90, close: 105 }),
   ]));
   expect(mocks.updateTick).not.toHaveBeenCalled();
+});
+
+it("searches the catalog and re-adds a removed exact gold symbol", async () => {
+  mocks.apiFetch.mockResolvedValue(response(candles));
+
+  await act(async () => root.render(<TradingViewChart />));
+  await flush();
+
+  const removeGold = host.querySelector("[data-testid=market-chart-remove-XAUUSD]") as HTMLButtonElement;
+  await act(async () => removeGold.click());
+  await flush();
+  expect(host.querySelector("[data-testid=market-chart-symbol-XAUUSD]")).toBeNull();
+
+  const input = host.querySelector("[data-testid=market-chart-symbol-search]") as HTMLInputElement;
+  await act(async () => setInputValue(input, "gold"));
+  await flush();
+
+  const result = host.querySelector("[data-testid=market-chart-search-result-XAUUSD]") as HTMLButtonElement;
+  expect(result).toBeTruthy();
+  await act(async () => result.click());
+  await flush();
+  expect(host.querySelector("[data-testid=market-chart-symbol-XAUUSD]")).not.toBeNull();
+});
+
+it("adds and removes a custom exact market symbol", async () => {
+  mocks.apiFetch.mockResolvedValue(response(candles));
+
+  await act(async () => root.render(<TradingViewChart />));
+  await flush();
+
+  const input = host.querySelector("[data-testid=market-chart-symbol-search]") as HTMLInputElement;
+  await act(async () => setInputValue(input, "GOOG"));
+  await flush();
+
+  const addCustom = host.querySelector("[data-testid=market-chart-add-custom-symbol]") as HTMLButtonElement;
+  expect(addCustom).toBeTruthy();
+  await act(async () => addCustom.click());
+  await flush();
+  expect(host.querySelector("[data-testid=market-chart-symbol-GOOG]")).not.toBeNull();
+
+  const removeCustom = host.querySelector("[data-testid=market-chart-remove-GOOG]") as HTMLButtonElement;
+  await act(async () => removeCustom.click());
+  await flush();
+  expect(host.querySelector("[data-testid=market-chart-symbol-GOOG]")).toBeNull();
 });
