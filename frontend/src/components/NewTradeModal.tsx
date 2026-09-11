@@ -1,10 +1,45 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { X, Check, RefreshCw, Zap, AlertTriangle } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
 import { useTranslation } from "../context/I18nContext";
-import { TradeSide } from "../types";
-import { apiBase, apiFetch, apiUrl } from "../lib/backend";
+import { MarketQuote, TradeSide } from "../types";
+import { apiFetch, apiUrl } from "../lib/backend";
+
+const FREE_QUOTE_SOURCE_IDS = new Set([
+  "binance_public",
+  "bybit_public",
+  "yahoo_public",
+  "stooq_public",
+]);
+
+function isMarketQuote(value: unknown): value is MarketQuote {
+  if (!value || typeof value !== "object") return false;
+  const quote = value as Partial<MarketQuote>;
+  if (
+    typeof quote.requested_symbol !== "string" ||
+    !["LIVE", "DELAYED", "EOD", "UNAVAILABLE"].includes(String(quote.status)) ||
+    quote.free_source !== true ||
+    quote.credentials_required !== false
+  ) {
+    return false;
+  }
+  if (quote.status === "UNAVAILABLE") {
+    return quote.price === null && quote.price_kind === null;
+  }
+  return Boolean(
+    typeof quote.source_id === "string" &&
+    FREE_QUOTE_SOURCE_IDS.has(quote.source_id) &&
+    typeof quote.source_symbol === "string" &&
+    quote.source_symbol.length > 0 &&
+    typeof quote.observed_at === "string" &&
+    quote.observed_at.length > 0 &&
+    (quote.price_kind === "LAST" || quote.price_kind === "CLOSE") &&
+    typeof quote.price === "number" &&
+    Number.isFinite(quote.price) &&
+    quote.price > 0
+  );
+}
 
 interface NewTradeModalProps {
   isOpen: boolean;
@@ -15,41 +50,27 @@ interface NewTradeModalProps {
 export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   isOpen,
   onClose,
-  onOpenApiKeySettings,
 }) => {
   const { t } = useTranslation();
-  const { symbol: defaultSymbol, currentPrice } = useMarketStore();
+  const { symbol: defaultSymbol } = useMarketStore();
   const { addTrade } = useTradeStore();
 
-  const [mode, setMode] = useState<"PAPER" | "LIVE">("PAPER");
-  const [exchange, setExchange] = useState<string>("binance_futures");
+  const [recordMode, setRecordMode] = useState<"EXTERNAL" | "SIMULATION">("EXTERNAL");
   const [tradeSymbol, setTradeSymbol] = useState<string>(defaultSymbol || "BTCUSDT");
   const [side, setSide] = useState<TradeSide>("BUY");
-  const [orderType, setOrderType] = useState<"LIMIT" | "MARKET">("LIMIT");
-  const [entryPrice, setEntryPrice] = useState<number>(currentPrice || 0);
+  const [entryPrice, setEntryPrice] = useState<number>(0);
   const [qty, setQty] = useState<number>(1.0);
-  const [stopLoss, setStopLoss] = useState<number>(currentPrice ? currentPrice * 0.98 : 0);
-  const [takeProfit, setTakeProfit] = useState<number>(currentPrice ? currentPrice * 1.04 : 0);
+  const [stopLoss, setStopLoss] = useState<number>(0);
+  const [takeProfit, setTakeProfit] = useState<number>(0);
+  const [executionVenue, setExecutionVenue] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
   const [isFetchingPrice, setIsFetchingPrice] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [fetchNotice, setFetchNotice] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [liveBalance, setLiveBalance] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (mode === "LIVE" && isOpen) {
-      apiFetch(`${apiBase()}/api/v1/exchange/balances?exchange_id=${exchange}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.free_quote !== undefined) {
-            setLiveBalance(data.free_quote);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [mode, exchange, isOpen]);
+  const [quote, setQuote] = useState<MarketQuote | null>(null);
+  const [priceOrigin, setPriceOrigin] = useState<"MANUAL" | "PUBLIC_QUOTE">("MANUAL");
 
   if (!isOpen) return null;
 
@@ -59,14 +80,20 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     setErrorMessage(null);
     try {
       const res = await apiFetch(
-        `${apiBase()}/api/v1/market-data/candles?symbol=${encodeURIComponent(
+        apiUrl(`/api/v1/market-data/quote?symbol=${encodeURIComponent(
           tradeSymbol.toUpperCase()
-        )}&timeframe=1m&limit=1`
+        )}&source=auto`)
       );
       if (!res.ok) throw new Error("Price fetch failed");
-      const candles = await res.json();
-      if (Array.isArray(candles) && candles.length > 0) {
-        const markPrice = Number(candles[candles.length - 1].close);
+      const candidateValue: unknown = await res.json();
+      const candidate = isMarketQuote(candidateValue) ? candidateValue : null;
+      if (!candidate || candidate.requested_symbol !== tradeSymbol.toUpperCase()) {
+        throw new Error("Malformed free quote response");
+      }
+      setQuote(candidate);
+      if (candidate && Number.isFinite(candidate.price) && Number(candidate.price) > 0 && candidate.status !== "UNAVAILABLE") {
+        const markPrice = Number(candidate.price);
+        setPriceOrigin("PUBLIC_QUOTE");
         setEntryPrice(markPrice);
         if (side === "BUY") {
           setStopLoss(Number((markPrice * 0.98).toFixed(2)));
@@ -75,12 +102,19 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           setStopLoss(Number((markPrice * 1.02).toFixed(2)));
           setTakeProfit(Number((markPrice * 0.96).toFixed(2)));
         }
-        setFetchNotice(`${t("order_ticket.latest_price")}: $${markPrice.toLocaleString()}`);
+        setFetchNotice(t("order_ticket.latest_price", {
+          price: markPrice.toLocaleString(),
+          source: candidate.source_symbol || candidate.source_id || "",
+          status: candidate.status,
+        }));
       } else {
-        throw new Error("No candle data");
+        setPriceOrigin("MANUAL");
+        setFetchNotice(t("order_ticket.price_unavailable_manual"));
       }
     } catch {
-      setFetchNotice(t("order_ticket.price_fetch_error"));
+      setQuote(null);
+      setPriceOrigin("MANUAL");
+      setFetchNotice(t("order_ticket.price_unavailable_manual"));
     } finally {
       setIsFetchingPrice(false);
     }
@@ -92,7 +126,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const totalReward = rewardPerUnit * qty;
   const rrRatio = totalRisk > 0 ? (totalReward / totalRisk).toFixed(2) : "0.00";
 
-  const accountRefBalance = liveBalance || 10000.0;
+  const accountRefBalance = 10000.0;
   const riskPct = accountRefBalance > 0 ? (totalRisk / accountRefBalance) * 100 : 0;
   const isHighRisk = riskPct > 2.5;
 
@@ -101,40 +135,55 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    const orderPayload = {
+    if (!Number.isFinite(entryPrice) || entryPrice <= 0 || !Number.isFinite(qty) || qty <= 0) {
+      setErrorMessage(t("order_ticket.invalid_price_or_qty"));
+      setIsSubmitting(false);
+      return;
+    }
+
+    const useQuoteProvenance = Boolean(
+      priceOrigin === "PUBLIC_QUOTE" && quote?.source_id && quote.price === entryPrice
+    );
+    const selectedQuote = useQuoteProvenance ? quote : null;
+    const tradePayload = {
       symbol: tradeSymbol.toUpperCase(),
       side,
-      order_type: orderType,
+      entry_price: Number(entryPrice),
       qty: Number(qty),
-      price: Number(entryPrice),
       stop_loss: stopLoss ? Number(stopLoss) : null,
       take_profit: takeProfit ? Number(takeProfit) : null,
-      exchange,
-      mode,
+      record_mode: recordMode,
+      execution_venue: executionVenue.trim() || null,
+      price_source: selectedQuote?.source_id || "manual",
+      price_source_symbol: selectedQuote?.source_symbol || null,
+      price_status: selectedQuote?.status || "UNAVAILABLE",
+      price_observed_at: selectedQuote?.observed_at || null,
+      price_origin: useQuoteProvenance ? "PUBLIC_QUOTE" : "MANUAL",
       notes: notes || undefined,
     };
 
     try {
-      const res = await apiFetch(apiUrl("/api/v1/execution/order"), {
+      const res = await apiFetch(apiUrl("/api/v1/trades"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
+        body: JSON.stringify(tradePayload),
       });
 
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        const errorDetail = data.detail?.reason || data.reason || data.detail || t("order_ticket.execution_failed");
+      if (!res.ok || !data.id) {
+        const errorDetail = data.detail?.reason || data.reason || data.detail || t("order_ticket.record_failed");
         setErrorMessage(errorDetail);
         setIsSubmitting(false);
         return;
       }
 
-      if (data.trade) {
-        addTrade(data.trade);
-      }
+      // The journal endpoint returns the persisted trade directly.  Do not
+      // invent a nested execution response shape here: this action records a
+      // reviewable journal entry and never dispatches an order.
+      addTrade(data);
       onClose();
     } catch (err: any) {
-      setErrorMessage(err.message || t("order_ticket.execution_failed"));
+      setErrorMessage(err.message || t("order_ticket.record_failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -154,30 +203,36 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           </button>
         </div>
 
-        {/* Mode Switcher: Paper Sandbox vs Live Exchange */}
+        {/* Record mode: real external journal entry is the safe default. */}
         <div className="grid grid-cols-2 gap-2 mt-4 p-1 bg-[#090d14] rounded-lg border border-surface-border text-xs">
           <button
             type="button"
-            onClick={() => setMode("PAPER")}
+            onClick={() => setRecordMode("EXTERNAL")}
             className={`py-1.5 rounded-md font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
-              mode === "PAPER"
+              recordMode === "EXTERNAL"
                 ? "bg-[#162032] text-accent border border-accent/40 shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <span>{t("order_ticket.mode_paper")}</span>
+            <span>{t("order_ticket.mode_external")}</span>
           </button>
           <button
             type="button"
-            onClick={() => setMode("LIVE")}
+            onClick={() => setRecordMode("SIMULATION")}
             className={`py-1.5 rounded-md font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
-              mode === "LIVE"
-                ? "bg-loss/20 text-rose-300 border border-loss/50 shadow-sm"
+              recordMode === "SIMULATION"
+                ? "bg-[#162032] text-amber-300 border border-amber-400/40 shadow-sm"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <span>{t("order_ticket.mode_live")}</span>
+            <span>{t("order_ticket.mode_simulation")}</span>
           </button>
+        </div>
+
+        <div className="mt-2 rounded border border-surface-border/70 bg-[#0b0e14] px-3 py-2 text-[10px] text-slate-400" data-testid="trade-record-mode-note">
+          {recordMode === "EXTERNAL"
+            ? t("order_ticket.external_record_notice")
+            : t("order_ticket.simulation_notice")}
         </div>
 
         {/* Error Alert */}
@@ -186,46 +241,22 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <div className="flex-1">
               <span>{errorMessage}</span>
-              {errorMessage.includes("Missing API credentials") && onOpenApiKeySettings && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenApiKeySettings();
-                  }}
-                  className="block mt-1 text-accent underline font-bold"
-                >
-                  {t("order_ticket.configure_keys_prompt")}
-                </button>
-              )}
             </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3 text-xs font-mono overflow-y-auto flex-1 pr-1">
-          {/* Live Venue Selection & Balance */}
-          {mode === "LIVE" && (
-            <div className="p-3 bg-[#090d14] rounded-lg border border-surface-border space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-slate-400">{t("order_ticket.exchange_label")}:</label>
-                <select
-                  value={exchange}
-                  onChange={(e) => setExchange(e.target.value)}
-                  className="bg-[#111722] text-white border border-surface-border rounded px-2 py-1 focus:outline-none focus:border-accent text-xs"
-                >
-                  <option value="binance_futures">Binance USDⓈ-M Futures</option>
-                  <option value="binance_spot">Binance Spot</option>
-                  <option value="okx">OKX V5 Unified</option>
-                </select>
-              </div>
-              {liveBalance !== null && (
-                <div className="flex justify-between text-[11px] pt-1 border-t border-surface-border/50 text-slate-300">
-                  <span>{t("order_ticket.live_free_balance")}:</span>
-                  <span className="font-bold text-accent">${liveBalance.toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Optional execution venue metadata; this never sends an order. */}
+          <div className="p-3 bg-[#090d14] rounded-lg border border-surface-border space-y-2">
+            <label className="text-slate-400 block">{t("order_ticket.execution_venue_label")}</label>
+            <input
+              type="text"
+              value={executionVenue}
+              onChange={(e) => setExecutionVenue(e.target.value)}
+              placeholder={t("order_ticket.execution_venue_placeholder")}
+              className="w-full bg-[#111722] text-white border border-surface-border rounded px-2 py-1.5 focus:outline-none focus:border-accent text-xs"
+            />
+          </div>
 
           {/* Symbol Input & Fetch Price Action */}
           <div>
@@ -239,8 +270,12 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               <input
                 type="text"
                 value={tradeSymbol}
-                onChange={(e) => setTradeSymbol(e.target.value.toUpperCase())}
-                placeholder="e.g. BTCUSDT, EURUSD, SPY"
+                onChange={(e) => {
+                  setTradeSymbol(e.target.value.toUpperCase());
+                  setQuote(null);
+                  setPriceOrigin("MANUAL");
+                }}
+                placeholder={t("order_ticket.symbol_placeholder")}
                 className="flex-1 bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-white uppercase focus:outline-none focus:border-accent"
                 required
               />
@@ -255,32 +290,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 <span className="text-[11px] font-semibold">{t("order_ticket.fetch_price_btn")}</span>
               </button>
             </div>
-          </div>
-
-          {/* Order Type Selector */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setOrderType("LIMIT")}
-              className={`py-1.5 rounded font-bold transition text-center cursor-pointer ${
-                orderType === "LIMIT"
-                  ? "bg-[#162032] text-accent border border-accent/40 shadow-sm"
-                  : "bg-[#0b0e14] text-slate-400 border border-surface-border hover:text-slate-200"
-              }`}
-            >
-              {t("order_ticket.type_limit")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setOrderType("MARKET")}
-              className={`py-1.5 rounded font-bold transition text-center cursor-pointer ${
-                orderType === "MARKET"
-                  ? "bg-[#162032] text-accent border border-accent/40 shadow-sm"
-                  : "bg-[#0b0e14] text-slate-400 border border-surface-border hover:text-slate-200"
-              }`}
-            >
-              {t("order_ticket.type_market")}
-            </button>
+            {quote && (
+              <div className="mt-2 text-[10px] text-slate-400" data-testid="trade-quote-status">
+                <span>{t("order_ticket.quote_status", { status: quote.status })}</span>
+                {quote.source_symbol && <span> · {quote.source_id}: {quote.source_symbol}</span>}
+                {quote.observed_at && <span> · {quote.observed_at}</span>}
+              </div>
+            )}
           </div>
 
           {/* Side Selector */}
@@ -317,8 +333,12 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 type="number"
                 step="any"
                 value={entryPrice || ""}
-                onChange={(e) => setEntryPrice(Number(e.target.value))}
-                placeholder="0.00"
+                onChange={(e) => {
+                  setEntryPrice(Number(e.target.value));
+                  setPriceOrigin("MANUAL");
+                }}
+                placeholder={t("order_ticket.price_placeholder")}
+                min="0"
                 className="w-full bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-white focus:outline-none focus:border-accent"
                 required
               />
@@ -330,7 +350,8 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 step="any"
                 value={qty || ""}
                 onChange={(e) => setQty(Number(e.target.value))}
-                placeholder="1.0"
+                placeholder={t("order_ticket.qty_placeholder")}
+                min="0"
                 className="w-full bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-white focus:outline-none focus:border-accent"
                 required
               />
@@ -346,7 +367,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 step="any"
                 value={stopLoss || ""}
                 onChange={(e) => setStopLoss(Number(e.target.value))}
-                placeholder="Optional"
+                placeholder={t("order_ticket.optional_placeholder")}
                 className="w-full bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-loss focus:outline-none focus:border-loss"
               />
             </div>
@@ -357,13 +378,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 step="any"
                 value={takeProfit || ""}
                 onChange={(e) => setTakeProfit(Number(e.target.value))}
-                placeholder="Optional"
+                placeholder={t("order_ticket.optional_placeholder")}
                 className="w-full bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-gain focus:outline-none focus:border-gain"
               />
             </div>
           </div>
 
-          {/* Live Risk / Reward Math & Risk Meter */}
+          {/* Risk / Reward Math & Risk Meter */}
           <div className={`p-3 rounded border space-y-1 text-[11px] ${
             isHighRisk ? "bg-loss/10 border-loss/40" : "bg-[#0b0e14] border-surface-border"
           }`}>
@@ -394,7 +415,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
             <label className="text-slate-400 block mb-1">{t("order_ticket.notes_label")}</label>
             <input
               type="text"
-              placeholder="e.g. 15m breakout, liquidity sweep, high volume"
+              placeholder={t("order_ticket.notes_placeholder")}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-slate-200 focus:outline-none focus:border-accent"
@@ -406,20 +427,22 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
             type="submit"
             disabled={isSubmitting}
             className={`w-full py-2.5 font-bold rounded flex items-center justify-center space-x-2 transition cursor-pointer ${
-              mode === "LIVE"
-                ? "bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/30"
+              recordMode === "SIMULATION"
+                ? "bg-amber-400 hover:bg-amber-300 text-black shadow-lg shadow-amber-500/20"
                 : "bg-accent hover:bg-sky-400 text-black shadow-lg shadow-sky-500/20"
             }`}
           >
             {isSubmitting ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>{t("order_ticket.executing_btn")}</span>
+                <span>{t("order_ticket.recording_btn")}</span>
               </>
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                <span>{mode === "LIVE" ? t("order_ticket.execute_live_btn") : t("order_ticket.execute_paper_btn")}</span>
+                <span>{recordMode === "SIMULATION"
+                  ? t("order_ticket.record_simulation_btn")
+                  : t("order_ticket.record_external_btn")}</span>
               </>
             )}
           </button>

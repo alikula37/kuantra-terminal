@@ -78,6 +78,21 @@ bilinçli olarak devre dışı kalabilir. Evidence Pack export'u yalnızca nativ
 gerçekten dosya kaydettiğini bildirdiğinde hazır görünür; kullanıcı iptali ile kayıt hatası
 başarı sayılmaz. Import edilen dosya değiştirildiğinde eski preview kullanılmaz.
 
+## Yeni işlem kaydı ve ücretsiz fiyat sınırı
+
+Yeni işlem ekranında varsayılan **Harici İşlem Kaydı** seçeneği, başka bir yerde
+gerçekleştirdiğiniz işlemi günlüğe yazar; Kuantra borsaya emir göndermez. Sembol alanına
+`BTCUSDT`, `EURUSD`, `XAUUSD`, `AAPL` veya kaydetmek istediğiniz başka bir varlığı
+girebilirsiniz. **Son Fiyatı Çek** yalnızca tam sembolü destekleyen ücretsiz public
+kaynakları dener. Sonuçta kaynak sembolü ve `LIVE`, `DELAYED`, `EOD` ya da
+`UNAVAILABLE` durumu gösterilir.
+
+Ücretsiz kaynak sonucu `UNAVAILABLE` ise otomatik olarak simülasyona geçilmez ve başka
+bir varlık fiyatı kullanılmaz; dışarıda gerçekleşen işlemin gerçek fiyatını manuel girin.
+**Simülasyon** yalnızca açıkça seçildiğinde kullanılır ve o da emir göndermez. TradingView
+webhook'u gelen bir gözlemdir; işlem günlüğüne fill olarak geçmesi için kullanıcı onayı
+gerekir. Ücretli veri hesabı veya API anahtarı pilot için gerekli değildir.
+
 `PARTIAL`, `UNKNOWN`, `NOT_AVAILABLE` ve `NO_DATA` sonuçlarını başarı veya sıfır
 olarak yorumlamayın. Bu pilotta gerçek broker emri, para transferi, API credential,
 `.env`, Windows migration ZIP'i veya gerçek kullanıcı geçmişi kullanılmaz.

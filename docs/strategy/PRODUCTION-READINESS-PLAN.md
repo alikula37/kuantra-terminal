@@ -3,7 +3,7 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.40
+version: 1.0.41
 status: Proposed
 date: 2026-09-11
 reviewed_commit: this change
@@ -47,6 +47,11 @@ dağıtılabilir ve hash'lenebilir bir pakete bağlar. İlk M-series pilotu içi
 arm64-only paket üretilebilir; bu paket dual release veya Intel desteği iddia etmez.
 Varsayılan dual paket native x86_64 kanıtı gelmeden fail-closed kalır; her iki ad-hoc
 paket production sayılmaz.
+P1-WP30, pilot dağıtımı sırasında kullanıcı tarafından gerçekleştirilen işlemlerin
+ücretsiz ve provenance-aware biçimde günlüğe alınmasını sağlar: harici kayıt varsayılan,
+simülasyon açık seçim, sembol kapsamı kullanıcı tarafından belirlenir ve exact ücretsiz
+quote yoksa manuel fiyat istenir. Bu paket otomatik broker/hesap kapsamını genişletmez,
+ücretli veri servisi eklemez ve canlı emir yetkisi açmaz.
 Aşağıdaki diğer iş kimlikleri plan satırıdır, topluca coding yetkisi veya tamamlanmış
 WP değildir.
 
@@ -153,6 +158,7 @@ Scope dışı kaydın “başarı paydasından çıkarılarak” metriği iyile�
 | U03 | Trade Evidence Pack: timeline, fees/funding coverage, applicable rule, export | UI→API→canonical source tutarlılığı; redaction; CSV formula injection ve HTML escaping; unavailable analytics görünür |
 | U04 | Weekly review: period/timezone, yeterli veri, rule breach, kullanıcı notu ve tamamlanma | As-of policy/effective time; hindsight rule ayrı; haftayı tekrar açınca aynı snapshot; late correction varsa revision/stale uyarısı |
 | U05 | Erişilebilir ve anlaşılır shell | EN/TR/DE parity; keyboard/focus; kontrast/zoom; loading/error/retry; timezone/numeric locale; dar ekran/uzun içerik testleri |
+| U06 / P1-WP30 | Harici işlem günlüğü, ücretsiz multi-asset quote ve TradingView observation boundary | External default; explicit simulation; exact source/status/provenance; unavailable→manual; no order dispatch; immutable pending alert + user confirmation; migration/rebuild regression |
 
 U01 import/review/export akışı P1-WP22 ile bounded olarak uygulanmış ve `ea4e12c`
 ile kanıtlanmıştır. U02 reconciliation inbox ve correction/user-decision boundary'si
@@ -176,7 +182,13 @@ supported-matrix, bağımsız oracle ve packaged value-chain audit'i `e042790` i
 tamamlandı ve arşivlendi. P1-WP29 trusted macOS pilot package preparation iki native
 artifact zinciri hazır olana kadar fail-closed hazırlanır; N03 temiz Mac profil/ikinci
 host install-lifecycle audit'i son pilot validation kapısıdır ve production iddiası yine
-açılamaz.
+açılamaz. U06/P1-WP30, bu değer zincirinin yeni işlem giriş kapısını tamamlar: kullanıcı
+herhangi bir sembolü günlüğe alabilir; otomatik fiyat yalnızca Binance/Bybit public
+crypto veya exact Yahoo/Stooq public sembolünden ve açık freshness status ile gelir.
+`UNAVAILABLE` sonucu manuel fiyat girişine yönlendirir; simülasyon otomatik fallback
+değildir. TradingView webhook'u `PENDING_REVIEW` immutable observation olarak kalır ve
+kullanıcı onayı olmadan trade snapshot'ı oluşturmaz. Bu, Binance/OKX hesap import destek
+matrisini veya ilk production venue kapsamını genişletmez.
 
 G2 acceptance: boş data directory → desteklenen fixture import → discrepancy açıklama
 → trade pack → rule review → haftalık review → export → yeniden açma akışı P1-WP27
@@ -406,7 +418,12 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
     per-architecture exact DMG smoke ve native-host release contract'ını tamamla. Intel
     claim'i native x86_64 host kanıtı olmadan açılmaz; hosted CI tercih edilir, kontrollü
     pilot Intel Mac'i alternatif build/runtime hostu olabilir; Universal2 kabul edilmez.
-20. N03–N06 owner/host bağımlılıkları kapsamlarına göre ilerler. N03 host çalıştırması
+20. P1-WP30: harici işlem günlüğü ve ücretsiz multi-asset quote boundary'sini uygula.
+    External kayıt varsayılan olur; explicit simulation, exact source/status/provenance,
+    unavailable→manual fallback, immutable TradingView observation ve user confirmation
+    test edilir. Bu paket paid data, yeni broker/live order veya geniş account
+    reconciliation kapsamı açmaz.
+21. N03–N06 owner/host bağımlılıkları kapsamlarına göre ilerler. N03 host çalıştırması
     final macOS distribution/pilot validation'a ertelenmiştir; N04 bounded audit'i
     tamamlanıp arşivlenmiştir. N05'in read-only artifact preflight kodu N03 host kanıtı
     beklenmeden hazırlanabilir; v1 için gerçek Developer ID/notary ve N03 kanıtı final
@@ -440,15 +457,19 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    kapsamındadır ve Intel desteği iddia etmez. Varsayılan dual mode iki native zincir ister;
    Intel zinciri eksikse exit 2 ile durur. GitHub Release/tag oluşturma veya upload owner
    onayı olmadan yapılmaz. Apple Developer ID olmadan production claim'i açma.
-7. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son macOS
+7. P1-WP30 ile harici işlem günlüğü ve ücretsiz multi-asset quote sınırını uygula:
+   external default, explicit simulation, exact source/status/provenance, unavailable→manual
+   fallback, immutable TradingView observation ve user confirmation. Paid source, yeni
+   broker/live order veya otomatik simulation fallback ekleme.
+8. N03 temiz Mac profil/ikinci host install-lifecycle kanıtını son macOS
    distribution/pilot validation kapısında çalıştır; host kanıtı gelene kadar
    `DEFERRED/HOST_REQUIRED` kalır. N04 sentetik/manual update, interrupted-update
    recovery ve uninstall veri koruma audit'i tamamlandı/arşivlendi.
-8. N05 exact-DMG read-only signing/notarization preflight kod kapısını uygula; gerçek
+9. N05 exact-DMG read-only signing/notarization preflight kod kapısını uygula; gerçek
    Developer ID/hardened-runtime/Gatekeeper/stapled-ticket kanıtını owner/Apple host
    erişimiyle al. Ticari dağıtım öncesi H05 license/notices/dependency disposition
    owner kapısını ayrıca yeniden aç; N05 bu kararı varsaymaz.
-9. v1 için N05 gerçek Apple dağıtım kanıtı ve N03 Mac host/profile validation; ardından
+10. v1 için N05 gerçek Apple dağıtım kanıtı ve N03 Mac host/profile validation; ardından
    G5 consent/metrik kararları, formative ve kontrollü pilot, G6–G7 owner release
    kararı ve sınırlı rollout. N06 Windows/Linux host kanıtı yalnızca v1 sonrası
    multi-platform genişleme onaylanırsa yürütülür.
@@ -465,6 +486,12 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.41 — 2026-09-11
+
+- P1-WP30, paid data veya live execution eklemeden external journal default, explicit
+  simulation, exact free multi-asset quote, manual unavailable boundary ve TradingView
+  pending-observation confirmation akışı olarak sıraya alındı.
 
 ### 1.0.40 — 2026-09-11
 

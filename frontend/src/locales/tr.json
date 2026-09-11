@@ -43,18 +43,24 @@
     "wizard_title": "Kuantra Kurumsal Terminal Kurulumu",
     "wizard_subtitle": "Ticaret ortamınızı, işletim sistemi keychain'ini ve sistem tercihlerinizi yapılandırın",
     "step1_title": "Ticaret Ortamı",
-    "step1_desc": "Canlı emir iletimi veya simüle edilmiş sanal işlem ortamınızı seçin",
-    "step2_title": "İşletim Sistemi Keychain Kimlik Bilgileri",
-    "step2_desc": "Entegrasyon kimlik bilgilerini işletim sistemi keychain'inde saklayın; düz metni SQLite'a yazmayın",
+    "step1_desc": "Harici işlem günlüğü veya açıkça işaretlenmiş yerel simülasyon seçin. Kuantra canlı emir göndermez.",
+    "step2_title": "İsteğe Bağlı Entegrasyonlar",
+    "step2_desc": "Günlük pilotu için borsa veya ücretli piyasa verisi kimliği gerekmez",
     "step3_title": "Tema & Yerelleştirme",
     "step3_desc": "Görsel çalışma alanı paletinizi ve arayüz dilinizi özelleştirin",
     "step4_title": "Doğrulama & El Sıkışma",
-    "step4_desc": "Masaüstü çekirdeği bağlantısını, canlı veri akışlarını ve veritabanı bütünlüğünü doğrulayın",
+    "step4_desc": "Masaüstü çekirdeği bağlantısını, yerel veri köprüsünü ve veritabanı bütünlüğünü doğrulayın",
     "mode": {
       "live_title": "Canlı Gerçek Zamanlı Veri & İletim",
       "live_desc": "Binance, OKX ve CME QuickFIX DMA ile doğrudan piyasa iletimi",
       "paper_title": "Simüle Edilmiş Sanal Ticaret",
       "paper_desc": "Sanal kurumsal sermaye ile risksiz emir simülasyon motoru",
+      "external_title": "Harici İşlem Günlüğü",
+      "external_desc": "Başka yerde gerçekleştirilmiş işlemleri kaydeder; Kuantra emir göndermez.",
+      "simulation_title": "Açıkça Seçilmiş Simülasyon",
+      "simulation_desc": "Yalnızca yerel simülasyon kaydıdır; canlı emir gönderilmez.",
+      "external_badge": "YALNIZCA GÜNLÜK — EMİR İLETİMİ YOK",
+      "simulation_badge": "AÇIKÇA SEÇİLMİŞ RİSKSİZ SİMÜLASYON",
       "balance_label": "Sanal Ticaret Başlangıç Bakiyesi ($)"
     },
     "vault": {
@@ -65,6 +71,7 @@
       "okx_key_label": "OKX API Anahtarı",
       "okx_secret_label": "OKX API Gizli Anahtarı",
       "okx_passphrase_label": "OKX Parolası (Passphrase)",
+      "disabled_notice": "İlk kurulumda hiçbir credential toplanmaz. Günlük kayıtları ve ücretsiz public fiyatlar API anahtarı olmadan çalışır; isteğe bağlı salt-okuma entegrasyonları ayrıca kontrollüdür.",
       "optional_notice": "Kimlik bilgileri yalnızca işletim sistemi keychain'i varsa saklanır; düz metin SQLite'a yazılmaz"
     },
     "preferences": {
@@ -77,11 +84,12 @@
       "locale_de": "Deutsch (DE)"
     },
     "verification": {
+      "running_diagnostics": "Yerel tanılamalar çalıştırılıyor...",
       "checking_desktop_core": "Masaüstü çekirdeği IPC bağlantısı test ediliyor...",
       "checking_sqlite": "SQLite OLTP (WAL modu) doğrulanıyor...",
       "checking_duckdb": "DuckDB OLAP sütunsal motoru inceleniyor...",
-      "checking_websocket": "Yerel canlı veri köprüsü kuruluyor...",
-      "all_systems_go": "Tüm kurumsal motor bileşenleri doğrulandı ve hazır!",
+      "checking_websocket": "Yerel piyasa verisi köprüsü kontrol ediliyor...",
+      "all_systems_go": "Yerel çekirdek bileşenleri hazır.",
       "complete_btn": "Terminal Gösterge Panelini Başlat"
     },
     "buttons": {
@@ -375,7 +383,7 @@
     "type_limit": "LİMİT EMİR",
     "type_market": "PİYASA EMRİ",
     "fetch_price_btn": "Son Fiyatı Çek",
-    "latest_price": "Son Gösterge Fiyatı",
+    "latest_price": "Ücretsiz fiyat: {price} · {source} · {status}",
     "price_fetch_error": "Canlı fiyat alınamadı",
     "side_buy": "LONG / AL",
     "side_sell": "SHORT / SAT",
@@ -392,7 +400,25 @@
     "execute_paper_btn": "ONAYLA VE İŞLE (SİMÜLASYON)",
     "execute_live_btn": "CANLI BORSA EMRİ GÖNDER",
     "execution_failed": "Emir iletimi reddedildi",
-    "configure_keys_prompt": "API Anahtarlarını yapılandırmak için tıklayın"
+    "configure_keys_prompt": "API Anahtarlarını yapılandırmak için tıklayın",
+    "mode_external": "Harici İşlem Kaydı",
+    "mode_simulation": "Simülasyon (Açık Seçim)",
+    "external_record_notice": "Başka bir yerde gerçekleştirilmiş işlemi kaydeder. Kuantra emir göndermez.",
+    "simulation_notice": "Yalnızca simülasyon. Canlı emir gönderilmez; bu modu açıkça seçtiniz.",
+    "execution_venue_label": "Bu işlem nerede gerçekleştirildi? (İsteğe bağlı)",
+    "execution_venue_placeholder": "örn. Binance, OKX, OANDA, diğer",
+    "symbol_placeholder": "örn. BTCUSDT, EURUSD, XAUUSD, AAPL",
+    "quote_status": "Piyasa verisi: {status}",
+    "price_placeholder": "Gerçek fiyatı girin",
+    "qty_placeholder": "Miktar girin",
+    "optional_placeholder": "İsteğe bağlı",
+    "notes_placeholder": "örn. kırılım, likidite süpürmesi, yüksek hacim",
+    "price_unavailable_manual": "Ücretsiz fiyat alınamadı. Gerçek fiyatı manuel girin.",
+    "invalid_price_or_qty": "Sonlu ve pozitif bir fiyat ile miktar girin.",
+    "record_failed": "İşlem güvenli biçimde kaydedilemedi.",
+    "recording_btn": "Kaydediliyor...",
+    "record_external_btn": "HARİCİ İŞLEMİ KAYDET",
+    "record_simulation_btn": "SİMÜLASYONU KAYDET"
   },
   "journal": {
     "title": "İŞLEM GÜNLÜĞÜ",

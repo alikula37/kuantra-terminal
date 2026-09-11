@@ -43,18 +43,24 @@
     "wizard_title": "Kuantra Institutional Terminal Setup",
     "wizard_subtitle": "Configure your trading environment, OS keychain, and system preferences",
     "step1_title": "Trading Environment",
-    "step1_desc": "Select your live order routing or simulated paper trading execution environment",
-    "step2_title": "OS Keychain Credentials",
-    "step2_desc": "Store integration credentials in the operating system keychain; never persist plaintext in SQLite",
+    "step1_desc": "Choose an external trade journal or an explicitly marked local simulation. Kuantra does not send live orders.",
+    "step2_title": "Optional Integrations",
+    "step2_desc": "No exchange or paid market-data credential is required for the journal pilot",
     "step3_title": "Theme & Localization",
     "step3_desc": "Customize your visual workspace palette and internationalized terminal language",
     "step4_title": "Verification & Handshake",
-    "step4_desc": "Verify desktop core connectivity, live data streams, and database integrity",
+    "step4_desc": "Verify desktop core connectivity, the local data bridge, and database integrity",
     "mode": {
       "live_title": "Live Realtime Feed & Execution",
       "live_desc": "Direct market routing with Binance, OKX, and CME QuickFIX DMA",
       "paper_title": "Simulated Paper Trading",
       "paper_desc": "Risk-free execution engine pre-seeded with virtual institutional capital",
+      "external_title": "External Trade Journal",
+      "external_desc": "Record trades executed elsewhere; Kuantra does not send orders.",
+      "simulation_title": "Explicit Simulation",
+      "simulation_desc": "Record a local simulation only; no live order is sent.",
+      "external_badge": "JOURNAL ONLY — NO ORDER ROUTING",
+      "simulation_badge": "EXPLICIT RISK-FREE SIMULATION",
       "balance_label": "Paper Trading Starting Balance ($)"
     },
     "vault": {
@@ -65,6 +71,7 @@
       "okx_key_label": "OKX API Key",
       "okx_secret_label": "OKX API Secret",
       "okx_passphrase_label": "OKX Passphrase",
+      "disabled_notice": "No credentials are collected during first setup. Journal entries and free public quotes work without API keys; optional read-only integrations remain separately gated.",
       "optional_notice": "Credentials are stored only when an OS keychain is available; plaintext is never persisted in SQLite"
     },
     "preferences": {
@@ -77,11 +84,12 @@
       "locale_de": "Deutsch (DE)"
     },
     "verification": {
+      "running_diagnostics": "Running local diagnostics...",
       "checking_desktop_core": "Testing desktop core IPC connection...",
       "checking_sqlite": "Verifying SQLite OLTP (WAL mode)...",
       "checking_duckdb": "Inspecting DuckDB OLAP columnar engine...",
-      "checking_websocket": "Establishing local live data bridge...",
-      "all_systems_go": "All institutional engine components verified and ready!",
+      "checking_websocket": "Checking the local market-data bridge...",
+      "all_systems_go": "Local core components are ready.",
       "complete_btn": "Launch Terminal Dashboard"
     },
     "buttons": {
@@ -375,7 +383,7 @@
     "type_limit": "LIMIT ORDER",
     "type_market": "MARKET ORDER",
     "fetch_price_btn": "Fetch Mark Price",
-    "latest_price": "Latest Mark Price",
+    "latest_price": "Free quote: {price} · {source} · {status}",
     "price_fetch_error": "Unable to fetch live price",
     "side_buy": "LONG / BUY",
     "side_sell": "SHORT / SELL",
@@ -392,7 +400,25 @@
     "execute_paper_btn": "CONFIRM & EXECUTE (PAPER)",
     "execute_live_btn": "SUBMIT LIVE EXCHANGE ORDER",
     "execution_failed": "Order execution rejected",
-    "configure_keys_prompt": "Click here to configure API Keys"
+    "configure_keys_prompt": "Click here to configure API Keys",
+    "mode_external": "External Trade Record",
+    "mode_simulation": "Simulation (Explicit)",
+    "external_record_notice": "Records a trade executed elsewhere. Kuantra will not send an order.",
+    "simulation_notice": "Simulation only. No live order is sent; use this mode explicitly.",
+    "execution_venue_label": "Where was this trade executed? (Optional)",
+    "execution_venue_placeholder": "e.g. Binance, OKX, OANDA, other",
+    "symbol_placeholder": "e.g. BTCUSDT, EURUSD, XAUUSD, AAPL",
+    "quote_status": "Market data: {status}",
+    "price_placeholder": "Enter the actual price",
+    "qty_placeholder": "Enter quantity",
+    "optional_placeholder": "Optional",
+    "notes_placeholder": "e.g. breakout, liquidity sweep, high volume",
+    "price_unavailable_manual": "Free quote unavailable. Enter the actual price manually.",
+    "invalid_price_or_qty": "Enter a finite positive price and quantity.",
+    "record_failed": "Trade could not be recorded safely.",
+    "recording_btn": "Recording...",
+    "record_external_btn": "RECORD EXTERNAL TRADE",
+    "record_simulation_btn": "RECORD SIMULATION"
   },
   "journal": {
     "title": "TRADE LOGGING JOURNAL",

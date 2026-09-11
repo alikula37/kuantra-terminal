@@ -2,8 +2,8 @@ from app.api.webhook_tv import webhook_router
 from app.api.plugin_endpoints import router as plugin_router
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query, UploadFile, File, Response
 from fastapi.responses import JSONResponse
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any, Literal
+from pydantic import BaseModel, Field, field_validator, model_validator
 import json
 import time
 from datetime import datetime
@@ -11,7 +11,10 @@ from app.db.sqlite_driver import sqlite_driver
 from app.db.duckdb_driver import duckdb_driver
 from app.db.sync_pipeline import sync_pipeline
 from app.db.repositories.candles_repo import candles_repo
-from app.services.market_data.public_fetcher import public_market_fetcher
+from app.services.market_data.public_fetcher import (
+    FREE_QUOTE_SOURCES,
+    public_market_fetcher,
+)
 from app.services.portfolio_service import portfolio_service
 from app.services.trade_read_adapter import trade_read_adapter
 from app.services.evidence_pack_export import (
@@ -65,11 +68,67 @@ def experimental_disabled_response(payload: Dict[str, Any]) -> JSONResponse:
 class TradeCreateSchema(BaseModel):
     symbol: str = "BTCUSDT"
     side: str = "BUY"
-    entry_price: float
-    qty: float
-    stop_loss: Optional[float] = None
-    take_profit: Optional[float] = None
-    notes: Optional[str] = ""
+    entry_price: float = Field(..., gt=0, le=10**15)
+    qty: float = Field(..., gt=0, le=10**12)
+    stop_loss: Optional[float] = Field(default=None, gt=0, le=10**15)
+    take_profit: Optional[float] = Field(default=None, gt=0, le=10**15)
+    entry_time: Optional[str] = Field(default=None, min_length=1, max_length=64)
+    notes: Optional[str] = Field(default="", max_length=2000)
+    record_mode: Literal["EXTERNAL", "SIMULATION"] = "EXTERNAL"
+    execution_venue: Optional[str] = Field(default=None, max_length=120)
+    price_source: Literal[
+        "manual", "binance_public", "bybit_public", "yahoo_public",
+        "stooq_public", "tradingview_alert", "broker_import", "unknown",
+    ] = "manual"
+    price_source_symbol: Optional[str] = Field(default=None, max_length=128)
+    price_status: Literal["LIVE", "DELAYED", "EOD", "UNAVAILABLE"] = "UNAVAILABLE"
+    price_observed_at: Optional[str] = Field(default=None, max_length=64)
+    price_origin: Literal[
+        "MANUAL", "PUBLIC_QUOTE", "TRADINGVIEW_ALERT", "BROKER_IMPORT", "UNKNOWN",
+    ] = "MANUAL"
+
+    @field_validator("execution_venue", "price_source_symbol", "entry_time", "price_observed_at")
+    @classmethod
+    def _validate_optional_text(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        if any(ord(character) < 32 for character in value):
+            raise ValueError("text fields cannot contain control characters")
+        cleaned = value.strip()
+        return cleaned or None
+
+    @field_validator("notes")
+    @classmethod
+    def _validate_notes(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and any(ord(character) < 32 for character in value):
+            raise ValueError("notes cannot contain control characters")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_price_provenance(self):
+        """Reject provenance combinations that would overstate quote evidence."""
+        if self.price_origin == "PUBLIC_QUOTE":
+            if self.price_source not in FREE_QUOTE_SOURCES:
+                raise ValueError("PUBLIC_QUOTE requires an approved free quote source")
+            if not self.price_source_symbol or not self.price_observed_at:
+                raise ValueError("PUBLIC_QUOTE requires source symbol and observation time")
+            if self.price_status == "UNAVAILABLE":
+                raise ValueError("PUBLIC_QUOTE cannot have UNAVAILABLE status")
+        elif self.price_origin == "MANUAL":
+            if self.price_status != "UNAVAILABLE":
+                raise ValueError("MANUAL price origin must remain UNAVAILABLE")
+            if self.price_source not in {"manual", "tradingview_alert", "broker_import", "unknown"}:
+                raise ValueError("MANUAL price origin cannot claim a public quote source")
+        elif self.price_origin == "BROKER_IMPORT":
+            if self.price_source != "broker_import":
+                raise ValueError("BROKER_IMPORT requires broker_import source")
+        elif self.price_origin == "TRADINGVIEW_ALERT":
+            if self.price_source != "tradingview_alert":
+                raise ValueError("TRADINGVIEW_ALERT requires tradingview_alert source")
+        elif self.price_origin == "UNKNOWN":
+            if self.price_source != "unknown" or self.price_status != "UNAVAILABLE":
+                raise ValueError("UNKNOWN provenance must remain unavailable")
+        return self
 
 class TradeCloseSchema(BaseModel):
     exit_price: float
@@ -159,6 +218,11 @@ def get_trade(trade_id: str):
 @router.post("/trades")
 def create_trade(trade: TradeCreateSchema):
     now = datetime.utcnow().isoformat()
+    price_source = trade.price_source.lower()
+    if price_source not in FREE_QUOTE_SOURCES and price_source not in {
+        "manual", "tradingview_alert", "broker_import", "unknown",
+    }:
+        raise HTTPException(status_code=422, detail="Unsupported price source")
     trade_data = {
         "symbol": trade.symbol.upper(),
         "side": trade.side.upper(),
@@ -166,13 +230,33 @@ def create_trade(trade: TradeCreateSchema):
         "qty": trade.qty,
         "stop_loss": trade.stop_loss,
         "take_profit": trade.take_profit,
-        "entry_time": now,
+        "entry_time": trade.entry_time or now,
         "status": "OPEN",
         "notes": trade.notes,
         "pnl": 0.0,
-        "commission": 0.0
+        "commission": 0.0,
+        "record_mode": trade.record_mode,
+        "execution_venue": trade.execution_venue,
+        "price_source": price_source,
+        "price_source_symbol": trade.price_source_symbol,
+        "price_status": trade.price_status,
+        "price_observed_at": trade.price_observed_at,
+        "price_origin": trade.price_origin,
     }
-    saved = sync_pipeline.record_and_sync_trade(trade_data)
+    saved = sync_pipeline.record_and_sync_trade(
+        trade_data,
+        source="journal_simulation" if trade.record_mode == "SIMULATION" else "journal_external",
+        source_ref=trade.execution_venue or "manual",
+        provenance_extra={
+            "record_mode": trade.record_mode,
+            "execution_venue": trade.execution_venue,
+            "price_source": price_source,
+            "price_source_symbol": trade.price_source_symbol,
+            "price_status": trade.price_status,
+            "price_observed_at": trade.price_observed_at,
+            "price_origin": trade.price_origin,
+        },
+    )
     return saved
 
 @router.post("/trades/{trade_id}/close")
@@ -1753,6 +1837,38 @@ def get_system_storage_statistics():
 # ZERO-AUTH PUBLIC MARKET DATA & SQLITE CANDLE CACHE ENDPOINTS
 # ==============================================================================
 
+@router.get("/market-data/quote")
+async def get_market_quote(
+    symbol: str = Query("BTCUSDT", min_length=1, max_length=64),
+    source: str = Query("auto", min_length=1, max_length=32),
+):
+    """Return one free quote with explicit freshness and source identity.
+
+    An unavailable quote is a structured response so the journal can offer
+    manual price entry without fabricating a value or switching to paper mode.
+    Explicitly disabled market data remains unavailable and does not attempt a
+    network request.
+    """
+    requested = symbol.strip().upper()
+    if not requested or any(ord(character) < 32 for character in requested):
+        raise HTTPException(status_code=422, detail="A symbol is required")
+    if not binance_client.market_data_enabled:
+        return {
+            "requested_symbol": requested,
+            "source_id": None,
+            "source_symbol": None,
+            "price": None,
+            "status": "UNAVAILABLE",
+            "price_kind": None,
+            "observed_at": None,
+            "reason": "MARKET_DATA_DISABLED",
+            "free_source": True,
+            "credentials_required": False,
+        }
+
+    quote = await public_market_fetcher.fetch_quote(requested, source=source)
+    return quote.as_dict()
+
 @router.get("/market-data/candles")
 async def get_market_candles(
     symbol: str = Query("BTCUSDT", description="Market symbol (e.g. BTCUSDT, ETHUSDT, EURUSD, SPY)"),
@@ -1801,7 +1917,10 @@ def get_market_data_status():
         "timeframes_cached": stats["timeframes"],
         "oldest_timestamp": stats["oldest_timestamp"],
         "newest_timestamp": stats["newest_timestamp"],
-        "supported_exchanges": ["binance_public", "bybit_public", "yahoo_public", "stooq_public"]
+        "supported_exchanges": ["binance_public", "bybit_public", "yahoo_public", "stooq_public"],
+        "supported_quote_sources": sorted(FREE_QUOTE_SOURCES),
+        "paid_quote_sources_enabled": False,
+        "quote_credentials_required": False,
     }
 
 

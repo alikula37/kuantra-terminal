@@ -43,18 +43,24 @@
     "wizard_title": "Kuantra Institutionelle Terminal-Einrichtung",
     "wizard_subtitle": "Konfigurieren Sie Handelsumgebung, Betriebssystem-Schlüsselbund und Systemeinstellungen",
     "step1_title": "Handelsumgebung",
-    "step1_desc": "Wählen Sie Ihr Live-Order-Routing oder Ihre simulierte Paper-Trading-Umgebung",
-    "step2_title": "Zugangsdaten im Betriebssystem-Schlüsselbund",
-    "step2_desc": "Integrations-Zugangsdaten ausschließlich im Betriebssystem-Schlüsselbund speichern; nicht als Klartext in SQLite",
+    "step1_desc": "Wählen Sie ein externes Trade-Journal oder eine ausdrücklich markierte lokale Simulation. Kuantra sendet keine Live-Orders.",
+    "step2_title": "Optionale Integrationen",
+    "step2_desc": "Für den Journal-Pilot sind weder Börsen- noch kostenpflichtige Marktdaten-Zugangsdaten erforderlich",
     "step3_title": "Design & Lokalisierung",
     "step3_desc": "Passen Sie Ihre visuelle Arbeitsbereichspalette und Terminalsprache an",
     "step4_title": "Verifizierung & Handshake",
-    "step4_desc": "Desktop-Kern-Verbindung, Live-Datenströme und Datenbankintegrität überprüfen",
+    "step4_desc": "Desktop-Kern-Verbindung, lokale Datenbrücke und Datenbankintegrität überprüfen",
     "mode": {
       "live_title": "Live-Echtzeit-Feed & Ausführung",
       "live_desc": "Direktes Marktrouting mit Binance, OKX und CME QuickFIX DMA",
       "paper_title": "Simuliertes Paper-Trading",
       "paper_desc": "Risikofreie Ausführungs-Engine mit virtuellem institutionellem Kapital",
+      "external_title": "Externes Trade-Journal",
+      "external_desc": "Erfasst Trades, die außerhalb ausgeführt wurden; Kuantra sendet keine Orders.",
+      "simulation_title": "Ausdrückliche Simulation",
+      "simulation_desc": "Erfasst nur eine lokale Simulation; es wird keine Live-Order gesendet.",
+      "external_badge": "NUR JOURNAL — KEIN ORDER-ROUTING",
+      "simulation_badge": "AUSDRÜCKLICHE RISIKOFREIE SIMULATION",
       "balance_label": "Paper-Trading Startkapital ($)"
     },
     "vault": {
@@ -65,6 +71,7 @@
       "okx_key_label": "OKX API-Schlüssel",
       "okx_secret_label": "OKX API-Geheimnis",
       "okx_passphrase_label": "OKX Passphrase",
+      "disabled_notice": "Beim ersten Setup werden keine Zugangsdaten erfasst. Journaleinträge und kostenlose öffentliche Kurse funktionieren ohne API-Schlüssel; optionale Nur-Lese-Integrationen bleiben separat geschützt.",
       "optional_notice": "Zugangsdaten werden nur bei verfügbarem Betriebssystem-Schlüsselbund gespeichert; kein Klartext in SQLite"
     },
     "preferences": {
@@ -77,11 +84,12 @@
       "locale_de": "Deutsch (DE)"
     },
     "verification": {
+      "running_diagnostics": "Lokale Diagnose wird ausgeführt...",
       "checking_desktop_core": "Desktop-Kern-IPC-Verbindung wird getestet...",
       "checking_sqlite": "SQLite OLTP (WAL-Modus) wird verifiziert...",
       "checking_duckdb": "DuckDB OLAP spaltenbasierte Engine wird überprüft...",
-      "checking_websocket": "Lokale Live-Datenbrücke wird eingerichtet...",
-      "all_systems_go": "Alle institutionellen Engine-Komponenten verifiziert und bereit!",
+      "checking_websocket": "Lokale Marktdatenbrücke wird geprüft...",
+      "all_systems_go": "Lokale Kernkomponenten sind bereit.",
       "complete_btn": "Terminal-Dashboard starten"
     },
     "buttons": {
@@ -375,7 +383,7 @@
     "type_limit": "LIMIT-ORDER",
     "type_market": "MARKET-ORDER",
     "fetch_price_btn": "Marktpreis abrufen",
-    "latest_price": "Aktueller Marktpreis",
+    "latest_price": "Kostenloser Kurs: {price} · {source} · {status}",
     "price_fetch_error": "Live-Preis konnte nicht abgerufen werden",
     "side_buy": "LONG / KAUFEN",
     "side_sell": "SHORT / VERKAUFEN",
@@ -392,7 +400,25 @@
     "execute_paper_btn": "BESTÄTIGEN & AUSFÜHREN (PAPER)",
     "execute_live_btn": "LIVE-BÖRSENORDER ÜBERMITTELN",
     "execution_failed": "Orderausführung abgelehnt",
-    "configure_keys_prompt": "Klicken Sie hier, um API-Schlüssel zu konfigurieren"
+    "configure_keys_prompt": "Klicken Sie hier, um API-Schlüssel zu konfigurieren",
+    "mode_external": "Externer Trade-Eintrag",
+    "mode_simulation": "Simulation (ausdrücklich)",
+    "external_record_notice": "Erfasst einen Trade, der außerhalb ausgeführt wurde. Kuantra sendet keine Order.",
+    "simulation_notice": "Nur Simulation. Es wird keine Live-Order gesendet; wählen Sie diesen Modus ausdrücklich.",
+    "execution_venue_label": "Wo wurde dieser Trade ausgeführt? (Optional)",
+    "execution_venue_placeholder": "z. B. Binance, OKX, OANDA, andere",
+    "symbol_placeholder": "z. B. BTCUSDT, EURUSD, XAUUSD, AAPL",
+    "quote_status": "Marktdaten: {status}",
+    "price_placeholder": "Tatsächlichen Preis eingeben",
+    "qty_placeholder": "Menge eingeben",
+    "optional_placeholder": "Optional",
+    "notes_placeholder": "z. B. Ausbruch, Liquiditäts-Sweep, hohes Volumen",
+    "price_unavailable_manual": "Kostenloser Kurs nicht verfügbar. Tatsächlichen Preis manuell eingeben.",
+    "invalid_price_or_qty": "Geben Sie einen endlichen positiven Preis und eine positive Menge ein.",
+    "record_failed": "Trade konnte nicht sicher aufgezeichnet werden.",
+    "recording_btn": "Wird aufgezeichnet...",
+    "record_external_btn": "EXTERNEN TRADE AUFZEICHNEN",
+    "record_simulation_btn": "SIMULATION AUFZEICHNEN"
   },
   "journal": {
     "title": "HANDELSJOURNAL",

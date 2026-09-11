@@ -68,6 +68,7 @@ Remote evidence, Windows host, latest-SHA and P2 operational gaps remain in STAT
 | [H06-privacy-data-lifecycle-credential-boundary](strategy/work-packages/H06-privacy-data-lifecycle-credential-boundary.md) | 0 |
 | [H07-bounded-performance-resource-limits](strategy/work-packages/H07-bounded-performance-resource-limits.md) | 0 |
 | [P1-WP27-g0-g2-supported-matrix-audit](strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md) | 0 |
+| [P1-WP30-free-multi-asset-journal](strategy/work-packages/P1-WP30-free-multi-asset-journal.md) | 0 |
 | [P2-WP01-sequence-gap-aware-market-context](strategy/work-packages/P2-WP01-sequence-gap-aware-market-context.md) | 1 |
 | [P2-WP02-binance-depth-sequence-validator](strategy/work-packages/P2-WP02-binance-depth-sequence-validator.md) | 1 |
 | [P2-WP03-binance-depth-recovery-coordinator](strategy/work-packages/P2-WP03-binance-depth-recovery-coordinator.md) | 1 |

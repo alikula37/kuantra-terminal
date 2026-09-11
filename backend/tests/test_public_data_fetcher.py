@@ -280,32 +280,19 @@ class TestPublicMarketDataFetcherAndCache:
             mock_macro.assert_called_once_with(symbol="XAUUSD", interval="15m")
 
     @pytest.mark.asyncio
-    async def test_gold_paxg_fallback_when_yahoo_fails(self):
-        """Verifies that if Yahoo Finance fails for XAUUSD, fetcher seamlessly falls back to Binance PAXGUSDT."""
+    async def test_gold_does_not_fallback_to_a_different_instrument_when_yahoo_fails(self):
+        """A spot-gold failure stays unavailable instead of becoming token gold."""
         fetcher = PublicMarketDataFetcher()
-        mock_paxg_candles = [
-            {"timestamp": 1700000000000, "open": 2050.0, "high": 2055.0, "low": 2048.0, "close": 2052.0, "volume": 12.0}
-        ]
 
-        # Simulate Yahoo HTTP 403 / failure and Binance 200 for PAXGUSDT
+        # Simulate Yahoo HTTP 403 and a final Stooq failure. There must be no
+        # Binance PAXGUSDT request because it is not the requested instrument.
         mock_yahoo_fail = MagicMock(status_code=403)
-        mock_binance_ok = MagicMock(
-            status_code=200,
-            json=MagicMock(return_value=[
-                [1700000000000, "2050.0", "2055.0", "2048.0", "2052.0", "12.0", 1700003599999, "24000.0", 50]
-            ])
-        )
 
         async def mock_get(url, *args, **kwargs):
             if "yahoo.com" in url:
                 return mock_yahoo_fail
-            elif "binance.com" in url and "PAXGUSDT" in kwargs.get("params", {}).get("symbol", ""):
-                return mock_binance_ok
             return MagicMock(status_code=404)
 
         with patch("httpx.AsyncClient.get", side_effect=mock_get):
             candles = await fetcher.fetch_macro_candles("XAUUSD", interval="15m")
-            assert len(candles) == 1
-            assert candles[0]["open"] == 2050.0
-            assert candles[0]["close"] == 2052.0
-
+            assert candles == []

@@ -136,6 +136,28 @@ class EvidenceTradeProjectionRepository:
                 if raw_trade.get("r_multiple") is not None else None,
                 "commission": _finite_number(raw_trade.get("commission"), "trade.commission", default=0.0),
                 "notes": str(raw_trade.get("notes") or ""),
+                # Quote provenance is optional for historical/imported events.
+                # Missing fields stay explicit rather than being upgraded to a
+                # live or complete market-data claim during projection rebuild.
+                "record_mode": str(raw_trade.get("record_mode") or "UNKNOWN").upper(),
+                "execution_venue": (
+                    str(raw_trade.get("execution_venue")).strip()
+                    if raw_trade.get("execution_venue") is not None
+                    else None
+                ),
+                "price_source": str(raw_trade.get("price_source") or "unknown").lower(),
+                "price_source_symbol": (
+                    str(raw_trade.get("price_source_symbol")).strip()
+                    if raw_trade.get("price_source_symbol") is not None
+                    else None
+                ),
+                "price_status": str(raw_trade.get("price_status") or "UNAVAILABLE").upper(),
+                "price_observed_at": (
+                    str(raw_trade.get("price_observed_at")).strip()
+                    if raw_trade.get("price_observed_at") is not None
+                    else None
+                ),
+                "price_origin": str(raw_trade.get("price_origin") or "UNKNOWN").upper(),
             }
         )
         snapshot_json = canonical_json(normalized_trade)

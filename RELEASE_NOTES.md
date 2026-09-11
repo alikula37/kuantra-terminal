@@ -1,5 +1,5 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.0.0 — M-series Trusted Pilot update
+# Kuantra Terminal v1.0.0 — Mac Candidate Truth & Safety — M-series Trusted Pilot update
 
 **Pilot Release tag:** `pilot-v1.0.0-arm64`
 **Artifact source commit:** `8da8019ae93513c474a3122d450cffb40f66261b`
@@ -13,6 +13,11 @@ The tag and download URL are unchanged; this is a closed trusted-pilot transport
 canonical `v1.0.0` product Release, a public download or a production/commercial-support
 artifact. The package targets macOS 12 Monterey or later on native Apple Silicon `arm64`.
 Intel `x86_64` evidence is still pending and is not implied by this asset set.
+
+The repository has since added the bounded P1-WP30 free multi-asset journal and quote
+provenance flow. Those source changes are not contained in the published `8da8019` arm64
+artifact; the artifact must not be used as evidence for that newer flow until a separately
+verified package is built.
 
 The verified local core includes trade journaling and forensics, deterministic risk checks,
 recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain credential

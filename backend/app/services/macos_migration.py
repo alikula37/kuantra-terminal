@@ -36,7 +36,7 @@ from app.core.input_limits import (
 
 BUNDLE_SCHEMA_VERSION = 1
 BUNDLE_TYPE = "kuantra-macos-migration"
-CURRENT_SQLITE_SCHEMA_VERSION = 3
+CURRENT_SQLITE_SCHEMA_VERSION = 4
 LEGACY_SQLITE_SCHEMA_VERSION = 1
 _SQLITE_RELATIVE_PATH = Path("data") / "kuantra_oltp.sqlite3"
 _COLD_STORAGE_RELATIVE_ROOT = Path("data") / "cold_storage"
@@ -73,6 +73,13 @@ _CURRENT_TRADE_COLUMNS = frozenset(
         "commission",
         "created_at",
         "updated_at",
+        "record_mode",
+        "execution_venue",
+        "price_source",
+        "price_source_symbol",
+        "price_status",
+        "price_observed_at",
+        "price_origin",
     }
 )
 _LEDGER_COLUMNS = frozenset(
@@ -115,7 +122,8 @@ _PROJECTION_COLUMNS = frozenset(
 _KNOWN_ALEMBIC_REVISIONS = {
     "001_initial_baseline": LEGACY_SQLITE_SCHEMA_VERSION,
     "002_evidence_ledger": 2,
-    "003_trade_projection": CURRENT_SQLITE_SCHEMA_VERSION,
+    "003_trade_projection": 3,
+    "004_trade_quote_provenance": CURRENT_SQLITE_SCHEMA_VERSION,
 }
 
 
@@ -219,6 +227,19 @@ def _inspect_sqlite_schema(conn: sqlite3.Connection) -> dict[str, Any]:
             "status": "legacy",
             "reason": "SQLITE_SCHEMA_UPGRADE_REQUIRED",
             "version": 2,
+            "alembic_revision": revision,
+            "sqlite_user_version": user_version,
+            "missing_current_columns": current_missing,
+        }
+    if (
+        revision == "003_trade_projection"
+        and _LEDGER_COLUMNS.issubset(ledger_columns)
+        and _PROJECTION_COLUMNS.issubset(projection_columns)
+    ):
+        return {
+            "status": "legacy",
+            "reason": "SQLITE_SCHEMA_UPGRADE_REQUIRED",
+            "version": 3,
             "alembic_revision": revision,
             "sqlite_user_version": user_version,
             "missing_current_columns": current_missing,
@@ -948,7 +969,7 @@ def upgrade_sqlite_schema(
             if _table_exists(staged_conn, "alembic_version"):
                 staged_conn.execute(
                     "UPDATE alembic_version SET version_num = ?",
-                    ("003_trade_projection",),
+                    ("004_trade_quote_provenance",),
                 )
             staged_conn.commit()
         finally:

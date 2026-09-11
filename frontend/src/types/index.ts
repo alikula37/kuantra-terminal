@@ -1,5 +1,8 @@
 export type TradeSide = "BUY" | "SELL" | "LONG" | "SHORT";
 export type TradeStatus = "OPEN" | "CLOSED" | "CANCELED";
+export type TradeRecordMode = "EXTERNAL" | "SIMULATION" | "UNKNOWN";
+export type QuoteStatus = "LIVE" | "DELAYED" | "EOD" | "UNAVAILABLE";
+export type PriceOrigin = "MANUAL" | "PUBLIC_QUOTE" | "TRADINGVIEW_ALERT" | "BROKER_IMPORT" | "UNKNOWN";
 
 export interface Trade {
   id: string;
@@ -17,10 +20,30 @@ export interface Trade {
   r_multiple?: number | null;
   commission?: number;
   notes?: string;
+  record_mode?: TradeRecordMode;
+  execution_venue?: string | null;
+  price_source?: string;
+  price_source_symbol?: string | null;
+  price_status?: QuoteStatus;
+  price_observed_at?: string | null;
+  price_origin?: PriceOrigin;
   created_at?: string;
   updated_at?: string;
   unrealized_pnl?: number | null;
   current_price?: number | null;
+}
+
+export interface MarketQuote {
+  requested_symbol: string;
+  source_id: string | null;
+  source_symbol: string | null;
+  price: number | null;
+  status: QuoteStatus;
+  price_kind: "LAST" | "CLOSE" | null;
+  observed_at: string | null;
+  reason: string | null;
+  free_source: boolean;
+  credentials_required: boolean;
 }
 
 export interface Candle {

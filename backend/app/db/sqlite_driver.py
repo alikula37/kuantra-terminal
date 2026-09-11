@@ -67,6 +67,13 @@ class SQLiteDriver:
                     r_multiple REAL,
                     commission REAL DEFAULT 0.0,
                     notes TEXT,
+                    record_mode TEXT NOT NULL DEFAULT 'EXTERNAL',
+                    execution_venue TEXT,
+                    price_source TEXT NOT NULL DEFAULT 'unknown',
+                    price_source_symbol TEXT,
+                    price_status TEXT NOT NULL DEFAULT 'UNAVAILABLE',
+                    price_observed_at TEXT,
+                    price_origin TEXT NOT NULL DEFAULT 'UNKNOWN',
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
@@ -198,6 +205,15 @@ class SQLiteDriver:
             "r_multiple": "REAL",
             "commission": "REAL DEFAULT 0.0",
             "notes": "TEXT DEFAULT ''",
+            # Existing rows predate quote provenance.  UNKNOWN/UNAVAILABLE
+            # are deliberately explicit and are never backfilled as success.
+            "record_mode": "TEXT NOT NULL DEFAULT 'UNKNOWN'",
+            "execution_venue": "TEXT",
+            "price_source": "TEXT NOT NULL DEFAULT 'unknown'",
+            "price_source_symbol": "TEXT",
+            "price_status": "TEXT NOT NULL DEFAULT 'UNAVAILABLE'",
+            "price_observed_at": "TEXT",
+            "price_origin": "TEXT NOT NULL DEFAULT 'UNKNOWN'",
             "created_at": "TEXT DEFAULT ''",
             "updated_at": "TEXT DEFAULT ''",
         }
@@ -217,7 +233,9 @@ class SQLiteDriver:
     _TRADE_SNAPSHOT_FIELDS = (
         "id", "symbol", "side", "entry_price", "exit_price", "qty",
         "stop_loss", "take_profit", "entry_time", "exit_time", "status", "pnl",
-        "r_multiple", "commission", "notes",
+        "r_multiple", "commission", "notes", "record_mode", "execution_venue",
+        "price_source", "price_source_symbol", "price_status", "price_observed_at",
+        "price_origin",
     )
 
     @staticmethod
@@ -241,6 +259,13 @@ class SQLiteDriver:
             "r_multiple": float(trade["r_multiple"]) if trade.get("r_multiple") is not None else None,
             "commission": float(trade.get("commission", 0.0)),
             "notes": trade.get("notes", ""),
+            "record_mode": str(trade.get("record_mode", "UNKNOWN")).upper(),
+            "execution_venue": trade.get("execution_venue"),
+            "price_source": str(trade.get("price_source", "unknown")).lower(),
+            "price_source_symbol": trade.get("price_source_symbol"),
+            "price_status": str(trade.get("price_status", "UNAVAILABLE")).upper(),
+            "price_observed_at": trade.get("price_observed_at"),
+            "price_origin": str(trade.get("price_origin", "UNKNOWN")).upper(),
             "created_at": trade.get("created_at") or now,
             "updated_at": trade.get("updated_at") or now,
         }
@@ -251,8 +276,10 @@ class SQLiteDriver:
                 INSERT INTO trades (
                     id, symbol, side, entry_price, exit_price, qty,
                     stop_loss, take_profit, entry_time, exit_time,
-                    status, pnl, r_multiple, commission, notes, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    status, pnl, r_multiple, commission, notes, record_mode,
+                    execution_venue, price_source, price_source_symbol, price_status,
+                    price_observed_at, price_origin, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     symbol = excluded.symbol,
                     side = excluded.side,
@@ -268,11 +295,20 @@ class SQLiteDriver:
                     r_multiple = excluded.r_multiple,
                     commission = excluded.commission,
                     notes = excluded.notes,
+                    record_mode = excluded.record_mode,
+                    execution_venue = excluded.execution_venue,
+                    price_source = excluded.price_source,
+                    price_source_symbol = excluded.price_source_symbol,
+                    price_status = excluded.price_status,
+                    price_observed_at = excluded.price_observed_at,
+                    price_origin = excluded.price_origin,
                     updated_at = excluded.updated_at
             """, tuple(trade[field] for field in (
                 "id", "symbol", "side", "entry_price", "exit_price", "qty",
                 "stop_loss", "take_profit", "entry_time", "exit_time", "status",
-                "pnl", "r_multiple", "commission", "notes", "created_at", "updated_at",
+                "pnl", "r_multiple", "commission", "notes", "record_mode",
+                "execution_venue", "price_source", "price_source_symbol", "price_status",
+                "price_observed_at", "price_origin", "created_at", "updated_at",
             )))
 
     def insert_trade(self, trade: Dict[str, Any]) -> Dict[str, Any]:

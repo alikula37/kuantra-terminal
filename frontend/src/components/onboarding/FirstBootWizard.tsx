@@ -14,17 +14,8 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
   const { locale, setLocale, t } = useTranslation();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [tradingMode, setTradingMode] = useState<"live" | "paper">("paper");
+  const [tradingMode, setTradingMode] = useState<"external" | "simulation">("external");
   const [paperBalance, setPaperBalance] = useState<number>(100000.0);
-
-  // Vault credentials
-  const [twelvedataKey, setTwelvedataKey] = useState<string>("");
-  const [polygonKey, setPolygonKey] = useState<string>("");
-  const [binanceKey, setBinanceKey] = useState<string>("");
-  const [binanceSecret, setBinanceSecret] = useState<string>("");
-  const [okxKey, setOkxKey] = useState<string>("");
-  const [okxSecret, setOkxSecret] = useState<string>("");
-  const [okxPassphrase, setOkxPassphrase] = useState<string>("");
 
   // Verification stage
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
@@ -61,15 +52,6 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
 
   const handleFinish = async () => {
     try {
-      const apiKeys: Record<string, string> = {};
-      if (twelvedataKey.trim()) apiKeys["TWELVEDATA_API_KEY"] = twelvedataKey.trim();
-      if (polygonKey.trim()) apiKeys["POLYGON_API_KEY"] = polygonKey.trim();
-      if (binanceKey.trim()) apiKeys["BINANCE_API_KEY"] = binanceKey.trim();
-      if (binanceSecret.trim()) apiKeys["BINANCE_API_SECRET"] = binanceSecret.trim();
-      if (okxKey.trim()) apiKeys["OKX_API_KEY"] = okxKey.trim();
-      if (okxSecret.trim()) apiKeys["OKX_API_SECRET"] = okxSecret.trim();
-      if (okxPassphrase.trim()) apiKeys["OKX_PASSPHRASE"] = okxPassphrase.trim();
-
       const payload = {
         trading_mode: tradingMode,
         paper_balance: paperBalance,
@@ -78,7 +60,6 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
         // Local model inference is not enabled until a verified sidecar is
         // configured; onboarding must not request the retired mock downloader.
         ai_mode: "disabled",
-        api_keys: apiKeys,
       };
 
       const res = await apiFetch(apiUrl("/api/v1/onboarding/complete"), {
@@ -136,7 +117,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
           ))}
         </div>
 
-        {/* STEP 1: TRADING MODE */}
+        {/* STEP 1: JOURNAL MODE */}
         {currentStep === 1 && (
           <div className="space-y-4">
             <div>
@@ -147,52 +128,52 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-              {/* Paper Trading */}
+              {/* External journal */}
               <div
-                onClick={() => setTradingMode("paper")}
+                onClick={() => setTradingMode("external")}
                 className={`p-4 rounded-lg border cursor-pointer transition flex flex-col justify-between space-y-3 ${
-                  tradingMode === "paper"
+                  tradingMode === "external"
                     ? "bg-accent/10 border-accent text-white shadow-md"
                     : "bg-[#111722] border-surface-border text-slate-300 hover:border-slate-600"
                 }`}
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Layers className={`w-5 h-5 ${tradingMode === "paper" ? "text-accent" : "text-slate-400"}`} />
-                    {tradingMode === "paper" && <Check className="w-4 h-4 text-accent" />}
+                    <Activity className={`w-5 h-5 ${tradingMode === "external" ? "text-accent" : "text-slate-400"}`} />
+                    {tradingMode === "external" && <Check className="w-4 h-4 text-accent" />}
                   </div>
-                  <span className="font-bold text-xs block">{t("onboarding.mode.paper_title")}</span>
-                  <p className="text-[10px] text-slate-400">{t("onboarding.mode.paper_desc")}</p>
+                  <span className="font-bold text-xs block">{t("onboarding.mode.external_title")}</span>
+                  <p className="text-[10px] text-slate-400">{t("onboarding.mode.external_desc")}</p>
                 </div>
                 <span className="text-[9px] bg-[#090d14] px-2 py-0.5 rounded border border-surface-border text-gain font-bold inline-block">
-                  RISK-FREE SIMULATION
+                  {t("onboarding.mode.external_badge")}
                 </span>
               </div>
 
-              {/* Live Trading */}
+              {/* Explicit simulation */}
               <div
-                onClick={() => setTradingMode("live")}
+                onClick={() => setTradingMode("simulation")}
                 className={`p-4 rounded-lg border cursor-pointer transition flex flex-col justify-between space-y-3 ${
-                  tradingMode === "live"
-                    ? "bg-accent/10 border-accent text-white shadow-md"
+                  tradingMode === "simulation"
+                    ? "bg-amber-400/10 border-amber-400 text-white shadow-md"
                     : "bg-[#111722] border-surface-border text-slate-300 hover:border-slate-600"
                 }`}
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Activity className={`w-5 h-5 ${tradingMode === "live" ? "text-accent" : "text-slate-400"}`} />
-                    {tradingMode === "live" && <Check className="w-4 h-4 text-accent" />}
+                    <Layers className={`w-5 h-5 ${tradingMode === "simulation" ? "text-amber-300" : "text-slate-400"}`} />
+                    {tradingMode === "simulation" && <Check className="w-4 h-4 text-amber-300" />}
                   </div>
-                  <span className="font-bold text-xs block">{t("onboarding.mode.live_title")}</span>
-                  <p className="text-[10px] text-slate-400">{t("onboarding.mode.live_desc")}</p>
+                  <span className="font-bold text-xs block">{t("onboarding.mode.simulation_title")}</span>
+                  <p className="text-[10px] text-slate-400">{t("onboarding.mode.simulation_desc")}</p>
                 </div>
-                <span className="text-[9px] bg-[#090d14] px-2 py-0.5 rounded border border-surface-border text-accent font-bold inline-block">
-                  DIRECT INSTITUTIONAL ROUTING
+                <span className="text-[9px] bg-[#090d14] px-2 py-0.5 rounded border border-surface-border text-amber-300 font-bold inline-block">
+                  {t("onboarding.mode.simulation_badge")}
                 </span>
               </div>
             </div>
 
-            {tradingMode === "paper" && (
+            {tradingMode === "simulation" && (
               <div className="bg-[#111722] p-3 rounded-lg border border-surface-border space-y-1.5">
                 <span className="text-[10px] text-slate-400 block">{t("onboarding.mode.balance_label")}</span>
                 <input
@@ -206,7 +187,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
           </div>
         )}
 
-        {/* STEP 2: STRONGHOLD VAULT CREDENTIALS */}
+        {/* STEP 2: OPTIONAL INTEGRATIONS */}
         {currentStep === 2 && (
           <div className="space-y-3">
             <div>
@@ -219,88 +200,9 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
               <p className="text-[11px] text-slate-400">{t("onboarding.step2_desc")}</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs max-h-60 overflow-y-auto pr-1">
-              <div>
-                <span className="text-[10px] text-slate-400 block mb-1">{t("onboarding.vault.twelvedata_label")}</span>
-                <input
-                  type="password"
-                  value={twelvedataKey}
-                  onChange={(e) => setTwelvedataKey(e.target.value)}
-                  placeholder="td_..."
-                  className="w-full bg-[#111722] border border-surface-border text-white px-2 py-1.5 rounded focus:outline-none focus:border-accent"
-                />
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 block mb-1">{t("onboarding.vault.polygon_label")}</span>
-                <input
-                  type="password"
-                  value={polygonKey}
-                  onChange={(e) => setPolygonKey(e.target.value)}
-                  placeholder="poly_..."
-                  className="w-full bg-[#111722] border border-surface-border text-white px-2 py-1.5 rounded focus:outline-none focus:border-accent"
-                />
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 block mb-1">{t("onboarding.vault.binance_key_label")}</span>
-                <input
-                  type="password"
-                  value={binanceKey}
-                  onChange={(e) => setBinanceKey(e.target.value)}
-                  placeholder="bin_key_..."
-                  className="w-full bg-[#111722] border border-surface-border text-white px-2 py-1.5 rounded focus:outline-none focus:border-accent"
-                />
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 block mb-1">{t("onboarding.vault.binance_secret_label")}</span>
-                <input
-                  type="password"
-                  value={binanceSecret}
-                  onChange={(e) => setBinanceSecret(e.target.value)}
-                  placeholder="bin_sec_..."
-                  className="w-full bg-[#111722] border border-surface-border text-white px-2 py-1.5 rounded focus:outline-none focus:border-accent"
-                />
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 block mb-1">{t("onboarding.vault.okx_key_label")}</span>
-                <input
-                  type="password"
-                  value={okxKey}
-                  onChange={(e) => setOkxKey(e.target.value)}
-                  placeholder="okx_key_..."
-                  className="w-full bg-[#111722] border border-surface-border text-white px-2 py-1.5 rounded focus:outline-none focus:border-accent"
-                />
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 block mb-1">{t("onboarding.vault.okx_secret_label")}</span>
-                <input
-                  type="password"
-                  value={okxSecret}
-                  onChange={(e) => setOkxSecret(e.target.value)}
-                  placeholder="okx_sec_..."
-                  className="w-full bg-[#111722] border border-surface-border text-white px-2 py-1.5 rounded focus:outline-none focus:border-accent"
-                />
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 block mb-1">{t("onboarding.vault.okx_passphrase_label")}</span>
-                <input
-                  type="password"
-                  value={okxPassphrase}
-                  onChange={(e) => setOkxPassphrase(e.target.value)}
-                  placeholder="okx_pass_..."
-                  className="w-full bg-[#111722] border border-surface-border text-white px-2 py-1.5 rounded focus:outline-none focus:border-accent"
-                />
-              </div>
-            </div>
-
-            <div className="bg-[#111722] p-2 rounded flex items-center space-x-2 text-[10px] text-slate-400">
+            <div className="bg-[#111722] p-4 rounded flex items-start space-x-3 text-[10px] text-slate-300" data-testid="onboarding-no-credentials">
               <Lock className="w-3.5 h-3.5 text-accent" />
-              <span>{t("onboarding.vault.optional_notice")}</span>
+              <span>{t("onboarding.vault.disabled_notice")}</span>
             </div>
           </div>
         )}
@@ -376,7 +278,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
             {/* Progress */}
             <div className="space-y-2">
               <div className="flex justify-between text-xs">
-                <span>{isVerifying ? "Running Engine Diagnostics..." : t("onboarding.verification.all_systems_go")}</span>
+                <span>{isVerifying ? t("onboarding.verification.running_diagnostics") : t("onboarding.verification.all_systems_go")}</span>
                 <span className="font-bold text-accent">{verificationProgress}%</span>
               </div>
               <div className="w-full bg-[#111722] h-2 rounded-full overflow-hidden">

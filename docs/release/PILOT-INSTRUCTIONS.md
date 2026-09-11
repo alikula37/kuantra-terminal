@@ -12,6 +12,19 @@ ayrı native `x86_64` artifact yayımlanana kadar beklemelidir; arm64 dosyasın�
 denemeyin. Aynı Release'teki `PILOT-MANIFEST.json`, `SHA256SUMS` ve evidence dosyaları
 DMG ile birlikte dağıtılan teknik kanıttır.
 
+## Trade entry boundary
+
+The New Trade screen defaults to **External Trade Record**. It records a trade that
+you executed elsewhere; Kuantra does not send a broker order. Any asset symbol may be
+entered for journaling. **Fetch Mark Price** tries only exact free public sources and
+shows the source identity plus `LIVE`, `DELAYED`, `EOD` or `UNAVAILABLE` status.
+
+When the free quote is unavailable, enter the actual external fill price manually.
+Kuantra does not substitute another instrument and does not silently switch to
+simulation. Simulation is available only after an explicit choice and also sends no
+order. A TradingView webhook is a pending observation until the user confirms the fill;
+it is not quote or execution proof. No paid data service or quote API key is required.
+
 ## İndirmeden önce
 
 1. GitHub hesabınızla giriş yapın ve size gönderilen private repository Release

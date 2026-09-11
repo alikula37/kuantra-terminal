@@ -59,6 +59,13 @@ mention them for audit history only; none is a current download source.
   Linux Secret Service). Plaintext SQLite credential fallback is not supported.
 - React + FastAPI + pywebview single-process desktop shell, with a browser
   development path and per-user data directory.
+- External trade journal records are the default New Trade path. The form accepts a
+  user-supplied symbol for any asset, uses only exact free public quotes when a source
+  supports it, and asks for the actual price manually when the quote is unavailable.
+  Quote freshness is explicit (`LIVE`, `DELAYED`, `EOD`, `UNAVAILABLE`); no paid data
+  service, automatic simulation fallback or live order is involved. First setup does not
+  collect exchange or market-data credentials; optional read-only connector settings are
+  separately gated.
 - EN/TR/DE i18n parity and a reproducible native build/smoke gate for the macOS arm64 and
   x86_64 candidate artifacts; no v1 release claim is made for other operating systems.
 
@@ -71,15 +78,17 @@ they are not production capabilities:
 - DEX/RPC/DeFAI/loan-arbitrage opportunity or execution paths;
 - wearable biometrics, FIDO/WebAuthn and stress lockout override;
 - MT5, Polygon and TwelveData live transports;
+- paid market-data quote services or API-key-based quote fallbacks;
 - generic FIX/DMA, internal matching as a venue, and unvalidated venue-latency claims;
 - reverse-skill agent deployment and unverified MCP source retrieval;
 - remote ModStore download, hot-mount and arbitrary plugin execution.
 
 See [`docs/strategy/`](docs/strategy) for the decision log, ADRs, evidence
-gates and work-package status. P1-WP29 is the current trusted pilot package record; its
-arm64 asset set is refreshed in place on the private Release, while P1-WP28 remains open
-until native Intel evidence exists and N05 remains the later owner-controlled distribution
-gate.
+gates and work-package status. P1-WP29 is the current trusted pilot distribution package;
+its existing arm64 Release asset is bound to the earlier `8da8019` flow and must be
+rebuilt before the P1-WP30 journal/quote changes are piloted. P1-WP30 is archived as the
+bounded free multi-asset journal/quote implementation. P1-WP28 remains open until native
+Intel evidence exists and N05 remains the later owner-controlled distribution gate.
 A disabled surface is a deliberate truth result, not a failed demo.
 
 ## Runtime architecture

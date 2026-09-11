@@ -342,6 +342,49 @@ def test_supported_legacy_schema_upgrade_is_atomic_and_idempotent(tmp_path):
     assert database.read_bytes() != before
 
 
+def test_previous_projection_schema_upgrades_to_quote_provenance(tmp_path):
+    database = tmp_path / "projection-v3.sqlite3"
+    driver = SQLiteDriver(str(database))
+    assert driver.run_migrations("head") is True
+
+    with sqlite3.connect(database) as connection:
+        for column in (
+            "price_origin",
+            "price_observed_at",
+            "price_status",
+            "price_source_symbol",
+            "price_source",
+            "execution_venue",
+            "record_mode",
+        ):
+            connection.execute(f"ALTER TABLE trades DROP COLUMN {column}")
+        connection.execute(
+            "UPDATE alembic_version SET version_num = ?",
+            ("003_trade_projection",),
+        )
+        connection.commit()
+
+    upgraded = upgrade_sqlite_schema(database)
+
+    assert upgraded["valid"] is True
+    assert upgraded["status"] == "UPGRADED"
+    assert upgraded["schema_before"]["version"] == 3
+    assert upgraded["schema_before"]["missing_current_columns"] == [
+        "execution_venue",
+        "price_observed_at",
+        "price_origin",
+        "price_source",
+        "price_source_symbol",
+        "price_status",
+        "record_mode",
+    ]
+    assert upgraded["schema_after"]["version"] == CURRENT_SQLITE_SCHEMA_VERSION
+    with sqlite3.connect(database) as connection:
+        assert connection.execute(
+            "SELECT version_num FROM alembic_version"
+        ).fetchone()[0] == "004_trade_quote_provenance"
+
+
 def test_interrupted_schema_upgrade_keeps_original_legacy_database(tmp_path):
     database = _legacy_database(tmp_path)
     original = database.read_bytes()

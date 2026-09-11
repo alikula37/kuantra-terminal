@@ -193,10 +193,28 @@ class CCXTExecutionEngine:
                 "pnl": 0.0,
                 "r_multiple": None,
                 "commission": 0.0,
+                "record_mode": "SIMULATION",
+                "execution_venue": exchange_id,
+                "price_source": "manual",
+                "price_source_symbol": symbol,
+                "price_status": "UNAVAILABLE",
+                "price_origin": "MANUAL",
                 "notes": notes or f"Paper Mode ({exchange_id})"
             }
 
-            saved = sync_pipeline.record_and_sync_trade(trade_record)
+            saved = sync_pipeline.record_and_sync_trade(
+                trade_record,
+                source="journal_simulation",
+                source_ref=exchange_id,
+                provenance_extra={
+                    "record_mode": "SIMULATION",
+                    "execution_venue": exchange_id,
+                    "price_source": "manual",
+                    "price_source_symbol": symbol,
+                    "price_status": "UNAVAILABLE",
+                    "price_origin": "MANUAL",
+                },
+            )
             logger.info(f"[CCXT-ENGINE] Paper simulated order logged: {order_id} ({side} {qty} {symbol} @ ${fill_price})")
 
             return {

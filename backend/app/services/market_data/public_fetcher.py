@@ -9,9 +9,12 @@ import asyncio
 import csv
 import io
 import logging
+import math
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote as url_quote
 
 import httpx
 
@@ -70,10 +73,16 @@ MACRO_SYMBOL_MAP = {
     "AUDUSD": ("AUDUSD=X", "audusd"),
     "USDCAD": ("CAD=X", "usdcad"),
     "USDCHF": ("CHF=X", "usdchf"),
-    "XAUUSD": ("GC=F", "xauusd"),
-    "GOLD": ("GC=F", "xauusd"),
-    "XAGUSD": ("SI=F", "xagusd"),
-    "SILVER": ("SI=F", "xagusd"),
+    # Keep spot FX/metal aliases separate from futures/token instruments.  A
+    # failed spot quote must never silently become a COMEX future or a token.
+    "XAUUSD": ("XAUUSD=X", "xauusd"),
+    "XAUUSD=X": ("XAUUSD=X", "xauusd"),
+    "GOLD": ("GC=F", "gc.f"),
+    "GC=F": ("GC=F", "gc.f"),
+    "XAGUSD": ("XAGUSD=X", "xagusd"),
+    "XAGUSD=X": ("XAGUSD=X", "xagusd"),
+    "SILVER": ("SI=F", "si.f"),
+    "SI=F": ("SI=F", "si.f"),
     "WTI": ("CL=F", "cl.f"),
     "CRUDE": ("CL=F", "cl.f"),
     "SPY": ("SPY", "spy.us"),
@@ -89,6 +98,42 @@ MACRO_SYMBOL_MAP = {
 }
 
 KNOWN_QUOTE_CURRENCIES = ("USDT", "USDC", "BUSD", "USD", "EUR", "BTC", "ETH", "TRY", "FDUSD", "TUSD")
+
+QUOTE_STATUSES = frozenset({"LIVE", "DELAYED", "EOD", "UNAVAILABLE"})
+FREE_QUOTE_SOURCES = frozenset({
+    "binance_public",
+    "bybit_public",
+    "yahoo_public",
+    "stooq_public",
+})
+
+
+@dataclass(frozen=True)
+class PublicQuote:
+    """A best-effort free quote with explicit source and freshness metadata."""
+
+    requested_symbol: str
+    source_id: Optional[str]
+    source_symbol: Optional[str]
+    price: Optional[float]
+    status: str
+    price_kind: Optional[str]
+    observed_at: Optional[str]
+    reason: Optional[str] = None
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "requested_symbol": self.requested_symbol,
+            "source_id": self.source_id,
+            "source_symbol": self.source_symbol,
+            "price": self.price,
+            "status": self.status,
+            "price_kind": self.price_kind,
+            "observed_at": self.observed_at,
+            "reason": self.reason,
+            "free_source": True,
+            "credentials_required": False,
+        }
 
 
 def normalize_crypto_symbol(symbol: str) -> str:
@@ -126,8 +171,10 @@ class PublicMarketDataFetcher:
     """
 
     BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
+    BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
     BINANCE_FUTURES_URL = "https://fapi.binance.com/fapi/v1/klines"
     BYBIT_KLINES_URL = "https://api.bybit.com/v5/market/kline"
+    BYBIT_TICKER_URL = "https://api.bybit.com/v5/market/tickers"
     YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
     STOOQ_CSV_URL = "https://stooq.com/q/d/l/?s={ticker}&i=d"
 
@@ -142,6 +189,341 @@ class PublicMarketDataFetcher:
             "Accept-Language": "en-US,en;q=0.9",
             "Cache-Control": "no-cache"
         }
+
+    @staticmethod
+    def _iso_from_timestamp_ms(timestamp_ms: Any) -> Optional[str]:
+        try:
+            timestamp = float(timestamp_ms) / 1000.0
+            if not math.isfinite(timestamp) or timestamp <= 0:
+                return None
+            return datetime.fromtimestamp(timestamp, timezone.utc).isoformat().replace("+00:00", "Z")
+        except (TypeError, ValueError, OverflowError, OSError):
+            return None
+
+    @staticmethod
+    def _unavailable_quote(
+        requested_symbol: str,
+        reason: str,
+        *,
+        source_id: Optional[str] = None,
+        source_symbol: Optional[str] = None,
+    ) -> PublicQuote:
+        return PublicQuote(
+            requested_symbol=requested_symbol,
+            source_id=source_id,
+            source_symbol=source_symbol,
+            price=None,
+            status="UNAVAILABLE",
+            price_kind=None,
+            observed_at=None,
+            reason=reason,
+        )
+
+    @classmethod
+    def _quote_candle_values(cls, candle: Dict[str, Any]) -> Optional[Tuple[float, str]]:
+        """Return a finite positive close and timestamp suitable for provenance."""
+        try:
+            price = float(candle["close"])
+        except (KeyError, TypeError, ValueError):
+            return None
+        observed_at = cls._iso_from_timestamp_ms(candle.get("timestamp"))
+        if not math.isfinite(price) or price <= 0 or observed_at is None:
+            return None
+        return price, observed_at
+
+    @staticmethod
+    def _macro_key(symbol: str) -> Optional[str]:
+        raw = str(symbol or "").strip().upper()
+        if raw in MACRO_SYMBOL_MAP:
+            return raw
+        compact = re.sub(r"\s+", "", raw)
+        return compact if compact in MACRO_SYMBOL_MAP else None
+
+    async def fetch_quote(self, symbol: str, source: str = "auto") -> PublicQuote:
+        """Resolve one free public quote without changing instrument identity.
+
+        ``auto`` has a deterministic source order.  A source failure returns an
+        explicit ``UNAVAILABLE`` result after the allowed free candidates have
+        been tried; it never produces a simulated or cross-instrument price.
+        """
+
+        requested = str(symbol or "").strip().upper()
+        if not requested:
+            return self._unavailable_quote("", "SYMBOL_REQUIRED")
+        if len(requested) > 128 or any(ord(character) < 32 for character in requested):
+            return self._unavailable_quote(requested, "SYMBOL_INVALID")
+
+        normalized_source = str(source or "auto").strip().lower()
+        if normalized_source != "auto" and normalized_source not in FREE_QUOTE_SOURCES:
+            return self._unavailable_quote(requested, "UNSUPPORTED_OR_PAID_SOURCE")
+
+        macro_key = self._macro_key(requested)
+        if macro_key is not None:
+            return await self._fetch_macro_quote(
+                requested_symbol=requested,
+                macro_key=macro_key,
+                source=normalized_source,
+            )
+        if self._crypto_pair_symbol(requested) is not None:
+            return await self._fetch_crypto_quote(
+                requested_symbol=requested,
+                source=normalized_source,
+            )
+        return await self._fetch_generic_quote(
+            requested_symbol=requested,
+            source=normalized_source,
+        )
+
+    @staticmethod
+    def _crypto_pair_symbol(symbol: str) -> Optional[str]:
+        """Return a normalized crypto pair only when the quote currency is explicit.
+
+        A bare ticker such as ``MSFT`` or ``GOOG`` must not be rewritten to a
+        fictitious ``MSFTUSDT`` pair.  The journal accepts those symbols as
+        generic assets and lets exact Yahoo/Stooq lookup decide availability.
+        """
+        raw = str(symbol or "").strip().upper()
+        compact = re.sub(r"[\s/_\-]+", "", raw)
+        if any(
+            compact.endswith(quote) and len(compact) > len(quote)
+            for quote in KNOWN_QUOTE_CURRENCIES
+        ):
+            return compact
+        return None
+
+    async def _fetch_macro_quote(
+        self,
+        *,
+        requested_symbol: str,
+        macro_key: str,
+        source: str,
+    ) -> PublicQuote:
+        yahoo_ticker, stooq_ticker = MACRO_SYMBOL_MAP[macro_key]
+        failures: List[str] = []
+        candidates = ("yahoo_public", "stooq_public") if source == "auto" else (source,)
+
+        if "yahoo_public" in candidates:
+            try:
+                params = {
+                    "interval": "1m",
+                    "range": "1d",
+                    "includePrePost": "false",
+                    "events": "div|split",
+                }
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.get(
+                        self.YAHOO_CHART_URL.format(ticker=yahoo_ticker),
+                        params=params,
+                        headers=self._get_headers(),
+                    )
+                if response.status_code == 200:
+                    candles = self._parse_yahoo_chart(response.json())
+                    if candles:
+                        latest = candles[-1]
+                        values = self._quote_candle_values(latest)
+                        if values is not None:
+                            price, observed_at = values
+                            return PublicQuote(
+                                requested_symbol=requested_symbol,
+                                source_id="yahoo_public",
+                                source_symbol=yahoo_ticker,
+                                price=price,
+                                status="DELAYED",
+                                price_kind="CLOSE",
+                                observed_at=observed_at,
+                            )
+                failures.append("YAHOO_QUOTE_UNAVAILABLE")
+            except Exception:
+                logger.warning("[PUBLIC-FETCHER] Yahoo quote failed for %s", yahoo_ticker)
+                failures.append("YAHOO_QUOTE_UNAVAILABLE")
+
+        if "stooq_public" in candidates:
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.get(
+                        self.STOOQ_CSV_URL.format(ticker=stooq_ticker),
+                        headers=self._get_headers(),
+                    )
+                if response.status_code == 200 and "Date" in response.text:
+                    candles = self._parse_stooq_csv(response.text)
+                    if candles:
+                        latest = candles[-1]
+                        values = self._quote_candle_values(latest)
+                        if values is not None:
+                            price, observed_at = values
+                            return PublicQuote(
+                                requested_symbol=requested_symbol,
+                                source_id="stooq_public",
+                                source_symbol=stooq_ticker,
+                                price=price,
+                                status="EOD",
+                                price_kind="CLOSE",
+                                observed_at=observed_at,
+                            )
+                failures.append("STOOQ_QUOTE_UNAVAILABLE")
+            except Exception:
+                logger.warning("[PUBLIC-FETCHER] Stooq quote failed for %s", stooq_ticker)
+                failures.append("STOOQ_QUOTE_UNAVAILABLE")
+
+        return self._unavailable_quote(
+            requested_symbol,
+            ";".join(failures) or "NO_FREE_QUOTE_SOURCE",
+            source_id=source if source != "auto" else None,
+            source_symbol=yahoo_ticker if source == "yahoo_public" else stooq_ticker if source == "stooq_public" else None,
+        )
+
+    async def _fetch_generic_quote(self, *, requested_symbol: str, source: str) -> PublicQuote:
+        """Fetch an exact generic ticker without changing its asset identity.
+
+        This path is for free-source-supported assets outside the curated
+        macro map (for example ``GOOG``).  It deliberately never appends a
+        crypto quote currency or adds an exchange suffix.  If a free source
+        cannot resolve the exact ticker, the caller receives ``UNAVAILABLE``
+        and can enter the actual journal price manually.
+        """
+        if source not in {"auto", "yahoo_public", "stooq_public"}:
+            return self._unavailable_quote(
+                requested_symbol,
+                "SOURCE_NOT_APPLICABLE_TO_GENERIC_SYMBOL",
+            )
+
+        failures: List[str] = []
+        candidates = ("yahoo_public", "stooq_public") if source == "auto" else (source,)
+        if "yahoo_public" in candidates:
+            try:
+                params = {
+                    "interval": "1d",
+                    "range": "5d",
+                    "includePrePost": "false",
+                    "events": "div|split",
+                }
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.get(
+                        self.YAHOO_CHART_URL.format(ticker=url_quote(requested_symbol, safe="")),
+                        params=params,
+                        headers=self._get_headers(),
+                    )
+                if response.status_code == 200:
+                    candles = self._parse_yahoo_chart(response.json())
+                    if candles:
+                        latest = candles[-1]
+                        values = self._quote_candle_values(latest)
+                        if values is not None:
+                            price, observed_at = values
+                            return PublicQuote(
+                                requested_symbol=requested_symbol,
+                                source_id="yahoo_public",
+                                source_symbol=requested_symbol,
+                                price=price,
+                                status="DELAYED",
+                                price_kind="CLOSE",
+                                observed_at=observed_at,
+                            )
+                failures.append("YAHOO_QUOTE_UNAVAILABLE")
+            except Exception:
+                logger.warning("[PUBLIC-FETCHER] Yahoo generic quote failed for %s", requested_symbol)
+                failures.append("YAHOO_QUOTE_UNAVAILABLE")
+
+        if "stooq_public" in candidates:
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.get(
+                        self.STOOQ_CSV_URL.format(ticker=url_quote(requested_symbol.lower(), safe="")),
+                        headers=self._get_headers(),
+                    )
+                if response.status_code == 200 and "Date" in response.text:
+                    candles = self._parse_stooq_csv(response.text)
+                    if candles:
+                        latest = candles[-1]
+                        values = self._quote_candle_values(latest)
+                        if values is not None:
+                            price, observed_at = values
+                            return PublicQuote(
+                                requested_symbol=requested_symbol,
+                                source_id="stooq_public",
+                                source_symbol=requested_symbol.lower(),
+                                price=price,
+                                status="EOD",
+                                price_kind="CLOSE",
+                                observed_at=observed_at,
+                            )
+                failures.append("STOOQ_QUOTE_UNAVAILABLE")
+            except Exception:
+                logger.warning("[PUBLIC-FETCHER] Stooq generic quote failed for %s", requested_symbol)
+                failures.append("STOOQ_QUOTE_UNAVAILABLE")
+
+        return self._unavailable_quote(
+            requested_symbol,
+            ";".join(failures) or "NO_FREE_QUOTE_SOURCE",
+            source_id=source if source != "auto" else None,
+            source_symbol=requested_symbol if source == "yahoo_public" else requested_symbol.lower() if source == "stooq_public" else None,
+        )
+
+    async def _fetch_crypto_quote(self, *, requested_symbol: str, source: str) -> PublicQuote:
+        normalized_symbol = normalize_crypto_symbol(requested_symbol)
+        failures: List[str] = []
+        candidates = ("binance_public", "bybit_public") if source == "auto" else (source,)
+
+        if "binance_public" in candidates:
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.get(
+                        self.BINANCE_TICKER_URL,
+                        params={"symbol": normalized_symbol},
+                        headers=self._get_headers(),
+                    )
+                if response.status_code == 200:
+                    payload = response.json()
+                    price = float(payload.get("price"))
+                    if math.isfinite(price) and price > 0:
+                        return PublicQuote(
+                            requested_symbol=requested_symbol,
+                            source_id="binance_public",
+                            source_symbol=normalized_symbol,
+                            price=price,
+                            status="LIVE",
+                            price_kind="LAST",
+                            observed_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                        )
+                failures.append("BINANCE_QUOTE_UNAVAILABLE")
+            except Exception:
+                logger.warning("[PUBLIC-FETCHER] Binance quote failed for %s", normalized_symbol)
+                failures.append("BINANCE_QUOTE_UNAVAILABLE")
+
+        if "bybit_public" in candidates:
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.get(
+                        self.BYBIT_TICKER_URL,
+                        params={"category": "spot", "symbol": normalized_symbol},
+                        headers=self._get_headers(),
+                    )
+                if response.status_code == 200:
+                    payload = response.json()
+                    rows = payload.get("result", {}).get("list", [])
+                    if rows and isinstance(rows[0], dict):
+                        price = float(rows[0].get("lastPrice"))
+                        if math.isfinite(price) and price > 0:
+                            return PublicQuote(
+                                requested_symbol=requested_symbol,
+                                source_id="bybit_public",
+                                source_symbol=normalized_symbol,
+                                price=price,
+                                status="LIVE",
+                                price_kind="LAST",
+                                observed_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                            )
+                failures.append("BYBIT_QUOTE_UNAVAILABLE")
+            except Exception:
+                logger.warning("[PUBLIC-FETCHER] Bybit quote failed for %s", normalized_symbol)
+                failures.append("BYBIT_QUOTE_UNAVAILABLE")
+
+        return self._unavailable_quote(
+            requested_symbol,
+            ";".join(failures) or "NO_FREE_QUOTE_SOURCE",
+            source_id=source if source != "auto" else None,
+            source_symbol=normalized_symbol,
+        )
 
     def _map_yahoo_interval_and_range(self, interval: str, period: Optional[str] = None) -> Tuple[str, str]:
         """Maps standard interval to Yahoo interval and appropriate query range."""
@@ -316,8 +698,8 @@ class PublicMarketDataFetcher:
     ) -> List[Dict[str, Any]]:
         """
         Fetches historical macro/forex/indices candles from public Yahoo Finance v8 or Stooq.
-        Includes automatic fallback to Binance PAXGUSDT for gold (XAUUSD/GOLD).
-        Zero API keys required.
+        Zero API keys required.  A source failure never falls back to a
+        materially different instrument such as PAXGUSDT for spot gold.
         """
         clean_sym = symbol.upper().strip()
         yahoo_ticker, stooq_ticker = MACRO_SYMBOL_MAP.get(clean_sym, (clean_sym, clean_sym.lower()))
@@ -347,27 +729,7 @@ class PublicMarketDataFetcher:
         except Exception as e:
             logger.warning(f"[PUBLIC-FETCHER] Yahoo Finance fetch error for {clean_sym} ({yahoo_ticker}): {e}")
 
-        # 2. Fallback for Gold (XAUUSD / GOLD): Binance PAXGUSDT
-        if clean_sym in ("XAUUSD", "GOLD"):
-            try:
-                logger.info(f"[PUBLIC-FETCHER] Attempting Binance PAXGUSDT fallback for {clean_sym}...")
-                norm_int = normalize_interval(interval)
-                params = {
-                    "symbol": "PAXGUSDT",
-                    "interval": norm_int,
-                    "limit": 500
-                }
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    res = await client.get(self.BINANCE_KLINES_URL, params=params, headers=self._get_headers())
-                    if res.status_code == 200:
-                        candles = self._parse_binance_klines(res.json())
-                        if candles:
-                            logger.info(f"[PUBLIC-FETCHER] Binance PAXGUSDT fallback succeeded for {clean_sym} ({len(candles)} candles).")
-                            return candles
-            except Exception as e:
-                logger.warning(f"[PUBLIC-FETCHER] Binance PAXGUSDT fallback error for {clean_sym}: {e}")
-
-        # 3. Try Stooq Public CSV Fallback
+        # 2. Try the same-instrument Stooq Public CSV fallback.
         try:
             stooq_url = self.STOOQ_CSV_URL.format(ticker=stooq_ticker)
             async with httpx.AsyncClient(timeout=self.timeout) as client:

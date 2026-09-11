@@ -2,24 +2,40 @@
 # Current product contract
 
 Kuantra is a local-first **Execution Intelligence & Trade Forensics workstation** for
-discretionary crypto/perps traders. The initial value chain is import → explainable
-reconciliation → source-linked Trade Evidence Pack → weekly review → versioned rule
-evaluation. Improved decision quality is a goal to measure, not a proven profitability claim.
+discretionary traders. Account reconciliation initially targets the declared crypto/perps
+market, while the journal also accepts manually recorded trades for any user-supplied
+asset symbol. The initial value chain is import → explainable reconciliation → source-linked
+Trade Evidence Pack → weekly review → versioned rule evaluation. Improved decision quality
+is a goal to measure, not a proven profitability claim.
 
 ## Binding boundaries
 
-- Entry market: Binance/OKX crypto perpetual users. Exact supported venue/market,
-  settlement, position mode and source format must be stated and independently tested.
-  Spot public testnet is not perps account reconciliation evidence.
-- First production target is read-only forensics/review. AI, live orders, HFT/FIX,
-  DEX, copy trading, remote plugins and broad multi-asset support are not prerequisites
-  and must not be promoted from disabled placeholders into production capability.
+- Entry market for automated account evidence: Binance/OKX crypto perpetual users.
+  Exact supported venue/market, settlement, position mode and source format must be
+  stated and independently tested. Spot public testnet is not perps account
+  reconciliation evidence. This does not prevent a user from journaling another asset
+  manually or with an exact free quote when one is available.
+- First production target is read-only forensics/review. The New Trade surface records
+  an external fill by default; explicit simulation is available for testing, and neither
+  path sends an order. AI, live orders, HFT/FIX, DEX, copy trading and remote plugins are
+  not production capabilities. Multi-asset journal input is not a claim of broad
+  multi-asset broker reconciliation.
 - Deterministic risk is the authority; AI has no order tools or override authority.
 - Canonical evidence is append-only SQLite, with deterministic rebuildable projections;
   DuckDB is not the source of truth. Corrections preserve lineage. Historical/source
   completeness and economic dedup are distinct from hash integrity.
 - Missing fee/funding/price/coverage remains unknown or incomplete, never synthetic zero
   or successful reconciliation. Instrument/fee currencies cannot be silently mixed.
+  A free quote is accepted only with explicit source identity and `LIVE`, `DELAYED` or
+  `EOD` status; otherwise price status is `UNAVAILABLE` and the actual price must be
+  entered manually.
+- Free quote sources are limited to the unauthenticated public Binance, Bybit, Yahoo
+  Finance and Stooq adapters. Paid market-data services and quote API keys are not
+  integrated. A symbol is never silently rewritten to a different instrument; a
+  TradingView alert is a pending observation until the user confirms the external fill.
+- First setup does not collect exchange secrets or market-data credentials. Optional
+  read-only connector settings remain separately gated and do not grant New Trade any
+  live-order authority.
 - Current desktop is Python/FastAPI + React/pywebview. Windows WebView2, Mac WKWebView,
   Linux Qt follow platform contracts. Rust/IPC/data-plane expansion needs measured demand.
 - Local-first does not currently prove network isolation. Privacy, offline operation,
