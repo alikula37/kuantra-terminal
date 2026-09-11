@@ -28,6 +28,12 @@ olarak kalır; production veya commercial support claim'i açılmaz.
 
 ## Kabul kriterleri
 
+- [x] Settings manual pilot Release action replaces the fabricated update check;
+      seven direct DOM tests cover native URL dispatch, browser link, failure/retry,
+      missing bridge and timeout/late response. EN/TR/DE 703-key parity and build pass.
+- [ ] Refreshed clean arm64 package includes the manual update action; native browser
+      handoff and exact DMG evidence are recorded before Release asset replacement.
+
 - [x] GitHub private Release'ın yalnızca repository read erişimi olan kullanıcılara
       dağıtım sağlayabildiği; Apple signing/notarization yerine geçmediği resmi kaynaklarla
       kaydedildi.

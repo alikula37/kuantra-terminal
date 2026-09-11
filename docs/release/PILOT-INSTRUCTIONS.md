@@ -92,6 +92,14 @@ profilde yapılan deneme pilot runtime kanıtıdır; temiz profil kanıtı olara
 
 ## Kurulum ve ilk açılış
 
+Ayarlar → **Uygulama güncellemeleri → Güncelleme sayfasını aç** düğmesi pilot
+Release sayfasını varsayılan tarayıcınızda açar. GitHub hesabınızla giriş yapmanız
+gerekebilir. Bu düğme sürüm karşılaştırması veya otomatik kurulum yapmaz. Yeni DMG'yi
+indirip doğrulayın; uygulamayı kapatarak Applications içindeki uygulamayı değiştirin.
+Eski kurulumun bu düğmeyi alması için bir defalık manuel güncelleme gerekir.
+Mevcut veriyle ilk açılıştan önce schema uyumluluğunu doğrulayın; uygulama dosyasının
+değiştirilmesi, veritabanı geçişinin doğrulandığı anlamına gelmez.
+
 1. Doğru DMG'yi çift tıklayın.
 2. `Kuantra Terminal.app` dosyasını **Applications** klasörüne sürükleyin.
 3. İlk açılışta Finder'da uygulamaya sağ tıklayın ve **Open** seçin.

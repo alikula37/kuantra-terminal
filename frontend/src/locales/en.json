@@ -1,4 +1,13 @@
 {
+  "updates": {
+    "title": "Application updates",
+    "version": "Installed version: {version}",
+    "description": "Download and install the new pilot package from GitHub. You may need to sign in to your GitHub account.",
+    "open": "Open update page",
+    "opening": "Opening browser…",
+    "retry": "Try again",
+    "error": "Could not open the browser. Please try again."
+  },
   "nav": {
     "dashboard": "Dashboard",
     "biometrics_studio": "Hardware Biometrics Studio",

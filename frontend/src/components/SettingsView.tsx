@@ -196,7 +196,7 @@ export const SettingsView: React.FC = () => {
         </form>
       </div>
 
-      {/* Auto-Updater Banner */}
+      {/* Manual pilot release access */}
       <UpdateNotifier />
 
       {/* Privacy Telemetry & Diagnostic Health */}

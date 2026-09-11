@@ -69,6 +69,19 @@ komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production 
 
 ## Selected next work
 
+**Manual update page (this change):** Settings now opens the fixed private arm64 pilot
+Release in the system browser through the desktop bridge. The old timer-based false
+"up to date" result is removed. Seven focused DOM tests and frontend build/i18n
+(703 keys per locale) pass. Clean artifact verification follows before upload.
+No version comparison, automatic installer or data migration is added.
+
+**Local schema compatibility finding — IMPLEMENTATION_REQUIRED:** Read-only inspection
+of the existing developer-profile SQLite returned integrity `ok`, but the migration
+classifier rejected the unstamped pre-004 schema with ledger/projection tables and seven
+missing quote fields as `SQLITE_SCHEMA_INCOMPLETE`. Runtime initialization and explicit
+upgrade classification differ; resolve and test this separately before migrating existing
+data. No user-data migration/reset was performed.
+
 **P1-WP29 — IN PROGRESS: trusted macOS pilot package preparation.** The current
 bounded distribution package is the next work item. It binds the refreshed source to
 architecture-scoped DMG, exact mounted smoke, manifest/checksums and pilot instructions;

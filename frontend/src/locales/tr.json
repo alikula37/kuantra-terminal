@@ -1,4 +1,13 @@
 {
+  "updates": {
+    "title": "Uygulama güncellemeleri",
+    "version": "Yüklü sürüm: {version}",
+    "description": "Yeni pilot paketini GitHub’dan indirip kurabilirsiniz. GitHub hesabınızla giriş yapmanız gerekebilir.",
+    "open": "Güncelleme sayfasını aç",
+    "opening": "Tarayıcı açılıyor…",
+    "retry": "Tekrar dene",
+    "error": "Tarayıcı açılamadı. Lütfen tekrar deneyin."
+  },
   "nav": {
     "dashboard": "Gösterge Paneli",
     "biometrics_studio": "Donanım Biyometri Stüdyosu",

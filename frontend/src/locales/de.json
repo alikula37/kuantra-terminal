@@ -1,4 +1,13 @@
 {
+  "updates": {
+    "title": "Anwendungsupdates",
+    "version": "Installierte Version: {version}",
+    "description": "Laden Sie das neue Pilotpaket von GitHub herunter und installieren Sie es. Möglicherweise müssen Sie sich bei GitHub anmelden.",
+    "open": "Update-Seite öffnen",
+    "opening": "Browser wird geöffnet…",
+    "retry": "Erneut versuchen",
+    "error": "Der Browser konnte nicht geöffnet werden. Bitte versuchen Sie es erneut."
+  },
   "nav": {
     "dashboard": "Dashboard",
     "biometrics_studio": "Hardware-Biometrie-Studio",
