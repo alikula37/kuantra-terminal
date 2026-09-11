@@ -43,8 +43,9 @@ macOS 12 or later; not every older Intel model can run Monterey, so “all Macs 
 years” is not a valid support claim. The pilot team may also supply native Intel runtime/N03
 evidence when the x86_64 artifact is available; this does not turn a normal user profile into
 clean-profile evidence or broaden the support claim.
-The old v1.4.0 publication is retained as a withdrawn historical record and must not be
-used.
+The old v1.4.0 publication, older release entries and their version tags were removed from
+GitHub on 2026-09-11 at the owner's request. Repository archive and truth files may still
+mention them for audit history only; none is a current download source.
 
 - SQLite WAL journal and transactional settings/metadata.
 - DuckDB analytical projection for recorded candles/trades.

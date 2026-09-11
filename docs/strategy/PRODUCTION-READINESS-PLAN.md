@@ -3,9 +3,9 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.39
+version: 1.0.40
 status: Proposed
-date: 2026-09-10
+date: 2026-09-11
 reviewed_commit: this change
 branch: main
 strategy: KPS-001@1.1.0
@@ -466,6 +466,13 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
 
 ## Değişiklik geçmişi
 
+### 1.0.40 — 2026-09-11
+
+- Owner isteğiyle GitHub Releases temizlendi: yalnızca güncel private
+  `pilot-v1.0.0-arm64` prerelease/tag bırakıldı; eski release kayıtları ve sürüm tag'leri
+  kaldırıldı. v1.4.0 truth matrix ve arşiv belgeleri repository-only tarihsel kanıt olarak
+  korunur, güncel indirme veya production kanıtı değildir.
+
 ### 1.0.38 — 2026-09-10
 
 - Pilot ekip teknik doğrulama grubu olarak tanımlandı. Native Intel Mac, hazır x86_64
@@ -483,8 +490,9 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
 
 ### 1.0.35 — 2026-09-10
 
-- Owner-approved version reset kaydedildi: kullanılamaz v1.4.0 publication/tag/assets
-  traceability için korunur ve geri çekilmiş olarak işaretlenir; ilk gerçek release train
+- 2026-09-10 tarihli owner-approved version reset'in ilk kararı, kullanılamaz v1.4.0
+  publication/tag/assets kayıtlarını traceability için korumaktı. Bu tarihsel karar
+  2026-09-11 release cleanup kararıyla supersede edildi; ilk gerçek release train yine
   `v1.0.0` macOS arm64 ve Developer ID imzalı/notarize DMG hedefidir.
 - Current truth matrix, package metadata, release workflow ve release-facing notlar
   `v1.0.0` ile hizalanır. Yeni tag/release, Apple signing/notarization ve G6 release

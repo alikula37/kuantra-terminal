@@ -1,7 +1,7 @@
 <!-- doc-role: current-status -->
 # Current development status
 
-Updated: 2026-09-10. Branch: `main`.
+Updated: 2026-09-11. Branch: `main`.
 Roadmap: [KPR-001](PRODUCTION-READINESS-PLAN.md), current planning source, still Proposed
 for new scope/estimates. Selecting one roadmap does not approve its commercial assumptions.
 
@@ -36,13 +36,21 @@ oluşturuldu ve arm64 DMG/evidence/checksum/instructions asset'leri yüklendi. C
 2026-09-10 tarihinde frontend hardening içeren `8da8019` source commit'ine bağlı paketle
 aynı tag üzerinde yenilendi; pilot kullanıcı erişimleri owner tarafından ayrıca verilmelidir.
 
+**Release cleanup decision (2026-09-11):** Owner isteğiyle güncel olmayan tüm GitHub Release
+kayıtları ve sürüm tag'leri kaldırıldı. GitHub Releases sayfasında artık yalnızca private
+`pilot-v1.0.0-arm64` prerelease'i ve tag'i bulunuyor. Eski v1.4.0/v1.3.0/v1.2.0 ve
+institutional sürüm referansları repository içindeki tarihsel audit/truth belgelerinde
+kalabilir; bunlar indirme kaynağı, güncel ürün tanımı veya production kanıtı değildir.
+Canonical `v1.0.0` product Release hâlâ yayımlanmadı.
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
-çekilmiş olarak korunacak; tag, assets ve eski truth matrix izlenebilirlik için silinmeyecek.
-Güncel canonical release train `v1.0.0`'dır; canonical product Release henüz
-yayımlanmamıştır. Kapalı pilot taşıma kanalı olan `pilot-v1.0.0-arm64` ayrı bir private
-prerelease'tir ve güncel arm64 asset seti `8da8019` source commit'ine bağlıdır. Aşağıdaki
-v1.4.0 ad-hoc hash'leri yalnızca pre-reset historical evidence'tir; güncel release kanıtı
-olarak kullanılamaz.
+çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
+matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel
+canonical release train `v1.0.0`'dır; canonical product Release henüz yayımlanmamıştır.
+Kapalı pilot taşıma kanalı olan `pilot-v1.0.0-arm64` ayrı bir private prerelease'tir ve
+güncel arm64 asset seti `8da8019` source commit'ine bağlıdır. Aşağıdaki v1.4.0 ad-hoc
+hash'leri yalnızca pre-reset historical evidence'tir; güncel release kanıtı olarak
+kullanılamaz.
 Eski kök `UAT_AUDIT_REPORT.json` raporu geri çekilmiş tarihsel kayıt olarak arşivlendi;
 güncel UAT çıktısı yalnızca ignore edilen `artifacts/evidence/uat/` altında tutulur.
 Son güvenli çalıştırmada 2 temel senaryo `PASSED`, 3 deneysel senaryo `DISABLED` oldu;

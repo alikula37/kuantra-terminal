@@ -12,8 +12,9 @@ produces its own exact evidence. The existing private pilot Release
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
 has been refreshed in place from app source commit `8da8019`; it remains arm64-only,
 ad-hoc and trusted-pilot-only. The previous
-v1.4.0 matrix and publication are retained as immutable historical records, but v1.4.0 is
-withdrawn and must not be installed or used as a current product description.
+v1.4.0 matrix and historical documentation remain in the repository for audit context only.
+Its GitHub publication, tag and assets were removed on 2026-09-11; v1.4.0 is not a download
+source or a current product description.
 
 The three-person pilot distribution and technical validation path is documented in
 [`PILOT-DISTRIBUTION-RESEARCH.md`](PILOT-DISTRIBUTION-RESEARCH.md) and
@@ -37,9 +38,9 @@ final artifacts, recovery, security, product evidence and owner approval. It doe
 grant release authority or change this truth matrix; an engineering gate alone is
 not proof that the read-only product is ready for production.
 
-The current matrix is `KTR-001@1.0.0`. The prior `KTR-001@1.0.1` matrix remains bound to the
-withdrawn v1.4.0 publication; it is not overwritten because release truth is immutable per
-product version.
+The current matrix is `KTR-001@1.0.0`. The prior `KTR-001@1.0.1` matrix remains as
+repository-only historical evidence for the withdrawn v1.4.0 line; it is not overwritten
+because release truth is immutable per product version.
 
 ## Naming and versioning
 

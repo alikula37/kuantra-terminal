@@ -52,8 +52,10 @@ plaintext credential fallback is introduced.
 
 The release body is generated from this marker-delimited section. Historical notes below remain
 for repository audit only and are not included in the GitHub Release body. The prior v1.4.0
-publication is withdrawn and must not be used. The later dual-architecture pilot still requires
-native x86_64 evidence, and N05 remains the owner-controlled signing/notarization gate.
+publication, tag and assets were removed from GitHub on 2026-09-11 and must not be used; any
+remaining repository references are historical evidence only. The later dual-architecture
+pilot still requires native x86_64 evidence, and N05 remains the owner-controlled
+signing/notarization gate.
 The exact canonical product tag is guarded by
 `docs/release/truth-matrix.v1.0.0.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
