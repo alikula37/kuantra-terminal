@@ -2,7 +2,7 @@
   "updates": {
     "title": "Application updates",
     "version": "Installed version: {version}",
-    "description": "Download and install the new pilot package from GitHub. You may need to sign in to your GitHub account.",
+    "description": "Open the pilot release page to download the latest package. You may need to sign in to your GitHub account; installation is manual.",
     "open": "Open update page",
     "opening": "Opening browser…",
     "retry": "Try again",

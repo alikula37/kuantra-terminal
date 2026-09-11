@@ -2,7 +2,7 @@
   "updates": {
     "title": "Uygulama güncellemeleri",
     "version": "Yüklü sürüm: {version}",
-    "description": "Yeni pilot paketini GitHub’dan indirip kurabilirsiniz. GitHub hesabınızla giriş yapmanız gerekebilir.",
+    "description": "En yeni pilot paketini indirmek için pilot Release sayfasını açın. GitHub hesabınızla giriş yapmanız gerekebilir; kurulum manueldir.",
     "open": "Güncelleme sayfasını aç",
     "opening": "Tarayıcı açılıyor…",
     "retry": "Tekrar dene",
