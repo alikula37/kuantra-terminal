@@ -36,6 +36,13 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       Source `119ae573`, DMG SHA-256 `7a07847d`, mounted executable SHA-256
       `9d70f2ac`, exact smoke SHA-256 `b59489cd`; native click-through opened the fixed
       private Release URL in Chrome from a clean temporary profile.
+- [x] Pilot journal UI correction keeps the persisted theme toggle visible across the
+      shell by applying light/dark DOM tokens, root `color-scheme` and a guarded settings
+      sync; the standard journal exposes an explicit, confirmed `CANCELED` action for
+      OPEN/CLOSED rows, preserves the tombstone instead of physically deleting evidence,
+      validates the response and exposes a CANCELED filter. Focused DOM coverage is
+      recorded by this change; the existing private Release asset still requires a later
+      package refresh before pilot distribution.
 
 - [x] GitHub private Release'ın yalnızca repository read erişimi olan kullanıcılara
       dağıtım sağlayabildiği; Apple signing/notarization yerine geçmediği resmi kaynaklarla

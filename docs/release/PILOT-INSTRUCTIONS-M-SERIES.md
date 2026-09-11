@@ -82,6 +82,12 @@ Uygulama açıldıktan sonra yalnızca sentetik veya onaylanmış/redakte edilmi
 4. JSON, HTML ve CSV export;
 5. uygulamayı kapatıp yeniden açma ve aynı review/Evidence Pack kimliğini kontrol etme.
 
+Tema için üst çubuktaki **Light/Dark** düğmesini kullanın. Light Mode seçildiğinde
+uygulamanın ana yüzeyi, yazıları ve kenarlıkları açık palete geçer; seçiminiz yerel
+ayarlarla eşzamanlanır. Yeni bir işlem kaydını kaldırmak istediğinizde Journal satırındaki
+**İptal et** düğmesini ve onay penceresini kullanın. Kayıt fiziksel olarak silinmez;
+kanıt zinciri korunarak `CANCELED` durumunda görünür kalır. Bu işlem borsaya emir göndermez.
+
 Review tamamla/yeniden aç kontrolleri period, timezone veya as-of snapshot değişmişse
 bilinçli olarak devre dışı kalabilir. Evidence Pack export'u yalnızca native save bridge
 gerçekten dosya kaydettiğini bildirdiğinde hazır görünür; kullanıcı iptali ile kayıt hatası

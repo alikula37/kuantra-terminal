@@ -111,6 +111,90 @@ it("keeps an unknown closed-trade PnL distinct from zero", async () => {
   expect(host.textContent).not.toContain("$0.00");
 });
 
+it("offers a confirmed audit-safe cancellation instead of physically deleting a trade", async () => {
+  const trade = {
+    id: "TRD-CANCEL",
+    symbol: "XAUUSD",
+    side: "BUY",
+    entry_price: 2400,
+    qty: 1,
+    entry_time: "2026-09-08T10:00:00Z",
+    status: "OPEN",
+  };
+  const canceledTrade = { ...trade, status: "CANCELED" };
+  mocks.apiFetch.mockImplementation((_path: string, init?: RequestInit) => (
+    init?.method === "DELETE"
+      ? Promise.resolve(response({ status: "canceled", id: trade.id, trade: canceledTrade }))
+      : Promise.resolve(response([trade]))
+  ));
+
+  await act(async () => root.render(<JournalView {...props} />));
+  await flush();
+
+  const action = host.querySelector("[data-testid=journal-cancel-action]") as HTMLButtonElement;
+  expect(action).toBeTruthy();
+  expect(action.dataset.tradeId).toBe(trade.id);
+  await act(async () => action.click());
+  expect(host.querySelector("[data-testid=journal-cancel-dialog]")).not.toBeNull();
+  expect(host.textContent).toContain("journal.cancel_audit_note");
+
+  const confirm = host.querySelector("[data-testid=journal-cancel-confirm]") as HTMLButtonElement;
+  await act(async () => confirm.click());
+  await flush();
+
+  expect(mocks.apiFetch).toHaveBeenCalledWith(`/api/v1/trades/${trade.id}`, { method: "DELETE" });
+  expect(mocks.setTrades).toHaveBeenCalledWith([canceledTrade]);
+  expect(host.querySelector("[data-testid=journal-cancel-dialog]")).toBeNull();
+  expect(host.querySelector("[data-testid=journal-cancel-success]")?.textContent).toContain("journal.cancel_success");
+});
+
+it("keeps the cancellation confirmation open when the server response is unsafe", async () => {
+  const trade = {
+    id: "TRD-CANCEL-ERROR",
+    symbol: "BTCUSDT",
+    side: "SELL",
+    entry_price: 100,
+    qty: 1,
+    entry_time: "2026-09-08T10:00:00Z",
+    status: "CLOSED",
+  };
+  mocks.apiFetch.mockImplementation((_path: string, init?: RequestInit) => (
+    init?.method === "DELETE"
+      ? Promise.resolve(response({ status: "canceled", id: trade.id }))
+      : Promise.resolve(response([trade]))
+  ));
+
+  await act(async () => root.render(<JournalView {...props} />));
+  await flush();
+  mocks.setTrades.mockClear();
+  await act(async () => (host.querySelector("[data-testid=journal-cancel-action]") as HTMLButtonElement).click());
+  await act(async () => (host.querySelector("[data-testid=journal-cancel-confirm]") as HTMLButtonElement).click());
+  await flush();
+
+  expect(host.querySelector("[data-testid=journal-cancel-dialog]")).not.toBeNull();
+  expect(host.querySelector("[data-testid=journal-cancel-error]")?.textContent).toContain("Trade cancellation response was malformed");
+  expect(mocks.setTrades).not.toHaveBeenCalled();
+});
+
+it("does not offer a second cancellation action for a retained tombstone", async () => {
+  const trade = {
+    id: "TRD-CANCELED",
+    symbol: "ETHUSDT",
+    side: "BUY",
+    entry_price: 100,
+    qty: 1,
+    entry_time: "2026-09-08T10:00:00Z",
+    status: "CANCELED",
+  };
+  mocks.apiFetch.mockResolvedValue(response([trade]));
+
+  await act(async () => root.render(<JournalView {...props} />));
+  await flush();
+
+  expect(host.querySelector("[data-testid=journal-cancel-action]")).toBeNull();
+  expect(host.textContent).toContain("CANCELED");
+});
+
 it("loads older journal pages without silently replacing the first page", async () => {
   const trade = (id: string) => ({
     id,

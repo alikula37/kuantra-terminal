@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock } from "lucide-react";
+import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2 } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
@@ -65,6 +65,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState(false);
+  const [cancellationTarget, setCancellationTarget] = useState<Trade | null>(null);
+  const [cancellingTradeId, setCancellingTradeId] = useState<string | null>(null);
+  const [cancellationError, setCancellationError] = useState<string | null>(null);
+  const [cancellationNotice, setCancellationNotice] = useState<string | null>(null);
   const loadControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
 
@@ -142,6 +146,46 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
     setError(t("journal.cancelled"));
   };
 
+  const cancelTrade = async () => {
+    const target = cancellationTarget;
+    if (!target || cancellingTradeId) return;
+
+    setCancellingTradeId(target.id);
+    setCancellationError(null);
+    setCancellationNotice(null);
+
+    try {
+      const response = await apiFetch(apiUrl(`/api/v1/trades/${encodeURIComponent(target.id)}`), { method: "DELETE" });
+      let payload: unknown = null;
+      try {
+        payload = await response.json();
+      } catch {
+        // The bounded error below explains the malformed or empty response.
+      }
+
+      const payloadRecord = payload && typeof payload === "object" ? payload as Record<string, unknown> : null;
+      if (!response.ok) {
+        const detail = payloadRecord && typeof payloadRecord.detail === "string" ? payloadRecord.detail : "";
+        throw new Error(detail || `Trade cancellation failed (HTTP ${response.status})`);
+      }
+
+      const canceledTrade = payloadRecord?.trade;
+      if (!isTrade(canceledTrade) || canceledTrade.id !== target.id || canceledTrade.status !== "CANCELED") {
+        throw new Error("Trade cancellation response was malformed");
+      }
+
+      // Keep the canonical row visible as a tombstone; the evidence chain is never physically deleted.
+      setTrades(trades.map((trade) => trade.id === target.id ? canceledTrade : trade));
+      setCancellationTarget(null);
+      setCancellationNotice(t("journal.cancel_success"));
+    } catch (cause) {
+      console.warn("[JournalView] Failed to cancel trade:", cause);
+      setCancellationError(cause instanceof Error ? cause.message : t("journal.cancel_failed"));
+    } finally {
+      setCancellingTradeId(null);
+    }
+  };
+
   const filteredTrades = trades.filter((t) => {
     if (filterSymbol !== "ALL" && t.symbol !== filterSymbol) return false;
     if (filterStatus !== "ALL" && t.status !== filterStatus) return false;
@@ -180,6 +224,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
               <option value="ALL">{t("journal.filter_all_status")}</option>
               <option value="OPEN">{t("journal.status_open")}</option>
               <option value="CLOSED">{t("journal.status_closed")}</option>
+              <option value="CANCELED">{t("journal.status_canceled")}</option>
             </select>
           </div>
 
@@ -216,6 +261,12 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           </button>
         </div>
       </div>
+
+      {cancellationNotice && (
+        <div role="status" data-testid="journal-cancel-success" className="mt-3 rounded border border-gain/40 bg-gain/10 px-3 py-2 text-xs text-gain">
+          {cancellationNotice}
+        </div>
+      )}
 
       {isLoading ? (
         <div role="status" data-testid="journal-loading" className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none font-mono text-slate-400 text-xs space-y-3">
@@ -346,6 +397,23 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                         <FileCheck2 className="w-3 h-3 text-accent" />
                         <span>{t("journal.evidence_action")}</span>
                       </button>
+                      {tItem.status !== "CANCELED" && (
+                        <button
+                          type="button"
+                          data-testid="journal-cancel-action"
+                          data-trade-id={tItem.id}
+                          onClick={() => {
+                            setCancellationTarget(tItem);
+                            setCancellationError(null);
+                            setCancellationNotice(null);
+                          }}
+                          className="inline-flex items-center space-x-1 px-2 py-0.5 ml-1 bg-loss/10 hover:bg-loss/20 border border-loss/40 text-loss font-bold rounded text-[10px] transition"
+                          title={t("journal.cancel_action_title")}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>{t("journal.cancel_action")}</span>
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -388,6 +456,52 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         />
       )}
       {weeklyReviewOpen && <WeeklyReviewPanel onClose={() => setWeeklyReviewOpen(false)} />}
+      {cancellationTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="journal-cancel-title"
+          aria-describedby="journal-cancel-description"
+          data-testid="journal-cancel-dialog"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+        >
+          <div className="w-full max-w-md rounded-lg border border-surface-border bg-[#0d121c] p-5 shadow-2xl">
+            <h2 id="journal-cancel-title" className="text-base font-bold text-white">{t("journal.cancel_title")}</h2>
+            <p id="journal-cancel-description" className="mt-3 text-xs leading-relaxed text-slate-300">
+              {t("journal.cancel_description", { id: cancellationTarget.id, symbol: cancellationTarget.symbol })}
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-slate-400">{t("journal.cancel_audit_note")}</p>
+            {cancellationError && (
+              <div role="alert" data-testid="journal-cancel-error" className="mt-3 rounded border border-loss/40 bg-loss/10 px-3 py-2 text-xs text-loss">
+                {cancellationError}
+              </div>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCancellationTarget(null);
+                  setCancellationError(null);
+                }}
+                disabled={cancellingTradeId === cancellationTarget.id}
+                className="rounded border border-surface-border px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                {t("journal.cancel_keep")}
+              </button>
+              <button
+                type="button"
+                data-testid="journal-cancel-confirm"
+                onClick={() => void cancelTrade()}
+                disabled={cancellingTradeId === cancellationTarget.id}
+                className="inline-flex items-center gap-1.5 rounded bg-loss px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {cancellingTradeId === cancellationTarget.id ? t("journal.cancel_in_progress") : t("journal.cancel_confirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
   </div>
   );
 };

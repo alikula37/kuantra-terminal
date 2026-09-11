@@ -4,16 +4,202 @@
 
 :root {
   color-scheme: dark;
+  --bg-primary: #0b0e14;
+  --bg-surface: #0d121c;
+  --bg-elevated: #111722;
+  --bg-soft: #162032;
+  --bg-deep: #090d14;
+  --bg-hover: #1a2234;
+  --bg-hover-strong: #1f2d47;
+  --border-color: #1e293b;
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
+  --color-accent: #38bdf8;
+  --color-gain: #10b981;
+  --color-loss: #f43f5e;
+  --accent-rgb: 56, 189, 248;
+  --gain-rgb: 16, 185, 129;
+  --loss-rgb: 244, 63, 94;
+}
+
+:root.light-theme {
+  color-scheme: light;
+  --bg-primary: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --bg-soft: #e2e8f0;
+  --bg-deep: #f1f5f9;
+  --bg-hover: #e2e8f0;
+  --bg-hover-strong: #cbd5e1;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --color-accent: #0284c7;
+  --color-gain: #059669;
+  --color-loss: #e11d48;
+  --accent-rgb: 2, 132, 199;
+  --gain-rgb: 5, 150, 105;
+  --loss-rgb: 225, 29, 72;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #0b0e14;
-  color: #f1f5f9;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   overflow: hidden;
 }
+
+/*
+ * A small compatibility layer for the original dark-first surface classes.
+ * New screens should use the theme variables/Tailwind semantic colors directly;
+ * these selectors keep existing pilot screens readable while they migrate.
+ */
+.light-theme [class~="bg-[#0b0e14]"],
+.light-theme [class*="bg-[#0b0e14]/"],
+.light-theme [class~="bg-[#090d14]"],
+.light-theme [class*="bg-[#090d14]/"],
+.light-theme [class~="bg-[#090d15]"] {
+  background-color: var(--bg-primary) !important;
+}
+
+.light-theme [class~="bg-[#0d121c]"],
+.light-theme [class*="bg-[#0d121c]/"],
+.light-theme [class~="bg-[#0b0f19]"],
+.light-theme [class~="bg-[#0e131f]"],
+.light-theme [class~="bg-[#0e1626]"] {
+  background-color: var(--bg-surface) !important;
+}
+
+.light-theme [class~="bg-[#111722]"],
+.light-theme [class*="bg-[#111722]/"],
+.light-theme [class~="bg-[#111724]"],
+.light-theme [class*="bg-[#111724]/"],
+.light-theme [class~="bg-[#121824]"],
+.light-theme [class~="bg-[#1e293b]"] {
+  background-color: var(--bg-elevated) !important;
+}
+
+.light-theme [class~="bg-[#162032]"],
+.light-theme [class~="bg-[#151c2a]"],
+.light-theme [class~="bg-[#151c2c]"],
+.light-theme [class~="bg-[#161f2e]"],
+.light-theme [class~="bg-[#192233]"],
+.light-theme [class~="bg-[#1a2333]"] {
+  background-color: var(--bg-soft) !important;
+}
+
+.light-theme [class~="bg-[#1a2234]"],
+.light-theme [class~="bg-[#1a2337]"],
+.light-theme [class~="bg-[#1a263c]"] {
+  background-color: var(--bg-hover) !important;
+}
+
+.light-theme [class~="bg-[#1f2d47]"],
+.light-theme [class~="bg-[#1f2c42]"] {
+  background-color: var(--bg-hover-strong) !important;
+}
+
+.light-theme [class~="bg-[#0a1612]"] {
+  background-color: #ecfdf5 !important;
+}
+
+.light-theme [class~="bg-[#180e12]"] {
+  background-color: #fff1f2 !important;
+}
+
+.light-theme [class~="hover:bg-[#0d121c]"]:hover,
+.light-theme [class~="hover:bg-[#111722]"]:hover,
+.light-theme [class~="hover:bg-[#090d14]"]:hover {
+  background-color: var(--bg-surface) !important;
+}
+
+.light-theme [class~="hover:bg-[#1a2234]"]:hover,
+.light-theme [class~="hover:bg-[#151c2a]"]:hover,
+.light-theme [class~="hover:bg-[#151c2c]"]:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+.light-theme [class~="hover:bg-[#1f2d47]"]:hover,
+.light-theme [class~="hover:bg-[#1f2c42]"]:hover {
+  background-color: var(--bg-hover-strong) !important;
+}
+
+.light-theme [class~="bg-accent"] {
+  background-color: var(--color-accent) !important;
+}
+
+.light-theme [class~="bg-accent/10"] { background-color: rgba(var(--accent-rgb), 0.10) !important; }
+.light-theme [class~="bg-accent/15"] { background-color: rgba(var(--accent-rgb), 0.15) !important; }
+.light-theme [class~="bg-accent/20"] { background-color: rgba(var(--accent-rgb), 0.20) !important; }
+.light-theme [class~="bg-accent/25"] { background-color: rgba(var(--accent-rgb), 0.25) !important; }
+.light-theme [class~="bg-accent/30"] { background-color: rgba(var(--accent-rgb), 0.30) !important; }
+.light-theme [class~="bg-accent/40"] { background-color: rgba(var(--accent-rgb), 0.40) !important; }
+
+.light-theme [class~="hover:bg-accent/10"]:hover { background-color: rgba(var(--accent-rgb), 0.10) !important; }
+.light-theme [class~="hover:bg-accent/30"]:hover { background-color: rgba(var(--accent-rgb), 0.30) !important; }
+.light-theme [class~="hover:bg-sky-400"]:hover { background-color: #0369a1 !important; }
+
+.light-theme [class~="bg-gain"] { background-color: var(--color-gain) !important; }
+.light-theme [class~="bg-gain/10"] { background-color: rgba(var(--gain-rgb), 0.10) !important; }
+.light-theme [class~="bg-gain/15"] { background-color: rgba(var(--gain-rgb), 0.15) !important; }
+.light-theme [class~="bg-gain/20"] { background-color: rgba(var(--gain-rgb), 0.20) !important; }
+.light-theme [class~="bg-gain/30"] { background-color: rgba(var(--gain-rgb), 0.30) !important; }
+.light-theme [class~="hover:bg-gain"]:hover { background-color: #047857 !important; }
+
+.light-theme [class~="bg-loss"] { background-color: var(--color-loss) !important; }
+.light-theme [class~="bg-loss/10"] { background-color: rgba(var(--loss-rgb), 0.10) !important; }
+.light-theme [class~="bg-loss/15"] { background-color: rgba(var(--loss-rgb), 0.15) !important; }
+.light-theme [class~="bg-loss/20"] { background-color: rgba(var(--loss-rgb), 0.20) !important; }
+.light-theme [class~="hover:bg-loss/10"]:hover { background-color: rgba(var(--loss-rgb), 0.10) !important; }
+
+.light-theme [class~="bg-slate-800"] { background-color: var(--bg-soft) !important; }
+.light-theme [class~="hover:bg-slate-800"]:hover { background-color: var(--bg-hover-strong) !important; }
+
+.light-theme [class~="text-white"],
+.light-theme [class~="text-slate-100"],
+.light-theme [class~="text-slate-200"],
+.light-theme [class~="text-slate-300"] {
+  color: var(--text-primary) !important;
+}
+
+.light-theme [class~="text-slate-400"],
+.light-theme [class~="text-slate-500"],
+.light-theme [class~="text-slate-600"] {
+  color: var(--text-muted) !important;
+}
+
+.light-theme [class~="hover:text-white"]:hover { color: var(--text-primary) !important; }
+.light-theme [class~="text-accent"] { color: var(--color-accent) !important; }
+.light-theme [class~="text-gain"] { color: var(--color-gain) !important; }
+.light-theme [class~="text-loss"] { color: var(--color-loss) !important; }
+.light-theme [class~="text-amber-300"],
+.light-theme [class~="text-amber-400"] { color: #b45309 !important; }
+
+/* Preserve white-on-color contrast for filled status/action controls. */
+.light-theme [class~="bg-accent"][class~="text-white"],
+.light-theme [class~="bg-gain"][class~="text-white"],
+.light-theme [class~="bg-loss"][class~="text-white"],
+.light-theme [class~="bg-rose-500"][class~="text-white"],
+.light-theme [class~="bg-red-500"][class~="text-white"] {
+  color: #ffffff !important;
+}
+
+.light-theme [class~="border-surface-border"],
+.light-theme [class*="border-surface-border/"] {
+  border-color: var(--border-color) !important;
+}
+
+.light-theme [class~="divide-surface-border"] > :not([hidden]) ~ :not([hidden]),
+.light-theme [class*="divide-surface-border/"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-color) !important;
+}
+
+.light-theme [class~="border-accent"],
+.light-theme [class*="border-accent/"] { border-color: var(--color-accent) !important; }
+.light-theme [class~="border-loss"],
+.light-theme [class*="border-loss/"] { border-color: var(--color-loss) !important; }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
@@ -21,12 +207,12 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0e14;
+  background: var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--border-color);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: var(--bg-hover-strong);
 }

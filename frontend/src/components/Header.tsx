@@ -253,7 +253,8 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={toggleTheme}
           className="p-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white rounded transition cursor-pointer"
-          title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Theme`}
+          title={t(theme === "dark" ? "header.switch_to_light_theme" : "header.switch_to_dark_theme")}
+          aria-label={t(theme === "dark" ? "header.switch_to_light_theme" : "header.switch_to_dark_theme")}
         >
           {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-accent" />}
         </button>

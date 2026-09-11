@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { apiFetch, apiUrl } from "../lib/backend";
 
 export type Theme = "dark" | "light";
@@ -74,6 +74,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const themeMutationVersionRef = useRef(0);
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("kuantra_theme") as Theme;
@@ -96,6 +97,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     root.style.setProperty("--text-primary", palette.text);
     root.style.setProperty("--text-muted", palette.textMuted);
     root.style.setProperty("--color-accent", palette.accent);
+    root.style.colorScheme = activeTheme;
+    root.dataset.theme = activeTheme;
 
     if (activeTheme === "light") {
       root.classList.add("light-theme");
@@ -107,6 +110,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const setTheme = useCallback((newTheme: Theme) => {
+    themeMutationVersionRef.current += 1;
     setThemeState(newTheme);
     if (typeof window !== "undefined") {
       localStorage.setItem("kuantra_theme", newTheme);
@@ -128,10 +132,13 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Initial load sync from backend if available
   useEffect(() => {
     applyDomTokens(theme);
+    const requestVersion = themeMutationVersionRef.current;
 
     apiFetch(apiUrl("/api/v1/settings"))
       .then((res) => res.json())
       .then((data) => {
+        // A user toggle wins over a slower initial settings response.
+        if (themeMutationVersionRef.current !== requestVersion) return;
         if (data && (data.active_theme === "light" || data.active_theme === "dark")) {
           if (data.active_theme !== theme) {
             setThemeState(data.active_theme);
