@@ -88,7 +88,16 @@ refreshes retain the last validated snapshot with an EN/TR/DE stale-data notice.
 Market Charts no longer cover the canvas or reset user zoom on every eight-second
 successful refresh. Three new regression scenarios reproduced the defects before
 the fixes; focused tests are **13 passed**, full frontend **29 files / 141 passed**,
-and i18n **763/763**. Packaged/native validation is pending for this source.
+and i18n **763/763**. Source `bea2bab` passed native arm64 build/WKWebView smoke
+with `COMPLETE` provenance; full local CI was `MERGE BLOCKED` by two historical
+Release-title assertions left behind by the previous download-page simplification.
+Those assertions now check the current M-series pilot title and scope. Intel probe
+tests also exposed a native-host classification defect: Apple's documented
+`sysctlbyname` `ENOENT` case is native, whereas other probe errors remain unknown.
+The shared Python probe now reads errno directly; packaging and hosted workflow
+use that same guard. Focused architecture/packaging/workflow/release tests are
+**43 passed**; the real Mac mini accepts arm64 and rejects an x86_64 request.
+Full local CI for the combined corrections is pending.
 The installed app was inspected read-only: its active chart shows `ARCLK.IS` prices
 with hardcoded dollar signs, another currency-display defect to resolve in this
 continuation. Spot persistence, New Trade UX, currency display and Intel work are

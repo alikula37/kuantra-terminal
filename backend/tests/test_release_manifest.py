@@ -24,7 +24,7 @@ class TestReleaseManifestAndPackaging:
         with open(notes_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        assert "Kuantra Terminal v1.0.0 — Mac Candidate Truth & Safety" in content
+        assert "Kuantra Terminal v1.0.0 — M-series Trusted Pilot" in content
         assert "CURRENT_RELEASE_NOTES:START" in content
         assert "CURRENT_RELEASE_NOTES:END" in content
         assert "Historical release archive (non-current)" in content

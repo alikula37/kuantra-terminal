@@ -150,7 +150,7 @@ class TestCICDWorkflowsAndPackaging:
         assert "scripts/render_current_release_notes.py" in rel_raw
         assert "body_path: dist/CURRENT_RELEASE_NOTES.md" in rel_raw
         assert "inputs.publish == true" in rel_raw
-        assert "sysctl.proc_translated" in rel_raw
+        assert 'python scripts/macos_architecture.py --expected-architecture "$expected"' in rel_raw
 
         pilot_job = rel_data["jobs"]["prepare-pilot-package"]
         assert pilot_job.get("needs") == "build-and-package"

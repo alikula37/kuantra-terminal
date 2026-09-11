@@ -69,13 +69,7 @@ jobs:
             echo "native runner architecture mismatch: expected $expected, got $actual" >&2
             exit 1
           }
-          if [ "$expected" = "x86_64" ]; then
-            translated="$(sysctl -in sysctl.proc_translated 2>/dev/null || true)"
-            [ "$translated" = "0" ] || {
-              echo "x86_64 job is not proven native Intel; Rosetta status is ${translated:-unknown}" >&2
-              exit 1
-            }
-          fi
+          python scripts/macos_architecture.py --expected-architecture "$expected"
       - name: Install Python dependencies
         run: python -m pip install --require-hashes -r backend/requirements.lock
       - name: Compile Python sources

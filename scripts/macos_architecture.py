@@ -9,6 +9,8 @@ architecture detection can be tested without a macOS binary or a real toolchain.
 from __future__ import annotations
 
 import platform
+import ctypes
+import errno
 import re
 import subprocess
 from pathlib import Path
@@ -40,30 +42,37 @@ def host_architecture() -> str | None:
     return canonical_architecture(platform.machine())
 
 
-def rosetta_translation_status(
-    *,
-    runner: CommandRunner | None = None,
-) -> bool | None:
+def rosetta_translation_status() -> bool | None:
     """Return whether the current macOS process is running through Rosetta.
 
     ``platform.machine()`` and ``uname -m`` describe the translated process as
     ``x86_64`` on Apple Silicon.  That is useful for running an Intel process,
     but it is not native Intel evidence.  macOS exposes the process translation
-    bit through ``sysctl.proc_translated``; an unavailable or malformed value is
-    deliberately treated as unknown so release-facing native checks can fail
-    closed.
+    bit through ``sysctl.proc_translated``. Apple's documented ENOENT result
+    means native (the key need not exist on Intel); other errors stay unknown.
+    Use errno directly rather than interpreting localized shell output or the
+    empty output produced by ``sysctl -i`` for a missing key.
     """
 
     if platform.system() != "Darwin":
         return False
-    run = runner or _default_runner
-    returncode, stdout, _stderr = run(("sysctl", "-in", "sysctl.proc_translated"))
-    if returncode != 0:
+    try:
+        sysctl = ctypes.CDLL(None, use_errno=True).sysctlbyname
+        sysctl.argtypes = [ctypes.c_char_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_size_t), ctypes.c_void_p, ctypes.c_size_t]
+        sysctl.restype = ctypes.c_int
+        value = ctypes.c_int(0)
+        size = ctypes.c_size_t(ctypes.sizeof(value))
+        ctypes.set_errno(0)
+        result = sysctl(b"sysctl.proc_translated", ctypes.byref(value), ctypes.byref(size), None, 0)
+        if result == -1:
+            return False if ctypes.get_errno() == errno.ENOENT else None
+        if result != 0 or size.value != ctypes.sizeof(value):
+            return None
+    except (OSError, AttributeError):
         return None
-    value = stdout.strip()
-    if value == "0":
+    if value.value == 0:
         return False
-    if value == "1":
+    if value.value == 1:
         return True
     return None
 
@@ -220,3 +229,16 @@ def detect_executable_architecture(
         "verified": False,
         "source": "undetected",
     }
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Verify the native macOS build host")
+    parser.add_argument("--expected-architecture", required=True, choices=sorted(SUPPORTED_ARCHITECTURES))
+    args = parser.parse_args()
+    if platform.system() != "Darwin":
+        parser.exit(2, "native macOS host required\n")
+    ok, reason = native_host_matches(args.expected_architecture)
+    print(reason)
+    raise SystemExit(0 if ok else 2)

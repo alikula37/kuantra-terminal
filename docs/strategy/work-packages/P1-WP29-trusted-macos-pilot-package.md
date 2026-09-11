@@ -33,8 +33,16 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       overlapping polls do not abort slow reads. Market Charts retain the visible
       canvas and user zoom during successful background refresh. Three failing
       regression scenarios now pass; focused DOM **13**, full frontend **141**,
-      EN/TR/DE **763/763** on macOS arm64. Source: this change. Native packaging
-      evidence for this source remains pending.
+      EN/TR/DE **763/763** on macOS arm64. Source `bea2bab` passed native build and
+      WKWebView smoke with COMPLETE provenance; full local CI exposed two pre-existing
+      Release-title assertion mismatches. These are corrected in this change;
+      the combined full local CI remains pending.
+- [x] Native Intel host classification follows Apple's `sysctlbyname` contract:
+      missing translation key (`ENOENT`) means native; Rosetta and other errors
+      remain rejected. Packaging and workflow share the Python guard. Focused
+      architecture/packaging/workflow/release tests **43 passed**; actual Mac mini
+      arm64 acceptance and x86_64 mismatch rejection verified. This is code/fixture
+      evidence, not an Intel artifact or pilot runtime pass.
 - [ ] Complete current owner-requested New Trade symbol-search parity and explicit
       spot journal persistence/round-trip validation.
 - [ ] Correct chart price currency presentation (installed ARCLK.IS chart incorrectly

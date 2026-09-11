@@ -55,6 +55,15 @@ paketin dışındadır. Windows/Linux release claim’i açılmaz.
 
 ## Uygulanan sınır
 
+2026-09-11 correction: the shell `sysctl -in sysctl.proc_translated` guard incorrectly
+rejected an absent key on native Intel. [Apple's documented probe](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment)
+treats `sysctlbyname` failure with `ENOENT` as native, while other errors are unknown.
+The shared Python helper now uses the native API and errno; packaging and hosted
+workflow call that helper. Tests cover native, translated, ENOENT, permission/I/O
+errors, malformed values and unavailable API; focused architecture/packaging/workflow/
+release regression is **43 passed** on macOS arm64. The actual host guard accepts
+arm64 and rejects x86_64 on the Mac mini. Native Intel artifact evidence remains open.
+
 Bu paket yalnızca native macOS compatibility ve evidence plumbing değiştirir. Ürün
 kimliği Execution Intelligence & Trade Forensics Workstation olarak korunur; AI order
 authority, live execution, yeni connector, funding/transfer schema, tam hesap PnL,

@@ -59,15 +59,7 @@ HOST_ARCH="$(canonical_architecture "$(uname -m)")" || {
   exit 1
 }
 EXPECTED_ARCH="${EXPECTED_ARCH:-$HOST_ARCH}"
-if [ "$EXPECTED_ARCH" = "x86_64" ]; then
-  # An Apple Silicon process launched through Rosetta reports x86_64 via
-  # uname -m.  Do not let that translated process produce Intel evidence.
-  TRANSLATED="$(sysctl -in sysctl.proc_translated 2>/dev/null || true)"
-  [ "$TRANSLATED" = "0" ] || {
-    echo "x86_64 packaging requires a native Intel host; Rosetta status is ${TRANSLATED:-unknown}" >&2
-    exit 1
-  }
-fi
+"$PYTHON_BIN" "$ROOT/scripts/macos_architecture.py" --expected-architecture "$EXPECTED_ARCH"
 APP="$(cd "$(dirname "$APP")" && pwd)/$(basename "$APP")"
 OUT="${OUT:-$ROOT/dist/Kuantra-Terminal-${VERSION}-${EXPECTED_ARCH}.dmg}"
 OUT="$(cd "$(dirname "$OUT")" && pwd)/$(basename "$OUT")"
