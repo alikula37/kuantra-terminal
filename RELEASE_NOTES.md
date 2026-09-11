@@ -2,22 +2,23 @@
 # Kuantra Terminal v1.0.0 — Mac Candidate Truth & Safety — M-series Trusted Pilot update
 
 **Pilot Release tag:** `pilot-v1.0.0-arm64`
-**Artifact source commit:** `8da8019ae93513c474a3122d450cffb40f66261b`
+**Artifact source commit:** `7f1ad482d41c16f6ac8e7ddbe8dbb66e945f63be`
 **Release status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`
 **Product identity:** Local-first Execution Intelligence & Trade Forensics Workstation
 
 The existing private GitHub Release at
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
-has been refreshed in place with the exact arm64 package built from the source commit above.
+is refreshed in place with the exact arm64 package built from the source commit above.
 The tag and download URL are unchanged; this is a closed trusted-pilot transport, not the
 canonical `v1.0.0` product Release, a public download or a production/commercial-support
 artifact. The package targets macOS 12 Monterey or later on native Apple Silicon `arm64`.
 Intel `x86_64` evidence is still pending and is not implied by this asset set.
 
-The repository has since added the bounded P1-WP30 free multi-asset journal and quote
-provenance flow. Those source changes are not contained in the published `8da8019` arm64
-artifact; the artifact must not be used as evidence for that newer flow until a separately
-verified package is built.
+The package contains the bounded P1-WP30 free multi-asset journal and quote provenance flow.
+External journaling is the default; simulation is explicit only; exact free public quotes
+remain source/status-bound; unavailable prices require manual entry; and TradingView alerts
+remain immutable `PENDING_REVIEW` observations until explicit user confirmation. No paid
+data service, live broker order or automatic simulation fallback is included.
 
 The verified local core includes trade journaling and forensics, deterministic risk checks,
 recorded-evidence analytics/replay, SQLite WAL plus DuckDB projection, OS keychain credential
@@ -29,17 +30,19 @@ the actual native save/cancel/failure outcome.
 
 Current verification evidence:
 
-- Locked arm64 local CI: **MERGE READY**; backend **816 passed / 2 warnings**, frontend
-  **25 test files / 116 tests**, EN/TR/DE **670/670**, TypeScript and production build pass,
+- Locked arm64 local CI: **MERGE READY**; backend **829 passed / 2 warnings**, frontend
+  **27 test files / 121 tests**, EN/TR/DE **696/696**, TypeScript and production build pass,
   native PyInstaller/WKWebView smoke and `COMPLETE` provenance.
 - DMG `Kuantra-Terminal-1.0.0-arm64.dmg`: SHA-256
-  `900ce30ebe93bc9a1ded399c0067edfa2f7475b892da9193ff608e579f291a76`.
+  `eb7d8d8a9601086e86bf8113685f2274eb92dde20a29395585445b77d164890b`.
 - Exact mounted executable: SHA-256
-  `6b3b9985058933f655b2a0e1ece69a41b7d51eb28f00c2c2c0023a7792e41ce1`.
+  `7247220e839f47a98f44f8f07fbd0b230c844781c4fc87cda2215bbe358ac765`.
 - Final mounted-DMG smoke report: SHA-256
-  `81eb80f7a77191325c43e313a4ce1664aefe4ba27f4f76292adaaaf97d34d6fd`.
-- Pilot manifest SHA-256: `1b196a795a82d2dc7b9fea006f0e12e4cf55690956a75b797bbedce4235bc548`.
-- `SHA256SUMS` SHA-256: `5577f7ae8b69197b36b754a4290472ad9dcca8314c74d62fbce72911af67e89e`.
+  `4f8f6c322d1e2902e068536f33673aa72dff24b56da2f1865144ee0810b7ba41`.
+- Pilot manifest SHA-256: `13e3a821922ea08c9d0a50a831ed3c98ead9d4bd746570e4da5687cd8f31e83f`.
+- `SHA256SUMS` SHA-256: `947c6e6c8a39ada91639bfb32baefbef9836edd876f51b598a71272759fd7137`.
+- Tracked source tree SHA-256: `fadf647b0f0bcad7fecaef2b43c87d9db8d17212068ea015d33e9c9f16ef73ec`.
+- Local-CI report SHA-256: `86b6f066447d8cced255c777ece1c937d02848039486e7e310d19380e11b627e`.
 - N05 distribution preflight: structurally valid but intentionally
   `BLOCKED/OWNER_REVIEW_REQUIRED` because this zero-cost pilot DMG is ad-hoc and not
   Developer ID signed/notarized.

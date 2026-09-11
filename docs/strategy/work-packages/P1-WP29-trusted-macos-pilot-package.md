@@ -8,6 +8,8 @@ status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
 implementation_commit: 8da8019
+latest_artifact_source_commit: 7f1ad482d41c16f6ac8e7ddbe8dbb66e945f63be
+latest_evidence_date: 2026-09-11
 branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
@@ -63,12 +65,21 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       `pilot-v1.0.0-arm64`, manifest SHA-256
       `cdcb68b0cc662e2d54a2805b4d8672c258f1ad9f2df37d44420bca5c56594f10`,
       `SHA256SUMS` SHA-256 `53610c49f7dd10e89cf13070e5d423e88fb1e50100352df90fa956967dcdeab9`.
+- [x] Önceki `6f8b1ed` paket kanıtı superseded historical evidence olarak korunur; güncel
+      M-series package doğrulamasında kullanılmaz.
+- [x] Güncel M-series arm64-only pilot paketi temiz source commit `7f1ad482`'dan üretildi;
+      manifest, checksum doğrulaması ve standalone M-series talimatı aynı pakette bulunur.
+      Paket `dual_architecture_complete=false`, `intel_artifact_included=false` ve
+      `intel_support_claim=false` alanlarını taşır. Paket durumu
+      `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`'tır; manifest SHA-256
+      `13e3a821922ea08c9d0a50a831ed3c98ead9d4bd746570e4da5687cd8f31e83f`,
+      `SHA256SUMS` SHA-256 `947c6e6c8a39ada91639bfb32baefbef9836edd876f51b598a71272759fd7137`.
 - [x] M-series private prerelease Release, `pilot-v1.0.0-arm64` tag'i ile
       yayımlandı; altı asset'in GitHub SHA-256 digest'i local `SHA256SUMS` ve
       manifest ile eşleşir. Release URL'si:
       `https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64`.
 - [x] Mevcut `pilot-v1.0.0-arm64` private prerelease asset seti yeni tag oluşturmadan
-      source commit `8da8019`'a bağlı arm64 paketle in-place yenilendi. Altı asset,
+      source commit `7f1ad482`'ye bağlı arm64 paketle in-place yenilendi. Altı asset,
       güncel release body ve `PILOT-INSTRUCTIONS-M-SERIES.md` aynı pilot sınırını taşır;
       canonical `v1.0.0` Release/tag'i oluşturulmadı.
 - [ ] Gerçek x86_64 native host (hosted runner veya açıkça seçilmiş pilot Intel Mac),
@@ -113,7 +124,42 @@ kapsamı ile başarılanabilir. İki zincir hazır olduğunda varsayılan dual �
 shasum -a 256 -c dist/pilot-package-v1.0.0/SHA256SUMS
 ```
 
-### Güncel M-series çalıştırması
+### Güncel M-series package evidence (2026-09-11)
+
+Temiz source commit `7f1ad482d41c16f6ac8e7ddbe8dbb66e945f63be` üzerinden arm64 pilot
+zinciri yeniden üretildi. `uv run --offline --no-project --with-requirements
+backend/requirements.lock python scripts/run_local_ci.py --expected-architecture arm64
+--report dist/p1-wp29-local-ci-arm64-current.json` **MERGE READY** döndürdü: backend
+**829 passed / 2 warnings**, frontend **27 test files / 121 tests**, EN/TR/DE **696/696**,
+TypeScript, production build, native arm64 PyInstaller ve native WKWebView smoke PASS;
+provenance `COMPLETE`. Local-CI report SHA-256:
+`86b6f066447d8cced255c777ece1c937d02848039486e7e310d19380e11b627e`.
+
+`bash scripts/package_macos.sh --architecture arm64 --output
+dist/Kuantra-Terminal-1.0.0-arm64.dmg` **PASS** oldu; `hdiutil verify` sonucu `VALID`.
+DMG SHA-256:
+`eb7d8d8a9601086e86bf8113685f2274eb92dde20a29395585445b77d164890b`.
+`.venv/bin/python scripts/smoke_macos_dmg.py --dmg
+dist/Kuantra-Terminal-1.0.0-arm64.dmg --expected-architecture arm64 --report
+dist/final-smoke-arm64.json` exact read-only mounted executable üzerinde **PASS** oldu;
+native arm64, WKWebView/controller identity ve detach doğrulandı. Mounted executable
+SHA-256 `7247220e839f47a98f44f8f07fbd0b230c844781c4fc87cda2215bbe358ac765`, smoke report
+SHA-256 `4f8f6c322d1e2902e068536f33673aa72dff24b56da2f1865144ee0810b7ba41`.
+
+N05 preflight structurally valid fakat ad-hoc artifact ve Developer ID/notarization kanıtı
+olmadığı için exit 2 ile beklenen `BLOCKED/OWNER_REVIEW_REQUIRED` sonucunu verdi. N05 report
+SHA-256 `b3d53a23a441841c8024a6653d96543f302b9a794fb0d7cfd5035e96c67909c8`.
+`prepare_pilot_package.py --architecture arm64 --pilot-tag pilot-v1.0.0-arm64` **PASS**
+oldu; package type `TRUSTED_MACOS_PILOT_ARM64`, scope `APPLE_SILICON_M_SERIES_ONLY`,
+status `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`. Package yolu:
+`dist/pilot-package-pilot-v1.0.0-arm64-7f1ad48/`; manifest SHA-256
+`13e3a821922ea08c9d0a50a831ed3c98ead9d4bd746570e4da5687cd8f31e83f`, `SHA256SUMS` SHA-256
+`947c6e6c8a39ada91639bfb32baefbef9836edd876f51b598a71272759fd7137`. Paketteki beş dosya
+`shasum -a 256 -c SHA256SUMS` ile `OK` oldu. Package, P1-WP30 değişikliklerini içerir;
+Intel artifact, production/commercial-support, live execution veya Apple-trusted claim
+taşımaz.
+
+### Superseded M-series çalıştırması (2026-09-10)
 
 2026-09-10 tarihinde `6f8b1ed` source commit'i ile aşağıdaki zincir PASS oldu:
 
@@ -129,7 +175,7 @@ yayındadır; üç pilot kullanıcısının repository read erişimi ve gerçek 
 install-lifecycle çalıştırması hâlâ owner/host kapısıdır. Canonical `v1.0.0` product
 Release/tag'i ve dual package bu işlemle oluşturulmadı.
 
-## Frontend pilot-flow hardening (this change)
+## Superseded frontend pilot-flow hardening (`8da8019`)
 
 The pilot-facing import → review → Evidence Pack path now has an explicit truth and
 failure boundary in the UI:
@@ -162,18 +208,19 @@ native bridge/export path has focused unit/DOM coverage, but the exact rebuilt D
 requires a manual pilot click-through of import → review → Evidence Pack → native
 JSON/HTML/CSV save before this package can be called end-to-end pilot-validated. The
 existing private prerelease asset set was then refreshed in place from this source commit;
-no new Release/tag was created.
+that asset set is superseded by the clean `7f1ad482` package above; no new Release/tag was
+created for the historical refresh.
 
 Dual GitHub Release, Apple signing/notarization, pilot kullanıcı erişimi ve
 clean-host yürütmesi bu work package'ın otomatik kod kapıları değildir; owner/host
 kapılarıdır. M-series private prerelease yayımlanmış olsa da canonical product Release
 yetkisi verilmiş değildir.
 
-## Güncel private Release asset yenilemesi
+## Superseded private Release asset yenilemesi (2026-09-10)
 
 2026-09-10 tarihinde mevcut `pilot-v1.0.0-arm64` private prerelease, aynı tag korunarak
 source commit `8da8019ae93513c474a3122d450cffb40f66261b` ile üretilen arm64 paketle
-yenilendi. Güncel DMG SHA-256
+yenilenmişti. Bu bölüm yalnızca audit history içindir; güncel DMG SHA-256
 `900ce30ebe93bc9a1ded399c0067edfa2f7475b892da9193ff608e579f291a76`, mounted executable
 SHA-256 `6b3b9985058933f655b2a0e1ece69a41b7d51eb28f00c2c2c0023a7792e41ce1`, final smoke
 report SHA-256 `81eb80f7a77191325c43e313a4ce1664aefe4ba27f4f76292adaaaf97d34d6fd` ve N05
