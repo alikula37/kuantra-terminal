@@ -218,3 +218,17 @@ def test_corrupted_chain_blocks_tracking(setup):
         conn.execute("UPDATE evidence_events SET event_hash=? WHERE chain_sequence=1", ("f" * 64,))
     with pytest.raises(ValueError, match="chain invalid"):
         svc.observe("t1", quote(150))
+
+
+def test_fractional_allocations_preserve_exact_quantity(setup):
+    driver, svc, _ = setup
+    driver.record_trade_with_evidence({"id": "t1", "qty": 0.1234567890123456},
+        event_type="TradeCorrected", idempotency_key="fractional")
+    fractional = plan()
+    for target, percent in zip(fractional["targets"], ["33.3333333333333", "33.3333333333333", "33.3333333333334"]):
+        target["percent"] = percent
+    svc.edit("t1", fractional, expected_revision=0)
+    first = svc.observe("t1", quote(110))
+    assert len(first["closures"]) == 1
+    final = svc.observe("t1", quote(130))
+    assert final["remaining_qty"] == "0"

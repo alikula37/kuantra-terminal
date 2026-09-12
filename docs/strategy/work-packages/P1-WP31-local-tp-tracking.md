@@ -18,7 +18,7 @@ remain unchanged; local closes are gross estimates, not confirmed executions.
   bounded shared polling/backoff and disabled/offline boundary.
 - [x] Package 3: Decimal partial/full close, SL, manual close, replay/concurrency,
   rollback and projection/export/restore regression.
-- [ ] Package 4: creation/edit/history/local-result UI, EN/TR/DE, dark/light,
+- [x] Package 4: creation/edit/history/local-result UI, EN/TR/DE, dark/light,
   keyboard and end-to-end synthetic quote lifecycle.
 - [ ] Full backend/frontend, docs/i18n and canonical Mac local CI.
 - [ ] Same-source native arm64/x86_64 exact DMGs, pilot Release refresh and
@@ -52,6 +52,14 @@ Package 3 focused backend: **26 passed / 2 warnings**. UI focused **18 passed**;
 full frontend before the final validation fixture **152 passed**, build and
 **813/813** translation parity PASS. Optional native tracking smoke uses isolated
 synthetic data with market data disabled and exercises the real editor.
+Native WKWebView lifecycle is functionally PASS on the Mac mini: create through
+ASGI, inject a synthetic provider observation, partial close, render/edit/save,
+completed-target lock, light/dark computed colors, local manual close and preserved
+external OPEN status. Initial native run had a dirty test-only tree and is not
+release provenance. Initial full CI was blocked by three default-network tests
+because disabled-network settings were incorrectly applied to the entire suite;
+the canonical gate is rerun with normal defaults, while native fixture runs stay
+explicitly network-disabled. Additional fractional-allocation regression PASS.
 No build, runtime-offline or release claim follows from this dependency mode.
 
 ## Persistence contract
