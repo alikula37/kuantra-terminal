@@ -250,7 +250,10 @@ jobs:
       - name: Verify pilot package checksums
         run: |
           set -euo pipefail
-          sha256sum -c "dist/pilot-package-${RELEASE_TAG}/SHA256SUMS"
+          (
+            cd "dist/pilot-package-${RELEASE_TAG}"
+            sha256sum -c SHA256SUMS
+          )
       - uses: actions/upload-artifact@v7
         with:
           name: trusted-macos-pilot-package

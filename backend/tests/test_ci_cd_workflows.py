@@ -165,6 +165,8 @@ class TestCICDWorkflowsAndPackaging:
         assert any("upload-artifact" in u.lower() for u in pilot_uses)
         assert "scripts/prepare_pilot_package.py" in pilot_runs
         assert "SHA256SUMS" in pilot_runs
+        assert "cd \"dist/pilot-package-${RELEASE_TAG}\"" in pilot_runs
+        assert "sha256sum -c SHA256SUMS" in pilot_runs
 
         # No Rust / Tauri leftovers in the release pipeline.
         assert "rust-toolchain" not in rel_raw
