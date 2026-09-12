@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from scripts.build_provenance import collect_provenance
+from scripts.macos_architecture import host_architecture
 from scripts.smoke_macos_dmg import DmgSmokeError, validate_macos_dmg_report
 
 
@@ -18,17 +19,18 @@ def _report(tmp_path):
     dmg = tmp_path / "Kuantra-Terminal-test.dmg"
     dmg.write_bytes(b"dmg artifact")
     provenance = dict(collect_provenance(ROOT, executable=executable, artifact=dmg))
+    architecture = host_architecture() or "x86_64"
     provenance["tracked_source_tree_status"] = "clean"
     provenance["provenance_status"] = "COMPLETE"
     provenance["source_commit_matches_checkout"] = True
-    provenance["architecture"] = "arm64"
+    provenance["architecture"] = architecture
     provenance["architecture_verified"] = True
     provenance["architecture_source"] = "executable"
-    provenance["executable_architectures"] = ["arm64"]
+    provenance["executable_architectures"] = [architecture]
     return (
         {
             "build_commit": provenance["source_commit_sha"],
-            "architecture": "arm64",
+            "architecture": architecture,
             "executable_sha256": provenance["executable_sha256"],
             "artifact_sha256": provenance["artifact_sha256"],
             "executable_path": str(executable.resolve()),
