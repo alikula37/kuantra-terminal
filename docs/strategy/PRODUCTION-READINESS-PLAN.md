@@ -494,7 +494,7 @@ işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uyg
   cryptography hazırlığı ile native x86_64 backend/frontend/build/DMG/mounted-WKWebView
   kanıtı alındı; aynı source/tree/lock/truth zincirindeki arm64 kanıtı da yenilendi.
 - P1-WP29 dual trusted-pilot package ve checksum doğrulaması PASS oldu. Private
-  `pilot-v1.0.0-arm64` transport aynı tag korunarak yalnızca iki DMG ile yenilenecek;
+  `pilot-v1.0.0-arm64` transport aynı tag korunarak yalnızca iki DMG ile yenilendi;
   N03, N05, H05 ve pilot erişimi açık kapılar olarak kaldı. Canonical product release/tag
   oluşturulmadı.
 

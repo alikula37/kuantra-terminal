@@ -30,14 +30,15 @@ approval gerektirir ve yalnızca trusted-pilot-only olarak sınıflandırılır.
 download, commercial support, production veya notarized-artifact claim'i açmaz. Pilot
 kullanıcılarının repository read erişimi owner tarafından ayrıca verilmelidir. Private
 prerelease Release [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
-aynı tag korunarak iki DMG ile güncellenecektir; JSON/MD evidence dosyaları Release asset'i
+aynı tag korunarak iki DMG ile güncellendi; GitHub asset digest'leri final DMG hash'leriyle
+eşleşiyor. JSON/MD evidence dosyaları Release asset'i
 yapılmayıp repository/local audit paketinde tutulacaktır. Canonical `v1.0.0` product
 tag'i/release'i oluşturulmayacaktır.
 
 **Release cleanup decision (2026-09-11, current refresh 2026-09-12):** Owner isteğiyle
 güncel olmayan tüm GitHub Release kayıtları ve sürüm tag'leri kaldırıldı. GitHub Releases
 sayfasında yalnızca private `pilot-v1.0.0-arm64` prerelease/tag ve iki exact DMG asset'i
-bulunacaktır: arm64 ve x86_64. JSON/MD kanıt dosyaları indirme alanında tutulmayacaktır.
+bulunuyor: arm64 ve x86_64. JSON/MD kanıt dosyaları indirme alanında tutulmuyor.
 Eski v1.4.0/v1.3.0/v1.2.0 ve institutional sürüm referansları repository içindeki
 tarihsel audit/truth belgelerinde kalabilir; bunlar indirme kaynağı, güncel ürün tanımı
 veya production kanıtı değildir. Canonical `v1.0.0` product Release yayımlanmayacaktır.
@@ -200,7 +201,9 @@ executable `4a5991ad1cd8b98dce79aab69581542b970043d8a12894050af83c14ce419cfc`. B
 reports show native matching architecture, `wkwebview`, `COMPLETE` provenance and
 `hdiutil verify: VALID`; N05 remains `BLOCKED/OWNER_REVIEW_REQUIRED` because both are
 ad-hoc and unsigned/notarized. This is dual native trusted-pilot evidence, not a
-production or Apple-trusted claim.
+production or Apple-trusted claim. The private Release title is now `Kuantra Terminal
+v1.0.0 — Trusted macOS Pilot (arm64 + x86_64)` and its asset set is exactly the two
+DMGs above; GitHub digests match the recorded SHA-256 values.
 
 **P1-WP30 — BOUNDED COMPLETE / ARCHIVED:** The external-default journal, explicit
 simulation, exact free quote provenance, unavailable→manual boundary and TradingView

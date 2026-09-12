@@ -242,8 +242,9 @@ N05 raporları `BLOCKED/OWNER_REVIEW_REQUIRED` durumunu korur: codesign yapısal
 olsa da identity AD_HOC, Developer ID/hardened runtime/notarization yoktur. Bu nedenle
 paket yalnızca üç kişilik trusted pilot içindir; production, Apple-trusted veya commercial
 support claim'i açmaz. Paketleme adımı ve package içindeki `SHA256SUMS` doğrulaması da PASS
-oldu; Release sayfasına yalnızca iki DMG aktarılacaktır. JSON/MD evidence dosyaları Release
-asset'i yapılmayacak, repository ve audit package içinde kalacaktır.
+oldu; private `pilot-v1.0.0-arm64` Release aynı tag korunarak güncellendi ve doğrulanan
+asset setinde yalnızca iki DMG bulunuyor. JSON/MD evidence dosyaları Release asset'i
+yapılmayacak, repository ve audit package içinde kalacaktır.
 
 ### Superseded M-series package evidence (2026-09-11)
 
