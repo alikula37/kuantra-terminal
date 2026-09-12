@@ -16,7 +16,7 @@ remain unchanged; local closes are gross estimates, not confirmed executions.
   single TP unchanged; completed targets immutable; external history preserved.
 - [x] Package 2: exact provider/instrument, provider-event age <=60 seconds,
   bounded shared polling/backoff and disabled/offline boundary.
-- [ ] Package 3: Decimal partial/full close, SL, manual close, replay/concurrency,
+- [x] Package 3: Decimal partial/full close, SL, manual close, replay/concurrency,
   rollback and projection/export/restore regression.
 - [ ] Package 4: creation/edit/history/local-result UI, EN/TR/DE, dark/light,
   keyboard and end-to-end synthetic quote lifecycle.
@@ -40,6 +40,12 @@ and respects market-data disabled. Public reference contracts:
 [Bybit recent trades](https://bybit-exchange.github.io/docs/v5/market/recent-trade).
 Only provider event timestamps qualify; Yahoo/Stooq/Biquote remain display-only
 for automatic tracking until their <=60s observation contract can be established.
+Package 3 adds four-writer concurrent observation, post-edit stale observation,
+external correction/cancellation, actual SQLite backup/reopen/rebuild and Evidence
+Pack equivalence, API revision/close and corrupted-chain tests. Schema changes
+invalidate the append-tail verification cache before tracking can evaluate prices.
+The existing external trade snapshot remains byte-for-byte equivalent in lifecycle
+tests; no synthetic commission or external fill is created.
 No build, runtime-offline or release claim follows from this dependency mode.
 
 ## Persistence contract

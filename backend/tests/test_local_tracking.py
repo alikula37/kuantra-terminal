@@ -138,3 +138,83 @@ def test_create_plan_failure_rolls_back_external_trade(setup):
         )
     assert driver.get_trade("bad") is None
     assert svc.get("bad") is None
+
+
+def test_concurrent_observation_cannot_double_close(setup):
+    from concurrent.futures import ThreadPoolExecutor
+    driver, svc, _ = setup
+    svc.edit("t1", plan(), expected_revision=0)
+    observation = quote(150)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda _: LocalTrackingService(driver).observe("t1", observation), range(4)))
+    assert all(r["remaining_qty"] == "0" for r in results)
+    assert len(svc.history("t1")) == 2
+    assert len(svc.get("t1")["closures"]) == 3
+
+
+def test_pre_edit_quote_cancellation_and_correction(setup):
+    driver, svc, _ = setup
+    svc.edit("t1", plan(), expected_revision=0)
+    stale = quote(150)
+    svc.edit("t1", plan(), expected_revision=1)
+    assert svc.observe("t1", stale)["remaining_qty"] == "2"
+    driver.record_trade_with_evidence({"id": "t1", "qty": 4}, event_type="TradeCorrected", idempotency_key="qty")
+    with pytest.raises(TrackingConflict):
+        svc.observe("t1", quote(150))
+    driver.record_trade_with_evidence({"id": "t1", "status": "CANCELED"}, event_type="TradeCorrected", idempotency_key="cancel")
+    assert svc.observe("t1", quote(150))["remaining_qty"] == "2"
+
+
+def test_sqlite_backup_restore_preserves_local_and_external_evidence(setup, tmp_path):
+    import sqlite3
+    from app.services.trade_read_adapter import TradeReadAdapter
+    from app.db.repositories.evidence_projection_repo import EvidenceTradeProjectionRepository
+    driver, svc, trade = setup
+    svc.edit("t1", plan(), expected_revision=0)
+    svc.observe("t1", quote(125))
+    original_pack = TradeReadAdapter(legacy_driver=driver).get_evidence_pack("t1")
+    assert any(e["normalized_payload"].get("local_tracking") for e in original_pack["events"])
+    target = str(tmp_path / "restored.sqlite3")
+    with driver.get_connection() as source, sqlite3.connect(target) as destination:
+        source.backup(destination)
+    restored = SQLiteDriver(target)
+    EvidenceTradeProjectionRepository(target).rebuild(dry_run=False)
+    assert LocalTrackingService(restored).get("t1") == svc.get("t1")
+    assert restored.get_trade("t1") == trade
+    pack = TradeReadAdapter(legacy_driver=restored).get_evidence_pack("t1")
+    assert pack["events"] == original_pack["events"]
+
+
+def test_tracking_api_is_revisioned_and_never_closes_external_trade(setup, monkeypatch):
+    from fastapi.testclient import TestClient
+    from main import create_app
+    from app.api import endpoints
+    driver, svc, trade = setup
+    monkeypatch.setattr(endpoints, "sqlite_driver", driver)
+    client = TestClient(create_app())
+    response = client.put("/api/v1/trades/t1/tracking", json={**plan(), "expected_revision": 0})
+    assert response.status_code == 200
+    assert client.put("/api/v1/trades/t1/tracking", json={**plan(), "expected_revision": 0}).status_code == 409
+    assert client.get("/api/v1/trades/t1/tracking").json()["plan"]["revision"] == 1
+    response = client.post("/api/v1/trades/t1/tracking/close", json={"price": 120, "expected_revision": 1})
+    assert response.status_code == 200
+    assert response.json()["remaining_qty"] == "0"
+    assert driver.get_trade("t1") == trade
+
+
+def test_no_targets_disabled_and_short_stop(setup):
+    driver, svc, _ = setup
+    svc.edit("t1", {"enabled": True, "targets": []}, expected_revision=0)
+    assert svc.observe("t1", quote(150))["remaining_qty"] == "2"
+    svc.edit("t1", {**plan(), "enabled": False}, expected_revision=1)
+    assert svc.observe("t1", quote(150))["remaining_qty"] == "2"
+
+
+def test_corrupted_chain_blocks_tracking(setup):
+    driver, svc, _ = setup
+    svc.edit("t1", plan(), expected_revision=0)
+    with driver.get_connection() as conn:
+        conn.execute("DROP TRIGGER evidence_events_no_update")
+        conn.execute("UPDATE evidence_events SET event_hash=? WHERE chain_sequence=1", ("f" * 64,))
+    with pytest.raises(ValueError, match="chain invalid"):
+        svc.observe("t1", quote(150))

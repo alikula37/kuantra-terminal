@@ -81,14 +81,58 @@ def validate_snapshot(state):
     decimal(state["entry_price"])
     decimal(state["gross_pnl"], positive=False)
     timestamp(state["armed_at"])
+    if type(state.get("enabled")) is not bool:
+        raise ValueError("Invalid tracking enabled flag")
+    long = state["side"] in {"BUY", "LONG"}
+    entry = decimal(state["entry_price"])
+    previous = entry
+    total = Decimal(0)
+    for index, target in enumerate(state["targets"]):
+        price, percent = decimal(target["price"]), decimal(target["percent"])
+        if target["id"] != f"TP{index + 1}" or percent > 100 or (long and price <= previous) or (not long and price >= previous):
+            raise ValueError("Invalid canonical target")
+        previous = price
+        total += percent
+    if state["targets"] and total != 100:
+        raise ValueError("Invalid canonical allocation")
+    if state["stop_loss"] is not None:
+        stop = decimal(state["stop_loss"])
+        if (long and stop >= entry) or (not long and stop <= entry):
+            raise ValueError("Invalid canonical stop")
+    seen = set()
+    gross = Decimal(0)
+    for closure in closures:
+        if closure["target_id"] in seen or closure["basis"] != "LOCAL_ESTIMATE":
+            raise ValueError("Duplicate or invalid local closure")
+        seen.add(closure["target_id"])
+        timestamp(closure["observed_at"])
+        if closure["target_id"] not in {"TP1", "TP2", "TP3", "SL", "MANUAL"}:
+            raise ValueError("Unsupported close target")
+        with localcontext() as ctx:
+            ctx.prec = 60
+            expected = (decimal(closure["price"]) - entry) * decimal(closure["qty"]) * (1 if long else -1)
+            if expected != decimal(closure["gross_pnl"], positive=False):
+                raise ValueError("Invalid canonical gross result")
+            gross += expected
+    if gross != decimal(state["gross_pnl"], positive=False):
+        raise ValueError("Gross result mismatch")
 
 
 class LocalTrackingService:
     def __init__(self, driver):
         self.driver = driver
         self.ledger = EvidenceLedgerRepository(driver.db_path)
+        self._schema_cookie = None
 
     def _verified(self):
+        with self.driver.get_connection() as conn:
+            cookie = conn.execute("PRAGMA schema_version").fetchone()[0]
+        # The append-tail cache relies on immutable-ledger guards. A schema
+        # change (including dropping/replacing those guards) invalidates that
+        # assumption and requires a fresh full verification.
+        if cookie != self._schema_cookie:
+            self.ledger.close()
+            self._schema_cookie = cookie
         if not self.ledger.verify_chain(account_id="local-journal")["valid"]:
             raise ValueError("Tracking evidence chain invalid")
 
@@ -98,13 +142,19 @@ class LocalTrackingService:
         rows = conn.execute(
             "SELECT * FROM evidence_events WHERE correlation_id=? AND account_id='local-journal' "
             "AND venue='local-journal' AND event_type='PositionProjectionUpdated' "
-            "ORDER BY chain_date_utc DESC, chain_sequence DESC", (trade_id,),
+            "ORDER BY chain_date_utc, chain_sequence", (trade_id,),
         )
+        latest, event_id = None, None
         for row in rows:
             state = project_tracking_event(None, dict(row))
             if state is not None:
-                return state, row["event_id"]
-        return None, None
+                if state["revision"] != (latest["revision"] + 1 if latest else 1) or row["causation_id"] != event_id:
+                    raise ValueError("Broken tracking revision lineage")
+                if latest and (state["closures"][:len(latest["closures"])] != latest["closures"]
+                    or any(state[k] != latest[k] for k in ("initial_qty", "entry_price", "side", "symbol"))):
+                    raise ValueError("Tracking history was changed")
+                latest, event_id = state, row["event_id"]
+        return latest, event_id
 
     def get(self, trade_id):
         self._verified()
@@ -134,10 +184,14 @@ class LocalTrackingService:
             results = []
             for row in ids:
                 state, _ = self._load(conn, row[0])
-                trade = conn.execute("SELECT status FROM trades WHERE id=?", (row[0],)).fetchone()
+                trade = conn.execute("SELECT * FROM trades WHERE id=?", (row[0],)).fetchone()
                 if state:
                     state = deepcopy(state)
-                    state["external_status"] = trade[0] if trade else "UNKNOWN"
+                    state["external_status"] = trade["status"] if trade else "UNKNOWN"
+                    if trade and (trade["symbol"] != state["symbol"] or trade["side"] != state["side"]
+                        or decimal(trade["entry_price"]) != decimal(state["entry_price"])
+                        or decimal(trade["qty"]) != decimal(state["initial_qty"])):
+                        state["external_status"] = "CORRECTED"
                     results.append(state)
             return results
 
@@ -255,6 +309,10 @@ class LocalTrackingService:
             trade = conn.execute("SELECT * FROM trades WHERE id=?", (trade_id,)).fetchone()
             if not trade or trade["status"] != "OPEN" or decimal(state["remaining_qty"], positive=False) == 0:
                 return state
+            if (trade["symbol"] != state["symbol"] or trade["side"] != state["side"]
+                or decimal(trade["entry_price"]) != decimal(state["entry_price"])
+                or decimal(trade["qty"]) != decimal(state["initial_qty"])):
+                raise TrackingConflict("External trade was corrected; tracking paused")
             if not manual and (not state["enabled"] or not self.eligible(state, observation)):
                 return state
             if state["closures"] and not manual and timestamp(observation["observed_at"]) <= timestamp(state["closures"][-1]["observed_at"]):
