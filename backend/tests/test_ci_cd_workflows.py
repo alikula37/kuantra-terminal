@@ -126,6 +126,10 @@ class TestCICDWorkflowsAndPackaging:
         assert "Smoke test desktop app" in bp_names
         assert "Package" in bp_names
         assert "Smoke test final packaged artifact" in bp_names
+        assert "Prepare Intel cryptography build" in bp_names
+        assert "OPENSSL_STATIC=1" in rel_raw
+        assert 'brew --prefix openssl@3' in rel_raw
+        assert 'uv cache clean cryptography' in rel_raw
         assert "dist/final-smoke-arm64.json" in rel_raw
         assert "dist/final-smoke-x86_64.json" in rel_raw
         assert "scripts/run_n05_macos_distribution_preflight.py" in rel_raw

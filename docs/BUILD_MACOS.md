@@ -73,6 +73,19 @@ The shared check accepts a native Intel host even when the Rosetta-only
 Intel. It still rejects an x86_64 process translated on Apple Silicon and keeps
 an unknown translation result fail-closed.
 
+On Intel, the locked dependency set may source-build `cryptography` because a
+matching wheel is not available. Before the build, provide Homebrew's OpenSSL
+static libraries and Rust so the frozen app does not combine the Rust binding
+with an incompatible dynamic `libssl` from the build toolchain:
+
+```bash
+brew install openssl@3 rust
+export OPENSSL_DIR="$(brew --prefix openssl@3)"
+export OPENSSL_STATIC=1
+uv cache clean cryptography
+python3.11 -m pip cache remove cryptography || true
+```
+
 Then run the locked local gate with the architecture requirement enabled. The build and
 packaged smoke steps inherit the same native-host/executable guard:
 
