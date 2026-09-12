@@ -2,7 +2,7 @@
   "document_id": "KTR-001",
   "version": "1.0.0",
   "status": "Accepted",
-  "last_updated": "2026-09-10",
+  "last_updated": "2026-09-12",
   "product": {
     "name": "Kuantra Terminal",
     "version": "1.0.0",
@@ -21,7 +21,7 @@
     "current_artifact_status": "AD_HOC_DEVELOPMENT_ONLY",
     "architecture_evidence": {
       "arm64": "VERIFIED_CURRENT_CANDIDATE",
-      "x86_64": "PENDING_NATIVE_CI"
+      "x86_64": "VERIFIED_CURRENT_CANDIDATE"
     },
     "unclaimed_platforms": [
       "Windows",

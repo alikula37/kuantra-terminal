@@ -2,17 +2,17 @@
 
 **Güncel pilot Release:** [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)<br>
 **Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
-ve local audit paketinde tutulur. Güncel Release indirme alanında pilot kullanıcıları
-için yalnızca doğrulanmış arm64 DMG bulunur.
+ve local audit paketinde tutulur. Güncel Release indirme alanında yalnızca iki native
+DMG bulunur: `arm64` Apple Silicon ve `x86_64` Intel.
 
 Bu paket üç kişilik, davetli pilot içindir. Public bir indirme veya production
 ürünü değildir. Apple Developer ID imzası ve notarization yoksa macOS ilk açılışta
 uyarı gösterir; bu bilinçli ve geçici pilot sınırıdır.
 
-Mevcut private Release yalnızca Apple Silicon native `arm64` DMG taşır. Intel pilotu
-ayrı native `x86_64` artifact yayımlanana kadar beklemelidir; arm64 dosyasını Intel'de
-denemeyin. Teknik manifest, checksum ve evidence dosyaları repository/local audit
-paketindedir; Release indirme alanında yalnızca DMG bulunur.
+Mevcut private Release iki ayrı native DMG taşır. Apple Silicon/M-serisi Mac için
+`arm64`, Intel Mac için `x86_64` dosyasını indirin; bir mimarinin dosyasını
+diğerinde kullanmayın. Teknik manifest, checksum ve evidence dosyaları repository/local
+audit paketindedir; Release indirme alanında yalnızca iki DMG bulunur.
 
 ## Trade entry boundary
 
@@ -39,17 +39,17 @@ it is not quote or execution proof. No paid data service or quote API key is req
 
 1. GitHub hesabınızla giriş yapın ve size gönderilen private repository Release
    sayfasını açın. Bu sayfa yalnızca repository read erişimi olan pilotlara açıktır.
-2. Mac'inizi öğrenin: Apple menüsü → **Bu Mac Hakkında**. Bu Release'te yalnızca
-   Apple Silicon M-serisi için `arm64` DMG bulunur. Intel için indirme yayımlanmadı.
+2. Mac'inizi öğrenin: Apple menüsü → **Bu Mac Hakkında**. Apple Silicon/M-serisi için
+   `arm64`, Intel için `x86_64` DMG'yi seçin. Intel Mac'te arm64, M-serisi
+   Mac'te x86_64 dosyasını kullanmayın.
    macOS 12 Monterey veya üzeri gerekir.
-3. Pilot Release indirme alanında şu anda yalnızca doğrulanmış Apple Silicon `arm64`
-   DMG bulunur. Intel `x86_64` DMG henüz yayımlanmadı; Intel Mac'te arm64 dosyasını
-   denemeyin. Teknik manifest, checksum ve evidence dosyaları repository/local audit
+3. Pilot Release indirme alanında yalnızca doğrulanmış `arm64` ve `x86_64`
+   DMG'ler bulunur. Teknik manifest, checksum ve evidence dosyaları repository/local audit
    paketindedir.
 4. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
 
    ```text
-   hdiutil verify Kuantra-Terminal-1.0.0-arm64.dmg
+   hdiutil verify Kuantra-Terminal-1.0.0-<architecture>.dmg
    ```
 
    Çıktı başarılı olmalıdır. Bu kontrol DMG

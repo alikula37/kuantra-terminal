@@ -1,35 +1,40 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.0.0 — M-series Trusted Pilot
+# Kuantra Terminal v1.0.0 — Trusted macOS Pilot
 
 **Pilot Release tag:** `pilot-v1.0.0-arm64`
 
-**Artifact source commit:** `876efe06fdac3e328d09b6ade429f792bf795314`
+**Artifact source commit:** recorded in the exact native smoke/provenance reports for this
+dual-architecture candidate.
 
-**Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`
+**Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
 **Product:** Local-first Execution Intelligence & Trade Forensics Workstation
 
-This private Release is intentionally simplified for the pilot. It currently exposes
-one download: **`Kuantra-Terminal-1.0.0-arm64.dmg` for Apple Silicon M-series Macs**.
-It requires macOS 12 Monterey or later. Do not download it on an Intel Mac.
+This private Release is intentionally scoped for the three-person pilot and exposes exactly
+two downloads:
 
-An Intel `x86_64` DMG is **not published yet** because native Intel build and exact
-mounted-DMG evidence are still pending. An arm64 DMG must not be presented as Intel support.
+- **`Kuantra-Terminal-1.0.0-arm64.dmg`** for Apple Silicon M-series Macs;
+- **`Kuantra-Terminal-1.0.0-x86_64.dmg`** for native Intel Macs.
 
-The DMG is an ad-hoc, trusted-pilot artifact without Apple Developer ID signing or
+Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
+architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
+Silicon artifact.
+
+The native arm64 and x86_64 build, desktop smoke and exact read-only mounted-DMG smoke
+passed on their matching hosts with WKWebView identity and complete source provenance.
+The exact source and per-artifact SHA-256 values are bound in the final smoke reports;
+technical JSON/manifest evidence remains in the repository and local audit package, not as
+separate Release downloads.
+
+The DMGs are ad-hoc trusted-pilot artifacts without Apple Developer ID signing or
 notarization. On first launch, use Finder → right-click → **Open**. This is not a public,
-production or commercial-support release. The pilot instructions remain in the repository:
-[`M-series pilot instructions`](https://github.com/alikula37/kuantra-terminal/blob/main/docs/release/PILOT-INSTRUCTIONS-M-SERIES.md).
-
-The current DMG SHA-256 is
-`9d4c7e44b83483ce794d6f628b710bd7c651b8f42ae8e98d4b40c5341d3f627d`.
-The exact mounted-DMG smoke passed native arm64/WKWebView checks; local CI passed with
-backend **838 tests**, frontend **138 tests**, EN/TR/DE **762/762**, and complete provenance.
-Technical JSON/manifest evidence is retained in the repository and local audit package,
-not shown as separate Release downloads.
+production or commercial-support release. Pilot instructions:
+[`Trusted macOS pilot instructions`](https://github.com/alikula37/kuantra-terminal/blob/codex/p1-wp01-evidence-ledger/docs/release/PILOT-INSTRUCTIONS.md).
 
 No live broker order, paid data service, credential, migration or automatic update is
-included. Settings’ update button only opens this fixed Release page.
+included. Experimental and disabled surfaces remain `EXPERIMENTAL_DISABLED`; AI has
+no execution authority, and connector secrets remain bounded by the OS keychain.
+Settings’ update button only opens this fixed Release page.
 
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed

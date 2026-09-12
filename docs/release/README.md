@@ -6,33 +6,32 @@ marketing inventory: it records what the current product can prove, what remains
 and which files are scanned before a build or GitHub Release.
 
 The current release train targets v1.0.0 on macOS 12+ with separate native arm64 and x86_64
-artifacts. At this revision arm64 is the verified current candidate; x86_64 remains
-`PENDING_NATIVE_CI` until a native Intel runner or explicitly controlled Intel pilot Mac
-produces its own exact evidence. The existing private pilot Release
+artifacts. A native `macos-15-intel` runner has now produced the x86_64 build, desktop
+smoke and exact mounted-DMG smoke; both architectures are verified current candidates.
+The existing private pilot Release
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
-has been refreshed in place from app source commit `876efe0`; it remains arm64-only,
-ad-hoc and trusted-pilot-only. The previous
+is being refreshed in place to carry both native DMGs; it remains ad-hoc and
+trusted-pilot-only. The previous
 v1.4.0 matrix and historical documentation remain in the repository for audit context only.
 Its GitHub publication, tag and assets were removed on 2026-09-11; v1.4.0 is not a download
 source or a current product description.
 
 The three-person pilot distribution and technical validation path is documented in
 [`PILOT-DISTRIBUTION-RESEARCH.md`](PILOT-DISTRIBUTION-RESEARCH.md) and
-[`PILOT-INSTRUCTIONS.md`](PILOT-INSTRUCTIONS.md). A private GitHub Release can carry the
-eventual dual-architecture DMGs, evidence and checksums for users with repository read
-access. The M-series pilot may start earlier with the explicitly scoped arm64-only package
-prepared by `scripts/prepare_pilot_package.py --architecture arm64 --pilot-tag
-pilot-v1.0.0-arm64`; this package is not a dual-architecture release and carries no Intel
-support claim. The separate `pilot-v1.0.0-arm64` tag is a private prerelease transport
-identifier, not the canonical `v1.0.0` product release tag. That transport does not provide
-Apple Developer ID trust; an ad-hoc DMG remains trusted-pilot-only and requires manual
-Gatekeeper approval. The current published M-series pilot Release is
+[`PILOT-INSTRUCTIONS.md`](PILOT-INSTRUCTIONS.md). The private GitHub Release now carries
+the two native architecture DMGs, evidence and checksums for users with repository read
+access. The earlier arm64-only package remains historical evidence; the current dual
+package includes the same explicit architecture boundary for both M-series and Intel users.
+The separate `pilot-v1.0.0-arm64` tag is a private prerelease transport identifier, not the
+canonical `v1.0.0` product release tag. That transport does not provide Apple Developer ID
+trust; an ad-hoc DMG remains trusted-pilot-only and requires manual Gatekeeper approval. The
+current published dual-architecture pilot Release is
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
-For pilot-user clarity, its download area currently contains only the exact arm64 DMG.
+For pilot-user clarity, its download area contains only the two exact native DMGs.
 Technical smoke/N05 evidence, manifest, instructions and checksums remain in the repository
-and local audit package rather than as separate downloads. No Intel DMG has been published;
-the native x86_64 evidence gate remains open. No dual product Release or canonical `v1.0.0`
-tag has been created.
+and local audit package rather than as separate downloads. The x86_64 evidence gate is now
+closed by native CI; N03, N05, H05 and pilot access remain separate gates. No canonical
+`v1.0.0` product Release/tag has been created.
 
 The proposed end-to-end delivery and release-readiness plan is
 [KPR-001](../strategy/PRODUCTION-READINESS-PLAN.md). Its G6 checklist covers exact-source

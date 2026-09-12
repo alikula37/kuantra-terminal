@@ -10,16 +10,17 @@ Bu belge repository içindeki pilot talimatıdır; Release body içindeki bağla
 okunabilir. Tag ve indirme linki aynıdır; DMG güncel provider-backed pilot build'ine
 göre yenilenmiştir.
 
-Bu paket yalnızca Apple Silicon **M işlemcili Mac'ler** içindir: M1, M2, M3,
+Bu belge yalnızca Apple Silicon **M işlemcili Mac'ler** içindir: M1, M2, M3,
 M4 ve aynı native `arm64` ailesindeki cihazlar. macOS 12 Monterey veya üzeri
-gerekir. Intel Mac bu paketin kapsamı değildir; Intel için ayrı `x86_64` DMG
-beklenmelidir.
+gerekir. Intel Mac bu belgenin kapsamı değildir; güncel Release'te Intel için ayrı
+native `x86_64` DMG bulunur.
 
 Bu paket `TRUSTED_MACOS_PILOT_ARM64` kapsamındadır. Kapalı teknik pilot içindir;
 public dağıtım, production, ticari destek veya Apple tarafından doğrulanmış güven
 iddiası değildir. Apple Developer ID alınmadığı için ilk açılışta manuel Gatekeeper
-onayı gerekebilir. Bu Release Intel desteği iddia etmez; Intel katılımcı yalnızca ayrı
-native `x86_64` artifact verildiğinde Intel lane'ini izlemelidir.
+onayı gerekebilir. Bu belge Intel desteği iddia etmez; Intel kullanıcıları bunun yerine
+`PILOT-INSTRUCTIONS.md` içindeki `x86_64` indirme ve doğrulama adımlarını
+izlemelidir.
 
 ## İndirmeden ve açmadan önce
 

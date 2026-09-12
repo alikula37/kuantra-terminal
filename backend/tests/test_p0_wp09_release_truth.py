@@ -40,9 +40,9 @@ def test_renderer_excludes_historical_release_claims(tmp_path):
     result = run_script(RENDERER, "--output", str(output))
     assert result.returncode == 0, result.stderr or result.stdout
     rendered = output.read_text(encoding="utf-8")
-    assert "M-series Trusted Pilot" in rendered
-    assert "AD_HOC_TRUSTED_PILOT_ONLY_ARM64" in rendered
-    assert "not published yet" in rendered
+    assert "Trusted macOS Pilot" in rendered
+    assert "AD_HOC_TRUSTED_PILOT_ONLY" in rendered
+    assert "x86_64" in rendered
     assert "Zero-Mock Institutional Release" not in rendered
     assert "CURRENT_RELEASE_NOTES:START" not in rendered
 
@@ -63,7 +63,7 @@ def test_v1_release_scope_is_mac_dual_architecture_only():
     assert matrix["distribution"]["release_scope"] == "macOS arm64 and x86_64"
     assert matrix["distribution"]["minimum_os"] == "macOS 12 Monterey or later"
     assert matrix["distribution"]["architectures"] == ["arm64", "x86_64"]
-    assert matrix["distribution"]["architecture_evidence"]["x86_64"] == "PENDING_NATIVE_CI"
+    assert matrix["distribution"]["architecture_evidence"]["x86_64"] == "VERIFIED_CURRENT_CANDIDATE"
     assert matrix["distribution"]["current_artifact_status"] == "AD_HOC_DEVELOPMENT_ONLY"
     assert set(matrix["distribution"]["unclaimed_platforms"]) == {
         "Windows", "Linux"
