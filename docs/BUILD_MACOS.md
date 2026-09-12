@@ -65,9 +65,13 @@ credentials or a production release. On the physical Intel Mac, confirm the host
 building:
 
 ```bash
-test "$(uname -m)" = "x86_64"
-test "$(sysctl -in sysctl.proc_translated 2>/dev/null || true)" = "0"
+python3.11 scripts/macos_architecture.py --expected-architecture x86_64
 ```
+
+The shared check accepts a native Intel host even when the Rosetta-only
+`sysctl.proc_translated` key is absent, which is the expected macOS behavior on
+Intel. It still rejects an x86_64 process translated on Apple Silicon and keeps
+an unknown translation result fail-closed.
 
 Then run the locked local gate with the architecture requirement enabled. The build and
 packaged smoke steps inherit the same native-host/executable guard:
