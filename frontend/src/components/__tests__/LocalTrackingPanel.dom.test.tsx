@@ -69,3 +69,14 @@ it("manual close uses only the local endpoint and requires a price", async () =>
   expect(call[0]).toBe("/api/v1/trades/t1/tracking/close");
   expect(JSON.parse(call[1].body)).toEqual({ expected_revision: 2, price: 119 });
 });
+
+it("contains keyboard focus and closes on Escape without saving", async () => {
+  await open();
+  const first = button("tracking.dismiss");
+  first.focus();
+  await act(async () => first.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true })));
+  expect(document.activeElement?.tagName).toBe("SUMMARY");
+  await act(async () => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
+  expect(host.querySelector("dialog")).toBeNull();
+  expect(mocks.request.mock.calls.some(c => c[1]?.method === "PUT")).toBe(false);
+});

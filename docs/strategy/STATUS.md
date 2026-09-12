@@ -10,6 +10,9 @@ green (`4fc271d`); Package 3 adds concurrency, correction/cancel, restore/export
 and corrupted-chain coverage (**26 passed**). UI focused **18 passed**, build and
 EN/TR/DE **813/813** PASS. Native tracking UI lifecycle/theme PASS on developer
 arm64 artifact; clean canonical CI and dual exact artifact evidence are pending.
+Clean canonical CI on `09d29e5` subsequently passed: backend **880**, frontend **153**,
+i18n **813/813**, native arm64 WKWebView and COMPLETE provenance. Final keyboard
+containment/Escape regression is also green; refreshed dual artifacts remain pending.
 Initial CI's three default-network failures were caused by global test environment
 overrides; this run is not reported as a passing gate. Native build and
 pilot refresh remain pending. Canonical local plans and estimates are separate from

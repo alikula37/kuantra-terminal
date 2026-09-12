@@ -23,6 +23,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
   const [editorError, setEditorError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
   const loadRef = useRef<AbortController | null>(null);
   const editorLoadRef = useRef<AbortController | null>(null);
   const mounted = useRef(true);
@@ -72,12 +73,17 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
   useEffect(() => { if (editTrade) void openEditor(editTrade); }, [editTrade, openEditor]);
   useEffect(() => {
     if (editor && dialog.current) {
-      if (typeof dialog.current.showModal === "function") dialog.current.showModal();
+      returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      if (typeof dialog.current.showModal === "function" && !dialog.current.open) dialog.current.showModal();
       else dialog.current.setAttribute("open", "");
+      dialog.current.querySelector<HTMLButtonElement>("button")?.focus();
     }
   }, [editor]);
 
-  const close = () => { if (busy) return; editorLoadRef.current?.abort(); setEditor(null); onEditorClose(); };
+  const close = () => {
+    if (busy) return;
+    editorLoadRef.current?.abort(); setEditor(null); onEditorClose(); returnFocus.current?.focus();
+  };
   const submit = async (manual: boolean) => {
     if (!editor || busy) return;
     const plan = editor.plan;
@@ -98,7 +104,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
       });
       if (!response.ok) { setEditorError(t(response.status === 409 ? "tracking.conflict" : "tracking.invalid")); return; }
       if (!isTrackingState(await response.json())) throw new Error();
-      if (mounted.current) { setEditor(null); onEditorClose(); void refresh(); }
+      if (mounted.current) { setEditor(null); onEditorClose(); returnFocus.current?.focus(); void refresh(); }
     } catch { if (mounted.current) setEditorError(t("tracking.error")); }
     finally { if (mounted.current) setBusy(false); }
   };
@@ -132,6 +138,14 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
       </span>)}
     </article>)}</div>
     {editor && <dialog ref={dialog} onCancel={e => { e.preventDefault(); close(); }}
+      aria-modal="true" onKeyDown={e => {
+        if (e.key === "Escape") { e.preventDefault(); close(); }
+        if (e.key !== "Tab") return;
+        const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), select:not(:disabled), summary"));
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }}
       className="bg-[#111722] text-white rounded-lg border border-surface-border p-5 w-full max-w-xl max-h-[85vh] overflow-y-auto backdrop:bg-black/60"
       aria-labelledby="tracking-editor-title">
       <div className="flex justify-between gap-3 mb-3"><h3 id="tracking-editor-title">{t("tracking.edit")} · {editor.trade.symbol}</h3>

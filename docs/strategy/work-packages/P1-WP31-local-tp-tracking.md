@@ -60,6 +60,10 @@ release provenance. Initial full CI was blocked by three default-network tests
 because disabled-network settings were incorrectly applied to the entire suite;
 the canonical gate is rerun with normal defaults, while native fixture runs stay
 explicitly network-disabled. Additional fractional-allocation regression PASS.
+Source `09d29e5` canonical Mac CI: **MERGE READY**, backend **880 passed / 2 warnings**,
+frontend **153 passed**, **813/813** i18n, build/native WKWebView, COMPLETE provenance.
+Final keyboard containment/Escape restoration also passes four editor DOM tests;
+the final source is rebuilt for distribution rather than reusing the prior binary.
 No build, runtime-offline or release claim follows from this dependency mode.
 
 ## Persistence contract
