@@ -7,7 +7,7 @@ version: 1.0.0
 status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
-implementation_commit: 0a5b8aa
+implementation_commit: dd58142
 latest_artifact_source_commit: dd581425c2c298664512f0434fa93a726a9cacb5
 latest_evidence_date: 2026-09-12
 branch: codex/p1-wp01-evidence-ledger
