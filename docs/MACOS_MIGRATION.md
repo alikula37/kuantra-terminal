@@ -5,10 +5,11 @@ Version: 1.2.1
 Status: Accepted
 Last updated: 2026-09-10
 
-## Current transition decision: no-user-data path
+## Initial Windows transition decision: no-user-data path
 
-The current repository has no external users and no user-owned journal that
-must be preserved. `backend/data/` contains local development artifacts and is
+At the original Windows-to-Mac transition there were no external users or user-owned
+journals to migrate. This is not permission to reset data now present on a pilot or
+developer Mac. `backend/data/` contains local development artifacts and is
 ignored by Git; it is not part of the code migration. For the current Windows
 to Mac move, **do not create or restore a migration ZIP**. Clone the private
 repository, checkout the product branch, install the toolchain, and let Kuantra
@@ -57,8 +58,7 @@ Credential Manager material or raw `.env` secrets to the Mac.
 
 ## Legacy SQLite schema upgrade (future real-data path only)
 
-The current Mac has no user data, so this command is **not** part of the clean
-bootstrap. When a future real-data database predates the evidence ledger or
+This command is **not** part of the clean bootstrap. When an existing database predates the evidence ledger or
 typed projection, stop Kuantra and obtain explicit owner approval before using:
 
 ```bash
@@ -76,6 +76,14 @@ SQLite/WAL set is retained as a `.pre-upgrade-*` backup. Unsupported/future sche
 corrupt backup, malformed legacy rows, or any failed validation stops the operation
 without promoting staged data. It does not remove credentials; bundle creation has
 the separate credential-sanitization policy below.
+
+The current additive journal revision is `005_trade_position_type` (schema version 5).
+Spot/long/short identity is retained through snapshots and export; historical rows
+receive `UNKNOWN`, never an inferred spot classification. Supported stamped and
+unstamped pre-quote/pre-position layouts are recognized only when the core trade,
+ledger and projection columns remain intact. Missing core columns and future
+schema versions still fail closed. Development checks use temporary synthetic
+databases; they do not authorize upgrading an existing user's database.
 
 Do not run `upgrade-schema` on the clean no-user-data Mac and do not treat it as a
 general database reset or migration-apply shortcut. After a successful upgrade,

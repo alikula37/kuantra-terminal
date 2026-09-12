@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Check, RefreshCw, Zap, AlertTriangle } from "lucide-react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
 import { useTranslation } from "../context/I18nContext";
 import { MarketQuote, TradeSide } from "../types";
 import { apiFetch, apiUrl } from "../lib/backend";
-import { createManualMarketInstrument, getMarketSymbolDefinition, resolveMarketSymbol } from "../lib/marketSymbols";
+import { createManualMarketInstrument, normalizeMarketSymbol } from "../lib/marketSymbols";
 import { MarketInstrument } from "../lib/marketSymbols";
 import { useInstrumentSearch } from "../hooks/useInstrumentSearch";
 
@@ -58,17 +58,16 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const { t } = useTranslation();
   const { symbol: defaultSymbol } = useMarketStore();
   const { addTrade } = useTradeStore();
-  const resolvedDefaultSymbol = resolveMarketSymbol(defaultSymbol || "");
-  const initialSymbol = resolvedDefaultSymbol && getMarketSymbolDefinition(resolvedDefaultSymbol)
-    ? resolvedDefaultSymbol
-    : "BTCUSDT";
+  const resolvedDefaultSymbol = normalizeMarketSymbol(defaultSymbol || "");
+  const initialSymbol = resolvedDefaultSymbol || "BTCUSDT";
 
   const [recordMode, setRecordMode] = useState<"EXTERNAL" | "SIMULATION">("EXTERNAL");
   const [tradeSymbol, setTradeSymbol] = useState<string>(initialSymbol);
-  const [symbolInput, setSymbolInput] = useState<string>(initialSymbol);
+  const [symbolInput, setSymbolInput] = useState<string>("");
   const [pendingInstrument, setPendingInstrument] = useState<MarketInstrument | null>(null);
   const [symbolSearchError, setSymbolSearchError] = useState<string | null>(null);
-  const [side, setSide] = useState<TradeSide>("BUY");
+  const [positionType, setPositionType] = useState<"SPOT" | "LONG" | "SHORT">("SPOT");
+  const side: TradeSide = positionType === "SHORT" ? "SELL" : "BUY";
   const [entryPrice, setEntryPrice] = useState<number>(0);
   const [qty, setQty] = useState<number>(1.0);
   const [stopLoss, setStopLoss] = useState<number>(0);
@@ -82,29 +81,43 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [quote, setQuote] = useState<MarketQuote | null>(null);
   const [priceOrigin, setPriceOrigin] = useState<"MANUAL" | "PUBLIC_QUOTE">("MANUAL");
+  const quoteRequestRef = useRef<AbortController | null>(null);
+  const isSymbolSearchPending = Boolean(symbolInput.trim() || pendingInstrument);
   const { results: searchResults, status: searchStatus } = useInstrumentSearch(
     symbolInput,
-    !pendingInstrument && symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase(),
+    isOpen && !pendingInstrument,
   );
+
+  useEffect(() => () => quoteRequestRef.current?.abort(), []);
+
+  const cancelQuoteRequest = () => {
+    quoteRequestRef.current?.abort();
+    quoteRequestRef.current = null;
+    setIsFetchingPrice(false);
+  };
 
   if (!isOpen) return null;
 
   const handleFetchLatestPrice = async () => {
-    if (symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase()) {
+    if (isSymbolSearchPending) {
       setSymbolSearchError(t("order_ticket.select_result_to_confirm"));
       return;
     }
     setIsFetchingPrice(true);
     setFetchNotice(null);
     setErrorMessage(null);
+    quoteRequestRef.current?.abort();
+    const controller = new AbortController();
+    quoteRequestRef.current = controller;
     try {
       const res = await apiFetch(
         apiUrl(`/api/v1/market-data/quote?symbol=${encodeURIComponent(
           tradeSymbol.toUpperCase()
-        )}&source=auto`)
+        )}&source=auto`), { signal: controller.signal },
       );
       if (!res.ok) throw new Error("Price fetch failed");
       const candidateValue: unknown = await res.json();
+      if (controller.signal.aborted || quoteRequestRef.current !== controller) return;
       const candidate = isMarketQuote(candidateValue) ? candidateValue : null;
       if (!candidate || candidate.requested_symbol !== tradeSymbol.toUpperCase()) {
         throw new Error("Malformed free quote response");
@@ -114,13 +127,6 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
         const markPrice = Number(candidate.price);
         setPriceOrigin("PUBLIC_QUOTE");
         setEntryPrice(markPrice);
-        if (side === "BUY") {
-          setStopLoss(Number((markPrice * 0.98).toFixed(2)));
-          setTakeProfit(Number((markPrice * 1.04).toFixed(2)));
-        } else {
-          setStopLoss(Number((markPrice * 1.02).toFixed(2)));
-          setTakeProfit(Number((markPrice * 0.96).toFixed(2)));
-        }
         setFetchNotice(t("order_ticket.latest_price", {
           price: markPrice.toLocaleString(),
           source: candidate.source_symbol || candidate.source_id || "",
@@ -131,11 +137,15 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
         setFetchNotice(t("order_ticket.price_unavailable_manual"));
       }
     } catch {
+      if (controller.signal.aborted || quoteRequestRef.current !== controller) return;
       setQuote(null);
       setPriceOrigin("MANUAL");
       setFetchNotice(t("order_ticket.price_unavailable_manual"));
     } finally {
-      setIsFetchingPrice(false);
+      if (quoteRequestRef.current === controller) {
+        quoteRequestRef.current = null;
+        setIsFetchingPrice(false);
+      }
     }
   };
 
@@ -154,7 +164,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       return;
     }
     setTradeSymbol(pendingInstrument.symbol);
-    setSymbolInput(pendingInstrument.symbol);
+    cancelQuoteRequest();
+    if (pendingInstrument.symbol !== tradeSymbol) {
+      setEntryPrice(0);
+      setStopLoss(0);
+      setTakeProfit(0);
+    }
+    setSymbolInput("");
     setPendingInstrument(null);
     setSymbolSearchError(null);
     setQuote(null);
@@ -164,26 +180,24 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
 
   const handleCancelSymbolSelection = () => {
     setPendingInstrument(null);
-    setSymbolInput(tradeSymbol);
+    setSymbolInput("");
     setSymbolSearchError(null);
   };
 
-  const riskPerUnit = Math.abs(entryPrice - (stopLoss || entryPrice));
-  const totalRisk = riskPerUnit * qty;
-  const rewardPerUnit = Math.abs((takeProfit || entryPrice) - entryPrice);
-  const totalReward = rewardPerUnit * qty;
-  const rrRatio = totalRisk > 0 ? (totalReward / totalRisk).toFixed(2) : "0.00";
-
-  const accountRefBalance = 10000.0;
-  const riskPct = accountRefBalance > 0 ? (totalRisk / accountRefBalance) * 100 : 0;
-  const isHighRisk = riskPct > 2.5;
+  const validSize = entryPrice > 0 && qty > 0 && Number.isFinite(entryPrice * qty);
+  const validStop = stopLoss > 0 && (side === "BUY" ? stopLoss < entryPrice : stopLoss > entryPrice);
+  const validTarget = takeProfit > 0 && (side === "BUY" ? takeProfit > entryPrice : takeProfit < entryPrice);
+  const totalRisk = validSize && validStop ? Math.abs(entryPrice - stopLoss) * qty : null;
+  const totalReward = validSize && validTarget ? Math.abs(takeProfit - entryPrice) * qty : null;
+  const rrRatio = totalRisk !== null && totalRisk > 0 && totalReward !== null
+    ? (totalReward / totalRisk).toFixed(2) : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    if (!symbolInput.trim() || symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase()) {
+    if (isSymbolSearchPending) {
       setErrorMessage(t("order_ticket.select_result_to_confirm"));
       setIsSubmitting(false);
       return;
@@ -202,6 +216,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     const tradePayload = {
       symbol: tradeSymbol.toUpperCase(),
       side,
+      position_type: positionType,
       entry_price: Number(entryPrice),
       qty: Number(qty),
       stop_loss: stopLoss ? Number(stopLoss) : null,
@@ -314,6 +329,9 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
 
           {/* Symbol Input & Fetch Price Action */}
           <div>
+            <div data-testid="new-trade-selected-symbol" className="mb-2 rounded border border-accent/30 bg-[#0b0e14] px-3 py-2 text-accent">
+              {t("order_ticket.selected_symbol", { symbol: tradeSymbol })}
+            </div>
             <div className="flex justify-between items-center mb-1">
               <label className="text-slate-400">{t("order_ticket.symbol_label")}</label>
               {fetchNotice && (
@@ -325,6 +343,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 type="text"
                 value={symbolInput}
                 onChange={(e) => {
+                  cancelQuoteRequest();
                   setSymbolInput(e.target.value.toUpperCase());
                   setPendingInstrument(null);
                   setSymbolSearchError(null);
@@ -339,12 +358,12 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 }}
                 placeholder={t("order_ticket.symbol_placeholder")}
                 className="flex-1 bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-white uppercase focus:outline-none focus:border-accent"
-                required
+                aria-label={t("order_ticket.symbol_search_label")}
               />
               <button
                 type="button"
                 onClick={handleFetchLatestPrice}
-                disabled={isFetchingPrice || symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase()}
+                disabled={isFetchingPrice || isSymbolSearchPending}
                 className="px-2.5 py-1.5 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-accent rounded flex items-center space-x-1 transition disabled:opacity-50 cursor-pointer"
                 title={t("order_ticket.fetch_price_btn")}
               >
@@ -352,8 +371,8 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 <span className="text-[11px] font-semibold">{t("order_ticket.fetch_price_btn")}</span>
               </button>
             </div>
-            {symbolInput.trim() && symbolInput.trim().toUpperCase() !== tradeSymbol.toUpperCase() && !pendingInstrument && (
-              <div role="listbox" data-testid="new-trade-symbol-search-results" className="mt-1 rounded border border-surface-border bg-[#0b0e14] p-1 shadow-xl">
+            {symbolInput.trim() && !pendingInstrument && (
+              <div role="listbox" aria-label={t("order_ticket.symbol_search_label")} data-testid="new-trade-symbol-search-results" className="mt-1 max-h-48 overflow-y-auto rounded border border-surface-border bg-[#0b0e14] p-1 shadow-xl">
                 {searchResults.map((item) => (
                   <button
                     key={item.symbol}
@@ -432,12 +451,18 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           </div>
 
           {/* Side Selector */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2" role="group" aria-label={t("order_ticket.position_type")}>
+            <button type="button" data-testid="new-trade-spot" aria-pressed={positionType === "SPOT"}
+              onClick={() => setPositionType("SPOT")}
+              className={`py-2 rounded font-bold transition cursor-pointer ${positionType === "SPOT" ? "bg-accent text-black" : "bg-[#1a2234] text-slate-300"}`}>
+              {t("order_ticket.side_spot")}
+            </button>
             <button
               type="button"
-              onClick={() => setSide("BUY")}
+              aria-pressed={positionType === "LONG"}
+              onClick={() => setPositionType("LONG")}
               className={`py-2 rounded font-bold transition cursor-pointer ${
-                side === "BUY"
+                positionType === "LONG"
                   ? "bg-gain text-black shadow-lg shadow-emerald-500/20"
                   : "bg-[#1a2234] text-slate-300"
               }`}
@@ -446,9 +471,10 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setSide("SELL")}
+              aria-pressed={positionType === "SHORT"}
+              onClick={() => setPositionType("SHORT")}
               className={`py-2 rounded font-bold transition cursor-pointer ${
-                side === "SELL"
+                positionType === "SHORT"
                   ? "bg-loss text-white shadow-lg shadow-rose-500/20"
                   : "bg-[#1a2234] text-slate-300"
               }`}
@@ -456,6 +482,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               {t("order_ticket.side_sell")}
             </button>
           </div>
+          {positionType === "SPOT" && <p className="text-[11px] text-slate-400">{t("order_ticket.spot_notice")}</p>}
 
           {/* Entry & Qty */}
           <div className="grid grid-cols-2 gap-3">
@@ -466,6 +493,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 step="any"
                 value={entryPrice || ""}
                 onChange={(e) => {
+                  cancelQuoteRequest();
                   setEntryPrice(Number(e.target.value));
                   setPriceOrigin("MANUAL");
                 }}
@@ -517,29 +545,22 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           </div>
 
           {/* Risk / Reward Math & Risk Meter */}
-          <div className={`p-3 rounded border space-y-1 text-[11px] ${
-            isHighRisk ? "bg-loss/10 border-loss/40" : "bg-[#0b0e14] border-surface-border"
-          }`}>
+          <div className="p-3 rounded border space-y-1 text-[11px] bg-[#0b0e14] border-surface-border">
             <div className="flex justify-between">
               <span className="text-slate-400">{t("order_ticket.risk_amount")}:</span>
-              <span className={`font-bold ${isHighRisk ? "text-rose-400" : "text-loss"}`}>
-                ${totalRisk.toFixed(2)} ({riskPct.toFixed(2)}% of equity)
+              <span className="font-bold text-loss">
+                {totalRisk === null ? t("order_ticket.estimate_unavailable") : totalRisk.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">{t("order_ticket.reward_amount")}:</span>
-              <span className="text-gain font-bold">${totalReward.toFixed(2)}</span>
+              <span className="text-gain font-bold">{totalReward === null ? t("order_ticket.estimate_unavailable") : totalReward.toFixed(2)}</span>
             </div>
             <div className="flex justify-between border-t border-surface-border/50 pt-1">
               <span className="text-slate-400">{t("order_ticket.rr_ratio")}:</span>
-              <span className="text-accent font-bold">1 : {rrRatio}</span>
+              <span className="text-accent font-bold">{rrRatio === null ? t("order_ticket.estimate_unavailable") : `1 : ${rrRatio}`}</span>
             </div>
-            {isHighRisk && (
-              <div className="flex items-center space-x-1.5 pt-1 text-[10px] text-rose-300 font-bold">
-                <AlertTriangle className="w-3 h-3" />
-                <span>{t("order_ticket.high_risk_warning")}</span>
-              </div>
-            )}
+            <p className="pt-1 text-[10px] text-slate-400">{t("order_ticket.estimate_units_notice")}</p>
           </div>
 
           {/* Notes */}
@@ -557,7 +578,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           {/* Submit Action */}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isFetchingPrice || isSymbolSearchPending}
             className={`w-full py-2.5 font-bold rounded flex items-center justify-center space-x-2 transition cursor-pointer ${
               recordMode === "SIMULATION"
                 ? "bg-amber-400 hover:bg-amber-300 text-black shadow-lg shadow-amber-500/20"

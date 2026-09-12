@@ -355,7 +355,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                             : "bg-loss/20 text-loss"
                         }`}
                       >
-                        {tItem.side}
+                        {tItem.position_type === "SPOT" ? t("order_ticket.side_spot") : tItem.side}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-slate-200">${Number(tItem.entry_price).toFixed(2)}</td>

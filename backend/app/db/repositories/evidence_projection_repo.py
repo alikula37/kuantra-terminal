@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from app.core.paths import get_sqlite_path
+from app.core.position_type import normalize_position_type
 from app.db.projection_schema import initialize_trade_projection_schema
 from app.db.repositories.evidence_ledger_repo import (
     EvidenceLedgerRepository,
@@ -114,6 +115,10 @@ class EvidenceTradeProjectionRepository:
             raise EvidenceProjectionError(f"trade {trade_id} qty must be positive")
         entry_time = _required_text(raw_trade.get("entry_time"), "trade.entry_time")
 
+        try:
+            position_type = normalize_position_type(raw_trade.get("position_type"), side)
+        except ValueError as exc:
+            raise EvidenceProjectionError(str(exc)) from exc
         normalized_trade = dict(raw_trade)
         normalized_trade.update(
             {
@@ -140,6 +145,7 @@ class EvidenceTradeProjectionRepository:
                 # Missing fields stay explicit rather than being upgraded to a
                 # live or complete market-data claim during projection rebuild.
                 "record_mode": str(raw_trade.get("record_mode") or "UNKNOWN").upper(),
+                "position_type": position_type,
                 "execution_venue": (
                     str(raw_trade.get("execution_venue")).strip()
                     if raw_trade.get("execution_venue") is not None

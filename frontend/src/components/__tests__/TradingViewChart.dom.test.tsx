@@ -170,6 +170,8 @@ it("renders valid historical candles without promoting them to live ticks", asyn
     expect.objectContaining({ open: 100, high: 110, low: 90, close: 105 }),
   ]));
   expect(mocks.updateTick).not.toHaveBeenCalled();
+  expect(host.textContent).not.toContain("$105");
+  expect(host.textContent).toContain("market_chart.price_units_notice");
 });
 
 it("refreshes candles without covering the chart or resetting the user's zoom", async () => {

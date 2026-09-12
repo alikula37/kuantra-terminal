@@ -240,6 +240,10 @@ export const TradingViewChart: React.FC = () => {
     let timedOut = false;
     const candleKey = `${activeSymbol}:${activeTimeframe}`;
     const hasCurrentChart = displayedCandleKeyRef.current === candleKey;
+    if (!hasCurrentChart) {
+      setHoveredCandle(null);
+      setLatestCandle(null);
+    }
     setIsLoading(!background || !hasCurrentChart);
     if (!background) setErrorMsg(null);
     setIsCancelled(false);
@@ -341,6 +345,7 @@ export const TradingViewChart: React.FC = () => {
         volumeSeriesRef.current.setData([]);
       }
       setLatestCandle(null);
+      setHoveredCandle(null);
     } finally {
       if (requestId === candleRequestIdRef.current) {
         if (candleTimeoutRef.current) clearTimeout(candleTimeoutRef.current);
@@ -426,6 +431,7 @@ export const TradingViewChart: React.FC = () => {
   const priceChange = displayCandle ? displayCandle.close - displayCandle.open : 0;
   const priceChangePct = displayCandle && displayCandle.open > 0 ? (priceChange / displayCandle.open) * 100 : 0;
   const isUp = priceChange >= 0;
+  const formatPrice = (value: number) => value.toLocaleString(undefined, { maximumSignificantDigits: 12 });
 
   return (
     <div className="relative flex-1 w-full h-full bg-[#0b0e14] overflow-hidden flex flex-col font-mono select-none">
@@ -616,16 +622,16 @@ export const TradingViewChart: React.FC = () => {
           {displayCandle && (
             <div className="flex items-center space-x-3">
               <span>
-                {t("market_chart.open")}: <span className="text-slate-200">${displayCandle.open.toFixed(2)}</span>
+                {t("market_chart.open")}: <span className="text-slate-200">{formatPrice(displayCandle.open)}</span>
               </span>
               <span>
-                {t("market_chart.high")}: <span className="text-emerald-400">${displayCandle.high.toFixed(2)}</span>
+                {t("market_chart.high")}: <span className="text-emerald-400">{formatPrice(displayCandle.high)}</span>
               </span>
               <span>
-                {t("market_chart.low")}: <span className="text-rose-400">${displayCandle.low.toFixed(2)}</span>
+                {t("market_chart.low")}: <span className="text-rose-400">{formatPrice(displayCandle.low)}</span>
               </span>
               <span>
-                {t("market_chart.close")}: <span className="text-white font-bold">${displayCandle.close.toFixed(2)}</span>
+                {t("market_chart.close")}: <span className="text-white font-bold">{formatPrice(displayCandle.close)}</span>
               </span>
               <span>
                 {t("market_chart.volume")}: <span className="text-cyan-400">{displayCandle.volume.toLocaleString()}</span>
@@ -637,13 +643,14 @@ export const TradingViewChart: React.FC = () => {
         {displayCandle && (
           <div className="flex items-center space-x-2">
             <span className={`font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
-              {isUp ? "+" : ""}${priceChange.toFixed(2)} ({isUp ? "+" : ""}{priceChangePct.toFixed(2)}%)
+              {isUp ? "+" : ""}{formatPrice(priceChange)} ({isUp ? "+" : ""}{priceChangePct.toFixed(2)}%)
             </span>
           </div>
         )}
       </div>
 
       {/* Chart Canvas Area */}
+      <p className="px-3 text-[10px] text-slate-400">{t("market_chart.price_units_notice")}</p>
       <div className="relative flex-1 w-full h-full">
         <div ref={chartContainerRef} className="w-full h-full" />
 

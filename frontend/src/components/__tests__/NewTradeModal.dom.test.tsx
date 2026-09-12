@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   apiFetch: vi.fn(),
   addTrade: vi.fn(),
+  symbol: "BTCUSDT",
   t: (key: string, params?: Record<string, string | number>) =>
     params ? `${key}:${Object.values(params).join("|")}` : key,
 }));
@@ -17,7 +18,7 @@ vi.mock("../../context/I18nContext", () => ({
   useTranslation: () => ({ t: mocks.t }),
 }));
 vi.mock("../../stores/marketStore", () => ({
-  useMarketStore: () => ({ symbol: "BTCUSDT" }),
+  useMarketStore: () => ({ symbol: mocks.symbol }),
 }));
 vi.mock("../../stores/tradeStore", () => ({
   useTradeStore: () => ({ addTrade: mocks.addTrade }),
@@ -80,6 +81,50 @@ beforeEach(async () => {
   root = createRoot(host);
   mocks.apiFetch.mockReset();
   mocks.addTrade.mockReset();
+  mocks.symbol = "BTCUSDT";
+});
+
+it("keeps a chart-selected non-catalog instrument and searches the same ticker explicitly", async () => {
+  mocks.symbol = "ARCLK.IS";
+  mocks.apiFetch.mockImplementation(() => Promise.resolve(response({ status: "READY", results: [
+    { symbol: "ARCLK.IS", name: "Arcelik", exchange: "Istanbul", asset_type: "EQUITY", source_id: "yahoo_public", source_symbol: "ARCLK.IS" },
+  ] })));
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  const search = host.querySelectorAll('input[type="text"]')[1] as HTMLInputElement;
+  expect(search.value).toBe("");
+  expect(host.querySelector("[data-testid=new-trade-selected-symbol]")?.textContent).toContain("ARCLK.IS");
+  await act(async () => setInputValue(search, "ARCLK.IS"));
+  await waitForSearch();
+  expect(host.querySelector('[data-testid="new-trade-symbol-search-result-ARCLK.IS"]')).not.toBeNull();
+  expect((host.querySelector('button[title="order_ticket.fetch_price_btn"]') as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("ignores an old quote after switching instruments and clears the previous price", async () => {
+  let resolveQuote!: (value: Response) => void;
+  mocks.apiFetch.mockImplementation((path: string) => path.includes("/quote?")
+    ? new Promise<Response>((resolve) => { resolveQuote = resolve; })
+    : Promise.resolve(response({ status: "READY", results: [
+      { symbol: "LINKUSDT", name: "Chainlink", exchange: "Binance Spot", asset_type: "CRYPTO", source_id: "binance_public", source_symbol: "LINKUSDT" },
+    ] })));
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  await act(async () => setInputValue(host.querySelector('input[type="number"]') as HTMLInputElement, "100"));
+  await act(async () => (host.querySelector('button[title="order_ticket.fetch_price_btn"]') as HTMLButtonElement).click());
+  await act(async () => setInputValue(host.querySelectorAll('input[type="text"]')[1] as HTMLInputElement, "LINK"));
+  await waitForSearch();
+  await act(async () => (host.querySelector("[data-testid=new-trade-symbol-search-result-LINKUSDT]") as HTMLButtonElement).click());
+  await act(async () => (host.querySelector("[data-testid=new-trade-confirm-symbol]") as HTMLButtonElement).click());
+  resolveQuote(response({ requested_symbol: "BTCUSDT", source_id: "binance_public", source_symbol: "BTCUSDT", price: 999,
+    status: "LIVE", price_kind: "LAST", observed_at: "2026-09-11T10:00:00Z", free_source: true, credentials_required: false }));
+  await flush();
+  expect((host.querySelector('input[type="number"]') as HTMLInputElement).value).toBe("");
+  expect(host.querySelector("[data-testid=trade-quote-status]")).toBeNull();
+});
+
+it("does not reinterpret an already-selected LINK ticker as a crypto alias", async () => {
+  mocks.symbol = "LINK";
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  expect(host.querySelector("[data-testid=new-trade-selected-symbol]")?.textContent).toBe("order_ticket.selected_symbol:LINK");
+  expect(mocks.apiFetch).not.toHaveBeenCalled();
 });
 
 afterEach(async () => {
@@ -125,6 +170,7 @@ it("uses a free quote only when the exact quote is available and records the ret
 
   expect(submittedBody).toMatchObject({
     symbol: "BTCUSDT",
+    position_type: "SPOT",
     record_mode: "EXTERNAL",
     price_source: "binance_public",
     price_source_symbol: "BTCUSDT",
@@ -135,6 +181,36 @@ it("uses a free quote only when the exact quote is available and records the ret
   expect(onClose).toHaveBeenCalledTimes(1);
   expect(mocks.apiFetch.mock.calls.some(([path]) => path === "/api/v1/execution/order")).toBe(false);
 });
+
+it("does not invent equity percentages, stop losses or targets from a quote", async () => {
+  mocks.apiFetch.mockResolvedValue(response({ requested_symbol: "BTCUSDT", source_id: "binance_public", source_symbol: "BTCUSDT",
+    price: 100, status: "LIVE", price_kind: "LAST", observed_at: "2026-09-12T00:00:00Z", free_source: true, credentials_required: false }));
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  await act(async () => (host.querySelector('button[title="order_ticket.fetch_price_btn"]') as HTMLButtonElement).click());
+  await flush();
+  const numbers = host.querySelectorAll('input[type="number"]');
+  expect((numbers[2] as HTMLInputElement).value).toBe("");
+  expect((numbers[3] as HTMLInputElement).value).toBe("");
+  expect(host.textContent).toContain("order_ticket.estimate_unavailable");
+  expect(host.textContent).not.toContain("% of equity");
+});
+
+it.each([['order_ticket.side_spot', 'SPOT', 'BUY'], ['order_ticket.side_buy', 'LONG', 'BUY'], ['order_ticket.side_sell', 'SHORT', 'SELL']])(
+  "records the explicitly selected %s position kind", async (label, positionType, side) => {
+    let payload: any;
+    mocks.apiFetch.mockImplementation((_path: string, init?: RequestInit) => {
+      payload = JSON.parse(String(init?.body));
+      return Promise.resolve(response({ ...savedTrade, ...payload }));
+    });
+    await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+    const button = Array.from(host.querySelectorAll("button")).find((element) => element.textContent === label)!;
+    await act(async () => button.click());
+    await act(async () => setInputValue(host.querySelector('input[type="number"]') as HTMLInputElement, "100"));
+    await act(async () => (host.querySelector('button[type="submit"]') as HTMLButtonElement).click());
+    await flush();
+    expect(payload).toMatchObject({ position_type: positionType, side, record_mode: "EXTERNAL" });
+  },
+);
 
 it("keeps the external journal default and requests manual price when the free source is unavailable", async () => {
   mocks.apiFetch.mockResolvedValue(response({

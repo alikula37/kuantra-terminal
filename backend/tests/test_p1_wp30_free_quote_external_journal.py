@@ -218,6 +218,50 @@ def test_external_trade_record_is_default_and_never_dispatches_order(monkeypatch
     assert driver.get_trade(trade["id"])["symbol"] == "OANDA:XAUUSD"
 
 
+def test_spot_position_survives_reopen_and_evidence_rebuild(monkeypatch, tmp_path):
+    driver = _isolated_journal(monkeypatch, tmp_path)
+    client = TestClient(create_app())
+    result = client.post("/api/v1/trades", json={
+        "symbol": "LINKUSDT", "side": "BUY", "position_type": "SPOT", "entry_price": 10, "qty": 2,
+    })
+    assert result.status_code == 200
+    saved = result.json()
+    assert saved["position_type"] == "SPOT"
+    reopened = SQLiteDriver(driver.db_path)
+    assert reopened.get_trade(saved["id"])["position_type"] == "SPOT"
+    adapter = TradeReadAdapter(legacy_driver=reopened, projection_repo=EvidenceTradeProjectionRepository(driver.db_path))
+    pack_before = adapter.get_evidence_pack(saved["id"])
+    assert pack_before["trade"]["position_type"] == "SPOT"
+    assert adapter.projection_repo.rebuild(dry_run=False)["ledger_valid"] is True
+    assert adapter.get_evidence_pack(saved["id"])["trade"] == pack_before["trade"]
+    from app.services.evidence_pack_export import EvidencePackExportService
+    exporter = EvidencePackExportService(adapter)
+    import csv
+    import io
+    exported = list(csv.DictReader(io.StringIO(exporter.export(saved["id"], "csv").content.decode())))
+    assert exported[0]["position_type"] == "SPOT"
+    closed = client.post(f"/api/v1/trades/{saved['id']}/close", json={"exit_price": 12, "commission": 1})
+    assert closed.status_code == 200
+    assert closed.json()["position_type"] == "SPOT"
+    assert closed.json()["pnl"] == 3
+    canceled = client.delete(f"/api/v1/trades/{saved['id']}")
+    assert canceled.json()["trade"]["position_type"] == "SPOT"
+    final_pack = adapter.get_evidence_pack(saved["id"])
+    assert final_pack["trade"]["status"] == "CANCELED"
+    assert final_pack["event_count"] > pack_before["event_count"]
+    assert pack_before["events"][0]["event_hash"] in {event["event_hash"] for event in final_pack["events"]}
+
+
+@pytest.mark.parametrize("position_type,side", [("SPOT", "SELL"), ("LONG", "SELL"), ("SHORT", "BUY"), ("INVALID", "BUY")])
+def test_position_type_rejects_contradictory_or_unknown_input(monkeypatch, tmp_path, position_type, side):
+    driver = _isolated_journal(monkeypatch, tmp_path)
+    result = TestClient(create_app()).post("/api/v1/trades", json={
+        "symbol": "LINKUSDT", "position_type": position_type, "side": side, "entry_price": 10, "qty": 2,
+    })
+    assert result.status_code == 422
+    assert driver.get_open_trades() == []
+
+
 def test_trade_endpoint_rejects_public_quote_without_complete_provenance(monkeypatch, tmp_path):
     _isolated_journal(monkeypatch, tmp_path)
     client = TestClient(create_app())
@@ -294,6 +338,7 @@ def test_additive_schema_migration_marks_old_rows_unknown(tmp_path):
     assert trade["price_source"] == "unknown"
     assert trade["price_status"] == "UNAVAILABLE"
     assert trade["price_origin"] == "UNKNOWN"
+    assert trade["position_type"] == "UNKNOWN"
 
 
 def _signed_body(payload: dict) -> tuple[bytes, dict[str, str]]:

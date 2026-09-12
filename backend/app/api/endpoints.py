@@ -1,4 +1,5 @@
 from app.api.webhook_tv import webhook_router
+from app.core.position_type import normalize_position_type
 from app.api.plugin_endpoints import router as plugin_router
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query, UploadFile, File, Response
 from fastapi.responses import JSONResponse
@@ -68,6 +69,7 @@ def experimental_disabled_response(payload: Dict[str, Any]) -> JSONResponse:
 class TradeCreateSchema(BaseModel):
     symbol: str = "BTCUSDT"
     side: str = "BUY"
+    position_type: Literal["SPOT", "LONG", "SHORT", "UNKNOWN"] = "UNKNOWN"
     entry_price: float = Field(..., gt=0, le=10**15)
     qty: float = Field(..., gt=0, le=10**12)
     stop_loss: Optional[float] = Field(default=None, gt=0, le=10**15)
@@ -107,6 +109,7 @@ class TradeCreateSchema(BaseModel):
     @model_validator(mode="after")
     def _validate_price_provenance(self):
         """Reject provenance combinations that would overstate quote evidence."""
+        normalize_position_type(self.position_type, self.side)
         if self.price_origin == "PUBLIC_QUOTE":
             if self.price_source not in FREE_QUOTE_SOURCES:
                 raise ValueError("PUBLIC_QUOTE requires an approved free quote source")
@@ -226,6 +229,7 @@ def create_trade(trade: TradeCreateSchema):
     trade_data = {
         "symbol": trade.symbol.upper(),
         "side": trade.side.upper(),
+        "position_type": trade.position_type,
         "entry_price": trade.entry_price,
         "qty": trade.qty,
         "stop_loss": trade.stop_loss,

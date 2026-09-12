@@ -387,6 +387,13 @@
     "free_balance": "Verfügbares Guthaben"
   },
   "order_ticket": {
+    "position_type": "Positionstyp",
+    "side_spot": "SPOT / KAUFEN",
+    "spot_notice": "Erfassen Sie Ihren externen Spot-Kauf ohne Hebel. Dies speichert nur einen Journaleintrag und platziert keine Order.",
+    "estimate_unavailable": "Nicht verfügbar",
+    "estimate_units_notice": "Schätzung aus Preis × Menge in den Preiseinheiten des Instruments, vor Gebühren. Kontokapitalanteil und Kontraktmultiplikatoren sind nicht verifiziert. Geben Sie bekannte tatsächliche Stop- und Zielkurse ein.",
+    "selected_symbol": "Ausgewähltes Instrument: {symbol}",
+    "symbol_search_label": "Instrumente suchen",
     "modal_title": "TRADE-TICKET ERFASSEN",
     "mode_paper": "Paper-Sandbox",
     "mode_live": "Live-Börsenausführung",
@@ -679,6 +686,7 @@
     "takeaway_desc": "Ein Stop-Loss von 1.25R erhöht die Überlebensrate auf {rate}%, ohne das Chance-Risiko-Verhältnis wesentlich zu beeinträchtigen."
   },
   "market_chart": {
+    "price_units_notice": "Preise verwenden die Preiseinheiten des Quellinstruments. Keine Umrechnung in USD; die Währung ist nicht unabhängig verifiziert.",
     "title": "MARKTCHARTS",
     "subtitle": "Historischer OHLCV-Marktkontext aus öffentlichen Daten",
     "search_placeholder": "Symbol suchen...",

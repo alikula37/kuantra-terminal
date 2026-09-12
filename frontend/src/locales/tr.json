@@ -387,6 +387,13 @@
     "free_balance": "Kullanılabilir Serbest Bakiye"
   },
   "order_ticket": {
+    "position_type": "Pozisyon türü",
+    "side_spot": "SPOT / AL",
+    "spot_notice": "Dışarıda yaptığınız kaldıraçsız spot alımını kaydedin. Bu işlem yalnızca günlüğe kayıt ekler, emir göndermez.",
+    "estimate_unavailable": "Hesaplanamıyor",
+    "estimate_units_notice": "Fiyat × miktar tahmini, varlığın fiyat birimindedir ve ücretleri içermez. Kasa yüzdesi ve sözleşme çarpanları doğrulanmış değildir. Biliniyorsa gerçek stop ve hedefinizi girin.",
+    "selected_symbol": "Seçili varlık: {symbol}",
+    "symbol_search_label": "Varlık ara",
     "modal_title": "İŞLEM BİLETİ OLUŞTUR",
     "mode_paper": "Simülasyon (Paper)",
     "mode_live": "Canlı Borsa İletimi",
@@ -679,6 +686,7 @@
     "takeaway_desc": "Stop loss seviyesini 1.25R olarak belirlemek, kâr/risk beklentisini bozmadan hayatta kalma oranını %{rate}'ye yükseltir."
   },
   "market_chart": {
+    "price_units_notice": "Fiyatlar kaynaktaki varlığın fiyat birimindedir. USD'ye çevrilmez; para birimi ayrıca doğrulanmış değildir.",
     "title": "PİYASA GRAFİKLERİ",
     "subtitle": "Herkese açık verilerden tarihsel OHLCV piyasa görünümü",
     "search_placeholder": "Sembol Ara...",

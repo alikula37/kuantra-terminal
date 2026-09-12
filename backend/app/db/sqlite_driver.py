@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 from typing import Callable, Dict, Any, List, Optional, Sequence
 from app.core.paths import get_sqlite_path
+from app.core.position_type import normalize_position_type
 from app.db.evidence_schema import initialize_evidence_schema
 from app.db.projection_schema import initialize_trade_projection_schema
 
@@ -68,6 +69,7 @@ class SQLiteDriver:
                     commission REAL DEFAULT 0.0,
                     notes TEXT,
                     record_mode TEXT NOT NULL DEFAULT 'EXTERNAL',
+                    position_type TEXT NOT NULL DEFAULT 'UNKNOWN',
                     execution_venue TEXT,
                     price_source TEXT NOT NULL DEFAULT 'unknown',
                     price_source_symbol TEXT,
@@ -208,6 +210,7 @@ class SQLiteDriver:
             # Existing rows predate quote provenance.  UNKNOWN/UNAVAILABLE
             # are deliberately explicit and are never backfilled as success.
             "record_mode": "TEXT NOT NULL DEFAULT 'UNKNOWN'",
+            "position_type": "TEXT NOT NULL DEFAULT 'UNKNOWN'",
             "execution_venue": "TEXT",
             "price_source": "TEXT NOT NULL DEFAULT 'unknown'",
             "price_source_symbol": "TEXT",
@@ -235,7 +238,7 @@ class SQLiteDriver:
         "stop_loss", "take_profit", "entry_time", "exit_time", "status", "pnl",
         "r_multiple", "commission", "notes", "record_mode", "execution_venue",
         "price_source", "price_source_symbol", "price_status", "price_observed_at",
-        "price_origin",
+        "price_origin", "position_type",
     )
 
     @staticmethod
@@ -260,6 +263,7 @@ class SQLiteDriver:
             "commission": float(trade.get("commission", 0.0)),
             "notes": trade.get("notes", ""),
             "record_mode": str(trade.get("record_mode", "UNKNOWN")).upper(),
+            "position_type": normalize_position_type(trade.get("position_type"), trade.get("side", "BUY")),
             "execution_venue": trade.get("execution_venue"),
             "price_source": str(trade.get("price_source", "unknown")).lower(),
             "price_source_symbol": trade.get("price_source_symbol"),
@@ -278,8 +282,8 @@ class SQLiteDriver:
                     stop_loss, take_profit, entry_time, exit_time,
                     status, pnl, r_multiple, commission, notes, record_mode,
                     execution_venue, price_source, price_source_symbol, price_status,
-                    price_observed_at, price_origin, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    price_observed_at, price_origin, created_at, updated_at, position_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     symbol = excluded.symbol,
                     side = excluded.side,
@@ -296,6 +300,7 @@ class SQLiteDriver:
                     commission = excluded.commission,
                     notes = excluded.notes,
                     record_mode = excluded.record_mode,
+                    position_type = excluded.position_type,
                     execution_venue = excluded.execution_venue,
                     price_source = excluded.price_source,
                     price_source_symbol = excluded.price_source_symbol,
@@ -308,7 +313,7 @@ class SQLiteDriver:
                 "stop_loss", "take_profit", "entry_time", "exit_time", "status",
                 "pnl", "r_multiple", "commission", "notes", "record_mode",
                 "execution_venue", "price_source", "price_source_symbol", "price_status",
-                "price_observed_at", "price_origin", "created_at", "updated_at",
+                "price_observed_at", "price_origin", "created_at", "updated_at", "position_type",
             )))
 
     def insert_trade(self, trade: Dict[str, Any]) -> Dict[str, Any]:

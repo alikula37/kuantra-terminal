@@ -1,6 +1,7 @@
 export type TradeSide = "BUY" | "SELL" | "LONG" | "SHORT";
 export type TradeStatus = "OPEN" | "CLOSED" | "CANCELED";
 export type TradeRecordMode = "EXTERNAL" | "SIMULATION" | "UNKNOWN";
+export type PositionType = "SPOT" | "LONG" | "SHORT" | "UNKNOWN";
 export type QuoteStatus = "LIVE" | "DELAYED" | "EOD" | "UNAVAILABLE";
 export type PriceOrigin = "MANUAL" | "PUBLIC_QUOTE" | "TRADINGVIEW_ALERT" | "BROKER_IMPORT" | "UNKNOWN";
 
@@ -21,6 +22,7 @@ export interface Trade {
   commission?: number;
   notes?: string;
   record_mode?: TradeRecordMode;
+  position_type?: PositionType;
   execution_venue?: string | null;
   price_source?: string;
   price_source_symbol?: string | null;

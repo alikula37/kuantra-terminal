@@ -207,13 +207,14 @@ class EvidencePackExportService:
             "trade_id", "snapshot_sha256", "symbol", "side", "status", "pnl",
             "read_source", "overall_coverage", "trade_snapshot", "fees",
             "funding_transfer", "market_context", "ledger_integrity", "rule_ids",
-            "source_event_hashes",
+            "source_event_hashes", "position_type",
         ]
         row = {
             "trade_id": trade_id,
             "snapshot_sha256": pack.get("snapshot_sha256") or payload_sha256,
             "symbol": trade.get("symbol"),
             "side": trade.get("side"),
+            "position_type": trade.get("position_type", "UNKNOWN"),
             "status": trade.get("status"),
             "pnl": trade.get("pnl"),
             "read_source": pack.get("read_source"),

@@ -36,7 +36,7 @@ from app.core.input_limits import (
 
 BUNDLE_SCHEMA_VERSION = 1
 BUNDLE_TYPE = "kuantra-macos-migration"
-CURRENT_SQLITE_SCHEMA_VERSION = 4
+CURRENT_SQLITE_SCHEMA_VERSION = 5
 LEGACY_SQLITE_SCHEMA_VERSION = 1
 _SQLITE_RELATIVE_PATH = Path("data") / "kuantra_oltp.sqlite3"
 _COLD_STORAGE_RELATIVE_ROOT = Path("data") / "cold_storage"
@@ -74,6 +74,7 @@ _CURRENT_TRADE_COLUMNS = frozenset(
         "created_at",
         "updated_at",
         "record_mode",
+        "position_type",
         "execution_venue",
         "price_source",
         "price_source_symbol",
@@ -123,7 +124,8 @@ _KNOWN_ALEMBIC_REVISIONS = {
     "001_initial_baseline": LEGACY_SQLITE_SCHEMA_VERSION,
     "002_evidence_ledger": 2,
     "003_trade_projection": 3,
-    "004_trade_quote_provenance": CURRENT_SQLITE_SCHEMA_VERSION,
+    "004_trade_quote_provenance": 4,
+    "005_trade_position_type": CURRENT_SQLITE_SCHEMA_VERSION,
 }
 
 
@@ -232,14 +234,19 @@ def _inspect_sqlite_schema(conn: sqlite3.Connection) -> dict[str, Any]:
             "missing_current_columns": current_missing,
         }
     if (
-        revision == "003_trade_projection"
+        revision in (None, "003_trade_projection", "004_trade_quote_provenance")
+        and user_version < CURRENT_SQLITE_SCHEMA_VERSION
+        and set(current_missing).issubset({
+            "record_mode", "execution_venue", "price_source", "price_source_symbol",
+            "price_status", "price_observed_at", "price_origin", "position_type",
+        })
         and _LEDGER_COLUMNS.issubset(ledger_columns)
         and _PROJECTION_COLUMNS.issubset(projection_columns)
     ):
         return {
             "status": "legacy",
             "reason": "SQLITE_SCHEMA_UPGRADE_REQUIRED",
-            "version": 3,
+            "version": _KNOWN_ALEMBIC_REVISIONS.get(revision, 4 if current_missing == ["position_type"] else 3),
             "alembic_revision": revision,
             "sqlite_user_version": user_version,
             "missing_current_columns": current_missing,
@@ -969,7 +976,7 @@ def upgrade_sqlite_schema(
             if _table_exists(staged_conn, "alembic_version"):
                 staged_conn.execute(
                     "UPDATE alembic_version SET version_num = ?",
-                    ("004_trade_quote_provenance",),
+                    ("005_trade_position_type",),
                 )
             staged_conn.commit()
         finally:

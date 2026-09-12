@@ -15,6 +15,9 @@ is a goal to measure, not a proven profitability claim.
   stated and independently tested. Spot public testnet is not perps account
   reconciliation evidence. This does not prevent a user from journaling another asset
   manually or with an exact free quote when one is available.
+- Manual journal entries distinguish spot purchases from long/short positions through
+  an explicit `position_type`. This is user-declared journal metadata, not broker
+  verification or expanded account reconciliation. Older entries remain `UNKNOWN`.
 - First production target is read-only forensics/review. The New Trade surface records
   an external fill by default; explicit simulation is available for testing, and neither
   path sends an order. AI, live orders, HFT/FIX, DEX, copy trading and remote plugins are

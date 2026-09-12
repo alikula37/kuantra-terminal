@@ -342,7 +342,8 @@ def test_supported_legacy_schema_upgrade_is_atomic_and_idempotent(tmp_path):
     assert database.read_bytes() != before
 
 
-def test_previous_projection_schema_upgrades_to_quote_provenance(tmp_path):
+@pytest.mark.parametrize("stamped", [True, False])
+def test_previous_projection_schema_upgrades_to_quote_provenance(tmp_path, stamped):
     database = tmp_path / "projection-v3.sqlite3"
     driver = SQLiteDriver(str(database))
     assert driver.run_migrations("head") is True
@@ -362,6 +363,8 @@ def test_previous_projection_schema_upgrades_to_quote_provenance(tmp_path):
             "UPDATE alembic_version SET version_num = ?",
             ("003_trade_projection",),
         )
+        if not stamped:
+            connection.execute("DROP TABLE alembic_version")
         connection.commit()
 
     upgraded = upgrade_sqlite_schema(database)
@@ -380,9 +383,32 @@ def test_previous_projection_schema_upgrades_to_quote_provenance(tmp_path):
     ]
     assert upgraded["schema_after"]["version"] == CURRENT_SQLITE_SCHEMA_VERSION
     with sqlite3.connect(database) as connection:
+        if not stamped:
+            return
         assert connection.execute(
             "SELECT version_num FROM alembic_version"
-        ).fetchone()[0] == "004_trade_quote_provenance"
+        ).fetchone()[0] == "005_trade_position_type"
+
+
+@pytest.mark.parametrize("stamped", [True, False])
+def test_previous_quote_schema_adds_unknown_position_kind_without_changing_trade(tmp_path, stamped):
+    database = tmp_path / "quote-v4.sqlite3"
+    driver = SQLiteDriver(str(database))
+    saved = driver.insert_trade({"id": "LEGACY-SPOT-UNKNOWN", "symbol": "LINKUSDT", "side": "BUY", "entry_price": 10, "qty": 2})
+    assert driver.run_migrations("head") is True
+    with sqlite3.connect(database) as connection:
+        connection.execute("ALTER TABLE trades DROP COLUMN position_type")
+        if stamped:
+            connection.execute("UPDATE alembic_version SET version_num = '004_trade_quote_provenance'")
+        else:
+            connection.execute("DROP TABLE alembic_version")
+    result = upgrade_sqlite_schema(database)
+    assert result["valid"] is True
+    assert result["schema_before"]["version"] == 4
+    restored = SQLiteDriver(str(database)).get_trade(saved["id"])
+    assert restored["position_type"] == "UNKNOWN"
+    assert restored["entry_price"] == saved["entry_price"]
+    assert restored["side"] == "BUY"
 
 
 def test_interrupted_schema_upgrade_keeps_original_legacy_database(tmp_path):

@@ -77,6 +77,24 @@ komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production 
 
 ## Selected next work
 
+**Spot/search UX implementation (2026-09-12, this change):** New Trade now separates
+the empty provider-search field from the committed instrument, keeps an already-selected
+non-catalog symbol (including literal `LINK`) intact, and requires explicit selection
+and confirmation before quote/submission. Aborted or late quote responses cannot write
+the previous instrument's price; switching instruments clears price/stop/target values.
+`SPOT` / `LONG` / `SHORT` is persisted as `position_type` in compatibility SQLite,
+canonical snapshots, rebuilt projections and Evidence Pack CSV/JSON. Spot is a BUY
+purchase; contradictory directions fail validation and historical entries stay UNKNOWN.
+New Trade no longer invents stop/target prices or an equity percentage from a hardcoded
+$10,000 account. Chart OHLC values no longer claim USD and retain small-price precision.
+Schema revision 005 is additive; stamped/unstamped v3/v4 classification and synthetic
+upgrade tests pass without changing a real user's database. The prior unstamped-schema
+finding below is corrected by these bounded classification tests.
+Focused New Trade DOM: **13 passed**; backend full suite before the final UI-only
+changes: **853 passed / 2 warnings**; spot close/cancel/CSV/rebuild regression passed.
+Final canonical local CI and native candidate evidence are pending. Intel exact artifact,
+installed-app update and pilot publication are still open; no completion is inferred.
+
 **Current owner-requested UX / Intel continuation (2026-09-11):** Work is on
 `codex/p1-wp01-evidence-ledger`, following the current session branch instruction;
 the existing `main` checkout was the baseline. The full requested scope remains:
@@ -145,12 +163,13 @@ Release in the system browser through the desktop bridge. The old timer-based fa
 click-through also pass; Release asset replacement follows from this evidence.
 No version comparison, automatic installer or data migration is added.
 
-**Local schema compatibility finding — IMPLEMENTATION_REQUIRED:** Read-only inspection
+**Local schema compatibility finding — IMPLEMENTED / USER DATA UNCHANGED:** Read-only inspection
 of the existing developer-profile SQLite returned integrity `ok`, but the migration
 classifier rejected the unstamped pre-004 schema with ledger/projection tables and seven
 missing quote fields as `SQLITE_SCHEMA_INCOMPLETE`. Runtime initialization and explicit
-upgrade classification differ; resolve and test this separately before migrating existing
-data. No user-data migration/reset was performed.
+upgrade classification differed. The 2026-09-12 schema classification handles the intact
+unstamped pre-004 layout and the additive pre-005 layout with synthetic upgrade tests.
+No user-data migration/reset was performed.
 
 **P1-WP29 — IN PROGRESS: trusted macOS pilot package preparation.** The current
 bounded distribution package is the next work item. It binds the refreshed source to

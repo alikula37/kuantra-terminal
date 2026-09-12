@@ -387,6 +387,13 @@
     "free_balance": "Available Free Balance"
   },
   "order_ticket": {
+    "position_type": "Position type",
+    "side_spot": "SPOT / BUY",
+    "spot_notice": "Record your external spot purchase without leverage. This saves a journal entry and does not place an order.",
+    "estimate_unavailable": "Not available",
+    "estimate_units_notice": "Price × quantity estimate in the instrument's quote units, before fees. Account-equity percentage and contract multipliers are not verified. Enter your actual stop and target if known.",
+    "selected_symbol": "Selected instrument: {symbol}",
+    "symbol_search_label": "Search instruments",
     "modal_title": "RECORD TRADE TICKET",
     "mode_paper": "Paper Sandbox",
     "mode_live": "Live Exchange",
@@ -679,6 +686,7 @@
     "takeaway_desc": "Setting stop loss at 1.25R increases survival rate to {rate}% without significantly altering reward-to-risk expectancy."
   },
   "market_chart": {
+    "price_units_notice": "Prices use the source instrument's quote units. They are not converted to USD; currency is not independently verified.",
     "title": "MARKET CHARTS",
     "subtitle": "Historical OHLCV market context from public data",
     "search_placeholder": "Search Symbol...",

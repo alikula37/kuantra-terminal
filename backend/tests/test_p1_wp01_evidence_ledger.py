@@ -50,7 +50,7 @@ def test_schema_is_idempotent_and_alembic_reaches_head(tmp_path):
     assert driver.run_migrations("head") is True
     assert driver.run_migrations("head") is True
     with sqlite3.connect(db_path) as conn:
-        assert conn.execute("SELECT version_num FROM alembic_version").fetchone()[0] == "004_trade_quote_provenance"
+        assert conn.execute("SELECT version_num FROM alembic_version").fetchone()[0] == "005_trade_position_type"
         assert conn.execute(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'evidence_trade_projections'"
         ).fetchone()[0] == "evidence_trade_projections"

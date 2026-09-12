@@ -95,7 +95,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                     </td>
                     <td className="py-2.5 px-3">
                       <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${isLong ? "bg-emerald-500/10 text-gain border border-emerald-500/20" : "bg-rose-500/10 text-loss border border-rose-500/20"}`}>
-                        {isLong ? "LONG" : "SHORT"}
+                        {p.position_type === "SPOT" ? t("order_ticket.side_spot") : isLong ? "LONG" : "SHORT"}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-slate-300">{p.qty}</td>

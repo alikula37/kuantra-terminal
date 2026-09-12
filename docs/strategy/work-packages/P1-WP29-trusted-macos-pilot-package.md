@@ -50,10 +50,18 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       architecture/packaging/workflow/release tests **43 passed**; actual Mac mini
       arm64 acceptance and x86_64 mismatch rejection verified. This is code/fixture
       evidence, not an Intel artifact or pilot runtime pass.
-- [ ] Complete current owner-requested New Trade symbol-search parity and explicit
-      spot journal persistence/round-trip validation.
-- [ ] Correct chart price currency presentation (installed ARCLK.IS chart incorrectly
-      labels values with dollars) and inspect related periodic refresh UX.
+- [x] New Trade provider search uses a separate empty search field and confirmed
+      instrument display, keeps non-catalog/literal symbols, cancels stale quote requests,
+      and clears prices on instrument changes. Focused New Trade DOM **13 passed**.
+- [x] Explicit SPOT/LONG/SHORT persists through canonical snapshots, projection rebuild,
+      reopen, close/cancel and CSV/JSON evidence export. Spot purchase contradicting SELL
+      is rejected. Additive schema 005 leaves old positions UNKNOWN; stamped/unstamped
+      v3/v4 synthetic upgrades pass. Full backend **853 passed / 2 warnings** before
+      the final UI changes; focused spot lifecycle/export scenario also passes.
+- [x] Chart prices no longer assert USD without currency evidence; small prices retain
+      significant digits. New Trade no longer fabricates equity percentages from a
+      $10,000 constant or fills in unrequested stop/target prices. Missing estimates
+      remain unavailable. Frontend build and EN/TR/DE **771/771** parity pass.
 - [ ] Rebuild and validate the corrected arm64 candidate, then prepare the native
       Intel test artifact path without claiming unmeasured Intel runtime success.
 
