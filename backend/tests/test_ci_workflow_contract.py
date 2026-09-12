@@ -99,6 +99,9 @@ def test_release_workflow_gates_mac_candidate_packaging_and_publish():
     assert 'expected $arch DMG missing' in package_job
     assert '--expected-architecture' in package_job
     assert 'macos-15-intel' in raw
+    assert 'npm --prefix frontend audit --omit=dev --audit-level=moderate' in raw
+    assert 'Known development-only npm audit findings' in raw
+    assert 'production publish remains blocked' in raw
     publish_job = job_block(raw, "publish-release")
     assert re.search(r"^    needs:\s*build-and-package$", publish_job, flags=re.MULTILINE)
     assert "Audit Phase 0 exit evidence" in publish_job
