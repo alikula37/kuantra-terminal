@@ -14,6 +14,13 @@ audit: KRR-001@1.0.0
 
 ## 1. Karar özeti ve yetki
 
+Owner-approved addition (2026-09-12): P1-WP31 local TP1/TP2/TP3/SL tracking follows
+the completed journal entry work. Delivery order is persistence/revisions, exact
+fresh provider quotes, deterministic local partial/full close, then UI and dual
+native pilot validation. Local gross estimates never become external fills or
+verified account PnL. New manual entries opt in by default; historical/imported
+entries remain off. See STATUS for the single selected work package and evidence.
+
 İlk production hedefi: **desteklendiği açıkça ilan edilen crypto/perps verisini yerelde
 eksiksizlik kontrolünden geçirip, açıklanabilir reconciliation, kaynak bağlantılı Trade
 Evidence Pack ve tekrarlanabilir haftalık review sunan read-only desktop workstation.**

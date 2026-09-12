@@ -325,6 +325,8 @@ class EvidenceTradeProjectionRepository:
         projected_at = _now_utc()
         latest: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
         latest_keys: Dict[Tuple[str, str, str], Tuple[str, str]] = {}
+        from app.services.local_tracking import project_tracking_event
+        tracking_events = {}
         events_seen = 0
         ignored = 0
         projectable = 0
@@ -332,6 +334,9 @@ class EvidenceTradeProjectionRepository:
             account_id=account_id, resource_check=resource_check,
         ):
             events_seen += 1
+            tracking = project_tracking_event(None, event)
+            if tracking is not None:
+                tracking_events[tracking["trade_id"]] = event
             if event["event_type"] not in PROJECTABLE_EVENT_TYPES:
                 ignored += 1
                 continue
@@ -381,6 +386,10 @@ class EvidenceTradeProjectionRepository:
                 self._insert_projection_records(conn, batch)
                 check_resources("after_projection_batch")
             check_resources("before_projection_commit")
+            if account_id in (None, "local-journal"):
+                conn.execute("DELETE FROM local_tracking_projections")
+                for event in tracking_events.values():
+                    project_tracking_event(conn, event)
             conn.commit()
         except Exception:
             if conn.in_transaction:

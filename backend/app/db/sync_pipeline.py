@@ -19,6 +19,7 @@ class SyncPipeline:
         source_ref: str = "",
         provenance_extra: Optional[Dict[str, Any]] = None,
         causation_id: Optional[str] = None,
+        local_tracking_plan: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Persist a journal mutation and evidence event before OLAP projection."""
         payload = dict(trade_data)
@@ -56,6 +57,7 @@ class SyncPipeline:
             occurred_at=occurred_at,
             causation_id=causation_id,
             provenance=provenance,
+            local_tracking_plan=local_tracking_plan,
         )
         if getattr(duckdb_driver, "is_available", False):
             duckdb_driver.sync_trade(saved)

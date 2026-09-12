@@ -1,0 +1,302 @@
+"""Local quote-driven tracking. Never writes external fills or broker orders.
+
+PositionProjectionUpdated events carry versioned local-only snapshots. The new
+table is a disposable projection, not a new account ledger or source schema.
+"""
+from __future__ import annotations
+
+import json
+from copy import deepcopy
+from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation, localcontext
+
+from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository, canonical_json
+
+
+class TrackingConflict(ValueError):
+    pass
+
+
+def now_utc():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def timestamp(value):
+    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise ValueError("Provider timestamp must have timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def decimal(value, *, positive=True):
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError("Invalid decimal") from exc
+    if not result.is_finite() or abs(result) > Decimal("1e30") or (positive and result <= 0):
+        raise ValueError("Invalid decimal range")
+    return result
+
+
+def number(value):
+    return format(value, "f").rstrip("0").rstrip(".") if "." in format(value, "f") else format(value, "f")
+
+
+def project_tracking_event(conn, event):
+    if event.get("event_type") != "PositionProjectionUpdated":
+        return None
+    payload = event.get("normalized_payload")
+    if payload is None:
+        payload = json.loads(event["normalized_payload_json"])
+    if not isinstance(payload, dict) or "local_tracking" not in payload:
+        return None
+    state = payload["local_tracking"]
+    validate_snapshot(state)
+    if event["correlation_id"] != state["trade_id"] or event["venue"] != "local-journal":
+        raise ValueError("Tracking evidence identity mismatch")
+    if conn is not None:
+        conn.execute(
+            "INSERT INTO local_tracking_projections VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(trade_id) DO UPDATE SET snapshot_json=excluded.snapshot_json, "
+            "source_event_id=excluded.source_event_id, source_event_hash=excluded.source_event_hash",
+            (state["trade_id"], canonical_json(state), event["event_id"], event["event_hash"]),
+        )
+    return state
+
+
+def validate_snapshot(state):
+    if not isinstance(state, dict) or state.get("version") != 1 or state.get("basis") != "LOCAL_ESTIMATE":
+        raise ValueError("Unsupported tracking snapshot")
+    if type(state.get("revision")) is not int or state["revision"] < 1:
+        raise ValueError("Invalid tracking revision")
+    initial = decimal(state["initial_qty"])
+    remaining = decimal(state["remaining_qty"], positive=False)
+    closures = state["closures"]
+    if not isinstance(closures, list) or not 0 <= remaining <= initial:
+        raise ValueError("Invalid remaining quantity")
+    if sum((decimal(c["qty"]) for c in closures), Decimal(0)) + remaining != initial:
+        raise ValueError("Tracking quantity mismatch")
+    if len(state["targets"]) > 3 or state["side"] not in {"BUY", "SELL", "LONG", "SHORT"}:
+        raise ValueError("Invalid tracking targets or side")
+    decimal(state["entry_price"])
+    decimal(state["gross_pnl"], positive=False)
+    timestamp(state["armed_at"])
+
+
+class LocalTrackingService:
+    def __init__(self, driver):
+        self.driver = driver
+        self.ledger = EvidenceLedgerRepository(driver.db_path)
+
+    def _verified(self):
+        if not self.ledger.verify_chain(account_id="local-journal")["valid"]:
+            raise ValueError("Tracking evidence chain invalid")
+
+    @staticmethod
+    def _load(conn, trade_id):
+        # Canonical lookup also recovers a missing/stale disposable projection.
+        rows = conn.execute(
+            "SELECT * FROM evidence_events WHERE correlation_id=? AND account_id='local-journal' "
+            "AND venue='local-journal' AND event_type='PositionProjectionUpdated' "
+            "ORDER BY chain_date_utc DESC, chain_sequence DESC", (trade_id,),
+        )
+        for row in rows:
+            state = project_tracking_event(None, dict(row))
+            if state is not None:
+                return state, row["event_id"]
+        return None, None
+
+    def get(self, trade_id):
+        self._verified()
+        with self.driver.get_connection() as conn:
+            state, _ = self._load(conn, trade_id)
+            return state
+
+    def history(self, trade_id):
+        self._verified()
+        with self.driver.get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM evidence_events WHERE correlation_id=? AND account_id='local-journal' "
+                "AND venue='local-journal' AND event_type='PositionProjectionUpdated' "
+                "ORDER BY chain_date_utc, chain_sequence", (trade_id,),
+            ).fetchall()
+            return [{"event_id": row["event_id"], "event_hash": row["event_hash"],
+                     "state": state} for row in rows
+                    if (state := project_tracking_event(None, dict(row))) is not None]
+
+    def list(self):
+        self._verified()
+        with self.driver.get_connection() as conn:
+            ids = conn.execute(
+                "SELECT DISTINCT correlation_id FROM evidence_events WHERE account_id='local-journal' "
+                "AND event_type='PositionProjectionUpdated' AND venue='local-journal'"
+            ).fetchall()
+            results = []
+            for row in ids:
+                state, _ = self._load(conn, row[0])
+                trade = conn.execute("SELECT status FROM trades WHERE id=?", (row[0],)).fetchone()
+                if state:
+                    state = deepcopy(state)
+                    state["external_status"] = trade[0] if trade else "UNKNOWN"
+                    results.append(state)
+            return results
+
+    def _save(self, conn, state, action, previous_event=None, observation=None):
+        validate_snapshot(state)
+        event = self.ledger.append_event_in_transaction(
+            conn, event_type="PositionProjectionUpdated", account_id="local-journal", venue="local-journal",
+            idempotency_key=f"local-tracking:{state['trade_id']}:{state['revision']}",
+            correlation_id=state["trade_id"], causation_id=previous_event,
+            normalized_payload={"local_tracking": state, "action": action, "observation": observation},
+            occurred_at=now_utc(), schema_version="1", adapter_version="local-tracking-v1",
+            provenance={"source": "local_tracking", "basis": "LOCAL_ESTIMATE", "broker_execution": False},
+        )
+        self.driver._notify_transaction_hook("after_local_tracking_event", conn)
+        project_tracking_event(conn, event)
+        self.driver._notify_transaction_hook("after_local_tracking_projection", conn)
+        return state
+
+    def edit_in_transaction(self, conn, trade, plan, expected_revision=0):
+        old, event_id = self._load(conn, trade["id"])
+        if (old["revision"] if old else 0) != expected_revision:
+            raise TrackingConflict("Tracking plan changed; reload before saving")
+        if trade["status"] != "OPEN" or (old and decimal(old["remaining_qty"], positive=False) == 0):
+            raise TrackingConflict("Tracking is already closed or canceled")
+        if old and any(str(trade[k]) != str(old[k]) for k in ("symbol", "side")):
+            raise TrackingConflict("External trade identity changed")
+        state = deepcopy(old) if old else {
+            "version": 1, "basis": "LOCAL_ESTIMATE", "trade_id": trade["id"],
+            "symbol": trade["symbol"], "side": trade["side"],
+            "entry_price": number(decimal(trade["entry_price"])),
+            "initial_qty": number(decimal(trade["qty"])), "remaining_qty": number(decimal(trade["qty"])),
+            "gross_pnl": "0", "closures": [], "targets": [],
+        }
+        if type(plan.get("enabled", True)) is not bool:
+            raise ValueError("Invalid enabled flag")
+        state["enabled"] = plan.get("enabled", True)
+        source = plan.get("source_id")
+        symbol = plan.get("source_symbol")
+        if source is not None and source not in {"binance_public", "bybit_public", "yahoo_public", "stooq_public", "biquote_public"}:
+            raise ValueError("Unsupported quote source")
+        if bool(source) != bool(symbol) or (symbol and (len(symbol) > 128 or any(ord(c) < 32 for c in symbol))):
+            raise ValueError("Invalid quote identity")
+        if old and old["closures"] and (source, symbol) != (old["source_id"], old["source_symbol"]):
+            raise TrackingConflict("Cannot change source after partial close")
+        state.update(source_id=source, source_symbol=symbol)
+        entry = decimal(state["entry_price"])
+        is_long = state["side"] in {"BUY", "LONG"}
+        stop = plan.get("stop_loss")
+        if stop is not None:
+            stop = decimal(stop)
+            if (is_long and stop >= entry) or (not is_long and stop <= entry):
+                raise ValueError("Stop loss must be on loss side of entry")
+        state["stop_loss"] = number(stop) if stop is not None else None
+        targets = plan.get("targets", [])
+        if not isinstance(targets, list) or len(targets) > 3:
+            raise ValueError("At most three targets")
+        normalized = []
+        previous = entry
+        for index, target in enumerate(targets):
+            price, percent = decimal(target["price"]), decimal(target["percent"])
+            if percent > 100 or (is_long and price <= previous) or (not is_long and price >= previous):
+                raise ValueError("Invalid target order or percent")
+            normalized.append({"id": f"TP{index + 1}", "price": number(price), "percent": number(percent)})
+            previous = price
+        completed_ids = {c["target_id"] for c in state["closures"]}
+        for target in state["targets"]:
+            if target["id"] in completed_ids and target not in normalized:
+                raise TrackingConflict("Completed targets are immutable")
+        if normalized and sum((decimal(t["percent"]) for t in normalized), Decimal(0)) != 100:
+            raise ValueError("Target percentages must sum to 100")
+        state.update(targets=normalized, revision=expected_revision + 1, armed_at=now_utc())
+        return self._save(conn, state, "PLAN_SAVED", event_id)
+
+    def edit(self, trade_id, plan, *, expected_revision):
+        self._verified()
+        conn = self.driver.get_connection()
+        try:
+            conn.execute("PRAGMA synchronous=FULL")
+            conn.execute("BEGIN IMMEDIATE")
+            trade = conn.execute("SELECT * FROM trades WHERE id=?", (trade_id,)).fetchone()
+            if trade is None:
+                raise LookupError("Trade not found")
+            state = self.edit_in_transaction(conn, dict(trade), plan, expected_revision)
+            conn.commit()
+            return state
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    @staticmethod
+    def eligible(state, observation, now=None):
+        try:
+            age = ((now or datetime.now(timezone.utc)) - timestamp(observation["observed_at"])).total_seconds()
+            return (observation["status"] == "LIVE" and observation.get("timestamp_basis") == "PROVIDER_EVENT"
+                    and observation["source_id"] == state["source_id"]
+                    and observation["source_symbol"] == state["source_symbol"]
+                    and 0 <= age <= 60 and decimal(observation["price"]) > 0
+                    and timestamp(observation["observed_at"]) > timestamp(state["armed_at"]))
+        except (ValueError, KeyError, TypeError, InvalidOperation):
+            return False
+
+    def observe(self, trade_id, observation, *, manual=False, expected_revision=None):
+        self._verified()
+        conn = self.driver.get_connection()
+        try:
+            conn.execute("PRAGMA synchronous=FULL")
+            conn.execute("BEGIN IMMEDIATE")
+            state, event_id = self._load(conn, trade_id)
+            if state is None:
+                raise LookupError("Tracking not found")
+            if manual and state["revision"] != expected_revision:
+                raise TrackingConflict("Tracking plan changed; reload")
+            trade = conn.execute("SELECT * FROM trades WHERE id=?", (trade_id,)).fetchone()
+            if not trade or trade["status"] != "OPEN" or decimal(state["remaining_qty"], positive=False) == 0:
+                return state
+            if not manual and (not state["enabled"] or not self.eligible(state, observation)):
+                return state
+            if state["closures"] and not manual and timestamp(observation["observed_at"]) <= timestamp(state["closures"][-1]["observed_at"]):
+                return state
+            with localcontext() as ctx:
+                ctx.prec = 60
+                price = decimal(observation["price"])
+                remaining = decimal(state["remaining_qty"])
+                initial = decimal(state["initial_qty"])
+                entry = decimal(state["entry_price"])
+                direction = Decimal(1) if state["side"] in {"BUY", "LONG"} else Decimal(-1)
+                closed_ids = {c["target_id"] for c in state["closures"]}
+                hit = []
+                stop = state["stop_loss"]
+                if manual or (stop is not None and direction * (price - decimal(stop)) <= 0):
+                    hit = [("MANUAL" if manual else "SL", remaining, stop)]
+                else:
+                    pending = [t for t in state["targets"] if t["id"] not in closed_ids]
+                    for target in pending:
+                        if direction * (price - decimal(target["price"])) >= 0:
+                            amount = remaining if target == pending[-1] else initial * decimal(target["percent"]) / 100
+                            amount = min(amount, remaining)
+                            hit.append((target["id"], amount, target["price"]))
+                            remaining -= amount
+                    remaining = decimal(state["remaining_qty"])
+                if not hit:
+                    return state
+                for target_id, amount, target_price in hit:
+                    pnl = direction * (price - entry) * amount
+                    state["closures"].append({"target_id": target_id, "qty": number(amount),
+                        "price": number(price), "target_price": target_price, "gross_pnl": number(pnl),
+                        "observed_at": now_utc() if manual else observation["observed_at"],
+                        "plan_revision": state["revision"], "basis": "LOCAL_ESTIMATE"})
+                    remaining -= amount
+                    state["gross_pnl"] = number(decimal(state["gross_pnl"], positive=False) + pnl)
+                state["remaining_qty"] = number(remaining)
+                state["revision"] += 1
+                result = self._save(conn, state, "LOCAL_CLOSE", event_id, observation)
+                conn.commit()
+                return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()

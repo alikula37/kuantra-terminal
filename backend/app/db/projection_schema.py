@@ -10,6 +10,14 @@ from typing import Any, Iterable
 
 PROJECTION_SCHEMA_STATEMENTS = (
     """
+    CREATE TABLE IF NOT EXISTS local_tracking_projections (
+        trade_id TEXT PRIMARY KEY,
+        snapshot_json TEXT NOT NULL,
+        source_event_id TEXT NOT NULL,
+        source_event_hash TEXT NOT NULL
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS evidence_trade_projections (
         account_id TEXT NOT NULL,
         venue TEXT NOT NULL,

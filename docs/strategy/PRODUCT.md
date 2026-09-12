@@ -10,6 +10,12 @@ is a goal to measure, not a proven profitability claim.
 
 ## Binding boundaries
 
+- Owner-approved local TP tracking: new manual entries default to enabled local
+  TP1/TP2/TP3/SL tracking with user-specified allocations. Observed quote closures
+  are explicitly local gross estimates, separate from external fills and financial
+  analytics. Tracking runs only while the application is awake; no broker order
+  authority, fee inference or retrospective fill reconstruction is granted.
+
 - Entry market for automated account evidence: Binance/OKX crypto perpetual users.
   Exact supported venue/market, settlement, position mode and source format must be
   stated and independently tested. Spot public testnet is not perps account

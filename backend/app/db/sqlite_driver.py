@@ -338,6 +338,7 @@ class SQLiteDriver:
         raw_payload: Any = None,
         event_id: Optional[str] = None,
         resource_check: Optional[Callable[[str], None]] = None,
+        local_tracking_plan: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Persist a journal mutation and its evidence event atomically.
 
@@ -356,6 +357,8 @@ class SQLiteDriver:
         resolved_id = str(trade.get("id") or f"TRD-{int(datetime.utcnow().timestamp()*1000)}")
         ledger = EvidenceLedgerRepository(self.db_path)
         projection = EvidenceTradeProjectionRepository(self.db_path)
+        from app.services.local_tracking import LocalTrackingService
+        tracking = LocalTrackingService(self) if local_tracking_plan is not None else None
         conn = self.get_connection()
         try:
             conn.execute("PRAGMA synchronous=FULL")
@@ -413,6 +416,8 @@ class SQLiteDriver:
             # compatibility row and canonical ledger event.  A projection
             # validation/constraint error must roll back the whole journal write.
             projection.upsert_event_in_transaction(conn, event)
+            if tracking is not None:
+                tracking.edit_in_transaction(conn, dict(stored), local_tracking_plan)
             self._notify_transaction_hook("after_projection_update", conn)
             if resource_check is not None:
                 resource_check("after_projection_update")

@@ -66,7 +66,71 @@ def experimental_disabled_response(payload: Dict[str, Any]) -> JSONResponse:
     """Expose disabled execution surfaces as a structured, non-success HTTP response."""
     return JSONResponse(status_code=503, content=payload)
 
+class TrackingTargetSchema(BaseModel):
+    price: float = Field(gt=0, le=10**15, allow_inf_nan=False)
+    percent: float = Field(gt=0, le=100, allow_inf_nan=False)
+
+
+class TrackingPlanSchema(BaseModel):
+    enabled: bool = True
+    source_id: Optional[str] = Field(default=None, max_length=40)
+    source_symbol: Optional[str] = Field(default=None, max_length=128)
+    stop_loss: Optional[float] = Field(default=None, gt=0, le=10**15, allow_inf_nan=False)
+    targets: List[TrackingTargetSchema] = Field(default_factory=list, max_length=3)
+
+
+class TrackingEditSchema(TrackingPlanSchema):
+    expected_revision: int = Field(ge=0)
+
+
+class TrackingCloseSchema(BaseModel):
+    expected_revision: int = Field(ge=1)
+    price: float = Field(gt=0, le=10**15, allow_inf_nan=False)
+
+
+def tracking_service():
+    from app.services.local_tracking import LocalTrackingService
+    return LocalTrackingService(sqlite_driver)
+
+
+def tracking_call(fn):
+    from app.services.local_tracking import TrackingConflict
+    try:
+        return fn()
+    except TrackingConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/local-tracking")
+def list_local_tracking():
+    return tracking_call(lambda: tracking_service().list())
+
+
+@router.get("/trades/{trade_id}/tracking")
+def get_local_tracking(trade_id: str):
+    return tracking_call(lambda: {"plan": tracking_service().get(trade_id),
+                                  "history": tracking_service().history(trade_id)})
+
+
+@router.put("/trades/{trade_id}/tracking")
+def edit_local_tracking(trade_id: str, payload: TrackingEditSchema):
+    return tracking_call(lambda: tracking_service().edit(
+        trade_id, payload.model_dump(exclude={"expected_revision"}), expected_revision=payload.expected_revision))
+
+
+@router.post("/trades/{trade_id}/tracking/close")
+def close_local_tracking(trade_id: str, payload: TrackingCloseSchema):
+    return tracking_call(lambda: tracking_service().observe(
+        trade_id, {"price": payload.price, "basis": "MANUAL_LOCAL"},
+        manual=True, expected_revision=payload.expected_revision))
+
+
 class TradeCreateSchema(BaseModel):
+    local_tracking: Optional[TrackingPlanSchema] = None
     symbol: str = "BTCUSDT"
     side: str = "BUY"
     position_type: Literal["SPOT", "LONG", "SHORT", "UNKNOWN"] = "UNKNOWN"
@@ -247,8 +311,9 @@ def create_trade(trade: TradeCreateSchema):
         "price_observed_at": trade.price_observed_at,
         "price_origin": trade.price_origin,
     }
-    saved = sync_pipeline.record_and_sync_trade(
+    saved = tracking_call(lambda: sync_pipeline.record_and_sync_trade(
         trade_data,
+        local_tracking_plan=trade.local_tracking.model_dump() if trade.local_tracking is not None else None,
         source="journal_simulation" if trade.record_mode == "SIMULATION" else "journal_external",
         source_ref=trade.execution_venue or "manual",
         provenance_extra={
@@ -260,7 +325,7 @@ def create_trade(trade: TradeCreateSchema):
             "price_observed_at": trade.price_observed_at,
             "price_origin": trade.price_origin,
         },
-    )
+    ))
     return saved
 
 @router.post("/trades/{trade_id}/close")

@@ -2,6 +2,13 @@
 # Current development status
 
 Updated: 2026-09-12. Branch: `codex/p1-wp01-evidence-ledger`.
+
+**Selected work: [P1-WP31 local TP tracking](work-packages/P1-WP31-local-tp-tracking.md).**
+Implementation in progress: canonical local plans and estimates are separate from
+external trade facts. Ordered packages: persistence → exact fresh quote monitoring →
+partial/full close → UI → native dual artifact verification and pilot refresh.
+Prior pilot artifacts remain unchanged until new candidate gates pass. P1-WP29
+retains its unchecked owner/host obligations as a reference, not a competing active WP.
 Roadmap: [KPR-001](PRODUCTION-READINESS-PLAN.md), current planning source, still Proposed
 for new scope/estimates. Selecting one roadmap does not approve its commercial assumptions.
 
