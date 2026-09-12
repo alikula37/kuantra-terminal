@@ -118,7 +118,7 @@ def test_install_surfaces_use_only_the_hashed_lock_and_current_actions():
         "actions/checkout@v7",
         "actions/setup-python@v7",
         "actions/setup-node@v7",
-        "astral-sh/setup-uv@v10",
+        "astral-sh/setup-uv@v10.1.0",
         "actions/upload-artifact@v7",
     ):
         assert action in ci
@@ -129,7 +129,7 @@ def test_install_surfaces_use_only_the_hashed_lock_and_current_actions():
         "actions/checkout@v7",
         "actions/setup-python@v7",
         "actions/setup-node@v7",
-        "astral-sh/setup-uv@v10",
+        "astral-sh/setup-uv@v10.1.0",
         "actions/upload-artifact@v7",
         "actions/download-artifact@v8",
     ):
