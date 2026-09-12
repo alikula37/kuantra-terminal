@@ -8,9 +8,9 @@ status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
 implementation_commit: 0a5b8aa
-latest_artifact_source_commit: 876efe06fdac3e328d09b6ade429f792bf795314
-latest_evidence_date: 2026-09-11
-branch: main
+latest_artifact_source_commit: dd581425c2c298664512f0434fa93a726a9cacb5
+latest_evidence_date: 2026-09-12
+branch: codex/p1-wp01-evidence-ledger
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
@@ -62,8 +62,10 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       significant digits. New Trade no longer fabricates equity percentages from a
       $10,000 constant or fills in unrequested stop/target prices. Missing estimates
       remain unavailable. Frontend build and EN/TR/DE **771/771** parity pass.
-- [ ] Rebuild and validate the corrected arm64 candidate, then prepare the native
-      Intel test artifact path without claiming unmeasured Intel runtime success.
+- [x] Rebuild and validate the corrected dual-architecture candidate. Native arm64 and
+      native Intel build, full backend/frontend checks, exact mounted-DMG smoke and
+      provenance all passed in GitHub Actions run `34664574672`; the Intel path uses
+      static OpenSSL for its source-built cryptography dependency.
 
 - [x] Settings manual pilot Release action replaces the fabricated update check;
       seven direct DOM tests cover native URL dispatch, browser link, failure/retry,
@@ -169,15 +171,15 @@ olarak kalır; production veya commercial support claim'i açılmaz.
       manifest, checksum ve talimatlar repository/local audit paketinde tutulur. Güncel
       release body aynı pilot sınırını taşır;
       canonical `v1.0.0` Release/tag'i oluşturulmadı.
-- [ ] Gerçek x86_64 native host (hosted runner veya açıkça seçilmiş pilot Intel Mac),
-      exact DMG ve smoke/N05 zincirini üretir. GitHub billing/spending-limit durumu
-      hosted yolu kapatırsa pilot Intel Mac kontrollü build hostu olabilir.
+- [x] Gerçek x86_64 native host (`macos-15-intel`) exact DMG ve smoke/N05 zincirini
+      üretti. Run `34664574672`, job `103473798705`, native `x86_64`, `hdiutil verify`
+      VALID, mounted `wkwebview` smoke PASS ve provenance COMPLETE oldu.
 - [ ] N03 temiz ikinci Mac profil/host install → launch → import/review → close/reopen
       kanıtı tamamlanır; pilot Intel Mac'i bu host olabilir. Bu paket kodla varsayılan
       olarak PASS ilan etmez.
-- [x] Owner-approved M-series pilot tag'i `pilot-v1.0.0-arm64` ile private prerelease
-      yayımlanır ve altı asset yüklenir. Canonical `v1.0.0` dual Release/tag'i bu paketle
-      oluşturulmaz.
+- [x] Owner-approved `pilot-v1.0.0-arm64` private prerelease aynı tag korunarak iki
+      native DMG ile güncellenir: arm64 ve x86_64. Canonical `v1.0.0` product Release/tag'i
+      bu paketle oluşturulmaz.
 - [ ] Owner, üç pilot kullanıcı için private repository read erişimini verir; erişim
       davetleri bu çalışma sırasında otomatik gönderilmez.
 
@@ -192,26 +194,58 @@ garantisi değildir. Kullanıcı Gatekeeper'ı kapatmaz ve karantina etiketini k
 ## Doğrulama
 
 Focus testleri ve tam suite, gerçek mimari kanıtı üretene kadar her kod değişikliğinde
-çalıştırılır. Package builder'ın beklenen mevcut sonucu:
+çalıştırılır. Package builder'ın güncel sonucu:
 
 ```text
 python scripts/prepare_pilot_package.py --output dist/pilot-package-v1.0.0
-→ BLOCKED (x86_64 native DMG/evidence missing; dual mode)
+→ PASS (dual native trusted-pilot package; N05 remains explicitly blocked)
 
 python scripts/prepare_pilot_package.py --architecture arm64 \
   --output dist/pilot-package-v1.0.0-arm64
-→ PASS (AD_HOC_TRUSTED_PILOT_ONLY_ARM64), once the current arm64 chain is present
+→ PASS (AD_HOC_TRUSTED_PILOT_ONLY_ARM64), optional arm64-only package mode
 ```
 
-İlk çağrının `BLOCKED` olması uygulama hatası değil, henüz üretilemeyen Intel dış
-kanıtının doğru şekilde reddedilmesidir. Arm64 çağrısı yalnızca açık M-series pilot
-kapsamı ile başarılanabilir. İki zincir hazır olduğunda varsayılan dual çağrı ve ardından:
+İlk çağrının önceki `BLOCKED` sonucu uygulama hatası değil, o tarihte eksik olan Intel
+kanıtının doğru şekilde reddedilmesiydi. İki zincir hazır olduğunda varsayılan dual çağrı
+artık **PASS** üretir; Phase 0 release-exit audit'i ise N05 ad-hoc signing/notarization
+sınırı nedeniyle ayrı tutulur ve production PASS sayılmaz:
 
 ```text
 shasum -a 256 -c dist/pilot-package-v1.0.0/SHA256SUMS
 ```
 
-### Güncel M-series package evidence (2026-09-11)
+### Güncel dual native pilot package evidence (2026-09-12)
+
+GitHub Actions run `34664574672` source commit
+`dd581425c2c298664512f0434fa93a726a9cacb5` üzerinden native `macos-latest/arm64` ve
+`macos-15-intel/x86_64` job'larını PASS tamamladı. Her iki job Python `3.11.9`, Node
+`20.20.2`, PyInstaller `6.22.2`, temiz tracked tree, aynı backend/frontend lock hash'leri
+ve truth-matrix SHA-256 `8c647721dc2349cc8fd99d046bf14738121ac4f9a0b7c8b87cdb9f1ccfe681ab`
+ile çalıştı. ARM64 backend sonucu **852 passed / 1 skipped / 2 warnings**, Intel backend
+sonucu **852 passed / 1 skipped / 2 warnings**; her iki frontend job'unda **29 test file /
+148 tests passed**, i18n parity **771/771**, TypeScript ve production build PASS oldu.
+
+Güncel artifact/evidence kimlikleri:
+
+- arm64 DMG SHA-256 `f8a4d4189ca6786f9ddb1e6d47f765ac6a3b4b11ffe8bc71a40bae8975189463`,
+  mounted executable SHA-256 `31d709963c2cb4d1ad1bea72f5e2b020423ed9b9ce151eb292f5a94ad0def2ca`;
+- x86_64 DMG SHA-256 `786370ff03270203fc95868e7c7faa17e214059d1a2625538609d48d36347f4c`,
+  mounted executable SHA-256 `4a5991ad1cd8b98dce79aab69581542b970043d8a12894050af83c14ce419cfc`;
+- final smoke report SHA-256 arm64 `c75ace0918bf48092d306c90b1ff06abc19d69c7cb06bb597e2a4dc1381d0685`,
+  x86_64 `12ac288398f0efcca678b7e295d498794ed9e908060a96f36b192cc6480f7c97`;
+- N05 report SHA-256 arm64 `67a97c45a7d6bacf5cdf3c908e50b2e0b32044f85e909988f2cfd958d590aa94`,
+  x86_64 `f923ed7ada2632691c12d73ce4044976980d7f939b4df967393a776dcaa87f9b`.
+
+Her iki DMG de read-only mount edilmiş, native matching executable çalıştırılmış,
+`wkwebview`/controller smoke ve detach PASS olmuş, `hdiutil verify` sonucu VALID olmuştur.
+N05 raporları `BLOCKED/OWNER_REVIEW_REQUIRED` durumunu korur: codesign yapısal olarak PASS
+olsa da identity AD_HOC, Developer ID/hardened runtime/notarization yoktur. Bu nedenle
+paket yalnızca üç kişilik trusted pilot içindir; production, Apple-trusted veya commercial
+support claim'i açmaz. Paketleme adımı ve package içindeki `SHA256SUMS` doğrulaması da PASS
+oldu; Release sayfasına yalnızca iki DMG aktarılacaktır. JSON/MD evidence dosyaları Release
+asset'i yapılmayacak, repository ve audit package içinde kalacaktır.
+
+### Superseded M-series package evidence (2026-09-11)
 
 Temiz source commit `119ae573ce4e4885c2c83e0e8619ebd6038131dd` üzerinden arm64 pilot
 zinciri yeniden üretildi. `uv run --offline --no-project --with-requirements
@@ -251,7 +285,7 @@ uygulamada temiz geçici profille native olarak doğrulandı. Düğme Chrome'da 
 Release URL'sini açtı; otomatik sürüm karşılaştırması, indirme, kurulum veya veri migration'ı
 yapmaz. Bu click-through kanıtı kullanıcı verisine dokunmadı.
 
-### Current provider-backed instrument-search candidate evidence (2026-09-11)
+### Superseded provider-backed instrument-search candidate evidence (2026-09-11)
 
 Implementation source commit `0a5b8aa2cbdc6528ba4b4b9ce52fb3d728ac6c00` is the exact
 artifact source. It adds the provider search endpoint and hook, preserves provider symbol
@@ -292,7 +326,7 @@ SHA-256:
 `COMPLETE`; signing remains ad-hoc and this is not a notarization or production claim.
 The private GitHub Release was not changed by this task.
 
-### Current arm64 pilot Release refresh evidence (2026-09-11, source `876efe0`)
+### Superseded arm64 pilot Release refresh evidence (2026-09-11, source `876efe0`)
 
 The provider-backed symbol-search runtime and the clarified pilot instructions were rebuilt
 from source commit `876efe06fdac3e328d09b6ade429f792bf795314`. The tracked source tree was

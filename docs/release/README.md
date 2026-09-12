@@ -10,7 +10,7 @@ artifacts. A native `macos-15-intel` runner has now produced the x86_64 build, d
 smoke and exact mounted-DMG smoke; both architectures are verified current candidates.
 The existing private pilot Release
 [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)
-is being refreshed in place to carry both native DMGs; it remains ad-hoc and
+has been refreshed in place to carry both native DMGs; it remains ad-hoc and
 trusted-pilot-only. The previous
 v1.4.0 matrix and historical documentation remain in the repository for audit context only.
 Its GitHub publication, tag and assets were removed on 2026-09-11; v1.4.0 is not a download

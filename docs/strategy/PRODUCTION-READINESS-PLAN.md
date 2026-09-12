@@ -3,11 +3,11 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.41
+version: 1.0.42
 status: Proposed
 date: 2026-09-11
 reviewed_commit: this change
-branch: main
+branch: codex/p1-wp01-evidence-ledger
 strategy: KPS-001@1.1.0
 audit: KRR-001@1.0.0
 ```
@@ -41,12 +41,12 @@ uygulanmıştır; owner kararıyla host çalıştırması son macOS dağıtım/p
 kapısına ertelenmiştir ve ikinci host/profile kanıtı olmadan PASS/production iddiası yoktur.
 N04 manual update/uninstall veri koruma audit'i bounded non-release kanıtla tamamlanıp
 arşivlenmiştir. P1-WP28 macOS 12+ native arm64/x86_64 artifact ve provenance zincirini
-kapatan teknik pakettir; Intel destek claim'i native Intel host kanıtı olmadan açılmaz.
-P1-WP29 bu iki mimari kanıtı Apple Developer ID olmadan yalnızca trusted pilot için
-dağıtılabilir ve hash'lenebilir bir pakete bağlar. İlk M-series pilotu için açıkça
-arm64-only paket üretilebilir; bu paket dual release veya Intel desteği iddia etmez.
-Varsayılan dual paket native x86_64 kanıtı gelmeden fail-closed kalır; her iki ad-hoc
-paket production sayılmaz.
+`34664574672` run'ında kapatmıştır; Intel teknik supported-candidate claim'i artık
+native `macos-15-intel` kanıtıyla açılabilir. P1-WP29 bu iki mimari kanıtı Apple Developer
+ID olmadan yalnızca trusted pilot için dağıtılabilir ve hash'lenebilir bir pakete bağlar.
+Arm64-only mod hâlâ gerektiğinde kullanılabilir; güncel pilot kanalı ise iki DMG'li dual
+pakettir. Her iki ad-hoc paket production sayılmaz; N03, N05 ve H05 ayrı release gates
+olarak kalır.
 P1-WP30, pilot dağıtımı sırasında kullanıcı tarafından gerçekleştirilen işlemlerin
 ücretsiz ve provenance-aware biçimde günlüğe alınmasını sağlar: harici kayıt varsayılan,
 simülasyon açık seçim, sembol kapsamı kullanıcı tarafından belirlenir ve exact ücretsiz
@@ -448,16 +448,16 @@ security reviewer ve operasyon sorumlusu. Bugün bunların eksikliği P1-WP20 fi
    import→review→export→reopen kabul denetimini tamamla; B2 kapsamını kanıtla
    netleştir. (Tamamlandı/arşivlendi `e042790`; bounded Mac kanıtı, release kanıtı değil.)
 5. P1-WP28 ile macOS 12+ native arm64/x86_64 build, exact DMG smoke, executable-derived
-   provenance ve native-host release contract'ını tamamla. Native Intel host kanıtı
-   gelmeden Intel supported claim'i açma. Hosted Intel CI tercih edilir; pilot ekibin Intel
-   Mac'i hazır artifact runtime/N03 testine veya kontrollü native build'e katkı sağlayabilir.
-   Universal2/cross-build kullanma. Rosetta translation durumu native kanıt sayılmaz.
-6. P1-WP29 ile önce M-series için açık `--architecture arm64` modunda tek native zinciri
-   private GitHub Release'e taşınabilir trusted pilot paketine bağla; exact report, manifest,
-   SHA256SUMS ve M-series kullanıcı talimatını üret. Bu paket `APPLE_SILICON_M_SERIES_ONLY`
-   kapsamındadır ve Intel desteği iddia etmez. Varsayılan dual mode iki native zincir ister;
-   Intel zinciri eksikse exit 2 ile durur. GitHub Release/tag oluşturma veya upload owner
-   onayı olmadan yapılmaz. Apple Developer ID olmadan production claim'i açma.
+   provenance ve native-host release contract'ını tamamla. **Teknik paket tamamlandı:**
+   hosted native Intel run `34664574672` iki mimarinin build/test/package/mounted-smoke
+   kanıtını verdi. Universal2/cross-build kullanılmadı; Rosetta translation native kanıt
+   sayılmadı. Pilot Intel Mac'i ayrıca runtime/N03 testine katkı sağlayabilir.
+6. P1-WP29 ile iki native zinciri private GitHub Release'e taşınabilir trusted pilot
+   paketine bağla; exact report, manifest, SHA256SUMS ve ortak pilot kullanıcı talimatını
+   üret. **Teknik paket tamamlandı:** dual builder ve checksum doğrulaması run
+   `34664574672` üzerinde PASS. Owner yetkisiyle mevcut `pilot-v1.0.0-arm64` prerelease
+   aynı tag korunarak yalnızca iki DMG ile yenilenir; JSON/MD evidence repository/audit
+   package içinde kalır. Apple Developer ID olmadan production claim'i açma.
 7. P1-WP30 ile harici işlem günlüğü ve ücretsiz multi-asset quote sınırını uygula:
    external default, explicit simulation, exact source/status/provenance, unavailable→manual
    fallback, immutable TradingView observation ve user confirmation. Paid source, yeni
@@ -487,6 +487,16 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.42 — 2026-09-12
+
+- P1-WP28 native Intel blocker'ı kapatıldı: `macos-15-intel` üzerinde static OpenSSL
+  cryptography hazırlığı ile native x86_64 backend/frontend/build/DMG/mounted-WKWebView
+  kanıtı alındı; aynı source/tree/lock/truth zincirindeki arm64 kanıtı da yenilendi.
+- P1-WP29 dual trusted-pilot package ve checksum doğrulaması PASS oldu. Private
+  `pilot-v1.0.0-arm64` transport aynı tag korunarak yalnızca iki DMG ile yenilenecek;
+  N03, N05, H05 ve pilot erişimi açık kapılar olarak kaldı. Canonical product release/tag
+  oluşturulmadı.
 
 ### 1.0.41 — 2026-09-11
 

@@ -3,8 +3,7 @@
 
 **Pilot Release tag:** `pilot-v1.0.0-arm64`
 
-**Artifact source commit:** recorded in the exact native smoke/provenance reports for this
-dual-architecture candidate.
+**Artifact source commit:** `dd581425c2c298664512f0434fa93a726a9cacb5`
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -21,10 +20,17 @@ architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an 
 Silicon artifact.
 
 The native arm64 and x86_64 build, desktop smoke and exact read-only mounted-DMG smoke
-passed on their matching hosts with WKWebView identity and complete source provenance.
-The exact source and per-artifact SHA-256 values are bound in the final smoke reports;
-technical JSON/manifest evidence remains in the repository and local audit package, not as
-separate Release downloads.
+passed on their matching hosts with WKWebView identity and complete source provenance in
+GitHub Actions run `34664574672`. DMG SHA-256 values are:
+
+- arm64: `f8a4d4189ca6786f9ddb1e6d47f765ac6a3b4b11ffe8bc71a40bae8975189463`;
+- x86_64: `786370ff03270203fc95868e7c7faa17e214059d1a2625538609d48d36347f4c`.
+
+Mounted executable SHA-256 values are arm64
+`31d709963c2cb4d1ad1bea72f5e2b020423ed9b9ce151eb292f5a94ad0def2ca` and x86_64
+`4a5991ad1cd8b98dce79aab69581542b970043d8a12894050af83c14ce419cfc`. Technical JSON/
+manifest evidence remains in the repository and local audit package, not as separate
+Release downloads.
 
 The DMGs are ad-hoc trusted-pilot artifacts without Apple Developer ID signing or
 notarization. On first launch, use Finder → right-click → **Open**. This is not a public,
