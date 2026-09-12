@@ -21,6 +21,12 @@ import httpx
 
 logger = logging.getLogger("public_market_fetcher")
 
+
+class TrackingQuoteRateLimit(ValueError):
+    def __init__(self, retry_after):
+        self.retry_after = retry_after
+        super().__init__("Public quote rate limit")
+
 # Standard intervals supported across public gateways
 SUPPORTED_CRYPTO_INTERVALS = {
     "1m": "1m",
@@ -517,6 +523,49 @@ class PublicMarketDataFetcher:
             return raw
         compact = re.sub(r"\s+", "", raw)
         return compact if compact in MACRO_SYMBOL_MAP else None
+
+    async def fetch_tracking_quote(self, source: str, symbol: str) -> Dict[str, Any]:
+        """Exact recent trade with provider event time, never request/candle time.
+
+        Other public adapters currently cannot attest <=60s event freshness and
+        remain display-only for automatic local tracking. No source fallback.
+        """
+        if not re.fullmatch(r"[A-Z0-9]{2,40}", symbol) or source not in {"binance_public", "bybit_public"}:
+            return {"status": "UNAVAILABLE", "source_id": source, "source_symbol": symbol,
+                    "reason": "PROVIDER_EVENT_TIME_UNAVAILABLE"}
+        binance = source == "binance_public"
+        url = ("https://data-api.binance.vision/api/v3/trades" if binance
+               else "https://api.bybit.com/v5/market/recent-trade")
+        params = {"symbol": symbol, "limit": 1}
+        if not binance:
+            params["category"] = "spot"
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(url, params=params, headers=self._get_headers())
+        if response.status_code in {418, 429}:
+            try:
+                delay = max(60, float(response.headers.get("Retry-After", "60")))
+                if not math.isfinite(delay):
+                    delay = 3600
+            except ValueError:
+                delay = 3600
+            raise TrackingQuoteRateLimit(delay)
+        response.raise_for_status()
+        body = response.json()
+        if not binance and body.get("retCode") != 0:
+            raise ValueError("Provider rejected quote")
+        rows = body if binance else body.get("result", {}).get("list", [])
+        if not isinstance(rows, list) or not rows:
+            raise ValueError("Missing recent provider trade")
+        row = rows[-1] if binance else rows[0]
+        if not binance and row.get("symbol") != symbol:
+            raise ValueError("Provider symbol mismatch")
+        price = float(row["price"])
+        if not math.isfinite(price) or price <= 0:
+            raise ValueError("Invalid provider price")
+        observed = datetime.fromtimestamp(int(row["time"]) / 1000, timezone.utc).isoformat()
+        return {"source_id": source, "source_symbol": symbol, "price": str(row["price"]),
+                "observed_at": observed, "status": "LIVE", "timestamp_basis": "PROVIDER_EVENT",
+                "provider_event_id": str(row["id"] if binance else row["execId"])}
 
     async def fetch_quote(self, symbol: str, source: str = "auto") -> PublicQuote:
         """Resolve one free public quote without changing instrument identity.

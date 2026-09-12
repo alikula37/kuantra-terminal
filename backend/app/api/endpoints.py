@@ -107,7 +107,8 @@ def tracking_call(fn):
 
 @router.get("/local-tracking")
 def list_local_tracking():
-    return tracking_call(lambda: tracking_service().list())
+    from app.services.local_tracking_monitor import tracking_monitor
+    return tracking_call(lambda: [tracking_monitor.view(s) for s in tracking_service().list()])
 
 
 @router.get("/trades/{trade_id}/tracking")

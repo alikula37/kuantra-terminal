@@ -218,15 +218,21 @@ class BinanceStreamClient:
                 side = tr["side"].upper()
                 sl = float(tr["stop_loss"]) if tr.get("stop_loss") else None
 
-                if current_price is None:
+                # This stream is Binance Spot for one exact instrument. Never
+                # apply its price to another asset or another selected venue.
+                quote_matches = (tr["symbol"].upper() == self.symbol.upper()
+                    and tr.get("price_source", "unknown") == "binance_public"
+                    and tr.get("price_source_symbol") == self.symbol.upper())
+                position_price = current_price if quote_matches else None
+                if position_price is None:
                     unrealized_pnl = None
                     r_multiple = None
                 elif side in ("BUY", "LONG"):
-                    unrealized_pnl = (current_price - entry) * qty
+                    unrealized_pnl = (position_price - entry) * qty
                     r_unit = (entry - sl) if sl and (entry > sl) else None
                     r_multiple = (unrealized_pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
                 else:
-                    unrealized_pnl = (entry - current_price) * qty
+                    unrealized_pnl = (entry - position_price) * qty
                     r_unit = (sl - entry) if sl and (sl > entry) else None
                     r_multiple = (unrealized_pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
 
@@ -235,7 +241,7 @@ class BinanceStreamClient:
                     "symbol": tr["symbol"],
                     "side": side,
                     "entry_price": entry,
-                    "current_price": current_price,
+                    "current_price": position_price,
                     "qty": qty,
                     "stop_loss": sl,
                     "take_profit": tr.get("take_profit"),

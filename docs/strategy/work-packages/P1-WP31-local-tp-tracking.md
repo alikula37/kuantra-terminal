@@ -14,7 +14,7 @@ remain unchanged; local closes are gross estimates, not confirmed executions.
 
 - [x] Package 1: atomic canonical plan/revision and disposable projection; legacy
   single TP unchanged; completed targets immutable; external history preserved.
-- [ ] Package 2: exact provider/instrument, provider-event age <=60 seconds,
+- [x] Package 2: exact provider/instrument, provider-event age <=60 seconds,
   bounded shared polling/backoff and disabled/offline boundary.
 - [ ] Package 3: Decimal partial/full close, SL, manual close, replay/concurrency,
   rollback and projection/export/restore regression.
@@ -31,6 +31,15 @@ backend/requirements.lock python -m pytest backend/tests/test_local_tracking.py 
 failed collection because the local tracking service did not exist (macOS arm64).
 The same command is now green: **16 passed**, including atomic create rollback,
 revision conflicts, immutable completed targets, short/SL/manual closure and rebuild.
+Package 1 source `542ce6b`: full backend **869 passed / 2 warnings**. Package 2
+monitor tests started red (missing module); combined tracking/market-truth regression
+is **34 passed / 2 warnings** before additional provider fixtures. Polling shares
+exact keys, caps four concurrent requests / twenty due keys per pass, backs off,
+and respects market-data disabled. Public reference contracts:
+[Binance recent trades](https://github.com/binance/binance-spot-api-docs/blob/master/rest-api.md#recent-trades-list),
+[Bybit recent trades](https://bybit-exchange.github.io/docs/v5/market/recent-trade).
+Only provider event timestamps qualify; Yahoo/Stooq/Biquote remain display-only
+for automatic tracking until their <=60s observation contract can be established.
 No build, runtime-offline or release claim follows from this dependency mode.
 
 ## Persistence contract

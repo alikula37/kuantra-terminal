@@ -7,14 +7,18 @@ from app.core.config import settings
 from app.api.endpoints import router as api_router
 from app.api.tv_sync_ws import tv_sync_websocket
 from app.websocket.binance_client import binance_client
+from app.services.local_tracking_monitor import tracking_monitor
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Start Binance Stream Client Background Task
     await binance_client.start()
-    yield
-    # Shutdown: Stop Binance Client
-    await binance_client.stop()
+    await tracking_monitor.start()
+    try:
+        yield
+    finally:
+        await tracking_monitor.stop()
+        await binance_client.stop()
 
 def create_app() -> FastAPI:
     app = FastAPI(
