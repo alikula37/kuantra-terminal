@@ -17,7 +17,7 @@ transport, source, security, and reconciliation contracts are implemented.
 Implementation is not proof of complete perpetual-account reconciliation or improved
 trading outcomes. There is no real-user pilot evidence yet. The current private
 `pilot-v1.0.0-arm64` prerelease is a closed, trusted-pilot transport for the verified
-Apple Silicon lane; it is not a public or production release. See the
+Apple Silicon and Intel lanes; it is not a public or production release. See the
 [current status](docs/strategy/STATUS.md) for open correctness risks, evidence limits
 and the remaining P1 delivery order.
 
@@ -28,16 +28,15 @@ Each architecture is built and distributed as its own native DMG; Universal2 is 
 v1 artifact. The release artifact must be a Developer ID-signed and notarized DMG; the
 current local artifacts remain ad-hoc and development-only until the owner supplies Apple
 signing/notarization access. Windows and Linux are outside the v1.0.0 release claim.
-For the three-person pilot, the current usable lane is an explicitly scoped Apple Silicon /
-M-series arm64-only package at the private
+For the three-person pilot, separate Apple Silicon / M-series and Intel DMGs are at the private
 [`pilot-v1.0.0-arm64` Release](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64).
-The current app artifact is bound to source commit `119ae573ce4e4885c2c83e0e8619ebd6038131dd`
-and contains the manual pilot-release access action but no Intel support claim. The eventual dual-architecture pilot package still waits for exact native x86_64
-evidence. Both paths use hash-verified ad-hoc DMGs and manual Gatekeeper approval; this is
+The Release notes identify the exact source commit and artifact hashes for both architectures.
+Both paths use hash-verified ad-hoc DMGs and manual Gatekeeper approval; this is
 trusted-pilot-only, not a public or production distribution. Pilot operators should read
 [`PILOT-INSTRUCTIONS.md`](docs/release/PILOT-INSTRUCTIONS.md), the
 [M-series instructions](docs/release/PILOT-INSTRUCTIONS-M-SERIES.md) for the arm64-only
-package, and the Release asset's `PILOT-MANIFEST.json` and `SHA256SUMS`, then read the
+package. Technical manifests/checksums remain in the audit package rather than the
+two-download Release list. Read the
 [distribution research](docs/release/PILOT-DISTRIBUTION-RESEARCH.md). A Mac must actually run
 macOS 12 or later; not every older Intel model can run Monterey, so “all Macs from the last ten
 years” is not a valid support claim. The pilot team may also supply native Intel runtime/N03

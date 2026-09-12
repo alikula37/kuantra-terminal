@@ -5,12 +5,13 @@ import { EquityCurveChart, EquityCurvePoint } from "./dashboard/EquityCurveChart
 import { OpenPositionsTable } from "./dashboard/OpenPositionsTable";
 import { PnlCalendarHeatmap, DailyHeatmapItem } from "./dashboard/PnlCalendarHeatmap";
 import { useTradeStore } from "../stores/tradeStore";
-import { useMarketStore } from "../stores/marketStore";
 import { usePluginRegistry } from "../context/PluginRegistryContext";
 import { RefreshCw, LayoutDashboard } from "lucide-react";
-import { apiBase, apiFetch, apiUrl } from "../lib/backend";
+import { apiFetch, apiUrl } from "../lib/backend";
 import type { MarketDataStatus } from "../types";
 import { useTranslation } from "../context/I18nContext";
+import { LocalTrackingPanel } from "./LocalTrackingPanel";
+import type { Trade } from "../types";
 
 interface DashboardViewProps {
   onOpenNewTrade?: () => void;
@@ -101,8 +102,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenInitialBalanceModal
 }) => {
   const { t } = useTranslation();
-  const { openPositions, updatePositionPnl } = useTradeStore();
-  const { currentPrice, marketDataStatus } = useMarketStore();
+  const { openPositions } = useTradeStore();
   const { isLiteMode } = usePluginRegistry();
 
   const [summary, setSummary] = useState<PortfolioSummaryData | null>(null);
@@ -111,7 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [heatmap, setHeatmap] = useState<DailyHeatmapItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [closeError, setCloseError] = useState<string | null>(null);
+  const [editTrade, setEditTrade] = useState<Trade | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState<boolean>(false);
   const loadControllerRef = useRef<AbortController | null>(null);
@@ -185,31 +185,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     setError(t("dashboard.cancelled"));
   };
 
-  const handleClosePosition = async (tradeId: string) => {
-    if (!canClosePositionAtMarketPrice(currentPrice, marketDataStatus)) {
-      setCloseError("Canlı piyasa fiyatı olmadan pozisyon kapatılamaz.");
-      return;
-    }
-
-    try {
-      const result = await requestPositionClose(tradeId, currentPrice, (id, exitPrice) => apiFetch(`${apiBase()}/api/v1/trades/${id}/close`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          exit_price: exitPrice,
-          exit_time: new Date().toISOString(),
-        }),
-      }), marketDataStatus);
-      if (!result.closed) {
-        setCloseError(result.error);
-        return;
-      }
-      updatePositionPnl(openPositions.filter((p) => p.id !== tradeId));
-      setCloseError(null);
-      fetchDashboardData();
-    } catch {
-      setCloseError("Pozisyon kapatma isteği gönderilemedi; pozisyon korunuyor.");
-    }
+  const handleClosePosition = (tradeId: string) => {
+    const position = openPositions.find(p => p.id === tradeId);
+    if (position) setEditTrade(position);
   };
 
   return (
@@ -250,12 +228,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {closeError && (
-        <div role="alert" className="rounded border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-          {closeError}
-        </div>
-      )}
-
       {(!error || summary !== null) && (
         <>
       {/* Section 1: Portfolio Key Performance Indicators (KPIs) */}
@@ -283,9 +255,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <OpenPositionsTable
         positions={openPositions}
         onClosePosition={handleClosePosition}
+        onEditPosition={setEditTrade}
         onOpenNewTrade={onOpenNewTrade}
         loading={loading}
       />
+      <LocalTrackingPanel editTrade={editTrade} onEditorClose={() => setEditTrade(null)} />
 
       {/* Section 4: 90-Day PnL Calendar Heatmap */}
       <PnlCalendarHeatmap data={heatmap} loading={loading} />

@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+import os
 
 
 def _eval(window, script, timeout=5.0):
@@ -25,6 +26,63 @@ def _eval(window, script, timeout=5.0):
 
 
 SMOKE_PLUGIN_ID = "plugin_orderflow"
+
+
+def _check_local_tracking(window, ctx):
+    """Synthetic-only native lifecycle; never enabled in a normal launch."""
+    from app.core.config import settings
+    from app.api.endpoints import tracking_service
+    from app.services.local_tracking import now_utc
+    if settings.market_data_enabled or not os.environ.get("KUANTRA_DATA_DIR"):
+        raise ValueError("Tracking smoke requires isolated data and disabled market data")
+    def request(method, path, body=None):
+        res = ctx.runtime.call(method, path, headers={"Content-Type": "application/json"},
+                               body=json.dumps(body).encode() if body is not None else b"")
+        if res.status != 200:
+            raise ValueError(f"Tracking smoke request failed: {res.status}")
+        return json.loads(res.content)
+    plan = {"enabled": True, "source_id": "binance_public", "source_symbol": "BTCUSDT", "stop_loss": 95,
+            "targets": [{"price": p, "percent": n} for p, n in [(110, 50), (120, 25), (130, 25)]]}
+    trade = request("POST", "/api/v1/trades", {"symbol": "BTCUSDT", "side": "BUY", "position_type": "LONG",
+        "entry_price": 100, "qty": 2, "record_mode": "SIMULATION", "notes": "synthetic native tracking smoke", "local_tracking": plan})
+    service = tracking_service()
+    service.observe(trade["id"], {"source_id": "binance_public", "source_symbol": "BTCUSDT", "price": "110",
+        "status": "LIVE", "timestamp_basis": "PROVIDER_EVENT", "observed_at": now_utc()})
+    if service.get(trade["id"])["remaining_qty"] != "1":
+        raise ValueError("Native partial close failed")
+    window.evaluate_js("""(() => {
+      const heading=[...document.querySelectorAll('h2')].find(x=>x.textContent==='Select Architectural Persona');
+      if(heading) heading.parentElement.parentElement.parentElement.querySelector('button').click();
+      document.querySelector('[data-testid="nav-dashboard"]')?.click();
+    })()""")
+    result = _eval(window, """new Promise(resolve => {
+      const deadline=Date.now()+15000; let clicked=false;
+      const wait=setInterval(()=>{
+        const panel=document.querySelector('[data-testid="local-tracking"]');
+        const article=panel && [...panel.querySelectorAll('article')].find(x=>x.textContent.includes('BTCUSDT'));
+        if(!clicked && article){article.querySelector('button').click();clicked=true;}
+        const dialog=document.querySelector('dialog[open]');
+        if(dialog && dialog.querySelector('[aria-label="TP3 price"]')) {
+          clearInterval(wait);
+          const dark=getComputedStyle(dialog).backgroundColor;
+          document.documentElement.classList.add('light-theme');
+          const light=getComputedStyle(dialog).backgroundColor;
+          document.documentElement.classList.remove('light-theme');
+          const locked=dialog.querySelector('[aria-label="TP1 price"]').disabled;
+          dialog.querySelector('button[type="submit"]').click();
+          resolve({locked,theme_changed:dark!==light});
+        } else if(Date.now()>deadline){clearInterval(wait);resolve(null);}
+      },100);
+    })""", timeout=17)
+    if not result or not result.get("locked") or not result.get("theme_changed"):
+        raise ValueError(f"Native tracking editor/theme failed: {result}")
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline and service.get(trade["id"])["revision"] != 3:
+        time.sleep(0.05)
+    request("POST", f"/api/v1/trades/{trade['id']}/tracking/close", {"price": 125, "expected_revision": 3})
+    if service.get(trade["id"])["remaining_qty"] != "0" or request("GET", f"/api/v1/trades/{trade['id']}")["status"] != "OPEN":
+        raise ValueError("Native local close or external preservation failed")
+    return True
 
 
 def measure_h07_ui(window, fixture, *, size=100_000):
@@ -152,6 +210,12 @@ def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
                 if checks["health"] and not checks["plugin_boundary"]:
                     checks["plugin_boundary"] = _check_plugin_boundary(ctx)
             if all(checks.values()):
+                if os.environ.get("KUANTRA_SMOKE_LOCAL_TRACKING") == "1":
+                    try:
+                        checks["local_tracking"] = _check_local_tracking(window, ctx)
+                    except Exception as exc:
+                        checks["local_tracking"] = False
+                        return {"ok": False, "reason": str(exc), "checks": checks}
                 return {"ok": True, "reason": "", "checks": checks}
         except Exception as exc:  # noqa: BLE001
             reason = f"{type(exc).__name__}: {exc}"

@@ -8,6 +8,8 @@ import { apiFetch, apiUrl } from "../lib/backend";
 import { createManualMarketInstrument, normalizeMarketSymbol } from "../lib/marketSymbols";
 import { MarketInstrument } from "../lib/marketSymbols";
 import { useInstrumentSearch } from "../hooks/useInstrumentSearch";
+import { TargetPlanFields } from "./TargetPlanFields";
+import { targetPayload, validTargets, type TargetDraft } from "../lib/localTracking";
 
 const FREE_QUOTE_SOURCE_IDS = new Set([
   "binance_public",
@@ -71,7 +73,10 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const [entryPrice, setEntryPrice] = useState<number>(0);
   const [qty, setQty] = useState<number>(1.0);
   const [stopLoss, setStopLoss] = useState<number>(0);
-  const [takeProfit, setTakeProfit] = useState<number>(0);
+  const [targets, setTargets] = useState<TargetDraft[]>([{ price: "", percent: "" }]);
+  const takeProfit = Number(targets[0]?.price || 0);
+  const [trackingEnabled, setTrackingEnabled] = useState(true);
+  const [selectedInstrument, setSelectedInstrument] = useState<MarketInstrument | null>(null);
   const [executionVenue, setExecutionVenue] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
@@ -113,7 +118,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       const res = await apiFetch(
         apiUrl(`/api/v1/market-data/quote?symbol=${encodeURIComponent(
           tradeSymbol.toUpperCase()
-        )}&source=auto`), { signal: controller.signal },
+        )}&source=${encodeURIComponent(selectedInstrument?.source_id && FREE_QUOTE_SOURCE_IDS.has(selectedInstrument.source_id) ? selectedInstrument.source_id : "auto")}`), { signal: controller.signal },
       );
       if (!res.ok) throw new Error("Price fetch failed");
       const candidateValue: unknown = await res.json();
@@ -164,11 +169,12 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       return;
     }
     setTradeSymbol(pendingInstrument.symbol);
+    setSelectedInstrument(pendingInstrument);
     cancelQuoteRequest();
     if (pendingInstrument.symbol !== tradeSymbol) {
       setEntryPrice(0);
       setStopLoss(0);
-      setTakeProfit(0);
+      setTargets([{ price: "", percent: "" }]);
     }
     setSymbolInput("");
     setPendingInstrument(null);
@@ -213,6 +219,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       priceOrigin === "PUBLIC_QUOTE" && quote?.source_id && quote.price === entryPrice
     );
     const selectedQuote = useQuoteProvenance ? quote : null;
+    if (!validTargets(targets, entryPrice, side, stopLoss || null)) {
+      setErrorMessage(t("tracking.invalid"));
+      setIsSubmitting(false);
+      return;
+    }
+    const trackingSource = selectedInstrument && FREE_QUOTE_SOURCE_IDS.has(selectedInstrument.source_id)
+      ? selectedInstrument : quote?.source_id && FREE_QUOTE_SOURCE_IDS.has(quote.source_id) ? quote : null;
     const tradePayload = {
       symbol: tradeSymbol.toUpperCase(),
       side,
@@ -221,6 +234,10 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       qty: Number(qty),
       stop_loss: stopLoss ? Number(stopLoss) : null,
       take_profit: takeProfit ? Number(takeProfit) : null,
+      local_tracking: {
+        enabled: trackingEnabled, targets: targetPayload(targets), stop_loss: stopLoss || null,
+        source_id: trackingSource?.source_id || null, source_symbol: trackingSource?.source_symbol || null,
+      },
       record_mode: recordMode,
       execution_venue: executionVenue.trim() || null,
       price_source: selectedQuote?.source_id || "manual",
@@ -531,18 +548,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 className="w-full bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-loss focus:outline-none focus:border-loss"
               />
             </div>
-            <div>
-              <label className="text-slate-400 block mb-1">{t("order_ticket.tp_label")}</label>
-              <input
-                type="number"
-                step="any"
-                value={takeProfit || ""}
-                onChange={(e) => setTakeProfit(Number(e.target.value))}
-                placeholder={t("order_ticket.optional_placeholder")}
-                className="w-full bg-[#0b0e14] border border-surface-border rounded px-3 py-1.5 text-gain focus:outline-none focus:border-gain"
-              />
-            </div>
           </div>
+          <TargetPlanFields targets={targets} onChange={setTargets} />
+          <label className="flex items-center gap-2 text-xs">
+            <input type="checkbox" checked={trackingEnabled} onChange={e => setTrackingEnabled(e.target.checked)} />
+            {t("tracking.enabled")}
+          </label>
+          <p className="text-xs text-slate-400">{t("tracking.disclaimer")}</p>
 
           {/* Risk / Reward Math & Risk Meter */}
           <div className="p-3 rounded border space-y-1 text-[11px] bg-[#0b0e14] border-surface-border">

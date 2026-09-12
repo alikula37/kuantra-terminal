@@ -4,7 +4,7 @@
 ```yaml
 work_package: P1-WP31
 status: InProgress
-branch: codex/p1-wp01-evidence-ledger
+branch: main
 ```
 Owner-approved scope: new manual entries default to enabled local tracking;
 users specify target allocations. No broker dispatch. External fills/analytics
@@ -46,6 +46,12 @@ Pack equivalence, API revision/close and corrupted-chain tests. Schema changes
 invalidate the append-tail verification cache before tracking can evaluate prices.
 The existing external trade snapshot remains byte-for-byte equivalent in lifecycle
 tests; no synthetic commission or external fill is created.
+2026-09-13 owner instruction supersedes the initial branch: continuation is on
+`main`, fast-forwarded to the existing history without a merge commit.
+Package 3 focused backend: **26 passed / 2 warnings**. UI focused **18 passed**;
+full frontend before the final validation fixture **152 passed**, build and
+**813/813** translation parity PASS. Optional native tracking smoke uses isolated
+synthetic data with market data disabled and exercises the real editor.
 No build, runtime-offline or release claim follows from this dependency mode.
 
 ## Persistence contract

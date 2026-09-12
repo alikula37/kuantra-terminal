@@ -84,6 +84,23 @@ beforeEach(async () => {
   mocks.symbol = "BTCUSDT";
 });
 
+it("creates a three-target local plan with explicit allocations and enabled default", async () => {
+  mocks.apiFetch.mockResolvedValue(response(savedTrade));
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  await act(async () => setInputValue(host.querySelector('input[type=number]') as HTMLInputElement, "100"));
+  for (let i = 1; i <= 3; i++) {
+    if (i > 1) await act(async () => (Array.from(host.querySelectorAll("button")).find(b => b.textContent === "tracking.add") as HTMLButtonElement).click());
+    await act(async () => {
+      setInputValue(host.querySelector(`[aria-label="tracking.price:${i}"]`) as HTMLInputElement, String(100 + i * 10));
+      setInputValue(host.querySelector(`[aria-label="tracking.percent:${i}"]`) as HTMLInputElement, String(i === 1 ? 50 : 25));
+    });
+  }
+  await act(async () => host.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  const payload = JSON.parse(String(mocks.apiFetch.mock.calls.at(-1)?.[1]?.body));
+  expect(payload.local_tracking.enabled).toBe(true);
+  expect(payload.local_tracking.targets).toEqual([{ price: 110, percent: 50 }, { price: 120, percent: 25 }, { price: 130, percent: 25 }]);
+});
+
 it("keeps a chart-selected non-catalog instrument and searches the same ticker explicitly", async () => {
   mocks.symbol = "ARCLK.IS";
   mocks.apiFetch.mockImplementation(() => Promise.resolve(response({ status: "READY", results: [

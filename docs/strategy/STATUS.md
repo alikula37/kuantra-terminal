@@ -1,13 +1,14 @@
 <!-- doc-role: current-status -->
 # Current development status
 
-Updated: 2026-09-12. Branch: `codex/p1-wp01-evidence-ledger`.
+Updated: 2026-09-13. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP31 local TP tracking](work-packages/P1-WP31-local-tp-tracking.md).**
 Package 1 `542ce6b`: **869 backend tests passed / 2 warnings**; focused local
 tracking **16 passed**. Package 2 exact-provider monitor focused regressions are
 green (`4fc271d`); Package 3 adds concurrency, correction/cancel, restore/export
-and corrupted-chain coverage. UI implementation is in progress; native build and
+and corrupted-chain coverage (**26 passed**). UI focused **18 passed**, build and
+EN/TR/DE **813/813** PASS. Native tracking UI smoke is being verified; native build and
 pilot refresh remain pending. Canonical local plans and estimates are separate from
 external trade facts. Ordered packages: persistence → exact fresh quote monitoring →
 partial/full close → UI → native dual artifact verification and pilot refresh.

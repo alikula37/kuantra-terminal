@@ -34,7 +34,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
         <div className="flex items-center space-x-2">
           <Crosshair className="w-4 h-4 text-accent" />
           <span className="text-xs font-bold text-white uppercase tracking-wider">
-            {t("open_positions.title")}
+            {t("tracking.external_title")}
           </span>
         </div>
         <span className="text-[10px] text-slate-400 font-semibold">
@@ -118,7 +118,8 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                           <button
                             onClick={() => onEditPosition(p)}
                             className="p-1 rounded bg-[#161f2e] hover:bg-[#1f2c42] text-slate-300 hover:text-white transition"
-                            title={t("open_positions.edit_btn")}
+                            title={t("tracking.edit")}
+                            aria-label={t("tracking.edit")}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
@@ -126,10 +127,10 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                         <button
                           onClick={() => onClosePosition(p.id)}
                           className="px-2 py-1 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-[10px] font-bold transition active:scale-95 flex items-center space-x-1"
-                          title={t("open_positions.close_btn")}
+                          title={t("tracking.manage_close")}
                         >
                           <XCircle className="w-3 h-3 mr-1" />
-                          <span>{t("open_positions.close_btn")}</span>
+                          <span>{t("tracking.manage_close")}</span>
                         </button>
                       </div>
                     </td>

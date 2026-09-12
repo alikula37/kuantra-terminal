@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import React, { act } from "react";
+vi.mock("../LocalTrackingPanel", () => ({ LocalTrackingPanel: () => null }));
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), t: (key: string) => key }));

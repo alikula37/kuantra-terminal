@@ -123,6 +123,7 @@ jobs:
       - name: Smoke test desktop app
         shell: bash
         env:
+          KUANTRA_SMOKE_LOCAL_TRACKING: "1"
           KUANTRA_MARKET_DATA_ENABLED: "false"
           KUANTRA_GATEWAY_ENABLED: "0"
         run: |
@@ -133,6 +134,7 @@ jobs:
       - name: Smoke test final packaged artifact
         shell: bash
         env:
+          KUANTRA_SMOKE_LOCAL_TRACKING: "1"
           KUANTRA_MARKET_DATA_ENABLED: "false"
           KUANTRA_GATEWAY_ENABLED: "0"
         run: |
