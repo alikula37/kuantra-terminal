@@ -1,4 +1,4 @@
-<!-- doc-role: reference -->
+<!-- doc-role: current-work-package -->
 # P1-WP29 — Trusted macOS Pilot Package
 
 ```yaml
@@ -8,12 +8,25 @@ status: InProgress
 date: 2026-09-10
 baseline_commit: a58935a
 implementation_commit: dd58142
-latest_artifact_source_commit: dd581425c2c298664512f0434fa93a726a9cacb5
-latest_evidence_date: 2026-09-12
-branch: codex/p1-wp01-evidence-ledger
+latest_artifact_source_commit: 4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0
+latest_evidence_date: 2026-09-13
+branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
+
+## Current continuation evidence
+
+P1-WP31 local TP tracking is completed and archived with full evidence at
+[P1-WP31](../../archive/strategy/work-packages/P1-WP31-local-tp-tracking.md).
+Source `4298acd`, native run `34721385803`: both architectures passed **879 backend /
+1 skipped / 2 warnings**, **154 frontend**, **813-key** i18n and exact DMG/WKWebView
+synthetic local-tracking lifecycle. Local canonical CI additionally passed **880 backend**.
+The private Release contains exactly the two verified DMGs identified in current
+RELEASE_NOTES/STATUS. The Mac mini installed executable matches the published arm64
+artifact, with user data preserved. Original reports are in
+`artifacts/evidence/p1-wp31/4298acd/`. Remaining unchecked pilot/owner/host criteria
+below are unchanged; this refresh is not Developer ID/notarization or production evidence.
 
 ## Amaç
 
@@ -214,7 +227,7 @@ sınırı nedeniyle ayrı tutulur ve production PASS sayılmaz:
 shasum -a 256 -c dist/pilot-package-v1.0.0/SHA256SUMS
 ```
 
-### Güncel dual native pilot package evidence (2026-09-12)
+### Previous dual native pilot package evidence (2026-09-12; superseded by WP31)
 
 GitHub Actions run `34664574672` source commit
 `dd581425c2c298664512f0434fa93a726a9cacb5` üzerinden native `macos-latest/arm64` ve

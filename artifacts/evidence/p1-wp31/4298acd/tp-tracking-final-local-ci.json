@@ -1,0 +1,244 @@
+{
+  "local_ci_schema_version": 1,
+  "policy": "KDG-002@1.1.0",
+  "started_at_utc": "2026-09-12T21:58:40Z",
+  "duration_seconds": 91.456,
+  "product_version": "1.0.0",
+  "platform": "darwin",
+  "expected_architecture": "arm64",
+  "architecture": "arm64",
+  "build_host_architecture": "arm64",
+  "python": "3.11.16",
+  "test_data_dir": "/var/folders/20/zl6nfjyj66z1mnks1fr1zy5c0000gn/T/kuantra-local-ci-tests-52zj7ebd",
+  "smoke_data_dir": "/var/folders/20/zl6nfjyj66z1mnks1fr1zy5c0000gn/T/kuantra-local-ci-smoke-43v0yyej",
+  "provenance_status": "COMPLETE",
+  "build_provenance": {
+    "source_commit_sha": "4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0",
+    "checkout_commit_sha": "4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0",
+    "source_commit_origin": "checkout",
+    "source_commit_matches_checkout": true,
+    "tracked_source_tree_status": "clean",
+    "tracked_source_tree_sha256": "79da8a6c9c4817943fafbcb55a93ccc33936227f42131af1a57f2487a3c306b8",
+    "lock_hashes": {
+      "backend_requirements_lock_sha256": "6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399",
+      "frontend_package_lock_sha256": "396c757d5733e9618aa71f665aa3f23f5d53fcdaa8d9ff67c11d172464fcc6bc"
+    },
+    "toolchain": {
+      "python": "3.11.16",
+      "node": "v24.20.0",
+      "npm": "11.19.0",
+      "uv": "uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)",
+      "pyinstaller": "6.22.2"
+    },
+    "os": "darwin",
+    "os_version": "macOS-26.6.2-arm64-arm-64bit",
+    "architecture": "arm64",
+    "architecture_verified": true,
+    "architecture_source": "executable",
+    "architecture_detection_tool": "lipo",
+    "executable_architectures": [
+      "arm64"
+    ],
+    "build_host_architecture": "arm64",
+    "build_host_translation": "native",
+    "executable_path": "/Users/kula/Documents/ChatGPT/kuantra_terminal/dist/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal",
+    "executable_sha256": "1883e9a04f5acef9c6c80587fb7c6ba83e263e4ab7939adda12a90f582bb11cb",
+    "artifact_path": "/Users/kula/Documents/ChatGPT/kuantra_terminal/dist/Kuantra Terminal.app",
+    "artifact_sha256": "ec5a27280573917db3883e847193dad62c60c5b960affc0a23792bd341b6ed2a",
+    "provenance_status": "COMPLETE"
+  },
+  "merge_ready": true,
+  "failed_steps": [],
+  "steps": [
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0.022
+    },
+    {
+      "name": "compileall",
+      "command": [
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/.venv/bin/python3",
+        "-m",
+        "compileall",
+        "-q",
+        "backend"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0.076
+    },
+    {
+      "name": "release-truth",
+      "command": [
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/.venv/bin/python3",
+        "scripts/check_release_truth.py"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0.074
+    },
+    {
+      "name": "packaging-integrity",
+      "command": [
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/.venv/bin/python3",
+        "scripts/verify_packaging.py"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0.131
+    },
+    {
+      "name": "supply-chain-audit",
+      "command": [
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/.venv/bin/python3",
+        "scripts/supply_chain_audit.py",
+        "--report",
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/dist/h05-supply-chain-report.json"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0.391
+    },
+    {
+      "name": "backend-tests",
+      "command": [
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/.venv/bin/python3",
+        "-m",
+        "pytest",
+        "backend/tests",
+        "-q",
+        "--tb=short"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 30.453
+    },
+    {
+      "name": "frontend-tests",
+      "command": [
+        "/opt/homebrew/bin/npm",
+        "--prefix",
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/frontend",
+        "test"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 6.275
+    },
+    {
+      "name": "frontend-build",
+      "command": [
+        "/opt/homebrew/bin/npm",
+        "--prefix",
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/frontend",
+        "run",
+        "build"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 4.793
+    },
+    {
+      "name": "desktop-build",
+      "command": [
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/.venv/bin/python3",
+        "scripts/build_desktop.py",
+        "--skip-frontend",
+        "--expected-architecture",
+        "arm64"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 44.52
+    },
+    {
+      "name": "desktop-smoke",
+      "command": [
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/.venv/bin/python3",
+        "scripts/smoke_desktop.py",
+        "--report",
+        "/Users/kula/Documents/ChatGPT/kuantra_terminal/dist/local-ci-smoke.json",
+        "--data-dir",
+        "/var/folders/20/zl6nfjyj66z1mnks1fr1zy5c0000gn/T/kuantra-local-ci-smoke-43v0yyej",
+        "--timeout",
+        "90.0",
+        "--expected-architecture",
+        "arm64"
+      ],
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 4.72
+    },
+    {
+      "name": "desktop-smoke-contract",
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0,
+      "details": {
+        "version": "1.0.0",
+        "checks": {
+          "bridge_roundtrip": true,
+          "health": true,
+          "plugin_boundary": true,
+          "push_sink": true,
+          "react_mounted": true
+        },
+        "executable_sha256": "1883e9a04f5acef9c6c80587fb7c6ba83e263e4ab7939adda12a90f582bb11cb",
+        "truth_matrix": {
+          "document_id": "KTR-001",
+          "version": "1.0.0",
+          "product_version": "1.0.0",
+          "sha256": "8c647721dc2349cc8fd99d046bf14738121ac4f9a0b7c8b87cdb9f1ccfe681ab"
+        },
+        "renderer_expected": null,
+        "renderer_actual": "wkwebview",
+        "renderer_controller_ready": true
+      }
+    },
+    {
+      "name": "desktop-renderer-preflight",
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0,
+      "details": {
+        "required": false,
+        "reason": "macOS uses native WKWebView"
+      }
+    },
+    {
+      "name": "provenance-contract",
+      "status": "PASS",
+      "returncode": 0,
+      "duration_seconds": 0,
+      "details": {
+        "provenance_status": "COMPLETE",
+        "source_commit_sha": "4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0",
+        "tracked_source_tree_status": "clean",
+        "tracked_source_tree_sha256": "79da8a6c9c4817943fafbcb55a93ccc33936227f42131af1a57f2487a3c306b8",
+        "lock_hashes": {
+          "backend_requirements_lock_sha256": "6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399",
+          "frontend_package_lock_sha256": "396c757d5733e9618aa71f665aa3f23f5d53fcdaa8d9ff67c11d172464fcc6bc"
+        },
+        "toolchain": {
+          "python": "3.11.16",
+          "node": "v24.20.0",
+          "npm": "11.19.0",
+          "uv": "uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)",
+          "pyinstaller": "6.22.2"
+        },
+        "architecture": "arm64",
+        "architecture_verified": true,
+        "architecture_source": "executable",
+        "executable_sha256": "1883e9a04f5acef9c6c80587fb7c6ba83e263e4ab7939adda12a90f582bb11cb",
+        "artifact_sha256": "ec5a27280573917db3883e847193dad62c60c5b960affc0a23792bd341b6ed2a"
+      }
+    }
+  ]
+}

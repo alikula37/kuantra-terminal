@@ -67,6 +67,14 @@ mention them for audit history only; none is a current download source.
   separately gated.
 - EN/TR/DE i18n parity and a reproducible native build/smoke gate for the macOS arm64 and
   x86_64 candidate artifacts; no v1 release claim is made for other operating systems.
+- Local TP1/TP2/TP3 and SL tracking for long/short journal entries, with explicit
+  user-entered allocations, revision-checked editing and partial/full local closes.
+  New manual entries enable tracking by default; historical/imported entries do not.
+  Local gross estimates stay separate from external fills and actual-trade analytics.
+  Tracking requires the app to be open and awake, plus a matching provider-event quote
+  no older than 60 seconds. Binance/Bybit recent-trade adapters qualify; existing
+  Yahoo/Stooq/Biquote feeds remain display-only for automatic tracking. Missing or
+  delayed quotes wait; they never create an assumed fill. No broker order is sent.
 
 ## Explicitly experimental/disabled
 
@@ -83,11 +91,11 @@ they are not production capabilities:
 - remote ModStore download, hot-mount and arbitrary plugin execution.
 
 See [`docs/strategy/`](docs/strategy) for the decision log, ADRs, evidence
-gates and work-package status. P1-WP29 is the current trusted pilot distribution package;
-its refreshed arm64 Release asset is bound to source commit `119ae57` and includes the
-P1-WP30 journal/quote implementation plus the manual update-page action. P1-WP30 is archived as the bounded free multi-asset
-journal/quote implementation. P1-WP28 remains open until native Intel evidence exists and
-N05 remains the later owner-controlled distribution gate.
+gates and work-package status. STATUS selects the current package and records exact
+artifact evidence. P1-WP29 owns trusted-pilot distribution; P1-WP31 adds local TP
+tracking. P1-WP30 is archived as the bounded free multi-asset journal implementation.
+P1-WP28 has native Intel CI evidence; N03 clean-profile, N05 signing/notarization and
+H05 commercial/dependency decisions remain separate production gates.
 A disabled surface is a deliberate truth result, not a failed demo.
 
 ## Runtime architecture

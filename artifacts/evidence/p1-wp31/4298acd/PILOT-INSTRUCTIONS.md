@@ -35,24 +35,6 @@ simulation. Simulation is available only after an explicit choice and also sends
 order. A TradingView webhook is a pending observation until the user confirms the fill;
 it is not quote or execution proof. No paid data service or quote API key is required.
 
-## Yerel TP1/TP2/TP3 takibi
-
-- Yeni manuel kayıtta otomatik yerel takip varsayılan açıktır; kapatabilirsiniz.
-  Eski/import edilmiş kayıtlarda kendiliğinden açılmaz.
-- Long veya short için 1–3 hedef fiyatı ve her hedefte kapanacak yüzdeyi girin.
-  Yüzdeleri siz belirlersiniz; toplam %100 olmalıdır. Yalnız SL de kullanılabilir.
-- Yerel takip panelindeki **TP/SL düzenle** ile kalan hedefleri ve SL'yi değiştirin.
-  Gerçekleşmiş hedefler kilitlidir; değişiklik geçmişi korunur.
-- Uygulama açık ve Mac uyanıkken, doğru sağlayıcı/sembole ait en fazla 60 saniyelik
-  doğrulanabilir güncel gözlem hedefi tetikleyebilir. Binance/Bybit son işlem akışları
-  bu kontrolü destekler. Mevcut Yahoo/Stooq/Biquote fiyatları (altın dahil) görüntülenebilir,
-  ancak güncellik kanıtı uygun değilse otomatik kapanış yapmaz; takip fiyat bekler.
-- Kapanışlar **uygulama içi** tahmini brüt sonuçtur: borsaya emir göndermez,
-  gerçek pozisyonunuzu kapatmaz, gerçek ücret/net kazanç veya borsa gerçekleşmesi değildir.
-  Harici işlem günlüğü ve gerçek işlem analitiği ayrı kalır.
-- İlk denemede sentetik kayıtla üç hedef girin, düzenleme ekranını açın, kalan miktarı
-  ve geçmişi kontrol edin. Uygulama kapalıyken geçmişe dönük kapanış üretilmez.
-
 ## İndirmeden önce
 
 1. GitHub hesabınızla giriş yapın ve size gönderilen private repository Release

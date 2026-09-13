@@ -1,0 +1,81 @@
+{
+  "ok": true,
+  "reason": "",
+  "checks": {
+    "react_mounted": true,
+    "bridge_roundtrip": true,
+    "health": true,
+    "push_sink": true,
+    "plugin_boundary": true,
+    "local_tracking": true
+  },
+  "version": "1.0.0",
+  "renderer_expected": null,
+  "renderer_actual": "wkwebview",
+  "renderer_controller_ready": true,
+  "smoke_schema_version": 2,
+  "version_expected": "1.0.0",
+  "platform": "darwin",
+  "architecture": "x86_64",
+  "architecture_verified": true,
+  "build_host_architecture": "x86_64",
+  "executable_path": "/private/var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/kuantra-dmg-smoke-w4yptlf0/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal",
+  "executable_sha256": "9714d539a03dbf4a3eb363ed89ddc4cbeedfaf04af5846c82b7249fd9e65cdff",
+  "artifact_path": "/Users/runner/work/kuantra-terminal/kuantra-terminal/dist/Kuantra-Terminal-1.0.0-x86_64.dmg",
+  "artifact_sha256": "e43e0026c118bff9ed338e9e8560dc3758c64fa9052de83d1a23977e906240c2",
+  "build_commit": "4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0",
+  "provenance_status": "COMPLETE",
+  "build_provenance": {
+    "source_commit_sha": "4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0",
+    "checkout_commit_sha": "4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0",
+    "source_commit_origin": "github_sha",
+    "source_commit_matches_checkout": true,
+    "tracked_source_tree_status": "clean",
+    "tracked_source_tree_sha256": "79da8a6c9c4817943fafbcb55a93ccc33936227f42131af1a57f2487a3c306b8",
+    "lock_hashes": {
+      "backend_requirements_lock_sha256": "6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399",
+      "frontend_package_lock_sha256": "396c757d5733e9618aa71f665aa3f23f5d53fcdaa8d9ff67c11d172464fcc6bc"
+    },
+    "toolchain": {
+      "python": "3.11.9",
+      "node": "v20.20.2",
+      "npm": "10.8.2",
+      "uv": "uv 0.12.10 (3c979abda 2026-09-04 x86_64-apple-darwin)",
+      "pyinstaller": "6.22.2"
+    },
+    "os": "darwin",
+    "os_version": "macOS-15.7.9-x86_64-i386-64bit",
+    "architecture": "x86_64",
+    "architecture_verified": true,
+    "architecture_source": "executable",
+    "architecture_detection_tool": "lipo",
+    "executable_architectures": [
+      "x86_64"
+    ],
+    "build_host_architecture": "x86_64",
+    "build_host_translation": "native",
+    "executable_path": "/private/var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/kuantra-dmg-smoke-w4yptlf0/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal",
+    "executable_sha256": "9714d539a03dbf4a3eb363ed89ddc4cbeedfaf04af5846c82b7249fd9e65cdff",
+    "artifact_path": "/Users/runner/work/kuantra-terminal/kuantra-terminal/dist/Kuantra-Terminal-1.0.0-x86_64.dmg",
+    "artifact_sha256": "e43e0026c118bff9ed338e9e8560dc3758c64fa9052de83d1a23977e906240c2",
+    "provenance_status": "COMPLETE"
+  },
+  "truth_matrix": {
+    "document_id": "KTR-001",
+    "version": "1.0.0",
+    "product_version": "1.0.0",
+    "sha256": "8c647721dc2349cc8fd99d046bf14738121ac4f9a0b7c8b87cdb9f1ccfe681ab"
+  },
+  "recorded_at_utc": "2026-09-12T22:07:25Z",
+  "macos_dmg_smoke": {
+    "status": "PASS",
+    "dmg_image_integrity": "PASS",
+    "mount_mode": "readonly",
+    "executable_from_mount": true,
+    "renderer": "wkwebview",
+    "architecture": "x86_64",
+    "executable_sha256": "9714d539a03dbf4a3eb363ed89ddc4cbeedfaf04af5846c82b7249fd9e65cdff",
+    "artifact_sha256": "e43e0026c118bff9ed338e9e8560dc3758c64fa9052de83d1a23977e906240c2",
+    "mount_detached": true
+  }
+}

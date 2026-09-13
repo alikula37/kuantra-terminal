@@ -3,23 +3,31 @@
 
 Updated: 2026-09-13. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP31 local TP tracking](work-packages/P1-WP31-local-tp-tracking.md).**
-Package 1 `542ce6b`: **869 backend tests passed / 2 warnings**; focused local
-tracking **16 passed**. Package 2 exact-provider monitor focused regressions are
-green (`4fc271d`); Package 3 adds concurrency, correction/cancel, restore/export
-and corrupted-chain coverage (**26 passed**). UI focused **18 passed**, build and
-EN/TR/DE **813/813** PASS. Native tracking UI lifecycle/theme PASS on developer
-arm64 artifact; clean canonical CI and dual exact artifact evidence are pending.
-Clean canonical CI on `09d29e5` subsequently passed: backend **880**, frontend **153**,
-i18n **813/813**, native arm64 WKWebView and COMPLETE provenance. Final keyboard
-containment/Escape regression is also green; refreshed dual artifacts remain pending.
-Initial CI's three default-network failures were caused by global test environment
-overrides; this run is not reported as a passing gate. Native build and
-pilot refresh remain pending. Canonical local plans and estimates are separate from
-external trade facts. Ordered packages: persistence → exact fresh quote monitoring →
-partial/full close → UI → native dual artifact verification and pilot refresh.
-Prior pilot artifacts remain unchanged until new candidate gates pass. P1-WP29
-retains its unchecked owner/host obligations as a reference, not a competing active WP.
+**Selected work: [P1-WP29 trusted pilot obligations](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+[P1-WP31 local TP tracking](../archive/strategy/work-packages/P1-WP31-local-tp-tracking.md)
+is bounded complete and archived. Source `4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0`
+passed canonical Mac CI: **880 backend / 154 frontend / 813-key i18n**, all 13 steps
+PASS, COMPLETE provenance. Local exact-DMG synthetic TP lifecycle also passed.
+Native GitHub run `34721385803` passed on both architectures: each **879 backend /
+1 skipped / 2 warnings**, **154 frontend**, **813-key i18n**, build and exact mounted
+DMG/WKWebView/local-tracking smoke. Original reports/manifest/checksums are retained
+in `artifacts/evidence/p1-wp31/4298acd/`; remote dependency setup/audit required network.
+
+Current pilot DMG SHA-256: arm64
+`03671ca814ba9299fcf47429cb0c585fbccd550e6201e747c5f2c2e5c32c5e93`, Intel
+`e43e0026c118bff9ed338e9e8560dc3758c64fa9052de83d1a23977e906240c2`.
+The existing private Release was refreshed with exactly those two DMGs; GitHub digests
+match. This Mac's installed arm64 executable is
+`ee5683af6c5571fb3da6797faac50bf5fd0cf7dc1840c360d46a98dd032b05b6`, verified and launched.
+User data was not reset/deleted/migrated; the previous app remains in
+`/tmp/kuantra-tp-update.A5TXWE/Kuantra Terminal.app.previous` until OS temporary cleanup.
+
+Local plans, partial/full closes and gross estimates remain separate from external
+fills/analytics. Binance/Bybit provider-event quotes must match instrument and be <=60s
+old; Yahoo/Stooq/Biquote currently remain display-only for automatic tracking.
+No eligible quote means WAITING, not an assumed fill. Historical/imported trades stay off.
+N03 clean-profile, N05 signing/notarization, H05 commercial/dependency disposition and
+pilot access/outcomes remain separate owner/host obligations, not closed by this package.
 Roadmap: [KPR-001](PRODUCTION-READINESS-PLAN.md), current planning source, still Proposed
 for new scope/estimates. Selecting one roadmap does not approve its commercial assumptions.
 
@@ -39,10 +47,10 @@ DMG’nin gerçek cihaz açılışı, architecture, Gatekeeper gözlemi ve sente
 import→review→export→close/reopen akışını doğrulayabilir. Temiz profil attestation'ı
 varsa N03 kanıtına da bağlanır; normal kullanıcı profili yalnız runtime pilot kanıtıdır.
 
-**Pilot distribution decision (2026-09-10, current evidence 2026-09-12):** Apple Developer
+**Pilot distribution decision (2026-09-10, current evidence 2026-09-13):** Apple Developer
 ID üyeliği satın alınmayacak. Üç kişilik kapalı pilot için iki native DMG'li dual paket
 hazırlandı: Apple Silicon için `arm64`, Intel için `x86_64`. Paket ve her iki exact
-mounted-DMG smoke zinciri GitHub Actions run `34664574672` üzerinde native hostlarda PASS
+mounted-DMG smoke zinciri GitHub Actions run `34721385803` üzerinde native hostlarda PASS
 oldu; package checksum doğrulaması da PASS. Her iki ad-hoc artifact manual Gatekeeper
 approval gerektirir ve yalnızca trusted-pilot-only olarak sınıflandırılır. Bu seçim public
 download, commercial support, production veya notarized-artifact claim'i açmaz. Pilot
@@ -84,7 +92,7 @@ canonical release train `v1.0.0`'dır; canonical product Release yayımlanmamı�
 private pilot transport ise aynı `pilot-v1.0.0-arm64` prerelease üzerinde iki native DMG
 taşır; bu transport production release değildir.
 Kapalı pilot taşıma kanalı olan `pilot-v1.0.0-arm64` ayrı bir private prerelease'tir ve
-güncel dual asset seti `dd58142` source commit'ine bağlıdır. Aşağıdaki v1.4.0 ad-hoc
+güncel dual asset seti `4298acd` source commit'ine bağlıdır. Aşağıdaki v1.4.0 ad-hoc
 hash'leri yalnızca pre-reset historical evidence'tir; güncel release kanıtı olarak
 kullanılamaz.
 Eski kök `UAT_AUDIT_REPORT.json` raporu geri çekilmiş tarihsel kayıt olarak arşivlendi;
@@ -94,7 +102,7 @@ komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production 
 
 ## Selected next work
 
-**Spot/search UX implementation (2026-09-12, this change):** New Trade now separates
+**Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates
 the empty provider-search field from the committed instrument, keeps an already-selected
 non-catalog symbol (including literal `LINK`) intact, and requires explicit selection
 and confirmation before quote/submission. Aborted or late quote responses cannot write
@@ -109,12 +117,12 @@ upgrade tests pass without changing a real user's database. The prior unstamped-
 finding below is corrected by these bounded classification tests.
 Focused New Trade DOM: **13 passed**; backend full suite before the final UI-only
 changes: **853 passed / 2 warnings**; spot close/cancel/CSV/rebuild regression passed.
-The current UI scope is now included in a dual-native candidate. GitHub Actions run
+That UI scope was included in the previous dual-native candidate. GitHub Actions run
 `34664574672` from source `dd581425c2c298664512f0434fa93a726a9cacb5` passed native
 arm64 and `x86_64` backend/frontend/build/package/smoke jobs; each backend reported
 **852 passed / 1 skipped / 2 warnings**, each frontend **29 files / 148 tests**, and
 EN/TR/DE parity **771/771**. The final DMGs and their exact read-only mounted-DMG
-evidence are ready for the authorized private Release refresh; N03, N05, H05 and pilot
+evidence supported the previous private Release refresh; N03, N05, H05 and pilot
 read access remain open separately.
 
 **Superseded owner-requested UX / Intel implementation evidence (2026-09-11):** Work was on
@@ -198,13 +206,12 @@ bounded distribution package binds the refreshed source to two native architectu
 exact mounted smoke, manifest/checksums and pilot instructions; the active work package is
 [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
-The private Release is the trusted-pilot transport for the clean dual package built from
-`dd58142`; it contains the completed P1-WP30 journal/quote changes plus the chart
-watchlist/XAUUSD fallback and confirmed-symbol selection boundary, and carries exactly
-one arm64 DMG and one x86_64 DMG after the authorized in-place refresh. N03, N05, H05 and
-pilot read access remain open; the native x86_64 build/evidence blocker is closed.
+The private Release is the trusted-pilot transport for the clean dual package identified
+in the current evidence at the top of this document. It carries exactly one arm64 DMG
+and one x86_64 DMG. N03, N05, H05 and pilot read access remain separate obligations;
+the native x86_64 build/evidence blocker is closed.
 
-**Current dual native pilot candidate evidence (2026-09-12):** GitHub Actions run
+**Previous dual native pilot candidate evidence (2026-09-12; not current downloads):** GitHub Actions run
 `34664574672`, source commit `dd581425c2c298664512f0434fa93a726a9cacb5`, passed the
 native `macos-latest/arm64` and `macos-15-intel/x86_64` jobs. Each host completed the
 locked backend suite with **852 passed / 1 skipped / 2 warnings**, the frontend with
@@ -219,9 +226,9 @@ executable `4a5991ad1cd8b98dce79aab69581542b970043d8a12894050af83c14ce419cfc`. B
 reports show native matching architecture, `wkwebview`, `COMPLETE` provenance and
 `hdiutil verify: VALID`; N05 remains `BLOCKED/OWNER_REVIEW_REQUIRED` because both are
 ad-hoc and unsigned/notarized. This is dual native trusted-pilot evidence, not a
-production or Apple-trusted claim. The private Release title is now `Kuantra Terminal
-v1.0.0 — Trusted macOS Pilot (arm64 + x86_64)` and its asset set is exactly the two
-DMGs above; GitHub digests match the recorded SHA-256 values.
+production or Apple-trusted claim. That private Release refresh used the title `Kuantra Terminal
+v1.0.0 — Trusted macOS Pilot (arm64 + x86_64)` and the two DMGs above. Current downloads
+are identified by WP31 evidence, not these historical hashes.
 
 **P1-WP30 — BOUNDED COMPLETE / ARCHIVED:** The external-default journal, explicit
 simulation, exact free quote provenance, unavailable→manual boundary and TradingView
@@ -1129,7 +1136,8 @@ and frontend lock hashes remain
 | H07 | CLOSED | Non-release synthetic performance/resource measurement, packaged cold/warm/append-tail/projection-rebuild distinction, candidate-band UI evidence and fail-closed boundaries | `e3aacc8`→`4e761fa` and `198e712` provide the Mac evidence: 366 packaged manifests, 120/120 valid projection samples, measured 1k/10k candidate-band behavior, native `wkwebview` evidence and explicit `UNKNOWN` handling. Owner decision: 100k is stress-only; no further 100k optimization or numeric commercial resource cap is required. H07 is archived at [H07](../archive/strategy/work-packages/H07-bounded-performance-resource-limits.md). Windows/Linux, signing and release evidence remain separate. |
 | P1-WP27 | CLOSED | G0–G2 supported matrix, independent oracle and packaged import→review→Evidence Pack→export→reopen audit | `e042790` packaged report `PASS`; malformed/partial/unknown fail-closed, coverage propagation, same-second review reopen, scope guard and caller-data isolation are recorded in [archived P1-WP27](../archive/strategy/work-packages/P1-WP27-g0-g2-supported-matrix-audit.md). This is bounded Mac development evidence, not release or cross-platform proof. |
 | P1-WP28 | BOUNDED COMPLETE / RELEASE GATES OPEN | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and native-host release contract | Source `dd58142` plus GitHub Actions run `34664574672` proves native arm64 and native `macos-15-intel` x86_64 build/test/package/exact mounted-DMG smoke. Both reports have `COMPLETE` provenance, matching executable architecture, `wkwebview`, `hdiutil verify: VALID` and truth-matrix SHA-256 `8c647721dc2349cc8fd99d046bf14738121ac4f9a0b7c8b87cdb9f1ccfe681ab`; Intel is no longer `PENDING_NATIVE_CI`. Phase 0 final release audit remains separate because N05 is intentionally ad-hoc `BLOCKED`; Universal2, Windows/Linux, N03 and signing are separate gates. |
-| P1-WP29 | IN PROGRESS / RELEASE REFRESH | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums, user instructions and bounded pilot UI corrections | Source `dd58142` and run `34664574672` produce the dual native trusted-pilot package. Backend is `852 passed / 1 skipped / 2 warnings` per host, frontend `29 files / 148 tests`, i18n `771/771`; arm64 DMG SHA-256 `f8a4d4189ca6786f9ddb1e6d47f765ac6a3b4b11ffe8bc71a40bae8975189463`, x86_64 DMG SHA-256 `786370ff03270203fc95868e7c7faa17e214059d1a2625538609d48d36347f4c`, and package checksum verification PASS. The in-place private Release refresh is authorized and will contain exactly those two DMGs; JSON/MD evidence stays in repository/audit package. N03 clean second profile/host, N05 signing/notarization, H05 commercial notices and pilot-user read access remain open. |
+| P1-WP29 | IN PROGRESS / OWNER-HOST OBLIGATIONS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums and user instructions | Source `4298acd`, run `34721385803`: dual native package, exact DMG/local-tracking smoke and checksum PASS. Existing private Release refreshed with exactly two DMGs; installed Mac app updated with data preserved. Current hashes/tests are at the top of STATUS and archived WP31. N03 clean second profile/host, N05 signing/notarization, H05 commercial/dependency disposition and pilot-user read access remain separate obligations. |
+| P1-WP31 | CLOSED / BOUNDED COMPLETE | Local TP1/TP2/TP3/SL revisions, exact provider-event quotes and separate estimated partial/full closes | Source `4298acd`, canonical Mac CI and both native exact DMGs PASS; pilot Release and installed app refreshed. [Archived WP31](../archive/strategy/work-packages/P1-WP31-local-tp-tracking.md) retains red/green, concurrency, rollback, rebuild/export/restore and UI evidence. Display-only quotes, old/imported records and actual external fills are not silently promoted. |
 | P1-WP30 | CLOSED / BOUNDED COMPLETE | Free multi-asset journal entry, exact public quote provenance, explicit simulation and TradingView pending-observation boundary | Archived [P1-WP30](../archive/strategy/work-packages/P1-WP30-free-multi-asset-journal.md) with focused backend/regression **35 passed / 2 warnings** and current clean regression/local-CI evidence recorded above. No paid data/live order/release claim. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; the pilot team's Intel Mac may be the selected host if clean-profile attestation is supplied. Current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |

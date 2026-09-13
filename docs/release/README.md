@@ -19,8 +19,8 @@ source or a current product description.
 The three-person pilot distribution and technical validation path is documented in
 [`PILOT-DISTRIBUTION-RESEARCH.md`](PILOT-DISTRIBUTION-RESEARCH.md) and
 [`PILOT-INSTRUCTIONS.md`](PILOT-INSTRUCTIONS.md). The private GitHub Release now carries
-the two native architecture DMGs, evidence and checksums for users with repository read
-access. The earlier arm64-only package remains historical evidence; the current dual
+only the two native architecture DMGs for users with repository read access.
+Evidence and checksums remain in the audit package and Release notes. The earlier arm64-only package remains historical evidence; the current dual
 package includes the same explicit architecture boundary for both M-series and Intel users.
 The separate `pilot-v1.0.0-arm64` tag is a private prerelease transport identifier, not the
 canonical `v1.0.0` product release tag. That transport does not provide Apple Developer ID

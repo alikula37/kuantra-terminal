@@ -1,0 +1,127 @@
+{
+  "schema_version": "Kuantra.pilot-package.v1",
+  "package_type": "TRUSTED_MACOS_PILOT",
+  "pilot_scope": "MACOS_DUAL_NATIVE_ARCHITECTURES",
+  "generated_at_utc": "2026-09-12T22:08:11Z",
+  "product": {
+    "name": "Kuantra Terminal",
+    "version": "1.0.0",
+    "release_tag": "v1.0.0",
+    "positioning": "Local-first Execution Intelligence & Trade Forensics Workstation"
+  },
+  "source": {
+    "commit_sha": "4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0",
+    "tracked_source_tree_sha256": "79da8a6c9c4817943fafbcb55a93ccc33936227f42131af1a57f2487a3c306b8",
+    "lock_hashes": {
+      "backend_requirements_lock_sha256": "6291588602869af34e2a4db5d7244a627f4e139cbbd4b034b7cc07d890812399",
+      "frontend_package_lock_sha256": "396c757d5733e9618aa71f665aa3f23f5d53fcdaa8d9ff67c11d172464fcc6bc"
+    },
+    "truth_matrix_sha256": "8c647721dc2349cc8fd99d046bf14738121ac4f9a0b7c8b87cdb9f1ccfe681ab"
+  },
+  "truth_matrix": {
+    "path": "docs/release/truth-matrix.v1.0.0.json",
+    "document_id": "KTR-001",
+    "version": "1.0.0",
+    "sha256": "8c647721dc2349cc8fd99d046bf14738121ac4f9a0b7c8b87cdb9f1ccfe681ab"
+  },
+  "distribution": {
+    "transport": "private GitHub Release",
+    "repository_read_access_required": true,
+    "apple_developer_id": false,
+    "download_integrity": {
+      "sha256sums_required": true,
+      "hdiutil_verify_required": true,
+      "github_immutable_release_recommended": true
+    },
+    "artifact_status": "AD_HOC_TRUSTED_PILOT_ONLY",
+    "release_channel": "PRIVATE_PRERELEASE_PILOT",
+    "pilot_tag": null,
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "dual_architecture_complete": true,
+    "intel_artifact_included": true,
+    "production_ready": false,
+    "commercial_support": false,
+    "live_execution": false,
+    "notarized": false,
+    "github_release_replaces_apple_notarization": false
+  },
+  "access_boundary": {
+    "supported_os": "macOS 12 Monterey or later",
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "hardware_scope": "macOS 12 Monterey or later, native arm64 and x86_64",
+    "intel_support_claim": true,
+    "private_release_users_must_be_signed_in": true,
+    "manual_gatekeeper_approval_required_for_ad_hoc": true,
+    "no_public_download_claim": true
+  },
+  "artifacts": [
+    {
+      "filename": "Kuantra-Terminal-1.0.0-arm64.dmg",
+      "architecture": "arm64",
+      "platform": "macOS",
+      "minimum_os": "macOS 12 Monterey or later",
+      "size_bytes": 87746255,
+      "sha256": "03671ca814ba9299fcf47429cb0c585fbccd550e6201e747c5f2c2e5c32c5e93",
+      "final_smoke_report": "final-smoke-arm64.json",
+      "final_smoke_report_sha256": "01f5276288ce4d61cdad991eea905bc2fe3cbd3357970da8aed4b98010d19e0b",
+      "n05_report": "n05-macos-distribution-arm64.json",
+      "n05_report_sha256": "ef9805f1aa82b8aa7825f72761bc20a439eeaf1ec3c37c82e780d3e9f1548076",
+      "distribution_evidence": "AD_HOC_BLOCKED"
+    },
+    {
+      "filename": "Kuantra-Terminal-1.0.0-x86_64.dmg",
+      "architecture": "x86_64",
+      "platform": "macOS",
+      "minimum_os": "macOS 12 Monterey or later",
+      "size_bytes": 96938852,
+      "sha256": "e43e0026c118bff9ed338e9e8560dc3758c64fa9052de83d1a23977e906240c2",
+      "final_smoke_report": "final-smoke-x86_64.json",
+      "final_smoke_report_sha256": "1c0a42242f4becee8f1a78450d0ca4dde89871ea92d6c880cff80048f2926dbd",
+      "n05_report": "n05-macos-distribution-x86_64.json",
+      "n05_report_sha256": "3f0157111cedec837528d29f61e50119696897828d40221729eeddedc7d166cf",
+      "distribution_evidence": "AD_HOC_BLOCKED"
+    }
+  ],
+  "evidence": [
+    {
+      "filename": "final-smoke-arm64.json",
+      "sha256": "01f5276288ce4d61cdad991eea905bc2fe3cbd3357970da8aed4b98010d19e0b"
+    },
+    {
+      "filename": "n05-macos-distribution-arm64.json",
+      "sha256": "ef9805f1aa82b8aa7825f72761bc20a439eeaf1ec3c37c82e780d3e9f1548076"
+    },
+    {
+      "filename": "final-smoke-x86_64.json",
+      "sha256": "1c0a42242f4becee8f1a78450d0ca4dde89871ea92d6c880cff80048f2926dbd"
+    },
+    {
+      "filename": "n05-macos-distribution-x86_64.json",
+      "sha256": "3f0157111cedec837528d29f61e50119696897828d40221729eeddedc7d166cf"
+    }
+  ],
+  "included_files": [
+    "Kuantra-Terminal-1.0.0-arm64.dmg",
+    "Kuantra-Terminal-1.0.0-x86_64.dmg",
+    "final-smoke-arm64.json",
+    "n05-macos-distribution-arm64.json",
+    "final-smoke-x86_64.json",
+    "n05-macos-distribution-x86_64.json",
+    "PILOT-MANIFEST.json",
+    "SHA256SUMS",
+    "PILOT-INSTRUCTIONS.md"
+  ],
+  "claims": {
+    "production_ready": false,
+    "commercial_support": false,
+    "real_user_outcome": false,
+    "live_broker_execution": false,
+    "ai_order_authority": false
+  }
+}
