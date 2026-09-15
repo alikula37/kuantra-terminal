@@ -332,3 +332,45 @@ synthetic plan before the explicit `qty_unit=BASE` declaration existed (`122b6be
 were fixed and re-validated; the failure logs are retained in the run history. N05 remains
 `BLOCKED` (ad-hoc, no Developer ID/notarization) and the installed application was not
 modified.
+
+## Round-5: note-style status editing, form overflow and header cleanup
+
+Owner feedback after pilot use (2026-09-15):
+
+1. **A canceled trade can be edited and brought back.** The journal is a personal note
+   system, not a ledger with terminal states. The edit surface now exposes an explicit
+   Open / Closed / Canceled control for every trade:
+   - Canceled → Open: the record is restored and can immediately receive a local TP/SL plan
+     again; `is_tombstone` clears on rebuild.
+   - Canceled → Closed: requires user-reported exit price/time; P/L is computed only for an
+     explicitly declared base unit, otherwise it stays unknown.
+   - Closed → Open (reopen): clears the stored exit result on the row; the append-only
+     ledger keeps the previous price/time/PnL in the correction provenance, and the trade
+     leaves the closed-trade aggregates.
+   - Open → Closed from the editor: requires the realized exit price/time and records
+     `close_source=USER_REPORTED`.
+   - Completed trades keep their evidence protection: without a status change only notes
+     can be edited, and canceling a completed trade is status+notes only.
+   Every transition is revision-checked (409 on stale editors) and appears in the revision
+   history (`status`, `exit_price`, `exit_time`, `pnl` with previous values).
+
+2. **New Trade overflow fixed.** `margin_source_UNVERIFIED_CONTRACT_SIZE` and
+   `reason_TIME_IN_FUTURE` translation keys were missing, so raw keys rendered and
+   overran the derived-value grid. The keys are added in EN/TR/DE, and the derived panel
+   now stacks on narrow windows (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4`) with
+   `min-w-0`/`break-words` cells so long labels or currencies cannot overlap a neighbor.
+
+3. **Top header boxes removed.** The portfolio telemetry cards (total equity, open risk,
+   realized), the market-status badge and the event-age badge were removed from the top
+   bar. The header now carries only the brand plus functional controls (persona/LITE,
+   language, theme, API keys, GPU/vision when active, New Trade); it no longer polls the
+   portfolio endpoint. Portfolio numbers remain on the Dashboard.
+
+Evidence: backend `test_p1_wp32_trade_status_edits.py` **9 passed**; full backend
+**938 passed / 2 warnings**; frontend **37 files / 199 tests** (new status-control,
+reopen-notice, exit-required, canceled-restore and slim-header tests); `npx tsc --noEmit`
+clean; i18n **976/976/976**. Canonical Mac arm64 local CI on the working tree is
+**MERGE READY** (13/13), report `dist/p1-wp32-ui-round-local-ci.json` SHA-256
+`b2b9ab40dad3d9d76b544e22fc290cf855abf45d1be5ef8108b1ca00f4bf6f3a`, provenance
+`DEVELOPER_DIRTY` (uncommitted). The installed app and GitHub Releases were not changed by
+this round.

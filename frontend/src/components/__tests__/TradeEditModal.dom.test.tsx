@@ -284,3 +284,57 @@ it("saves a plan-only target change with its plan revision", async () => {
   expect(captured.patch.take_profit).toBeUndefined();
   expect(captured.patch.stop_loss).toBeUndefined();
 });
+
+it("restores a canceled trade to open from the status control", async () => {
+  const canceledTrade = { ...openTrade, status: "CANCELED", revision: 2 };
+  const captured = respond(canceledTrade);
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+
+  expect((host.querySelector("[data-testid=trade-edit-status-canceled]") as HTMLButtonElement).getAttribute("aria-pressed")).toBe("true");
+  await act(async () => (host.querySelector("[data-testid=trade-edit-status-open]") as HTMLButtonElement).click());
+  await act(async () => (host.querySelector("[data-testid=trade-edit-save]") as HTMLButtonElement).click());
+  await flush();
+
+  expect(captured.patch).toMatchObject({ status: "OPEN", expected_revision: 2 });
+});
+
+it("requires user-reported exit data when closing from the editor", async () => {
+  const captured = respond({ ...openTrade });
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+
+  await act(async () => (host.querySelector("[data-testid=trade-edit-status-closed]") as HTMLButtonElement).click());
+  expect(host.querySelector("[data-testid=trade-edit-exit-price]")).not.toBeNull();
+  await act(async () => (host.querySelector("[data-testid=trade-edit-save]") as HTMLButtonElement).click());
+  await flush();
+  expect(host.querySelector("[data-testid=trade-edit-error]")?.textContent).toContain("journal_edit.reason_exit_required");
+  expect(captured.patch).toBeUndefined();
+
+  await act(async () => setInputValue(host.querySelector("[data-testid=trade-edit-exit-price]") as HTMLInputElement, "110"));
+  await act(async () => setInputValue(host.querySelector("[data-testid=trade-edit-exit-time]") as HTMLInputElement, "2026-01-16T10:00"));
+  await act(async () => (host.querySelector("[data-testid=trade-edit-save]") as HTMLButtonElement).click());
+  await flush();
+
+  expect(captured.patch).toMatchObject({ status: "CLOSED", exit_price: 110 });
+  expect(captured.patch.exit_time).toBe("2026-01-16T07:00:00.000Z");
+});
+
+it("unlocks a completed trade when the editor selects Open", async () => {
+  const closedTrade = {
+    ...openTrade,
+    status: "CLOSED",
+    exit_price: 110,
+    exit_time: "2026-09-14T06:00:00Z",
+    revision: 3,
+  };
+  respond(closedTrade);
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+
+  expect(host.querySelector("[data-testid=trade-edit-closed-notice]")).not.toBeNull();
+  expect((host.querySelector("[data-testid=trade-edit-qty]") as HTMLInputElement).disabled).toBe(true);
+  await act(async () => (host.querySelector("[data-testid=trade-edit-status-open]") as HTMLButtonElement).click());
+  expect(host.querySelector("[data-testid=trade-edit-reopen-notice]")).not.toBeNull();
+  expect((host.querySelector("[data-testid=trade-edit-qty]") as HTMLInputElement).disabled).toBe(false);
+});

@@ -825,24 +825,24 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 </label>
               )}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm rounded border border-surface-border bg-[#0b0e14] p-3">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm rounded border border-surface-border bg-[#0b0e14] p-3">
+              <div className="min-w-0">
                 <span className="k-help block">{t("order_ticket.derived_notional")}</span>
-                <span className="font-semibold text-slate-100">{formatNotional(tradeSymbol, sizing.notional.value)}</span>
+                <span className="font-semibold text-slate-100 break-words">{formatNotional(tradeSymbol, sizing.notional.value)}</span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="k-help block">{t("order_ticket.derived_margin")}</span>
-                <span className="font-semibold text-slate-100">{formatNotional(tradeSymbol, sizing.marginEstimate.value)}</span>
-                <span className="block k-help">{t(`order_ticket.margin_source_${sizing.marginEstimate.source}`)}</span>
+                <span className="font-semibold text-slate-100 break-words">{formatNotional(tradeSymbol, sizing.marginEstimate.value)}</span>
+                <span className="block k-help break-words">{t(`order_ticket.margin_source_${sizing.marginEstimate.source}`)}</span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="k-help block">{t("order_ticket.derived_leverage")}</span>
-                <span className="font-semibold text-slate-100">{sizing.leverage.value ?? "—"}</span>
-                <span className="block k-help">{t(`order_ticket.leverage_source_${sizing.leverage.source}`)}</span>
+                <span className="font-semibold text-slate-100 break-words">{sizing.leverage.value ?? "—"}</span>
+                <span className="block k-help break-words">{t(`order_ticket.leverage_source_${sizing.leverage.source}`)}</span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="k-help block">{t("order_ticket.derived_contract")}</span>
-                <span className="font-semibold text-slate-100">{t(`order_ticket.verification_${sizing.instrument.verification}`)}</span>
+                <span className="font-semibold text-slate-100 break-words">{t(`order_ticket.verification_${sizing.instrument.verification}`)}</span>
               </div>
               <div className="col-span-full">
                 <label className="flex items-center gap-2 text-sm">
@@ -935,7 +935,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           <section className="k-card space-y-2" aria-labelledby="new-trade-section-summary" data-testid="new-trade-summary">
             <h4 id="new-trade-section-summary" className="k-section-title">{t("order_ticket.section_summary")}</h4>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.col_symbol")}</dt><dd className="font-semibold">{tradeSymbol}</dd></div>
+              <div className="flex justify-between gap-3 min-w-0"><dt className="text-slate-400">{t("order_ticket.col_symbol")}</dt><dd className="font-semibold break-words">{tradeSymbol}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.position_type")}</dt><dd className="font-semibold">{t(`order_ticket.side_${positionType === "SPOT" ? "spot" : positionType === "LONG" ? "buy" : "sell"}`)}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.col_time")}</dt><dd className="font-semibold">{t("order_ticket.summary_time", { value: tradeTime.replace("T", " ") })}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.status_label")}</dt><dd className="font-semibold">{t(tradeStatus === "OPEN" ? "order_ticket.status_still_open" : "order_ticket.status_already_closed")}</dd></div>

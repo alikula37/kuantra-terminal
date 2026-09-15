@@ -262,7 +262,9 @@
     "positions": "Pozisyon",
     "new_trade_btn": "YENİ İŞLEM",
     "portfolio_loading": "Portföy verileri yükleniyor...",
-    "portfolio_unavailable": "Portföy verileri kullanılamıyor"
+    "portfolio_unavailable": "Portföy verileri kullanılamıyor",
+    "language": "Dil",
+    "gpu_telemetry": "Yerel GPU hızlandırma ve telemetri"
   },
   "sidebar": {
     "lite_core_badge": "LİTE ÇEKİRDEK (0 Eklenti)",
@@ -575,7 +577,9 @@
     "qty_unit_base_label": "Kullanıcı beyanı: miktar, enstrümanın temel birimidir",
     "qty_unit_base_help": "Yalnız miktar birimini biliyorsanız işaretleyin (örn. BTC, hisse, ons). Sağlayıcı etiketi veya fiyat tek başına sözleşme büyüklüğünü doğrulamaz; beyan edilene kadar pozisyon büyüklüğü, teminat ve parasal K/Z hesaplanmaz.",
     "verification_EXPLICIT_QTY_UNIT": "Kullanıcı beyanı (temel birim)",
-    "verification_NONE": "Birim beyan edilmedi"
+    "verification_NONE": "Birim beyan edilmedi",
+    "margin_source_UNVERIFIED_CONTRACT_SIZE": "Sözleşme büyüklüğü doğrulanmadı",
+    "reason_TIME_IN_FUTURE": "Gerçekleşmiş işlem gelecekte olamaz."
   },
   "journal": {
     "title": "İŞLEM GÜNLÜĞÜ",
@@ -1002,8 +1006,7 @@
     "reason_revision_conflict": "İşlem siz düzenlerken değişti. Yeniden yükleyip tekrar deneyin.",
     "reason_partial_close_locked": "Kısmi kapanıştan sonra giriş fiyatı ve miktar kilitlidir; kapanış kanıtı değiştirilemez.",
     "reason_plan_invalid": "Yeni giriş fiyatı mevcut yerel TP/SL planını geçersiz kılıyor. Önce planı düzenleyin.",
-    "reason_closed_notes_only": "Tamamlanmış işlemde yalnızca not düzeltilebilir; gerçekleşen kapanış kanıttır.",
-    "reason_canceled": "İptal edilmiş işlem kalıcıdır ve düzenlenemez.",
+    "reason_closed_notes_only": "Tamamlanmış işlemde yalnızca not düzeltilebilir; diğer alanlar için durumu Açık yapın.",
     "reason_not_found": "İşlem bulunamadı.",
     "reason_entry_after_exit": "Giriş, çıkıştan sonra olamaz.",
     "reason_stop_wrong_side": "Stop zarar tarafında olmalı.",
@@ -1042,6 +1045,16 @@
     "reason_tracking_unit_unverified": "Yerel takip açık bir temel birim beyanı gerektirir (qty_unit=BASE); bu sembolün sözleşme/lot büyüklüğü doğrulanmadı.",
     "field_qty_unit": "Miktar birimi",
     "field_tracking_plan": "Yerel plan revizyonu",
-    "reason_qty_unit_invalid": "Miktar birimi BASE veya UNKNOWN olmalı."
+    "reason_qty_unit_invalid": "Miktar birimi BASE veya UNKNOWN olmalı.",
+    "field_status": "Durum",
+    "status_label": "İşlem durumu",
+    "status_open": "Açık",
+    "status_closed": "Kapalı",
+    "status_canceled": "İptal edildi",
+    "status_help": "İptal edilmiş ve kapanmış kayıtlar düzeltilebilir ve geri alınabilir; her değişiklik revizyonlanır.",
+    "reopen_notice": "Yeniden açmak, kayıtlı kapanış sonucunu temizler; önceki değerler düzeltme geçmişinde kalır.",
+    "reason_exit_required": "Bir işlemi kapatmak için gerçekleşen çıkış fiyatı ve saati gerekir.",
+    "reason_exit_fields_require_close": "Çıkış fiyatı ve saati yalnızca işlem kapatılırken girilebilir.",
+    "reason_status_invalid": "İşlem durumu açık, kapalı veya iptal edildi olmalı."
   }
 }

@@ -51,28 +51,22 @@ afterEach(async () => {
   host.remove();
 });
 
-it("does not render unavailable portfolio telemetry as zero values", async () => {
-  mocks.apiFetch.mockResolvedValue(response({ detail: "portfolio summary unavailable" }, 503));
-  await act(async () => root.render(<Header {...props} />));
+it("renders the slim header without portfolio telemetry boxes", async () => {
+  await act(async () => root.render(
+    <Header {...props} onOpenApiKeySettings={vi.fn()} onOpenPersonaSelector={vi.fn()} />,
+  ));
   await flush();
 
-  expect(host.querySelector("[data-testid=header-portfolio-unavailable]")?.textContent).toContain("portfolio summary unavailable");
+  // The header no longer fetches or displays portfolio cards.
+  expect(mocks.apiFetch).not.toHaveBeenCalled();
+  expect(host.textContent).not.toContain("header.total_equity");
+  expect(host.textContent).not.toContain("header.open_risk");
+  expect(host.textContent).not.toContain("header.today_realized");
+  expect(host.querySelector("[data-testid=header-portfolio-unavailable]")).toBeNull();
+  // Functional controls remain available.
+  expect(host.textContent).toContain("header.new_trade_btn");
+  expect(host.textContent).toContain("exchange.header_btn");
   expect(host.textContent).not.toContain("$0.00");
-});
-
-it("aborts the portfolio polling request when the header unmounts", async () => {
-  let requestSignal: AbortSignal | undefined;
-  const pending = new Promise<Response>(() => {});
-  mocks.apiFetch.mockImplementation((_path: string, init?: RequestInit) => {
-    requestSignal = init?.signal;
-    return pending;
-  });
-
-  await act(async () => root.render(<Header {...props} />));
-  await flush();
-  await act(async () => root.unmount());
-
-  expect(requestSignal?.aborted).toBe(true);
 });
 
 it("does not expose Chart Vision from the verified Quant persona", async () => {

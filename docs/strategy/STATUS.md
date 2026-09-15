@@ -236,6 +236,22 @@ fixed (`1fd0030`, `122b6be`) before the successful run. The prior `pilot-v1.0.0-
 prerelease remains as historical transport. The installed application on this Mac was not
 changed.
 
+**P1-WP32 round-5 pilot feedback (2026-09-15):** The journal now behaves like a personal
+note system: canceled trades are editable and can be restored to open or closed, completed
+trades can be reopened (the row's exit result is cleared while the ledger keeps the previous
+values), and an open trade can be closed from the editor with user-reported exit price/time
+(unknown P/L stays unknown for unverified units). Completed-trade evidence protection remains
+for edits without a status change. New Trade raw-key overflow was fixed by adding the missing
+`margin_source_UNVERIFIED_CONTRACT_SIZE` and `reason_TIME_IN_FUTURE` translations and making
+the derived panel responsive with `min-w-0`/`break-words`. The top header telemetry cards,
+market badge and age badge were removed; the header keeps only functional controls and no
+longer polls the portfolio endpoint. Evidence: focused status-edit tests **9 passed**, full
+backend **938 passed / 2 warnings**, frontend **37 files / 199 tests**, i18n
+**976/976/976**; local CI `MERGE READY` report
+`dist/p1-wp32-ui-round-local-ci.json` SHA-256
+`b2b9ab40dad3d9d76b544e22fc290cf855abf45d1be5ef8108b1ca00f4bf6f3a` (`DEVELOPER_DIRTY`).
+Uncommitted; installed app and Releases unchanged.
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel

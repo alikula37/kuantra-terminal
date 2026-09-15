@@ -15,6 +15,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
+from app.core.position_math import instrument_unit_basis
 from app.core.trade_rules import (
     TradeRuleError,
     normalize_leverage,
@@ -242,27 +243,38 @@ class TradeEditService:
                 "The trade changed since this editor was opened; reload before saving.",
             )
 
-        if status == "CANCELED":
+        requested_status = str(changes.get("status") or status).upper()
+        if requested_status not in {"OPEN", "CLOSED", "CANCELED"}:
             raise TradeEditError(
-                "TRADE_CANCELED_IMMUTABLE",
-                "A canceled trade is a permanent tombstone and cannot be edited.",
-                status_code=409,
+                "TRADE_STATUS_INVALID",
+                "Trade status must be OPEN, CLOSED or CANCELED.",
+                field="status",
             )
+        status_change = requested_status != status
         requested = {key: value for key, value in changes.items() if key in _OPEN_EDITABLE}
-        if status == "CLOSED":
+        if "exit_price" in changes or "exit_time" in changes:
+            if not (status_change and requested_status == "CLOSED"):
+                raise TradeEditError(
+                    "EXIT_FIELDS_REQUIRE_CLOSE",
+                    "Exit price and time can only be set while closing the trade.",
+                    field="exit_price" if "exit_price" in changes else "exit_time",
+                )
+        if status == "CLOSED" and not status_change:
             forbidden = sorted(set(requested) - _CLOSED_EDITABLE)
             if forbidden:
                 raise TradeEditError(
                     "TRADE_CLOSED_NOTES_ONLY",
-                    "A completed trade only allows note corrections; realized close data is evidence.",
+                    "A completed trade only allows note corrections; reopen it to change other fields.",
                     field=forbidden[0],
                 )
-        if status not in {"OPEN", "CLOSED"}:
-            raise TradeEditError(
-                "TRADE_STATUS_NOT_EDITABLE",
-                "This trade status does not allow edits.",
-                status_code=409,
-            )
+        if status == "CLOSED" and requested_status == "CANCELED":
+            forbidden = sorted(set(requested) - {"notes"})
+            if forbidden:
+                raise TradeEditError(
+                    "TRADE_CLOSED_NOTES_ONLY",
+                    "Canceling a completed trade only allows the status and notes change.",
+                    field=forbidden[0],
+                )
 
         if tracking_plan is not None and ({"stop_loss", "take_profit"} & set(requested)):
             raise TradeEditError(
@@ -272,7 +284,7 @@ class TradeEditService:
             )
 
         reference_time = now or datetime.now(timezone.utc)
-        tracking = self._tracking_state(trade_id) if status == "OPEN" else None
+        tracking = self._tracking_state(trade_id) if requested_status == "OPEN" else None
         has_closures = bool(tracking and tracking.get("closures"))
 
         payload: Dict[str, Any] = {"id": trade_id, "revision": current_revision + 1}
@@ -283,6 +295,78 @@ class TradeEditService:
                 return
             payload[field] = new_value
             changed[field] = {"from": old_value, "to": new_value}
+
+        if status_change:
+            apply("status", status, requested_status)
+            if requested_status == "OPEN":
+                # Reopening clears the recorded close result; the append-only
+                # ledger keeps the previous values in the correction provenance.
+                if existing.get("exit_price") is not None:
+                    apply("exit_price", _number(existing.get("exit_price")), None)
+                if existing.get("exit_time") is not None:
+                    apply("exit_time", str(existing.get("exit_time")), None)
+                if _number(existing.get("pnl")) not in (None, 0.0):
+                    apply("pnl", _number(existing.get("pnl")), 0.0)
+                if existing.get("r_multiple") is not None:
+                    apply("r_multiple", _number(existing.get("r_multiple")), None)
+                if existing.get("close_source"):
+                    apply("close_source", str(existing.get("close_source")), None)
+            elif requested_status == "CLOSED":
+                # Closing from the editor records a user-reported exit.
+                exit_price_value = (
+                    _number(changes.get("exit_price"))
+                    if "exit_price" in changes
+                    else _number(existing.get("exit_price"))
+                )
+                exit_time_raw = changes.get("exit_time") if "exit_time" in changes else existing.get("exit_time")
+                if exit_price_value is None or exit_price_value <= 0:
+                    raise TradeRuleError(
+                        "EXIT_REQUIRED_FOR_CLOSED",
+                        "Closing a trade requires the realized exit price and time.",
+                        field="exit_price",
+                    )
+                if not exit_time_raw:
+                    raise TradeRuleError(
+                        "EXIT_REQUIRED_FOR_CLOSED",
+                        "Closing a trade requires the realized exit price and time.",
+                        field="exit_time",
+                    )
+                parsed_exit = parse_user_time(str(exit_time_raw), field="exit_time", now=reference_time)
+                validate_not_future(parsed_exit, field="exit_time", now=reference_time)
+                parsed_entry = parse_user_time(str(existing.get("entry_time")), now=reference_time)
+                if parsed_exit < parsed_entry:
+                    raise TradeRuleError(
+                        "EXIT_BEFORE_ENTRY",
+                        "The exit cannot be earlier than the entry.",
+                        field="exit_time",
+                    )
+                side = str(existing.get("side") or "BUY")
+                qty_value = _number(payload.get("qty", existing.get("qty")))
+                entry_value = _number(payload.get("entry_price", existing.get("entry_price")))
+                unit_ready = instrument_unit_basis(
+                    existing.get("symbol"),
+                    qty_unit=payload.get("qty_unit", existing.get("qty_unit")),
+                )["contract_size"] == "BASE_UNIT"
+                commission_value = _number(existing.get("commission")) or 0.0
+                gross: Optional[float] = None
+                if unit_ready and qty_value is not None and entry_value is not None:
+                    direction = 1.0 if side in ("BUY", "LONG") else -1.0
+                    gross = direction * (exit_price_value - entry_value) * qty_value - commission_value
+                stop_value = _number(payload.get("stop_loss", existing.get("stop_loss")))
+                r_multiple_value = None
+                if gross is not None and stop_value:
+                    risk_unit = (
+                        (entry_value - stop_value) if side in ("BUY", "LONG") and entry_value > stop_value
+                        else (stop_value - entry_value) if side not in ("BUY", "LONG") and stop_value > entry_value
+                        else None
+                    )
+                    if risk_unit and qty_value and qty_value > 0:
+                        r_multiple_value = round(gross / (risk_unit * qty_value), 2)
+                apply("exit_price", _number(existing.get("exit_price")), exit_price_value)
+                apply("exit_time", existing.get("exit_time"), to_utc_iso(parsed_exit))
+                apply("pnl", _number(existing.get("pnl")), round(gross, 2) if gross is not None else None)
+                apply("r_multiple", _number(existing.get("r_multiple")), r_multiple_value)
+                apply("close_source", existing.get("close_source"), "USER_REPORTED")
 
         if "entry_price" in requested:
             new_entry = _number(requested["entry_price"])
@@ -349,7 +433,7 @@ class TradeEditService:
             apply("notes", str(existing.get("notes") or ""), notes)
 
         plan_dirty = False
-        if tracking_plan is not None and status == "OPEN":
+        if tracking_plan is not None and requested_status == "OPEN":
             plan_stop = _number(tracking_plan.get("stop_loss"))
             plan_targets = tracking_plan.get("targets") or []
             apply("stop_loss", _number(existing.get("stop_loss")), plan_stop)
@@ -456,7 +540,7 @@ class TradeEditService:
             "changed_fields": changed,
             "revision": int(updated.get("revision") or current_revision + 1),
             "no_change": False,
-            "tracking": self._tracking_state(trade_id) if status == "OPEN" else tracking,
+            "tracking": self._tracking_state(trade_id) if requested_status == "OPEN" else None,
         }
 
     @staticmethod

@@ -118,7 +118,12 @@ profilde yapılan deneme pilot runtime kanıtıdır; temiz profil kanıtı olara
   için yerel takip ancak kayıttan sonraki ilk uygun fiyat gözlemiyle başlar.
 - Jurnal satırındaki **Düzenle** ile giriş fiyatı, işlem zamanı, miktar, kaldıraç,
   notlar ve plan TP/SL değerleri düzeltilebilir. Kısmi kapanıştan sonra giriş
-  fiyatı ve miktar kilitlidir; tamamlanmış işlemde yalnızca not düzeltilebilir.
+  fiyatı ve miktar kilitlidir.
+- Düzenleme ekranındaki **durum** seçimiyle işlem açık, kapalı veya iptal edildi
+  yapılabilir: iptal edilmiş kayıt geri açılabilir, kapanmış kayıt yeniden açılabilir
+  (kayıtlı kapanış sonucu temizlenir, önceki değerler düzeltme geçmişinde kalır).
+  Bir işlemi kapatmak için gerçekleşen çıkış fiyatı ve saati gerekir; tamamlanmış
+  işlemde durum değiştirilmeden yalnızca not düzeltilebilir.
 - Her düzeltme revizyonlanır ve önceki değerler kanıt geçmişinde korunur; eski bir
   ekran yeni değişikliğin üzerine yazamaz.
 

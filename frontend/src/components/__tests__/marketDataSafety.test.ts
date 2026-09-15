@@ -1,11 +1,5 @@
 import { expect, it, vi } from "vitest";
 import { canClosePositionAtMarketPrice, requestPositionClose } from "../DashboardView";
-import { formatEventAge } from "../Header";
-
-it("renders an em dash until a measured market event age exists", () => {
-  expect(formatEventAge(null)).toBe("—");
-  expect(formatEventAge(10.4)).toBe("10ms");
-});
 
 it("rejects dashboard close actions without a finite positive market price", () => {
   expect(canClosePositionAtMarketPrice(null)).toBe(false);

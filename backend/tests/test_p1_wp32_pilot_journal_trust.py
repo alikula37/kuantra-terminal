@@ -504,19 +504,31 @@ def test_size_edit_rejects_plan_that_becomes_invalid(journal):
     assert response.json()["detail"]["reason"] == "TRACKING_PLAN_INVALID_AFTER_EDIT"
 
 
-def test_canceled_trade_is_immutable(journal):
-    _, client = journal
+def test_canceled_trade_is_editable_and_can_be_restored(journal):
+    driver, client = journal
     trade = _create(client)
     canceled = client.delete(f"/api/v1/trades/{trade['id']}")
     assert canceled.status_code == 200
     revision = canceled.json()["trade"]["revision"]
-    response = client.patch(
+
+    # A canceled trade is a note-style record now: fields and status can be
+    # corrected, and the ledger keeps every previous value.
+    notes = client.patch(
         f"/api/v1/trades/{trade['id']}",
         json={"expected_revision": revision, "notes": "late"},
     )
-    assert response.status_code == 409
-    assert response.json()["detail"]["reason"] == "TRADE_CANCELED_IMMUTABLE"
-    assert client.delete(f"/api/v1/trades/{trade['id']}").status_code == 409
+    assert notes.status_code == 200, notes.text
+    restored = client.patch(
+        f"/api/v1/trades/{trade['id']}",
+        json={"expected_revision": notes.json()["revision"], "status": "OPEN"},
+    )
+    assert restored.status_code == 200, restored.text
+    assert restored.json()["trade"]["status"] == "OPEN"
+    assert driver.get_trade(trade["id"])["status"] == "OPEN"
+    # Canceling again is allowed from the restored open state.
+    recanceled = client.delete(f"/api/v1/trades/{trade['id']}")
+    assert recanceled.status_code == 200
+    assert recanceled.json()["trade"]["status"] == "CANCELED"
 
 
 # -- quote refresh -------------------------------------------------------

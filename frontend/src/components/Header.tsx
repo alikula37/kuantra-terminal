@@ -1,38 +1,18 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { 
-  PlusCircle, 
-  Zap, 
-  Camera, 
-  Sun, 
-  Moon, 
-  Globe, 
-  Cpu, 
-  Wallet, 
-  ShieldAlert, 
-  Calendar,
+import React from "react";
+import {
+  PlusCircle,
+  Zap,
+  Camera,
+  Sun,
+  Moon,
+  Globe,
+  Cpu,
   Key
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useTranslation, SUPPORTED_LOCALES, Locale } from "../context/I18nContext";
 import { usePluginRegistry } from "../context/PluginRegistryContext";
-import { useMarketStore } from "../stores/marketStore";
 import { ExtensionSlot } from "./plugins/ExtensionSlot";
-import { apiFetch, apiUrl } from "../lib/backend";
-
-interface PortfolioSummary {
-  initial_balance: number;
-  total_equity: number;
-  net_pnl: number;
-  net_pnl_pct: number;
-  today_pnl: number;
-  today_pnl_pct: number;
-  today_trades_count: { wins: number; losses: number; total: number };
-  open_risk_usd: number;
-  open_risk_r: number;
-  active_positions_count: number;
-  win_rate: number;
-  profit_factor: number;
-}
 
 interface HeaderProps {
   onOpenNewTrade: () => void;
@@ -43,179 +23,36 @@ interface HeaderProps {
   onOpenApiKeySettings?: () => void;
 }
 
-const PORTFOLIO_NUMERIC_FIELDS: Array<keyof Omit<PortfolioSummary, "today_trades_count">> = [
-  "initial_balance", "total_equity", "net_pnl", "net_pnl_pct", "today_pnl", "today_pnl_pct",
-  "open_risk_usd", "open_risk_r", "active_positions_count", "win_rate", "profit_factor",
-];
-
-function isPortfolioSummary(value: unknown): value is PortfolioSummary {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Record<string, unknown>;
-  const counts = candidate.today_trades_count;
-  return PORTFOLIO_NUMERIC_FIELDS.every((field) => typeof candidate[field] === "number" && Number.isFinite(candidate[field]))
-    && !!counts && typeof counts === "object"
-    && ["wins", "losses", "total"].every((field) => typeof (counts as Record<string, unknown>)[field] === "number" && Number.isFinite((counts as Record<string, unknown>)[field]));
-}
-
-async function readPortfolioSummary(response: Response): Promise<PortfolioSummary> {
-  if (!response.ok) {
-    let detail = "";
-    try {
-      const payload = await response.json() as { detail?: unknown };
-      if (typeof payload.detail === "string") detail = payload.detail;
-    } catch {
-      // Keep the HTTP status as the bounded error when the body is not JSON.
-    }
-    throw new Error(detail || `Portfolio summary request failed (HTTP ${response.status})`);
-  }
-  const payload = await response.json();
-  if (!isPortfolioSummary(payload)) throw new Error("Portfolio summary response was incomplete");
-  return payload;
-}
-
-export function formatEventAge(eventAgeMs: number | null): string {
-  return Number.isFinite(eventAgeMs) ? `${Math.round(eventAgeMs as number)}ms` : "—";
-}
-
-export const Header: React.FC<HeaderProps> = ({ 
-  onOpenNewTrade, 
-  onOpenVisionUploader, 
+export const Header: React.FC<HeaderProps> = ({
+  onOpenNewTrade,
+  onOpenVisionUploader,
   onOpenGPUTelemetry,
   onOpenPersonaSelector,
-  onOpenInitialBalanceModal,
   onOpenApiKeySettings
 }) => {
-  const { eventAgeMs, marketDataStatus } = useMarketStore();
   const { theme, toggleTheme } = useTheme();
   const { locale, setLocale, t } = useTranslation();
   const { activePersona, isLiteMode, isPluginActive } = usePluginRegistry();
 
-  const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
-  const [portfolioError, setPortfolioError] = useState<string | null>(null);
-  const loadControllerRef = useRef<AbortController | null>(null);
-  const requestIdRef = useRef(0);
-
-  const fetchPortfolioSummary = useCallback(async () => {
-    loadControllerRef.current?.abort();
-    const controller = new AbortController();
-    const requestId = ++requestIdRef.current;
-    loadControllerRef.current = controller;
-    try {
-      const data = await apiFetch(apiUrl("/api/v1/portfolio/summary"), { signal: controller.signal }).then(readPortfolioSummary);
-      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
-      setPortfolio(data);
-      setPortfolioError(null);
-    } catch (err) {
-      if (controller.signal.aborted || requestId !== requestIdRef.current) return;
-      console.warn("[Header] Failed to fetch portfolio summary:", err);
-      setPortfolioError(err instanceof Error ? err.message : t("header.portfolio_unavailable"));
-    } finally {
-      if (requestId === requestIdRef.current) loadControllerRef.current = null;
-    }
-  }, [t]);
-
-  useEffect(() => {
-    void fetchPortfolioSummary();
-    const interval = setInterval(() => { void fetchPortfolioSummary(); }, 4000);
-    return () => {
-      clearInterval(interval);
-      requestIdRef.current += 1;
-      loadControllerRef.current?.abort();
-      loadControllerRef.current = null;
-    };
-  }, [fetchPortfolioSummary]);
-
-  const isNetPnlPositive = portfolio ? portfolio.net_pnl >= 0 : false;
-  const isTodayPnlPositive = portfolio ? portfolio.today_pnl >= 0 : false;
-
   return (
-    <header className="h-14 border-b border-surface-border bg-[#0d121c] flex items-center justify-between px-4 select-none shrink-0">
+    <header className="h-14 border-b border-surface-border bg-[#0d121c] flex items-center justify-between gap-3 px-4 select-none shrink-0">
       {/* Left: Brand Identity */}
-      <div className="flex items-center space-x-5">
-        <div className="flex items-center space-x-2">
-          <div className="w-7 h-7 rounded bg-gradient-to-tr from-accent to-blue-600 flex items-center justify-center font-black text-black text-sm">
-            K
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-sm tracking-wider text-slate-100 font-mono leading-none">
-              {isLiteMode ? "KUANTRA LITE" : "KUANTRA"}
-            </span>
-            <span className="text-[9px] text-accent font-mono tracking-widest leading-none mt-0.5">
-              {isLiteMode ? t("header.disciplined_core") : t("header.quant_terminal")}
-            </span>
-          </div>
+      <div className="flex items-center space-x-2 min-w-0">
+        <div className="w-7 h-7 rounded bg-gradient-to-tr from-accent to-blue-600 flex items-center justify-center font-black text-black text-sm shrink-0">
+          K
         </div>
-
-        <div className="h-6 w-[1px] bg-surface-border" />
-
-        {/* Portfolio-First Live Telemetry Strip */}
-        <div className="flex items-center space-x-4 font-mono text-xs">
-          {/* 1. Total Equity & Net PnL */}
-          <div 
-            onClick={onOpenInitialBalanceModal}
-            className={`flex items-center space-x-2 bg-[#111722] px-3 py-1 rounded border border-surface-border transition group ${
-              onOpenInitialBalanceModal ? "cursor-pointer hover:border-accent/60" : ""
-            }`}
-            title={t("header.set_initial_capital")}
-          >
-            <Wallet className="w-3.5 h-3.5 text-accent" />
-            <div className="flex flex-col" aria-busy={!portfolio}>
-              <span className="text-[9px] text-slate-500 font-semibold leading-tight group-hover:text-cyan-400 transition">
-                {t("header.total_equity")}
-              </span>
-              <div className="flex items-baseline space-x-1.5 leading-tight">
-                <span className="text-white font-bold text-xs group-hover:text-cyan-300 transition">
-                  {portfolio ? `$${portfolio.total_equity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                </span>
-                <span className={`text-[10px] font-bold ${isNetPnlPositive ? "text-gain" : "text-loss"}`}>
-                  {portfolio ? `${isNetPnlPositive ? "+" : ""}$${portfolio.net_pnl.toFixed(2)} (${isNetPnlPositive ? "+" : ""}${portfolio.net_pnl_pct.toFixed(1)}%)` : "—"}
-                </span>
-              </div>
-              {portfolioError && <span data-testid="header-portfolio-unavailable" className="text-[9px] text-amber-300 mt-1 break-words">{portfolioError}</span>}
-              {!portfolio && !portfolioError && <span data-testid="header-portfolio-loading" className="text-[9px] text-slate-500 mt-1">{t("header.portfolio_loading")}</span>}
-            </div>
-          </div>
-
-          {/* 2. Open Position Risk Exposure */}
-          <div className="hidden sm:flex items-center space-x-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
-            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-            <div className="flex flex-col">
-              <span className="text-[9px] text-slate-500 font-semibold leading-tight">
-                {t("header.open_risk")}
-              </span>
-              <div className="flex items-baseline space-x-1.5 leading-tight">
-                <span className="text-amber-400 font-bold text-xs">
-                  {portfolio ? `${portfolio.open_risk_r.toFixed(1)}R ($${portfolio.open_risk_usd.toFixed(2)})` : "—"}
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  {portfolio ? `| ${portfolio.active_positions_count} ${t("header.positions")}` : "—"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Today's Performance */}
-          <div className="hidden md:flex items-center space-x-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
-            <Calendar className="w-3.5 h-3.5 text-sky-400" />
-            <div className="flex flex-col">
-              <span className="text-[9px] text-slate-500 font-semibold leading-tight">
-                {t("header.today_realized")}
-              </span>
-              <div className="flex items-baseline space-x-1.5 leading-tight">
-                <span className={`font-bold text-xs ${isTodayPnlPositive ? "text-gain" : "text-loss"}`}>
-                  {portfolio ? `${isTodayPnlPositive ? "+" : ""}$${portfolio.today_pnl.toFixed(2)}` : "—"}
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  {portfolio ? `(${portfolio.today_trades_count.wins}W / ${portfolio.today_trades_count.losses}L)` : "—"}
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="flex flex-col min-w-0">
+          <span className="font-bold text-sm tracking-wide text-slate-100 leading-none truncate">
+            {isLiteMode ? "KUANTRA LITE" : "KUANTRA"}
+          </span>
+          <span className="k-help leading-none mt-0.5 truncate">
+            {isLiteMode ? t("header.disciplined_core") : t("header.quant_terminal")}
+          </span>
         </div>
       </div>
 
       {/* Right: Controls, Personas & Actions */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2 shrink-0">
         {/* Dynamic Plugin Header Extension Slots */}
         <ExtensionSlot slot="header" />
 
@@ -223,23 +60,24 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenPersonaSelector && (
           <button
             onClick={onOpenPersonaSelector}
-            className="flex items-center space-x-1.5 bg-gradient-to-r from-accent/20 to-blue-600/20 hover:from-accent/30 hover:to-blue-600/30 border border-accent/40 text-accent px-3 py-1 rounded-md text-xs font-mono font-bold transition shadow-sm hover:shadow-accent/10 active:scale-95"
+            className="flex items-center space-x-1.5 bg-gradient-to-r from-accent/20 to-blue-600/20 hover:from-accent/30 hover:to-blue-600/30 border border-accent/40 text-accent px-3 py-2 rounded-md text-sm font-bold transition shadow-sm hover:shadow-accent/10 active:scale-95 cursor-pointer"
             title={t("header.change_persona")}
           >
-            <Zap className="w-3.5 h-3.5 text-accent animate-pulse" />
-            <span className="uppercase text-[11px] font-extrabold tracking-wide">
-              {isLiteMode ? "⚡ LITE MODE" : `⚡ ${activePersona.replace("kuantra_", "").toUpperCase()} MODE`}
+            <Zap className="w-4 h-4 text-accent animate-pulse" />
+            <span className="uppercase tracking-wide">
+              {isLiteMode ? "LITE" : activePersona.replace("kuantra_", "").toUpperCase()}
             </span>
           </button>
         )}
 
         {/* Language Selector */}
-        <div className="flex items-center space-x-1 bg-[#111722] px-2 py-1 rounded border border-surface-border text-xs font-mono text-slate-300">
-          <Globe className="w-3.5 h-3.5 text-accent" />
+        <div className="flex items-center space-x-1 bg-[#111722] px-2 py-1.5 rounded border border-surface-border text-sm text-slate-300">
+          <Globe className="w-4 h-4 text-accent" />
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value as Locale)}
-            className="bg-transparent border-none text-white text-xs focus:outline-none cursor-pointer"
+            aria-label={t("header.language")}
+            className="bg-transparent border-none text-white text-sm focus:outline-none cursor-pointer"
           >
             {SUPPORTED_LOCALES.map((loc) => (
               <option key={loc.id} value={loc.id} className="bg-[#0d121c] text-white">
@@ -252,21 +90,21 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
-          className="p-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white rounded transition cursor-pointer"
+          className="p-2 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white rounded transition cursor-pointer"
           title={t(theme === "dark" ? "header.switch_to_light_theme" : "header.switch_to_dark_theme")}
           aria-label={t(theme === "dark" ? "header.switch_to_light_theme" : "header.switch_to_dark_theme")}
         >
-          {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-accent" />}
+          {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-accent" />}
         </button>
 
         {/* Exchange API Key Configuration Trigger */}
         {onOpenApiKeySettings && (
           <button
             onClick={onOpenApiKeySettings}
-            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white px-2.5 py-1 rounded text-xs font-mono transition cursor-pointer"
-            title="Configure Exchange API Keys"
+            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white px-2.5 py-2 rounded text-sm transition cursor-pointer"
+            title={t("exchange.header_btn")}
           >
-            <Key className="w-3.5 h-3.5 text-accent" />
+            <Key className="w-4 h-4 text-accent" />
             <span className="font-bold">{t("exchange.header_btn")}</span>
           </button>
         )}
@@ -275,41 +113,21 @@ export const Header: React.FC<HeaderProps> = ({
         {!isLiteMode && isPluginActive("plugin_ai_swarm") && onOpenGPUTelemetry && (
           <button
             onClick={onOpenGPUTelemetry}
-            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-purple-400 hover:text-purple-300 px-2.5 py-1 rounded text-xs font-mono transition"
-            title="Open Local GPU Acceleration & Telemetry Studio"
+            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-purple-400 hover:text-purple-300 px-2.5 py-2 rounded text-sm transition cursor-pointer"
+            title={t("header.gpu_telemetry")}
           >
-            <Cpu className="w-3.5 h-3.5 text-purple-400" />
+            <Cpu className="w-4 h-4 text-purple-400" />
             <span className="font-bold">GPU</span>
           </button>
         )}
 
-        {/* Exchange event age */}
-        <div
-          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded border text-xs font-mono ${
-            marketDataStatus === "LIVE"
-              ? "border-emerald-500/40 text-emerald-300"
-              : marketDataStatus === "DEGRADED"
-                ? "border-amber-500/50 text-amber-300"
-                : "border-slate-500/50 text-slate-400"
-          }`}
-          aria-label={`Market data ${marketDataStatus.toLowerCase()}`}
-          title="Market data provenance status"
-        >
-          <span className="font-bold">MARKET: {marketDataStatus}</span>
-        </div>
-        <div className="flex items-center space-x-1.5 bg-[#111722] px-2.5 py-1 rounded border border-surface-border text-xs font-mono">
-          <Zap className="w-3.5 h-3.5 text-accent" />
-          <span className="text-slate-400">AGE:</span>
-          <span className="text-accent font-bold">{formatEventAge(eventAgeMs)}</span>
-        </div>
-
         {isPluginActive("plugin_ai_swarm") && onOpenVisionUploader && (
           <button
             onClick={onOpenVisionUploader}
-            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white text-xs px-3 py-1.5 rounded transition"
-            title="Upload Chart Screenshot for Vision OCR"
+            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white text-sm px-3 py-2 rounded transition cursor-pointer"
+            title={t("dashboard.upload_chart_btn")}
           >
-            <Camera className="w-3.5 h-3.5 text-accent" />
+            <Camera className="w-4 h-4 text-accent" />
             <span>{t("dashboard.upload_chart_btn")}</span>
           </button>
         )}
@@ -317,9 +135,9 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Primary Trade Entry Action Button */}
         <button
           onClick={onOpenNewTrade}
-          className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-xs px-3 py-1.5 rounded transition shadow-md hover:shadow-cyan-500/20 active:scale-95"
+          className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-sm px-3 py-2 rounded transition shadow-md hover:shadow-cyan-500/20 active:scale-95 cursor-pointer"
         >
-          <PlusCircle className="w-3.5 h-3.5" />
+          <PlusCircle className="w-4 h-4" />
           <span>{t("header.new_trade_btn")}</span>
         </button>
       </div>

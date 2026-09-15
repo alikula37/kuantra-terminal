@@ -262,7 +262,9 @@
     "positions": "Positionen",
     "new_trade_btn": "NEUER TRADE",
     "portfolio_loading": "Portfoliodaten werden geladen...",
-    "portfolio_unavailable": "Portfoliodaten nicht verfügbar"
+    "portfolio_unavailable": "Portfoliodaten nicht verfügbar",
+    "language": "Sprache",
+    "gpu_telemetry": "Lokale GPU-Beschleunigung und Telemetrie"
   },
   "sidebar": {
     "lite_core_badge": "LITE-KERN (0 Plugins)",
@@ -575,7 +577,9 @@
     "qty_unit_base_label": "Nutzererklärung: Die Menge ist in der Basiseinheit des Instruments",
     "qty_unit_base_help": "Nur ankreuzen, wenn die Mengeneinheit bekannt ist (z. B. BTC, Aktien, Unzen). Ein Anbieter-Label oder ein Preis allein verifiziert die Kontraktgröße nicht; bis zur Erklärung bleiben Positionsgröße, Margin und Geld-P/L unberechnet.",
     "verification_EXPLICIT_QTY_UNIT": "Nutzererklärung (Basiseinheit)",
-    "verification_NONE": "Einheit nicht erklärt"
+    "verification_NONE": "Einheit nicht erklärt",
+    "margin_source_UNVERIFIED_CONTRACT_SIZE": "Kontraktgröße unverifiziert",
+    "reason_TIME_IN_FUTURE": "Ein realisierter Trade kann nicht in der Zukunft liegen."
   },
   "journal": {
     "title": "HANDELSJOURNAL",
@@ -1002,8 +1006,7 @@
     "reason_revision_conflict": "Der Trade hat sich während der Bearbeitung geändert. Neu laden und erneut versuchen.",
     "reason_partial_close_locked": "Einstiegspreis und Menge sind nach einem Teilabschluss gesperrt; der Abschlussnachweis ist unveränderlich.",
     "reason_plan_invalid": "Der neue Einstiegspreis macht den lokalen TP/SL-Plan ungültig; bearbeiten Sie zuerst den Plan.",
-    "reason_closed_notes_only": "Ein abgeschlossener Trade erlaubt nur Notizkorrekturen; der realisierte Abschluss ist Nachweis.",
-    "reason_canceled": "Ein stornierter Trade ist dauerhaft und kann nicht bearbeitet werden.",
+    "reason_closed_notes_only": "Ein abgeschlossener Trade erlaubt nur Notizkorrekturen; wählen Sie Offen für weitere Felder.",
     "reason_not_found": "Trade nicht gefunden.",
     "reason_entry_after_exit": "Der Einstieg kann nicht nach dem Ausstieg liegen.",
     "reason_stop_wrong_side": "Der Stop muss auf der Verlustseite liegen.",
@@ -1042,6 +1045,16 @@
     "reason_tracking_unit_unverified": "Die lokale Verfolgung benötigt eine ausdrückliche Basis-Einheit-Erklärung (qty_unit=BASE); die Kontrakt-/Lotgröße dieses Symbols ist nicht verifiziert.",
     "field_qty_unit": "Mengeneinheit",
     "field_tracking_plan": "Lokale Plan-Revision",
-    "reason_qty_unit_invalid": "Die Mengeneinheit muss BASE oder UNKNOWN sein."
+    "reason_qty_unit_invalid": "Die Mengeneinheit muss BASE oder UNKNOWN sein.",
+    "field_status": "Status",
+    "status_label": "Trade-Status",
+    "status_open": "Offen",
+    "status_closed": "Geschlossen",
+    "status_canceled": "Storniert",
+    "status_help": "Stornierte und abgeschlossene Einträge können korrigiert und zurückgeholt werden; jede Änderung wird revisioniert.",
+    "reopen_notice": "Beim Wiederöffnen wird das gespeicherte Abschlussergebnis geleert; die vorherigen Werte bleiben im Korrekturverlauf.",
+    "reason_exit_required": "Zum Schließen sind realisierter Ausstiegspreis und -zeit erforderlich.",
+    "reason_exit_fields_require_close": "Ausstiegspreis und -zeit können nur beim Schließen gesetzt werden.",
+    "reason_status_invalid": "Der Trade-Status muss offen, geschlossen oder storniert sein."
   }
 }

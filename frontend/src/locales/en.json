@@ -262,7 +262,9 @@
     "positions": "Positions",
     "new_trade_btn": "NEW TRADE",
     "portfolio_loading": "Portfolio data loading...",
-    "portfolio_unavailable": "Portfolio data unavailable"
+    "portfolio_unavailable": "Portfolio data unavailable",
+    "language": "Language",
+    "gpu_telemetry": "Local GPU acceleration and telemetry"
   },
   "sidebar": {
     "lite_core_badge": "LITE CORE (0 Plugins)",
@@ -575,7 +577,9 @@
     "qty_unit_base_label": "User declaration: the quantity is in the instrument's base unit",
     "qty_unit_base_help": "Only tick when you know the quantity unit (e.g. BTC, shares, ounces). A provider label or a price alone does not verify the contract size, so position size, margin and money P/L stay uncalculated until you declare it.",
     "verification_EXPLICIT_QTY_UNIT": "User declaration (base unit)",
-    "verification_NONE": "Unit not declared"
+    "verification_NONE": "Unit not declared",
+    "margin_source_UNVERIFIED_CONTRACT_SIZE": "Contract size unverified",
+    "reason_TIME_IN_FUTURE": "A realized trade cannot be in the future."
   },
   "journal": {
     "title": "TRADE LOGGING JOURNAL",
@@ -1002,8 +1006,7 @@
     "reason_revision_conflict": "The trade changed while you were editing. Reload and try again.",
     "reason_partial_close_locked": "Entry price and quantity are locked after a partial close; the close evidence is immutable.",
     "reason_plan_invalid": "The new entry price invalidates the existing local TP/SL plan; edit the plan first.",
-    "reason_closed_notes_only": "A completed trade only allows note corrections; the realized close is evidence.",
-    "reason_canceled": "A canceled trade is a permanent tombstone and cannot be edited.",
+    "reason_closed_notes_only": "A completed trade only allows note corrections; choose Open to edit other fields.",
     "reason_not_found": "Trade not found.",
     "reason_entry_after_exit": "The entry cannot be later than the exit.",
     "reason_stop_wrong_side": "The stop must sit on the loss side.",
@@ -1042,6 +1045,16 @@
     "reason_tracking_unit_unverified": "Local tracking needs an explicit base-unit declaration (qty_unit=BASE); the contract or lot size of this symbol is not verified.",
     "field_qty_unit": "Quantity unit",
     "field_tracking_plan": "Local plan revision",
-    "reason_qty_unit_invalid": "The quantity unit must be BASE or UNKNOWN."
+    "reason_qty_unit_invalid": "The quantity unit must be BASE or UNKNOWN.",
+    "field_status": "Status",
+    "status_label": "Trade status",
+    "status_open": "Open",
+    "status_closed": "Closed",
+    "status_canceled": "Canceled",
+    "status_help": "Canceled and completed records can be corrected and brought back; every change is revisioned.",
+    "reopen_notice": "Reopening clears the recorded exit result; the previous values stay in the correction history.",
+    "reason_exit_required": "Closing a trade requires the realized exit price and time.",
+    "reason_exit_fields_require_close": "Exit price and time can only be set while closing the trade.",
+    "reason_status_invalid": "Trade status must be open, closed or canceled."
   }
 }

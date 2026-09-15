@@ -257,15 +257,18 @@ class TradeEditSchema(BaseModel):
     take_profit: Optional[float] = Field(default=None, gt=0, le=10**15)
     notes: Optional[str] = Field(default=None, max_length=2000)
     qty_unit: Optional[Literal["BASE", "UNKNOWN"]] = None
+    status: Optional[Literal["OPEN", "CLOSED", "CANCELED"]] = None
+    exit_price: Optional[float] = Field(default=None, gt=0, le=10**15)
+    exit_time: Optional[str] = Field(default=None, min_length=1, max_length=64)
     local_tracking: Optional[TrackingEditSchema] = None
 
-    @field_validator("entry_time")
+    @field_validator("entry_time", "exit_time")
     @classmethod
     def _validate_entry_time(cls, value: Optional[str]) -> Optional[str]:
         if value is None:
             return None
         if any(ord(character) < 32 for character in value):
-            raise ValueError("entry time cannot contain control characters")
+            raise ValueError("time fields cannot contain control characters")
         cleaned = value.strip()
         return cleaned or None
 
