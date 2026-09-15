@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from app.core.position_math import instrument_unit_basis
 from app.services.market_data.instrument_catalog import instrument_catalog
 from app.db.sqlite_driver import sqlite_driver
+from app.services.quote_refresh import QuoteRefreshService, quote_refresh_service
 from app.services.trade_read_adapter import trade_read_adapter
 
 logger = logging.getLogger("portfolio_service")
@@ -89,6 +90,14 @@ class PortfolioAnalyticsService:
         A missing PnL (for example an unknown contract size) is never summed as
         a synthetic zero; those trades are counted separately and excluded from
         monetary aggregates.
+
+        ``total_equity`` stays the realized ledger (balance + closed results).
+        ``live_equity`` adds the mark-to-market result of open positions whose
+        unit is verified and whose quote this server already refreshed, and
+        reports its basis: COMPLETE (every open position priced), PARTIAL (some
+        excluded, see ``live_positions_unpriced``), or NOT_AVAILABLE (no open
+        position could be priced, so ``live_equity`` is null).  Open positions
+        without a fetched quote are never valued at their entry price.
         """
         balance = initial_balance if initial_balance is not None else self.get_configured_initial_balance()
         trades = trade_read_adapter.list_trades(limit=100000)
@@ -125,6 +134,13 @@ class PortfolioAnalyticsService:
         open_risk_usd = 0.0
         open_risk_r = 0.0
         unverified_open_positions = 0
+        unrealized_pnl_usd = 0.0
+        live_positions_covered = 0
+        live_positions_unpriced = 0
+        live_quotes_stale = False
+        oldest_live_age: Optional[float] = None
+        oldest_live_observed_at: Optional[str] = None
+        query_time = datetime.now(timezone.utc)
         for t in open_trades:
             entry = float(t.get("entry_price") or 0.0)
             qty = float(t.get("qty") or 0.0)
@@ -137,6 +153,7 @@ class PortfolioAnalyticsService:
             )["contract_size"] == "BASE_UNIT"
             if not verified_unit:
                 unverified_open_positions += 1
+                live_positions_unpriced += 1
                 continue
 
             if sl is not None and sl > 0:
@@ -152,7 +169,37 @@ class PortfolioAnalyticsService:
             open_risk_usd += trade_dollar_risk
             open_risk_r += 1.0  # 1R planned risk unit per open trade
 
+            # Mark-to-market reads only quotes this server already obtained for
+            # the trade's confirmed identity; a missing quote is counted, never
+            # replaced with an entry-price zero.
+            quote = quote_refresh_service.cached_quote(t)
+            if quote is None or quote.get("price") is None:
+                live_positions_unpriced += 1
+                continue
+            direction = 1.0 if side in ("BUY", "LONG") else -1.0
+            unrealized_pnl_usd += direction * (float(quote["price"]) - entry) * qty
+            live_positions_covered += 1
+            if quote.get("stale"):
+                live_quotes_stale = True
+            age = QuoteRefreshService._age_seconds(quote.get("observed_at"), query_time)
+            if age is not None and (oldest_live_age is None or age > oldest_live_age):
+                oldest_live_age = age
+                oldest_live_observed_at = quote.get("observed_at")
+
         active_positions_count = len(open_trades)
+
+        if live_positions_unpriced == 0:
+            live_equity_basis = "COMPLETE"
+        elif live_positions_covered == 0:
+            live_equity_basis = "NOT_AVAILABLE"
+        else:
+            live_equity_basis = "PARTIAL"
+
+        if open_trades and live_positions_covered == 0:
+            live_equity: Optional[float] = None
+        else:
+            live_equity = total_equity + unrealized_pnl_usd
+        unrealized_pnl_pct = (unrealized_pnl_usd / balance * 100.0) if balance > 0 else 0.0
 
         # 4. Win Rate, Profit Factor, and R-Multiple Math
         win_trades = [t for t in known_closed if float(t["pnl"]) > 0]
@@ -188,6 +235,15 @@ class PortfolioAnalyticsService:
         return {
             "initial_balance": round(balance, 2),
             "total_equity": round(total_equity, 2),
+            "live_equity": round(live_equity, 2) if live_equity is not None else None,
+            "live_equity_basis": live_equity_basis,
+            "unrealized_pnl_usd": round(unrealized_pnl_usd, 2),
+            "unrealized_pnl_pct": round(unrealized_pnl_pct, 2),
+            "live_positions_covered": live_positions_covered,
+            "live_positions_unpriced": live_positions_unpriced,
+            "live_quotes_stale": live_quotes_stale,
+            "oldest_live_quote_age_seconds": round(oldest_live_age, 3) if oldest_live_age is not None else None,
+            "oldest_live_quote_observed_at": oldest_live_observed_at,
             "net_pnl": round(net_pnl, 2),
             "net_pnl_pct": round(net_pnl_pct, 2),
             "today_pnl": round(today_pnl, 2),

@@ -24,6 +24,12 @@ seem not to work." Every refresh control was traced to its handler:
 | Biometrics "Refresh" | real devices + telemetry reads | works |
 | Settings "TRIGGER FULL DUAL-DB SYNC" | **only a 600ms `setTimeout` that printed "sync completed successfully"** — no request, no sync | fabricated |
 
+Owner decision (2026-09-15, second round): "açık işlemdeki zarar veya kar toplam
+kasayı etkilemiyor; sence bu doğru mu?" — the owner chose **live (mark-to-market)
+equity**: the total-cash card must move with the open positions' unrealized result,
+with the freshness of the prices visible and no fabricated values when no price was
+ever fetched.
+
 ## Ordered acceptance
 
 - [x] Settings dual-DB sync runs for real: `SyncPipeline.full_sync_report()` reports
@@ -37,6 +43,18 @@ seem not to work." Every refresh control was traced to its handler:
   `refreshNonce` that the open-positions table consumes, so prices, ages and
   unrealized K/Z move together with the KPI cards instead of waiting for the
   20s poll.
+- [x] Live equity: `portfolio/summary` keeps `total_equity` as the realized ledger
+  and adds `live_equity` (realized + mark-to-market of open positions), with an
+  explicit basis — `COMPLETE`, `PARTIAL` (`live_positions_unpriced` counted) or
+  `NOT_AVAILABLE` (`live_equity` is `null`) — plus `unrealized_pnl_usd/pct`,
+  `live_quotes_stale` and the oldest quote age. Mark-to-market reads only quotes
+  this server already fetched (`QuoteRefreshService.cached_quote`, no network on
+  the summary path); a position without a fetched quote is never valued at its
+  entry price.
+- [x] Dashboard card: shows "TOPLAM KASA (CANLI)" with the realized/open
+  breakdown, the oldest price age (or the stale last-known notice), the excluded
+  position count for partial coverage, and falls back to the realized ledger with
+  an explicit "no live price" note when nothing can be priced.
 - [x] EN/TR/DE strings for the new sync states; i18n parity check.
 - [x] Tests: backend endpoint outcomes (unavailable / synced / blocked) and
   frontend DOM tests for the sync states, the dashboard cascade and the nonce.
@@ -51,16 +69,28 @@ seem not to work." Every refresh control was traced to its handler:
 
 ## Evidence
 
+- `backend/tests/test_portfolio_service.py` **15 passed**: the three new
+  mark-to-market tests cover a fully priced book (long + short), partial coverage
+  with an unverifiable unit, an all-unpriced book (`live_equity` null), and a
+  failed refresh contributing only the explicitly stale last-known price with its
+  age.
 - `backend/tests/test_system_sync.py` **3 passed**: unavailable DuckDB reports
   `DUCKDB_UNAVAILABLE`, a ready evidence projection syncs and reports the count,
   and incomplete coverage is blocked without ever reaching DuckDB.
 - Existing `test_p1_wp02_trade_projection.py` full-sync tests keep passing through
   the refactored `full_sync()` delegation.
-- Frontend **39 files / 214 tests**: SettingsView reports real success/unavailable/
+- Frontend **39 files / 217 tests**: SettingsView reports real success/unavailable/
   blocked/failure states, the dashboard refresh increments the position-table
-  nonce, and the table issues a fresh quote refresh on a nonce bump.
-- Full backend **960 passed / 2 warnings**; i18n **993/993/993**; `npx tsc --noEmit`
+  nonce, the table issues a fresh quote refresh on a nonce bump, and the KPI card
+  renders the live/partial/fallback equity states with the realized-open breakdown
+  and price age.
+- Full backend **963 passed / 2 warnings**; i18n **999/999/999**; `npx tsc --noEmit`
   clean.
+- Live check on a copy of the owner database: before any quote refresh the summary
+  reports `live_equity: null` / `NOT_AVAILABLE`; after the quote refresh it reports
+  `live_equity: -3448.50` (`COMPLETE`, unrealized `-8520.00`, oldest age 0.005s) —
+  the open position's unrealized loss now moves the cash card exactly as the owner
+  requested.
 
 ### Clean build and installed-app update
 

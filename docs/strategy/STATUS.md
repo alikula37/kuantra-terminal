@@ -382,6 +382,22 @@ waiting for the 20s poll. Evidence: `test_system_sync.py` **3 passed**, full bac
 **960 passed / 2 warnings**, frontend **39 files / 214 tests**, i18n **993/993/993**,
 TypeScript clean.
 
+**P1-WP35 round 2 — live (mark-to-market) equity (2026-09-15):** Owner decision after
+"açık işlemdeki zarar/kâr toplam kasayı etkilemiyor; sence bu doğru mu?": the total-cash
+card now moves with open positions. `total_equity` stays the realized ledger;
+`live_equity` adds the mark-to-market result of open positions using only quotes the
+server already fetched (`QuoteRefreshService.cached_quote`, no network on the summary
+path), with `live_equity_basis` `COMPLETE|PARTIAL|NOT_AVAILABLE`, `unrealized_pnl_usd/pct`,
+`live_positions_unpriced`, `live_quotes_stale` and the oldest quote age; a position
+without a fetched quote is never valued at its entry price. The dashboard card shows
+"TOPLAM KASA (CANLI)" with the realized/open breakdown, price age or stale notice,
+partial-coverage count, and an explicit fallback note when nothing can be priced.
+Evidence: `test_portfolio_service.py` **15 passed** (three new mark-to-market tests),
+full backend **963 passed / 2 warnings**, frontend **39 files / 217 tests**, i18n
+**999/999/999**, TypeScript clean. Live check on a copy of the owner database: before a
+quote refresh `live_equity: null`; after it `live_equity: -3448.50` (COMPLETE,
+unrealized -8520.00).
+
 **P1-WP35 clean install (2026-09-15):** Source `ef89ae6` passed canonical arm64 local
 CI with `COMPLETE` provenance and a clean tree (backend **960**, frontend **39/214**, i18n
 **993/993/993**; report `7903e040…`, executable `a51f290f…`); arm64 DMG `66ae08f1…`

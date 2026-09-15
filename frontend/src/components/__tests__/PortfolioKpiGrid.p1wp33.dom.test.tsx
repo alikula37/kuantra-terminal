@@ -92,3 +92,69 @@ it("shows a computed average R only when R observations exist", async () => {
   expect(host.textContent).toContain("$120.50 (1 header.positions)");
   expect(host.textContent).not.toContain("portfolio.open_risk_unverified");
 });
+
+it("shows the live mark-to-market equity with realized/open breakdown and price age", async () => {
+  await act(async () => root.render(
+    <PortfolioKpiGrid
+      summary={{
+        ...baseSummary,
+        total_equity: 5071.5,
+        live_equity: 5095.25,
+        live_equity_basis: "COMPLETE",
+        unrealized_pnl_usd: 23.75,
+        live_positions_covered: 1,
+        live_positions_unpriced: 0,
+        live_quotes_stale: false,
+        oldest_live_quote_age_seconds: 12,
+      }}
+    />,
+  ));
+
+  expect(host.textContent).toContain("portfolio.total_equity_live");
+  expect(host.textContent).toContain("$5,095.25");
+  expect(host.textContent).toContain("portfolio.live_equity_breakdown:$5,071.50|+$23.75");
+  expect(host.textContent).toContain("portfolio.live_equity_age:12s");
+  expect(host.textContent).not.toContain("portfolio.live_equity_unavailable");
+});
+
+it("labels partial coverage and flags stale last-known prices", async () => {
+  await act(async () => root.render(
+    <PortfolioKpiGrid
+      summary={{
+        ...baseSummary,
+        live_equity: 5080,
+        live_equity_basis: "PARTIAL",
+        unrealized_pnl_usd: 8.5,
+        live_positions_covered: 1,
+        live_positions_unpriced: 2,
+        live_quotes_stale: true,
+        oldest_live_quote_age_seconds: 95,
+      }}
+    />,
+  ));
+
+  expect(host.textContent).toContain("portfolio.total_equity_live");
+  expect(host.textContent).toContain("portfolio.live_equity_stale");
+  expect(host.textContent).toContain("portfolio.live_equity_partial:2");
+  expect(host.textContent).not.toContain("portfolio.live_equity_age");
+});
+
+it("falls back to the realized ledger when no open position can be priced", async () => {
+  await act(async () => root.render(
+    <PortfolioKpiGrid
+      summary={{
+        ...baseSummary,
+        live_equity: null,
+        live_equity_basis: "NOT_AVAILABLE",
+        unrealized_pnl_usd: 0,
+        live_positions_covered: 0,
+        live_positions_unpriced: 1,
+      }}
+    />,
+  ));
+
+  expect(host.textContent).not.toContain("portfolio.total_equity_live");
+  expect(host.textContent).toContain("portfolio.total_equity");
+  expect(host.textContent).toContain("$5,071.50");
+  expect(host.textContent).toContain("portfolio.live_equity_unavailable");
+});

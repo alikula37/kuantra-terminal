@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { useTranslation } from "../../context/I18nContext";
+import { relativeAgeLabel } from "../../lib/tradeTime";
 
 export interface PortfolioSummaryData {
   initial_balance: number;
@@ -37,6 +38,14 @@ export interface PortfolioSummaryData {
   known_r_trades?: number;
   open_risk_basis?: "COMPLETE" | "PARTIAL" | "NOT_AVAILABLE";
   profit_factor_basis?: "READY" | "INFINITE_NO_LOSS";
+  live_equity?: number | null;
+  live_equity_basis?: "COMPLETE" | "PARTIAL" | "NOT_AVAILABLE";
+  unrealized_pnl_usd?: number;
+  unrealized_pnl_pct?: number;
+  live_positions_covered?: number;
+  live_positions_unpriced?: number;
+  live_quotes_stale?: boolean;
+  oldest_live_quote_age_seconds?: number | null;
 }
 
 interface PortfolioKpiGridProps {
@@ -67,6 +76,15 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
   const avgR = knownRTrades > 0 && summary.avg_r_multiple != null ? summary.avg_r_multiple : null;
   const isAvgRPositive = avgR != null && avgR >= 0;
   const openRiskBasis = summary.open_risk_basis ?? "COMPLETE";
+  const liveBasis = summary.live_equity_basis ?? "COMPLETE";
+  const liveEquity = summary.live_equity ?? null;
+  const showLiveEquity = liveEquity != null && liveBasis !== "NOT_AVAILABLE";
+  const unrealized = summary.unrealized_pnl_usd ?? 0;
+  const unpricedLive = summary.live_positions_unpriced ?? 0;
+  const liveQuoteAge = summary.oldest_live_quote_age_seconds ?? null;
+  const money = (value: number) =>
+    `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const signedMoney = (value: number) => `${value >= 0 ? "+" : "-"}${money(Math.abs(value))}`;
   const drawdownPct = Math.abs(summary.max_drawdown_pct) < 0.005 ? 0 : summary.max_drawdown_pct;
   const infiniteProfitFactor = (summary.profit_factor_basis ?? (summary.profit_factor >= 999 ? "INFINITE_NO_LOSS" : "READY")) === "INFINITE_NO_LOSS";
 
@@ -83,7 +101,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
         <div className="flex items-center justify-between text-slate-400">
           <div className="flex items-center space-x-1">
             <span className="text-[10px] uppercase font-semibold tracking-wider">
-              {t("portfolio.total_equity")}
+              {showLiveEquity ? t("portfolio.total_equity_live") : t("portfolio.total_equity")}
             </span>
             {onOpenInitialBalanceModal && (
               <Edit2 className="w-2.5 h-2.5 text-slate-500 group-hover:text-accent transition opacity-60 group-hover:opacity-100" />
@@ -93,12 +111,38 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
         </div>
         <div className="mt-1">
           <div className="text-base font-bold text-white group-hover:text-cyan-300 transition">
-            ${summary.total_equity.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {money(showLiveEquity ? (liveEquity as number) : summary.total_equity)}
           </div>
           <div className={`text-[11px] font-semibold flex items-center mt-0.5 ${isNetPnlPositive ? "text-gain" : "text-loss"}`}>
             {isNetPnlPositive ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
             <span>{isNetPnlPositive ? "+" : ""}${summary.net_pnl.toFixed(2)} ({isNetPnlPositive ? "+" : ""}{summary.net_pnl_pct.toFixed(1)}%)</span>
           </div>
+          {summary.active_positions_count > 0 && (
+            <div className="text-[10px] text-slate-400 mt-0.5 leading-tight" data-testid="live-equity-detail">
+              {showLiveEquity ? (
+                <>
+                  <span>
+                    {t("portfolio.live_equity_breakdown", {
+                      realized: money(summary.total_equity),
+                      open: signedMoney(unrealized),
+                    })}
+                  </span>
+                  <span className="block">
+                    {summary.live_quotes_stale
+                      ? t("portfolio.live_equity_stale")
+                      : liveQuoteAge != null
+                        ? t("portfolio.live_equity_age", { age: relativeAgeLabel(liveQuoteAge) })
+                        : ""}
+                    {liveBasis === "PARTIAL" && unpricedLive > 0
+                      ? ` · ${t("portfolio.live_equity_partial", { count: unpricedLive })}`
+                      : ""}
+                  </span>
+                </>
+              ) : (
+                <span>{t("portfolio.live_equity_unavailable")}</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

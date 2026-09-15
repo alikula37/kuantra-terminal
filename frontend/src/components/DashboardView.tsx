@@ -51,7 +51,10 @@ function isPortfolioSummaryData(value: unknown): value is PortfolioSummaryData {
     "profit_factor", "max_drawdown_usd", "max_drawdown_pct",
   ];
   const avgRKnown = candidate["avg_r_multiple"] === null || isFiniteNumber(candidate["avg_r_multiple"]);
-  return avgRKnown && numericFields.every((field) => isFiniteNumber(candidate[field]))
+  const liveEquityKnown = candidate["live_equity"] === undefined
+    || candidate["live_equity"] === null
+    || isFiniteNumber(candidate["live_equity"]);
+  return avgRKnown && liveEquityKnown && numericFields.every((field) => isFiniteNumber(candidate[field]))
     && !!counts && typeof counts === "object"
     && ["wins", "losses", "total"].every((field) => isFiniteNumber((counts as Record<string, unknown>)[field]));
 }

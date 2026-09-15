@@ -295,7 +295,13 @@
     "no_losses": "Henüz kayıp yok",
     "no_r_data": "R verisi yok (stop girilmemiş)",
     "r_over_trades": "{count} işlemde R",
-    "open_risk_unverified": "{count} pozisyonun birimi doğrulanmadı; risk hesaplanamıyor"
+    "open_risk_unverified": "{count} pozisyonun birimi doğrulanmadı; risk hesaplanamıyor",
+    "total_equity_live": "TOPLAM KASA (CANLI)",
+    "live_equity_breakdown": "Gerçekleşen {realized} · Açık {open}",
+    "live_equity_partial": "{count} pozisyon hariç (fiyat yok)",
+    "live_equity_age": "en eski fiyat: {age}",
+    "live_equity_stale": "son bilinen fiyatlar kullanılıyor",
+    "live_equity_unavailable": "Açık pozisyonlar için canlı fiyat yok; kasa gerçekleşen değeri gösteriyor."
   },
   "equity_curve": {
     "loading": "Kümülatif Kasa Eğrisi Yükleniyor...",

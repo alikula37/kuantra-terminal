@@ -295,7 +295,13 @@
     "no_losses": "No losses yet",
     "no_r_data": "No R data (no stop recorded)",
     "r_over_trades": "R over {count} trades",
-    "open_risk_unverified": "{count} position(s) with an unverified unit; risk not calculated"
+    "open_risk_unverified": "{count} position(s) with an unverified unit; risk not calculated",
+    "total_equity_live": "TOTAL EQUITY (LIVE)",
+    "live_equity_breakdown": "Realized {realized} · Open {open}",
+    "live_equity_partial": "{count} position(s) excluded (no price)",
+    "live_equity_age": "oldest price: {age}",
+    "live_equity_stale": "using last known prices",
+    "live_equity_unavailable": "No live price for open positions; equity shows the realized value."
   },
   "equity_curve": {
     "loading": "Loading Cumulative Equity Curve...",

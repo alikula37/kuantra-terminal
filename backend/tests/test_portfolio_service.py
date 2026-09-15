@@ -4,6 +4,9 @@ Validates multi-asset classification, R-multiple exposure, equity curve progress
 peak-to-trough drawdown math, daily heatmap aggregation, and REST API endpoints.
 """
 
+import asyncio
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
@@ -14,7 +17,33 @@ from app.services.portfolio_service import (
     classify_asset_class
 )
 from app.db.sqlite_driver import sqlite_driver
+from app.services.quote_refresh import QuoteRefreshService
 from app.services.trade_read_adapter import trade_read_adapter
+
+
+class _FakeQuoteFetcher:
+    def __init__(self, prices):
+        self.prices = prices
+
+    async def fetch_quote(self, symbol, source):
+        if symbol not in self.prices:
+            raise RuntimeError("no quote configured")
+        return {
+            "status": "LIVE",
+            "price": self.prices[symbol],
+            "price_kind": "LAST",
+            "source_id": source,
+            "source_symbol": symbol,
+            "observed_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+
+def _quote_service(monkeypatch, trades, prices):
+    fetcher = _FakeQuoteFetcher(prices)
+    service = QuoteRefreshService(fetcher=fetcher)
+    asyncio.run(service.refresh(trades))
+    monkeypatch.setattr("app.services.portfolio_service.quote_refresh_service", service)
+    return service
 
 
 class TestPortfolioAnalyticsService:
@@ -217,6 +246,99 @@ class TestPortfolioAnalyticsService:
         assert summary["open_risk_basis"] == "NOT_AVAILABLE"
         assert summary["open_risk_usd"] == 0.0
         assert summary["open_risk_r"] == 0.0
+
+    def test_live_equity_prices_open_positions_from_refreshed_quotes(self, monkeypatch):
+        """Mark-to-market equity adds covered open results to the realized ledger."""
+        service = PortfolioAnalyticsService(default_initial_balance=100000.0)
+        mock_trades = [
+            {"id": "C-1", "symbol": "BTCUSDT", "status": "CLOSED", "pnl": 50.0,
+             "qty_unit": "BASE", "exit_time": "2026-08-28T16:00:00Z"},
+            {"id": "O-1", "symbol": "BTCUSDT", "status": "OPEN", "side": "BUY",
+             "entry_price": 100.0, "qty": 2.0, "qty_unit": "BASE",
+             "price_source": "binance_public", "price_source_symbol": "BTCUSDT"},
+            {"id": "O-2", "symbol": "ETHUSDT", "status": "OPEN", "side": "SELL",
+             "entry_price": 200.0, "qty": 1.0, "qty_unit": "BASE",
+             "price_source": "binance_public", "price_source_symbol": "ETHUSDT"},
+        ]
+        _quote_service(monkeypatch, mock_trades, {"BTCUSDT": 110.0, "ETHUSDT": 190.0})
+
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
+            summary = service.get_portfolio_summary()
+
+        assert summary["total_equity"] == 100050.0
+        assert summary["unrealized_pnl_usd"] == 30.0  # +20 long, +10 short
+        assert summary["live_equity"] == 100080.0
+        assert summary["live_equity_basis"] == "COMPLETE"
+        assert summary["live_positions_covered"] == 2
+        assert summary["live_positions_unpriced"] == 0
+        assert summary["live_quotes_stale"] is False
+        assert summary["oldest_live_quote_age_seconds"] is not None
+        assert summary["unrealized_pnl_pct"] == pytest.approx(0.03, abs=0.001)
+
+    def test_live_equity_basis_distinguishes_partial_and_unavailable(self, monkeypatch):
+        """An unpriced or unverified position is counted, never valued at entry price."""
+        service = PortfolioAnalyticsService(default_initial_balance=100000.0)
+        mock_trades = [
+            {"id": "O-1", "symbol": "BTCUSDT", "status": "OPEN", "side": "BUY",
+             "entry_price": 100.0, "qty": 1.0, "qty_unit": "BASE",
+             "price_source": "binance_public", "price_source_symbol": "BTCUSDT"},
+            {"id": "O-2", "symbol": "XAUUSD", "status": "OPEN", "side": "BUY",
+             "entry_price": 2000.0, "qty": 1.0, "qty_unit": "UNKNOWN"},
+        ]
+        _quote_service(monkeypatch, mock_trades, {"BTCUSDT": 105.0})
+
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
+            summary = service.get_portfolio_summary()
+        assert summary["live_equity_basis"] == "PARTIAL"
+        assert summary["live_positions_covered"] == 1
+        assert summary["live_positions_unpriced"] == 1
+        assert summary["unrealized_pnl_usd"] == 5.0
+        assert summary["live_equity"] == 100005.0
+
+        unpriced_only = [mock_trades[0].copy(), {
+            "id": "O-3", "symbol": "GOLD", "status": "OPEN", "side": "BUY",
+            "entry_price": 2000.0, "qty": 1.0, "qty_unit": "UNKNOWN",
+        }]
+        _quote_service(monkeypatch, unpriced_only, {})
+        with patch.object(trade_read_adapter, "list_trades", return_value=unpriced_only):
+            summary = service.get_portfolio_summary()
+        assert summary["live_equity"] is None
+        assert summary["live_equity_basis"] == "NOT_AVAILABLE"
+        assert summary["unrealized_pnl_usd"] == 0.0
+        assert summary["total_equity"] == 100000.0
+
+    def test_live_equity_uses_stale_last_known_and_flags_it(self, monkeypatch):
+        """A failed refresh can only contribute the explicitly stale last known price."""
+        service = PortfolioAnalyticsService(default_initial_balance=100000.0)
+        mock_trades = [
+            {"id": "O-1", "symbol": "BTCUSDT", "status": "OPEN", "side": "BUY",
+             "entry_price": 100.0, "qty": 1.0, "qty_unit": "BASE",
+             "price_source": "binance_public", "price_source_symbol": "BTCUSDT"},
+        ]
+        quote_service = QuoteRefreshService(fetcher=_FakeQuoteFetcher({}))
+        observed = (datetime.now(timezone.utc) - timedelta(seconds=90)).isoformat()
+        quote_service._cache[("binance_public", "BTCUSDT")] = {
+            "kind": "error",
+            "reason": "PROVIDER_UNAVAILABLE",
+            "failures": 1,
+            "retry_at": datetime.now(timezone.utc) + timedelta(seconds=60),
+            "last_known_quote": {
+                "status": "LIVE", "price": 108.0, "price_kind": "LAST",
+                "source_id": "binance_public", "source_symbol": "BTCUSDT",
+                "observed_at": observed,
+            },
+        }
+        monkeypatch.setattr("app.services.portfolio_service.quote_refresh_service", quote_service)
+
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
+            summary = service.get_portfolio_summary()
+
+        assert summary["unrealized_pnl_usd"] == 8.0
+        assert summary["live_equity"] == 100008.0
+        assert summary["live_equity_basis"] == "COMPLETE"
+        assert summary["live_quotes_stale"] is True
+        assert summary["oldest_live_quote_age_seconds"] >= 89.0
+        assert summary["oldest_live_quote_observed_at"] == observed
 
     def test_daily_pnl_heatmap_aggregation(self):
         """Validates daily aggregation, win rate, and intensity normalization for calendar heatmap."""

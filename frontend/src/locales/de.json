@@ -295,7 +295,13 @@
     "no_losses": "Noch keine Verluste",
     "no_r_data": "Keine R-Daten (kein Stop erfasst)",
     "r_over_trades": "R über {count} Trades",
-    "open_risk_unverified": "{count} Position(en) mit unverifizierter Einheit; Risiko nicht berechnet"
+    "open_risk_unverified": "{count} Position(en) mit unverifizierter Einheit; Risiko nicht berechnet",
+    "total_equity_live": "GESAMTKASSE (LIVE)",
+    "live_equity_breakdown": "Realisiert {realized} · Offen {open}",
+    "live_equity_partial": "{count} Position(en) ausgenommen (kein Kurs)",
+    "live_equity_age": "ältester Kurs: {age}",
+    "live_equity_stale": "letzte bekannte Kurse werden verwendet",
+    "live_equity_unavailable": "Kein Live-Kurs für offene Positionen; die Kasse zeigt den realisierten Wert."
   },
   "equity_curve": {
     "loading": "Kumulative Kapitalkurve wird geladen...",

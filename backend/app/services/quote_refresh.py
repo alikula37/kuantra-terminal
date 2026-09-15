@@ -124,6 +124,39 @@ class QuoteRefreshService:
             "quote_status": quote.get("status"),
         }
 
+    def cached_quote(self, trade: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Read the last refreshed quote for one trade without any network call.
+
+        Returns the freshest price this server already obtained — a LIVE quote
+        or the explicit stale "last known" value after a failure — together
+        with its observation time and source status.  ``None`` means no quote
+        was ever fetched for this trade's confirmed identity, so mark-to-market
+        math must not invent one.
+        """
+
+        identity = self._identity(trade)
+        if identity is None:
+            return None
+        entry = self._cache.get(identity)
+        if not entry:
+            return None
+        if entry.get("kind") == "quote":
+            quote = entry.get("quote") or {}
+            stale = False
+        else:
+            quote = entry.get("last_known_quote") or {}
+            stale = True
+        if quote.get("price") is None:
+            return None
+        return {
+            "price": quote.get("price"),
+            "status": quote.get("status"),
+            "observed_at": quote.get("observed_at"),
+            "source_id": quote.get("source_id") or identity[0],
+            "source_symbol": quote.get("source_symbol") or identity[1],
+            "stale": stale,
+        }
+
     async def _fetch_identity(
         self,
         identity: QuoteIdentity,
