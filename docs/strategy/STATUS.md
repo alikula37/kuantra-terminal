@@ -277,7 +277,7 @@ ad-hoc/trusted-pilot-only boundary is unchanged.
 **Security patch train (2026-09-15):** the security follow-up (dependency OSV scan, crafted-ZIP
 validation, migration manifest ceiling) advances the trusted pilot artifacts to `v1.1.1`.
 [`truth-matrix.v1.1.1.json`](../release/truth-matrix.v1.1.1.json) is the current accepted
-matrix; the private transport release remains `pilot-v1.1.0` (assets replaced, tag not moved)
+matrix; the pilot prerelease is `pilot-v1.1.1`, whose tag points at the verified build commit,
 and the canonical product Release/tag stays unpublished.
 
 **v1.1.0 pilot prerelease published (2026-09-15, owner-authorized):** GitHub Actions
@@ -750,19 +750,43 @@ place, tag not moved). Build/CI/install hashes are recorded in the follow-up evi
 the same commit (arm64 executable `a9db9c46…`, x86_64 `77b692e9…`) with native and
 exact mounted-DMG smoke PASS; the pilot-package `SHA256SUMS` verified locally; a local native
 arm64 exact-DMG smoke passed (`dist/security-followup-arm64-exact-dmg-smoke.json` SHA-256
-`446e894cc69e61ead37ceefd76ff977657d3cca899000f330200742f3594d0bd`). The existing
-`pilot-v1.1.0` prerelease now carries exactly two assets —
-`Kuantra-Terminal-1.1.1-arm64.dmg` SHA-256
-`df4656bce6e7f841a6981cde0ad6347042e10ad102f98dc305a3775cac65961a` and
-`Kuantra-Terminal-1.1.1-x86_64.dmg` SHA-256
-`a541ce7dc94a418bd3f98234798e99b63bcf950d803758061745e2e34742d436` — with digests matching
-`SHA256SUMS`; the transport tag was **not moved** (it still targets `122b6bef…`) and the
-release body was refreshed from the marker-delimited notes.
+`446e894cc69e61ead37ceefd76ff977657d3cca899000f330200742f3594d0bd`). The two assets were
+first attached to the `pilot-v1.1.0` prerelease; the later release-identity correction below
+moved them to a dedicated `pilot-v1.1.1` release.
 `/Applications/Kuantra Terminal.app` was replaced with the verified arm64 artifact (installed
 executable `a9db9c46…`, `codesign` structure OK, launch verified, previous bundle retained at
 `/tmp/kuantra-v111-update.kUez7y`, user data preserved). The installed signature remains
 ad-hoc (`TeamIdentifier=not set`): Developer ID signing/notarization is still **absent** and
 remains an open pilot/distribution gate.
+
+**Release-identity correction (2026-09-15, owner-authorized):** the 1.1.1 DMGs had been
+attached to the `pilot-v1.1.0` prerelease whose tag targets the older `122b6bef…` commit,
+leaving a Release–tag–package mismatch. Corrected by creating the lightweight tag
+`pilot-v1.1.1` on the verified build commit `6c1e03c9c8a42f2e32d8c730beab828482338506` and a
+new prerelease `pilot-v1.1.1` carrying exactly the two already-verified DMGs (arm64
+`df4656bc…`, x86_64 `a541ce7d…`, downloaded back and re-hashed after upload). Only after that
+verification, the `pilot-v1.1.0` prerelease was marked superseded (title/body redirect, no
+downloads) and its wrongly-attributed 1.1.1 assets were removed; the old tag was not moved and
+no history was rewritten. **Binary-affecting follow-up found:** the app's update button opens a
+hardcoded URL (`frontend/src/components/updater/UpdateNotifier.tsx` →
+`releases/tag/pilot-v1.0.0-arm64`), so the installed 1.1.1 app still points at the oldest
+pilot release and does **not** yet find `pilot-v1.1.1`. Fixing this requires a frontend change,
+i.e. a new binary; per instruction the 1.1.1 packages were not replaced. Bounded patch plan
+(not started): update the update-mechanism URL (prefer a stable pointer such as the releases
+index or the current pilot tag), rebuild both DMGs from one clean commit, re-run
+native/exact-DMG smoke, publish as `pilot-v1.1.2`, then update the installed app.
+
+**Vitest advisory assessment (2026-09-15):** `GHSA-82fw-gwwq-j7x9` / `CVE-2026-84373`
+(`@vitest/mocker` redirect-mock path traversal, CVSS 5.9 moderate) was reviewed from the
+official advisory. The unauthenticated path requires a third-party dev server using the public
+`mockerPlugin`/`interceptorPlugin` on a reachable Vite HMR socket; `vitest` itself does not
+load that plugin in this repository (no `@vitest/mocker` imports, no browser mode, no
+`--api`/`--host`, `vitest run` with the node environment in ephemeral CI). No reachable
+exploit path exists in the current developer/CI usage; the finding stays open as a
+**dev-toolchain** item because the fix exists only in vitest 4.1.11+ (3.x is unmaintained and
+will not receive it). Bounded fix (not started): upgrade the dev-only vitest dependency to
+4.1.11 and run the full frontend suite; no app/runtime binary impact. Details:
+`security-report/dependency-audit.md`.
 
 ## Selected next work
 

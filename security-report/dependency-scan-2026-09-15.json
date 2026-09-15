@@ -45,7 +45,7 @@
           ],
           "severity": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N (npm: moderate)",
           "fixed_versions": ["4.1.11", "5.0.0-rc.2"],
-          "disposition": "Dev/test tool only, excluded from production npm installs and from the packaged app; fix requires a vitest major upgrade (3.x -> 4.x) which was intentionally not forced."
+          "disposition": "Dev/test tool only, excluded from production npm installs and from the packaged app; no reachable exploit path demonstrated in this repository (node environment, vitest run, no mockerPlugin/interceptorPlugin usage, no browser mode or exposed dev server). Fix exists only in vitest 4.1.11+ (3.x unmaintained); bounded major upgrade proposal recorded in dependency-audit.md and STATUS.md, intentionally not forced here."
         }
       ]
     }

@@ -1,6 +1,6 @@
 # Kuantra Terminal v1.1.1 — kapalı macOS pilotu
 
-**Güncel pilot Release:** [`pilot-v1.1.0`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.0)<br>
+**Güncel pilot Release:** [`pilot-v1.1.1`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.1)<br>
 **Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
 ve local audit paketinde tutulur. Güncel Release indirme alanında yalnızca iki native
 DMG bulunur: `arm64` Apple Silicon ve `x86_64` Intel.
@@ -79,7 +79,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 İsteğe bağlı olarak Release metadata'sını GitHub CLI ile de kontrol edebilirsiniz:
 
 ```text
-gh release view pilot-v1.1.0 --repo alikula37/kuantra-terminal
+gh release view pilot-v1.1.1 --repo alikula37/kuantra-terminal
 ```
 
 GitHub metadata'sı Apple Gatekeeper güveninin yerine geçmez; asıl dosya doğrulaması

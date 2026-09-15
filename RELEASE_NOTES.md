@@ -2,7 +2,8 @@
 
 # Kuantra Terminal v1.1.1 — Trusted macOS Pilot (security patch)
 
-**Pilot Release tag:** `pilot-v1.1.0` (transport release refreshed in place; the tag is not moved)
+**Pilot Release tag:** `pilot-v1.1.1` (release and tag point at the artifact source commit
+below; the former `pilot-v1.1.0` prerelease is superseded and keeps no downloads)
 
 **Artifact source commit:** `6c1e03c9c8a42f2e32d8c730beab828482338506` (clean build
 commit; GitHub Actions release run `35023961123`, `workflow_dispatch`, `publish=false`)

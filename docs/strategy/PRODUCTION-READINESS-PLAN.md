@@ -38,7 +38,9 @@ Owner decision (2026-09-15): the pilot artifact train advances to `v1.1.0`
 
 Owner decision (2026-09-15, security follow-up): the trusted pilot artifacts are rebuilt as
 the `v1.1.1` security patch (accepted truth matrix `truth-matrix.v1.1.1.json`) and published
-to the same `pilot-v1.1.0` transport release; the canonical product Release/tag is not moved.
+as the `pilot-v1.1.1` prerelease whose tag points at the verified build commit; the former
+`pilot-v1.1.0` transport release is superseded and keeps no downloads. The canonical product
+Release/tag is not moved.
 
 Owner-approved addition (2026-09-12): P1-WP31 local TP1/TP2/TP3/SL tracking follows
 the completed journal entry work. Delivery order is persistence/revisions, exact

@@ -15,8 +15,10 @@ declaration. Both architectures are verified current candidates; Intel evidence 
 the native `macos-15-intel` release workflow lane, arm64 from the native Apple Silicon host.
 
 The private pilot Release
-[`pilot-v1.1.0`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.0)
-carries both native DMGs; it remains ad-hoc and trusted-pilot-only. The previous
+[`pilot-v1.1.1`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.1)
+carries both native DMGs; it remains ad-hoc and trusted-pilot-only. Its tag points at the
+verified build commit. The former `pilot-v1.1.0` prerelease is superseded, keeps no downloads
+and directs users to `pilot-v1.1.1`. The previous
 `pilot-v1.0.0-arm64` transport is historical. The prior
 v1.4.0 matrix and historical documentation remain in the repository for audit context only.
 Its GitHub publication, tag and assets were removed on 2026-09-11; v1.4.0 is not a download
@@ -28,7 +30,7 @@ The three-person pilot distribution and technical validation path is documented 
 [`PILOT-INSTRUCTIONS.md`](PILOT-INSTRUCTIONS.md). The private GitHub Release carries
 only the two native architecture DMGs for users with repository read access.
 Evidence and checksums remain in the audit package and Release notes. The separate
-`pilot-v1.1.0` tag is a private prerelease transport identifier, not a canonical product
+`pilot-v1.1.1` tag is a private prerelease transport identifier, not a canonical product
 release tag. That transport does not provide Apple Developer ID trust; an ad-hoc DMG remains
 trusted-pilot-only and requires manual Gatekeeper approval. Technical smoke/N05 evidence,
 manifest, instructions and checksums remain in the repository and local audit package rather

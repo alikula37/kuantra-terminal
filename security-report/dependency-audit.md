@@ -31,15 +31,37 @@
 
 ### The single npm advisory
 
-- **Affected:** `vitest@3.2.7` and its bundled `@vitest/mocker@3.2.7` — **devDependency**, not part
-  of `npm ci --omit=dev`, not bundled into the app; the packaged WebView runs the Vite production
-  bundle only.
-- **Issue:** path traversal / arbitrary file read via redirect mock (CVSS 3.1
-  `AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N`, npm severity *moderate*).
-- **Fix availability:** `4.1.11` / `5.0.0-rc.2` — only reachable through a **major** vitest upgrade
-  (`npm audit fix --force`), which was deliberately not forced for a dev-only finding.
-- **Disposition:** retained as a documented dev-toolchain finding; production distribution is not
-  affected. A bounded vitest 4 upgrade can be scheduled separately with its own test run.
+**Assessment (2026-09-15, from the official GitHub advisory `GHSA-82fw-gwwq-j7x9` /
+`CVE-2026-84373`, CVSS 5.9 moderate):** the flaw is in `@vitest/mocker`'s standalone
+`mockerPlugin` / `interceptorPlugin`: a redirect mock's target path is registered from client
+input on Vite's **unauthenticated HMR WebSocket** without a `server.fs.allow`/root boundary
+check, so a reachable dev server can be driven into reading local files. Preconditions from the
+advisory: a development server that uses those public plugin exports and is reachable (localhost
+by default, network only if exposed); Vitest's own browser mode registers mocks over a
+**token-authenticated** RPC and is not remotely reachable by default.
+
+**Fit with this repository (verified locally):**
+- `frontend/vitest.config.ts` runs the **node** environment; the command is `vitest run`
+  (non-watch) in CI and locally, so no persistent, exposed dev server is started.
+- No source or test imports `@vitest/mocker`, `mockerPlugin` or `interceptorPlugin`; the
+  installed `vitest` core does not load the interceptor plugin path, and no `--browser`,
+  `--api`, `--host` or `server.host` configuration exists in scripts or workflows.
+- CI runs on ephemeral GitHub-hosted runners with no inbound exposure; local runs bind nothing
+  beyond the developer's own machine.
+- Result: **no reachable exploit path demonstrated** in the current developer/CI usage. This is
+  a dev-toolchain exposure item, not an application-runtime vulnerability, and it is not
+  shipped in the app bundle.
+
+**Deferral rationale and fix check:** the advisory states that older majors (2.x, 3.x) are
+unmaintained and will not receive the fix; the npm registry confirms `vitest@3` tops out at
+3.2.7 while the patched line is 4.1.11 (and 5.0.x). There is therefore **no narrower fix than a
+major upgrade**, which was intentionally not forced for a dev-only tool with no reachable path.
+
+**Bounded fix proposal (not started, no app binary impact):** upgrade the dev-only `vitest`
+(and its bundled `@vitest/mocker`) from 3.2.7 to 4.1.11 in `frontend/package.json` +
+lockfile, adjust the vitest config/API if the major requires it, and run the full frontend
+suite and CI before merge. Blocker for shipping: **none** (no reachable path); the advisory
+remains open as a tracked dev-toolchain follow-up.
 
 ### Cross-check
 
