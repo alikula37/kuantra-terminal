@@ -374,3 +374,26 @@ clean; i18n **976/976/976**. Canonical Mac arm64 local CI on the working tree is
 `b2b9ab40dad3d9d76b544e22fc290cf855abf45d1be5ef8108b1ca00f4bf6f3a`, provenance
 `DEVELOPER_DIRTY` (uncommitted). The installed app and GitHub Releases were not changed by
 this round.
+
+### Round-5 clean build and installed-app update
+
+Per the owner standing instruction (AGENTS.md, 2026-09-15), the verified round-5 change was
+committed (`8719b27`, pushed) and the Mac's installed application was updated from the clean
+commit:
+
+- Canonical Mac arm64 local CI on `8719b27`: **MERGE READY**, provenance **COMPLETE**, tree
+  clean, backend **938 passed / 2 warnings**, frontend **199 tests**, i18n **976/976/976**;
+  report `dist/p1-wp32-round5-clean-local-ci.json` SHA-256
+  `d633827c2f5bf301e6f759a7b3f32833d692e9cda78d9f78fbe237b7c65e1327`, built executable
+  `eeb16e89f3c4418678df79aaa0266d42b640b1a036453d749ffc083ac6c27287`.
+- Exact arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-round5.dmg` built from that app:
+  `hdiutil verify` **VALID**, DMG SHA-256
+  `1ad8123c9ffa5835e3d930cdd8f4c210c3876636c5ff6b19abdc2e94890129ed`; exact read-only
+  mounted-DMG smoke **PASS** (report `dist/p1-wp32-round5-dmg-smoke.json` SHA-256
+  `acddbaafb5357913e4157fae2c3dd6b318fd1bf271b1ef6ccb32144117e624bc`).
+- `/Applications/Kuantra Terminal.app` replaced after a graceful quit; installed executable
+  SHA-256 matches the CI/DMG executable, `codesign --verify --deep --strict` passes, version
+  `1.1.0`, launched PID `38584`, local runtime `{"status":"online","gateway":true,"version":"1.1.0"}`.
+  User data under `~/Library/Application Support/Kuantra Terminal` was preserved.
+- The GitHub pilot prerelease was not changed by this local update; a Release refresh remains a
+  separate owner decision.

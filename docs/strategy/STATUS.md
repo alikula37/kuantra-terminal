@@ -252,6 +252,16 @@ backend **938 passed / 2 warnings**, frontend **37 files / 199 tests**, i18n
 `b2b9ab40dad3d9d76b544e22fc290cf855abf45d1be5ef8108b1ca00f4bf6f3a` (`DEVELOPER_DIRTY`).
 Uncommitted; installed app and Releases unchanged.
 
+**Owner standing instruction (2026-09-15):** recorded in
+[AGENTS.md](../../AGENTS.md); after every successful bounded development the change is
+committed and pushed, and the installed application on this Mac is rebuilt from the clean
+commit and replaced while preserving user data. GitHub Release refreshes stay a separate
+owner decision. Round-5 followed it: source `8719b27`, clean arm64 local CI `MERGE READY`
+with `COMPLETE` provenance (report `d633827c…`), arm64 DMG `1ad8123c…` with `hdiutil verify`
+VALID and mounted-DMG smoke PASS (`acddbaaf…`), installed executable `eeb16e89…` matching the
+CI build, launched with runtime `{"status":"online","version":"1.1.0"}`; the journal database
+was preserved.
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel
