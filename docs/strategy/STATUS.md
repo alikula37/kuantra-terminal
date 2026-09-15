@@ -6,20 +6,20 @@ Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 **Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
 The package is selected again strictly for its still-open owner-host obligations
 (N03/N05/H05/pilot access); no development proceeds under it without owner approval, and
-**A1.2 and every other integration package remain unapproved**.
+**A1.2 (including the deferred OKX identity work) and every other integration package
+remain unapproved**.
+[P1-WP40 MT5 HTML report preview](../archive/strategy/work-packages/P1-WP40-mt5-html-report-preview.md)
+is complete and archived: safe parsing of the defined English MT5 ReportHistory HTML
+format with a preview-only UI, separated order/deal identities and no persistent writes.
+Owner decision (2026-09-15): pilot users need to bring XM/MetaTrader trades into
+Kuantra; only this bounded **preview** package was approved. **Persistence/import,
+migration and financial schema extensions are not approved.** Statement import is not
+live tracking: the preview reads one report in memory and writes nothing.
+**Open obligation (owner/pilot):** real anonymized XM report validation — terminal
+(MT4/MT5), build/language, then a preview-vs-source comparison of counts, identity
+relations, quantities and timestamps; no "XM supported" claim until then.
 [P1-WP39 broker observation projection (A1.1)](../archive/strategy/work-packages/P1-WP39-broker-observation-projection.md)
-completed its account-scope closure and is complete and archived. The closure found that
-the caller-declared local bucket was being used as an economic account scope: two
-documents in the same bucket with the same fill id would have merged (same content) or
-been declared conflicting (different content) without proof of account equality. The
-producer trace confirmed no verifiable account namespace exists (credential refs are per
-`exchange_id`, `account_id` is free text, file hashes are not identities), so every
-observation is now projected individually with `account_scope_state = UNVERIFIED`, no
-economic merge/dedup/conflict runs while the scope is unverified, duplicate claims are
-counted and preserved with lineage, and source-level idempotency stays separate. Focused
-tests **20 passed**; related regressions **106 + 121 passed**; full backend **1003 passed
-/ 2 warnings**; frontend unchanged. No commit/push, Release, installed-app change or real
-user-data operation.
+completed its account-scope closure and is complete and archived.
 [P1-WP38 A0 data-accuracy findings](../archive/strategy/work-packages/P1-WP38-a0-data-accuracy-findings.md)
 is complete and archived with its evidence (including the closure review). Owner
 instruction (2026-09-15): apply **only** A0 — verify the two reported data-accuracy
@@ -647,6 +647,36 @@ instruction; report `dist/p1-wp39-account-scope-local-ci.json` SHA-256
 `8ab45595e7918a34e8f14c8165d805463ceea81216db273aa9a9a21d87819e5d`, executable
 `485b9604…`). No commit, Release or installed-app change; A1.2 and every other
 integration package remain unapproved.
+
+**P1-WP40 MT5 HTML report preview — complete and archived (2026-09-15,
+uncommitted):** The CSV import modal
+gained an **MT5 HTML preview** tab: the user selects an English MT5 "ReportHistory" HTML
+export and sees a safe, in-memory preview — recognized format + parser version,
+order/deal counts, rows read/with problems, source date range, masked source-declared
+account (never the owner name), deposit currency, time-basis warning, bounded order and
+deal tables with separate `SOURCE_ORDER_ID`/`SOURCE_DEAL_ID` kinds, row errors with
+reasons and unprocessed sections. The footer states "Bu ekran yalnız önizlemedir;
+işlemler kaydedilmez." and has no import/save action. The parser fails closed for
+wrong platform/template, unsupported language, missing sections/columns, ambiguous
+time/number formats and limit overruns; it never converts timezones, lots or money,
+never turns missing values into zero and never executes or fetches HTML resources.
+**Nothing is persisted** (no ledger/projection/journal/portfolio writes; no raw file
+retention; logs carry no file content or personal data), and this is a
+synthetic-fixture-validated contract, not XM compatibility evidence: until a real
+anonymized XM report passes, no "XM supported" claim is made. Evidence: backend
+`test_wp40_mt5_statement_preview.py` **23 passed**, frontend
+`Mt5StatementPreview.dom.test.tsx` **7 passed** plus the unchanged `CsvImportModal`
+tests **7 passed**, related regressions **112 passed**, full backend **1026 passed / 2
+warnings**, frontend **40 files / 236 tests**, TypeScript/i18n/production build clean.
+Canonical arm64 local CI (`KDG-002@1.1.0`) is **MERGE READY** with 13/13 steps and
+provenance `DEVELOPER_DIRTY` (uncommitted by instruction; report
+`dist/p1-wp40-preview-local-ci.json` SHA-256
+`579dd63e17284b253ea959590a33a38104ff0c572e93253cd14411d850886a8c`, executable
+`963eed4f…`). No commit, Release or installed-app change; persistence/import, migration
+and financial schema extension remain unapproved. **Open owner/pilot obligation:** the
+real anonymized XM report validation (terminal MT4/MT5, build/language, preview-vs-source
+comparison of counts, identity relations, quantities and timestamps) is tracked here and
+separate from this completed preview package.
 
 ## Selected next work
 

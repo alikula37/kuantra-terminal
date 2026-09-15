@@ -15,7 +15,7 @@ depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
 
-Selection note (2026-09-15): P1-WP39 (A1.1) completed its account-scope closure and is
+Selection note (2026-09-15): P1-WP40 (MT5 HTML report preview) is complete and
 archived, so this package is selected again strictly for its still-open owner-host
 obligations (N03/N05/H05/pilot access). No development proceeds under it without explicit
 owner approval; A1.2 and every other integration package remain unapproved.

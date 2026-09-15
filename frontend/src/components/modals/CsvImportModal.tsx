@@ -4,6 +4,7 @@ import { useTranslation } from "../../context/I18nContext";
 import { apiFetch, apiUrl } from "../../lib/backend";
 import { downloadFromBackend } from "../../lib/desktop";
 import { useDialogAccessibility } from "../../hooks/useDialogAccessibility";
+import { Mt5StatementPreview } from "./Mt5StatementPreview";
 
 interface CsvImportModalProps {
   isOpen: boolean;
@@ -92,11 +93,13 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
+  const [mode, setMode] = useState<"csv" | "mt5">("csv");
 
   useEffect(() => {
     if (!isOpen) {
       previewControllerRef.current?.abort();
       previewControllerRef.current = null;
+      setMode("csv");
     }
     return () => {
       previewControllerRef.current?.abort();
@@ -105,6 +108,21 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const switchMode = (nextMode: "csv" | "mt5") => {
+    if (nextMode === mode) return;
+    previewControllerRef.current?.abort();
+    previewControllerRef.current = null;
+    setSelectedFile(null);
+    setDetectedFormat(null);
+    setPreviewTrades([]);
+    setPreviewReview(null);
+    setTotalRows(0);
+    setIsLoadingPreview(false);
+    setImportResult(null);
+    setErrorMessage(null);
+    setMode(nextMode);
+  };
 
   const resetState = () => {
     previewControllerRef.current?.abort();
@@ -346,8 +364,42 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
           </button>
         </div>
 
+        {/* Import mode tabs */}
+        <div className="flex items-center gap-1 px-6 pt-3 border-b border-surface-border bg-[#0b0e14] text-[11px]">
+          <button
+            type="button"
+            data-testid="csv-import-tab"
+            aria-pressed={mode === "csv"}
+            onClick={() => switchMode("csv")}
+            className={`px-3 py-2 rounded-t-lg border-b-2 transition ${
+              mode === "csv"
+                ? "border-accent text-white font-bold"
+                : "border-transparent text-slate-400 hover:text-white"
+            }`}
+          >
+            {t("csv_import.tab_csv")}
+          </button>
+          <button
+            type="button"
+            data-testid="mt5-preview-tab"
+            aria-pressed={mode === "mt5"}
+            onClick={() => switchMode("mt5")}
+            className={`px-3 py-2 rounded-t-lg border-b-2 transition ${
+              mode === "mt5"
+                ? "border-accent text-white font-bold"
+                : "border-transparent text-slate-400 hover:text-white"
+            }`}
+          >
+            {t("csv_import.tab_mt5")}
+          </button>
+        </div>
+
         {/* Content Body */}
         <div className="p-6 overflow-y-auto space-y-4 flex-1">
+          {mode === "mt5" ? (
+            <Mt5StatementPreview />
+          ) : (
+            <>
           {errorMessage && (
             <div role="alert" className="flex items-center space-x-2 p-3 bg-loss/15 border border-loss/30 rounded-lg text-loss text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -542,9 +594,24 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
               )}
             </>
           )}
+            </>
+          )}
         </div>
 
         {/* Footer Actions */}
+        {mode === "mt5" ? (
+          <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-surface-border bg-[#0d121c] text-xs">
+            <span className="text-amber-300">{t("mt5_preview.preview_only_notice")}</span>
+            <button
+              type="button"
+              data-testid="mt5-preview-close"
+              onClick={handleClose}
+              className="px-4 py-2 bg-accent hover:bg-sky-400 text-black font-bold rounded-lg transition cursor-pointer shrink-0"
+            >
+              {t("csv_import.close_btn")}
+            </button>
+          </div>
+        ) : (
         <div className="flex items-center justify-between px-6 py-4 border-t border-surface-border bg-[#0d121c] text-xs">
           <button
             type="button"
@@ -599,6 +666,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose,
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

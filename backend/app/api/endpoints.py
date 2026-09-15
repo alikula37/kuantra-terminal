@@ -36,6 +36,10 @@ from app.services.evidence_pack_export import (
 )
 from app.services.csv_importer import csv_trade_importer
 from app.services.broker_import_service import broker_import_service, BrokerImportValidationError
+from app.services.mt5_statement_preview import (
+    Mt5StatementPreviewError,
+    preview_mt5_html_report,
+)
 from app.services.reconciliation_inbox import (
     ReconciliationDecisionConflict,
     ReconciliationInboxError,
@@ -50,7 +54,7 @@ from app.services.exchange.read_only_broker_sync import (
 from app.services.exchange.credentials_manager import exchange_credentials_manager
 from app.services.security.credential_store import CredentialStoreUnavailable, credential_store_status
 from app.core.availability import experimental_disabled_exception, experimental_disabled_response as build_experimental_disabled_response
-from app.core.input_limits import MAX_BROKER_JSON_BYTES, MAX_CSV_BYTES
+from app.core.input_limits import MAX_BROKER_JSON_BYTES, MAX_CSV_BYTES, MAX_STATEMENT_BYTES
 from app.services.execution.ccxt_engine import ccxt_execution_engine
 from app.websocket.connection_manager import ws_manager
 from app.websocket.binance_client import binance_client
@@ -758,6 +762,36 @@ async def import_broker_json(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Broker export could not be imported safely.") from exc
+
+
+@router.post("/broker/statement/preview-html")
+async def preview_mt5_statement(file: UploadFile = File(...)):
+    """Preview a supported MT5 HTML report in memory; nothing is written."""
+    filename = (file.filename or "").lower()
+    if not filename.endswith((".html", ".htm")):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "UNSUPPORTED_FILE_TYPE",
+                "message": "The MT5 report preview accepts a .html or .htm export only.",
+            },
+        )
+    content = await _read_bounded_upload(file, MAX_STATEMENT_BYTES)
+    try:
+        return preview_mt5_html_report(content)
+    except Mt5StatementPreviewError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": exc.code,
+                "message": "The MT5 report could not be previewed safely.",
+            },
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="The MT5 report could not be previewed safely.",
+        ) from exc
 
 
 @router.get("/reconciliation/inbox")
