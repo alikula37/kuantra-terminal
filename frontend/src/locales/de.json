@@ -878,7 +878,12 @@
     "symbol_eur_usd": "EUR/USD",
     "symbol_sp500": "S&P 500 (SPY)",
     "symbol_nvidia": "NVIDIA (NVDA)",
-    "unknown_symbol": "Unbekanntes Symbol"
+    "unknown_symbol": "Unbekanntes Symbol",
+    "load_older": "Ältere Daten laden",
+    "loading_older": "Verlauf wird geladen…",
+    "no_more_history": "Keine älteren Daten verfügbar",
+    "older_failed": "Ältere Daten konnten nicht geladen werden",
+    "load_older_tooltip": "Einen älteren Balkenblock laden"
   },
   "ai_coach": {
     "title": "DETERMINISTISCHER KI-TRADE-AUDITOR & KOGNITIVER AGENT",

@@ -3,7 +3,13 @@
 
 Updated: 2026-09-13. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP32 pilot journal trust](work-packages/P1-WP32-pilot-journal-trust.md).**
+**Selected work: [P1-WP33 bounded market-chart history](work-packages/P1-WP33-market-chart-history.md).**
+Owner report (2026-09-15): Market Charts show only a short history and cannot load older
+data; the chart also froze on the first cached window. The package adds bounded provider
+pagination, Yahoo `period1/period2` deep ranges with documented intraday clamping, cache
+freshness, and a "load older data" chart control. [P1-WP32 pilot journal trust](work-packages/P1-WP32-pilot-journal-trust.md)
+remains the previous bounded package with its evidence recorded below.
+
 Owner instruction (2026-09-14): pilot traders need a readable journal with
 user-supplied Turkey-time trade dates, working edit/correction with revision
 control, declared leverage with separated price/position/margin returns, automatic
@@ -272,6 +278,19 @@ unit, keeps previous values in the correction provenance, and revoking the unit 
 the result to unknown. The Dashboard shows an explicit unknown-result count. Evidence:
 focused status-edit tests **12 passed**, full backend **941 passed / 2 warnings**,
 frontend **37 files / 200 tests**, i18n **979/979/979**, TypeScript clean.
+
+**P1-WP33 market-chart history (2026-09-15):** Market Charts were limited to one
+provider page and the cache-freshness gate never expired, so the 8-second refresh could
+freeze on the first window. Crypto history now walks Binance klines backwards in bounded
+pages (max 10 x 1000, stops on short page/reached start, dedup by timestamp) for an
+explicit `start_time`; macro/equity history uses Yahoo `period1/period2` with the
+documented intraday window (1m=7d, 5m-30m=60d, 1h=730d) and daily+ keeps the requested
+lookback; a full cache is reused only while at most two bars old. The chart requests 1000
+bars, has a "load older data" control that prepends one bounded chunk while keeping the
+visible window, disables itself at the provider's history start, and the live refresh
+merges instead of wiping loaded history. Evidence: `test_market_candle_history.py`
+**6 passed**, full backend **947 passed / 2 warnings**, frontend **38 files / 204 tests**,
+i18n **984/984/984**, TypeScript clean.
 
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth

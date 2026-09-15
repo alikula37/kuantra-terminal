@@ -878,7 +878,12 @@
     "symbol_eur_usd": "EUR/USD",
     "symbol_sp500": "S&P 500 (SPY)",
     "symbol_nvidia": "NVIDIA (NVDA)",
-    "unknown_symbol": "Unknown symbol"
+    "unknown_symbol": "Unknown symbol",
+    "load_older": "Load older data",
+    "loading_older": "Loading history…",
+    "no_more_history": "No older data available",
+    "older_failed": "Older data could not be loaded",
+    "load_older_tooltip": "Load an older block of bars"
   },
   "ai_coach": {
     "title": "DETERMINISTIC AI TRADE AUDITOR & NATURAL LANGUAGE COGNITIVE AGENT",

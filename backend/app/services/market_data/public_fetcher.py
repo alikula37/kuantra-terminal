@@ -218,6 +218,21 @@ class PublicMarketDataFetcher:
     Fetches spot/futures klines and macro/forex candles directly from free public endpoints.
     """
 
+    # Bounded provider pagination for "load older" history.  Each page is one
+    # provider request; the cap keeps a single user action bounded and polite.
+    MAX_HISTORY_PAGES = 10
+    BINANCE_PAGE_LIMIT = 1000
+    # Yahoo intraday lookbacks (ms).  Longer requests are clamped to the
+    # provider's documented window instead of failing or inventing data.
+    YAHOO_INTRADAY_LOOKBACK_MS = {
+        "1m": 7 * 86_400_000,
+        "2m": 60 * 86_400_000,
+        "5m": 60 * 86_400_000,
+        "15m": 60 * 86_400_000,
+        "30m": 60 * 86_400_000,
+        "90m": 60 * 86_400_000,
+        "60m": 730 * 86_400_000,
+    }
     BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
     BINANCE_EXCHANGE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo"
     BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
@@ -931,30 +946,52 @@ class PublicMarketDataFetcher:
         norm_int = normalize_interval(interval)
         clamped_limit = max(1, min(1000, limit))
 
-        # 1. Attempt Binance Public Spot Klines
+        # 1. Attempt Binance Public Spot Klines.  A history request
+        # (``start_time``) walks backwards page by page within a bounded cap so
+        # the chart can load older bars without hammering the provider.
         try:
-            params: Dict[str, Any] = {
-                "symbol": norm_sym,
-                "interval": norm_int,
-                "limit": clamped_limit
-            }
-            if start_time is not None:
-                params["startTime"] = int(start_time)
-            if end_time is not None:
-                params["endTime"] = int(end_time)
-
+            page_limit = min(self.BINANCE_PAGE_LIMIT, max(1, clamped_limit))
+            collected: Dict[int, Dict[str, Any]] = {}
+            cursor_end = int(end_time) if end_time is not None else None
+            pages = 0
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                res = await client.get(self.BINANCE_KLINES_URL, params=params, headers=self._get_headers())
-                if res.status_code == 200:
-                    data = res.json()
-                    candles = self._parse_binance_klines(data)
-                    if candles:
-                        logger.info(f"[PUBLIC-FETCHER] Successfully fetched {len(candles)} candles for {norm_sym} ({norm_int}) via Binance Public.")
-                        return candles
-                elif res.status_code == 429:
-                    logger.warning(f"[PUBLIC-FETCHER] Binance Public API rate limited (429). Falling back to Bybit...")
-                else:
-                    logger.warning(f"[PUBLIC-FETCHER] Binance Public API returned status {res.status_code} for {norm_sym}: {res.text[:100]}")
+                while pages < (self.MAX_HISTORY_PAGES if start_time is not None else 1):
+                    params: Dict[str, Any] = {
+                        "symbol": norm_sym,
+                        "interval": norm_int,
+                        "limit": page_limit if start_time is not None else clamped_limit,
+                    }
+                    if start_time is not None:
+                        params["startTime"] = int(start_time)
+                    if cursor_end is not None:
+                        params["endTime"] = cursor_end
+
+                    res = await client.get(self.BINANCE_KLINES_URL, params=params, headers=self._get_headers())
+                    if res.status_code == 429:
+                        logger.warning(f"[PUBLIC-FETCHER] Binance Public API rate limited (429). Falling back to Bybit...")
+                        break
+                    if res.status_code != 200:
+                        logger.warning(f"[PUBLIC-FETCHER] Binance Public API returned status {res.status_code} for {norm_sym}: {res.text[:100]}")
+                        break
+                    page = self._parse_binance_klines(res.json())
+                    if not page:
+                        break
+                    before = len(collected)
+                    for candle in page:
+                        collected[candle["timestamp"]] = candle
+                    pages += 1
+                    oldest = min(candle["timestamp"] for candle in page)
+                    if len(collected) == before:
+                        break
+                    if len(page) < (page_limit if start_time is not None else clamped_limit):
+                        break
+                    if start_time is not None and oldest <= int(start_time):
+                        break
+                    cursor_end = oldest - 1
+            if collected:
+                candles = [collected[key] for key in sorted(collected)]
+                logger.info(f"[PUBLIC-FETCHER] Successfully fetched {len(candles)} candles for {norm_sym} ({norm_int}) via Binance Public.")
+                return candles
         except Exception as e:
             logger.warning(f"[PUBLIC-FETCHER] Binance fetch error for {norm_sym}: {e}. Triggering Bybit fallback...")
 
@@ -1052,11 +1089,22 @@ class PublicMarketDataFetcher:
         candles.sort(key=lambda c: c["timestamp"])
         return candles
 
+    @classmethod
+    def _clamp_yahoo_period1(cls, interval: str, start_ms: int, end_ms: int) -> int:
+        """Clamp a requested start to Yahoo's documented intraday window."""
+
+        lookback = cls.YAHOO_INTRADAY_LOOKBACK_MS.get(str(interval))
+        if lookback is None:
+            return max(0, int(start_ms))
+        return max(int(start_ms), int(end_ms) - lookback)
+
     async def fetch_macro_candles(
         self,
         symbol: str,
         interval: str = "1d",
-        period: Optional[str] = None
+        period: Optional[str] = None,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Fetches historical macro/forex/indices candles from free public sources.
@@ -1087,15 +1135,28 @@ class PublicMarketDataFetcher:
                 )
                 return candles
 
-        # 1. Try Yahoo Finance Chart API
+        # 1. Try Yahoo Finance Chart API.  An explicit start_time switches to
+        # period1/period2 so the chart can walk years back for daily+ bars; the
+        # provider's intraday window is honored by clamping, never invented.
         try:
             url = self.YAHOO_CHART_URL.format(ticker=yahoo_ticker)
-            params = {
-                "interval": yahoo_interval,
-                "range": auto_range,
-                "includePrePost": "false",
-                "events": "div|split"
-            }
+            if start_time is not None:
+                end_ms = int(end_time) if end_time is not None else int(time.time() * 1000)
+                clamped_start = self._clamp_yahoo_period1(yahoo_interval, int(start_time), end_ms)
+                params = {
+                    "interval": yahoo_interval,
+                    "period1": clamped_start // 1000,
+                    "period2": max(end_ms // 1000, clamped_start // 1000 + 1),
+                    "includePrePost": "false",
+                    "events": "div|split"
+                }
+            else:
+                params = {
+                    "interval": yahoo_interval,
+                    "range": auto_range,
+                    "includePrePost": "false",
+                    "events": "div|split"
+                }
             headers = self._get_headers()
 
             async with httpx.AsyncClient(timeout=self.timeout) as client:

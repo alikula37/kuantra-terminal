@@ -1,4 +1,4 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # P1-WP32 — Pilot journal trust: trade time, editing and sizing
 
 ```yaml

@@ -6,6 +6,7 @@ for crypto and macro OHLCV candlestick data.
 
 import logging
 import sqlite3
+import time
 from typing import Any, Dict, List, Optional
 from app.core.paths import get_sqlite_path
 from app.db.sqlite_driver import sqlite_driver
@@ -19,11 +20,44 @@ from app.services.market_data.public_fetcher import (
 logger = logging.getLogger("candles_repo")
 
 
+# Expected bar duration in milliseconds; used only to decide whether the
+# cached window is still current enough to skip a provider request.
+TIMEFRAME_MS = {
+    "1m": 60_000,
+    "3m": 180_000,
+    "5m": 300_000,
+    "15m": 900_000,
+    "30m": 1_800_000,
+    "1h": 3_600_000,
+    "2h": 7_200_000,
+    "4h": 14_400_000,
+    "6h": 21_600_000,
+    "8h": 28_800_000,
+    "12h": 43_200_000,
+    "1d": 86_400_000,
+    "3d": 259_200_000,
+    "1w": 604_800_000,
+    "1M": 2_629_800_000,
+}
+
+
 class CandlesRepository:
     """
     High-performance SQLite caching repository for financial market candles.
     Uses WAL-mode transactions and composite index deduplication.
     """
+
+    @staticmethod
+    def _timeframe_ms(timeframe: str) -> int:
+        return TIMEFRAME_MS.get(normalize_interval(timeframe), 3_600_000)
+
+    @classmethod
+    def _is_fresh(cls, timeframe: str, newest_ts_ms: int, now_ms: Optional[int] = None) -> bool:
+        """A cached window is fresh until two bar durations have passed."""
+
+        now = now_ms if now_ms is not None else int(time.time() * 1000)
+        age = now - int(newest_ts_ms)
+        return 0 <= age < 2 * cls._timeframe_ms(timeframe)
 
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = db_path or get_sqlite_path()
@@ -223,8 +257,15 @@ class CandlesRepository:
                 end_ts=end_ts,
                 limit=clamped_limit
             )
-            # If we have enough cached candles to satisfy the query, return immediately
-            if len(cached) >= clamped_limit or (start_ts and end_ts and len(cached) > 0):
+            enough = len(cached) >= clamped_limit
+            history_query = start_ts is not None or end_ts is not None
+            fresh = bool(cached) and not history_query and self._is_fresh(norm_tf, cached[-1]["timestamp"])
+            # A full request window is used only while it is still current;
+            # otherwise the provider is asked for newer bars instead of serving
+            # a frozen chart.  History queries keep the exact-range shortcut.
+            if (enough and (fresh or (start_ts is not None and end_ts is not None))) or (
+                history_query and start_ts is not None and end_ts is not None and cached
+            ):
                 logger.info(f"[CANDLE-CACHE] Cache HIT for {norm_sym} ({norm_tf}): {len(cached)} candles returned from SQLite.")
                 return cached
 
@@ -235,7 +276,9 @@ class CandlesRepository:
             fetched = await public_market_fetcher.fetch_macro_candles(
                 symbol=norm_sym,
                 interval=norm_tf,
-                period="1mo"
+                period=None,
+                start_time=start_ts,
+                end_time=end_ts,
             )
         else:
             fetched = await public_market_fetcher.fetch_crypto_candles(

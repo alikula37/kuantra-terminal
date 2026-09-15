@@ -2,6 +2,7 @@ import pytest
 import asyncio
 import tempfile
 import os
+import time
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi.testclient import TestClient
 from app.api import endpoints
@@ -279,9 +280,10 @@ class TestPublicMarketDataFetcherAndCache:
     @pytest.mark.asyncio
     async def test_get_or_fetch_candles_cache_hit_and_miss(self, temp_repo):
         """Tests that get_or_fetch_candles utilizes cache on hit and fetches on miss."""
+        now_ms = int(time.time() * 1000)
         mock_candles = [
-            {"timestamp": 1700000000000, "open": 50000.0, "high": 51000.0, "low": 49000.0, "close": 50500.0, "volume": 100.0},
-            {"timestamp": 1700003600000, "open": 50500.0, "high": 52000.0, "low": 50000.0, "close": 51500.0, "volume": 120.0}
+            {"timestamp": now_ms - 3_600_000, "open": 50000.0, "high": 51000.0, "low": 49000.0, "close": 50500.0, "volume": 100.0},
+            {"timestamp": now_ms, "open": 50500.0, "high": 52000.0, "low": 50000.0, "close": 51500.0, "volume": 120.0}
         ]
 
         with patch.object(public_market_fetcher, "fetch_crypto_candles", AsyncMock(return_value=mock_candles)) as mock_fetch:

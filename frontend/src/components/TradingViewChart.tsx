@@ -3,8 +3,16 @@ import { createChart, IChartApi, ISeriesApi, CandlestickData, Time, HistogramDat
 import { useMarketStore } from "../stores/marketStore";
 import { useTranslation } from "../context/I18nContext";
 import { getChartTheme, useTheme } from "../context/ThemeContext";
-import { RefreshCw, AlertCircle, BarChart2, Plus, X } from "lucide-react";
+import { RefreshCw, AlertCircle, BarChart2, Plus, X, History } from "lucide-react";
 import { apiBase, apiFetch } from "../lib/backend";
+import {
+  CHART_INITIAL_LIMIT,
+  CHART_OLDER_CHUNK,
+  hasMoreHistory,
+  mergeCandleHistory,
+  olderStartMs,
+  type CandlePoint,
+} from "../lib/candles";
 import {
   MARKET_SYMBOL_CATALOG,
   createManualMarketInstrument,
@@ -110,6 +118,10 @@ export const TradingViewChart: React.FC = () => {
   const candleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const candleRequestIdRef = useRef(0);
   const displayedCandleKeyRef = useRef<string | null>(null);
+  const displayedCandlesRef = useRef<CandlePoint[]>([]);
+  const [hasOlderHistory, setHasOlderHistory] = useState<boolean>(true);
+  const [isLoadingOlder, setIsLoadingOlder] = useState<boolean>(false);
+  const [olderNotice, setOlderNotice] = useState<string | null>(null);
   const initialChartTheme = getChartTheme(theme);
 
   useEffect(() => {
@@ -256,7 +268,7 @@ export const TradingViewChart: React.FC = () => {
     try {
       const url = `${apiBase()}/api/v1/market-data/candles?symbol=${encodeURIComponent(
         activeSymbol
-      )}&timeframe=${encodeURIComponent(activeTimeframe)}&limit=500`;
+      )}&timeframe=${encodeURIComponent(activeTimeframe)}&limit=${CHART_INITIAL_LIMIT}`;
 
       const response = await apiFetch(url, { signal: controller.signal });
       if (!response.ok) {
@@ -307,7 +319,18 @@ export const TradingViewChart: React.FC = () => {
 
       if (requestId !== candleRequestIdRef.current || controller.signal.aborted) return;
 
-      const chartCandles: CandlestickData<Time>[] = sortedCandles.map((c) => ({
+      // A live refresh replaces only the recent window: already loaded older
+      // history stays on the chart instead of being wiped by the poll.
+      const mergedCandles = hasCurrentChart && displayedCandlesRef.current.length > sortedCandles.length
+        ? mergeCandleHistory(displayedCandlesRef.current, sortedCandles)
+        : sortedCandles;
+      displayedCandlesRef.current = mergedCandles;
+      if (!hasCurrentChart) {
+        setHasOlderHistory(true);
+        setOlderNotice(null);
+      }
+
+      const chartCandles: CandlestickData<Time>[] = mergedCandles.map((c) => ({
         time: c.timestamp as Time,
         open: c.open,
         high: c.high,
@@ -315,7 +338,7 @@ export const TradingViewChart: React.FC = () => {
         close: c.close,
       }));
 
-      const chartVolumes: HistogramData<Time>[] = sortedCandles.map((c) => ({
+      const chartVolumes: HistogramData<Time>[] = mergedCandles.map((c) => ({
         time: c.timestamp as Time,
         value: c.volume,
         color: c.close >= c.open ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)",
@@ -328,7 +351,7 @@ export const TradingViewChart: React.FC = () => {
         displayedCandleKeyRef.current = candleKey;
       }
 
-      const last = sortedCandles[sortedCandles.length - 1];
+      const last = mergedCandles[mergedCandles.length - 1];
       setLatestCandle(last);
       setErrorMsg(null);
       setIsCancelled(false);
@@ -340,6 +363,7 @@ export const TradingViewChart: React.FC = () => {
         : err.message || t("market_chart.fetch_failed", { symbol: activeSymbol });
       setErrorMsg(message);
       displayedCandleKeyRef.current = null;
+      displayedCandlesRef.current = [];
       if (candleSeriesRef.current && volumeSeriesRef.current) {
         candleSeriesRef.current.setData([]);
         volumeSeriesRef.current.setData([]);
@@ -355,6 +379,73 @@ export const TradingViewChart: React.FC = () => {
       }
     }
   }, [activeSymbol, activeTimeframe, t]);
+
+  // Load one bounded chunk of older bars and keep the visible window stable.
+  const loadOlderHistory = useCallback(async () => {
+    const current = displayedCandlesRef.current;
+    if (isLoadingOlder || isLoading || !hasOlderHistory || current.length === 0) return;
+    const oldestSeconds = current[0].timestamp;
+    const startMs = olderStartMs(oldestSeconds, activeTimeframe);
+    const endMs = oldestSeconds * 1000 - 1;
+    setIsLoadingOlder(true);
+    setOlderNotice(null);
+    try {
+      const url = `${apiBase()}/api/v1/market-data/candles?symbol=${encodeURIComponent(
+        activeSymbol
+      )}&timeframe=${encodeURIComponent(activeTimeframe)}&limit=${CHART_OLDER_CHUNK}` +
+        `&start_time=${startMs}&end_time=${endMs}`;
+      const response = await apiFetch(url);
+      if (!response.ok) throw new Error(t("market_chart.older_failed"));
+      const payload = await response.json() as { candles?: unknown };
+      const rawCandles = Array.isArray(payload.candles) ? payload.candles : null;
+      if (!rawCandles) throw new Error(t("market_chart.older_failed"));
+      const points: CandlePoint[] = [];
+      for (const raw of rawCandles) {
+        const candle = normalizeCandle(raw);
+        if (!candle) throw new Error(t("market_chart.malformed"));
+        points.push(candle);
+      }
+      if (points.length === 0) {
+        setHasOlderHistory(false);
+        setOlderNotice(t("market_chart.no_more_history"));
+        return;
+      }
+      const merged = mergeCandleHistory(current, points);
+      const added = merged.length - current.length;
+      const timeScale = chartRef.current?.timeScale();
+      const previousRange = timeScale?.getVisibleLogicalRange?.() ?? null;
+      displayedCandlesRef.current = merged;
+      if (candleSeriesRef.current && volumeSeriesRef.current) {
+        candleSeriesRef.current.setData(merged.map((c) => ({
+          time: c.timestamp as Time,
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+        })));
+        volumeSeriesRef.current.setData(merged.map((c) => ({
+          time: c.timestamp as Time,
+          value: c.volume,
+          color: c.close >= c.open ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)",
+        })));
+      }
+      if (previousRange && added > 0 && timeScale) {
+        timeScale.setVisibleLogicalRange({
+          from: (previousRange.from ?? 0) + added,
+          to: (previousRange.to ?? 0) + added,
+        });
+      }
+      setHasOlderHistory(hasMoreHistory(CHART_OLDER_CHUNK, points.length));
+      if (!hasMoreHistory(CHART_OLDER_CHUNK, points.length)) {
+        setOlderNotice(t("market_chart.no_more_history"));
+      }
+    } catch (err) {
+      console.warn("[TradingViewChart] Older history load failed:", err);
+      setOlderNotice(t("market_chart.older_failed"));
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [activeSymbol, activeTimeframe, hasOlderHistory, isLoading, isLoadingOlder, t]);
 
   // Trigger real data fetch on symbol or timeframe change
   useEffect(() => {
@@ -600,6 +691,18 @@ export const TradingViewChart: React.FC = () => {
           </div>
 
           <button
+            type="button"
+            data-testid="market-chart-load-older"
+            onClick={() => void loadOlderHistory()}
+            disabled={isLoadingOlder || isLoading || !hasOlderHistory}
+            className="flex items-center space-x-1 px-2 py-1 rounded bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white transition disabled:opacity-50 text-[11px]"
+            title={t("market_chart.load_older_tooltip")}
+          >
+            <History className={`w-3.5 h-3.5 text-accent ${isLoadingOlder ? "animate-pulse" : ""}`} />
+            <span>{isLoadingOlder ? t("market_chart.loading_older") : t("market_chart.load_older")}</span>
+          </button>
+
+          <button
             onClick={() => void fetchMarketCandles()}
             disabled={isLoading}
             className="p-1.5 rounded bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white transition disabled:opacity-50"
@@ -650,6 +753,9 @@ export const TradingViewChart: React.FC = () => {
       </div>
 
       {/* Chart Canvas Area */}
+      {olderNotice && (
+        <p role="status" data-testid="market-chart-older-notice" className="px-3 text-[11px] text-amber-300">{olderNotice}</p>
+      )}
       <p className="px-3 text-[10px] text-slate-400">{t("market_chart.price_units_notice")}</p>
       <div className="relative flex-1 w-full h-full">
         <div ref={chartContainerRef} className="w-full h-full" />

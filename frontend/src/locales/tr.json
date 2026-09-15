@@ -878,7 +878,12 @@
     "symbol_eur_usd": "EUR/USD",
     "symbol_sp500": "S&P 500 (SPY)",
     "symbol_nvidia": "NVIDIA (NVDA)",
-    "unknown_symbol": "Bilinmeyen sembol"
+    "unknown_symbol": "Bilinmeyen sembol",
+    "load_older": "Daha fazla geçmiş yükle",
+    "loading_older": "Geçmiş yükleniyor…",
+    "no_more_history": "Daha eski veri yok",
+    "older_failed": "Daha eski veri alınamadı",
+    "load_older_tooltip": "Daha eski bir mum bloğu yükle"
   },
   "ai_coach": {
     "title": "DETERMİNİSTİK YAPAY ZEKA İŞLEM DENETÇİSİ & BİLİŞSEL AJAN",

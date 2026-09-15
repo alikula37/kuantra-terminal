@@ -23,6 +23,11 @@ simplified New Trade/Edit form. The standard journal's primary action becomes Ed
 replay remains a secondary closed-trade view. Local tracking rules (LIVE,
 provider-event, <=60s) are not weakened. See STATUS for the selected package.
 
+Owner-approved addition (2026-09-15): P1-WP33 bounded market-chart history.
+Free public sources only: bounded provider pagination for crypto, Yahoo `period1/period2`
+deep ranges with documented intraday clamping, cache freshness and a "load older data"
+chart control. No paid data, no invented bars; provider limits stay visible.
+
 Owner decision (2026-09-15): the pilot artifact train advances to `v1.1.0`
 (accepted truth matrix `truth-matrix.v1.1.0.json`); the private transport tag becomes
 `pilot-v1.1.0`. The canonical product Release/tag stays unpublished.
