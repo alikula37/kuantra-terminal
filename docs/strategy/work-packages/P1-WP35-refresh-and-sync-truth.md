@@ -109,6 +109,18 @@ pushed) and the Mac's installed application was rebuilt from the clean commit:
   launched PID `52143`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`.
   User data was preserved (5 trades).
 
+### Round 2 clean build (live equity)
+
+- Source `25dcf88` passed canonical arm64 local CI with **COMPLETE** provenance and a
+  clean tree; report `dist/p1-wp35b-clean-local-ci.json` SHA-256
+  `ef1745247bff3d34cfc87a49666168ffe27ef977b6a30e5c01399a2a5e4fc1bf`, executable
+  `09e5195f61177c47d94bdfcb5a7126b54f96adc4db6456f808abcb40d26dbbcd`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp35b.dmg` `hdiutil verify` VALID,
+  SHA-256 `d481e4b8017b652a833d5fb22e184dc9396d15f887602cdd058d1539d3162af4`; mounted
+  read-only smoke **PASS** (`dist/p1-wp35b-dmg-smoke.json`).
+- `/Applications` installed executable matches the CI build; launched PID `54668`,
+  runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved.
+
 ### Live verification
 
 - Against a copy of the owner database (same build): `POST /api/v1/system/sync/full`

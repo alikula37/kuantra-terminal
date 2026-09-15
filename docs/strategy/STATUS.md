@@ -398,6 +398,13 @@ full backend **963 passed / 2 warnings**, frontend **39 files / 217 tests**, i18
 quote refresh `live_equity: null`; after it `live_equity: -3448.50` (COMPLETE,
 unrealized -8520.00).
 
+**P1-WP35 round-2 clean install (2026-09-15):** Source `25dcf88` passed canonical arm64
+local CI with `COMPLETE` provenance and a clean tree (backend **963**, frontend
+**39/217**, i18n **999/999/999**; report `ef174524…`, executable `09e5195f…`); arm64 DMG
+`d481e4b8…` passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications` was
+replaced after a graceful quit (installed executable matches the CI build, PID `54668`,
+runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved).
+
 **P1-WP35 clean install (2026-09-15):** Source `ef89ae6` passed canonical arm64 local
 CI with `COMPLETE` provenance and a clean tree (backend **960**, frontend **39/214**, i18n
 **993/993/993**; report `7903e040…`, executable `a51f290f…`); arm64 DMG `66ae08f1…`
