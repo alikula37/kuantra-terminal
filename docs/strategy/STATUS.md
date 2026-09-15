@@ -503,6 +503,14 @@ was replaced after a graceful quit (installed executable matches the CI build, P
 `65266`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data
 preserved).
 
+**P1-WP36 round 5 — remove the "unknown results" cell (2026-09-15):** The owner asked
+what the cell meant and then asked to remove it entirely. The strip cell and its two
+unused locale keys are gone; the truth guard remains — the summary still reports
+`unknown_pnl_trades`, the amber warning line still appears while the count is above zero,
+and unknown-result trades stay excluded from monetary aggregates rather than counted as
+zero. The rail now has six cells and keeps the hide/reflow behaviour. Evidence:
+frontend **39/223**, i18n **1028/1028/1028**, TypeScript clean.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

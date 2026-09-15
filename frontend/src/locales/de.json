@@ -327,8 +327,6 @@
     "tooltip_dd": "Größter Rückgang der realisierten Kasse von Hoch zu Tief",
     "unverified_count": "{count} unverifiziert",
     "all_verified": "alle verifiziert",
-    "unknown_results": "UNBEKANNTE ERGEBNISSE",
-    "of_closed": "von {count} geschl.",
     "sharpe": "SHARPE",
     "tooltip_sharpe": "Annualisierter Sharpe der realisierten Trade-Renditen (Mittel / Std × √252, risikofrei 0, auf das Startkapital skaliert)",
     "sharpe_over_trades": "{count} geschlossene Trades",

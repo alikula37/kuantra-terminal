@@ -79,7 +79,6 @@ const RAIL_METRICS = [
   "max-dd",
   "active-positions",
   "sharpe",
-  "unknown-results",
 ] as const;
 const ALL_METRICS = [...HERO_METRICS, ...RAIL_METRICS] as const;
 
@@ -95,7 +94,6 @@ const METRIC_LABEL_KEYS: Record<string, string> = {
   "max-dd": "portfolio.max_drawdown",
   "active-positions": "portfolio.active_positions",
   sharpe: "portfolio.sharpe",
-  "unknown-results": "portfolio.unknown_results",
 };
 
 // Fixed class names so Tailwind can see every candidate; the hero grid keeps one
@@ -252,7 +250,6 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
   const isTodayPositive = summary.today_pnl >= 0;
   const hasOpenPositions = summary.active_positions_count > 0;
   const unverified = summary.unverified_open_positions ?? 0;
-  const unknownClosed = summary.unknown_pnl_trades ?? 0;
 
   const sharpe = summary.sharpe_ratio ?? null;
   const sharpeReady = (summary.sharpe_basis ?? (sharpe != null ? "READY" : "NOT_AVAILABLE")) === "READY" && sharpe != null;
@@ -497,18 +494,6 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             <span className="k-kpi-sub">
               {sharpeReady ? t("portfolio.sharpe_over_trades", { count: sharpeTrades }) : t("portfolio.sharpe_insufficient")}
             </span>
-          </div>
-        )}
-
-        {!hiddenSet.has("unknown-results") && (
-          <div className="k-kpi-strip-item relative group">
-            <HideMetricButton metricId="unknown-results" onHide={hideMetric} />
-            <span className="k-kpi-label">
-              <span>{t("portfolio.unknown_results")}</span>
-              <ShieldAlert className="w-4 h-4 text-muted transition group-hover:opacity-0" />
-            </span>
-            <span className={`text-lg font-bold ${unknownClosed > 0 ? "text-warn" : "text-muted"}`}>{unknownClosed}</span>
-            <span className="k-kpi-sub">{t("portfolio.of_closed", { count: summary.total_closed_trades })}</span>
           </div>
         )}
       </div>

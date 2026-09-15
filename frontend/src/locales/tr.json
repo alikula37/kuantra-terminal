@@ -327,8 +327,6 @@
     "tooltip_dd": "Gerçekleşen kasanın zirveden dibe en büyük düşüşü",
     "unverified_count": "{count} doğrulanmamış",
     "all_verified": "tümü doğrulanmış",
-    "unknown_results": "BİLİNMEYEN SONUÇ",
-    "of_closed": "kapanan: {count}",
     "sharpe": "SHARPE",
     "tooltip_sharpe": "Gerçekleşen işlem getirilerinin yıllıklandırılmış Sharpe'ı (ortalama / sapma × √252, risksiz faiz 0, başlangıç sermayesi bazlı)",
     "sharpe_over_trades": "{count} kapanan işlem",

@@ -124,6 +124,21 @@ açılırlarsa hizalama vs ona göre yapılsın."
 - EN/TR/DE strings for the hide/restore controls; screenshot-verified with three
   metrics hidden (hero reflowed to 4 cards, rail to 5 cells, restore chip visible).
 
+## Round 5 — remove the "unknown results" cell (owner request)
+
+Owner request (2026-09-15): "unknown results diye bir kutu var o. nedir?" then "onu
+kaldıralım tamamen". The strip cell was removed together with its two now-unused locale
+keys; the underlying honesty guard stays untouched — `unknown_pnl_trades` is still
+reported by `portfolio/summary`, the dashboard still shows the amber
+"completed trade(s) have an unknown result" warning while the count is above zero, and
+those trades remain excluded from monetary aggregates instead of being counted as zero.
+
+- Removed: the `unknown-results` strip cell, its entry in the hidden-metric registry
+  and label map, and `portfolio.unknown_results` / `portfolio.of_closed` in EN/TR/DE.
+- The rail now carries six cells (win rate, profit factor, average R, max drawdown,
+  active positions, Sharpe) and keeps reflowing with the hide controls.
+- Evidence: frontend **39 files / 223 tests**, i18n **1028/1028/1028**, TypeScript clean.
+
 ## Scope boundaries
 
 - No new endpoints beyond the existing summary fields; no fabricated values — every
