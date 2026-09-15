@@ -95,3 +95,41 @@ it("shows local unrealized only for a verified base unit", async () => {
   expect(btcRow.textContent).toContain("open_positions.local_unrealized");
   expect(btcRow.textContent).not.toContain("open_positions.monetary_unavailable");
 });
+
+it("enables money math once the server verifies the symbol", async () => {
+  const solPosition = {
+    id: "TRD-SOL", symbol: "SOLUSDT", side: "BUY", position_type: "LONG",
+    entry_price: 150, qty: 10, entry_time: "2026-09-15T10:00:00Z", status: "OPEN",
+  };
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/market-data/instrument")) {
+      return Promise.resolve(response({
+        status: "VERIFIED", provider: "binance_spot", base_asset: "SOL", quote_asset: "USDT",
+      }));
+    }
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({
+        checked_at: new Date().toISOString(), requested: 1, identities: 1, skipped_identities: 0,
+        quotes: {
+          "TRD-SOL": {
+            quote_status: "LIVE", price: 160, price_kind: "LAST",
+            source_id: "binance_public", source_symbol: "SOLUSDT",
+            observed_at: new Date().toISOString(), checked_at: new Date().toISOString(),
+            age_seconds: 1, reason: null, last_known: null,
+          },
+        },
+      }));
+    }
+    return Promise.resolve(response([]));
+  });
+
+  await act(async () => root.render(
+    <OpenPositionsTable positions={[solPosition] as never} onClosePosition={vi.fn()} />,
+  ));
+  await flush();
+
+  const row = host.querySelector("tbody tr")!;
+  expect(row.textContent).toContain("160");
+  expect(row.textContent).toContain("open_positions.local_unrealized");
+  expect(row.textContent).not.toContain("open_positions.monetary_unavailable");
+});

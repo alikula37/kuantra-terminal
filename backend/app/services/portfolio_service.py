@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from app.core.position_math import instrument_unit_basis
+from app.services.market_data.instrument_catalog import instrument_catalog
 from app.db.sqlite_driver import sqlite_driver
 from app.services.trade_read_adapter import trade_read_adapter
 
@@ -132,6 +133,7 @@ class PortfolioAnalyticsService:
             verified_unit = instrument_unit_basis(
                 t.get("symbol"),
                 qty_unit=t.get("qty_unit"),
+                server_verified=instrument_catalog.is_verified(str(t.get("symbol") or "")),
             )["contract_size"] == "BASE_UNIT"
             if not verified_unit:
                 unverified_open_positions += 1
@@ -288,6 +290,7 @@ class PortfolioAnalyticsService:
             verified_unit = instrument_unit_basis(
                 raw_sym,
                 qty_unit=t.get("qty_unit"),
+                server_verified=instrument_catalog.is_verified(raw_sym),
             )["contract_size"] == "BASE_UNIT"
             if verified_unit:
                 grouped[raw_sym]["total_volume"] += entry_price * qty

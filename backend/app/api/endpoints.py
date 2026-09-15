@@ -22,6 +22,7 @@ from app.db.sync_pipeline import sync_pipeline
 from app.db.repositories.candles_repo import candles_repo
 from app.services.trade_edit import TradeEditError, trade_edit_service
 from app.services.quote_refresh import quote_refresh_service
+from app.services.market_data.instrument_catalog import instrument_catalog
 from app.services.market_data.public_fetcher import (
     FREE_QUOTE_SOURCES,
     public_market_fetcher,
@@ -368,9 +369,10 @@ def get_trade(trade_id: str):
 def attach_position_summary(trade: Dict[str, Any]) -> Dict[str, Any]:
     """Attach the labeled sizing/return view without mutating stored data."""
 
+    symbol = trade.get("symbol")
     enriched = dict(trade)
     enriched["sizing"] = position_summary(
-        symbol=trade.get("symbol"),
+        symbol=symbol,
         position_type=trade.get("position_type") or "UNKNOWN",
         side=trade.get("side") or "BUY",
         entry_price=trade.get("entry_price"),
@@ -379,6 +381,7 @@ def attach_position_summary(trade: Dict[str, Any]) -> Dict[str, Any]:
         exit_price=trade.get("exit_price"),
         commission=trade.get("commission"),
         qty_unit=trade.get("qty_unit"),
+        server_verified=instrument_catalog.is_verified(str(symbol or "")),
     )
     return enriched
 
@@ -438,7 +441,11 @@ def create_trade(trade: TradeCreateSchema):
     side = trade.side.upper()
     long = side in ("BUY", "LONG")
     direction = 1.0 if long else -1.0
-    unit_basis = instrument_unit_basis(trade.symbol, qty_unit=trade.qty_unit)
+    unit_basis = instrument_unit_basis(
+        trade.symbol,
+        qty_unit=trade.qty_unit,
+        server_verified=instrument_catalog.is_verified(trade.symbol),
+    )
     monetary_ready = unit_basis["contract_size"] == "BASE_UNIT"
     exit_price = float(trade.exit_price) if trade.status == "CLOSED" else None
     pnl: Optional[float] = 0.0
@@ -614,6 +621,7 @@ def close_trade(trade_id: str, close_data: TradeCloseSchema):
     monetary_ready = instrument_unit_basis(
         existing.get("symbol"),
         qty_unit=existing.get("qty_unit"),
+        server_verified=instrument_catalog.is_verified(str(existing.get("symbol") or "")),
     )["contract_size"] == "BASE_UNIT"
 
     if not monetary_ready:
@@ -2315,6 +2323,19 @@ async def get_market_candles(
     except Exception as e:
         logger.error(f"[MARKET-DATA-API] Failed to fetch market candles for {symbol}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch market candles: {str(e)}")
+
+
+@router.get("/market-data/instrument")
+async def get_market_instrument(
+    symbol: str = Query(..., min_length=1, max_length=64, description="Exact instrument symbol")
+):
+    """Verify one symbol against the provider's public instrument metadata.
+
+    A verified result is cached server-side and enables base-unit monetary math
+    without a manual declaration; an unverifiable symbol stays UNVERIFIED.
+    """
+
+    return await instrument_catalog.describe(symbol)
 
 
 @router.get("/market-data/status")

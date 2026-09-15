@@ -585,7 +585,8 @@
     "verification_EXPLICIT_QTY_UNIT": "Nutzererklärung (Basiseinheit)",
     "verification_NONE": "Einheit nicht erklärt",
     "margin_source_UNVERIFIED_CONTRACT_SIZE": "Kontraktgröße unverifiziert",
-    "reason_TIME_IN_FUTURE": "Ein realisierter Trade kann nicht in der Zukunft liegen."
+    "reason_TIME_IN_FUTURE": "Ein realisierter Trade kann nicht in der Zukunft liegen.",
+    "verification_PROVIDER_CATALOG": "Server-verifiziertes Anbieter-Instrument"
   },
   "journal": {
     "title": "HANDELSJOURNAL",

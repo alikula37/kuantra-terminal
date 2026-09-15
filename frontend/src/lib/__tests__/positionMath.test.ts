@@ -123,6 +123,16 @@ describe("position sizing rules", () => {
     expect(cryptoUndeclared.instrument.verification).toBe("NONE");
     expect(cryptoUndeclared.monetaryCalculation.status).toBe("UNAVAILABLE");
 
+    const catalogVerified = positionSizing({
+      symbol: "ETHUSDT", positionType: "LONG", side: "BUY",
+      entryPrice: 2500, qty: 2, exitPrice: 2600, serverVerified: true,
+    });
+    expect(catalogVerified.instrument.verification).toBe("PROVIDER_CATALOG");
+    expect(catalogVerified.instrument.verificationSource).toBe("PROVIDER_CATALOG");
+    expect(catalogVerified.monetaryCalculation.status).toBe("READY");
+    expect(catalogVerified.notional.value).toBe(5000);
+    expect(catalogVerified.positionReturnPctGross).toBeCloseTo(4);
+
     const explicit = positionSizing({
       symbol: "EURUSD", positionType: "LONG", side: "BUY",
       entryPrice: 1.1, qty: 1000, leverage: 10, exitPrice: 1.12, qtyUnit: "BASE",

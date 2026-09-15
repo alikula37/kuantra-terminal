@@ -585,7 +585,8 @@
     "verification_EXPLICIT_QTY_UNIT": "Kullanıcı beyanı (temel birim)",
     "verification_NONE": "Birim beyan edilmedi",
     "margin_source_UNVERIFIED_CONTRACT_SIZE": "Sözleşme büyüklüğü doğrulanmadı",
-    "reason_TIME_IN_FUTURE": "Gerçekleşmiş işlem gelecekte olamaz."
+    "reason_TIME_IN_FUTURE": "Gerçekleşmiş işlem gelecekte olamaz.",
+    "verification_PROVIDER_CATALOG": "Sunucu doğrulamalı sağlayıcı enstrümanı"
   },
   "journal": {
     "title": "İŞLEM GÜNLÜĞÜ",

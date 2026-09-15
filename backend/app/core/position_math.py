@@ -110,21 +110,35 @@ def instrument_unit_basis(
     symbol: str,
     *,
     qty_unit: Optional[str] = None,
+    server_verified: bool = False,
 ) -> Dict[str, Any]:
     """Return the unit basis plus whether monetary math is allowed.
 
-    The only accepted basis is an explicit user ``qty_unit=BASE`` declaration.
-    Provider labels and symbol suffixes are not verification and never grant
-    base-unit status on their own.
+    Accepted bases:
+
+    * ``server_verified`` — the backend itself confirmed the symbol in the
+      provider's public instrument metadata (spot, base-unit quantity); or
+    * an explicit user ``qty_unit=BASE`` declaration.
+
+    Client-supplied provider labels and symbol suffixes are never verification.
     """
 
     identity = classify_instrument(symbol)
     explicit = str(qty_unit or "UNKNOWN").strip().upper() == "BASE"
+    if explicit:
+        verification = "EXPLICIT_QTY_UNIT"
+        source = "USER_DECLARATION"
+    elif server_verified:
+        verification = "PROVIDER_CATALOG"
+        source = "PROVIDER_CATALOG"
+    else:
+        verification = "NONE"
+        source = "NONE"
     return {
         **identity,
-        "contract_size": "BASE_UNIT" if explicit else "UNVERIFIED",
-        "verification": "EXPLICIT_QTY_UNIT" if explicit else "NONE",
-        "verification_source": "USER_DECLARATION" if explicit else "NONE",
+        "contract_size": "BASE_UNIT" if verification != "NONE" else "UNVERIFIED",
+        "verification": verification,
+        "verification_source": source,
         "qty_unit": "BASE" if explicit else "UNKNOWN",
     }
 
@@ -157,6 +171,7 @@ def position_summary(
     commission: Any = None,
     size_input_mode: str = "QTY",
     qty_unit: Optional[str] = None,
+    server_verified: bool = False,
 ) -> Dict[str, Any]:
     """Return a labeled sizing/return summary for one trade.
 
@@ -166,7 +181,11 @@ def position_summary(
     declaration.
     """
 
-    instrument = instrument_unit_basis(symbol, qty_unit=qty_unit)
+    instrument = instrument_unit_basis(
+        symbol,
+        qty_unit=qty_unit,
+        server_verified=server_verified,
+    )
     entry = _finite(entry_price)
     quantity = _finite(qty)
     exit_value = _finite(exit_price)

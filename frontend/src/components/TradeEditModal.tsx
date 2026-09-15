@@ -76,6 +76,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
   const [takeProfit, setTakeProfit] = useState("");
   const [notes, setNotes] = useState("");
   const [qtyUnit, setQtyUnit] = useState<"BASE" | "UNKNOWN">("UNKNOWN");
+  const [serverVerified, setServerVerified] = useState(false);
   const [statusSelection, setStatusSelection] = useState<"OPEN" | "CLOSED" | "CANCELED">("OPEN");
   const [exitPrice, setExitPrice] = useState("");
   const [exitTime, setExitTime] = useState("");
@@ -95,6 +96,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
     setTakeProfit(next.take_profit != null ? String(next.take_profit) : "");
     setNotes(next.notes || "");
     setQtyUnit(next.qty_unit === "BASE" ? "BASE" : "UNKNOWN");
+    setServerVerified(next.sizing?.instrument?.verification === "PROVIDER_CATALOG");
     setStatusSelection((next.status as "OPEN" | "CLOSED" | "CANCELED") || "OPEN");
     setExitPrice(next.exit_price != null ? String(next.exit_price) : "");
     setExitTime(utcIsoToIstanbulInput(next.exit_time) || "");
@@ -134,6 +136,12 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
       const revisionData: unknown = await revisionResponse.json();
       if (controller.signal.aborted) return;
       applyTrade(tradeData);
+      void apiFetch(apiUrl(`/api/v1/market-data/instrument?symbol=${encodeURIComponent(tradeData.symbol)}`))
+        .then((response) => (response.ok ? response.json() : null))
+        .then((payload: { status?: string } | null) => {
+          if (payload?.status === "VERIFIED") setServerVerified(true);
+        })
+        .catch(() => {});
       const plan = (trackingData as { plan?: unknown })?.plan;
       applyTracking(plan == null ? null : isTrackingState(plan) ? plan : null);
       const history = (revisionData as TradeRevisionHistory)?.revisions;
@@ -177,7 +185,8 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
     leverage: leverage === "" ? null : Number(leverage),
     exitPrice: trade.exit_price != null ? Number(trade.exit_price) : null,
     qtyUnit,
-  }) : null, [trade, entryPrice, qty, leverage, qtyUnit]);
+    serverVerified,
+  }) : null, [trade, entryPrice, qty, leverage, qtyUnit, serverVerified]);
 
   const refreshPrice = async () => {
     if (quoteBusy) return;
@@ -604,16 +613,22 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                 />
               </label>
 
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  data-testid="trade-edit-qty-unit"
-                  checked={qtyUnit === "BASE"}
-                  disabled={notesOnly}
-                  onChange={(e) => setQtyUnit(e.target.checked ? "BASE" : "UNKNOWN")}
-                />
-                {t("order_ticket.qty_unit_base_label")}
-              </label>
+              {sizing?.instrument.verification === "PROVIDER_CATALOG" ? (
+                <p className="k-help text-gain" data-testid="trade-edit-verified-instrument">
+                  {t("order_ticket.verification_PROVIDER_CATALOG")}
+                </p>
+              ) : (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    data-testid="trade-edit-qty-unit"
+                    checked={qtyUnit === "BASE"}
+                    disabled={notesOnly}
+                    onChange={(e) => setQtyUnit(e.target.checked ? "BASE" : "UNKNOWN")}
+                  />
+                  {t("order_ticket.qty_unit_base_label")}
+                </label>
+              )}
               {sizing && (
                 <p className="k-help">
                   {t(`order_ticket.verification_${sizing.instrument.verification}`)}

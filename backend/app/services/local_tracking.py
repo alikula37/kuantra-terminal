@@ -124,10 +124,15 @@ def validate_snapshot(state):
 
 
 class LocalTrackingService:
-    def __init__(self, driver):
+    def __init__(self, driver, catalog=None):
         self.driver = driver
         self.ledger = EvidenceLedgerRepository(driver.db_path)
         self._schema_cookie = None
+        if catalog is None:
+            from app.services.market_data.instrument_catalog import InstrumentCatalog
+
+            catalog = InstrumentCatalog(db_path=driver.db_path)
+        self.catalog = catalog
 
     def _verified(self):
         with self.driver.get_connection() as conn:
@@ -243,18 +248,23 @@ class LocalTrackingService:
         except (KeyError, IndexError):
             return None
 
-    @classmethod
-    def _unit_verified(cls, trade) -> bool:
-        """Verified base unit requires an explicit user declaration.
+    def _unit_verified(self, trade) -> bool:
+        """Base unit from the server-verified catalog or an explicit declaration.
 
-        A plan's provider label is client-supplied and is not verification, so
-        it never enables monetary close evidence on its own; the trade must
-        carry ``qty_unit=BASE``.
+        A plan's provider label is client-supplied and is not verification.  The
+        backend's own provider-instrument lookup (or the user's ``qty_unit=BASE``
+        declaration) is required before monetary close evidence can be produced.
         """
 
+        symbol = self._row_value(trade, "symbol")
+        try:
+            server_verified = bool(self.catalog.is_verified(str(symbol or "")))
+        except Exception:  # noqa: BLE001 - verification must never block tracking reads
+            server_verified = False
         return instrument_unit_basis(
-            cls._row_value(trade, "symbol"),
-            qty_unit=cls._row_value(trade, "qty_unit"),
+            symbol,
+            qty_unit=self._row_value(trade, "qty_unit"),
+            server_verified=server_verified,
         )["contract_size"] == "BASE_UNIT"
 
     def edit_in_transaction(self, conn, trade, plan, expected_revision=0, reset=False):

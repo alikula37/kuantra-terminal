@@ -585,7 +585,8 @@
     "verification_EXPLICIT_QTY_UNIT": "User declaration (base unit)",
     "verification_NONE": "Unit not declared",
     "margin_source_UNVERIFIED_CONTRACT_SIZE": "Contract size unverified",
-    "reason_TIME_IN_FUTURE": "A realized trade cannot be in the future."
+    "reason_TIME_IN_FUTURE": "A realized trade cannot be in the future.",
+    "verification_PROVIDER_CATALOG": "Server-verified provider instrument"
   },
   "journal": {
     "title": "TRADE LOGGING JOURNAL",

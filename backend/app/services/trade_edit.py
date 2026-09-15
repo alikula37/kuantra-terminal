@@ -64,8 +64,19 @@ def _number(value: Any) -> Optional[float]:
 
 
 class TradeEditService:
-    def __init__(self, driver=None):
+    def __init__(self, driver=None, catalog=None):
         self.driver = driver or sqlite_driver
+        if catalog is None:
+            from app.services.market_data.instrument_catalog import InstrumentCatalog
+
+            catalog = InstrumentCatalog(db_path=self.driver.db_path)
+        self.catalog = catalog
+
+    def _catalog_verified(self, symbol) -> bool:
+        try:
+            return bool(self.catalog.is_verified(str(symbol or "")))
+        except Exception:  # noqa: BLE001 - verification must never block an edit
+            return False
 
     # -- read helpers -----------------------------------------------------
 
@@ -374,6 +385,7 @@ class TradeEditService:
                 unit_ready = instrument_unit_basis(
                     existing.get("symbol"),
                     qty_unit=payload.get("qty_unit", existing.get("qty_unit")),
+                    server_verified=self._catalog_verified(existing.get("symbol")),
                 )["contract_size"] == "BASE_UNIT"
                 gross, r_multiple_value = self._close_result(
                     side=side,
@@ -492,6 +504,7 @@ class TradeEditService:
             unit_ready = instrument_unit_basis(
                 existing.get("symbol"),
                 qty_unit=payload.get("qty_unit", existing.get("qty_unit")),
+                server_verified=self._catalog_verified(existing.get("symbol")),
             )["contract_size"] == "BASE_UNIT"
             gross, r_multiple_value = self._close_result(
                 side=str(existing.get("side") or "BUY"),

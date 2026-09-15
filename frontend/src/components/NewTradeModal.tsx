@@ -134,6 +134,8 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const [targets, setTargets] = useState<TargetDraft[]>([{ price: "", percent: "" }]);
   const takeProfit = Number(targets[0]?.price || 0);
   const [trackingEnabled, setTrackingEnabled] = useState(true);
+  const [serverVerified, setServerVerified] = useState(false);
+  const [verifiedProvider, setVerifiedProvider] = useState<string | null>(null);
   const [selectedInstrument, setSelectedInstrument] = useState<MarketInstrument | null>(null);
   const [executionVenue, setExecutionVenue] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
@@ -158,6 +160,28 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     if (isOpen) setTradeTime(istanbulInputValue());
   }, [isOpen]);
 
+  const verifyInstrument = async (symbol: string) => {
+    const normalized = symbol.trim().toUpperCase();
+    if (!normalized) return;
+    try {
+      const response = await apiFetch(
+        apiUrl(`/api/v1/market-data/instrument?symbol=${encodeURIComponent(normalized)}`),
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json() as { status?: string; provider?: string; base_asset?: string; quote_asset?: string };
+      if (payload.status === "VERIFIED") {
+        setServerVerified(true);
+        setVerifiedProvider(payload.provider ? `${payload.provider} · ${payload.base_asset}/${payload.quote_asset}` : null);
+      } else {
+        setServerVerified(false);
+        setVerifiedProvider(null);
+      }
+    } catch {
+      setServerVerified(false);
+      setVerifiedProvider(null);
+    }
+  };
+
   const cancelQuoteRequest = () => {
     quoteRequestRef.current?.abort();
     quoteRequestRef.current = null;
@@ -180,6 +204,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     leverage: numericLeverage,
     exitPrice: tradeStatus === "CLOSED" && Number(exitPrice) > 0 ? Number(exitPrice) : null,
     qtyUnit,
+    serverVerified,
   });
   const validStop = Number(stopLoss) > 0;
   const validTarget = takeProfit > 0;
@@ -230,6 +255,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       }
       setQuote(candidate);
       if (candidate && Number.isFinite(candidate.price) && Number(candidate.price) > 0 && candidate.status !== "UNAVAILABLE") {
+        void verifyInstrument(tradeSymbol);
         const markPrice = Number(candidate.price);
         setPriceOrigin("PUBLIC_QUOTE");
         setEntryPrice(String(markPrice));
@@ -271,6 +297,9 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     }
     setTradeSymbol(pendingInstrument.symbol);
     setSelectedInstrument(pendingInstrument);
+    setServerVerified(false);
+    setVerifiedProvider(null);
+    void verifyInstrument(pendingInstrument.symbol);
     cancelQuoteRequest();
     if (pendingInstrument.symbol !== tradeSymbol) {
       setEntryPrice("");
@@ -845,16 +874,25 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 <span className="font-semibold text-slate-100 break-words">{t(`order_ticket.verification_${sizing.instrument.verification}`)}</span>
               </div>
               <div className="col-span-full">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    data-testid="new-trade-qty-unit-base"
-                    checked={qtyUnit === "BASE"}
-                    onChange={(e) => setQtyUnit(e.target.checked ? "BASE" : "UNKNOWN")}
-                  />
-                  {t("order_ticket.qty_unit_base_label")}
-                </label>
-                <p className="k-help">{t("order_ticket.qty_unit_base_help")}</p>
+                {sizing.instrument.verification === "PROVIDER_CATALOG" ? (
+                  <p className="k-help text-gain" data-testid="new-trade-verified-instrument">
+                    {t("order_ticket.verification_PROVIDER_CATALOG")}
+                    {verifiedProvider && <span className="ml-1 text-slate-400">({verifiedProvider})</span>}
+                  </p>
+                ) : (
+                  <>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        data-testid="new-trade-qty-unit-base"
+                        checked={qtyUnit === "BASE"}
+                        onChange={(e) => setQtyUnit(e.target.checked ? "BASE" : "UNKNOWN")}
+                      />
+                      {t("order_ticket.qty_unit_base_label")}
+                    </label>
+                    <p className="k-help">{t("order_ticket.qty_unit_base_help")}</p>
+                  </>
+                )}
               </div>
               {!monetaryReady && (
                 <p className="col-span-full k-help text-amber-300" data-testid="new-trade-monetary-unavailable">

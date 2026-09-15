@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP33-market-chart-history.md"
+    "docs/strategy/work-packages/P1-WP34-verified-instrument-catalog.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -125,7 +125,8 @@
     "docs/strategy/STATUS.md": "current-status",
     "docs/strategy/README.md": "reference",
     "docs/archive/README.md": "reference",
-    "docs/strategy/work-packages/P1-WP33-market-chart-history.md": "current-work-package"
+    "docs/strategy/work-packages/P1-WP33-market-chart-history.md": "reference",
+    "docs/strategy/work-packages/P1-WP34-verified-instrument-catalog.md": "current-work-package"
   },
   "archived_unchecked_counts": {
     "docs/archive/strategy/work-packages/P1-WP31-local-tp-tracking.md": 0,

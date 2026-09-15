@@ -211,3 +211,28 @@ it("requires an explicit unit declaration before money math and tracking for a m
   expect(captured.body.qty_unit).toBe("BASE");
   expect(captured.body.local_tracking).toMatchObject({ enabled: true });
 });
+
+it("hides the manual declaration once the server verifies the instrument", async () => {
+  const quote = {
+    requested_symbol: "BTCUSDT", source_id: "binance_public", source_symbol: "BTCUSDT",
+    price: 65000, status: "LIVE", price_kind: "LAST",
+    observed_at: "2026-09-15T10:00:00Z", reason: null, free_source: true, credentials_required: false,
+  };
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.startsWith("/api/v1/market-data/instrument")) {
+      return Promise.resolve(response({ status: "VERIFIED", provider: "binance_spot", base_asset: "BTC", quote_asset: "USDT" }));
+    }
+    if (path.startsWith("/api/v1/market-data/quote")) return Promise.resolve(response(quote));
+    return Promise.resolve(response({}));
+  });
+
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  expect(host.querySelector("[data-testid=new-trade-qty-unit-base]")).not.toBeNull();
+
+  await act(async () => (host.querySelector('button[title="order_ticket.fetch_price_btn"]') as HTMLButtonElement).click());
+  await flush();
+
+  expect(host.querySelector("[data-testid=new-trade-verified-instrument]")).not.toBeNull();
+  expect(host.textContent).toContain("order_ticket.verification_PROVIDER_CATALOG");
+  expect(host.querySelector("[data-testid=new-trade-qty-unit-base]")).toBeNull();
+});

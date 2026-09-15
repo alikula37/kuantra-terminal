@@ -1,9 +1,9 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # P1-WP33 — Bounded market-chart history
 
 ```yaml
 work_package: P1-WP33
-status: InProgress
+status: Complete
 branch: main
 baseline: f640e4b
 ```

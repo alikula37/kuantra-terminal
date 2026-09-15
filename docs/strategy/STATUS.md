@@ -3,12 +3,15 @@
 
 Updated: 2026-09-13. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP33 bounded market-chart history](work-packages/P1-WP33-market-chart-history.md).**
-Owner report (2026-09-15): Market Charts show only a short history and cannot load older
-data; the chart also froze on the first cached window. The package adds bounded provider
-pagination, Yahoo `period1/period2` deep ranges with documented intraday clamping, cache
-freshness, and a "load older data" chart control. [P1-WP32 pilot journal trust](work-packages/P1-WP32-pilot-journal-trust.md)
-remains the previous bounded package with its evidence recorded below.
+**Selected work: [P1-WP34 server-verified instrument catalog](work-packages/P1-WP34-verified-instrument-catalog.md).**
+Owner report (2026-09-15): the open ETHUSDT position still shows "contract size not
+verified — monetary P/L is not calculated" even though the backend can check the
+instrument at the exchange. The package makes the server verify free provider spot
+metadata itself (Binance/Bybit, cached in the app database) so a directly verified spot
+instrument enables monetary math without a manual declaration. [P1-WP33 bounded
+market-chart history](work-packages/P1-WP33-market-chart-history.md) is complete with its
+evidence below; [P1-WP32 pilot journal trust](work-packages/P1-WP32-pilot-journal-trust.md)
+remains a reference package.
 
 Owner instruction (2026-09-14): pilot traders need a readable journal with
 user-supplied Turkey-time trade dates, working edit/correction with revision
@@ -330,6 +333,22 @@ Eski kök `UAT_AUDIT_REPORT.json` raporu geri çekilmiş tarihsel kayıt olarak 
 güncel UAT çıktısı yalnızca ignore edilen `artifacts/evidence/uat/` altında tutulur.
 Son güvenli çalıştırmada 2 temel senaryo `PASSED`, 3 deneysel senaryo `DISABLED` oldu;
 komutun yüzde-100 dışı sonucu bilinçli bir release engelidir ve production PASS değildir.
+
+**P1-WP34 server-verified instrument catalog (2026-09-15):** Money math previously
+required an explicit `qty_unit=BASE` declaration; a client `price_source` label was never
+proof (round-4 decision) and the server had no verification path of its own. The new
+`InstrumentCatalog` queries Binance spot exchange info (Bybit spot fallback) and stores
+the result in a `verified_instruments` table in the same SQLite database as trades:
+24-hour cache reuse, 7-day honesty horizon, silent UNVERIFIED on provider errors or
+unknown symbols. `EXPLICIT_QTY_UNIT` and `PROVIDER_CATALOG` enable money math, `NONE`
+stays unknown; trade creation, open-position summaries, portfolio open risk/volume,
+local-tracking plans and trade-edit close recomputation all consult the catalog, and
+`GET /api/v1/market-data/instrument?symbol=` exposes one symbol's verification. New
+Trade/Edit verify the confirmed symbol once and hide the manual checkbox when the server
+confirms it; the open-positions table asks once per unverified symbol and then shows
+monetary K/Z. Evidence: `test_instrument_catalog.py` **9 passed**, full backend
+**957 passed / 2 warnings**, frontend **39 files / 209 tests**, i18n **990/990/990**,
+TypeScript clean.
 
 ## Selected next work
 

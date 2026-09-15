@@ -12,7 +12,7 @@
 export type InstrumentKind = "CRYPTO_PAIR" | "MACRO_OR_COMMODITY" | "GENERIC";
 export type PositionType = "SPOT" | "LONG" | "SHORT" | "UNKNOWN";
 
-export type UnitVerification = "EXPLICIT_QTY_UNIT" | "NONE";
+export type UnitVerification = "PROVIDER_CATALOG" | "EXPLICIT_QTY_UNIT" | "NONE";
 
 export interface InstrumentIdentity {
   kind: InstrumentKind;
@@ -20,7 +20,7 @@ export interface InstrumentIdentity {
   quote: string;
   contractSize: "BASE_UNIT" | "UNVERIFIED";
   verification: UnitVerification;
-  verificationSource: "USER_DECLARATION" | "NONE";
+  verificationSource: "PROVIDER_CATALOG" | "USER_DECLARATION" | "NONE";
 }
 
 export interface MonetaryCalculation {
@@ -83,15 +83,25 @@ export function classifyInstrument(symbol: string | null | undefined): Instrumen
  */
 export function instrumentUnitBasis(
   symbol: string | null | undefined,
-  options: { qtyUnit?: string | null } = {},
+  options: { qtyUnit?: string | null; serverVerified?: boolean } = {},
 ): InstrumentIdentity {
   const identity = classifyInstrument(symbol);
   const explicit = String(options.qtyUnit || "UNKNOWN").toUpperCase() === "BASE";
+  const verification: UnitVerification = explicit
+    ? "EXPLICIT_QTY_UNIT"
+    : options.serverVerified
+      ? "PROVIDER_CATALOG"
+      : "NONE";
+  const verificationSource = explicit
+    ? "USER_DECLARATION"
+    : options.serverVerified
+      ? "PROVIDER_CATALOG"
+      : "NONE";
   return {
     ...identity,
-    contractSize: explicit ? "BASE_UNIT" : "UNVERIFIED",
-    verification: explicit ? "EXPLICIT_QTY_UNIT" : "NONE",
-    verificationSource: explicit ? "USER_DECLARATION" : "NONE",
+    contractSize: verification === "NONE" ? "UNVERIFIED" : "BASE_UNIT",
+    verification,
+    verificationSource,
   };
 }
 
@@ -120,8 +130,12 @@ export function positionSizing(input: {
   leverage?: number | null;
   exitPrice?: number | null;
   qtyUnit?: string | null;
+  serverVerified?: boolean;
 }): PositionSizing {
-  const instrument = instrumentUnitBasis(input.symbol, { qtyUnit: input.qtyUnit });
+  const instrument = instrumentUnitBasis(input.symbol, {
+    qtyUnit: input.qtyUnit,
+    serverVerified: input.serverVerified,
+  });
   const entry = Number.isFinite(input.entryPrice) ? Number(input.entryPrice) : null;
   const quantity = Number.isFinite(input.qty) ? Number(input.qty) : null;
   const declared = Number.isFinite(input.leverage) ? Number(input.leverage) : null;

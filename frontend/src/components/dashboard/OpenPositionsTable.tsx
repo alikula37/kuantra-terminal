@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Crosshair, Plus, Shield, Edit3, XCircle, RefreshCw } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
 import { Trade } from "../../types";
 import { useOpenQuoteRefresh, quoteAgeSeconds } from "../../hooks/useOpenQuoteRefresh";
+import { apiFetch, apiUrl } from "../../lib/backend";
 import { formatIstanbulDateTime, relativeAgeLabel } from "../../lib/tradeTime";
 import { formatPrice, positionSizing } from "../../lib/positionMath";
 
@@ -22,6 +23,8 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
   onOpenNewTrade,
 }) => {
   const { t, locale } = useTranslation();
+  const [verifiedSymbols, setVerifiedSymbols] = useState<Record<string, boolean>>({});
+  const verificationRequested = useRef<Set<string>>(new Set());
   const {
     quotes,
     refresh,
@@ -31,6 +34,29 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
     lastAttemptAt,
     nowMs,
   } = useOpenQuoteRefresh(positions.length > 0);
+
+  // One bounded server-side instrument verification per symbol: a verified
+  // provider spot instrument enables base-unit money math without a manual
+  // declaration.
+  useEffect(() => {
+    const candidates = positions
+      .filter((position) => position.sizing?.instrument?.verification !== "PROVIDER_CATALOG")
+      .map((position) => position.symbol)
+      .filter((symbol) => !verificationRequested.current.has(symbol));
+    if (candidates.length === 0) return;
+    for (const symbol of candidates) {
+      verificationRequested.current.add(symbol);
+      void apiFetch(apiUrl(`/api/v1/market-data/instrument?symbol=${encodeURIComponent(symbol)}`))
+        .then((response: Response) => (response.ok ? response.json() : null))
+        .then((payload: { status?: string } | null) => {
+          if (payload?.status === "VERIFIED") {
+            setVerifiedSymbols((current) => ({ ...current, [symbol]: true }));
+            void refresh();
+          }
+        })
+        .catch(() => {});
+    }
+  }, [positions, refresh]);
 
   if (loading) {
     return (
@@ -130,6 +156,8 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                   qty: p.qty ?? null,
                   leverage: p.leverage ?? null,
                   qtyUnit: p.qty_unit ?? null,
+                  serverVerified: verifiedSymbols[p.symbol] === true
+                    || p.sizing?.instrument?.verification === "PROVIDER_CATALOG",
                 });
                 const monetaryReady = sizing.monetaryCalculation.status === "READY";
                 const unrealized = monetaryReady && quotePrice != null && p.entry_price != null && p.qty != null
