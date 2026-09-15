@@ -158,3 +158,61 @@ it("falls back to the realized ledger when no open position can be priced", asyn
   expect(host.textContent).toContain("$5,071.50");
   expect(host.textContent).toContain("portfolio.live_equity_unavailable");
 });
+
+it("shows the hero exposure, open P&L and today cells with compact formatting", async () => {
+  await act(async () => root.render(
+    <PortfolioKpiGrid
+      sparkline={[5000, 5050, 5071.5]}
+      summary={{
+        ...baseSummary,
+        unrealized_pnl_usd: 250,
+        unrealized_pnl_pct: 5,
+        live_equity: 5321.5,
+        live_equity_basis: "COMPLETE",
+        open_notional_usd: 1_250_000,
+        open_margin_usd: 125_000,
+        open_margin_positions: 2,
+        open_exposure_basis: "COMPLETE",
+        today_trades_count: { wins: 1, losses: 0, total: 1 },
+      }}
+    />,
+  ));
+
+  expect(host.textContent).toContain("portfolio.open_unrealized");
+  expect(host.textContent).toContain("+$250.00");
+  expect(host.textContent).toContain("portfolio.exposure");
+  expect(host.textContent).toContain("$1.25M");
+  expect(host.textContent).toContain("portfolio.margin_line:$125.0K|2");
+  expect(host.textContent).toContain("portfolio.today_wl:1|0");
+  expect(host.querySelector("[data-testid=equity-sparkline]")).not.toBeNull();
+});
+
+it("flags unpriced exposure and unknown today results instead of hiding them", async () => {
+  await act(async () => root.render(
+    <PortfolioKpiGrid
+      summary={{
+        ...baseSummary,
+        open_exposure_basis: "PARTIAL",
+        open_exposure_unpriced: 1,
+        open_notional_usd: 500,
+        open_margin_usd: 0,
+        open_margin_positions: 0,
+        today_trades_count: { wins: 1, losses: 0, total: 3 },
+      }}
+    />,
+  ));
+
+  expect(host.textContent).toContain("portfolio.exposure_partial:1");
+  expect(host.textContent).toContain("portfolio.today_unknown:2");
+
+  await act(async () => root.render(
+    <PortfolioKpiGrid
+      summary={{
+        ...baseSummary,
+        open_exposure_basis: "NOT_AVAILABLE",
+        open_exposure_unpriced: 1,
+      }}
+    />,
+  ));
+  expect(host.textContent).toContain("portfolio.exposure_unavailable");
+});

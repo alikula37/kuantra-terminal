@@ -138,6 +138,10 @@ class PortfolioAnalyticsService:
         live_positions_covered = 0
         live_positions_unpriced = 0
         live_quotes_stale = False
+        open_notional_usd = 0.0
+        open_margin_usd = 0.0
+        open_margin_positions = 0
+        exposure_unpriced = 0
         oldest_live_age: Optional[float] = None
         oldest_live_observed_at: Optional[str] = None
         query_time = datetime.now(timezone.utc)
@@ -154,6 +158,7 @@ class PortfolioAnalyticsService:
             if not verified_unit:
                 unverified_open_positions += 1
                 live_positions_unpriced += 1
+                exposure_unpriced += 1
                 continue
 
             if sl is not None and sl > 0:
@@ -168,6 +173,20 @@ class PortfolioAnalyticsService:
 
             open_risk_usd += trade_dollar_risk
             open_risk_r += 1.0  # 1R planned risk unit per open trade
+
+            # Exposure is measured only on verified base units; margin uses the
+            # trade's recorded leverage when present and is counted separately so
+            # an assumed 1x is never mixed silently into the margin figure.
+            position_notional = entry * qty
+            open_notional_usd += position_notional
+            raw_leverage = t.get("leverage")
+            try:
+                position_leverage = float(raw_leverage) if raw_leverage is not None else None
+            except (TypeError, ValueError):
+                position_leverage = None
+            if position_leverage is not None and position_leverage > 0:
+                open_margin_usd += position_notional / position_leverage
+                open_margin_positions += 1
 
             # Mark-to-market reads only quotes this server already obtained for
             # the trade's confirmed identity; a missing quote is counted, never
@@ -200,6 +219,13 @@ class PortfolioAnalyticsService:
         else:
             live_equity = total_equity + unrealized_pnl_usd
         unrealized_pnl_pct = (unrealized_pnl_usd / balance * 100.0) if balance > 0 else 0.0
+
+        if exposure_unpriced == 0:
+            open_exposure_basis = "COMPLETE"
+        elif exposure_unpriced == len(open_trades):
+            open_exposure_basis = "NOT_AVAILABLE"
+        else:
+            open_exposure_basis = "PARTIAL"
 
         # 4. Win Rate, Profit Factor, and R-Multiple Math
         win_trades = [t for t in known_closed if float(t["pnl"]) > 0]
@@ -244,6 +270,11 @@ class PortfolioAnalyticsService:
             "live_quotes_stale": live_quotes_stale,
             "oldest_live_quote_age_seconds": round(oldest_live_age, 3) if oldest_live_age is not None else None,
             "oldest_live_quote_observed_at": oldest_live_observed_at,
+            "open_notional_usd": round(open_notional_usd, 2),
+            "open_margin_usd": round(open_margin_usd, 2),
+            "open_margin_positions": open_margin_positions,
+            "open_exposure_basis": open_exposure_basis,
+            "open_exposure_unpriced": exposure_unpriced,
             "net_pnl": round(net_pnl, 2),
             "net_pnl_pct": round(net_pnl_pct, 2),
             "today_pnl": round(today_pnl, 2),

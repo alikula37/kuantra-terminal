@@ -3,7 +3,14 @@
 
 Updated: 2026-09-13. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP35 refresh and sync button truth](work-packages/P1-WP35-refresh-and-sync-truth.md).**
+**Selected work: [P1-WP36 dashboard terminal redesign](work-packages/P1-WP36-dashboard-terminal-redesign.md).**
+Owner report (2026-09-15): the dashboard is "çok basit ve anlaması zor"; it must be more
+effective. Owner decisions: the top of the page shows live cash + open P/L + risk at one
+glance, in a professional trading-terminal style. The package adds a dense hero row and
+metric rail, compact exposure/margin metrics from the backend, formula tooltips, a
+sparkline, a localized title and a rebalanced layout. [P1-WP35 refresh and sync button
+truth](work-packages/P1-WP35-refresh-and-sync-truth.md) is complete with its evidence
+below.
 Owner report (2026-09-15): "check the refresh / refresh-all buttons on every page; some
 seem not to work." Every refresh control was traced to its handler; the Settings
 "full dual-DB sync" button was a pure `setTimeout` placebo that claimed success without
@@ -414,6 +421,20 @@ passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications` was rep
 on a copy of the owner database: `POST /system/sync/full` →
 `{available: true, coverage_ready: true, synced: 5}` and the quote refresh returned
 `LIVE 2481.13` for the open ETHUSDT trade.
+
+**P1-WP36 dashboard terminal redesign (2026-09-15):** The dashboard now opens with a
+five-block hero row — live equity (realized/open breakdown, price freshness, equity
+sparkline), open P&L, open risk, exposure (notional + margin from recorded leverage,
+coverage notes) and today's activity — followed by a compact rail (win rate, profit
+factor with gross profit/loss, average R, max drawdown, active positions with
+verification state, unknown results) and a tighter layout with the 90-day heatmap
+moved beside the asset breakdown. The backend adds verified-only exposure metrics
+(`open_notional_usd`, `open_margin_usd`, `open_margin_positions`,
+`open_exposure_basis`, `open_exposure_unpriced`); every cell reuses the established
+truth bases (no fabricated values). The hardcoded mixed-language dashboard title is
+now EN/TR/DE. Evidence: `test_portfolio_service.py` **16 passed**, full backend
+**964 passed / 2 warnings**, frontend **39 files / 220 tests**, i18n **1022/1022/1022**,
+TypeScript clean.
 
 ## Selected next work
 

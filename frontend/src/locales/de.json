@@ -171,7 +171,10 @@
     "retry": "Erneut versuchen",
     "refresh": "Aktualisieren",
     "refresh_title": "Daten aktualisieren",
-    "unknown_pnl_note": "{count} abgeschlossene(r) Trade(s) haben ein unbekanntes Ergebnis, weil keine Basis-Einheit erklärt wurde."
+    "unknown_pnl_note": "{count} abgeschlossene(r) Trade(s) haben ein unbekanntes Ergebnis, weil keine Basis-Einheit erklärt wurde.",
+    "title": "QUANT-GESAMTPANEL",
+    "title_lite": "LITE-PORTFOLIO- & RISIKO-PANEL",
+    "as_of": "Stand {time}"
   },
   "orderflow": {
     "footprint_title": "Orderflow-Footprint-Matrix",
@@ -301,7 +304,27 @@
     "live_equity_partial": "{count} Position(en) ausgenommen (kein Kurs)",
     "live_equity_age": "ältester Kurs: {age}",
     "live_equity_stale": "letzte bekannte Kurse werden verwendet",
-    "live_equity_unavailable": "Kein Live-Kurs für offene Positionen; die Kasse zeigt den realisierten Wert."
+    "live_equity_unavailable": "Kein Live-Kurs für offene Positionen; die Kasse zeigt den realisierten Wert.",
+    "open_unrealized": "OFFENER G/V",
+    "tooltip_unrealized": "Unrealisiertes Ergebnis offener Positionen, bewertet mit dem zuletzt aktualisierten Kurs",
+    "no_open_positions": "Keine offenen Positionen",
+    "live_priced": "Live-Kurs",
+    "live_unpriced": "{count} ohne Kurs",
+    "exposure": "EXPOSITION",
+    "tooltip_exposure": "Nominalwert offener Positionen mit verifizierter Basiseinheit",
+    "tooltip_margin": "Margin = Nominalwert / erfasster Hebel; Positionen ohne erfassten Hebel sind ausgeschlossen",
+    "margin_line": "Margin {margin} · {count} Pos.",
+    "exposure_unavailable": "Einheit nicht verifiziert; Exposition nicht berechenbar",
+    "exposure_partial": "{count} Position(en) ausgenommen",
+    "today_wl": "G {wins} / V {losses}",
+    "today_unknown": "{count} unbekannt",
+    "tooltip_pf": "Bruttogewinn / Bruttoverlust abgeschlossener Trades",
+    "tooltip_avg_r": "Durchschnittlicher R-Multiple über abgeschlossene Trades mit Stop",
+    "tooltip_dd": "Größter Rückgang der realisierten Kasse von Hoch zu Tief",
+    "unverified_count": "{count} unverifiziert",
+    "all_verified": "alle verifiziert",
+    "unknown_results": "UNBEKANNTE ERGEBNISSE",
+    "of_closed": "von {count} geschlossenen"
   },
   "equity_curve": {
     "loading": "Kumulative Kapitalkurve wird geladen...",

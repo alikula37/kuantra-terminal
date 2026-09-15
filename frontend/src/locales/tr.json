@@ -171,7 +171,10 @@
     "retry": "Tekrar dene",
     "refresh": "Yenile",
     "refresh_title": "Verileri yenile",
-    "unknown_pnl_note": "{count} tamamlanmış işlemde sonuç bilinmiyor çünkü miktar birimi beyan edilmedi."
+    "unknown_pnl_note": "{count} tamamlanmış işlemde sonuç bilinmiyor çünkü miktar birimi beyan edilmedi.",
+    "title": "BÜYÜK RESİM QUANT PANELİ",
+    "title_lite": "LİTE PORTFÖY & RİSK PANELİ",
+    "as_of": "son veri {time}"
   },
   "orderflow": {
     "footprint_title": "Emir Akışı Footprint Matrisi",
@@ -301,7 +304,27 @@
     "live_equity_partial": "{count} pozisyon hariç (fiyat yok)",
     "live_equity_age": "en eski fiyat: {age}",
     "live_equity_stale": "son bilinen fiyatlar kullanılıyor",
-    "live_equity_unavailable": "Açık pozisyonlar için canlı fiyat yok; kasa gerçekleşen değeri gösteriyor."
+    "live_equity_unavailable": "Açık pozisyonlar için canlı fiyat yok; kasa gerçekleşen değeri gösteriyor.",
+    "open_unrealized": "AÇIK K/Z",
+    "tooltip_unrealized": "Açık pozisyonların en son tazelenen fiyatla hesaplanan gerçekleşmemiş sonucu",
+    "no_open_positions": "Açık pozisyon yok",
+    "live_priced": "canlı fiyat",
+    "live_unpriced": "{count} fiyatsız",
+    "exposure": "MARUZİYET",
+    "tooltip_exposure": "Birimi doğrulanmış açık pozisyonların notional değeri",
+    "tooltip_margin": "Teminat = notional / kayıtlı kaldıraç; kaldıracı kayıtlı olmayan pozisyonlar hariç tutulur",
+    "margin_line": "teminat {margin} · {count} poz.",
+    "exposure_unavailable": "Birim doğrulanmadı; maruziyet hesaplanamaz",
+    "exposure_partial": "{count} pozisyon hariç",
+    "today_wl": "K {wins} / Z {losses}",
+    "today_unknown": "{count} bilinmiyor",
+    "tooltip_pf": "Tamamlanmış işlemlerde brüt kâr / brüt zarar",
+    "tooltip_avg_r": "Stop kaydeden tamamlanmış işlemlerde ortalama R çarpanı",
+    "tooltip_dd": "Gerçekleşen kasanın zirveden dibe en büyük düşüşü",
+    "unverified_count": "{count} doğrulanmamış",
+    "all_verified": "tümü doğrulanmış",
+    "unknown_results": "BİLİNMEYEN SONUÇ",
+    "of_closed": "{count} kapanan içinde"
   },
   "equity_curve": {
     "loading": "Kümülatif Kasa Eğrisi Yükleniyor...",

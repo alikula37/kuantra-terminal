@@ -171,7 +171,10 @@
     "retry": "Retry",
     "refresh": "Refresh",
     "refresh_title": "Refresh data",
-    "unknown_pnl_note": "{count} completed trade(s) have an unknown result because no base unit was declared."
+    "unknown_pnl_note": "{count} completed trade(s) have an unknown result because no base unit was declared.",
+    "title": "BIG PICTURE QUANT DASHBOARD",
+    "title_lite": "LITE PORTFOLIO & RISK DASHBOARD",
+    "as_of": "as of {time}"
   },
   "orderflow": {
     "footprint_title": "Order Flow Footprint Matrix",
@@ -301,7 +304,27 @@
     "live_equity_partial": "{count} position(s) excluded (no price)",
     "live_equity_age": "oldest price: {age}",
     "live_equity_stale": "using last known prices",
-    "live_equity_unavailable": "No live price for open positions; equity shows the realized value."
+    "live_equity_unavailable": "No live price for open positions; equity shows the realized value.",
+    "open_unrealized": "OPEN P&L",
+    "tooltip_unrealized": "Unrealized result of open positions, priced with the latest refreshed quote",
+    "no_open_positions": "No open positions",
+    "live_priced": "live price",
+    "live_unpriced": "{count} unpriced",
+    "exposure": "EXPOSURE",
+    "tooltip_exposure": "Notional value of open positions with a verified base unit",
+    "tooltip_margin": "Margin = notional / recorded leverage; positions without a recorded leverage are excluded",
+    "margin_line": "margin {margin} · {count} pos.",
+    "exposure_unavailable": "Unit unverified; exposure cannot be calculated",
+    "exposure_partial": "{count} position(s) excluded",
+    "today_wl": "W {wins} / L {losses}",
+    "today_unknown": "{count} unknown",
+    "tooltip_pf": "Gross profit / gross loss from completed trades",
+    "tooltip_avg_r": "Average R multiple over completed trades that recorded a stop",
+    "tooltip_dd": "Largest peak-to-trough equity drop of the realized ledger",
+    "unverified_count": "{count} unverified",
+    "all_verified": "all verified",
+    "unknown_results": "UNKNOWN RESULTS",
+    "of_closed": "of {count} closed"
   },
   "equity_curve": {
     "loading": "Loading Cumulative Equity Curve...",

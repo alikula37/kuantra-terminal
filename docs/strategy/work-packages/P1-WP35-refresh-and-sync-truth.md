@@ -1,9 +1,9 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # P1-WP35 — Refresh and sync button truth
 
 ```yaml
 work_package: P1-WP35
-status: InProgress
+status: Complete
 branch: main
 baseline: cf97498
 ```

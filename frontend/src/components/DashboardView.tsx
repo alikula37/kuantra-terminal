@@ -197,14 +197,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#0b0e14] p-4 space-y-4 font-sans select-none custom-scrollbar">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#0b0e14] p-3 space-y-3 font-sans select-none custom-scrollbar">
       {/* Top Header / Refresh Bar */}
       <div className="flex items-center justify-between pb-1">
         <div className="flex items-center space-x-2">
           <LayoutDashboard className="w-5 h-5 text-accent" />
           <h1 className="text-base font-bold text-white uppercase tracking-wide">
-            {isLiteMode ? "LITE PORTFÖY & RİSK DASHBOARD" : "BIG PICTURE QUANT DASHBOARD"}
+            {isLiteMode ? t("dashboard.title_lite") : t("dashboard.title")}
           </h1>
+          {summary?.timestamp && (
+            <span className="text-[10px] text-slate-500" data-testid="dashboard-as-of">
+              {t("dashboard.as_of", { time: new Date(summary.timestamp).toLocaleTimeString() })}
+            </span>
+          )}
         </div>
         <button
           onClick={handleManualRefresh}
@@ -240,7 +245,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <PortfolioKpiGrid 
         summary={summary} 
         loading={loading} 
-        onOpenInitialBalanceModal={onOpenInitialBalanceModal} 
+        onOpenInitialBalanceModal={onOpenInitialBalanceModal}
+        sparkline={equityCurve.map((point) => point.equity)} 
       />
       {!loading && summary && (summary.unknown_pnl_trades ?? 0) > 0 && (
         <p role="status" data-testid="dashboard-unknown-pnl-note" className="text-sm text-amber-300">
@@ -248,8 +254,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </p>
       )}
 
-      {/* Section 2: Two-Column Grid -> Equity Curve Chart & Multi-Asset Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[320px]">
+      {/* Section 2: Equity curve with the distribution and activity column */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-[320px]">
         <div className="lg:col-span-2 h-full">
           <EquityCurveChart 
             series={equityCurve} 
@@ -257,8 +263,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             onOpenNewTrade={onOpenNewTrade}
           />
         </div>
-        <div className="lg:col-span-1 h-full">
+        <div className="lg:col-span-1 flex flex-col gap-3">
           <MultiAssetBreakdown items={breakdown} loading={loading} />
+          <PnlCalendarHeatmap data={heatmap} loading={loading} />
         </div>
       </div>
 
@@ -272,9 +279,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         refreshNonce={quoteRefreshNonce}
       />
       <LocalTrackingPanel editTrade={editTrade} onEditorClose={() => setEditTrade(null)} />
-
-      {/* Section 4: 90-Day PnL Calendar Heatmap */}
-      <PnlCalendarHeatmap data={heatmap} loading={loading} />
         </>
       )}
     </div>

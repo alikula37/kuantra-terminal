@@ -340,6 +340,35 @@ class TestPortfolioAnalyticsService:
         assert summary["oldest_live_quote_age_seconds"] >= 89.0
         assert summary["oldest_live_quote_observed_at"] == observed
 
+    def test_open_exposure_and_margin_cover_only_verified_units(self, monkeypatch):
+        """Exposure sums verified notionals; margin needs a recorded leverage."""
+        service = PortfolioAnalyticsService(default_initial_balance=100000.0)
+        mock_trades = [
+            {"id": "O-1", "symbol": "BTCUSDT", "status": "OPEN", "side": "BUY",
+             "entry_price": 100.0, "qty": 2.0, "leverage": 10, "qty_unit": "BASE"},
+            {"id": "O-2", "symbol": "ETHUSDT", "status": "OPEN", "side": "BUY",
+             "entry_price": 50.0, "qty": 4.0, "qty_unit": "BASE"},
+            {"id": "O-3", "symbol": "XAUUSD", "status": "OPEN", "side": "BUY",
+             "entry_price": 2000.0, "qty": 1.0, "qty_unit": "UNKNOWN"},
+        ]
+        _quote_service(monkeypatch, mock_trades, {})
+
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
+            summary = service.get_portfolio_summary()
+
+        assert summary["open_notional_usd"] == 400.0  # 200 + 200, the unknown unit excluded
+        assert summary["open_margin_usd"] == 20.0  # only the 10x leg contributes 200/10
+        assert summary["open_margin_positions"] == 1
+        assert summary["open_exposure_basis"] == "PARTIAL"
+        assert summary["open_exposure_unpriced"] == 1
+
+        all_unverified = [mock_trades[2]]
+        with patch.object(trade_read_adapter, "list_trades", return_value=all_unverified):
+            summary = service.get_portfolio_summary()
+        assert summary["open_exposure_basis"] == "NOT_AVAILABLE"
+        assert summary["open_notional_usd"] == 0.0
+        assert summary["open_margin_usd"] == 0.0
+
     def test_daily_pnl_heatmap_aggregation(self):
         """Validates daily aggregation, win rate, and intensity normalization for calendar heatmap."""
         service = PortfolioAnalyticsService()

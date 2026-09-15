@@ -177,3 +177,12 @@ it("cascades the dashboard refresh into the open-position quotes", async () => {
 
   expect(host.querySelector("[data-testid=dashboard-positions]")?.getAttribute("data-nonce")).toBe("1");
 });
+
+it("uses the localized dashboard title instead of a hardcoded bilingual string", async () => {
+  readyDashboard();
+  await act(async () => root.render(<DashboardView />));
+  await flush();
+
+  expect(host.textContent).toContain("dashboard.title_lite");
+  expect(host.textContent).not.toContain("LITE PORTFÖY");
+});
