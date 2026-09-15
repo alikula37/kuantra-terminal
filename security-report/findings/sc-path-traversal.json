@@ -50,6 +50,31 @@
       "cwe": "CWE-409",
       "remediation": "Streamed bounded reads; reject on exceeding cap",
       "tests": ["backend/tests/test_security_review_fixes.py::test_migration_member_read_is_byte_bounded", "backend/tests/test_macos_migration.py"]
+    },
+    {
+      "id": "PATH-003",
+      "title": "Migration manifest was read unbounded before JSON parsing (crafted-zip follow-up)",
+      "severity": "Medium",
+      "confidence": 88,
+      "file": "backend/app/services/macos_migration.py",
+      "pre_fix_lines": "668-671",
+      "entry_point": "verify_migration_bundle / restore_migration_bundle on a user-supplied bundle",
+      "attacker": "Crafted migration bundle (compressed manifest bomb)",
+      "principal_impacted": "Application memory during bundle verification",
+      "controlled_value": "manifest.json decompressed size/content",
+      "source_trace": [
+        "verify loop validated declared per-member and total sizes against 256MB/512MB caps and then called _read_manifest",
+        "_read_manifest used archive.read('manifest.json') with no manifest-specific ceiling",
+        "a ~KB on-disk archive could declare and deliver a manifest close to 256MB, forcing a full decompression plus JSON parse"
+      ],
+      "failed_control": "No manifest-specific size ceiling; streamed cap not applied to the manifest path",
+      "sink": "archive.read allocation + json.loads",
+      "proven_result": "Manifest reads now stream through _read_member_bounded with MAX_ARCHIVE_MANIFEST_BYTES (1MB); crafted oversized manifests are rejected before parsing and restore never touches the target",
+      "conditions": "Requires the user to open a crafted bundle file; impact bounded by the previous 256MB member cap",
+      "verdict": "confirmed",
+      "cwe": "CWE-409",
+      "remediation": "Dedicated manifest ceiling enforced while streaming",
+      "tests": ["backend/tests/test_security_crafted_zip.py::test_oversized_manifest_is_bounded_before_parsing", "backend/tests/test_security_crafted_zip.py (14 crafted-archive tests)"]
     }
   ]
 }

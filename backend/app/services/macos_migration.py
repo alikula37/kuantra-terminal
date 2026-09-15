@@ -29,6 +29,7 @@ from typing import Any, Callable, Iterable
 
 from app.core.input_limits import (
     MAX_ARCHIVE_BYTES,
+    MAX_ARCHIVE_MANIFEST_BYTES,
     MAX_ARCHIVE_MEMBER_BYTES,
     MAX_ARCHIVE_MEMBERS,
     MAX_ARCHIVE_TOTAL_UNCOMPRESSED_BYTES,
@@ -667,7 +668,9 @@ def create_migration_bundle(
 
 def _read_manifest(archive: zipfile.ZipFile) -> dict[str, Any]:
     try:
-        raw = archive.read("manifest.json")
+        raw = _read_member_bounded(
+            archive, "manifest.json", limit=MAX_ARCHIVE_MANIFEST_BYTES
+        )
         manifest = json.loads(raw.decode("utf-8"))
     except (KeyError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise MigrationBundleError(f"manifest.json is missing or invalid: {exc}") from exc

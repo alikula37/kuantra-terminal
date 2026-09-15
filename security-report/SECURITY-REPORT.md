@@ -5,7 +5,7 @@
 **Scanner:** security-check v1.2.0 (`ersinkoc/security-check`, bundle hash `4542ae21…f7512c`)
 **Profile:** Deep · whole repository · sandboxed local checks
 **Commit audited:** `2c961fe` + remediation working tree
-**Risk Score:** 7.7/10 (High at scan time) → 0 confirmed findings remain unpatched; all 21 confirmed items remediated with regression coverage
+**Risk Score:** 8.2/10 (High at scan time) → 0 confirmed findings remain unpatched; all 22 confirmed items remediated with regression coverage
 
 ## Executive Summary
 
@@ -15,7 +15,8 @@ route, GitHub Actions release pipeline). Five independent hunter passes covered 
 desktop gateway/local IPC, webhook/WS surfaces, data/parsers/crypto paths, and CI/CD supply
 chain. 21 candidates were verified as confirmed trust-boundary failures; 3 additional hunter
 claims were disproved during independent verification; several coverage units produced no
-confirmed findings.
+confirmed findings. A 2026-09-15 follow-up (crafted-ZIP validation) added one more confirmed
+Medium finding (PATH-003), bringing the total to 22.
 
 The application intentionally has **no endpoint authentication** (single-user desktop, in-process
 API); therefore the audit focused on whether each networkable surface is properly constrained by
@@ -26,21 +27,21 @@ path traversal in the model downloader, and multiple unbounded-input/resource pa
 hardening was also required: workflow actions were pinned to mutable tags inside a
 `contents: write` release job.
 
-All 21 confirmed findings are fixed in the working tree and pinned by tests
-(`backend/tests/test_security_review_fixes.py`, 33 tests; updated
-`test_python_dependency_lock_contract.py`, `test_phase14_p2p_copy.py`). No finding remains
-unremediated; the residual risk items are runtime/deployment facts listed under Needs Validation,
-not code defects.
+All 22 confirmed findings are fixed in the working tree and pinned by tests
+(`backend/tests/test_security_review_fixes.py`, 33 tests; `backend/tests/test_security_crafted_zip.py`,
+14 tests; updated `test_python_dependency_lock_contract.py`, `test_phase14_p2p_copy.py`). No finding
+remains unremediated; the residual risk items are runtime/deployment facts listed under Needs
+Validation, not code defects.
 
 ### Key Metrics
 
 | Metric | Value |
 |--------|-------|
-| Total verified findings | 21 |
+| Total verified findings | 22 |
 | Critical | 0 |
 | High | 4 |
-| Medium | 10 |
-| Low | 7 |
+| Medium | 12 |
+| Low | 6 |
 | Rejected hunter claims | 3 |
 | Confirmed findings without a regression test | 2 (grep-verified workflow edits: CICD-002, CICD-003) |
 
@@ -65,9 +66,9 @@ not code defects.
 | Languages detected | Python, TypeScript, TSX, YAML, Bash, Dockerfile |
 | Frameworks detected | FastAPI, Pydantic v2, React, Vite, pywebview, SQLite, DuckDB |
 | Skills executed | sc-orchestrator/recon/verifier/report, sc-api-security, sc-authz, sc-business-logic, sc-ci-cd, sc-crypto, sc-data-exposure, sc-docker, sc-lang-python, sc-mass-assignment, sc-path-traversal, sc-xss (sampled), sc-local-ipc, sc-secrets (sampled), sc-dependency-audit |
-| Candidates before verification | 24 (21 confirmed + 3 rejected) |
+| Candidates before verification | 25 (22 confirmed + 3 rejected) |
 | False positives eliminated | 3 |
-| Final confirmed findings | 21 (all fixed and test-pinned) |
+| Final confirmed findings | 22 (all fixed and test-pinned) |
 
 ## Confirmed Findings (all remediated)
 
@@ -154,6 +155,16 @@ Fixed with streamed bounded reads for verify and restore. Test:
 fetched and executed when missing. Fixed: fail closed unless `APPIMAGETOOL` is supplied. Test:
 `test_package_linux_never_downloads_unverified_tool`.
 
+**M11 — Release publish checkout persisted credentials** (CWE-522) — the `contents: write`
+publish job left the `GITHUB_TOKEN` in the checkout's git config. Fixed with
+`persist-credentials: false` (verified by workflow inspection in the committed diff).
+
+**M12 — Migration manifest read unbounded before JSON parsing** (CWE-409) — crafted-ZIP
+follow-up: `_read_manifest` used `archive.read("manifest.json")`, so a compressed manifest bomb
+could force a full member-cap-sized decompression plus JSON parse before any bound applied.
+Fixed with a dedicated streamed `MAX_ARCHIVE_MANIFEST_BYTES` (1MB) ceiling. Tests:
+`test_oversized_manifest_is_bounded_before_parsing` plus the 14-test crafted-archive suite.
+
 ### Low
 
 **L1 — Non-constant-time webhook secret comparisons** (CWE-208) — HMAC, passphrase, and tunnel
@@ -163,52 +174,58 @@ token comparisons now use `hmac.compare_digest`, tolerant of non-ASCII input.
 
 **L3 — Trade list pagination unbounded** (CWE-400) — `limit` 1..1000, `offset` >= 0.
 
-**L4 — Release publish checkout persisted credentials** (CWE-522) — `persist-credentials: false`
-in the publish job.
-
-**L5 — `release_tag` dispatch input unvalidated** (CWE-20) — anchored
+**L4 — `release_tag` dispatch input unvalidated** (CWE-20) — anchored
 `^[A-Za-z0-9._-]{1,40}$` gate before shell use.
 
-**L6 — Dockerfile missing pipefail** (CWE-1188) — strict shell added to the smoke image.
+**L5 — Dockerfile missing pipefail** (CWE-1188) — strict shell added to the smoke image.
 
-**L7 — Copy broadcast without configured secret** (CWE-347) — 503 fail-closed instead of
+**L6 — Copy broadcast without configured secret** (CWE-347) — 503 fail-closed instead of
 emitting unverifiable signals.
 
 ## Needs Validation (no severity)
 
+Resolved since the original report: dependency CVE freshness was checked with an OSV.dev scan
+(only package name/version pairs sent; Python 0/82, npm one dev-only advisory retained —
+see `security-report/dependency-audit.md` and `security-report/dependency-scan-2026-09-15.json`);
+the crafted-ZIP validation ran as 14 synthetic-archive regression tests and produced and fixed
+one additional Medium finding (M12); the SHA-pinned workflows were then executed for real in
+release run `35017352321` (`publish: false`, both native runners green).
+
 | Item | Blocker | Safe next check |
 |------|---------|-----------------|
-| Dependency CVE freshness (Python lock + npm) | No local CVE DB/scanner; constraint on external services | `pip-audit` / `npm audit` in an owner-approved isolated environment |
-| Workflow SHA pins under real GitHub-hosted execution | Cannot dispatch workflows from this host | `workflow_dispatch` dry-run (`publish: false`) on next push |
-| Crafted zip with falsified central-directory sizes | No crafted sample executed; streaming cap present | Add crafted-zip regression to `test_macos_migration.py` |
+| Continuous dependency monitoring | The OSV scan is point-in-time; no CI job repeats it | Add an owner-approved `pip-audit`/OSV job to CI where network use is acceptable |
+| npm dev-only vitest advisory | Fix requires a vitest 3.x → 4.x major upgrade; dev-only, intentionally not forced | Schedule a bounded vitest 4 upgrade with its own test run |
 | macOS signing/notarization | Unsigned pilot channel; unchanged by this review | Notarize before public distribution |
 | Real XM statement parser correctness | No real sample (tracked product obligation) | Anonymized XM report validation |
+| Live network probing of provider APIs | Audit constraints prohibit live probing and credential use | Owner-approved staging probe |
 
 ## Hardening Notes (positive controls / recommendations)
 
 - Present and working: loopback gateway bind with explicit override, TV-sync WS origin
   allowlist, CORS origin allowlist, hashed Python dependency installs, idempotent webhook
   ingestion, bot/allowlist-free design for a local single-user app.
-- Recommended next (not findings): add crafted-zip tests for migration restore; add a small
-  `pip-audit`/`npm audit` job in CI where network use is acceptable; consider a per-launch
-  random gateway token so even loopback processes cannot post forged ingest payloads; document
-  the `KUANTRA_COPY_SIGNAL_SECRET` / `KUANTRA_PANIC_DISARM_SECRET` /
-  `KUANTRA_ALLOW_NON_LOOPBACK_GATEWAY` operating requirements in the deployment docs.
+- Recommended next (not findings): add a small owner-approved `pip-audit`/OSV job in CI where
+  network use is acceptable; consider a per-launch random gateway token so even loopback
+  processes cannot post forged ingest payloads; document the `KUANTRA_COPY_SIGNAL_SECRET` /
+  `KUANTRA_PANIC_DISARM_SECRET` / `KUANTRA_ALLOW_NON_LOOPBACK_GATEWAY` operating requirements
+  in the deployment docs; plan the bounded vitest 4 dev-toolchain upgrade.
 
 ## Coverage Totals
 
-14 coverage units: 12 covered, 1 sampled (frontend output handling, 0 findings), 1 blocked
-(dependency CVE freshness). Full detail: `security-report/coverage-ledger.md`.
+14 coverage units: 13 covered, 1 sampled (frontend output handling, 0 findings), 0 blocked
+(the former dependency-CVE blocker is resolved as a point-in-time scan). Full detail:
+`security-report/coverage-ledger.md`.
 Rejected claims and duplicate root causes are recorded in `security-report/verified-findings.md`.
 
 ## Remediation Roadmap
 
-- **Phase 0 (this scan, complete):** all 4 High, 10 Medium, 7 Low findings fixed; 33 regression
-  tests green; contract tests updated. Remaining before shipping: full backend/frontend suites
-  and the canonical local CI run on the remediation commit.
-- **Phase 1 (before the next pilot release):** run the canonical CI on the final commit; verify
-  workflow pins via a `workflow_dispatch` dry-run; run the crafted-zip migration test.
-- **Phase 2 (before broader distribution):** dependency CVE audit in CI; per-launch gateway
-  token; notarized macOS builds.
+- **Phase 0 (this scan, complete):** all 4 High, 12 Medium, 6 Low findings fixed; 33 security
+  regression tests plus the 14-test crafted-archive suite green; contract tests updated; full
+  backend suite green; canonical local CI run on the remediation commit.
+- **Phase 1 (before the next pilot release, complete):** canonical CI on the clean commit;
+  SHA-pinned workflow dry-run executed as release run `35017352321` (both native runners green);
+  crafted-ZIP validation executed and its one new finding fixed.
+- **Phase 2 (before broader distribution):** dependency monitoring job in CI; bounded vitest 4
+  dev-toolchain upgrade; per-launch gateway token; notarized macOS builds.
 - **Phase 3 (ongoing):** keep SHA pins updated (comment-documented versions); re-run this audit
-  on any change to gateway/webhook/copy/import surfaces.
+  on any change to gateway/webhook/copy/import surfaces; repeat the OSV scan or add CI monitoring.

@@ -1,0 +1,59 @@
+{
+  "scan_date": "2026-09-15",
+  "scanner": "OSV.dev querybatch (Google Open Source Vulnerabilities)",
+  "constraints": [
+    "Local lockfile parsing only; no file contents, hashes, paths or credentials were uploaded.",
+    "External payloads contain only {ecosystem, package name, version} triples.",
+    "No installs, no npm/pip audit fix, no version changes were performed."
+  ],
+  "service_usage": {
+    "endpoint": "POST https://api.osv.dev/v1/querybatch",
+    "follow_up": "GET https://api.osv.dev/v1/vulns/{id} for each reported advisory id",
+    "sent": "PyPI: 82 installed locked packages (name+version). npm: 289 locked packages (name+version).",
+    "not_sent": "Frontend/backend source, lockfile contents or hashes, repository paths, environment values, credentials"
+  },
+  "payload_sha256": {
+    "python": "1f9960adf5a8439d52b4e48fcc16df62e4f8051cfc800160f3ea39fa0c0ad2f2",
+    "npm": "670fcc7fa5411f52464def7c5ff4c10205424fe60624636b26c674ac8b4ea512"
+  },
+  "response_sha256": {
+    "python": "d10f06ec8054decaf4ab8b0334e17a6973387c167afbf66a95b9de470647d5d7",
+    "npm": "71235e5380806a49f099bb1a6dc62dd8231d07adb94fab4a68896c9e08423db4",
+    "summary": "640bbeb9cc7c919202575a1924178f47c5ef7345247c70f60a4b155e83190996"
+  },
+  "coverage": {
+    "python_lock_entries": 98,
+    "python_queried_installed": 82,
+    "python_platform_excluded_not_queried": 16,
+    "python_scope": {"runtime": 71, "build": 6, "dev": 5},
+    "npm_lock_entries": 289,
+    "npm_queried": 289,
+    "npm_scope": {"runtime": 37, "dev": 252}
+  },
+  "results": {
+    "python": {"vulnerable_packages": 0, "advisories": []},
+    "npm": {
+      "vulnerable_packages": 2,
+      "advisories": [
+        {
+          "id": "GHSA-82fw-gwwq-j7x9",
+          "aliases": ["CVE-2026-84373"],
+          "summary": "Vitest: Path Traversal / Arbitrary File Read via @vitest/mocker Redirect Mock",
+          "affected": [
+            {"name": "vitest", "version": "3.2.7", "scope": "dev"},
+            {"name": "@vitest/mocker", "version": "3.2.7", "scope": "dev"}
+          ],
+          "severity": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N (npm: moderate)",
+          "fixed_versions": ["4.1.11", "5.0.0-rc.2"],
+          "disposition": "Dev/test tool only, excluded from production npm installs and from the packaged app; fix requires a vitest major upgrade (3.x -> 4.x) which was intentionally not forced."
+        }
+      ]
+    }
+  },
+  "cross_check": {
+    "source": "GitHub Release workflow run 35017352321 (commit a235da2), job 'Package (macos-latest / arm64)', step 'Audit frontend dependencies'",
+    "production_audit": "npm audit --omit=dev --audit-level=moderate -> found 0 vulnerabilities",
+    "full_audit": "npm audit -> 2 moderate severity vulnerabilities (GHSA-82fw-gwwq-j7x9), retained dev-only warning",
+    "agreement": "matches the OSV scan result and the dev-only classification"
+  }
+}

@@ -1,21 +1,24 @@
 # Kuantra Terminal — Verified Findings (Phase 3)
 
 **Date:** 2026-09-15 · security-check v1.2.0 · Deep profile / whole repository / sandboxed local checks
-**Source candidates:** `security-report/findings/*.json` (8 skill files, 21 candidates)
-**Result:** 21 confirmed · 0 needs_validation candidates · 0 rejected candidates · 3 rejected coverage claims (below)
+**Source candidates:** `security-report/findings/*.json` (10 skill files, 22 candidates)
+**Result:** 22 confirmed · 0 needs_validation candidates · 0 rejected candidates · 3 rejected coverage claims (below)
 
 Every confirmed finding was verified against the pre-fix source at `2c961fe` (`git diff HEAD`
 shows each removal), reproduced with a failing regression test where technically possible, and
 is now pinned by a passing test in `backend/tests/test_security_review_fixes.py` (33 tests) plus
-the updated contract tests. Verification was performed by fresh code reading and local test
-runs; the original hunter agents did not mark their own candidates.
+`backend/tests/test_security_crafted_zip.py` (14 tests) and the updated contract tests.
+Verification was performed by fresh code reading and local test runs; the original hunter agents
+did not mark their own candidates. PATH-003 was found and fixed during the 2026-09-15 crafted-ZIP
+follow-up validation.
 
-## Confirmed (21)
+## Confirmed (22)
 
 | ID | Skill | Severity | Title | Fix site | Verification |
 |----|-------|----------|-------|----------|--------------|
 | PATH-001 | sc-path-traversal | High | Model artifact name path traversal | `backend/app/core/model_downloader.py` | Traversal/absolute/empty names raise ValueError and 400 at the API; status no longer exposes arbitrary file metadata |
 | PATH-002 | sc-path-traversal | Medium | Migration archive member reads unbounded | `backend/app/services/macos_migration.py` | Streamed `_read_member_bounded` cap; oversized-member test passes |
+| PATH-003 | sc-path-traversal | Medium | Migration manifest read unbounded before JSON parse (follow-up) | `backend/app/services/macos_migration.py` | Dedicated 1MB streamed manifest ceiling; crafted oversized manifest rejected before parsing; restore leaves no partial target |
 | AUTHZ-001 | sc-authz | High | Gateway mounted the full webhook router | `backend/desktop/gateway.py` | Gateway app now exposes only ingest + TV sync + health; confirm routes remain on the UI app; non-loopback bind refused |
 | CRYPTO-001 | sc-crypto | High | Copy signal accepted by signature length | `backend/app/services/p2p/copy_engine.py` | HMAC-SHA256 over canonical payload; without secret verify fails closed; broadcast 503 |
 | CRYPTO-002 | sc-crypto | Low | Non-constant-time webhook secret comparisons | `backend/app/api/webhook_tv.py` | `hmac.compare_digest` for HMAC, passphrase, tunnel auth |
