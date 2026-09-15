@@ -229,7 +229,7 @@
     "sync_desc": "Neu aufgezeichnete Trades von SQLite in DuckDB-Spaltentabellen synchronisieren.",
     "sync_btn": "VOLLSTÄNDIGE DUAL-DB-SYNCHRONISATION STARTEN",
     "syncing": "Wird synchronisiert...",
-    "sync_success": "Vollständige OLTP -> DuckDB Synchronisation erfolgreich abgeschlossen!",
+    "sync_success": "{count} Trades in die DuckDB-Analytikprojektion synchronisiert.",
     "privacy_title": "DATENSCHUTZ-TELEMETRIE & SYSTEMDIAGNOSTIK",
     "pii_redaction_active": "PII-Bereinigung: Aktiv",
     "telemetry_label": "Anonyme Fehler- und Absturzberichte",
@@ -243,7 +243,10 @@
     "telemetry_queue_pending": "{count} Absturzberichte werden lokal gespeichert und warten auf eine ausdrückliche Übertragung.",
     "telemetry_refresh": "Aktualisieren",
     "telemetry_export_description": "Rotierende Logs mit geprüfter Bereinigung für den technischen Support paketieren.",
-    "telemetry_export_btn": "BEREINIGTE LOGS EXPORTIEREN (.ZIP)"
+    "telemetry_export_btn": "BEREINIGTE LOGS EXPORTIEREN (.ZIP)",
+    "sync_unavailable": "DuckDB ist in diesem Build nicht verfügbar; es wurde nicht synchronisiert.",
+    "sync_blocked": "Synchronisierung blockiert: Die Trade-Evidenzabdeckung ist unvollständig.",
+    "sync_failed": "Synchronisierung fehlgeschlagen. Es wurde nichts geändert."
   },
   "alerts": {
     "panic_triggered": "Notfall-Panik-Schalter aktiviert! Positionen werden geschlossen...",

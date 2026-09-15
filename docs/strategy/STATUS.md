@@ -3,7 +3,15 @@
 
 Updated: 2026-09-13. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP34 server-verified instrument catalog](work-packages/P1-WP34-verified-instrument-catalog.md).**
+**Selected work: [P1-WP35 refresh and sync button truth](work-packages/P1-WP35-refresh-and-sync-truth.md).**
+Owner report (2026-09-15): "check the refresh / refresh-all buttons on every page; some
+seem not to work." Every refresh control was traced to its handler; the Settings
+"full dual-DB sync" button was a pure `setTimeout` placebo that claimed success without
+any request, and the Dashboard refresh never reached the open-position quotes. The
+package wires the real sync (`POST /system/sync/full` with honest outcomes) and makes
+the dashboard refresh cascade into the quote refresh. [P1-WP34 server-verified
+instrument catalog](work-packages/P1-WP34-verified-instrument-catalog.md) remains a
+reference package.
 Owner report (2026-09-15): the open ETHUSDT position still shows "contract size not
 verified — monetary P/L is not calculated" even though the backend can check the
 instrument at the exchange. The package makes the server verify free provider spot
@@ -360,6 +368,19 @@ the installed app verified the owner's open ETHUSDT position at startup
 (`verified_instruments` row `ETHUSDT | binance_spot | ETH | USDT`) and an isolated copy
 of the owner database reports `PROVIDER_CATALOG` / money **READY** for
 `TRD-1789460532666` without rewriting the trade.
+
+**P1-WP35 refresh and sync button truth (2026-09-15):** All refresh controls were
+audited; every one except the Settings dual-DB sync was already wired to a real
+request. That button only started a 600ms timer and printed "sync completed
+successfully" — no endpoint existed. `SyncPipeline.full_sync_report()` now reports
+DuckDB availability, the evidence coverage gate and the synchronized count, exposed
+via `POST /api/v1/system/sync/full`; the Settings button disables while running and
+shows synced count / DuckDB-unavailable / coverage-blocked / failed honestly. The
+Dashboard refresh now also bumps a nonce consumed by the open-positions table, so
+prices, ages and unrealized K/Z refresh together with the KPI cards instead of
+waiting for the 20s poll. Evidence: `test_system_sync.py` **3 passed**, full backend
+**960 passed / 2 warnings**, frontend **39 files / 214 tests**, i18n **993/993/993**,
+TypeScript clean.
 
 ## Selected next work
 

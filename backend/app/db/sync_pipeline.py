@@ -71,11 +71,20 @@ class SyncPipeline:
         return saved
 
     @staticmethod
-    def full_sync() -> int:
-        """Run full synchronization of all historical SQLite trades into DuckDB."""
+    def full_sync_report() -> Dict[str, Any]:
+        """Run the full SQLite -> DuckDB sync and report the honest outcome.
+
+        The report distinguishes "DuckDB is not available in this build" from
+        "the evidence projection coverage is incomplete", so the UI can never
+        claim a successful sync that did not happen.
+        """
         if not getattr(duckdb_driver, "is_available", False):
-            logger.info("DuckDB not available; skipping full sync in Lite mode.")
-            return 0
+            return {
+                "available": False,
+                "coverage_ready": False,
+                "synced": 0,
+                "reason": "DUCKDB_UNAVAILABLE",
+            }
         # Bulk OLAP writes must use the same evidence coverage gate as the
         # hydrator.  Construct the adapter from the module's current driver so
         # tests and explicit per-database maintenance jobs remain injectable.
@@ -84,14 +93,33 @@ class SyncPipeline:
         reader = TradeReadAdapter(legacy_driver=sqlite_driver)
         coverage = reader.coverage()
         if not coverage["ready"]:
-            logger.warning(
-                "DuckDB full sync blocked: evidence projection coverage is incomplete: %s",
-                coverage,
-            )
-            return 0
+            return {
+                "available": True,
+                "coverage_ready": False,
+                "synced": 0,
+                "reason": "COVERAGE_INCOMPLETE",
+            }
         all_trades = reader.list_trades(limit=100000)
         synced_count = duckdb_driver.sync_all_trades(all_trades)
-        logger.info(f"Full OLTP -> OLAP sync completed: {synced_count} trades synchronized.")
-        return synced_count
+        return {
+            "available": True,
+            "coverage_ready": True,
+            "synced": int(synced_count),
+            "reason": None,
+        }
+
+    @staticmethod
+    def full_sync() -> int:
+        """Run full synchronization of all historical SQLite trades into DuckDB."""
+        report = SyncPipeline.full_sync_report()
+        if report["reason"] == "DUCKDB_UNAVAILABLE":
+            logger.info("DuckDB not available; skipping full sync in Lite mode.")
+        elif report["reason"] == "COVERAGE_INCOMPLETE":
+            logger.warning(
+                "DuckDB full sync blocked: evidence projection coverage is incomplete."
+            )
+        else:
+            logger.info(f"Full OLTP -> OLAP sync completed: {report['synced']} trades synchronized.")
+        return report["synced"]
 
 sync_pipeline = SyncPipeline()

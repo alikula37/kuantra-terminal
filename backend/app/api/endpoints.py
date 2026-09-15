@@ -2226,6 +2226,18 @@ def get_system_storage_statistics():
     return db_maintenance_engine.get_storage_telemetry()
 
 
+@router.post("/system/sync/full")
+def run_full_dual_db_sync():
+    """Sync SQLite trades into the DuckDB columnar projection.
+
+    Returns the honest outcome: whether DuckDB is available in this build,
+    whether the evidence coverage gate allowed the bulk write, and how many
+    trades were synchronized — the UI must never show a fabricated success.
+    """
+
+    return sync_pipeline.full_sync_report()
+
+
 # ==============================================================================
 # ZERO-AUTH PUBLIC MARKET DATA & SQLITE CANDLE CACHE ENDPOINTS
 # ==============================================================================

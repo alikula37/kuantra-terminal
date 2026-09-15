@@ -112,6 +112,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [heatmap, setHeatmap] = useState<DailyHeatmapItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [quoteRefreshNonce, setQuoteRefreshNonce] = useState<number>(0);
   const [editTrade, setEditTrade] = useState<Trade | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState<boolean>(false);
@@ -171,6 +172,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const handleManualRefresh = () => {
     setIsRefreshing(true);
+    setQuoteRefreshNonce((current) => current + 1);
     void fetchDashboardData();
   };
 
@@ -264,6 +266,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         onEditPosition={setEditTrade}
         onOpenNewTrade={onOpenNewTrade}
         loading={loading}
+        refreshNonce={quoteRefreshNonce}
       />
       <LocalTrackingPanel editTrade={editTrade} onEditorClose={() => setEditTrade(null)} />
 

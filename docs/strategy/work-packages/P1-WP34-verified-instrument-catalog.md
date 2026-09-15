@@ -1,9 +1,9 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # P1-WP34 — Server-verified instrument catalog
 
 ```yaml
 work_package: P1-WP34
-status: InProgress
+status: Complete
 branch: main
 baseline: 14d77a8
 ```

@@ -13,6 +13,7 @@ interface OpenPositionsTableProps {
   onClosePosition: (tradeId: string) => void;
   onEditPosition?: (trade: Trade) => void;
   onOpenNewTrade?: () => void;
+  refreshNonce?: number;
 }
 
 export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
@@ -21,6 +22,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
   onClosePosition,
   onEditPosition,
   onOpenNewTrade,
+  refreshNonce = 0,
 }) => {
   const { t, locale } = useTranslation();
   const [verifiedSymbols, setVerifiedSymbols] = useState<Record<string, boolean>>({});
@@ -34,6 +36,12 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
     lastAttemptAt,
     nowMs,
   } = useOpenQuoteRefresh(positions.length > 0);
+
+  // A parent-driven refresh (for example the Dashboard refresh button) must
+  // also refresh the open-position quotes, not just the portfolio aggregates.
+  useEffect(() => {
+    if (refreshNonce > 0) void refresh();
+  }, [refreshNonce, refresh]);
 
   // One bounded server-side instrument verification per symbol: a verified
   // provider spot instrument enables base-unit money math without a manual

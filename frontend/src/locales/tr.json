@@ -229,7 +229,7 @@
     "sync_desc": "SQLite üzerinde kaydedilen yeni işlemleri DuckDB sütunsal analitik tablolarına senkronize edin.",
     "sync_btn": "TAM ÇİFT-VT SENKRONİZASYONUNU BAŞLAT",
     "syncing": "Senkronize Ediliyor...",
-    "sync_success": "Tam OLTP -> DuckDB senkronizasyonu başarıyla tamamlandı!",
+    "sync_success": "DuckDB analitik projeksiyonuna {count} işlem senkronize edildi.",
     "privacy_title": "GİZLİLİK TELEMETRİSİ VE SİSTEM TANILAMA",
     "pii_redaction_active": "Kişisel veri temizleme: Aktif",
     "telemetry_label": "Anonim Hata ve Çökme Raporlama",
@@ -243,7 +243,10 @@
     "telemetry_queue_pending": "{count} çökme raporu açık gönderim onayı beklenerek yerelde tutuluyor.",
     "telemetry_refresh": "Yenile",
     "telemetry_export_description": "Döner logları doğrulanmış temizleme ile teknik destek için paketle.",
-    "telemetry_export_btn": "TEMİZLENMİŞ LOGLARI DIŞA AKTAR (.ZIP)"
+    "telemetry_export_btn": "TEMİZLENMİŞ LOGLARI DIŞA AKTAR (.ZIP)",
+    "sync_unavailable": "Bu sürümde DuckDB kullanılamıyor; senkronizasyon atlandı.",
+    "sync_blocked": "Senkronizasyon engellendi: işlem kanıt kapsamı tamamlanmamış.",
+    "sync_failed": "Senkronizasyon başarısız. Hiçbir şey değiştirilmedi."
   },
   "alerts": {
     "panic_triggered": "Acil Durum Panik Butonu tetiklendi! Pozisyonlar kapatılıyor...",

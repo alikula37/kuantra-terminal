@@ -27,7 +27,9 @@ vi.mock("../dashboard/EquityCurveChart", () => ({
   EquityCurveChart: ({ loading }: { loading?: boolean }) => <div data-testid="dashboard-equity">{loading ? "loading" : "equity"}</div>,
 }));
 vi.mock("../dashboard/OpenPositionsTable", () => ({
-  OpenPositionsTable: ({ loading }: { loading?: boolean }) => <div data-testid="dashboard-positions">{loading ? "loading" : "positions"}</div>,
+  OpenPositionsTable: ({ loading, refreshNonce }: { loading?: boolean; refreshNonce?: number }) => (
+    <div data-testid="dashboard-positions" data-nonce={refreshNonce ?? 0}>{loading ? "loading" : "positions"}</div>
+  ),
 }));
 vi.mock("../dashboard/PnlCalendarHeatmap", () => ({
   PnlCalendarHeatmap: ({ loading }: { loading?: boolean }) => <div data-testid="dashboard-heatmap">{loading ? "loading" : "heatmap"}</div>,
@@ -162,4 +164,16 @@ it("rejects a malformed successful response instead of rendering a partial dashb
 
   expect(host.querySelector("[data-testid=dashboard-error]")?.textContent).toContain("Portfolio summary response was incomplete or malformed");
   expect(host.querySelector("[data-testid=dashboard-summary]")?.textContent).not.toBe("summary");
+});
+
+it("cascades the dashboard refresh into the open-position quotes", async () => {
+  readyDashboard();
+  await act(async () => root.render(<DashboardView />));
+  await flush();
+  expect(host.querySelector("[data-testid=dashboard-positions]")?.getAttribute("data-nonce")).toBe("0");
+
+  await act(async () => (host.querySelector('button[title="dashboard.refresh_title"]') as HTMLButtonElement).click());
+  await flush();
+
+  expect(host.querySelector("[data-testid=dashboard-positions]")?.getAttribute("data-nonce")).toBe("1");
 });

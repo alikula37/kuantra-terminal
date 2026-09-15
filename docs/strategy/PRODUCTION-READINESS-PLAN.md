@@ -24,6 +24,7 @@ replay remains a secondary closed-trade view. Local tracking rules (LIVE,
 provider-event, <=60s) are not weakened. See STATUS for the selected package.
 
 Owner-approved addition (2026-09-15): P1-WP33 bounded market-chart history.
+Owner-approved addition (2026-09-15): P1-WP35 refresh and sync button truth (`docs/strategy/work-packages/P1-WP35-refresh-and-sync-truth.md`) — no refresh or sync control may claim an outcome that did not happen.
 Owner-approved addition (2026-09-15): P1-WP34 server-verified instrument catalog (`docs/strategy/work-packages/P1-WP34-verified-instrument-catalog.md`) — the server verifies free provider spot metadata itself so directly verified instruments need no manual base-unit declaration.
 Free public sources only: bounded provider pagination for crypto, Yahoo `period1/period2`
 deep ranges with documented intraday clamping, cache freshness and a "load older data"

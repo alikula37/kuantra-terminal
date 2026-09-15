@@ -76,3 +76,64 @@ it("rejects a malformed portfolio summary response", async () => {
   expect(host.querySelector("[data-testid=settings-capital-error]")?.textContent).toContain("Portfolio summary response was malformed");
   expect((host.querySelector("input[type=number]") as HTMLInputElement).value).toBe("");
 });
+
+it("runs a real full dual-db sync and reports the honest outcome", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path === "/api/v1/system/sync/full") {
+      return Promise.resolve(response({ available: true, coverage_ready: true, synced: 5, reason: null }));
+    }
+    return Promise.resolve(response({ initial_balance: 1000 }));
+  });
+
+  await act(async () => root.render(<SettingsView />));
+  await flush();
+
+  const syncButton = host.querySelector("[data-testid=settings-sync]") as HTMLButtonElement;
+  expect(syncButton).toBeTruthy();
+  await act(async () => syncButton.click());
+  await flush();
+
+  const call = mocks.apiFetch.mock.calls.find(([path]) => path === "/api/v1/system/sync/full");
+  expect(call?.[1]?.method).toBe("POST");
+  expect(host.querySelector("[data-testid=settings-sync-status]")?.textContent).toContain("settings.sync_success");
+  expect(host.querySelector("[data-testid=settings-sync-error]")).toBeNull();
+});
+
+it("shows an honest notice instead of a fake success when DuckDB is unavailable", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path === "/api/v1/system/sync/full") {
+      return Promise.resolve(response({ available: false, coverage_ready: false, synced: 0, reason: "DUCKDB_UNAVAILABLE" }));
+    }
+    return Promise.resolve(response({ initial_balance: 1000 }));
+  });
+
+  await act(async () => root.render(<SettingsView />));
+  await flush();
+  await act(async () => (host.querySelector("[data-testid=settings-sync]") as HTMLButtonElement).click());
+  await flush();
+
+  expect(host.querySelector("[data-testid=settings-sync-status]")?.textContent).toContain("settings.sync_unavailable");
+  expect(host.querySelector("[data-testid=settings-sync-error]")).toBeNull();
+});
+
+it("surfaces a blocked coverage gate and a transport failure distinctly", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path === "/api/v1/system/sync/full") {
+      return Promise.resolve(response({ available: true, coverage_ready: false, synced: 0, reason: "COVERAGE_INCOMPLETE" }));
+    }
+    return Promise.resolve(response({ initial_balance: 1000 }));
+  });
+  await act(async () => root.render(<SettingsView />));
+  await flush();
+  await act(async () => (host.querySelector("[data-testid=settings-sync]") as HTMLButtonElement).click());
+  await flush();
+  expect(host.querySelector("[data-testid=settings-sync-error]")?.textContent).toContain("settings.sync_blocked");
+
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path === "/api/v1/system/sync/full") return Promise.resolve(response({ detail: "boom" }, 500));
+    return Promise.resolve(response({ initial_balance: 1000 }));
+  });
+  await act(async () => (host.querySelector("[data-testid=settings-sync]") as HTMLButtonElement).click());
+  await flush();
+  expect(host.querySelector("[data-testid=settings-sync-error]")?.textContent).toContain("settings.sync_failed");
+});

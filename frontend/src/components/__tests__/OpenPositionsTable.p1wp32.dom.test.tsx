@@ -133,3 +133,45 @@ it("enables money math once the server verifies the symbol", async () => {
   expect(row.textContent).toContain("open_positions.local_unrealized");
   expect(row.textContent).not.toContain("open_positions.monetary_unavailable");
 });
+
+it("refreshes quotes when the parent bumps the refresh nonce", async () => {
+  const position = {
+    id: "TRD-NONCE", symbol: "ETHUSDT", side: "BUY", position_type: "LONG",
+    entry_price: 2500, qty: 1, entry_time: "2026-09-15T10:00:00Z", status: "OPEN",
+  };
+  const refreshCalls: string[] = [];
+  mocks.apiFetch.mockImplementation((path: string, init?: RequestInit) => {
+    if (path.includes("/market-data/instrument")) {
+      return Promise.resolve(response({ status: "VERIFIED", provider: "binance_spot", base_asset: "ETH", quote_asset: "USDT" }));
+    }
+    if (path.includes("/quotes/refresh")) {
+      refreshCalls.push(String(init?.method || "GET"));
+      return Promise.resolve(response({
+        checked_at: new Date().toISOString(), requested: 1, identities: 1, skipped_identities: 0,
+        quotes: {
+          "TRD-NONCE": {
+            quote_status: "LIVE", price: 2510, price_kind: "LAST",
+            source_id: "binance_public", source_symbol: "ETHUSDT",
+            observed_at: new Date().toISOString(), checked_at: new Date().toISOString(),
+            age_seconds: 1, reason: null, last_known: null,
+          },
+        },
+      }));
+    }
+    return Promise.resolve(response([]));
+  });
+
+  await act(async () => root.render(
+    <OpenPositionsTable positions={[position] as never} onClosePosition={vi.fn()} refreshNonce={0} />,
+  ));
+  await flush();
+  const initialCalls = refreshCalls.length;
+  expect(initialCalls).toBeGreaterThan(0);
+
+  await act(async () => root.render(
+    <OpenPositionsTable positions={[position] as never} onClosePosition={vi.fn()} refreshNonce={1} />,
+  ));
+  await flush();
+
+  expect(refreshCalls.length).toBe(initialCalls + 1);
+});

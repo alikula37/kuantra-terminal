@@ -42,6 +42,8 @@ async function readInitialBalance(response: Response): Promise<number> {
 export const SettingsView: React.FC = () => {
   const { t } = useTranslation();
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [initialBalance, setInitialBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(true);
   const [balanceError, setBalanceError] = useState<string | null>(null);
@@ -123,12 +125,34 @@ export const SettingsView: React.FC = () => {
     }
   };
 
-  const handleManualSync = () => {
+  const handleManualSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
     setSyncStatus(t("settings.syncing"));
-    setTimeout(() => {
-      setSyncStatus(t("settings.sync_success"));
-      setTimeout(() => setSyncStatus(null), 3000);
-    }, 600);
+    setSyncError(null);
+    try {
+      const response = await apiFetch(apiUrl("/api/v1/system/sync/full"), { method: "POST" });
+      const payload = await response.json() as {
+        available?: unknown;
+        coverage_ready?: unknown;
+        synced?: unknown;
+      };
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (payload.available !== true) {
+        setSyncStatus(t("settings.sync_unavailable"));
+      } else if (payload.coverage_ready !== true) {
+        setSyncStatus(null);
+        setSyncError(t("settings.sync_blocked"));
+      } else {
+        const synced = isFiniteNumber(payload.synced) ? payload.synced : 0;
+        setSyncStatus(t("settings.sync_success", { count: synced }));
+      }
+    } catch {
+      setSyncStatus(null);
+      setSyncError(t("settings.sync_failed"));
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -266,13 +290,16 @@ export const SettingsView: React.FC = () => {
 
         <div className="flex items-center space-x-4">
           <button
-            onClick={handleManualSync}
-            className="flex items-center space-x-2 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white px-4 py-2 rounded text-xs font-bold transition cursor-pointer"
+            data-testid="settings-sync"
+            onClick={() => void handleManualSync()}
+            disabled={isSyncing}
+            className="flex items-center space-x-2 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-white px-4 py-2 rounded text-xs font-bold transition cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-accent" />
-            <span>{t("settings.sync_btn")}</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-accent ${isSyncing ? "animate-spin" : ""}`} />
+            <span>{isSyncing ? t("settings.syncing") : t("settings.sync_btn")}</span>
           </button>
-          {syncStatus && <span className="text-xs text-gain font-bold">{syncStatus}</span>}
+          {syncStatus && <span data-testid="settings-sync-status" className="text-xs text-gain font-bold">{syncStatus}</span>}
+          {syncError && <span data-testid="settings-sync-error" role="alert" className="text-xs text-loss font-bold">{syncError}</span>}
         </div>
       </div>
     </div>
