@@ -20,12 +20,125 @@ from app.db.repositories.evidence_ledger_repo import (
 PROJECTABLE_EVENT_TYPES = frozenset(
     {"LegacyTradeImported", "IntentRecorded", "FillRecorded", "TradeCorrected"}
 )
+# Broker export/API observations and imported account events reuse projectable
+# event type names (``FillRecorded``, ``TradeCorrected``) with a non-trade
+# payload.  These explicit payload contracts are out of scope for the trade
+# projection; anything else without a trade snapshot still fails closed.
+NON_TRADE_LIFECYCLE_PAYLOAD_KEYS = frozenset({"broker_lifecycle", "account_event"})
+# The accepted event-type scopes mirror the producers:
+# - broker_import_service fills -> FillRecorded with {"broker_lifecycle": payload()}
+#   (order observations use VenueAck/VenueReject, which are not projectable);
+# - account_reconciliation MANUAL_CORRECTION -> TradeCorrected with
+#   {"account_event": payload()} (fee/rebate observations use FeeAdjusted,
+#   which is not projectable).
+_BROKER_LIFECYCLE_EVENT_TYPES = frozenset({"FillRecorded"})
+_ACCOUNT_EVENT_EVENT_TYPES = frozenset({"TradeCorrected"})
+_BROKER_RECORD_TYPES = frozenset({"fill", "order"})
+_BROKER_LIFECYCLE_REQUIRED_TEXT = (
+    "record_type",
+    "external_order_id",
+    "symbol",
+    "occurred_at",
+)
+_ACCOUNT_EVENT_REQUIRED_TEXT = (
+    "account_event_kind",
+    "account_event_status",
+    "storage_status",
+    "external_event_id",
+)
 _SIDES = frozenset({"BUY", "SELL", "LONG", "SHORT"})
 _STATUSES = frozenset({"OPEN", "CLOSED", "CANCELED"})
 
 
 class EvidenceProjectionError(Exception):
     """Raised when the canonical ledger cannot produce a safe projection."""
+
+
+def _load_event_payload(event: Dict[str, Any]) -> Any:
+    """Parse the canonical payload or fail closed with the event identity."""
+
+    try:
+        return json.loads(event["normalized_payload_json"])
+    except (KeyError, TypeError, json.JSONDecodeError) as exc:
+        raise EvidenceProjectionError(
+            f"event {event.get('event_id', '<unknown>')} has invalid normalized payload"
+        ) from exc
+
+
+def _required_payload_text(body: Dict[str, Any], field: str, source: str) -> str:
+    value = body.get(field)
+    text = value.strip() if isinstance(value, str) else ""
+    if not text:
+        raise EvidenceProjectionError(f"{source} payload requires {field}")
+    return text
+
+
+def _classify_non_trade_lifecycle_payload(
+    event_type: Any,
+    account_id: Any,
+    venue: Any,
+    payload: Any,
+) -> Optional[str]:
+    """Validate a documented non-trade lifecycle payload.
+
+    Returns the payload key when the event is a valid broker/account observation
+    that stays out of the trade projection, ``None`` when the payload contains
+    no lifecycle contract at all, and raises for malformed, conflicting or
+    event-type-mismatched lifecycle payloads so a rebuild never silently skips a
+    broken event.
+    """
+
+    if not isinstance(payload, dict):
+        return None
+    keys = sorted(key for key in NON_TRADE_LIFECYCLE_PAYLOAD_KEYS if key in payload)
+    if not keys:
+        return None
+    if len(keys) > 1:
+        raise EvidenceProjectionError(
+            f"conflicting lifecycle payload keys: {', '.join(keys)}"
+        )
+    key = keys[0]
+    body = payload.get(key)
+    if not isinstance(body, dict):
+        raise EvidenceProjectionError(f"{key} payload must be an object")
+
+    normalized_event_type = str(event_type or "").strip()
+    normalized_venue = str(venue or "").strip().upper()
+    if key == "broker_lifecycle":
+        if normalized_event_type not in _BROKER_LIFECYCLE_EVENT_TYPES:
+            raise EvidenceProjectionError(
+                "broker_lifecycle payload is not valid for "
+                f"{normalized_event_type or 'unknown'} events"
+            )
+        for field in _BROKER_LIFECYCLE_REQUIRED_TEXT:
+            _required_payload_text(body, field, "broker_lifecycle")
+        record_type = str(body["record_type"]).strip().lower()
+        if record_type not in _BROKER_RECORD_TYPES:
+            raise EvidenceProjectionError("broker_lifecycle record_type is unsupported")
+        if record_type == "fill":
+            _required_payload_text(body, "external_fill_id", "broker_lifecycle")
+        if str(body.get("venue") or "").strip().upper() != normalized_venue:
+            raise EvidenceProjectionError(
+                "broker_lifecycle venue disagrees with the event venue"
+            )
+        return key
+
+    if normalized_event_type not in _ACCOUNT_EVENT_EVENT_TYPES:
+        raise EvidenceProjectionError(
+            "account_event payload is not valid for "
+            f"{normalized_event_type or 'unknown'} events"
+        )
+    for field in _ACCOUNT_EVENT_REQUIRED_TEXT:
+        _required_payload_text(body, field, "account_event")
+    if str(body.get("account_id") or "").strip() != str(account_id or "").strip():
+        raise EvidenceProjectionError(
+            "account_event account_id disagrees with the event account"
+        )
+    if str(body.get("venue") or "").strip().upper() != normalized_venue:
+        raise EvidenceProjectionError(
+            "account_event venue disagrees with the event venue"
+        )
+    return key
 
 
 def _now_utc() -> str:
@@ -85,13 +198,13 @@ class EvidenceTradeProjectionRepository:
             conn.close()
 
     @staticmethod
-    def _projection_from_event(event: Dict[str, Any], projected_at: str) -> Dict[str, Any]:
-        try:
-            payload = json.loads(event["normalized_payload_json"])
-        except (KeyError, TypeError, json.JSONDecodeError) as exc:
-            raise EvidenceProjectionError(
-                f"event {event.get('event_id', '<unknown>')} has invalid normalized payload"
-            ) from exc
+    def _projection_from_event(
+        event: Dict[str, Any],
+        projected_at: str,
+        payload: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        if payload is None:
+            payload = _load_event_payload(event)
         if not isinstance(payload, dict) or not isinstance(payload.get("trade"), dict):
             raise EvidenceProjectionError(
                 f"event {event.get('event_id', '<unknown>')} has no trade snapshot"
@@ -295,8 +408,10 @@ class EvidenceTradeProjectionRepository:
         Journal writes use this boundary immediately after appending the canonical
         event.  The caller owns commit/rollback, so a projection validation or
         SQLite failure rolls back the compatibility row and ledger event together.
-        Non-trade lifecycle events are deliberately ignored until their own typed
-        projection semantics exist.
+        Non-trade lifecycle events, including the recognized broker/account
+        observation payloads, are deliberately ignored until their own typed
+        projection semantics exist; an unrecognized projectable payload still
+        fails closed.
         """
 
         if not conn.in_transaction:
@@ -305,8 +420,21 @@ class EvidenceTradeProjectionRepository:
             )
         if event.get("event_type") not in PROJECTABLE_EVENT_TYPES:
             return None
+        payload = _load_event_payload(event)
+        if not isinstance(payload, dict) or not isinstance(payload.get("trade"), dict):
+            lifecycle_kind = _classify_non_trade_lifecycle_payload(
+                event.get("event_type"),
+                event.get("account_id"),
+                event.get("venue"),
+                payload,
+            )
+            if lifecycle_kind is not None:
+                return None
+            raise EvidenceProjectionError(
+                f"event {event.get('event_id', '<unknown>')} has no trade snapshot"
+            )
         projected_at = _now_utc()
-        record = self._projection_from_event(event, projected_at)
+        record = self._projection_from_event(event, projected_at, payload=payload)
         self._insert_projection_record(conn, record)
         return record
 
@@ -321,7 +449,9 @@ class EvidenceTradeProjectionRepository:
 
         A malformed projectable event fails closed before the projection table is
         changed.  Non-trade lifecycle events are counted as ignored until their
-        own projection semantics are introduced.
+        own projection semantics are introduced; the recognized broker/account
+        observation payloads are reported separately as
+        ``non_trade_lifecycle_events`` instead of aborting the rebuild.
         """
 
         if resource_check is not None and not callable(resource_check):
@@ -350,6 +480,7 @@ class EvidenceTradeProjectionRepository:
         tracking_events = {}
         events_seen = 0
         ignored = 0
+        non_trade_lifecycle = 0
         projectable = 0
         for event in ledger.export_events(
             account_id=account_id, resource_check=resource_check,
@@ -361,7 +492,21 @@ class EvidenceTradeProjectionRepository:
             if event["event_type"] not in PROJECTABLE_EVENT_TYPES:
                 ignored += 1
                 continue
-            record = self._projection_from_event(event, projected_at)
+            payload = _load_event_payload(event)
+            if not isinstance(payload, dict) or not isinstance(payload.get("trade"), dict):
+                lifecycle_kind = _classify_non_trade_lifecycle_payload(
+                    event.get("event_type"),
+                    event.get("account_id"),
+                    event.get("venue"),
+                    payload,
+                )
+                if lifecycle_kind is not None:
+                    non_trade_lifecycle += 1
+                    continue
+                raise EvidenceProjectionError(
+                    f"event {event.get('event_id', '<unknown>')} has no trade snapshot"
+                )
+            record = self._projection_from_event(event, projected_at, payload=payload)
             identity = (record["account_id"], record["venue"], record["trade_id"])
             order = self._sort_key(event)
             # Export is in chain order, not received-time order. Preserve the
@@ -380,6 +525,7 @@ class EvidenceTradeProjectionRepository:
             "events_seen": events_seen,
             "projectable_events": projectable,
             "ignored_events": ignored,
+            "non_trade_lifecycle_events": non_trade_lifecycle,
             "projections_written": len(latest),
             "tombstones": sum(1 for row in latest.values() if row["is_tombstone"]),
             "ledger_valid": True,

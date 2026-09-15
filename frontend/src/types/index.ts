@@ -138,6 +138,8 @@ export interface QuantScorecard {
 export interface SymbolBreakdown {
   symbol: string;
   count: number;
+  known_pnl_count: number;
+  unknown_pnl_count: number;
   total_pnl: number;
   avg_pnl: number;
   win_rate: number;

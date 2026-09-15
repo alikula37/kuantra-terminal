@@ -1,4 +1,4 @@
-<!-- doc-role: reference -->
+<!-- doc-role: current-work-package -->
 # P1-WP29 — Trusted macOS Pilot Package
 
 ```yaml
@@ -14,6 +14,11 @@ branch: main
 depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
+
+Selection note (2026-09-15): this package is the selected work package only for its
+still-open owner-host obligations (N03/N05/H05/pilot access). No development proceeds
+under it without explicit owner approval; A1 and every integration package remain
+unapproved.
 
 ## Current continuation evidence
 

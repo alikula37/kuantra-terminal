@@ -31,6 +31,17 @@ const scorecard = {
   half_kelly_pct: 10,
 };
 
+const symbolRow = (overrides: Record<string, unknown> = {}) => ({
+  symbol: "BTCUSDT",
+  count: 4,
+  known_pnl_count: 3,
+  unknown_pnl_count: 1,
+  total_pnl: 2,
+  avg_pnl: 0.67,
+  win_rate: 33.33,
+  ...overrides,
+});
+
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 const flush = async () => { await act(async () => { await Promise.resolve(); await Promise.resolve(); }); };
@@ -103,4 +114,63 @@ it("keeps a valid zero-trade response as an explicit empty state", async () => {
 
   expect(host.textContent).toContain("analytics.waiting_title");
   expect(host.textContent).not.toContain("SYSTEM QUALITY NUMBER");
+});
+
+it("shows the unknown-result count when known and unknown results are mixed", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(
+    path.includes("/quant")
+      ? response({ ...scorecard, total_trades: 3, win_rate: 33.33, total_pnl: 2 })
+      : response([symbolRow()]),
+  ));
+
+  await act(async () => root.render(<AnalyticsView />));
+  await flush();
+
+  expect(host.textContent).toContain("analytics.unknown_pnl_note");
+  expect(host.textContent).toContain("analytics.symbol_unknown_count");
+  expect(host.textContent).toContain("SYSTEM QUALITY NUMBER");
+});
+
+it("labels an all-unknown book instead of claiming there are no trades", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(
+    path.includes("/quant")
+      ? response({ ...scorecard, total_trades: 0, total_pnl: 0 })
+      : response([symbolRow({
+          count: 2,
+          known_pnl_count: 0,
+          unknown_pnl_count: 2,
+          total_pnl: 0,
+          avg_pnl: 0,
+          win_rate: 0,
+        })]),
+  ));
+
+  await act(async () => root.render(<AnalyticsView />));
+  await flush();
+
+  expect(host.textContent).toContain("analytics.unknown_all_title");
+  expect(host.textContent).not.toContain("analytics.waiting_title");
+  expect(host.textContent).not.toContain("SYSTEM QUALITY NUMBER");
+});
+
+it("keeps a fully known book free of unknown-result notes", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(
+    path.includes("/quant")
+      ? response({ ...scorecard, total_trades: 2, win_rate: 50, total_pnl: -1 })
+      : response([symbolRow({
+          count: 2,
+          known_pnl_count: 2,
+          unknown_pnl_count: 0,
+          total_pnl: -1,
+          avg_pnl: -0.5,
+          win_rate: 50,
+        })]),
+  ));
+
+  await act(async () => root.render(<AnalyticsView />));
+  await flush();
+
+  expect(host.textContent).not.toContain("analytics.unknown_pnl_note");
+  expect(host.textContent).not.toContain("analytics.unknown_all_title");
+  expect(host.textContent).toContain("SYSTEM QUALITY NUMBER");
 });

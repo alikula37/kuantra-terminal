@@ -300,8 +300,11 @@ class DuckDBDriver:
                 except Exception:
                     pass
 
-            pnl = float(trade.get("pnl", 0.0) or 0.0)
-            is_win = pnl > 0
+            # An unknown PnL stays NULL: missing money is never stored as a
+            # realized zero or classified as a breakeven result.
+            pnl_value = trade.get("pnl")
+            pnl = float(pnl_value) if pnl_value is not None else None
+            is_win = (pnl > 0) if pnl is not None else None
 
             trade_record = {
                 "id": str(trade["id"]),
@@ -346,9 +349,11 @@ class DuckDBDriver:
             query = """
                 SELECT 
                     COUNT(*) as total_trades,
-                    COALESCE(SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END), 0) as win_count,
-                    COALESCE(SUM(CASE WHEN pnl < 0 THEN 1 ELSE 0 END), 0) as loss_count,
-                    COALESCE(SUM(CASE WHEN pnl = 0 THEN 1 ELSE 0 END), 0) as breakeven_count,
+                    COUNT(pnl) as known_pnl_trades,
+                    COUNT(*) - COUNT(pnl) as unknown_pnl_trades,
+                    COALESCE(SUM(CASE WHEN pnl IS NOT NULL AND pnl > 0 THEN 1 ELSE 0 END), 0) as win_count,
+                    COALESCE(SUM(CASE WHEN pnl IS NOT NULL AND pnl < 0 THEN 1 ELSE 0 END), 0) as loss_count,
+                    COALESCE(SUM(CASE WHEN pnl IS NOT NULL AND pnl = 0 THEN 1 ELSE 0 END), 0) as breakeven_count,
                     COALESCE(SUM(pnl), 0.0) as total_pnl,
                     COALESCE(AVG(pnl), 0.0) as avg_pnl,
                     COALESCE(AVG(CASE WHEN pnl > 0 THEN pnl END), 0.0) as avg_win,
@@ -367,6 +372,8 @@ class DuckDBDriver:
             if not row or row[0] == 0:
                 return {
                     "total_trades": 0,
+                    "known_pnl_trades": 0,
+                    "unknown_pnl_trades": 0,
                     "win_count": 0,
                     "loss_count": 0,
                     "breakeven_count": 0,
@@ -384,30 +391,37 @@ class DuckDBDriver:
                 }
 
             total_trades = row[0]
-            win_count = row[1]
-            loss_count = row[2]
-            breakeven_count = row[3]
-            win_rate = (win_count / total_trades) * 100 if total_trades > 0 else 0.0
-            gross_profit = row[10]
-            gross_loss = row[11]
+            known_pnl_trades = row[1]
+            unknown_pnl_trades = row[2]
+            win_count = row[3]
+            loss_count = row[4]
+            breakeven_count = row[5]
+            # The win rate denominator contains known results only; unknown
+            # outcomes are surfaced through ``unknown_pnl_trades`` instead of
+            # silently counting as losses or breakevens.
+            win_rate = (win_count / known_pnl_trades) * 100 if known_pnl_trades > 0 else 0.0
+            gross_profit = row[12]
+            gross_loss = row[13]
             profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else (gross_profit if gross_profit > 0 else 0.0)
 
             return {
                 "total_trades": total_trades,
+                "known_pnl_trades": known_pnl_trades,
+                "unknown_pnl_trades": unknown_pnl_trades,
                 "win_count": win_count,
                 "loss_count": loss_count,
                 "breakeven_count": breakeven_count,
                 "win_rate": round(win_rate, 2),
-                "total_pnl": round(row[4], 2),
-                "avg_pnl": round(row[5], 2),
-                "avg_win": round(row[6], 2),
-                "avg_loss": round(row[7], 2),
-                "max_win": round(row[8], 2),
-                "max_loss": round(row[9], 2),
+                "total_pnl": round(row[6], 2),
+                "avg_pnl": round(row[7], 2),
+                "avg_win": round(row[8], 2),
+                "avg_loss": round(row[9], 2),
+                "max_win": round(row[10], 2),
+                "max_loss": round(row[11], 2),
                 "profit_factor": round(profit_factor, 2),
-                "avg_r_multiple": round(row[12], 2),
-                "avg_duration_seconds": round(row[13], 1),
-                "total_commission": round(row[14], 2)
+                "avg_r_multiple": round(row[14], 2),
+                "avg_duration_seconds": round(row[15], 1),
+                "total_commission": round(row[16], 2)
             }
         finally:
             conn.close()
@@ -419,17 +433,22 @@ class DuckDBDriver:
                 SELECT 
                     symbol,
                     COUNT(*) as count,
+                    COUNT(pnl) as known_pnl_count,
+                    COUNT(*) - COUNT(pnl) as unknown_pnl_count,
                     COALESCE(SUM(pnl), 0.0) as total_pnl,
                     COALESCE(AVG(pnl), 0.0) as avg_pnl,
-                    COALESCE(AVG(CASE WHEN pnl > 0 THEN 1.0 ELSE 0.0 END), 0.0) * 100 as win_rate
+                    COALESCE(AVG(CASE WHEN pnl IS NULL THEN NULL WHEN pnl > 0 THEN 1.0 ELSE 0.0 END), 0.0) * 100 as win_rate
                 FROM olap_trades
                 WHERE status = 'CLOSED'
                 GROUP BY symbol
                 ORDER BY total_pnl DESC
             """
             result = conn.execute(query).fetchall()
-            cols = ["symbol", "count", "total_pnl", "avg_pnl", "win_rate"]
-            return [dict(zip(cols, [r[0], r[1], round(r[2], 2), round(r[3], 2), round(r[4], 2)])) for r in result]
+            cols = ["symbol", "count", "known_pnl_count", "unknown_pnl_count", "total_pnl", "avg_pnl", "win_rate"]
+            return [
+                dict(zip(cols, [r[0], r[1], r[2], r[3], round(r[4], 2), round(r[5], 2), round(r[6], 2)]))
+                for r in result
+            ]
         finally:
             conn.close()
 
@@ -445,7 +464,7 @@ class DuckDBDriver:
                     SUM(pnl) OVER (ORDER BY exit_time ASC, id ASC) as cumulative_pnl,
                     r_multiple
                 FROM olap_trades
-                WHERE status = 'CLOSED' AND exit_time IS NOT NULL
+                WHERE status = 'CLOSED' AND exit_time IS NOT NULL AND pnl IS NOT NULL
                 ORDER BY exit_time ASC
             """
             result = conn.execute(query).fetchall()

@@ -1,9 +1,24 @@
 <!-- doc-role: current-status -->
 # Current development status
 
-Updated: 2026-09-13. Branch: `main` (latest owner instruction).
+Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP37 multi-select journal filters and one-click unit declaration](work-packages/P1-WP37-journal-filters-and-unit-declaration.md).**
+**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+The package is selected only for its still-open owner-host obligations (N03/N05/H05/pilot
+access); no development proceeds under it without owner approval.
+[P1-WP38 A0 data-accuracy findings](../archive/strategy/work-packages/P1-WP38-a0-data-accuracy-findings.md)
+is complete and archived with its evidence (including the closure review). Owner
+instruction (2026-09-15): apply **only** A0 — verify the two reported data-accuracy
+findings and fix them if real. A1, an MT4/MT5 statement parser, cTrader, an XM bridge, a
+new cloud service and a new broker identity schema are **not** approved; no commit/push,
+Release, installed-app update or real-data migration. Both findings were reproduced and
+fixed; the closure review additionally verified user-visible unknown-PnL reporting and
+tightened the projection lifecycle-event classifier: full backend **983 passed / 2
+warnings**, frontend **39 files / 229 tests**, focused A0 tests **17 passed**, i18n
+**1036/1036/1036**. Broker observations are not converted into journal trades; a future
+design must use a separate broker view, explicit matching and double-count prevention.
+[P1-WP37 multi-select journal filters and one-click unit declaration](work-packages/P1-WP37-journal-filters-and-unit-declaration.md)
+is complete with its evidence below.
 Owner report (2026-09-15): the journal filters must allow multi-selection, and the open
 XAUUSD position still shows "contract size not verified — monetary P/L is not
 calculated". The package makes the symbol/status filters multi-select dropdowns and turns
@@ -542,6 +557,47 @@ with `COMPLETE` provenance and a clean tree (backend **966**, frontend **39/226*
 passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications` was replaced
 after a graceful quit (installed executable matches the CI build, PID `69084`, runtime
 `{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved).
+
+**P1-WP38 A0 data-accuracy findings — complete and archived (2026-09-15, uncommitted):**
+Broker and account lifecycle observations (`FillRecorded` with a `broker_lifecycle`
+payload, `TradeCorrected` with an `account_event` payload) previously aborted
+`EvidenceTradeProjectionRepository.rebuild()` with `event … has no trade snapshot`, which
+broke the `kuantra-cli evidence-ledger projection-rebuild` maintenance path, the H07
+performance worker and the macOS migration restore rebuild for any database containing
+broker observations. Rebuild and the atomic upsert now project trade snapshots, count the
+validated non-trade payload contracts as `non_trade_lifecycle_events`, leave the source
+events, provenance and chain untouched, and still fail closed on unknown projectable
+payloads. The DuckDB OLAP path no longer converts an unknown PnL to 0.0: NULL is preserved
+(`is_winner` NULL), `known_pnl_trades`/`unknown_pnl_trades` are reported, the win rate uses
+known results only, the symbol breakdown carries known/unknown counts, and the equity
+curve skips unknown results, matching the portfolio summary contract.
+
+**Closure review (2026-09-15):** (1) User-visible unknown PnL: AnalyticsView now consumes
+the known/unknown counts — a mixed book shows an unknown-result note and per-symbol
+unknown counts, an all-unknown book gets its own labelled state instead of the generic
+"awaiting trades" empty state, and a fully known book shows no note; the dashboard already
+showed `dashboard.unknown_pnl_note` while unknown results exist. `/analytics/overview` and
+`/analytics/equity` remain API-only (no frontend consumer) and are reported as such.
+(2) Classifier strictness: lifecycle payloads are validated against the producer
+contracts — `broker_lifecycle` only on `FillRecorded` with record type, order/fill
+identity, symbol, occurrence and matching venue; `account_event` only on `TradeCorrected`
+with kind/status/storage/identity and matching account/venue; both keys at once is a
+conflict; malformed, mismatched or unknown payloads fail closed and never partially
+change the projection. Evidence: focused A0 tests **17 passed** with red-first proof
+(`EvidenceProjectionError: … has no trade snapshot`; `assert 0.0 is None`; two frontend
+DOM failures before the visibility fix), frontend **39 files / 229 tests**, i18n
+**1036/1036/1036**, related backend **160 passed**, full backend **983 passed / 2
+warnings**, TypeScript clean and production build PASS. Canonical arm64 local CI
+(`KDG-002@1.1.0`) on the closure-review tree is **MERGE READY** with 13/13 steps and
+provenance `DEVELOPER_DIRTY` (uncommitted by instruction; report
+`dist/p1-wp38-closure-local-ci.json` SHA-256
+`ebd133133d33ade353a7811a9c8019f2aa406549452d61ad6091df76f124d1f8`, executable
+`9f9caf29…`). Plugin-gated engines that still
+coalesce unknown PnL in their own paths (pivot/psychology/execution-drift) are recorded as
+an open follow-up. No commit, Release or installed-app change was made; A1 and every
+integration package remain unapproved. **Broker observations are not converted into
+journal trades; a future design must use a separate broker view, explicit matching and
+double-count prevention.**
 
 ## Selected next work
 

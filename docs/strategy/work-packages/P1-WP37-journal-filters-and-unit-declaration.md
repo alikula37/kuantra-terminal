@@ -1,9 +1,9 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # P1-WP37 — Multi-select journal filters and one-click unit declaration
 
 ```yaml
 work_package: P1-WP37
-status: InProgress
+status: Complete
 branch: main
 baseline: c694712
 ```

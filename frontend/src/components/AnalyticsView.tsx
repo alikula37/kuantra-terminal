@@ -21,6 +21,8 @@ function isSymbolBreakdown(value: unknown): value is SymbolBreakdown {
   const candidate = value as Record<string, unknown>;
   return typeof candidate.symbol === "string"
     && typeof candidate.count === "number" && Number.isFinite(candidate.count)
+    && typeof candidate.known_pnl_count === "number" && Number.isFinite(candidate.known_pnl_count)
+    && typeof candidate.unknown_pnl_count === "number" && Number.isFinite(candidate.unknown_pnl_count)
     && typeof candidate.total_pnl === "number" && Number.isFinite(candidate.total_pnl)
     && typeof candidate.avg_pnl === "number" && Number.isFinite(candidate.avg_pnl)
     && typeof candidate.win_rate === "number" && Number.isFinite(candidate.win_rate);
@@ -130,6 +132,9 @@ export const AnalyticsView: React.FC = () => {
     );
   }
 
+  const unknownTotal = symbols.reduce((sum, item) => sum + item.unknown_pnl_count, 0);
+  const allResultsUnknown = scorecard.total_trades === 0 && unknownTotal > 0;
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-y-auto p-4 select-none font-mono space-y-4">
       <div className="pb-3 border-b border-surface-border flex items-center justify-between">
@@ -142,7 +147,19 @@ export const AnalyticsView: React.FC = () => {
         </div>
       </div>
 
-      {scorecard.total_trades === 0 ? (
+      {allResultsUnknown ? (
+        <div data-testid="analytics-unknown-only" className="flex-1 bg-[#0d121c] p-12 rounded-lg border border-surface-border flex flex-col items-center justify-center text-center select-none font-mono">
+          <div className="w-14 h-14 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
+            <ShieldAlert className="w-7 h-7 text-amber-400" />
+          </div>
+          <h3 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
+            {t("analytics.unknown_all_title")}
+          </h3>
+          <p className="text-xs text-slate-400 max-w-md leading-relaxed">
+            {t("analytics.unknown_all_desc", { count: unknownTotal })}
+          </p>
+        </div>
+      ) : scorecard.total_trades === 0 ? (
         <div className="flex-1 bg-[#0d121c] p-12 rounded-lg border border-surface-border flex flex-col items-center justify-center text-center select-none font-mono">
           <div className="w-14 h-14 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
             <Target className="w-7 h-7 text-accent" />
@@ -156,6 +173,11 @@ export const AnalyticsView: React.FC = () => {
         </div>
       ) : (
         <>
+          {unknownTotal > 0 && (
+            <div data-testid="analytics-unknown-note" className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-300">
+              {t("analytics.unknown_pnl_note", { count: unknownTotal })}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-[#0d121c] p-3.5 rounded-lg border border-surface-border flex flex-col justify-between">
           <div className="flex items-center justify-between">
@@ -259,7 +281,14 @@ export const AnalyticsView: React.FC = () => {
             {symbols.map((s) => (
               <tr key={s.symbol} className="hover:bg-[#111722]">
                 <td className="py-2.5 font-bold text-white">{s.symbol}</td>
-                <td className="py-2.5 text-slate-300">{s.count}</td>
+                <td className="py-2.5 text-slate-300">
+                  {s.count}
+                  {s.unknown_pnl_count > 0 && (
+                    <span className="ml-1 text-amber-400">
+                      ({t("analytics.symbol_unknown_count", { count: s.unknown_pnl_count })})
+                    </span>
+                  )}
+                </td>
                 <td className="py-2.5 text-gain font-semibold">{s.win_rate}%</td>
                 <td className="py-2.5 text-slate-300">${s.avg_pnl}</td>
                 <td className="py-2.5 text-right font-bold text-gain">+${s.total_pnl.toLocaleString()}</td>

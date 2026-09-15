@@ -108,7 +108,10 @@ class DuckDBHydrator:
                         except Exception:
                             pass
 
-                    pnl = float(t.get("pnl") or 0.0)
+                    pnl_value = t.get("pnl")
+                    # Unknown PnL stays NULL in the OLAP store; it is never
+                    # hydrated as a realized zero.
+                    pnl = float(pnl_value) if pnl_value is not None else None
                     trade_records.append({
                         "id": str(t["id"]),
                         "symbol": str(t["symbol"]).upper(),
@@ -125,7 +128,7 @@ class DuckDBHydrator:
                         "r_multiple": float(t["r_multiple"]) if t.get("r_multiple") is not None else None,
                         "commission": float(t.get("commission") or 0.0),
                         "duration_seconds": duration,
-                        "is_winner": pnl > 0
+                        "is_winner": (pnl > 0) if pnl is not None else None
                     })
 
                 df = pd.DataFrame(trade_records)
