@@ -126,6 +126,19 @@ quant engine's default capital, which would have disagreed with the dashboard.
   the token migration), both-theme screenshots reviewed, DOM-measured layout check
   (no overlap; the grid row now sizes to its content).
 
+### Round 3 clean build and installed-app update
+
+- Source `43a3c06` passed canonical arm64 local CI with **COMPLETE** provenance and a
+  clean tree; report `dist/p1-wp36c-clean-local-ci.json` SHA-256
+  `a08edaa406f1191fff41a4e0e1558a2dec2dc786c61f5b7190b9903b21cdf58e`, executable
+  `01dc9eefa8c26eb40c873407bcbc84f406beb08b6950cd159b19365b6192ae56`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp36c.dmg` `hdiutil verify` VALID,
+  SHA-256 `c1d47fb7dd6386b684d6cc1b525c348d0dbd9572c2d395ab2984837d911ce44f`; mounted
+  read-only smoke **PASS** (`dist/p1-wp36c-dmg-smoke.json`).
+- `/Applications` replaced after a graceful quit; installed executable matches the CI
+  build, launched PID `63300`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`,
+  user data preserved.
+
 ### Round 2 clean build and installed-app update
 
 - Source `ffa3a77` passed canonical arm64 local CI with **COMPLETE** provenance and a

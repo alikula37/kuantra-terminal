@@ -476,6 +476,14 @@ tooltip and the closed-trade count. Evidence: `test_portfolio_service.py` **18 p
 full backend **966 passed / 2 warnings**, frontend **39/221**, i18n **1026/1026/1026**,
 TypeScript clean.
 
+**P1-WP36 round-3 clean install (2026-09-15):** Source `43a3c06` passed canonical arm64
+local CI with `COMPLETE` provenance and a clean tree (backend **966**, frontend
+**39/221**, i18n **1026/1026/1026**; report `a08edaa4…`, executable `01dc9eef…`); arm64
+DMG `c1d47fb7…` passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications`
+was replaced after a graceful quit (installed executable matches the CI build, PID
+`63300`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data
+preserved).
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates
