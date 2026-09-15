@@ -382,6 +382,16 @@ waiting for the 20s poll. Evidence: `test_system_sync.py` **3 passed**, full bac
 **960 passed / 2 warnings**, frontend **39 files / 214 tests**, i18n **993/993/993**,
 TypeScript clean.
 
+**P1-WP35 clean install (2026-09-15):** Source `ef89ae6` passed canonical arm64 local
+CI with `COMPLETE` provenance and a clean tree (backend **960**, frontend **39/214**, i18n
+**993/993/993**; report `7903e040…`, executable `a51f290f…`); arm64 DMG `66ae08f1…`
+passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications` was replaced
+(installed executable matches the CI build; runtime
+`{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved). Live check
+on a copy of the owner database: `POST /system/sync/full` →
+`{available: true, coverage_ready: true, synced: 5}` and the quote refresh returned
+`LIVE 2481.13` for the open ETHUSDT trade.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

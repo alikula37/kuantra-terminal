@@ -64,6 +64,25 @@ seem not to work." Every refresh control was traced to its handler:
 
 ### Clean build and installed-app update
 
-Per the owner standing instruction, the verified change was committed and the Mac's
-installed application was rebuilt from the clean commit (details appended after the
-run: source commit, CI report hash, DMG hash, smoke report, installed executable).
+Per the owner standing instruction, the verified change was committed (`ef89ae6`,
+pushed) and the Mac's installed application was rebuilt from the clean commit:
+
+- Canonical arm64 local CI on `ef89ae6`: **MERGE READY**, provenance **COMPLETE**,
+  clean tree; report `dist/p1-wp35-clean-local-ci.json` SHA-256
+  `7903e0401ba9a7a4f9da203577a3bab2fab2383503222e13664ac014bf3875bd`, executable
+  `a51f290f5f5ab46a121b0a6c830fa1eaf54b2bbbd66a9a73f40b168f67b78f5c`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp35.dmg`: `hdiutil verify` VALID,
+  SHA-256 `66ae08f1c368887d99db448458c2f2969c35f664d06e6d37c223f1f3d2c654bd`;
+  exact read-only mounted-DMG smoke **PASS** (`dist/p1-wp35-dmg-smoke.json`).
+- `/Applications/Kuantra Terminal.app` replaced after a graceful quit; installed
+  executable matches the CI build, `codesign --verify --deep --strict` passes,
+  launched PID `52143`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`.
+  User data was preserved (5 trades).
+
+### Live verification
+
+- Against a copy of the owner database (same build): `POST /api/v1/system/sync/full`
+  returned `{"available": true, "coverage_ready": true, "synced": 5}` — the button
+  now performs the real sync it claims (previously it made no request).
+- The same build's quote refresh returned `LIVE 2481.13` for the owner's open
+  ETHUSDT trade, confirming the journal/positions refresh path end to end.
