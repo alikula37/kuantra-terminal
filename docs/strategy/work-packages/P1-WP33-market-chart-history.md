@@ -54,3 +54,21 @@ load older data. The chart also froze on the first cached window because the
 - Full backend **947 passed / 2 warnings**; frontend **38 files / 204 tests**
   (`lib/__tests__/candles.test.ts` covers merge, dedupe, window math and
   full-page detection); i18n **984/984/984**; `npx tsc --noEmit` clean.
+
+### Clean build and installed-app update
+
+Per the owner standing instruction, the verified change was committed (`7e785a1`,
+pushed) and the Mac's installed application was rebuilt from the clean commit:
+
+- Canonical arm64 local CI on `7e785a1`: **MERGE READY**, provenance **COMPLETE**,
+  clean tree; backend **947 passed / 2 warnings**, frontend **38 files / 204 tests**,
+  i18n **984/984/984**; report `dist/p1-wp33-clean-local-ci.json` SHA-256
+  `46ecf223513c919fb0ed88214d83dcc816b0a0c375d7e4a5683301989bc67e41`, executable
+  `38a59ad1c61265449b5330b98ed99b9e453b215c1b923b810b30221eba63b9e3`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp33.dmg`: `hdiutil verify` VALID,
+  SHA-256 `55f93dc17bd9bc3b59f2a2a2df200bb69b68a04cf4f368c3b4f0fb06b5180643`;
+  exact read-only mounted-DMG smoke **PASS** (`dist/p1-wp33-dmg-smoke.json`).
+- `/Applications/Kuantra Terminal.app` replaced after a graceful quit; installed
+  executable matches the CI build, `codesign --verify --deep --strict` passes,
+  launched PID `43979`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`.
+  User data was preserved.

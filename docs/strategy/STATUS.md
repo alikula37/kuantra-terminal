@@ -292,6 +292,13 @@ merges instead of wiping loaded history. Evidence: `test_market_candle_history.p
 **6 passed**, full backend **947 passed / 2 warnings**, frontend **38 files / 204 tests**,
 i18n **984/984/984**, TypeScript clean.
 
+**P1-WP33 clean build and install (2026-09-15):** Source `7e785a1` passed canonical
+arm64 local CI with `COMPLETE` provenance and a clean tree (backend **947**, frontend
+**38/204**, i18n **984/984/984**; report `46ecf223…`). The arm64 DMG
+`55f93dc1…` passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications`
+was replaced (installed executable `38a59ad1…`, runtime
+`{"status":"online","version":"1.1.0"}`, user data preserved).
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel
