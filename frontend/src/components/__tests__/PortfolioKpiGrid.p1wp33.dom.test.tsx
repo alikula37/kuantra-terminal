@@ -235,3 +235,48 @@ it("shows the annualized Sharpe with its data basis, or an honest missing state"
   expect(host.textContent).toContain("portfolio.sharpe_insufficient");
   expect(host.textContent).not.toContain("portfolio.sharpe_over_trades");
 });
+
+it("hides a metric from its hover close button, reflows the grid and restores it", async () => {
+  window.localStorage.clear();
+  await act(async () => root.render(<PortfolioKpiGrid summary={baseSummary} />));
+
+  const hideButton = host.querySelector("[data-testid=hide-metric-open-pnl]") as HTMLButtonElement;
+  expect(hideButton).toBeTruthy();
+  expect(hideButton.className).toContain("group-hover:opacity-100");
+  expect(hideButton.getAttribute("aria-label")).toBe("dashboard.metric_hide");
+  expect(host.textContent).toContain("portfolio.open_unrealized");
+
+  await act(async () => hideButton.click());
+  expect(host.textContent).not.toContain("portfolio.open_unrealized");
+  expect(JSON.parse(window.localStorage.getItem("kuantra_dashboard_metrics_hidden") as string)).toEqual(["open-pnl"]);
+  const heroGrid = host.querySelector("[data-testid=dashboard-hero]")?.firstElementChild as HTMLElement;
+  expect(heroGrid.className).toContain("xl:grid-cols-5");
+
+  const restore = host.querySelector("[data-testid=dashboard-metrics-restore]") as HTMLButtonElement;
+  expect(restore).toBeTruthy();
+  expect(restore.textContent).toContain("dashboard.metrics_hidden_count:1");
+  await act(async () => restore.click());
+
+  const toggle = host.querySelector("[data-testid=metric-toggle-open-pnl]") as HTMLInputElement;
+  expect(toggle.checked).toBe(false);
+  await act(async () => toggle.click());
+
+  expect(host.textContent).toContain("portfolio.open_unrealized");
+  expect(JSON.parse(window.localStorage.getItem("kuantra_dashboard_metrics_hidden") as string)).toEqual([]);
+  expect(host.querySelector("[data-testid=dashboard-metrics-restore]")).toBeNull();
+});
+
+it("shows every metric again from the restore panel", async () => {
+  window.localStorage.setItem("kuantra_dashboard_metrics_hidden", JSON.stringify(["open-risk", "sharpe"]));
+  await act(async () => root.render(<PortfolioKpiGrid summary={baseSummary} />));
+
+  expect(host.textContent).not.toContain("portfolio.open_risk");
+  expect(host.textContent).not.toContain("portfolio.sharpe");
+
+  await act(async () => (host.querySelector("[data-testid=dashboard-metrics-restore]") as HTMLButtonElement).click());
+  await act(async () => (host.querySelector("[data-testid=dashboard-metrics-show-all]") as HTMLButtonElement).click());
+
+  expect(host.textContent).toContain("portfolio.open_risk");
+  expect(host.textContent).toContain("portfolio.sharpe");
+  expect(JSON.parse(window.localStorage.getItem("kuantra_dashboard_metrics_hidden") as string)).toEqual([]);
+});

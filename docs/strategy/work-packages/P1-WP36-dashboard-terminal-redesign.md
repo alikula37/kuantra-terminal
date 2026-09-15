@@ -103,6 +103,27 @@ quant engine's default capital, which would have disagreed with the dashboard.
   engine value, one trade / flat series / unknown results stay unavailable) and the KPI
   grid DOM test covers the ready and missing states.
 
+## Round 4 — per-metric hide with hover ✕ (owner request)
+
+Owner report (2026-09-15): "çok fazla metrik var hepsi anlamlı olmayabilir. mouse üzerlerine
+geldiğinde sağ üstlerinde çarpı işareti çıksın her bir kutu için. kapatılırsa veya
+açılırlarsa hizalama vs ona göre yapılsın."
+
+- Every hero card and rail cell renders an ✕ button in its top-right corner that
+  appears on hover (and on keyboard focus), hides its metric, and stops event
+  propagation so the clickable equity card is not triggered.
+- Hidden metrics are remembered per machine in `localStorage`
+  (`kuantra_dashboard_metrics_hidden`); a blocked storage degrades to in-memory state
+  instead of breaking the dashboard.
+- Alignment reflows: the hero grid computes its column count from the remaining cards
+  (the live-equity card keeps a double slot, so 5 visible cards render in 6 columns,
+  4 in 5, and so on), and the rail strip keeps its auto-fit cells, so hiding any
+  combination leaves no gaps.
+- A "Metrikler · N gizli" control appears only while metrics are hidden; it opens a
+  checkbox panel for every metric plus "show all", so closing is always reversible.
+- EN/TR/DE strings for the hide/restore controls; screenshot-verified with three
+  metrics hidden (hero reflowed to 4 cards, rail to 5 cells, restore chip visible).
+
 ## Scope boundaries
 
 - No new endpoints beyond the existing summary fields; no fabricated values — every
@@ -120,6 +141,9 @@ quant engine's default capital, which would have disagreed with the dashboard.
   plus the localized-title test; all earlier dashboard truth tests still pass.
 - Full backend **964 passed / 2 warnings**; i18n **1022/1022/1022**; `npx tsc --noEmit`
   clean.
+- Round 4: frontend **39 files / 223 tests** (hide from the ✕, storage persistence,
+  grid class reflow, restore panel and show-all covered); i18n **1030/1030/1030**;
+  full backend **966 passed / 2 warnings**.
 - Round 3: full backend **966 passed / 2 warnings**; frontend **39 files / 221 tests**;
   i18n **1026/1026/1026**; both-theme screenshot re-checked with the seven-cell strip.
 - Round 2: frontend rerun **39 files / 220 tests** (unchanged tests keep passing through

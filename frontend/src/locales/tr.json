@@ -174,7 +174,11 @@
     "unknown_pnl_note": "{count} tamamlanmış işlemde sonuç bilinmiyor çünkü miktar birimi beyan edilmedi.",
     "title": "BÜYÜK RESİM QUANT PANELİ",
     "title_lite": "LİTE PORTFÖY & RİSK PANELİ",
-    "as_of": "son veri {time}"
+    "as_of": "son veri {time}",
+    "metric_hide": "Bu metriği gizle",
+    "metrics_restore": "Metrikler",
+    "metrics_hidden_count": "{count} gizli",
+    "metrics_show_all": "Tüm metrikleri göster"
   },
   "orderflow": {
     "footprint_title": "Emir Akışı Footprint Matrisi",

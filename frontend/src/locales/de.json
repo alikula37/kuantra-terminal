@@ -174,7 +174,11 @@
     "unknown_pnl_note": "{count} abgeschlossene(r) Trade(s) haben ein unbekanntes Ergebnis, weil keine Basis-Einheit erklärt wurde.",
     "title": "QUANT-GESAMTPANEL",
     "title_lite": "LITE-PORTFOLIO- & RISIKO-PANEL",
-    "as_of": "Stand {time}"
+    "as_of": "Stand {time}",
+    "metric_hide": "Diese Metrik ausblenden",
+    "metrics_restore": "Metriken",
+    "metrics_hidden_count": "{count} ausgeblendet",
+    "metrics_show_all": "Alle Metriken einblenden"
   },
   "orderflow": {
     "footprint_title": "Orderflow-Footprint-Matrix",

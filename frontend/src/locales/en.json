@@ -174,7 +174,11 @@
     "unknown_pnl_note": "{count} completed trade(s) have an unknown result because no base unit was declared.",
     "title": "BIG PICTURE QUANT DASHBOARD",
     "title_lite": "LITE PORTFOLIO & RISK DASHBOARD",
-    "as_of": "as of {time}"
+    "as_of": "as of {time}",
+    "metric_hide": "Hide this metric",
+    "metrics_restore": "Metrics",
+    "metrics_hidden_count": "{count} hidden",
+    "metrics_show_all": "Show all metrics"
   },
   "orderflow": {
     "footprint_title": "Order Flow Footprint Matrix",

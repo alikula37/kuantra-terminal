@@ -484,6 +484,17 @@ was replaced after a graceful quit (installed executable matches the CI build, P
 `63300`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data
 preserved).
 
+**P1-WP36 round 4 — per-metric hide (2026-09-15):** Owner asked for a hover ✕ on every
+KPI box with layout re-alignment when boxes are closed or reopened. Each hero card and
+rail cell now carries an ✕ that appears on hover/focus and hides that metric; the
+choice is stored in `localStorage` (`kuantra_dashboard_metrics_hidden`) with an
+in-memory fallback. The hero grid recomputes its column count from the remaining cards
+(live equity keeps a double slot) and the rail keeps auto-fit cells, so any combination
+stays aligned without gaps. A "Metrikler · N gizli" control appears only while
+something is hidden and opens a per-metric checkbox panel plus "show all", so closing
+is reversible. Evidence: frontend **39/223**, i18n **1030/1030/1030**, full backend
+**966**, TypeScript clean, screenshot-verified with three metrics hidden.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates
