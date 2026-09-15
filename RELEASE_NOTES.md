@@ -3,7 +3,7 @@
 
 **Pilot Release tag:** `pilot-v1.1.0`
 
-**Artifact source commit:** `bfd52b3a724f3de0dc24646a3276b1e1a564f947`
+**Artifact source commit:** `122b6bef522f3e2ed9872f82e3bed5cf98f25a58`
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
