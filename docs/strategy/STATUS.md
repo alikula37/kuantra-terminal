@@ -741,6 +741,29 @@ fix is binary-affecting, the trusted pilot artifacts advance to `v1.1.1`
 (`truth-matrix.v1.1.1.json`); the transport release stays `pilot-v1.1.0` (assets refreshed in
 place, tag not moved). Build/CI/install hashes are recorded in the follow-up evidence commit.
 
+**v1.1.1 security-patch artifacts built and installed (2026-09-15):** build commit
+`6c1e03c9c8a42f2e32d8c730beab828482338506` (clean tree). Canonical arm64 local CI is
+**MERGE READY** 13/13 with provenance `COMPLETE` (report
+`dist/p1-security-followup-committed-local-ci.json` SHA-256
+`582b14a168f7b1de5adf58b4b5a829e28f1415e7cea298ed6a25a75588585a8d`, executable
+`cf6b9b5d…`, artifact `ae148d76…`). Release run `35023961123` built both native DMGs from
+the same commit (arm64 executable `a9db9c46…`, x86_64 `77b692e9…`) with native and
+exact mounted-DMG smoke PASS; the pilot-package `SHA256SUMS` verified locally; a local native
+arm64 exact-DMG smoke passed (`dist/security-followup-arm64-exact-dmg-smoke.json` SHA-256
+`446e894cc69e61ead37ceefd76ff977657d3cca899000f330200742f3594d0bd`). The existing
+`pilot-v1.1.0` prerelease now carries exactly two assets —
+`Kuantra-Terminal-1.1.1-arm64.dmg` SHA-256
+`df4656bce6e7f841a6981cde0ad6347042e10ad102f98dc305a3775cac65961a` and
+`Kuantra-Terminal-1.1.1-x86_64.dmg` SHA-256
+`a541ce7dc94a418bd3f98234798e99b63bcf950d803758061745e2e34742d436` — with digests matching
+`SHA256SUMS`; the transport tag was **not moved** (it still targets `122b6bef…`) and the
+release body was refreshed from the marker-delimited notes.
+`/Applications/Kuantra Terminal.app` was replaced with the verified arm64 artifact (installed
+executable `a9db9c46…`, `codesign` structure OK, launch verified, previous bundle retained at
+`/tmp/kuantra-v111-update.kUez7y`, user data preserved). The installed signature remains
+ad-hoc (`TeamIdentifier=not set`): Developer ID signing/notarization is still **absent** and
+remains an open pilot/distribution gate.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates
