@@ -504,6 +504,69 @@ def _safe_bundle_member(name: str) -> bool:
     return bool(name) and not path.is_absolute() and ".." not in path.parts and not name.endswith("/")
 
 
+class _BoundedMemberReader:
+    """Streams one archive member while enforcing member and total byte ceilings."""
+
+    def __init__(
+        self,
+        stream: Any,
+        *,
+        member_label: str,
+        member_limit: int,
+        total_state: dict[str, int],
+        total_limit: int,
+    ) -> None:
+        self._stream = stream
+        self._member_label = member_label
+        self._member_limit = member_limit
+        self._member_read = 0
+        self._total_state = total_state
+        self._total_limit = total_limit
+
+    def read(self, size: int = -1) -> bytes:
+        chunk = self._stream.read(64 * 1024 if size in (-1, None) else size)
+        if not chunk:
+            return chunk
+        self._member_read += len(chunk)
+        self._total_state["restored_total"] = self._total_state.get("restored_total", 0) + len(chunk)
+        if self._member_read > self._member_limit:
+            raise MigrationBundleError(
+                f"restored member exceeds the safety limit: {self._member_label}"
+            )
+        if self._total_state["restored_total"] > self._total_limit:
+            raise MigrationBundleError(
+                "restored bundle exceeds the total uncompressed safety limit"
+            )
+        return chunk
+
+
+def _read_member_bounded(
+    archive: zipfile.ZipFile,
+    name: str,
+    *,
+    limit: int = MAX_ARCHIVE_MEMBER_BYTES,
+) -> bytes:
+    """Read one archive member while enforcing the real decompressed byte ceiling.
+
+    Central-directory ``file_size`` values are attacker-controlled, so the
+    decompressed byte count is enforced while streaming, not declared metadata.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    with archive.open(name, "r") as source:
+        while True:
+            chunk = source.read(64 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > limit:
+                raise MigrationBundleError(
+                    f"archive member exceeds the safety limit of {limit} bytes: {name}"
+                )
+            chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def _manifest_file_entry(path: Path, relative: Path) -> dict[str, Any]:
     return {
         "path": relative.as_posix(),
@@ -764,9 +827,12 @@ def verify_migration_bundle(bundle_path: str | Path) -> dict[str, Any]:
                         continue
                     try:
                         info = archive.getinfo(name)
-                        payload = archive.read(name)
+                        payload = _read_member_bounded(archive, name)
                     except KeyError:
                         errors.append(f"manifest file is missing from archive: {name}")
+                        continue
+                    except MigrationBundleError as exc:
+                        errors.append(f"unsafe archive member: {exc}")
                         continue
                     digest = hashlib.sha256(payload).hexdigest()
                     if digest != item.get("sha256") or len(payload) != item.get("size_bytes"):
@@ -1095,6 +1161,7 @@ def restore_migration_bundle(
     staging = Path(tempfile.mkdtemp(prefix=f".{target.name}.restore-", dir=str(target.parent)))
     existing_backup: Path | None = None
     restored_relative: list[PurePosixPath] = []
+    restore_byte_state: dict[str, int] = {"restored_total": 0}
     try:
         with zipfile.ZipFile(Path(bundle_path).expanduser().resolve(), "r") as archive:
             manifest = _read_manifest(archive)
@@ -1108,7 +1175,16 @@ def restore_migration_bundle(
                 destination = staging.joinpath(*relative.parts[1:])
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(relative.as_posix(), "r") as source, destination.open("wb") as sink:
-                    shutil.copyfileobj(source, sink)
+                    shutil.copyfileobj(
+                        _BoundedMemberReader(
+                            source,
+                            member_label=relative.as_posix(),
+                            member_limit=MAX_ARCHIVE_MEMBER_BYTES,
+                            total_state=restore_byte_state,
+                            total_limit=MAX_ARCHIVE_TOTAL_UNCOMPRESSED_BYTES,
+                        ),
+                        sink,
+                    )
                 if destination.stat().st_size != item.get("size_bytes"):
                     raise MigrationBundleError(f"restored size mismatch: {relative}")
                 if _sha256_file(destination) != item.get("sha256"):

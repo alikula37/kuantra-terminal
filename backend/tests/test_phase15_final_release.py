@@ -54,7 +54,8 @@ class TestPhase15MobileAndFinalRelease:
         assert revoked is True
         assert not any(d["device_id"] == "DEV-UNITTEST-IPHONE" for d in bridge.list_paired_devices())
 
-    def test_wearable_emergency_panic_kill_switch_lifecycle(self):
+    def test_wearable_emergency_panic_kill_switch_lifecycle(self, monkeypatch):
+        monkeypatch.setenv("KUANTRA_PANIC_DISARM_SECRET", "phase15-disarm-secret")
         engine = PanicKillSwitchEngine()
         assert engine.is_locked_down is False
 
@@ -64,18 +65,19 @@ class TestPhase15MobileAndFinalRelease:
             reason="Acute Volatility Spike"
         )
         assert event["status"] == "TERMINAL_LOCKED_DOWN"
+        assert event["flattened_positions_count"] == 0
         assert engine.is_locked_down is True
 
         st = engine.get_lockdown_status()
         assert st["is_locked_down"] is True
         assert st["lockdown_reason"] == "Acute Volatility Spike"
 
-        # 2. Disarm with invalid PIN
-        with pytest.raises(ValueError, match="Invalid Disarm PIN"):
+        # 2. Disarm with an invalid secret
+        with pytest.raises(ValueError, match="Invalid disarm secret"):
             engine.disarm_lockdown("wrong_pin")
 
-        # 3. Disarm with valid PIN
-        disarm_res = engine.disarm_lockdown("1234")
+        # 3. Disarm with the owner-configured secret
+        disarm_res = engine.disarm_lockdown("phase15-disarm-secret")
         assert disarm_res["status"] == "DISARMED"
         assert engine.is_locked_down is False
 

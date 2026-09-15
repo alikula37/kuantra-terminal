@@ -1,0 +1,29 @@
+{
+  "skill": "sc-docker",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "DOCKER-001",
+      "title": "Dockerfile smoke image lacked pipefail for curl | bash install",
+      "severity": "Low",
+      "confidence": 70,
+      "file": "packaging/linux/Dockerfile.smoke",
+      "entry_point": "Linux smoke build",
+      "attacker": "Network/upstream failure mode (availability, not direct compromise)",
+      "principal_impacted": "Build determinism",
+      "controlled_value": "N/A",
+      "source_trace": [
+        "RUN layer piped NodeSource setup script into bash",
+        "default /bin/sh has no pipefail, so a failing curl could be masked"
+      ],
+      "failed_control": "Shell strictness",
+      "sink": "Image build",
+      "proven_result": "Dockerfile now sets SHELL [\"/bin/bash\", \"-o\", \"pipefail\", \"-c\"]",
+      "conditions": "Build only",
+      "verdict": "confirmed",
+      "cwe": "CWE-1188",
+      "remediation": "pipefail shell",
+      "tests": ["backend/tests/test_python_dependency_lock_contract.py (Dockerfile content assertions)"]
+    }
+  ]
+}

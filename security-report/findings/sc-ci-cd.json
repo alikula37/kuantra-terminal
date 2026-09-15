@@ -1,0 +1,93 @@
+{
+  "skill": "sc-ci-cd",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "CICD-001",
+      "title": "Workflow actions referenced by mutable tags, including a contents:write release job",
+      "severity": "Medium",
+      "confidence": 88,
+      "file": ".github/workflows/release.yml",
+      "pre_fix_lines": "220 (softprops/action-gh-release@v2); ci.yml/release.yml all other uses",
+      "entry_point": "GitHub Actions on push tag / workflow_dispatch",
+      "attacker": "Upstream tag move or compromised action publisher",
+      "principal_impacted": "Release artifacts, contents:write token scope",
+      "controlled_value": "N/A (build supply chain)",
+      "source_trace": [
+        "all `uses:` entries referenced mutable major tags (@v7, @v2, @v10.1.0)",
+        "the publish job holds contents: write and uploads release assets"
+      ],
+      "failed_control": "No commit-SHA pinning",
+      "sink": "Release publication",
+      "proven_result": "All actions pinned to full 40-char SHAs resolved from upstream tags; contract test now requires SHA pins",
+      "conditions": "Requires upstream tag mutation or registry compromise",
+      "verdict": "confirmed",
+      "cwe": "CWE-1357",
+      "remediation": "SHA pin + version comment",
+      "tests": ["backend/tests/test_python_dependency_lock_contract.py::test_install_surfaces_use_only_the_hashed_lock_and_current_actions"]
+    },
+    {
+      "id": "CICD-002",
+      "title": "Release checkout persisted credentials into the contents:write job workspace",
+      "severity": "Medium",
+      "confidence": 80,
+      "file": ".github/workflows/release.yml",
+      "entry_point": "publish job checkout step",
+      "attacker": "Any later step in the publish job (or injected code)",
+      "principal_impacted": "GITHUB_TOKEN with contents: write",
+      "controlled_value": "N/A",
+      "source_trace": ["actions/checkout defaults to persisting the token in git config"],
+      "failed_control": "persist-credentials not disabled in the highest-privilege job",
+      "sink": "Git credential store",
+      "proven_result": "Checkout in the publish job now sets persist-credentials: false",
+      "conditions": "Requires code execution in a later publish-job step",
+      "verdict": "confirmed",
+      "cwe": "CWE-522",
+      "remediation": "persist-credentials: false",
+      "tests": ["grep-level verification: release.yml publish job checkout block"]
+    },
+    {
+      "id": "CICD-003",
+      "title": "workflow_dispatch release_tag input used without format validation",
+      "severity": "Low",
+      "confidence": 75,
+      "file": ".github/workflows/release.yml",
+      "entry_point": "manual release dispatch",
+      "attacker": "Workflow dispatcher / accidental input",
+      "principal_impacted": "Release tag correctness",
+      "controlled_value": "release_tag input",
+      "source_trace": ["RELEASE_TAG fed directly into git/gh-release commands"],
+      "failed_control": "No charset/length validation before shell use",
+      "sink": "Shell environment + release creation",
+      "proven_result": "Publish job now rejects tags outside ^[A-Za-z0-9._-]{1,40}$ before use",
+      "conditions": "Requires dispatch permission",
+      "verdict": "confirmed",
+      "cwe": "CWE-20",
+      "remediation": "Anchored regex gate",
+      "tests": ["grep-level verification: release.yml Validate release tag input step"]
+    },
+    {
+      "id": "CICD-004",
+      "title": "package_linux.sh silently downloaded appimagetool at build time",
+      "severity": "Medium",
+      "confidence": 85,
+      "file": "scripts/package_linux.sh",
+      "entry_point": "Linux packaging step",
+      "attacker": "Upstream release channel / network attacker",
+      "principal_impacted": "Build host and produced artifact",
+      "controlled_value": "N/A",
+      "source_trace": [
+        "missing tool triggered curl of the continuous appimagetool release",
+        "no checksum/signature verification before execution"
+      ],
+      "failed_control": "Unverified binary fetched and executed",
+      "sink": "Executed build tool",
+      "proven_result": "Script now fails closed unless APPIMAGETOOL points at an existing executable; no download path remains",
+      "conditions": "Requires a build environment without the tool",
+      "verdict": "confirmed",
+      "cwe": "CWE-494",
+      "remediation": "Explicit verified tool path; fail closed",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_package_linux_never_downloads_unverified_tool"]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "skill": "sc-crypto",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "CRYPTO-001",
+      "title": "Copy-signal 'signature' accepted by length only",
+      "severity": "High",
+      "confidence": 90,
+      "file": "backend/app/services/p2p/copy_engine.py",
+      "pre_fix_lines": "97-121",
+      "entry_point": "POST /api/v1/p2p/copy/execute (and internally execute_copy_signal)",
+      "attacker": "Any peer/caller that can submit a signal payload",
+      "principal_impacted": "Follower order routing (order_router.route_order)",
+      "controlled_value": "signal dict incl. signature",
+      "source_trace": [
+        "execute_copy_signal -> verify_signal(signal)",
+        "pre-fix verify_signal compared only len(signature) == 64",
+        "verification success -> order_router.route_order(order_payload)"
+      ],
+      "failed_control": "No cryptographic verification of the signature value or payload binding",
+      "sink": "Order routing call on an unauthenticated signal",
+      "proven_result": "verify_signal now requires KUANTRA_COPY_SIGNAL_SECRET and HMAC-SHA256 compare_digest over a canonical payload; invalid/tampered signals REJECTED; broadcast endpoint returns 503 when no secret is configured",
+      "conditions": "Reachable from the loopback API",
+      "verdict": "confirmed",
+      "cwe": "CWE-347",
+      "remediation": "Shared-secret HMAC over canonical fields; fail closed without secret",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_copy_engine_rejects_length_only_signature", "test_copy_engine_accepts_valid_hmac", "test_copy_broadcast_requires_configured_secret", "backend/tests/test_phase14_p2p_copy.py::test_zero_knowledge_copy_signal_signing_and_verification"]
+    },
+    {
+      "id": "CRYPTO-002",
+      "title": "Non-constant-time secret comparisons in webhook auth",
+      "severity": "Low",
+      "confidence": 80,
+      "file": "backend/app/api/webhook_tv.py",
+      "pre_fix_lines": "85-90",
+      "entry_point": "POST /api/v1/webhook/tradingview",
+      "attacker": "Local timing observer",
+      "principal_impacted": "Webhook secrets (HMAC secret, passphrase, tunnel token)",
+      "controlled_value": "signature/passphrase strings",
+      "source_trace": [
+        "verify_hmac_signature / verify_passphrase / tunnel check used == comparisons",
+        "early-exit string comparison leaks prefix progress"
+      ],
+      "failed_control": "Non-constant-time comparison",
+      "sink": "Auth decision",
+      "proven_result": "All three comparisons now use _constant_time_equals(hmac.compare_digest) and tolerate non-ASCII input without crashing",
+      "conditions": "Timing attack feasibility on loopback is limited",
+      "verdict": "confirmed",
+      "cwe": "CWE-208",
+      "remediation": "hmac.compare_digest with exception-safe encoding",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_webhook_auth_handles_non_ascii_without_crashing"]
+    }
+  ]
+}

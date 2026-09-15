@@ -18,6 +18,26 @@ logger = logging.getLogger("model_downloader")
 MODELS_DIR = DATA_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
+
+def _safe_model_name(model_name: Optional[str]) -> str:
+    """Keep model files inside MODELS_DIR; reject traversal and absolute paths."""
+
+    candidate = (
+        ModelDownloader.DEFAULT_MODEL_NAME
+        if model_name is None
+        else str(model_name).strip()
+    )
+    if not candidate or len(candidate) > 128:
+        raise ValueError("MODEL_NAME_INVALID")
+    if candidate != os.path.basename(candidate) or candidate in (".", ".."):
+        raise ValueError("MODEL_NAME_INVALID")
+    if any(separator in candidate for separator in ("/", "\\", "\x00")):
+        raise ValueError("MODEL_NAME_INVALID")
+    target = (MODELS_DIR / candidate).resolve()
+    if not target.is_relative_to(MODELS_DIR.resolve()):
+        raise ValueError("MODEL_NAME_INVALID")
+    return candidate
+
 class ModelDownloader:
     """Manages background chunked downloads of GGUF model weights with Range headers."""
 
@@ -32,7 +52,14 @@ class ModelDownloader:
 
     def get_status(self, model_name: Optional[str] = None) -> Dict[str, Any]:
         """Returns live download progress, state, and verification status."""
-        name = model_name or self.DEFAULT_MODEL_NAME
+        try:
+            name = _safe_model_name(model_name)
+        except ValueError:
+            return {
+                "model_name": str(model_name or ""),
+                "status": "INVALID_MODEL_NAME",
+                "file_path": None,
+            }
         target_path = MODELS_DIR / name
 
         if os.path.exists(target_path) and name not in self._downloads:
@@ -66,7 +93,7 @@ class ModelDownloader:
         expected_sha256: Optional[str] = None
     ) -> Dict[str, Any]:
         """Initiates or resumes chunked GGUF download in background thread."""
-        name = model_name or self.DEFAULT_MODEL_NAME
+        name = _safe_model_name(model_name)
         download_url = url or self.DEFAULT_MODEL_URL
 
         if name in self._downloads and self._downloads[name]["status"] == "DOWNLOADING":
@@ -99,7 +126,7 @@ class ModelDownloader:
         return self._downloads[name]
 
     def pause_download(self, model_name: Optional[str] = None) -> Dict[str, Any]:
-        name = model_name or self.DEFAULT_MODEL_NAME
+        name = _safe_model_name(model_name)
         if name in self._pause_events:
             self._pause_events[name].set()
             if name in self._downloads:
@@ -108,11 +135,11 @@ class ModelDownloader:
         return self.get_status(name)
 
     def resume_download(self, model_name: Optional[str] = None) -> Dict[str, Any]:
-        name = model_name or self.DEFAULT_MODEL_NAME
+        name = _safe_model_name(model_name)
         return self.start_download(model_name=name)
 
     def cancel_download(self, model_name: Optional[str] = None) -> Dict[str, Any]:
-        name = model_name or self.DEFAULT_MODEL_NAME
+        name = _safe_model_name(model_name)
         if name in self._cancel_events:
             self._cancel_events[name].set()
         if name in self._downloads:

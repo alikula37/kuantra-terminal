@@ -18,6 +18,15 @@ from app.services.security.credential_store import (
 logger = logging.getLogger("exchange_credentials")
 
 
+def _safe_exchange_error_message(error_type: str) -> str:
+    """Generic, secret-free connection error text; never echoes upstream data."""
+    return {
+        "AUTHENTICATION_ERROR": "The exchange rejected the API credentials.",
+        "NETWORK_ERROR": "Network error while connecting to the exchange.",
+        "UNEXPECTED_ERROR": "Unexpected error while testing the exchange connection.",
+    }.get(error_type, "The exchange connection could not be verified.")
+
+
 class ExchangeCredentialsManager:
     """Manages OS-keychain-backed exchange credentials and connection handshakes.
 
@@ -361,25 +370,25 @@ class ExchangeCredentialsManager:
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
         except ccxt.AuthenticationError as e:
-            logger.warning(f"[EXCHANGE-TEST] Authentication failed for '{exchange_id}': {e}")
+            logger.warning("[EXCHANGE-TEST] Authentication failed for '%s' (details withheld).", exchange_id)
             return {
                 "success": False,
                 "error_type": "AUTHENTICATION_ERROR",
-                "message": f"Exchange rejected API Key / Secret signature: {str(e)}"
+                "message": _safe_exchange_error_message("AUTHENTICATION_ERROR"),
             }
         except ccxt.NetworkError as e:
-            logger.warning(f"[EXCHANGE-TEST] Network error reaching '{exchange_id}': {e}")
+            logger.warning("[EXCHANGE-TEST] Network error reaching '%s' (details withheld).", exchange_id)
             return {
                 "success": False,
                 "error_type": "NETWORK_ERROR",
-                "message": f"Network error connecting to exchange: {str(e)}"
+                "message": _safe_exchange_error_message("NETWORK_ERROR"),
             }
         except Exception as e:
-            logger.error(f"[EXCHANGE-TEST] Unexpected error testing '{exchange_id}': {e}")
+            logger.error("[EXCHANGE-TEST] Unexpected error testing '%s' (details withheld).", exchange_id)
             return {
                 "success": False,
                 "error_type": "UNEXPECTED_ERROR",
-                "message": str(e)
+                "message": _safe_exchange_error_message("UNEXPECTED_ERROR"),
             }
 
 

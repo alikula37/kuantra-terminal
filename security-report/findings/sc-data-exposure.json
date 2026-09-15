@@ -1,0 +1,29 @@
+{
+  "skill": "sc-data-exposure",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "EXPO-001",
+      "title": "Credential probe errors echoed upstream details to callers",
+      "severity": "Low",
+      "confidence": 78,
+      "file": "backend/app/services/exchange/credentials_manager.py",
+      "entry_point": "Exchange test-connection endpoint",
+      "attacker": "Local API caller",
+      "principal_impacted": "Exchange credential context (error strings could embed headers/URLs/tokens)",
+      "controlled_value": "exchange selection; upstream error text originates from provider libraries",
+      "source_trace": [
+        "test_connection exception handler returned str(error)/error type to the caller",
+        "upstream messages can contain request URLs, header fragments, account hints"
+      ],
+      "failed_control": "Raw upstream error returned in API response",
+      "sink": "JSON error response",
+      "proven_result": "_safe_exchange_error_message returns generic per-error-type text; detail is not returned to callers (and not logged with secrets)",
+      "conditions": "Requires local API reachability plus an upstream failure",
+      "verdict": "confirmed",
+      "cwe": "CWE-209",
+      "remediation": "Generic messages at the boundary",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_exchange_error_messages_are_generic"]
+    }
+  ]
+}

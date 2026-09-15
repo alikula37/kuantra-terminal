@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import socket
 import sys
 from typing import Optional
@@ -14,16 +15,22 @@ from typing import Optional
 import uvicorn
 from fastapi import FastAPI
 
-from app.api.webhook_tv import WEBHOOK_SECRET_CONFIGURED, WEBHOOK_SECRET_KEY, webhook_router
+from app.api.webhook_tv import WEBHOOK_SECRET_CONFIGURED, WEBHOOK_SECRET_KEY, webhook_ingest_router
 from app.api.tv_sync_ws import tv_sync_websocket
 from app.core.config import settings
 from app.version import __version__
 
 logger = logging.getLogger("desktop.gateway")
 
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
+ALLOW_NON_LOOPBACK_ENV = "KUANTRA_ALLOW_NON_LOOPBACK_GATEWAY"
+
+
 def build_gateway_app() -> FastAPI:
     app = FastAPI(title="Kuantra Integrations Gateway", version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
-    app.include_router(webhook_router, prefix="/api/v1")
+    # Only the HMAC-gated ingest route is exposed here; the observation
+    # list/confirm routes stay on the UI-side app.
+    app.include_router(webhook_ingest_router, prefix="/api/v1")
     app.add_api_websocket_route("/ws/tv-sync", tv_sync_websocket)
 
     @app.get("/health")
@@ -54,6 +61,15 @@ class IntegrationsGateway:
             )
 
     def start(self) -> bool:
+        if self.host not in _LOOPBACK_HOSTS and os.environ.get(ALLOW_NON_LOOPBACK_ENV) != "1":
+            logger.error(
+                "Integrations gateway refused to bind non-loopback host '%s'. "
+                "Set %s=1 only for an explicitly reviewed deployment.",
+                self.host, ALLOW_NON_LOOPBACK_ENV,
+            )
+            self.enabled = False
+            self.url = None
+            return False
         self._warn_on_missing_webhook_secret()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if sys.platform.startswith("win"):

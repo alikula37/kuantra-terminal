@@ -239,9 +239,9 @@ class TradeCreateSchema(BaseModel):
         return self
 
 class TradeCloseSchema(BaseModel):
-    exit_price: float
+    exit_price: float = Field(gt=0, le=10**15, allow_inf_nan=False)
     exit_time: Optional[str] = None
-    commission: Optional[float] = 0.0
+    commission: Optional[float] = Field(default=0.0, ge=-(10**15), le=10**15, allow_inf_nan=False)
 
 
 class TradeEditSchema(BaseModel):
@@ -305,8 +305,8 @@ class WeeklyReviewDecisionSchema(BaseModel):
 
 @router.get("/trades")
 def list_trades(
-    limit: int = 100,
-    offset: int = 0,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
     symbol: Optional[str] = None,
     status: Optional[str] = None
 ):
@@ -1004,11 +1004,10 @@ def get_exchange_balances(exchange_id: str = "binance_futures"):
         raise HTTPException(status_code=400, detail=res.get("error", "Failed to sync balances"))
     return res
 
-@router.post("/execution/order")
-def dispatch_order(order: OrderDispatchSchema):
-    """Dispatches a paper order through the pre-execution risk gatekeeper."""
-    mode = str(order.mode or "PAPER").strip().upper()
-    if mode == "LIVE":
+def _require_paper_execution_mode(mode: str) -> str:
+    """Live order operations stay fail-closed on every execution route."""
+    normalized = str(mode or "PAPER").strip().upper()
+    if normalized == "LIVE":
         raise HTTPException(
             status_code=403,
             detail={
@@ -1016,7 +1015,7 @@ def dispatch_order(order: OrderDispatchSchema):
                 "reason": "Live execution is disabled until the Phase 4 execution safety gates are complete.",
             },
         )
-    if mode != "PAPER":
+    if normalized != "PAPER":
         raise HTTPException(
             status_code=403,
             detail={
@@ -1024,6 +1023,14 @@ def dispatch_order(order: OrderDispatchSchema):
                 "reason": "Only PAPER execution mode is supported.",
             },
         )
+    return normalized
+
+
+@router.post("/execution/order")
+def dispatch_order(order: OrderDispatchSchema):
+    """Dispatches a paper order through the pre-execution risk gatekeeper."""
+    mode = str(order.mode or "PAPER").strip().upper()
+    _require_paper_execution_mode(mode)
 
     res = ccxt_execution_engine.create_order(
         symbol=order.symbol,
@@ -1046,11 +1053,13 @@ def dispatch_order(order: OrderDispatchSchema):
 @router.get("/execution/orders/open")
 def get_open_orders(exchange_id: str = "binance_futures", symbol: Optional[str] = None, mode: str = "PAPER"):
     """Lists active open orders from exchange or paper log."""
+    _require_paper_execution_mode(mode)
     return ccxt_execution_engine.fetch_open_orders(exchange_id=exchange_id, symbol=symbol, mode=mode)
 
 @router.delete("/execution/orders/{order_id}")
 def cancel_execution_order(order_id: str, symbol: Optional[str] = None, exchange_id: str = "binance_futures", mode: str = "PAPER"):
-    """Cancels active order."""
+    """Cancels a paper order (live exchange order operations stay disabled)."""
+    _require_paper_execution_mode(mode)
     res = ccxt_execution_engine.cancel_order(order_id=order_id, symbol=symbol, exchange_id=exchange_id, mode=mode)
     if not res.get("success"):
         raise HTTPException(status_code=400, detail=res)
@@ -1381,27 +1390,49 @@ class ModelDownloadSchema(BaseModel):
 
 @router.get("/system/model/status")
 def get_model_download_status(model_name: Optional[str] = None):
-    return model_downloader.get_status(model_name)
+    status = model_downloader.get_status(model_name)
+    if status.get("status") == "INVALID_MODEL_NAME":
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "MODEL_NAME_INVALID",
+                "message": "Model name must be a plain file name inside the models directory.",
+            },
+        )
+    return status
+
+def _model_download_call(action):
+    try:
+        return action()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": str(exc), "message": "Model request was rejected."},
+        ) from exc
 
 @router.post("/system/model/download")
 def start_model_download(payload: ModelDownloadSchema):
-    return model_downloader.start_download(
-        model_name=payload.model_name,
-        url=payload.url,
-        mock_mode=payload.mock_mode
-    )
+    if payload.url:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "MODEL_URL_NOT_ALLOWED",
+                "message": "Custom model URLs are not allowed; the built-in model source is used.",
+            },
+        )
+    return _model_download_call(lambda: model_downloader.start_download(model_name=payload.model_name))
 
 @router.post("/system/model/pause")
 def pause_model_download(payload: ModelDownloadSchema):
-    return model_downloader.pause_download(model_name=payload.model_name)
+    return _model_download_call(lambda: model_downloader.pause_download(model_name=payload.model_name))
 
 @router.post("/system/model/resume")
 def resume_model_download(payload: ModelDownloadSchema):
-    return model_downloader.resume_download(model_name=payload.model_name)
+    return _model_download_call(lambda: model_downloader.resume_download(model_name=payload.model_name))
 
 @router.post("/system/model/cancel")
 def cancel_model_download(payload: ModelDownloadSchema):
-    return model_downloader.cancel_download(model_name=payload.model_name)
+    return _model_download_call(lambda: model_downloader.cancel_download(model_name=payload.model_name))
 
 
 from app.services.settings_service import settings_service
@@ -1682,7 +1713,7 @@ def connect_p2p_peer(payload: PeerConnectSchema):
     )
     return {"status": "CONNECTED", "peer_id": payload.peer_id}
 
-from app.services.p2p.copy_engine import copy_trading_engine
+from app.services.p2p.copy_engine import copy_trading_engine, copy_signal_secret_configured
 
 class CopySignalCreateSchema(BaseModel):
     symbol: str = "BTCUSDT"
@@ -1700,6 +1731,8 @@ class CopySignalExecuteSchema(BaseModel):
 
 @router.post("/p2p/copy/broadcast")
 def broadcast_copy_signal(payload: CopySignalCreateSchema):
+    if not copy_signal_secret_configured():
+        raise HTTPException(status_code=503, detail="COPY_SIGNAL_SECRET_UNCONFIGURED")
     return copy_trading_engine.create_master_signal(
         symbol=payload.symbol,
         side=payload.side,

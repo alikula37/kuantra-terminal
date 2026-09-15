@@ -1,0 +1,29 @@
+{
+  "skill": "sc-mass-assignment",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "MASS-001",
+      "title": "update_trade interpolated caller-supplied column names into SQL",
+      "severity": "Medium",
+      "confidence": 82,
+      "file": "backend/app/db/sqlite_driver.py",
+      "entry_point": "Internal callers (reconciliation, journal edits) reaching SQLiteDriver.update_trade",
+      "attacker": "Any path where field names derive from parsed/imported or API data",
+      "principal_impacted": "Evidence database",
+      "controlled_value": "field names (values were parameterized)",
+      "source_trace": [
+        "update_trade built SET clause from the caller's mapping keys",
+        "keys flowed into SQL text without an allowlist"
+      ],
+      "failed_control": "No allowlist for updatable columns",
+      "sink": "SQL statement text",
+      "proven_result": "_UPDATE_TRADE_FIELDS allowlist (snapshot fields minus id, plus updated_at) rejects unknown fields with ValueError",
+      "conditions": "Requires a caller that passes non-constant keys; defense-in-depth against future call sites",
+      "verdict": "confirmed",
+      "cwe": "CWE-89",
+      "remediation": "Frozen allowlist of updatable fields",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_update_trade_rejects_unknown_columns"]
+    }
+  ]
+}

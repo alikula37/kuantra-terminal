@@ -7,6 +7,7 @@ Transpiles TradingView Pine Script v4/v5 into native Kuantra AI Swarm Rules and 
 import re
 import csv
 import io
+import json
 import time
 import math
 import uuid
@@ -14,6 +15,16 @@ import logging
 from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger("reverse_skill")
+
+
+def _safe_python_string(value: Any) -> str:
+    """Render an arbitrary value as a quoted Python/JSON string literal.
+
+    Keeps generated code generated: quotes and newlines in source-controlled
+    names must never break out of the literal.
+    """
+    return json.dumps(str(value if value is not None else ""), ensure_ascii=False)
+
 
 class ReverseSkillTranspiler:
     """Institutional Reverse-Engineering & Pine Script Transpilation Engine."""
@@ -215,8 +226,8 @@ class {clean_name}SwarmAgent:
     """Autonomous Swarm Execution Agent with compiled Pine Script parameters."""
 
     def __init__(self):
-        self.strategy_id = "{dsl['strategy_id']}"
-        self.strategy_name = "{strategy_name}"
+        self.strategy_id = {_safe_python_string(dsl['strategy_id'])}
+        self.strategy_name = {_safe_python_string(strategy_name)}
         self.sl_ticks = {dsl['risk_parameters']['stop_loss_ticks']}
         self.tp_ticks = {dsl['risk_parameters']['take_profit_ticks']}
 

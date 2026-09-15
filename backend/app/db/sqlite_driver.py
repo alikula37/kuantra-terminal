@@ -626,10 +626,18 @@ class SQLiteDriver:
         finally:
             conn.close()
 
+    _UPDATE_TRADE_FIELDS = frozenset(
+        (set(_TRADE_SNAPSHOT_FIELDS) - {"id"}) | {"updated_at"}
+    )
+
     def update_trade(self, trade_id: str, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         existing = self.get_trade(trade_id)
         if not existing:
             return None
+
+        unknown_fields = sorted(set(update_data) - self._UPDATE_TRADE_FIELDS)
+        if unknown_fields:
+            raise ValueError(f"unsupported trade update field: {unknown_fields[0]}")
 
         update_data["updated_at"] = datetime.utcnow().isoformat()
         fields = []

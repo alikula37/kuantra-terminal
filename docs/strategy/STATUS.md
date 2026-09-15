@@ -668,15 +668,40 @@ anonymized XM report passes, no "XM supported" claim is made. Evidence: backend
 `Mt5StatementPreview.dom.test.tsx` **7 passed** plus the unchanged `CsvImportModal`
 tests **7 passed**, related regressions **112 passed**, full backend **1026 passed / 2
 warnings**, frontend **40 files / 236 tests**, TypeScript/i18n/production build clean.
-Canonical arm64 local CI (`KDG-002@1.1.0`) is **MERGE READY** with 13/13 steps and
-provenance `DEVELOPER_DIRTY` (uncommitted by instruction; report
-`dist/p1-wp40-preview-local-ci.json` SHA-256
-`579dd63e17284b253ea959590a33a38104ff0c572e93253cd14411d850886a8c`, executable
-`963eed4f…`). No commit, Release or installed-app change; persistence/import, migration
-and financial schema extension remain unapproved. **Open owner/pilot obligation:** the
+Canonical arm64 local CI (`KDG-002@1.1.0`) was **MERGE READY** with 13/13 steps
+on the committed tree (`2c961fe`, pushed; clean-commit provenance `COMPLETE`).
+Persistence/import, migration and financial schema extension remain unapproved. **Open
+owner/pilot obligation:** the
 real anonymized XM report validation (terminal MT4/MT5, build/language, preview-vs-source
 comparison of counts, identity relations, quantities and timestamps) is tracked here and
 separate from this completed preview package.
+
+**Security review (`ersinkoc/security-check` v1.2.0, deep profile, whole repository,
+sandboxed local checks) — complete and remediated (2026-09-15):** Independent hunt and
+verification passes produced 21 confirmed findings (4 High, 10 Medium, 7 Low) and 3
+rejected hunter claims; the full report is
+[security-report/SECURITY-REPORT.md](../../security-report/SECURITY-REPORT.md) with its
+coverage ledger, dependency notes and per-skill candidate records alongside. Confirmed
+fixes: the panic switch no longer fabricates closing trades and requires
+`KUANTRA_PANIC_DISARM_SECRET`; the integrations gateway exposes webhook ingest only and
+refuses non-loopback binds; copy signals require a shared-secret HMAC and broadcast fails
+closed; model artifact names are contained under `MODELS_DIR`; webhook bodies are streamed
+under a 64KB cap with constant-time secret comparisons; the execution-mode guard covers
+cancel/open routes; correction/close/list inputs are bounded; `update_trade` columns are
+allowlisted; broker-import review output is capped; migration archive reads stream under
+byte ceilings; generated Python literals are escaped; exchange errors are generic; workflow
+actions are SHA-pinned with `persist-credentials: false`, a validated `release_tag` and no
+silent `appimagetool` download. Pinned by 33 new tests in
+`backend/tests/test_security_review_fixes.py` (full backend **1059 passed**); canonical
+arm64 local CI on the remediation tree was **MERGE READY** 13/13 with provenance
+`DEVELOPER_DIRTY` (report `dist/p1-security-review-local-ci.json` SHA-256
+`3a15e187f718c7b3c7299c6830bb9fa786735aec11736b9aa040627ef9808288`). Commit/push,
+clean-commit CI, DMG asset refresh and the installed-app update are recorded in the
+follow-up install commit. **Needs validation (no severity):** dependency CVE freshness (no
+local scanner; external audit services not used), GitHub-hosted execution of the new SHA
+pins (dry-run pending), crafted-zip false-central-directory regression; macOS
+signing/notarization and the real XM sample remain separate open obligations.
+`security-report/` is repository documentation only and is not a Release asset.
 
 ## Selected next work
 

@@ -45,21 +45,21 @@ jobs:
             architecture: x86_64
             package: bash scripts/package_macos.sh
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Initialize isolated data directory
         shell: bash
         run: printf '%s\n' 'KUANTRA_DATA_DIR=${{ runner.temp }}/kuantra-data' >> "$GITHUB_ENV"
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: backend/requirements.lock
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: astral-sh/setup-uv@v10.1.0
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
           version: "0.12.10"
       - name: Prepare Intel cryptography build
@@ -164,7 +164,7 @@ jobs:
             exit 0
           fi
           exit "$n05_status"
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-macos-${{ matrix.architecture }}
           path: |
@@ -181,11 +181,20 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.11"
-      - uses: actions/download-artifact@v8
+      - name: Validate release tag input
+        run: |
+          set -euo pipefail
+          if [[ ! "${RELEASE_TAG}" =~ ^[A-Za-z0-9._-]{1,40}$ ]]; then
+            echo "invalid release tag: ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: dist
           merge-multiple: true
@@ -209,7 +218,7 @@ jobs:
             --tag "${RELEASE_TAG}" \
             --macos-distribution-report dist/n05-macos-distribution-arm64.json \
             --macos-distribution-report dist/n05-macos-distribution-x86_64.json
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: phase0-exit-evidence
           path: |
@@ -217,7 +226,7 @@ jobs:
             dist/final-smoke-*.json
             dist/MANIFEST.json
           if-no-files-found: error
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         if: github.event_name == 'push' || inputs.publish == true
         with:
           tag_name: ${{ env.RELEASE_TAG }}
@@ -236,11 +245,11 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.publish == false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.11"
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           path: dist
           pattern: release-macos-*
@@ -258,7 +267,7 @@ jobs:
             cd "dist/pilot-package-${RELEASE_TAG}"
             sha256sum -c SHA256SUMS
           )
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: trusted-macos-pilot-package
           path: dist/pilot-package-${{ inputs.release_tag }}

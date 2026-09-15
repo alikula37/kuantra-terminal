@@ -28,6 +28,12 @@ EXACT_REQUIREMENT = re.compile(
 )
 
 
+def _pinned_action_ref(workflow_text: str, action: str) -> str | None:
+    """Return the pinned commit SHA for a workflow action, if it is SHA-pinned."""
+    match = re.search(rf"{re.escape(action)}@([0-9a-f]{{40}})\b", workflow_text)
+    return match.group(1) if match else None
+
+
 def test_universal_lock_is_generated_from_the_source_manifests_and_hashed():
     assert INPUT.read_text(encoding="utf-8").splitlines() == [
         "# Human-maintained source manifests; compile this file into requirements.lock.",
@@ -115,25 +121,26 @@ def test_install_surfaces_use_only_the_hashed_lock_and_current_actions():
     ci = WORKFLOWS[0].read_text(encoding="utf-8")
     assert "cache-dependency-path: backend/requirements.lock" in ci
     for action in (
-        "actions/checkout@v7",
-        "actions/setup-python@v7",
-        "actions/setup-node@v7",
-        "astral-sh/setup-uv@v10.1.0",
-        "actions/upload-artifact@v7",
+        "actions/checkout",
+        "actions/setup-python",
+        "actions/setup-node",
+        "astral-sh/setup-uv",
+        "actions/upload-artifact",
     ):
-        assert action in ci
+        assert _pinned_action_ref(ci, action) is not None, f"{action} must be pinned to a full commit SHA"
 
     release = WORKFLOWS[1].read_text(encoding="utf-8")
     assert "cache-dependency-path: backend/requirements.lock" in release
     for action in (
-        "actions/checkout@v7",
-        "actions/setup-python@v7",
-        "actions/setup-node@v7",
-        "astral-sh/setup-uv@v10.1.0",
-        "actions/upload-artifact@v7",
-        "actions/download-artifact@v8",
+        "actions/checkout",
+        "actions/setup-python",
+        "actions/setup-node",
+        "astral-sh/setup-uv",
+        "actions/upload-artifact",
+        "actions/download-artifact",
+        "softprops/action-gh-release",
     ):
-        assert action in release
+        assert _pinned_action_ref(release, action) is not None, f"{action} must be pinned to a full commit SHA"
 
     dockerfile = DOCKERFILE.read_text(encoding="utf-8")
     assert "COPY backend/requirements.lock backend/" in dockerfile

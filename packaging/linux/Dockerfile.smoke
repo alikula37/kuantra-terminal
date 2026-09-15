@@ -1,5 +1,6 @@
 # packaging/linux/Dockerfile.smoke — reproduces the Linux CI job locally (build + headless smoke + AppImage)
 FROM ubuntu:22.04
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y software-properties-common curl git xvfb libfuse2 file \
     libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \

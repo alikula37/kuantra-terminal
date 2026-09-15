@@ -1,0 +1,99 @@
+{
+  "skill": "sc-business-logic",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "LOGIC-001",
+      "title": "Panic kill-switch fabricated closing trades and hardcoded disarm PINs",
+      "severity": "High",
+      "confidence": 95,
+      "file": "backend/app/services/biometrics/panic_switch.py",
+      "pre_fix_lines": "31-46,77-95",
+      "entry_point": "Panic trigger/disarm API + engine methods",
+      "attacker": "Any local API caller; the hardcoded PIN was guessable by anyone",
+      "principal_impacted": "Forensic evidence integrity (fabricated closes) and lockdown control",
+      "controlled_value": "trigger source; disarm PIN '1234'/'admin' hashes",
+      "source_trace": [
+        "trigger_emergency_kill_switch wrote synthetic close records for open positions without broker authority",
+        "disarm compared against hardcoded PIN hashes present in source"
+      ],
+      "failed_control": "No broker confirmation before writing closes; secrets embedded in code",
+      "sink": "SQLite journal writes + feature unlock",
+      "proven_result": "Trigger now only locks down and records flattened_positions_count=0 with flattening=DISABLED_NO_ORDER_AUTHORITY; disarm requires KUANTRA_PANIC_DISARM_SECRET (compare_digest) or raises PANIC_DISARM_UNCONFIGURED",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-798",
+      "remediation": "Remove fabrication; external secret for disarm; explicit no-order-authority marker",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_panic_trigger_does_not_write_fabricated_closes", "test_panic_disarm_requires_the_configured_secret", "test_panic_disarm_rejects_hardcoded_pins"]
+    },
+    {
+      "id": "LOGIC-002",
+      "title": "Live-execution guard missing on cancel/open-orders and model routes",
+      "severity": "Medium",
+      "confidence": 85,
+      "file": "backend/app/api/endpoints.py",
+      "entry_point": "POST /api/v1/trades/{id}/cancel, GET /api/v1/trades/open, POST /api/v1/trades/{id}/close, model routes",
+      "attacker": "Local API caller operating outside PAPER mode",
+      "principal_impacted": "Order authority boundary (read-only product)",
+      "controlled_value": "execution mode / settings",
+      "source_trace": [
+        "dispatch_order enforced paper mode; cancel and open-order routes did not call the guard",
+        "model start also accepted mock_mode and custom url"
+      ],
+      "failed_control": "Guard implemented on a single route",
+      "sink": "Executor calls / downloads",
+      "proven_result": "_require_paper_execution_mode now gates dispatch, cancel, and open-order routes (LIVE -> 403 LIVE_EXECUTION_DISABLED, other -> 403 UNSUPPORTED_EXECUTION_MODE); model start rejects custom url and ignores mock_mode",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-693",
+      "remediation": "Central execution-mode guard reused by all execution routes",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_live_mode_is_rejected_on_cancel_and_open_order_routes", "test_model_endpoint_rejects_traversal"]
+    },
+    {
+      "id": "LOGIC-003",
+      "title": "Broker import discrepancy amplification copied wholesale into responses",
+      "severity": "Medium",
+      "confidence": 82,
+      "file": "backend/app/services/broker_import_service.py",
+      "entry_point": "Broker import review output",
+      "attacker": "Caller-controlled import payload size/content",
+      "principal_impacted": "API response memory/CPU",
+      "controlled_value": "number of imported rows",
+      "source_trace": [
+        "reconciliation produced O(rows) discrepancies (probe: 450 for 150 rows)",
+        "review summary copied the entire list into the response"
+      ],
+      "failed_control": "No output bound on review discrepancies",
+      "sink": "JSON response construction",
+      "proven_result": "Review copies at most 100 discrepancies and reports discrepancy_count and discrepancies_truncated; probe confirms 450 counted / 100 returned",
+      "conditions": "Any import scale above the cap",
+      "verdict": "confirmed",
+      "cwe": "CWE-400",
+      "remediation": "Slice response list; keep full count",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_broker_import_review_discrepancies_are_count_bounded"]
+    },
+    {
+      "id": "LOGIC-004",
+      "title": "Copy broadcast created unverifiable signals when no secret configured",
+      "severity": "Low",
+      "confidence": 80,
+      "file": "backend/app/api/endpoints.py",
+      "entry_point": "POST /api/v1/p2p/copy/broadcast",
+      "attacker": "Local API caller",
+      "principal_impacted": "Copy signal history integrity",
+      "controlled_value": "signal payload",
+      "source_trace": [
+        "create_master_signal signed with the node private key when no shared secret existed",
+        "no peer can verify that signature, so the signal is unusable and misleading"
+      ],
+      "failed_control": "Endpoint produced signals that verification always rejects",
+      "sink": "Signal history / mesh broadcast",
+      "proven_result": "Endpoint returns 503 COPY_SIGNAL_SECRET_UNCONFIGURED unless KUANTRA_COPY_SIGNAL_SECRET is set; with the secret the signal verifies",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-347",
+      "remediation": "Fail closed on broadcast without configured secret",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_copy_broadcast_requires_configured_secret"]
+    }
+  ]
+}

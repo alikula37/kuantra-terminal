@@ -29,6 +29,7 @@ SUPPORTED_SOURCE_EXCHANGES = {
 }
 SUPPORTED_SOURCE_EXCHANGE_IDS = set(SUPPORTED_SOURCE_EXCHANGES)
 SUPPORTED_MARKET_TYPES = {metadata["market_type"] for metadata in SUPPORTED_SOURCE_EXCHANGES.values()}
+_MAX_REVIEW_DISCREPANCIES = 100
 DECIMAL_ENCODING = "DECIMAL_STRING_V1"
 _DECIMAL_ZERO = Decimal("0")
 _DECIMAL_MAX_DIGITS = 64
@@ -323,7 +324,11 @@ class BrokerImportService:
             "coverage": coverage,
             "discrepancy_count": len(report.get("discrepancies", [])),
             "discrepancy_types": discrepancy_types,
-            "discrepancies": bounded_discrepancies,
+            # The review summary is copied into every ledger event's provenance;
+            # keep it bounded so one import cannot amplify a huge discrepancy
+            # list across the whole batch.
+            "discrepancies": bounded_discrepancies[:_MAX_REVIEW_DISCREPANCIES],
+            "discrepancies_truncated": len(bounded_discrepancies) > _MAX_REVIEW_DISCREPANCIES,
         }
 
     @staticmethod

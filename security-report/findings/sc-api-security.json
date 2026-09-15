@@ -1,0 +1,96 @@
+{
+  "skill": "sc-api-security",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "API-001",
+      "title": "Webhook body read unbounded after content-length check",
+      "severity": "Medium",
+      "confidence": 88,
+      "file": "backend/app/api/webhook_tv.py",
+      "pre_fix_lines": "141-157",
+      "entry_point": "POST /api/v1/webhook/tradingview",
+      "attacker": "Any caller able to reach the webhook route",
+      "principal_impacted": "Process memory",
+      "controlled_value": "request body (chunked transfer with absent/spoofed content-length)",
+      "source_trace": [
+        "receive_tradingview_webhook checked Content-Length header only",
+        "chunked requests have no such header; await request.body() then read unbounded data"
+      ],
+      "failed_control": "Body size enforced from a spoofable header instead of the stream",
+      "sink": "request.body() allocation before HMAC verification",
+      "proven_result": "_read_bounded_body streams at most 64KB and rejects larger bodies before signature verification",
+      "conditions": "Local/loopback reachability of the webhook route",
+      "verdict": "confirmed",
+      "cwe": "CWE-400",
+      "remediation": "Streamed bounded read, independent of headers",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_webhook_rejects_chunked_oversize_body"]
+    },
+    {
+      "id": "API-002",
+      "title": "Reconciliation correction numbers unvalidated (NaN/inf/absurd magnitudes)",
+      "severity": "Medium",
+      "confidence": 85,
+      "file": "backend/app/services/reconciliation_inbox.py",
+      "entry_point": "Reconciliation inbox correction handler",
+      "attacker": "Local API caller submitting a correction",
+      "principal_impacted": "Evidence/journal numeric integrity",
+      "controlled_value": "entry_price, exit_price, qty, stop_loss, take_profit, pnl, commission, r_multiple",
+      "source_trace": [
+        "_validate_correction checked only that fields existed",
+        "NaN/Infinity/1e300 accepted into stored correction payloads"
+      ],
+      "failed_control": "No numeric bounds or finiteness validation",
+      "sink": "Correction record persisted/derived analytics",
+      "proven_result": "_CORRECTION_NUMERIC_BOUNDS + _bounded_correction_number reject non-finite and out-of-range values",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-20",
+      "remediation": "Per-field bounds with finite checks",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_reconciliation_correction_requires_bounded_numbers"]
+    },
+    {
+      "id": "API-003",
+      "title": "TradeCloseSchema accepted non-finite/absurd exit price and commission",
+      "severity": "Medium",
+      "confidence": 80,
+      "file": "backend/app/api/endpoints.py",
+      "entry_point": "POST /api/v1/trades/{id}/close",
+      "attacker": "Local API caller",
+      "principal_impacted": "Ledger PnL evidence",
+      "controlled_value": "exit_price, commission",
+      "source_trace": [
+        "Pydantic schema had no Field constraints",
+        "inf/NaN/huge values flowed into trade close records"
+      ],
+      "failed_control": "Missing schema bounds",
+      "sink": "Trade close write",
+      "proven_result": "Fields now enforce gt/le bounds with allow_inf_nan=False",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-20",
+      "remediation": "Pydantic Field bounds",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_trade_close_schema_rejects_unbounded_values"]
+    },
+    {
+      "id": "API-004",
+      "title": "Trade list pagination unbounded",
+      "severity": "Low",
+      "confidence": 78,
+      "file": "backend/app/api/endpoints.py",
+      "entry_point": "GET /api/v1/trades",
+      "attacker": "Local API caller",
+      "principal_impacted": "Process memory / response size",
+      "controlled_value": "limit query parameter",
+      "source_trace": ["list_trades accepted any limit/offset value"],
+      "failed_control": "No pagination bounds",
+      "sink": "SQLite query + serialization",
+      "proven_result": "limit constrained to 1..1000, offset >= 0",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-400",
+      "remediation": "Query(ge=1, le=1000)",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_trades_list_limit_is_bounded"]
+    }
+  ]
+}

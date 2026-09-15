@@ -8,12 +8,38 @@ import json
 import hashlib
 import hmac
 import logging
+import os
 from typing import Dict, Any, List, Optional
 from app.services.p2p.mesh_node import p2p_mesh_node
 from app.services.execution.order_router import order_router
 from app.db.sqlite_driver import sqlite_driver
 
 logger = logging.getLogger("copy_engine")
+
+COPY_SIGNAL_SECRET_ENV = "KUANTRA_COPY_SIGNAL_SECRET"
+_COPY_SIGNAL_FIELDS = (
+    "signal_id", "master_node_id", "symbol", "side", "entry_price",
+    "stop_loss", "take_profit", "risk_pct", "timestamp",
+)
+
+
+def _copy_signal_secret() -> str:
+    return str(os.environ.get(COPY_SIGNAL_SECRET_ENV) or "").strip()
+
+
+def copy_signal_secret_configured() -> bool:
+    """True when an owner-configured shared secret can sign and verify copy signals."""
+    return bool(_copy_signal_secret())
+
+
+def _copy_signal_payload(signal: Dict[str, Any]) -> bytes:
+    canonical = {field: signal.get(field) for field in _COPY_SIGNAL_FIELDS}
+    return json.dumps(canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def sign_copy_signal(signal: Dict[str, Any], secret: str) -> str:
+    """Shared HMAC-SHA256 signing routine for master signals."""
+    return hmac.new(secret.encode("utf-8"), _copy_signal_payload(signal), hashlib.sha256).hexdigest()
 
 class ZeroKnowledgeCopyEngine:
     """Master signal publisher & Follower dynamic equity scaling copy executor."""
@@ -64,6 +90,9 @@ class ZeroKnowledgeCopyEngine:
         }
 
         # Broadcast across P2P Mesh
+        secret = _copy_signal_secret()
+        if secret:
+            signal["signature"] = sign_copy_signal(signal, secret)
         p2p_mesh_node.broadcast_signal(signal)
         self.signal_history.append(signal)
 
@@ -85,8 +114,16 @@ class ZeroKnowledgeCopyEngine:
         if not all([sig_id, symbol, side, entry_price, stop_loss, take_profit, signature]):
             return False
 
-        # In production this checks master_pubkey signature; here verified deterministically
-        return len(signature) == 64
+        secret = _copy_signal_secret()
+        if not secret:
+            # Fail closed: without the owner-configured secret, signature
+            # verification is impossible and no signal may execute.
+            return False
+        expected = sign_copy_signal(signal, secret)
+        try:
+            return hmac.compare_digest(str(signature), expected)
+        except Exception:
+            return False
 
     def calculate_follower_lot_size(
         self,

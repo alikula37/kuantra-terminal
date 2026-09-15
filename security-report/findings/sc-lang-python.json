@@ -1,0 +1,29 @@
+{
+  "skill": "sc-lang-python",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "PY-001",
+      "title": "Reverse-skill generator interpolated raw strings into executable Python",
+      "severity": "Medium",
+      "confidence": 80,
+      "file": "backend/app/services/ai/reverse_skill.py",
+      "entry_point": "Strategy reverse-engineering / skill generation pipeline",
+      "attacker": "Values derived from strategy documents (strategy_id, strategy_name)",
+      "principal_impacted": "Generated Python module execution context",
+      "controlled_value": "strategy_id, strategy_name",
+      "source_trace": [
+        "generator f-string embedded dsl['strategy_id'] and strategy_name into code literals",
+        "quotes/newlines in the values could break out of the literal"
+      ],
+      "failed_control": "No escaping for generated string literals",
+      "sink": "Generated .py source compiled by the skill loader",
+      "proven_result": "_safe_python_string uses json.dumps for both interpolations; generated output stays a literal",
+      "conditions": "Requires attacker-influenced strategy metadata reaching the generator",
+      "verdict": "confirmed",
+      "cwe": "CWE-94",
+      "remediation": "json.dumps for code-literal emission",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_generated_python_string_escapes_injection"]
+    }
+  ]
+}

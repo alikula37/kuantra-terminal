@@ -44,6 +44,31 @@ _CORRECTION_FIELDS = frozenset({
     "commission",
     "notes",
 })
+# (lower, upper, zero_allowed) for every numeric correction field.
+_CORRECTION_NUMERIC_BOUNDS = {
+    "entry_price": (0.0, 1e15, False),
+    "exit_price": (0.0, 1e15, False),
+    "qty": (0.0, 1e15, False),
+    "stop_loss": (0.0, 1e15, False),
+    "take_profit": (0.0, 1e15, False),
+    "pnl": (-1e15, 1e15, True),
+    "r_multiple": (-1e6, 1e6, True),
+    "commission": (-1e15, 1e15, True),
+}
+
+
+def _bounded_correction_number(key: str, value: Any) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ReconciliationInboxError(f"correction field {key} must be numeric")
+    number = float(value)
+    if not math.isfinite(number):
+        raise ReconciliationInboxError(f"correction field {key} must be finite")
+    lower, upper, zero_allowed = _CORRECTION_NUMERIC_BOUNDS[key]
+    if number < lower or number > upper or (number == 0 and not zero_allowed):
+        raise ReconciliationInboxError(
+            f"correction field {key} is outside the allowed range"
+        )
+    return number
 _DISCREPANCY_FIELDS = frozenset({
     "type",
     "fields",
@@ -423,6 +448,8 @@ class ReconciliationInboxService:
                 if normalized_status not in {"OPEN", "CLOSED", "CANCELED"}:
                     raise ReconciliationInboxError("correction status is unsupported")
                 validated[key] = normalized_status
+            elif key in _CORRECTION_NUMERIC_BOUNDS:
+                validated[key] = _bounded_correction_number(key, value)
             else:
                 validated[key] = value
         return validated

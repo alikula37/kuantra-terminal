@@ -9,9 +9,9 @@ OUT="$ROOT/dist/Kuantra-Terminal-${VERSION}-x86_64.AppImage"
 TOOL="${APPIMAGETOOL:-$ROOT/build/appimagetool}"
 [ -x "$SRC/kuantra-terminal" ] || { echo "missing $SRC (run scripts/build_desktop.py first)"; exit 1; }
 if [ ! -x "$TOOL" ]; then
-  mkdir -p "$(dirname "$TOOL")"
-  curl -fsSL -o "$TOOL" https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
-  chmod +x "$TOOL"
+  echo "appimagetool not found at $TOOL." >&2
+  echo "Provide a verified tool via APPIMAGETOOL=/path/to/appimagetool; this script never downloads unverified binaries." >&2
+  exit 1
 fi
 rm -rf "$APPDIR" "$OUT"
 mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" "$APPDIR/usr/share/icons/hicolor/256x256/apps"

@@ -80,8 +80,21 @@ class TestPhase14P2PCopyAndMultiAccount:
         assert bc["status"] == "BROADCAST_SUCCESS"
         assert bc["peers_reached"] >= 3
 
-    def test_zero_knowledge_copy_signal_signing_and_verification(self):
+    def test_zero_knowledge_copy_signal_signing_and_verification(self, monkeypatch):
         engine = ZeroKnowledgeCopyEngine()
+
+        # Fail closed: without an owner-configured shared secret no signal verifies.
+        unsigned = engine.create_master_signal(
+            symbol="BTCUSDT",
+            side="BUY",
+            entry_price=65000.0,
+            stop_loss=64000.0,
+            take_profit=68000.0,
+            risk_pct=1.0
+        )
+        assert engine.verify_signal(unsigned) is False
+
+        monkeypatch.setenv("KUANTRA_COPY_SIGNAL_SECRET", "phase14-test-shared-secret")
         sig = engine.create_master_signal(
             symbol="BTCUSDT",
             side="BUY",
@@ -98,6 +111,11 @@ class TestPhase14P2PCopyAndMultiAccount:
         invalid_sig = dict(sig)
         invalid_sig["signature"] = "short"
         assert engine.verify_signal(invalid_sig) is False
+
+        # Tampered payload no longer matches the signature
+        tampered_sig = dict(sig)
+        tampered_sig["entry_price"] = 1.0
+        assert engine.verify_signal(tampered_sig) is False
 
     def test_dynamic_follower_equity_lot_sizing(self):
         engine = ZeroKnowledgeCopyEngine()

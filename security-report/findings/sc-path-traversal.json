@@ -1,0 +1,55 @@
+{
+  "skill": "sc-path-traversal",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "PATH-001",
+      "title": "Model artifact name used directly under MODELS_DIR",
+      "severity": "High",
+      "confidence": 95,
+      "file": "backend/app/core/model_downloader.py",
+      "pre_fix_lines": "35-115",
+      "entry_point": "GET /api/v1/system/model/status, POST /api/v1/system/model/start|pause|resume|cancel (model_name)",
+      "attacker": "Any caller of the local API/gateway surface (lower-trust local process or browser page)",
+      "principal_impacted": "Local user filesystem outside MODELS_DIR",
+      "controlled_value": "model_name",
+      "source_trace": [
+        "endpoints.py model routes -> model_downloader.get_status/start_download(model_name)",
+        "model_downloader.py:35 pre-fix used MODELS_DIR / model_name without canonicalization",
+        "get_status read candidate file metadata; start_download wrote bytes to the derived path"
+      ],
+      "failed_control": "No containment check; no separator/absolute rejection",
+      "sink": "Filesystem read (metadata) and write (artifact bytes) at an attacker-chosen path",
+      "proven_result": "`../../evil.gguf`, `/etc/hosts`, `..`, `a/b.gguf`, `\"\"` are rejected with ValueError/400 after fix; status no longer exposes arbitrary file metadata",
+      "conditions": "Reachable from the unauthenticated loopback API; requires local reachability only",
+      "verdict": "confirmed",
+      "cwe": "CWE-22",
+      "remediation": "_safe_model_name(): reject empty/None-as-default semantics, separators, absolute paths, >128 chars; resolve and require is_relative_to(MODELS_DIR)",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_model_downloader_rejects_names_outside_models_dir", "test_model_downloader_status_hides_arbitrary_paths", "test_model_endpoint_rejects_traversal"]
+    },
+    {
+      "id": "PATH-002",
+      "title": "Migration archive member extraction trusted declared sizes",
+      "severity": "Medium",
+      "confidence": 85,
+      "file": "backend/app/services/macos_migration.py",
+      "entry_point": "Migration bundle verify/restore API",
+      "attacker": "Crafted migration bundle file",
+      "principal_impacted": "Application memory / restore integrity",
+      "controlled_value": "zip member contents and declared member size",
+      "source_trace": [
+        "macos_migration.py verify/restore read members via archive.read(name)",
+        "declared size could be falsified, bypassing MAX_ARCHIVE_MEMBER_BYTES",
+        "unbounded allocation for a single member"
+      ],
+      "failed_control": "Size cap only checked declared metadata",
+      "sink": "In-memory archive.read / extract loop",
+      "proven_result": "Reads now stream through _read_member_bounded with hard byte caps (member_bytes, restored_total)",
+      "conditions": "Requires a migration bundle chosen by the user/attacker",
+      "verdict": "confirmed",
+      "cwe": "CWE-409",
+      "remediation": "Streamed bounded reads; reject on exceeding cap",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_migration_member_read_is_byte_bounded", "backend/tests/test_macos_migration.py"]
+    }
+  ]
+}

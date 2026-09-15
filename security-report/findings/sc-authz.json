@@ -1,0 +1,31 @@
+{
+  "skill": "sc-authz",
+  "scan_date": "2026-09-15",
+  "candidates": [
+    {
+      "id": "AUTHZ-001",
+      "title": "Integrations gateway mounted the full webhook router (trade confirmation writes)",
+      "severity": "High",
+      "confidence": 92,
+      "file": "backend/desktop/gateway.py",
+      "pre_fix_lines": "28-36",
+      "entry_point": "http://127.0.0.1:8765/api/v1/webhook/tradingview/confirm and sibling observation routes",
+      "attacker": "Any local process, or a browser page able to reach loopback (CSRF-style POST)",
+      "principal_impacted": "Trade evidence journal integrity (fabricated confirmed executions)",
+      "controlled_value": "Confirmation payload (trade data) with no auth dependency",
+      "source_trace": [
+        "gateway.py mounted app.api.webhook_tv:webhook_router",
+        "webhook_router includes the manual confirmation endpoint which writes to the ledger",
+        "No authentication dependency exists on any route (single-user desktop design)"
+      ],
+      "failed_control": "Gateway surface included write routes; no origin/CSRF guard",
+      "sink": "Evidence ledger write via confirmation handler",
+      "proven_result": "Gateway now mounts webhook_ingest_router only (/webhook/tradingview); confirm/list routes are no longer reachable there; non-loopback bind additionally refused unless KUANTRA_ALLOW_NON_LOOPBACK_GATEWAY=1",
+      "conditions": "Local loopback reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-306",
+      "remediation": "Split routers; mount only ingest on the gateway; loopback-only bind fail-closed",
+      "tests": ["backend/tests/test_security_review_fixes.py::test_gateway_mounts_only_ingest_ws_and_health", "test_gateway_refuses_non_loopback_bind"]
+    }
+  ]
+}

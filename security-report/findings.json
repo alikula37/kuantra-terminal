@@ -1,0 +1,579 @@
+{
+  "scan_date": "2026-09-15",
+  "scanner": "security-check v1.2.0",
+  "profile": "deep",
+  "scope": "whole repository",
+  "validation": "sandboxed local checks",
+  "summary": {
+    "confirmed": 21,
+    "needs_validation": 0,
+    "rejected": 0,
+    "total": 21
+  },
+  "findings": [
+    {
+      "id": "API-001",
+      "title": "Webhook body read unbounded after content-length check",
+      "severity": "Medium",
+      "confidence": 88,
+      "file": "backend/app/api/webhook_tv.py",
+      "pre_fix_lines": "141-157",
+      "entry_point": "POST /api/v1/webhook/tradingview",
+      "attacker": "Any caller able to reach the webhook route",
+      "principal_impacted": "Process memory",
+      "controlled_value": "request body (chunked transfer with absent/spoofed content-length)",
+      "source_trace": [
+        "receive_tradingview_webhook checked Content-Length header only",
+        "chunked requests have no such header; await request.body() then read unbounded data"
+      ],
+      "failed_control": "Body size enforced from a spoofable header instead of the stream",
+      "sink": "request.body() allocation before HMAC verification",
+      "proven_result": "_read_bounded_body streams at most 64KB and rejects larger bodies before signature verification",
+      "conditions": "Local/loopback reachability of the webhook route",
+      "verdict": "confirmed",
+      "cwe": "CWE-400",
+      "remediation": "Streamed bounded read, independent of headers",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_webhook_rejects_chunked_oversize_body"
+      ],
+      "source_skill_file": "security-report/findings/sc-api-security.json"
+    },
+    {
+      "id": "API-002",
+      "title": "Reconciliation correction numbers unvalidated (NaN/inf/absurd magnitudes)",
+      "severity": "Medium",
+      "confidence": 85,
+      "file": "backend/app/services/reconciliation_inbox.py",
+      "entry_point": "Reconciliation inbox correction handler",
+      "attacker": "Local API caller submitting a correction",
+      "principal_impacted": "Evidence/journal numeric integrity",
+      "controlled_value": "entry_price, exit_price, qty, stop_loss, take_profit, pnl, commission, r_multiple",
+      "source_trace": [
+        "_validate_correction checked only that fields existed",
+        "NaN/Infinity/1e300 accepted into stored correction payloads"
+      ],
+      "failed_control": "No numeric bounds or finiteness validation",
+      "sink": "Correction record persisted/derived analytics",
+      "proven_result": "_CORRECTION_NUMERIC_BOUNDS + _bounded_correction_number reject non-finite and out-of-range values",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-20",
+      "remediation": "Per-field bounds with finite checks",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_reconciliation_correction_requires_bounded_numbers"
+      ],
+      "source_skill_file": "security-report/findings/sc-api-security.json"
+    },
+    {
+      "id": "API-003",
+      "title": "TradeCloseSchema accepted non-finite/absurd exit price and commission",
+      "severity": "Medium",
+      "confidence": 80,
+      "file": "backend/app/api/endpoints.py",
+      "entry_point": "POST /api/v1/trades/{id}/close",
+      "attacker": "Local API caller",
+      "principal_impacted": "Ledger PnL evidence",
+      "controlled_value": "exit_price, commission",
+      "source_trace": [
+        "Pydantic schema had no Field constraints",
+        "inf/NaN/huge values flowed into trade close records"
+      ],
+      "failed_control": "Missing schema bounds",
+      "sink": "Trade close write",
+      "proven_result": "Fields now enforce gt/le bounds with allow_inf_nan=False",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-20",
+      "remediation": "Pydantic Field bounds",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_trade_close_schema_rejects_unbounded_values"
+      ],
+      "source_skill_file": "security-report/findings/sc-api-security.json"
+    },
+    {
+      "id": "API-004",
+      "title": "Trade list pagination unbounded",
+      "severity": "Low",
+      "confidence": 78,
+      "file": "backend/app/api/endpoints.py",
+      "entry_point": "GET /api/v1/trades",
+      "attacker": "Local API caller",
+      "principal_impacted": "Process memory / response size",
+      "controlled_value": "limit query parameter",
+      "source_trace": [
+        "list_trades accepted any limit/offset value"
+      ],
+      "failed_control": "No pagination bounds",
+      "sink": "SQLite query + serialization",
+      "proven_result": "limit constrained to 1..1000, offset >= 0",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-400",
+      "remediation": "Query(ge=1, le=1000)",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_trades_list_limit_is_bounded"
+      ],
+      "source_skill_file": "security-report/findings/sc-api-security.json"
+    },
+    {
+      "id": "AUTHZ-001",
+      "title": "Integrations gateway mounted the full webhook router (trade confirmation writes)",
+      "severity": "High",
+      "confidence": 92,
+      "file": "backend/desktop/gateway.py",
+      "pre_fix_lines": "28-36",
+      "entry_point": "http://127.0.0.1:8765/api/v1/webhook/tradingview/confirm and sibling observation routes",
+      "attacker": "Any local process, or a browser page able to reach loopback (CSRF-style POST)",
+      "principal_impacted": "Trade evidence journal integrity (fabricated confirmed executions)",
+      "controlled_value": "Confirmation payload (trade data) with no auth dependency",
+      "source_trace": [
+        "gateway.py mounted app.api.webhook_tv:webhook_router",
+        "webhook_router includes the manual confirmation endpoint which writes to the ledger",
+        "No authentication dependency exists on any route (single-user desktop design)"
+      ],
+      "failed_control": "Gateway surface included write routes; no origin/CSRF guard",
+      "sink": "Evidence ledger write via confirmation handler",
+      "proven_result": "Gateway now mounts webhook_ingest_router only (/webhook/tradingview); confirm/list routes are no longer reachable there; non-loopback bind additionally refused unless KUANTRA_ALLOW_NON_LOOPBACK_GATEWAY=1",
+      "conditions": "Local loopback reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-306",
+      "remediation": "Split routers; mount only ingest on the gateway; loopback-only bind fail-closed",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_gateway_mounts_only_ingest_ws_and_health",
+        "test_gateway_refuses_non_loopback_bind"
+      ],
+      "source_skill_file": "security-report/findings/sc-authz.json"
+    },
+    {
+      "id": "LOGIC-001",
+      "title": "Panic kill-switch fabricated closing trades and hardcoded disarm PINs",
+      "severity": "High",
+      "confidence": 95,
+      "file": "backend/app/services/biometrics/panic_switch.py",
+      "pre_fix_lines": "31-46,77-95",
+      "entry_point": "Panic trigger/disarm API + engine methods",
+      "attacker": "Any local API caller; the hardcoded PIN was guessable by anyone",
+      "principal_impacted": "Forensic evidence integrity (fabricated closes) and lockdown control",
+      "controlled_value": "trigger source; disarm PIN '1234'/'admin' hashes",
+      "source_trace": [
+        "trigger_emergency_kill_switch wrote synthetic close records for open positions without broker authority",
+        "disarm compared against hardcoded PIN hashes present in source"
+      ],
+      "failed_control": "No broker confirmation before writing closes; secrets embedded in code",
+      "sink": "SQLite journal writes + feature unlock",
+      "proven_result": "Trigger now only locks down and records flattened_positions_count=0 with flattening=DISABLED_NO_ORDER_AUTHORITY; disarm requires KUANTRA_PANIC_DISARM_SECRET (compare_digest) or raises PANIC_DISARM_UNCONFIGURED",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-798",
+      "remediation": "Remove fabrication; external secret for disarm; explicit no-order-authority marker",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_panic_trigger_does_not_write_fabricated_closes",
+        "test_panic_disarm_requires_the_configured_secret",
+        "test_panic_disarm_rejects_hardcoded_pins"
+      ],
+      "source_skill_file": "security-report/findings/sc-business-logic.json"
+    },
+    {
+      "id": "LOGIC-002",
+      "title": "Live-execution guard missing on cancel/open-orders and model routes",
+      "severity": "Medium",
+      "confidence": 85,
+      "file": "backend/app/api/endpoints.py",
+      "entry_point": "POST /api/v1/trades/{id}/cancel, GET /api/v1/trades/open, POST /api/v1/trades/{id}/close, model routes",
+      "attacker": "Local API caller operating outside PAPER mode",
+      "principal_impacted": "Order authority boundary (read-only product)",
+      "controlled_value": "execution mode / settings",
+      "source_trace": [
+        "dispatch_order enforced paper mode; cancel and open-order routes did not call the guard",
+        "model start also accepted mock_mode and custom url"
+      ],
+      "failed_control": "Guard implemented on a single route",
+      "sink": "Executor calls / downloads",
+      "proven_result": "_require_paper_execution_mode now gates dispatch, cancel, and open-order routes (LIVE -> 403 LIVE_EXECUTION_DISABLED, other -> 403 UNSUPPORTED_EXECUTION_MODE); model start rejects custom url and ignores mock_mode",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-693",
+      "remediation": "Central execution-mode guard reused by all execution routes",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_live_mode_is_rejected_on_cancel_and_open_order_routes",
+        "test_model_endpoint_rejects_traversal"
+      ],
+      "source_skill_file": "security-report/findings/sc-business-logic.json"
+    },
+    {
+      "id": "LOGIC-003",
+      "title": "Broker import discrepancy amplification copied wholesale into responses",
+      "severity": "Medium",
+      "confidence": 82,
+      "file": "backend/app/services/broker_import_service.py",
+      "entry_point": "Broker import review output",
+      "attacker": "Caller-controlled import payload size/content",
+      "principal_impacted": "API response memory/CPU",
+      "controlled_value": "number of imported rows",
+      "source_trace": [
+        "reconciliation produced O(rows) discrepancies (probe: 450 for 150 rows)",
+        "review summary copied the entire list into the response"
+      ],
+      "failed_control": "No output bound on review discrepancies",
+      "sink": "JSON response construction",
+      "proven_result": "Review copies at most 100 discrepancies and reports discrepancy_count and discrepancies_truncated; probe confirms 450 counted / 100 returned",
+      "conditions": "Any import scale above the cap",
+      "verdict": "confirmed",
+      "cwe": "CWE-400",
+      "remediation": "Slice response list; keep full count",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_broker_import_review_discrepancies_are_count_bounded"
+      ],
+      "source_skill_file": "security-report/findings/sc-business-logic.json"
+    },
+    {
+      "id": "LOGIC-004",
+      "title": "Copy broadcast created unverifiable signals when no secret configured",
+      "severity": "Low",
+      "confidence": 80,
+      "file": "backend/app/api/endpoints.py",
+      "entry_point": "POST /api/v1/p2p/copy/broadcast",
+      "attacker": "Local API caller",
+      "principal_impacted": "Copy signal history integrity",
+      "controlled_value": "signal payload",
+      "source_trace": [
+        "create_master_signal signed with the node private key when no shared secret existed",
+        "no peer can verify that signature, so the signal is unusable and misleading"
+      ],
+      "failed_control": "Endpoint produced signals that verification always rejects",
+      "sink": "Signal history / mesh broadcast",
+      "proven_result": "Endpoint returns 503 COPY_SIGNAL_SECRET_UNCONFIGURED unless KUANTRA_COPY_SIGNAL_SECRET is set; with the secret the signal verifies",
+      "conditions": "Local API reachability",
+      "verdict": "confirmed",
+      "cwe": "CWE-347",
+      "remediation": "Fail closed on broadcast without configured secret",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_copy_broadcast_requires_configured_secret"
+      ],
+      "source_skill_file": "security-report/findings/sc-business-logic.json"
+    },
+    {
+      "id": "CICD-001",
+      "title": "Workflow actions referenced by mutable tags, including a contents:write release job",
+      "severity": "Medium",
+      "confidence": 88,
+      "file": ".github/workflows/release.yml",
+      "pre_fix_lines": "220 (softprops/action-gh-release@v2); ci.yml/release.yml all other uses",
+      "entry_point": "GitHub Actions on push tag / workflow_dispatch",
+      "attacker": "Upstream tag move or compromised action publisher",
+      "principal_impacted": "Release artifacts, contents:write token scope",
+      "controlled_value": "N/A (build supply chain)",
+      "source_trace": [
+        "all `uses:` entries referenced mutable major tags (@v7, @v2, @v10.1.0)",
+        "the publish job holds contents: write and uploads release assets"
+      ],
+      "failed_control": "No commit-SHA pinning",
+      "sink": "Release publication",
+      "proven_result": "All actions pinned to full 40-char SHAs resolved from upstream tags; contract test now requires SHA pins",
+      "conditions": "Requires upstream tag mutation or registry compromise",
+      "verdict": "confirmed",
+      "cwe": "CWE-1357",
+      "remediation": "SHA pin + version comment",
+      "tests": [
+        "backend/tests/test_python_dependency_lock_contract.py::test_install_surfaces_use_only_the_hashed_lock_and_current_actions"
+      ],
+      "source_skill_file": "security-report/findings/sc-ci-cd.json"
+    },
+    {
+      "id": "CICD-002",
+      "title": "Release checkout persisted credentials into the contents:write job workspace",
+      "severity": "Medium",
+      "confidence": 80,
+      "file": ".github/workflows/release.yml",
+      "entry_point": "publish job checkout step",
+      "attacker": "Any later step in the publish job (or injected code)",
+      "principal_impacted": "GITHUB_TOKEN with contents: write",
+      "controlled_value": "N/A",
+      "source_trace": [
+        "actions/checkout defaults to persisting the token in git config"
+      ],
+      "failed_control": "persist-credentials not disabled in the highest-privilege job",
+      "sink": "Git credential store",
+      "proven_result": "Checkout in the publish job now sets persist-credentials: false",
+      "conditions": "Requires code execution in a later publish-job step",
+      "verdict": "confirmed",
+      "cwe": "CWE-522",
+      "remediation": "persist-credentials: false",
+      "tests": [
+        "grep-level verification: release.yml publish job checkout block"
+      ],
+      "source_skill_file": "security-report/findings/sc-ci-cd.json"
+    },
+    {
+      "id": "CICD-003",
+      "title": "workflow_dispatch release_tag input used without format validation",
+      "severity": "Low",
+      "confidence": 75,
+      "file": ".github/workflows/release.yml",
+      "entry_point": "manual release dispatch",
+      "attacker": "Workflow dispatcher / accidental input",
+      "principal_impacted": "Release tag correctness",
+      "controlled_value": "release_tag input",
+      "source_trace": [
+        "RELEASE_TAG fed directly into git/gh-release commands"
+      ],
+      "failed_control": "No charset/length validation before shell use",
+      "sink": "Shell environment + release creation",
+      "proven_result": "Publish job now rejects tags outside ^[A-Za-z0-9._-]{1,40}$ before use",
+      "conditions": "Requires dispatch permission",
+      "verdict": "confirmed",
+      "cwe": "CWE-20",
+      "remediation": "Anchored regex gate",
+      "tests": [
+        "grep-level verification: release.yml Validate release tag input step"
+      ],
+      "source_skill_file": "security-report/findings/sc-ci-cd.json"
+    },
+    {
+      "id": "CICD-004",
+      "title": "package_linux.sh silently downloaded appimagetool at build time",
+      "severity": "Medium",
+      "confidence": 85,
+      "file": "scripts/package_linux.sh",
+      "entry_point": "Linux packaging step",
+      "attacker": "Upstream release channel / network attacker",
+      "principal_impacted": "Build host and produced artifact",
+      "controlled_value": "N/A",
+      "source_trace": [
+        "missing tool triggered curl of the continuous appimagetool release",
+        "no checksum/signature verification before execution"
+      ],
+      "failed_control": "Unverified binary fetched and executed",
+      "sink": "Executed build tool",
+      "proven_result": "Script now fails closed unless APPIMAGETOOL points at an existing executable; no download path remains",
+      "conditions": "Requires a build environment without the tool",
+      "verdict": "confirmed",
+      "cwe": "CWE-494",
+      "remediation": "Explicit verified tool path; fail closed",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_package_linux_never_downloads_unverified_tool"
+      ],
+      "source_skill_file": "security-report/findings/sc-ci-cd.json"
+    },
+    {
+      "id": "CRYPTO-001",
+      "title": "Copy-signal 'signature' accepted by length only",
+      "severity": "High",
+      "confidence": 90,
+      "file": "backend/app/services/p2p/copy_engine.py",
+      "pre_fix_lines": "97-121",
+      "entry_point": "POST /api/v1/p2p/copy/execute (and internally execute_copy_signal)",
+      "attacker": "Any peer/caller that can submit a signal payload",
+      "principal_impacted": "Follower order routing (order_router.route_order)",
+      "controlled_value": "signal dict incl. signature",
+      "source_trace": [
+        "execute_copy_signal -> verify_signal(signal)",
+        "pre-fix verify_signal compared only len(signature) == 64",
+        "verification success -> order_router.route_order(order_payload)"
+      ],
+      "failed_control": "No cryptographic verification of the signature value or payload binding",
+      "sink": "Order routing call on an unauthenticated signal",
+      "proven_result": "verify_signal now requires KUANTRA_COPY_SIGNAL_SECRET and HMAC-SHA256 compare_digest over a canonical payload; invalid/tampered signals REJECTED; broadcast endpoint returns 503 when no secret is configured",
+      "conditions": "Reachable from the loopback API",
+      "verdict": "confirmed",
+      "cwe": "CWE-347",
+      "remediation": "Shared-secret HMAC over canonical fields; fail closed without secret",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_copy_engine_rejects_length_only_signature",
+        "test_copy_engine_accepts_valid_hmac",
+        "test_copy_broadcast_requires_configured_secret",
+        "backend/tests/test_phase14_p2p_copy.py::test_zero_knowledge_copy_signal_signing_and_verification"
+      ],
+      "source_skill_file": "security-report/findings/sc-crypto.json"
+    },
+    {
+      "id": "CRYPTO-002",
+      "title": "Non-constant-time secret comparisons in webhook auth",
+      "severity": "Low",
+      "confidence": 80,
+      "file": "backend/app/api/webhook_tv.py",
+      "pre_fix_lines": "85-90",
+      "entry_point": "POST /api/v1/webhook/tradingview",
+      "attacker": "Local timing observer",
+      "principal_impacted": "Webhook secrets (HMAC secret, passphrase, tunnel token)",
+      "controlled_value": "signature/passphrase strings",
+      "source_trace": [
+        "verify_hmac_signature / verify_passphrase / tunnel check used == comparisons",
+        "early-exit string comparison leaks prefix progress"
+      ],
+      "failed_control": "Non-constant-time comparison",
+      "sink": "Auth decision",
+      "proven_result": "All three comparisons now use _constant_time_equals(hmac.compare_digest) and tolerate non-ASCII input without crashing",
+      "conditions": "Timing attack feasibility on loopback is limited",
+      "verdict": "confirmed",
+      "cwe": "CWE-208",
+      "remediation": "hmac.compare_digest with exception-safe encoding",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_webhook_auth_handles_non_ascii_without_crashing"
+      ],
+      "source_skill_file": "security-report/findings/sc-crypto.json"
+    },
+    {
+      "id": "EXPO-001",
+      "title": "Credential probe errors echoed upstream details to callers",
+      "severity": "Low",
+      "confidence": 78,
+      "file": "backend/app/services/exchange/credentials_manager.py",
+      "entry_point": "Exchange test-connection endpoint",
+      "attacker": "Local API caller",
+      "principal_impacted": "Exchange credential context (error strings could embed headers/URLs/tokens)",
+      "controlled_value": "exchange selection; upstream error text originates from provider libraries",
+      "source_trace": [
+        "test_connection exception handler returned str(error)/error type to the caller",
+        "upstream messages can contain request URLs, header fragments, account hints"
+      ],
+      "failed_control": "Raw upstream error returned in API response",
+      "sink": "JSON error response",
+      "proven_result": "_safe_exchange_error_message returns generic per-error-type text; detail is not returned to callers (and not logged with secrets)",
+      "conditions": "Requires local API reachability plus an upstream failure",
+      "verdict": "confirmed",
+      "cwe": "CWE-209",
+      "remediation": "Generic messages at the boundary",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_exchange_error_messages_are_generic"
+      ],
+      "source_skill_file": "security-report/findings/sc-data-exposure.json"
+    },
+    {
+      "id": "DOCKER-001",
+      "title": "Dockerfile smoke image lacked pipefail for curl | bash install",
+      "severity": "Low",
+      "confidence": 70,
+      "file": "packaging/linux/Dockerfile.smoke",
+      "entry_point": "Linux smoke build",
+      "attacker": "Network/upstream failure mode (availability, not direct compromise)",
+      "principal_impacted": "Build determinism",
+      "controlled_value": "N/A",
+      "source_trace": [
+        "RUN layer piped NodeSource setup script into bash",
+        "default /bin/sh has no pipefail, so a failing curl could be masked"
+      ],
+      "failed_control": "Shell strictness",
+      "sink": "Image build",
+      "proven_result": "Dockerfile now sets SHELL [\"/bin/bash\", \"-o\", \"pipefail\", \"-c\"]",
+      "conditions": "Build only",
+      "verdict": "confirmed",
+      "cwe": "CWE-1188",
+      "remediation": "pipefail shell",
+      "tests": [
+        "backend/tests/test_python_dependency_lock_contract.py (Dockerfile content assertions)"
+      ],
+      "source_skill_file": "security-report/findings/sc-docker.json"
+    },
+    {
+      "id": "PY-001",
+      "title": "Reverse-skill generator interpolated raw strings into executable Python",
+      "severity": "Medium",
+      "confidence": 80,
+      "file": "backend/app/services/ai/reverse_skill.py",
+      "entry_point": "Strategy reverse-engineering / skill generation pipeline",
+      "attacker": "Values derived from strategy documents (strategy_id, strategy_name)",
+      "principal_impacted": "Generated Python module execution context",
+      "controlled_value": "strategy_id, strategy_name",
+      "source_trace": [
+        "generator f-string embedded dsl['strategy_id'] and strategy_name into code literals",
+        "quotes/newlines in the values could break out of the literal"
+      ],
+      "failed_control": "No escaping for generated string literals",
+      "sink": "Generated .py source compiled by the skill loader",
+      "proven_result": "_safe_python_string uses json.dumps for both interpolations; generated output stays a literal",
+      "conditions": "Requires attacker-influenced strategy metadata reaching the generator",
+      "verdict": "confirmed",
+      "cwe": "CWE-94",
+      "remediation": "json.dumps for code-literal emission",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_generated_python_string_escapes_injection"
+      ],
+      "source_skill_file": "security-report/findings/sc-lang-python.json"
+    },
+    {
+      "id": "MASS-001",
+      "title": "update_trade interpolated caller-supplied column names into SQL",
+      "severity": "Medium",
+      "confidence": 82,
+      "file": "backend/app/db/sqlite_driver.py",
+      "entry_point": "Internal callers (reconciliation, journal edits) reaching SQLiteDriver.update_trade",
+      "attacker": "Any path where field names derive from parsed/imported or API data",
+      "principal_impacted": "Evidence database",
+      "controlled_value": "field names (values were parameterized)",
+      "source_trace": [
+        "update_trade built SET clause from the caller's mapping keys",
+        "keys flowed into SQL text without an allowlist"
+      ],
+      "failed_control": "No allowlist for updatable columns",
+      "sink": "SQL statement text",
+      "proven_result": "_UPDATE_TRADE_FIELDS allowlist (snapshot fields minus id, plus updated_at) rejects unknown fields with ValueError",
+      "conditions": "Requires a caller that passes non-constant keys; defense-in-depth against future call sites",
+      "verdict": "confirmed",
+      "cwe": "CWE-89",
+      "remediation": "Frozen allowlist of updatable fields",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_update_trade_rejects_unknown_columns"
+      ],
+      "source_skill_file": "security-report/findings/sc-mass-assignment.json"
+    },
+    {
+      "id": "PATH-001",
+      "title": "Model artifact name used directly under MODELS_DIR",
+      "severity": "High",
+      "confidence": 95,
+      "file": "backend/app/core/model_downloader.py",
+      "pre_fix_lines": "35-115",
+      "entry_point": "GET /api/v1/system/model/status, POST /api/v1/system/model/start|pause|resume|cancel (model_name)",
+      "attacker": "Any caller of the local API/gateway surface (lower-trust local process or browser page)",
+      "principal_impacted": "Local user filesystem outside MODELS_DIR",
+      "controlled_value": "model_name",
+      "source_trace": [
+        "endpoints.py model routes -> model_downloader.get_status/start_download(model_name)",
+        "model_downloader.py:35 pre-fix used MODELS_DIR / model_name without canonicalization",
+        "get_status read candidate file metadata; start_download wrote bytes to the derived path"
+      ],
+      "failed_control": "No containment check; no separator/absolute rejection",
+      "sink": "Filesystem read (metadata) and write (artifact bytes) at an attacker-chosen path",
+      "proven_result": "`../../evil.gguf`, `/etc/hosts`, `..`, `a/b.gguf`, `\"\"` are rejected with ValueError/400 after fix; status no longer exposes arbitrary file metadata",
+      "conditions": "Reachable from the unauthenticated loopback API; requires local reachability only",
+      "verdict": "confirmed",
+      "cwe": "CWE-22",
+      "remediation": "_safe_model_name(): reject empty/None-as-default semantics, separators, absolute paths, >128 chars; resolve and require is_relative_to(MODELS_DIR)",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_model_downloader_rejects_names_outside_models_dir",
+        "test_model_downloader_status_hides_arbitrary_paths",
+        "test_model_endpoint_rejects_traversal"
+      ],
+      "source_skill_file": "security-report/findings/sc-path-traversal.json"
+    },
+    {
+      "id": "PATH-002",
+      "title": "Migration archive member extraction trusted declared sizes",
+      "severity": "Medium",
+      "confidence": 85,
+      "file": "backend/app/services/macos_migration.py",
+      "entry_point": "Migration bundle verify/restore API",
+      "attacker": "Crafted migration bundle file",
+      "principal_impacted": "Application memory / restore integrity",
+      "controlled_value": "zip member contents and declared member size",
+      "source_trace": [
+        "macos_migration.py verify/restore read members via archive.read(name)",
+        "declared size could be falsified, bypassing MAX_ARCHIVE_MEMBER_BYTES",
+        "unbounded allocation for a single member"
+      ],
+      "failed_control": "Size cap only checked declared metadata",
+      "sink": "In-memory archive.read / extract loop",
+      "proven_result": "Reads now stream through _read_member_bounded with hard byte caps (member_bytes, restored_total)",
+      "conditions": "Requires a migration bundle chosen by the user/attacker",
+      "verdict": "confirmed",
+      "cwe": "CWE-409",
+      "remediation": "Streamed bounded reads; reject on exceeding cap",
+      "tests": [
+        "backend/tests/test_security_review_fixes.py::test_migration_member_read_is_byte_bounded",
+        "backend/tests/test_macos_migration.py"
+      ],
+      "source_skill_file": "security-report/findings/sc-path-traversal.json"
+    }
+  ]
+}
