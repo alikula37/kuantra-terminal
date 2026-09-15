@@ -427,3 +427,21 @@ recomputes 71.5 for the reported ETHUSDT short; exit correction recomputes 82.5
 with provenance; revocation clears P/L; entry/quantity stay locked); full backend
 **941 passed / 2 warnings**; frontend **37 files / 200 tests**; i18n
 **979/979/979**; TypeScript clean.
+
+### Round-6 clean build and installed-app update
+
+Per the owner standing instruction, the verified round-6 fix was committed (`37edd86`,
+pushed) and the Mac's installed application was rebuilt from the clean commit:
+
+- Canonical arm64 local CI on `37edd86`: **MERGE READY**, provenance **COMPLETE**, clean
+  tree; backend **941 passed / 2 warnings**, frontend **200 tests**, i18n
+  **979/979/979**; report `dist/p1-wp32-round6-clean-local-ci.json` SHA-256
+  `d683b34f8f8f75bace00861535bb20bed88eebe9f7a56615f9ca3a0e005e2706`, executable
+  `407a7b5fd45ef10f65adfd02450201f8cc57f002fcaa2a517f635dd820ba4088`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-round6.dmg`: `hdiutil verify` **VALID**,
+  SHA-256 `bdaf0e2c852afefb4a35a3b161a194b6af11b36f3f7c524c85f831fe3d5c943f`; mounted-DMG
+  smoke **PASS** (`b28b0d9e…`).
+- `/Applications/Kuantra Terminal.app` replaced after a graceful quit; installed
+  executable matches the CI build, `codesign --verify --deep --strict` passes, launched
+  PID `41077`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`. User data
+  preserved.
