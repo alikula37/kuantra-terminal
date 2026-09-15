@@ -110,6 +110,24 @@ READY** (13/13) with native WKWebView smoke; report
 `daa3e351d1b00a6715cea14fd562719035675c7a88aa32193ba085ce2e8e75d9`, provenance
 `DEVELOPER_DIRTY`. No commit, release or installed-app change was made.
 
+**P1-WP32 clean-source commit and distribution validation:** Implementation
+commit `bfd52b3a724f3de0dc24646a3276b1e1a564f947` contains the complete package;
+the tracked tree is clean. Canonical Mac arm64 local CI on that commit is
+**MERGE READY** (13/13) with provenance **COMPLETE** and
+`source_commit_sha = bfd52b3a…`; backend **929**, frontend **37 files / 198
+tests**, i18n **963/963/963**; report
+`dist/p1-wp32-clean-local-ci.json` SHA-256
+`91bfd4bfb6555e699c23d409cf4b9e784aced452d437f5a617dd32bb6863b6b4`, tracked tree
+`7e66cf0e…`. Distribution validation from the same clean source: arm64 DMG
+`hdiutil verify` VALID (`04416ce65504338db764a43d562410ccf11d7c10934884774761a414173df47d`),
+exact read-only mounted-DMG smoke PASS with native `wkwebview` and COMPLETE
+provenance (report `97a1de2d…`), N05 correctly `BLOCKED` ad-hoc (report
+`fc905f6b…`), and pilot package `TRUSTED_MACOS_PILOT_ARM64` /
+`AD_HOC_TRUSTED_PILOT_ONLY_ARM64` with all `SHA256SUMS` verified
+(`SHA256SUMS` `c76dcce8…`, manifest `c818938a…`). The clean commit is local;
+pushing and any Release/installed-app change await separate owner approval. No
+GitHub Release asset or installed app was modified.
+
 [P1-WP31 local TP tracking](../archive/strategy/work-packages/P1-WP31-local-tp-tracking.md)
 is bounded complete and archived. Source `4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0`
 passed canonical Mac CI: **880 backend / 154 frontend / 813-key i18n**, all 13 steps

@@ -257,3 +257,49 @@ report `dist/local-ci-smoke.json` SHA-256
 source tree `daa3e351d1b00a6715cea14fd562719035675c7a88aa32193ba085ce2e8e75d9`;
 executable `4135267d55212772452b555dd2327566379d71e005fda53ae7b92b6a88d852eb`;
 provenance `DEVELOPER_DIRTY` (uncommitted).
+
+## Clean-source commit and distribution validation
+
+Implementation commit `bfd52b3a724f3de0dc24646a3276b1e1a564f947`
+("feat: add Turkey-time journal trust, revisioned editing and unit-declared
+sizing") contains the complete P1-WP32 work. The tracked tree is clean
+(`git status --porcelain --untracked-files=no` empty); only the preserved
+untracked `.codex/` and P1-WP27 evidence directories remain outside this change.
+
+Canonical Mac arm64 local CI on that commit
+(`uv run --offline --no-project --with-requirements backend/requirements.lock
+python scripts/run_local_ci.py --expected-architecture arm64 --report
+dist/p1-wp32-clean-local-ci.json --smoke-timeout 90`): **MERGE READY**, 13/13
+steps PASS, provenance **COMPLETE**, `source_commit_sha = bfd52b3a…`, tracked
+tree `7e66cf0e8fc1c834d27bdefc9888e9ea0cfc367e8cd93483c803ccff87f1d5e9`;
+backend **929 passed / 2 warnings**, frontend **37 files / 198 tests**, i18n
+**963/963/963**. Report SHA-256
+`91bfd4bfb6555e699c23d409cf4b9e784aced452d437f5a617dd32bb6863b6b4`; local CI
+smoke report `d1ad0628049654db650a0cd04acf80424e09292f79a9fe9c499bc9f06b1b9df6`;
+built executable `afde5274beda8b097d834ffbaabc9362e7149db7ad8e6b7a18f9d488d6f19a9f`.
+
+Distribution validation from the same clean source (local artifacts only):
+
+- DMG `dist/Kuantra-Terminal-1.0.0-arm64.dmg` built with `PYTHON_BIN=python3.11
+  scripts/package_macos.sh --architecture arm64 --app "dist/Kuantra Terminal.app"`;
+  `hdiutil verify` = **VALID**; DMG SHA-256
+  `04416ce65504338db764a43d562410ccf11d7c10934884774761a414173df47d`;
+  mounted executable SHA-256 `afde5274…` (matches the CI build).
+- Exact read-only mounted-DMG smoke (`scripts/smoke_macos_dmg.py`, isolated temp
+  data dir, `KUANTRA_MARKET_DATA_ENABLED=false`): **PASS**, native arm64,
+  `wkwebview` controller ready, `COMPLETE` provenance; report SHA-256
+  `97a1de2d663731c182cdc5a90e4e514d7e125e2a5175b5f4c8e2af6e8665d428`.
+- N05 preflight: `BLOCKED` as designed (ad-hoc artifact, no Developer
+  ID/notarization); report SHA-256
+  `fc905f6bd44ba8c83c3dcd5eaba57bbc5d72a440e96698959d00c758a332a64b`.
+- Pilot package `dist/p1-wp32-clean-pilot-package/`: `TRUSTED_MACOS_PILOT_ARM64`,
+  status `AD_HOC_TRUSTED_PILOT_ONLY_ARM64`, bound to `bfd52b3a…` with the clean
+  tree hash; `shasum -a 256 -c SHA256SUMS` passed for all five payload files;
+  `SHA256SUMS` SHA-256
+  `c76dcce8c2e45983ff39d82c1018cbac6869b59c576e07651c883d5a1143c6f2`; manifest
+  SHA-256 `c818938a4dc89e6b9550c3d6ba24d5a88cb1b15605da7bfda7f0fa50d9d6ff0b`.
+
+No GitHub Release asset or installed application was changed by this validation;
+both remain behind separate owner approval. The package is ad-hoc and
+trusted-pilot-only, not notarized or production evidence, and Intel remains
+outside this local arm64 chain.
