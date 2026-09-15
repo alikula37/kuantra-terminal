@@ -692,16 +692,29 @@ allowlisted; broker-import review output is capped; migration archive reads stre
 byte ceilings; generated Python literals are escaped; exchange errors are generic; workflow
 actions are SHA-pinned with `persist-credentials: false`, a validated `release_tag` and no
 silent `appimagetool` download. Pinned by 33 new tests in
-`backend/tests/test_security_review_fixes.py` (full backend **1059 passed**); canonical
-arm64 local CI on the remediation tree was **MERGE READY** 13/13 with provenance
-`DEVELOPER_DIRTY` (report `dist/p1-security-review-local-ci.json` SHA-256
-`3a15e187f718c7b3c7299c6830bb9fa786735aec11736b9aa040627ef9808288`). Commit/push,
-clean-commit CI, DMG asset refresh and the installed-app update are recorded in the
-follow-up install commit. **Needs validation (no severity):** dependency CVE freshness (no
-local scanner; external audit services not used), GitHub-hosted execution of the new SHA
-pins (dry-run pending), crafted-zip false-central-directory regression; macOS
-signing/notarization and the real XM sample remain separate open obligations.
-`security-report/` is repository documentation only and is not a Release asset.
+`backend/tests/test_security_review_fixes.py` (full backend **1059 passed**); committed as
+`a235da2` and pushed. The clean-commit canonical arm64 local CI is **MERGE READY** 13/13
+with provenance `COMPLETE` (report `dist/p1-security-review-committed-local-ci.json`
+SHA-256 `b8e2898a1b8f943acd6af9077548bd94a80734b3959697cc2f998b7d4f11c1d4`, executable
+`0b2b044278…`, artifact `41d7e4e8c4…`). The release workflow was then dispatched on
+`a235da2` (`release_tag=v1.1.0`, `publish=false`, run `35017352321`): both native runners
+built and exact-DMG-smoked their artifacts (arm64 executable `4cf92f1f…`, x86_64
+`aaed049c…`), the SHA-pinned actions executed cleanly and the trusted pilot package
+checksums verified locally. `Kuantra-Terminal-1.1.0-arm64.dmg` SHA-256
+`96fc311e76583b4b2a8506f9b432381966ac0221d747f55bfbd81eb78a84a41f` and
+`Kuantra-Terminal-1.1.0-x86_64.dmg` SHA-256
+`2b344a4f2538b5bfd9040a7b7d2dda33eddbc93e0b4261606735ba8aa24a14b2` were re-uploaded to
+the existing `pilot-v1.1.0` prerelease (tag not moved; exactly two DMGs; digests match the
+package `SHA256SUMS`); a local native arm64 exact-DMG smoke passed
+(`dist/security-arm64-exact-dmg-smoke.json` SHA-256
+`9cef33a45ee14484fa7861cbda4dc5c1c7db155dd5f6e57e4c5ce5acd2b57502`); and
+`/Applications/Kuantra Terminal.app` was replaced with the verified arm64 artifact
+(installed executable `4cf92f1f…`, codesign structure verified, launch verified, previous
+bundle retained temporarily, user data preserved). `security-report/` is repository
+documentation only and was not added to the Release. **Needs validation (no severity):**
+dependency CVE freshness (no local scanner; external audit services not used) and the
+crafted-zip false-central-directory regression; macOS signing/notarization and the real XM
+sample remain separate open obligations.
 
 ## Selected next work
 
