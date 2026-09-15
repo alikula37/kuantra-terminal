@@ -303,3 +303,32 @@ No GitHub Release asset or installed application was changed by this validation;
 both remain behind separate owner approval. The package is ad-hoc and
 trusted-pilot-only, not notarized or production evidence, and Intel remains
 outside this local arm64 chain.
+
+## v1.1.0 pilot prerelease
+
+Owner-authorized pilot publication of the P1-WP32 train. GitHub Actions candidate run
+[`34946454427`](https://github.com/alikula37/kuantra-terminal/actions/runs/34946454427)
+(`workflow_dispatch`, `release_tag=v1.1.0`, `publish=false`, source
+`122b6bef522f3e2ed9872f82e3bed5cf98f25a58`) passed both native build jobs: arm64 on
+`macos-latest` and x86_64 on `macos-15-intel`, each with the locked backend/frontend
+suites, native desktop smoke including the synthetic local TP lifecycle, exact read-only
+mounted-DMG smoke and `COMPLETE` provenance. The trusted pilot package artifact verified
+with `shasum -a 256 -c SHA256SUMS` for all eight payload files, and both downloaded DMGs
+passed `hdiutil verify` locally.
+
+Private prerelease:
+[`pilot-v1.1.0`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.0)
+(tag at `122b6be`, `PRERELEASE`, `AD_HOC_TRUSTED_PILOT_ONLY`) carries exactly two assets
+whose GitHub digests match the CI reports:
+
+| Architecture | DMG SHA-256 | Mounted executable SHA-256 |
+|---|---|---|
+| arm64 | `ce0cc652e6d57d38dc6d6e06aa9d9fde2131f480cfe92c18be1e827c764df803` | `4b3013e44b0ef143e2f24a8b638c21525a84f9d0ddb72a9ad24b740fecc2d808` |
+| x86_64 | `09e27a31bbbd929b061d2c21da2d3bca4e4fa7c0050e5eb0770532f67656ef1c` | `45e58975eccaa5119b95e06cc4267dc1c28d9a84ed287629e1e0ea5aa0ccc13e` |
+
+Two earlier candidate runs failed before publication: the workflow's npm-audit tolerance
+was pinned to the previous tag (`1fd0030`) and the native tracking smoke created its
+synthetic plan before the explicit `qty_unit=BASE` declaration existed (`122b6be`). Both
+were fixed and re-validated; the failure logs are retained in the run history. N05 remains
+`BLOCKED` (ad-hoc, no Developer ID/notarization) and the installed application was not
+modified.

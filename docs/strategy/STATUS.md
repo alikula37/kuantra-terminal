@@ -216,6 +216,26 @@ matrix and `pilot-v1.1.0` is the private prerelease transport carrying the nativ
 x86_64 DMGs. The canonical product Release/tag remains unpublished and the
 ad-hoc/trusted-pilot-only boundary is unchanged.
 
+**v1.1.0 pilot prerelease published (2026-09-15, owner-authorized):** GitHub Actions
+candidate run `34946454427` (`workflow_dispatch`, `publish=false`, source `122b6be`)
+passed both native jobs — arm64 (`macos-latest`) and x86_64 (`macos-15-intel`) — with the
+locked backend/frontend suites, native desktop smoke including the synthetic local TP
+lifecycle, and exact read-only mounted-DMG smoke; provenance `COMPLETE` on both. The
+trusted pilot package artifact also passed its checksums locally (all eight entries). The
+private prerelease [`pilot-v1.1.0`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.0)
+was created at `122b6be` with exactly two DMGs and GitHub asset digests matching the CI
+reports: DMG SHA-256 arm64
+`ce0cc652e6d57d38dc6d6e06aa9d9fde2131f480cfe92c18be1e827c764df803`, x86_64
+`09e27a31bbbd929b061d2c21da2d3bca4e4fa7c0050e5eb0770532f67656ef1c`; mounted executables
+arm64 `4b3013e44b0ef143e2f24a8b638c21525a84f9d0ddb72a9ad24b740fecc2d808`, x86_64
+`45e58975eccaa5119b95e06cc4267dc1c28d9a84ed287629e1e0ea5aa0ccc13e`. Both artifacts are
+ad-hoc (`AD_HOC_TRUSTED_PILOT_ONLY`) and not notarized; N05 stays `BLOCKED` by design.
+Two earlier candidate runs failed on a version-pinned npm-audit tolerance and on the
+native tracking smoke missing the new explicit `qty_unit=BASE` declaration; both were
+fixed (`1fd0030`, `122b6be`) before the successful run. The prior `pilot-v1.0.0-arm64`
+prerelease remains as historical transport. The installed application on this Mac was not
+changed.
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel
