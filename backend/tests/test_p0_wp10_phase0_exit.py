@@ -45,12 +45,12 @@ def test_smoke_report_enrichment_binds_hashes_and_truth_matrix(tmp_path, monkeyp
     monkeypatch.delenv("GITHUB_SHA", raising=False)
     monkeypatch.delenv("KUANTRA_BUILD_COMMIT", raising=False)
     executable = tmp_path / "Kuantra Terminal"
-    artifact = tmp_path / "Kuantra-Terminal-1.1.0-test.bin"
+    artifact = tmp_path / "Kuantra-Terminal-1.1.1-test.bin"
     executable.write_bytes(b"packaged executable")
     artifact.write_bytes(b"distributed artifact")
 
     report = enrich_report(
-        {"ok": True, "version": "1.1.0", "checks": {
+        {"ok": True, "version": "1.1.1", "checks": {
             "react_mounted": True,
             "bridge_roundtrip": True,
             "health": True,
@@ -65,7 +65,7 @@ def test_smoke_report_enrichment_binds_hashes_and_truth_matrix(tmp_path, monkeyp
     assert len(report["executable_sha256"]) == 64
     assert len(report["artifact_sha256"]) == 64
     assert report["truth_matrix"]["document_id"] == "KTR-001"
-    assert report["truth_matrix"]["product_version"] == "1.1.0"
+    assert report["truth_matrix"]["product_version"] == "1.1.1"
     assert report["truth_matrix"]["sha256"] == canonical_matrix_digest(load_matrix())
     assert re.fullmatch(r"[0-9a-f]{40}", report["build_commit"])
     assert report["build_provenance"]["source_commit_sha"] == report["build_commit"]

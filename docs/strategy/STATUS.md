@@ -269,10 +269,16 @@ sessizce eklenmez; bu sınır kapsam dışı veri sağlayıcısı/yanlış eşle
 
 **Version train decision (2026-09-15):** The P1-WP32 journal-trust feature set moves
 the pilot artifact train to `v1.1.0`. The release truth matrix
-[`truth-matrix.v1.1.0.json`](../release/truth-matrix.v1.1.0.json) is the current accepted
-matrix and `pilot-v1.1.0` is the private prerelease transport carrying the native arm64 and
-x86_64 DMGs. The canonical product Release/tag remains unpublished and the
+[`truth-matrix.v1.1.0.json`](../release/truth-matrix.v1.1.0.json) is the accepted
+matrix for that feature set and `pilot-v1.1.0` is the private prerelease transport carrying
+the native arm64 and x86_64 DMGs. The canonical product Release/tag remains unpublished and the
 ad-hoc/trusted-pilot-only boundary is unchanged.
+
+**Security patch train (2026-09-15):** the security follow-up (dependency OSV scan, crafted-ZIP
+validation, migration manifest ceiling) advances the trusted pilot artifacts to `v1.1.1`.
+[`truth-matrix.v1.1.1.json`](../release/truth-matrix.v1.1.1.json) is the current accepted
+matrix; the private transport release remains `pilot-v1.1.0` (assets replaced, tag not moved)
+and the canonical product Release/tag stays unpublished.
 
 **v1.1.0 pilot prerelease published (2026-09-15, owner-authorized):** GitHub Actions
 candidate run `34946454427` (`workflow_dispatch`, `publish=false`, source `122b6be`)
@@ -714,7 +720,26 @@ bundle retained temporarily, user data preserved). `security-report/` is reposit
 documentation only and was not added to the Release. **Needs validation (no severity):**
 dependency CVE freshness (no local scanner; external audit services not used) and the
 crafted-zip false-central-directory regression; macOS signing/notarization and the real XM
-sample remain separate open obligations.
+sample remain separate open obligations. (Both former follow-up items — dependency CVE freshness
+and the crafted-zip regression — were closed by the 2026-09-15 follow-up below.)
+
+**Security follow-up validations complete (2026-09-15):** (1) **Dependency scan** — an
+OSV.dev `querybatch` received only `{ecosystem, name, version}` triples for the 82 installed
+Python lock packages and all 289 npm lock packages; **Python: 0 vulnerabilities**. npm returned
+a single dev-only advisory (`GHSA-82fw-gwwq-j7x9`, vitest/@vitest/mocker 3.2.7, fixed only in a
+vitest 4 major) which is not shipped; the production `npm audit --omit=dev` cross-check from
+release run `35017352321` reports 0. No dependency, lock or version changes were made. Evidence:
+`security-report/dependency-scan-2026-09-15.json`, updated `security-report/dependency-audit.md`.
+(2) **Crafted-ZIP validation** — 14 synthetic-archive tests
+(`backend/tests/test_security_crafted_zip.py`) cover central-directory falsification, declared
+vs actual size mismatch, member/total/count ceilings, symlink/traversal/duplicate/unlisted
+members, corrupt central directories and restore atomicity under interruption. The validation
+found one real Medium issue — `_read_manifest` decompressed `manifest.json` without a manifest
+ceiling — fixed with `MAX_ARCHIVE_MANIFEST_BYTES` (1MB, streamed) and pinned by
+`test_oversized_manifest_is_bounded_before_parsing`; full backend **1073 passed**. Because the
+fix is binary-affecting, the trusted pilot artifacts advance to `v1.1.1`
+(`truth-matrix.v1.1.1.json`); the transport release stays `pilot-v1.1.0` (assets refreshed in
+place, tag not moved). Build/CI/install hashes are recorded in the follow-up evidence commit.
 
 ## Selected next work
 

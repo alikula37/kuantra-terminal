@@ -1,9 +1,11 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.1.0 — Trusted macOS Pilot
 
-**Pilot Release tag:** `pilot-v1.1.0`
+# Kuantra Terminal v1.1.1 — Trusted macOS Pilot (security patch)
 
-**Artifact source commit:** `122b6bef522f3e2ed9872f82e3bed5cf98f25a58`
+**Pilot Release tag:** `pilot-v1.1.0` (transport release refreshed in place; the tag is not moved)
+
+**Artifact source commit:** the clean build commit of this security patch; the exact SHA and
+run id are recorded in the post-build install evidence in `docs/strategy/STATUS.md`.
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -12,36 +14,39 @@
 This private Release is intentionally scoped for the three-person pilot and exposes exactly
 two downloads:
 
-- **`Kuantra-Terminal-1.1.0-arm64.dmg`** for Apple Silicon M-series Macs;
-- **`Kuantra-Terminal-1.1.0-x86_64.dmg`** for native Intel Macs.
+- **`Kuantra-Terminal-1.1.1-arm64.dmg`** for Apple Silicon M-series Macs;
+- **`Kuantra-Terminal-1.1.1-x86_64.dmg`** for native Intel Macs.
 
 Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
-Silicon artifact. The native arm64 and x86_64 builds, desktop smoke and exact read-only
-mounted-DMG smoke passed on their matching hosts with WKWebView identity and complete source
-provenance in GitHub Actions run `34946454427` (source `122b6be`). DMG SHA-256 values are:
+Silicon artifact. Both native builds come from the same clean commit in the pinned GitHub
+Actions release workflow and pass the native desktop smoke plus the exact read-only
+mounted-DMG smoke on their matching hosts. The run id, source commit, DMG SHA-256 and mounted
+executable SHA-256 values are recorded in the post-build install evidence and in
+`docs/strategy/STATUS.md`; technical JSON/manifest evidence remains in the repository and
+local audit package, not as separate Release downloads.
 
-- arm64: `ce0cc652e6d57d38dc6d6e06aa9d9fde2131f480cfe92c18be1e827c764df803`;
-- x86_64: `09e27a31bbbd929b061d2c21da2d3bca4e4fa7c0050e5eb0770532f67656ef1c`.
+**New in this patch:** v1.1.1 is the security-hardened rebuild of the v1.1.0 pilot. The deep
+security review's confirmed findings are fixed and pinned by regression tests, including the
+migration archive and manifest byte ceilings, the bounded broker-import review output, the
+shared paper-mode execution guard, contained model-artifact path handling, constant-time
+webhook comparisons and copy-signal HMAC verification. The Python lock is unchanged and the
+OSV dependency scan reported no runtime advisories (Python 0 affected; the single npm
+advisory is dev-only and not shipped). A crafted-ZIP validation suite now covers
+central-directory falsification, size/metadata inconsistencies and resource limits. GitHub
+Actions are pinned to full commit SHAs, including the release job.
 
-Mounted executable SHA-256 values are arm64
-`4b3013e44b0ef143e2f24a8b638c21525a84f9d0ddb72a9ad24b740fecc2d808` and x86_64
-`45e58975eccaa5119b95e06cc4267dc1c28d9a84ed287629e1e0ea5aa0ccc13e`. Technical JSON/
-manifest evidence remains in the repository and local audit package, not as separate
-Release downloads.
-
-**New in this pilot release:** the trade journal now records the user-supplied trade date
-and time in Turkey time (minute precision, stored as UTC), explicitly separates a
-still-open entry from an already-closed one, and replaces the Replay row action with a
-working **Edit** surface. Corrections are revisioned: previous values stay in the
-append-only history, completed targets are locked after a partial close, and entry/quantity
-changes reset a local TP/SL plan only before any close evidence exists. Journal stop and
-target edits are applied to the active local plan in the same transaction. Declared
-leverage is journal metadata: price return, position return and margin return stay
-separate and the position P/L is never multiplied by leverage. Open-trade quotes refresh
-automatically and on demand with explicit `LIVE`, `DELAYED` and stale last-known states,
-and the New Trade form is grouped into Trade / Size / Targets / Summary sections with an
-equal-split helper and concrete field errors.
+**v1.1.0 pilot features (unchanged):** the trade journal records the user-supplied trade date
+and time in Turkey time (minute precision, stored as UTC), explicitly separates a still-open
+entry from an already-closed one, and replaces the Replay row action with a working **Edit**
+surface. Corrections are revisioned: previous values stay in the append-only history,
+completed targets are locked after a partial close, and entry/quantity changes reset a local
+TP/SL plan only before any close evidence exists. Journal stop and target edits are applied
+to the active local plan in the same transaction. Declared leverage is journal metadata:
+price return, position return and margin return stay separate and the position P/L is never
+multiplied by leverage. Open-trade quotes refresh automatically and on demand with explicit
+`LIVE`, `DELAYED` and stale last-known states, and the New Trade form is grouped into Trade /
+Size / Targets / Summary sections with an equal-split helper and concrete field errors.
 
 **Monetary calculation boundary:** position size, margin and money P/L are produced only
 for an explicitly declared base-unit quantity (`qty_unit=BASE`); provider labels and symbol
@@ -65,13 +70,13 @@ production or commercial-support release. Pilot instructions:
 [`Trusted macOS pilot instructions`](https://github.com/alikula37/kuantra-terminal/blob/main/docs/release/PILOT-INSTRUCTIONS.md).
 
 Both architecture artifacts in this private prerelease are the exact CI outputs above;
-their checksums were re-verified locally with `shasum -a 256 -c SHA256SUMS` and
+their checksums are re-verified locally with `shasum -a 256 -c SHA256SUMS` and
 `hdiutil verify` before publication.
 
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed
 from GitHub on 2026-09-11 and must not be used. The exact canonical product tag is guarded by
-`docs/release/truth-matrix.v1.1.0.json`.
+`docs/release/truth-matrix.v1.1.1.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)

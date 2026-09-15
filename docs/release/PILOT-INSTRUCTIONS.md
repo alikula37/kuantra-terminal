@@ -1,4 +1,4 @@
-# Kuantra Terminal v1.1.0 — kapalı macOS pilotu
+# Kuantra Terminal v1.1.1 — kapalı macOS pilotu
 
 **Güncel pilot Release:** [`pilot-v1.1.0`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.0)<br>
 **Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
@@ -69,7 +69,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 4. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
 
    ```text
-   hdiutil verify Kuantra-Terminal-1.1.0-<architecture>.dmg
+   hdiutil verify Kuantra-Terminal-1.1.1-<architecture>.dmg
    ```
 
    Çıktı başarılı olmalıdır. Bu kontrol DMG

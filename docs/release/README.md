@@ -1,12 +1,14 @@
 # Kuantra release truth contract
 
 Release-facing claims are governed by the versioned matrix in
-[`truth-matrix.v1.1.0.json`](truth-matrix.v1.1.0.json). The matrix is a contract, not a
+[`truth-matrix.v1.1.1.json`](truth-matrix.v1.1.1.json). The matrix is a contract, not a
 marketing inventory: it records what the current product can prove, what remains disabled,
 and which files are scanned before a build or GitHub Release.
 
-The current release train targets v1.1.0 on macOS 12+ with separate native arm64 and x86_64
-artifacts. The v1.1.0 pilot adds user-supplied Turkey-time trade dates, revisioned journal
+The current release train targets v1.1.1 on macOS 12+ with separate native arm64 and x86_64
+artifacts; v1.1.1 is the security-hardened rebuild of the v1.1.0 pilot (deep security review
+follow-up, dependency OSV scan, crafted-ZIP validation). The v1.1.0 pilot added user-supplied
+Turkey-time trade dates, revisioned journal
 editing with local TP/SL plan synchronization, declared-leverage sizing, bounded open-trade
 quote refresh, and a fail-closed monetary boundary that requires an explicit base-unit
 declaration. Both architectures are verified current candidates; Intel evidence comes from
@@ -38,7 +40,7 @@ final artifacts, recovery, security, product evidence and owner approval. It doe
 grant release authority or change this truth matrix; an engineering gate alone is
 not proof that the read-only product is ready for production.
 
-The current matrix is `KTR-001@1.0.0`. The prior `KTR-001@1.0.1` matrix remains as
+The current matrix is `KTR-001@1.1.1`. The prior `KTR-001@1.0.1` matrix remains as
 repository-only historical evidence for the withdrawn v1.4.0 line; it is not overwritten
 because release truth is immutable per product version.
 
