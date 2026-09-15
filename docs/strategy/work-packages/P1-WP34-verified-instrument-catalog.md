@@ -3,7 +3,7 @@
 
 ```yaml
 work_package: P1-WP34
-status: Complete
+status: InProgress
 branch: main
 baseline: 14d77a8
 ```
