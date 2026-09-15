@@ -310,6 +310,12 @@ validator accepts a null average R. Evidence: `test_portfolio_service.py` **12 p
 `PortfolioKpiGrid.p1wp33` DOM tests **3 passed**, full backend **948 passed / 2 warnings**,
 frontend **39 files / 207 tests**, i18n **989/989/989**.
 
+**Round-7 clean install (2026-09-15):** Source `878f699` passed canonical arm64 local
+CI with `COMPLETE` provenance and a clean tree (backend **948**, frontend **39/207**, i18n
+**989/989/989**; report `0586dfb4…`); arm64 DMG `d73843fc…` passed `hdiutil verify` and
+the exact mounted-DMG smoke; `/Applications` was replaced (installed executable
+`23fcf253…`, runtime `{"status":"online","version":"1.1.0"}`, user data preserved).
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel

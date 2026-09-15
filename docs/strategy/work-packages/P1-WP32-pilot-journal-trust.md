@@ -478,3 +478,21 @@ partial/unavailable open risk, missing R); `PortfolioKpiGrid.p1wp33` DOM tests
 **3 passed** (`—` for unknown R/risk, no `-0.00%`, computed R only when known);
 full backend **948 passed / 2 warnings**, frontend **39 files / 207 tests**,
 i18n **989/989/989**, TypeScript clean.
+
+### Round-7 clean build and installed-app update
+
+Per the owner standing instruction, the verified round-7 fix was committed (`878f699`,
+pushed) and the Mac's installed application was rebuilt from the clean commit:
+
+- Canonical arm64 local CI on `878f699`: **MERGE READY**, provenance **COMPLETE**, clean
+  tree; backend **948 passed / 2 warnings**, frontend **39 files / 207 tests**, i18n
+  **989/989/989**; report `dist/p1-wp32-round7-clean-local-ci.json` SHA-256
+  `0586dfb41163b3ddcacd70645f21818b68ec3776077c37629d2847d9642f6782`, executable
+  `23fcf253ddf6a821551fbfa018edb28f05a8b0336252d42d6fbda5a740316c1e`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-round7.dmg`: `hdiutil verify` VALID,
+  SHA-256 `d73843fce0068397c2595f6e95ad7cad8dd5891902f7540cc2fc6e9d7a47672b`; exact
+  read-only mounted-DMG smoke **PASS**.
+- `/Applications/Kuantra Terminal.app` replaced after a graceful quit; installed
+  executable matches the CI build, `codesign --verify --deep --strict` passes, launched
+  PID `46708`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`. User data
+  preserved.
