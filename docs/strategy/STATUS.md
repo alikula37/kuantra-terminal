@@ -495,6 +495,14 @@ something is hidden and opens a per-metric checkbox panel plus "show all", so cl
 is reversible. Evidence: frontend **39/223**, i18n **1030/1030/1030**, full backend
 **966**, TypeScript clean, screenshot-verified with three metrics hidden.
 
+**P1-WP36 round-4 clean install (2026-09-15):** Source `3ad50ed` passed canonical arm64
+local CI with `COMPLETE` provenance and a clean tree (backend **966**, frontend
+**39/223**, i18n **1030/1030/1030**; report `c495e26d…`, executable `b1419395…`); arm64
+DMG `b3c07ce3…` passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications`
+was replaced after a graceful quit (installed executable matches the CI build, PID
+`65266`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data
+preserved).
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

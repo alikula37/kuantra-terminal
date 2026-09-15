@@ -150,6 +150,19 @@ açılırlarsa hizalama vs ona göre yapılsın."
   the token migration), both-theme screenshots reviewed, DOM-measured layout check
   (no overlap; the grid row now sizes to its content).
 
+### Round 4 clean build and installed-app update
+
+- Source `3ad50ed` passed canonical arm64 local CI with **COMPLETE** provenance and a
+  clean tree; report `dist/p1-wp36d-clean-local-ci.json` SHA-256
+  `c495e26d18dd9207e242e680524a7f48164e9f9cf7eb44bc47a23f006228c2cf`, executable
+  `b1419395a2812706d7a0bacb7efea23bbcf8fec87873c56797a3d1ccb9a3467f`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp36d.dmg` `hdiutil verify` VALID,
+  SHA-256 `b3c07ce3777925f4ab492ca519e9a6cf4fcecd2a87106b715131fa808b9b3619`; mounted
+  read-only smoke **PASS** (`dist/p1-wp36d-dmg-smoke.json`).
+- `/Applications` replaced after a graceful quit; installed executable matches the CI
+  build, launched PID `65266`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`,
+  user data preserved.
+
 ### Round 3 clean build and installed-app update
 
 - Source `43a3c06` passed canonical arm64 local CI with **COMPLETE** provenance and a
