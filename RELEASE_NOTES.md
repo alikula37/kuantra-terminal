@@ -18,9 +18,17 @@ two downloads:
 Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
 Silicon artifact. The native arm64 and x86_64 builds, desktop smoke and exact read-only
-mounted-DMG smoke pass on their matching hosts with WKWebView identity and complete source
-provenance in the recorded GitHub Actions run; the exact run and artifact hashes are kept
-in the repository audit evidence.
+mounted-DMG smoke passed on their matching hosts with WKWebView identity and complete source
+provenance in GitHub Actions run `34946454427` (source `122b6be`). DMG SHA-256 values are:
+
+- arm64: `ce0cc652e6d57d38dc6d6e06aa9d9fde2131f480cfe92c18be1e827c764df803`;
+- x86_64: `09e27a31bbbd929b061d2c21da2d3bca4e4fa7c0050e5eb0770532f67656ef1c`.
+
+Mounted executable SHA-256 values are arm64
+`4b3013e44b0ef143e2f24a8b638c21525a84f9d0ddb72a9ad24b740fecc2d808` and x86_64
+`45e58975eccaa5119b95e06cc4267dc1c28d9a84ed287629e1e0ea5aa0ccc13e`. Technical JSON/
+manifest evidence remains in the repository and local audit package, not as separate
+Release downloads.
 
 **New in this pilot release:** the trade journal now records the user-supplied trade date
 and time in Turkey time (minute precision, stored as UTC), explicitly separates a
@@ -56,9 +64,9 @@ notarization. On first launch, use Finder → right-click → **Open**. This is 
 production or commercial-support release. Pilot instructions:
 [`Trusted macOS pilot instructions`](https://github.com/alikula37/kuantra-terminal/blob/main/docs/release/PILOT-INSTRUCTIONS.md).
 
-DMG and mounted-executable SHA-256 values for both architectures are recorded from the
-exact downloaded Release artifacts in the repository audit evidence and below before the
-Release is published.
+Both architecture artifacts in this private prerelease are the exact CI outputs above;
+their checksums were re-verified locally with `shasum -a 256 -c SHA256SUMS` and
+`hdiutil verify` before publication.
 
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed
