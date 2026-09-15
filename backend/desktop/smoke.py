@@ -44,7 +44,8 @@ def _check_local_tracking(window, ctx):
     plan = {"enabled": True, "source_id": "binance_public", "source_symbol": "BTCUSDT", "stop_loss": 95,
             "targets": [{"price": p, "percent": n} for p, n in [(110, 50), (120, 25), (130, 25)]]}
     trade = request("POST", "/api/v1/trades", {"symbol": "BTCUSDT", "side": "BUY", "position_type": "LONG",
-        "entry_price": 100, "qty": 2, "record_mode": "SIMULATION", "notes": "synthetic native tracking smoke", "local_tracking": plan})
+        "entry_price": 100, "qty": 2, "record_mode": "SIMULATION", "qty_unit": "BASE",
+        "notes": "synthetic native tracking smoke", "local_tracking": plan})
     service = tracking_service()
     service.observe(trade["id"], {"source_id": "binance_public", "source_symbol": "BTCUSDT", "price": "110",
         "status": "LIVE", "timestamp_basis": "PROVIDER_EVENT", "observed_at": now_utc()})
