@@ -443,6 +443,20 @@ passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications` was rep
 after a graceful quit (installed executable matches the CI build, PID `57042`, runtime
 `{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved).
 
+**P1-WP36 round 2 — research-driven design fix (2026-09-15):** The owner rejected the
+first pass ("çok kötü") and asked for design research. Root causes: a hardcoded dark
+hero color the light-theme shim did not remap while it did remap the text color; 9–10px
+rail labels inflated to the 14px readability floor, breaking the six-cell layout; and a
+flex-column scroller whose `min-h` let the chart row shrink so the positions card painted
+over the heatmap. Round 2 applies published dashboard practice (inverted pyramid, fixed
+card anatomy, one metric per meaning, semantic tokens instead of hardcoded colors) and
+migrates Tailwind to theme CSS variables (`elevated`, `ink`, `muted`, `warn` +
+alpha-capable accent/gain/loss/border), rewrites the KPI hero/strip on new `.k-kpi`
+primitives, theme-resolves the chart colors, fixes the scroller flow and formats negative
+money correctly. Both themes were verified with headless-Chrome screenshots and a
+DOM-measured overlap check. Frontend **39/220**, i18n **1022/1022/1022**, TypeScript
+clean.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

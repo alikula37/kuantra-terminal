@@ -324,7 +324,7 @@
     "unverified_count": "{count} unverifiziert",
     "all_verified": "alle verifiziert",
     "unknown_results": "UNBEKANNTE ERGEBNISSE",
-    "of_closed": "von {count} geschlossenen"
+    "of_closed": "von {count} geschl."
   },
   "equity_curve": {
     "loading": "Kumulative Kapitalkurve wird geladen...",

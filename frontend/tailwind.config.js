@@ -8,12 +8,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#0b0e14",
-        surface: "#111722",
-        "surface-border": "#1e293b",
-        accent: "#38bdf8",
-        gain: "#10b981",
-        loss: "#ef4444",
+        // Semantic tokens only: every surface/text color resolves through the
+        // theme variables in index.css so light and dark stay readable.
+        background: "var(--bg-primary)",
+        surface: "var(--bg-surface)",
+        elevated: "var(--bg-elevated)",
+        soft: "var(--bg-soft)",
+        deep: "var(--bg-deep)",
+        hover: "var(--bg-hover)",
+        "hover-strong": "var(--bg-hover-strong)",
+        "surface-border": "rgb(var(--border-rgb) / <alpha-value>)",
+        ink: "var(--text-primary)",
+        muted: "var(--text-muted)",
+        accent: "rgb(var(--accent-rgb) / <alpha-value>)",
+        gain: "rgb(var(--gain-rgb) / <alpha-value>)",
+        loss: "rgb(var(--loss-rgb) / <alpha-value>)",
+        warn: "rgb(var(--warn-rgb) / <alpha-value>)",
       },
       fontFamily: {
         mono: ["JetBrains Mono", "Fira Code", "Courier New", "monospace"],

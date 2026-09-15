@@ -197,7 +197,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[#0b0e14] p-3 space-y-3 font-sans select-none custom-scrollbar">
+    <div className="flex-1 h-full overflow-y-auto bg-background p-3 space-y-3 font-sans select-none custom-scrollbar">
       {/* Top Header / Refresh Bar */}
       <div className="flex items-center justify-between pb-1">
         <div className="flex items-center space-x-2">

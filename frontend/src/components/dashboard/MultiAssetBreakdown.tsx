@@ -27,7 +27,7 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
 
   if (loading) {
     return (
-      <div className="bg-[#111722] p-4 rounded-lg border border-surface-border animate-pulse h-80 flex flex-col justify-center items-center text-slate-500 font-mono text-xs">
+      <div className="bg-elevated p-4 rounded-lg border border-surface-border animate-pulse h-80 flex flex-col justify-center items-center text-slate-500 font-mono text-xs">
         <span>{t("breakdown.loading")}</span>
       </div>
     );
@@ -35,8 +35,8 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
 
   if (!items || items.length === 0) {
     return (
-      <div className="bg-[#111722] p-6 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-center select-none font-mono">
-        <div className="w-12 h-12 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
+      <div className="bg-elevated p-6 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-center select-none font-mono">
+        <div className="w-12 h-12 rounded-full bg-soft flex items-center justify-center mb-3 border border-surface-border">
           <Layers className="w-6 h-6 text-slate-500" />
         </div>
         <h4 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
@@ -66,7 +66,7 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
   };
 
   return (
-    <div className="bg-[#111722] p-4 rounded-lg border border-surface-border flex flex-col h-full select-none font-mono">
+    <div className="bg-elevated p-4 rounded-lg border border-surface-border flex flex-col h-full select-none font-mono">
       <div className="flex items-center justify-between pb-3 border-b border-surface-border">
         <div className="flex items-center space-x-2">
           <PieChart className="w-4 h-4 text-accent" />

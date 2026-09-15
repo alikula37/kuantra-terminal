@@ -23,7 +23,7 @@ export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, lo
 
   if (loading) {
     return (
-      <div className="bg-[#111722] p-4 rounded-lg border border-surface-border animate-pulse h-48 flex items-center justify-center text-slate-500 font-mono text-xs">
+      <div className="bg-elevated p-4 rounded-lg border border-surface-border animate-pulse h-48 flex items-center justify-center text-slate-500 font-mono text-xs">
         <span>{t("heatmap.loading")}</span>
       </div>
     );
@@ -69,7 +69,7 @@ export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, lo
   const activeDays = (data || []).filter((d) => d.trades_count > 0).length;
 
   return (
-    <div className="bg-[#111722] p-4 rounded-lg border border-surface-border flex flex-col select-none font-mono">
+    <div className="bg-elevated p-4 rounded-lg border border-surface-border flex flex-col select-none font-mono">
       <div className="flex items-center justify-between pb-3 border-b border-surface-border">
         <div className="flex items-center space-x-2">
           <Calendar className="w-4 h-4 text-accent" />

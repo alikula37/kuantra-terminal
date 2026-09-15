@@ -28,7 +28,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-[#111722] p-4 rounded-lg border border-surface-border animate-pulse h-80 flex flex-col justify-center items-center text-slate-500 font-mono text-xs">
+      <div className="bg-elevated p-4 rounded-lg border border-surface-border animate-pulse h-80 flex flex-col justify-center items-center text-slate-500 font-mono text-xs">
         <span>{t("equity_curve.loading")}</span>
       </div>
     );
@@ -38,8 +38,8 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
 
   if (!isRealHistory) {
     return (
-      <div className="bg-[#111722] p-6 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-center select-none font-mono">
-        <div className="w-12 h-12 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
+      <div className="bg-elevated p-6 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-center select-none font-mono">
+        <div className="w-12 h-12 rounded-full bg-soft flex items-center justify-center mb-3 border border-surface-border">
           <TrendingUp className="w-6 h-6 text-accent" />
         </div>
         <h4 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
@@ -106,7 +106,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
   const currentPoint = hoveredPoint || series[series.length - 1];
 
   return (
-    <div className="bg-[#111722] p-4 rounded-lg border border-surface-border flex flex-col h-full select-none font-mono">
+    <div className="bg-elevated p-4 rounded-lg border border-surface-border flex flex-col h-full select-none font-mono">
       <div className="flex items-center justify-between pb-2 border-b border-surface-border">
         <div className="flex items-center space-x-2">
           <TrendingUp className="w-4 h-4 text-accent" />
@@ -129,17 +129,17 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
       <div className="relative flex-1 mt-2 flex items-center justify-center">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-full max-h-64 overflow-visible"
+          className="w-full h-full overflow-visible"
           onMouseLeave={() => setHoveredPoint(null)}
         >
           <defs>
             <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#00e5ff" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#00e5ff" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0.0" />
             </linearGradient>
             <linearGradient id="ddGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.0" />
-              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.4" />
+              <stop offset="0%" stopColor="var(--color-loss)" stopOpacity="0.0" />
+              <stop offset="100%" stopColor="var(--color-loss)" stopOpacity="0.4" />
             </linearGradient>
           </defs>
 
@@ -149,7 +149,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
             y1={padding.top}
             x2={padding.left + innerWidth}
             y2={padding.top}
-            stroke="#1e293b"
+            stroke="var(--border-color)"
             strokeDasharray="3 3"
           />
           <line
@@ -157,7 +157,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
             y1={padding.top + equityHeight / 2}
             x2={padding.left + innerWidth}
             y2={padding.top + equityHeight / 2}
-            stroke="#1e293b"
+            stroke="var(--border-color)"
             strokeDasharray="3 3"
           />
           <line
@@ -165,17 +165,17 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
             y1={padding.top + equityHeight}
             x2={padding.left + innerWidth}
             y2={padding.top + equityHeight}
-            stroke="#334155"
+            stroke="var(--border-color)"
           />
 
           {/* Equity Y-Labels */}
-          <text x={padding.left - 8} y={padding.top + 4} fill="#64748b" fontSize="9" textAnchor="end">
+          <text x={padding.left - 8} y={padding.top + 4} fill="var(--text-muted)" fontSize="9" textAnchor="end">
             ${(yEquityMax / 1000).toFixed(1)}k
           </text>
-          <text x={padding.left - 8} y={padding.top + equityHeight / 2 + 3} fill="#64748b" fontSize="9" textAnchor="end">
+          <text x={padding.left - 8} y={padding.top + equityHeight / 2 + 3} fill="var(--text-muted)" fontSize="9" textAnchor="end">
             ${((yEquityMax + yEquityMin) / 2000).toFixed(1)}k
           </text>
-          <text x={padding.left - 8} y={padding.top + equityHeight} fill="#64748b" fontSize="9" textAnchor="end">
+          <text x={padding.left - 8} y={padding.top + equityHeight} fill="var(--text-muted)" fontSize="9" textAnchor="end">
             ${(yEquityMin / 1000).toFixed(1)}k
           </text>
 
@@ -184,7 +184,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
           <polyline
             points={equityPoints}
             fill="none"
-            stroke="#00e5ff"
+            stroke="var(--color-accent)"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -196,23 +196,23 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
             y1={ddZeroY}
             x2={padding.left + innerWidth}
             y2={ddZeroY}
-            stroke="#475569"
+            stroke="var(--text-muted)"
             strokeWidth="1"
           />
           <polygon points={ddAreaPath} fill="url(#ddGradient)" />
           <polyline
             points={ddPoints}
             fill="none"
-            stroke="#ef4444"
+            stroke="var(--color-loss)"
             strokeWidth="1.5"
             strokeLinecap="round"
           />
 
           {/* Drawdown Y-Labels */}
-          <text x={padding.left - 8} y={ddZeroY + 4} fill="#64748b" fontSize="9" textAnchor="end">
+          <text x={padding.left - 8} y={ddZeroY + 4} fill="var(--text-muted)" fontSize="9" textAnchor="end">
             0%
           </text>
-          <text x={padding.left - 8} y={ddZeroY + ddHeight} fill="#ef4444" fontSize="9" textAnchor="end">
+          <text x={padding.left - 8} y={ddZeroY + ddHeight} fill="var(--color-loss)" fontSize="9" textAnchor="end">
             {minDd.toFixed(1)}%
           </text>
 
@@ -236,12 +236,12 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
                       y1={padding.top}
                       x2={x}
                       y2={ddZeroY + ddHeight}
-                      stroke="#00e5ff"
+                      stroke="var(--color-accent)"
                       strokeWidth="1"
                       strokeDasharray="2 2"
                     />
                     <circle cx={x} cy={y} r="4" fill="#00e5ff" stroke="#0d121c" strokeWidth="2" />
-                    <circle cx={x} cy={getDdY(p.drawdown_pct)} r="3" fill="#ef4444" />
+                    <circle cx={x} cy={getDdY(p.drawdown_pct)} r="3" fill="var(--color-loss)" />
                   </>
                 )}
               </g>
@@ -251,15 +251,15 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
           {/* X-Axis Date Labels */}
           {series.length > 0 && (
             <>
-              <text x={padding.left} y={height - 8} fill="#64748b" fontSize="9" textAnchor="start">
+              <text x={padding.left} y={height - 8} fill="var(--text-muted)" fontSize="9" textAnchor="start">
                 {series[0].date}
               </text>
               {series.length > 2 && (
-                <text x={padding.left + innerWidth / 2} y={height - 8} fill="#64748b" fontSize="9" textAnchor="middle">
+                <text x={padding.left + innerWidth / 2} y={height - 8} fill="var(--text-muted)" fontSize="9" textAnchor="middle">
                   {series[Math.floor(series.length / 2)].date}
                 </text>
               )}
-              <text x={padding.left + innerWidth} y={height - 8} fill="#64748b" fontSize="9" textAnchor="end">
+              <text x={padding.left + innerWidth} y={height - 8} fill="var(--text-muted)" fontSize="9" textAnchor="end">
                 {series[series.length - 1].date}
               </text>
             </>

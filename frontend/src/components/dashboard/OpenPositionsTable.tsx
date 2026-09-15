@@ -68,14 +68,14 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-[#111722] p-4 rounded-lg border border-surface-border animate-pulse h-48 flex items-center justify-center text-slate-500 text-sm">
+      <div className="bg-elevated p-4 rounded-lg border border-surface-border animate-pulse h-48 flex items-center justify-center text-slate-500 text-sm">
         <span>{t("open_positions.loading")}</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#111722] p-4 rounded-lg border border-surface-border flex flex-col select-none">
+    <div className="bg-elevated p-4 rounded-lg border border-surface-border flex flex-col select-none">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-surface-border">
         <div className="flex items-center space-x-2">
           <Crosshair className="w-4 h-4 text-accent" />
@@ -92,7 +92,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
             data-testid="open-positions-refresh"
             onClick={() => void refresh()}
             disabled={busy || positions.length === 0}
-            className="k-btn border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200 disabled:opacity-50"
+            className="k-btn border border-surface-border bg-soft hover:bg-hover-strong text-slate-200 disabled:opacity-50"
             title={t("journal.refresh_all_title")}
           >
             <RefreshCw className={`w-4 h-4 text-accent ${busy ? "animate-spin" : ""}`} />
@@ -110,7 +110,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
 
       {positions.length === 0 ? (
         <div className="py-10 flex flex-col items-center justify-center text-center select-none font-mono">
-          <div className="w-10 h-10 rounded-full bg-[#162032] flex items-center justify-center mb-2.5 border border-surface-border">
+          <div className="w-10 h-10 rounded-full bg-soft flex items-center justify-center mb-2.5 border border-surface-border">
             <Shield className="w-5 h-5 text-slate-500" />
           </div>
           <h4 className="text-xs font-bold text-slate-200 mb-1 uppercase tracking-wide">
@@ -122,7 +122,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
           {onOpenNewTrade && (
             <button
               onClick={onOpenNewTrade}
-              className="flex items-center space-x-1.5 px-3 py-1 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-accent font-semibold rounded text-xs transition cursor-pointer"
+              className="flex items-center space-x-1.5 px-3 py-1 bg-soft hover:bg-hover-strong border border-surface-border text-accent font-semibold rounded text-xs transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{t("open_positions.open_action")}</span>

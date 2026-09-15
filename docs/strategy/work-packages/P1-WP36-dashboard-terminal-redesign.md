@@ -42,6 +42,49 @@ professional trading terminal (dense grid, color coding, compact typography).
   and localized title; all previous truth states (unknown R, unverified risk,
   infinite PF, zero drawdown, live/partial/fallback equity) keep their tests.
 
+## Round 2 — owner rejected the first pass; research-driven redesign
+
+Owner feedback (2026-09-15, with a screenshot): "bu ne yav çok kötü" and an explicit
+request to research design. Root causes found in the first pass:
+
+- The first hero used a hardcoded dark `bg-[#0e141f]` that the light-theme compatibility
+  shim did not remap, while the shim *did* remap `text-white` to the light text color:
+  dark cards with near-invisible dark values in the light theme.
+- Secondary cells used 9–10px label classes, but the pilot readability floor raises every
+  `text-[8px]`–`text-xs` utility to 14px, so the six-cell rail wrapped into unreadable
+  multi-line blocks.
+- The dashboard scroller was a flex column; the chart row's explicit `min-h-[320px]`
+  let it shrink below its content, so the open-positions card painted over the heatmap.
+- Only the light-theme shim kept the older surfaces readable; nothing used the real
+  theme variables.
+
+Design research (web) applied: inverted-pyramid/F-pattern hierarchy (Tier-1 north-star
+metrics largest, top-left), one fixed card anatomy (label -> value -> context) with
+tabular numerals, "one metric = one meaning" (no duplicated exposure cell), consistent
+color semantics (gain/loss/accent/warn only, no decorative palette), semantic design
+tokens instead of hardcoded colors (the Carbon/USWDS approach), and visible freshness
+("son veri" + live-price age).
+
+What changed in round 2:
+
+- Tailwind colors now resolve through the theme CSS variables (`background`, `surface`,
+  `elevated`, `soft`, `deep`, `hover`, `surface-border`, `ink`, `muted`, `accent`,
+  `gain`, `loss`, `warn` with `rgb(var(--…-rgb) / <alpha-value>)` for alpha support),
+  and new `.k-kpi*`/`.k-kpi-strip*` primitives carry the card anatomy with no hardcoded
+  colors.
+- Hero: live equity (2/6 wide, 30px value, sparkline, realized/open breakdown and price
+  freshness), open P&L, open risk, exposure, today; strip: win rate, profit factor,
+  average R, max drawdown, active positions, unknown results.
+- Chart, breakdown, heatmap and positions cards migrated to the tokens; chart SVG
+  colors resolve from the theme; the scroller switched from flex to block flow so no
+  card can be squeezed over another; negative money formats as `-$X`.
+- Localized title and shorter TR/EN/DE copy for the unknown-results sub-label.
+
+Visual verification: the running app was screenshotted with headless Chrome in **both**
+themes at 1680x1050 (temporary copy of the owner database; nothing user-facing changed)
+and the layout was measured through the DOM to prove the overlap is gone
+(chart/right column bottom 874px, positions card starts at 886px).
+
 ## Scope boundaries
 
 - No new endpoints beyond the existing summary fields; no fabricated values — every
@@ -59,6 +102,9 @@ professional trading terminal (dense grid, color coding, compact typography).
   plus the localized-title test; all earlier dashboard truth tests still pass.
 - Full backend **964 passed / 2 warnings**; i18n **1022/1022/1022**; `npx tsc --noEmit`
   clean.
+- Round 2: frontend rerun **39 files / 220 tests** (unchanged tests keep passing through
+  the token migration), both-theme screenshots reviewed, DOM-measured layout check
+  (no overlap; the grid row now sizes to its content).
 
 ### Clean build and installed-app update
 
