@@ -62,6 +62,16 @@ professional trading terminal (dense grid, color coding, compact typography).
 
 ### Clean build and installed-app update
 
-Per the owner standing instruction, the verified change was committed and the Mac's
-installed application was rebuilt from the clean commit (details appended after the
-run: source commit, CI report hash, DMG hash, smoke report, installed executable).
+Per the owner standing instruction, the verified change was committed (`4b874ad`,
+pushed) and the Mac's installed application was rebuilt from the clean commit:
+
+- Canonical arm64 local CI on `4b874ad`: **MERGE READY**, provenance **COMPLETE**,
+  clean tree; report `dist/p1-wp36-clean-local-ci.json` SHA-256
+  `59dd43d9b6d716bb093dbf6dca00e601001790efddfd76b39e7256734d338726`, executable
+  `903c713b7be2d813fc5197ee1aa3be9bce3663137bbf7232ebfe4e149579a9b5`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp36.dmg`: `hdiutil verify` VALID,
+  SHA-256 `f92f22851674614e9c77134b381dafa7bb2704e82a6018cfcb2f38972983a42c`;
+  exact read-only mounted-DMG smoke **PASS** (`dist/p1-wp36-dmg-smoke.json`).
+- `/Applications/Kuantra Terminal.app` replaced after a graceful quit; installed
+  executable matches the CI build, launched PID `57042`, runtime
+  `{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved.

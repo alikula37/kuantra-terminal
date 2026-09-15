@@ -436,6 +436,13 @@ now EN/TR/DE. Evidence: `test_portfolio_service.py` **16 passed**, full backend
 **964 passed / 2 warnings**, frontend **39 files / 220 tests**, i18n **1022/1022/1022**,
 TypeScript clean.
 
+**P1-WP36 clean install (2026-09-15):** Source `4b874ad` passed canonical arm64 local
+CI with `COMPLETE` provenance and a clean tree (backend **964**, frontend **39/220**, i18n
+**1022/1022/1022**; report `59dd43d9…`, executable `903c713b…`); arm64 DMG `f92f2285…`
+passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications` was replaced
+after a graceful quit (installed executable matches the CI build, PID `57042`, runtime
+`{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved).
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates
