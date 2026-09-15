@@ -54,6 +54,9 @@ export interface PortfolioSummaryData {
   open_margin_positions?: number;
   open_exposure_basis?: "COMPLETE" | "PARTIAL" | "NOT_AVAILABLE";
   open_exposure_unpriced?: number;
+  sharpe_ratio?: number | null;
+  sharpe_basis?: "READY" | "NOT_AVAILABLE";
+  sharpe_trades?: number;
   timestamp?: string;
 }
 
@@ -154,6 +157,9 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
   const exposureUnpriced = summary.open_exposure_unpriced ?? 0;
 
   const hasOpenRisk = openRiskBasis === "COMPLETE";
+  const sharpe = summary.sharpe_ratio ?? null;
+  const sharpeReady = (summary.sharpe_basis ?? (sharpe != null ? "READY" : "NOT_AVAILABLE")) === "READY" && sharpe != null;
+  const sharpeTrades = summary.sharpe_trades ?? knownRTrades;
   const today = summary.today_trades_count ?? { wins: 0, losses: 0, total: 0 };
   const isTodayPositive = summary.today_pnl >= 0;
   const hasOpenPositions = summary.active_positions_count > 0;
@@ -346,6 +352,19 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             {unverified > 0
               ? t("portfolio.unverified_count", { count: unverified })
               : t("portfolio.all_verified")}
+          </span>
+        </div>
+
+        <div className="k-kpi-strip-item" title={t("portfolio.tooltip_sharpe")}>
+          <span className="k-kpi-label">
+            <span>{t("portfolio.sharpe")}</span>
+            <Zap className="w-4 h-4 text-muted" />
+          </span>
+          <span className={`text-lg font-bold ${!sharpeReady ? "text-muted" : sharpe >= 0 ? "text-gain" : "text-loss"}`}>
+            {sharpeReady ? sharpe.toFixed(2) : "—"}
+          </span>
+          <span className="k-kpi-sub">
+            {sharpeReady ? t("portfolio.sharpe_over_trades", { count: sharpeTrades }) : t("portfolio.sharpe_insufficient")}
           </span>
         </div>
 

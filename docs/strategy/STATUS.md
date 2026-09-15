@@ -465,6 +465,17 @@ was replaced after a graceful quit (installed executable matches the CI build, P
 `61170`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data
 preserved).
 
+**P1-WP36 round 3 — Sharpe on the dashboard (2026-09-15):** Owner asked where the Sharpe
+ratio is and to add it. It lived only in the plugin-gated Analytics page (invisible in
+Lite mode) and used the engine's default capital. `portfolio/summary` now reports
+`sharpe_ratio`/`sharpe_basis`/`sharpe_trades` (annualized mean/std × √252 of realized
+returns scaled by the configured balance; fewer than two varying results stay
+`NOT_AVAILABLE`, never `0.00`), the Analytics endpoint uses the same configured capital
+for one-number consistency, and the KPI strip gained a "SHARPE" cell with the formula
+tooltip and the closed-trade count. Evidence: `test_portfolio_service.py` **18 passed**,
+full backend **966 passed / 2 warnings**, frontend **39/221**, i18n **1026/1026/1026**,
+TypeScript clean.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

@@ -369,6 +369,51 @@ class TestPortfolioAnalyticsService:
         assert summary["open_notional_usd"] == 0.0
         assert summary["open_margin_usd"] == 0.0
 
+    def test_sharpe_ratio_uses_realized_returns_and_reports_basis(self):
+        """Sharpe is annualized from realized returns scaled by the configured balance."""
+        from app.quant.quant_engine import quant_engine
+
+        service = PortfolioAnalyticsService(default_initial_balance=100000.0)
+        pnls = [1000.0, -500.0, 1500.0, -300.0]
+        mock_trades = [
+            {"symbol": "BTCUSDT", "status": "CLOSED", "pnl": value, "qty_unit": "BASE",
+             "exit_time": f"2026-08-2{index + 1}T16:00:00Z"}
+            for index, value in enumerate(pnls)
+        ]
+        expected = round(quant_engine.calculate_sharpe_ratio([value / 100000.0 for value in pnls]), 2)
+
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
+            summary = service.get_portfolio_summary()
+
+        assert summary["sharpe_basis"] == "READY"
+        assert summary["sharpe_trades"] == 4
+        assert summary["sharpe_ratio"] == expected
+
+    def test_sharpe_ratio_stays_unavailable_without_two_varying_results(self):
+        """One trade, a flat series, or unknown results cannot produce a Sharpe."""
+        service = PortfolioAnalyticsService(default_initial_balance=100000.0)
+
+        single = [{"symbol": "BTCUSDT", "status": "CLOSED", "pnl": 100.0, "qty_unit": "BASE",
+                   "exit_time": "2026-08-21T16:00:00Z"}]
+        with patch.object(trade_read_adapter, "list_trades", return_value=single):
+            summary = service.get_portfolio_summary()
+        assert summary["sharpe_ratio"] is None
+        assert summary["sharpe_basis"] == "NOT_AVAILABLE"
+        assert summary["sharpe_trades"] == 1
+
+        flat = [
+            {"symbol": "BTCUSDT", "status": "CLOSED", "pnl": 250.0, "qty_unit": "BASE",
+             "exit_time": f"2026-08-2{index + 1}T16:00:00Z"}
+            for index in range(3)
+        ]
+        unknown = {"symbol": "ETHUSDT", "status": "CLOSED", "pnl": None, "qty_unit": "UNKNOWN",
+                   "exit_time": "2026-08-24T16:00:00Z"}
+        with patch.object(trade_read_adapter, "list_trades", return_value=flat + [unknown]):
+            summary = service.get_portfolio_summary()
+        assert summary["sharpe_ratio"] is None
+        assert summary["sharpe_basis"] == "NOT_AVAILABLE"
+        assert summary["sharpe_trades"] == 3
+
     def test_daily_pnl_heatmap_aggregation(self):
         """Validates daily aggregation, win rate, and intensity normalization for calendar heatmap."""
         service = PortfolioAnalyticsService()

@@ -2127,7 +2127,12 @@ def get_analytics_quant():
     all_closed = [t for t in trade_read_adapter.list_trades(limit=10000, status="CLOSED") if t.get("pnl") is not None]
     pnls = [float(t["pnl"]) for t in all_closed]
     r_mults = [float(t["r_multiple"]) for t in all_closed if t.get("r_multiple") is not None]
-    return quant_engine.calculate_full_performance_suite(pnls, r_multiples=r_mults if len(r_mults) == len(pnls) else None)
+    initial_capital = portfolio_service.get_configured_initial_balance()
+    return quant_engine.calculate_full_performance_suite(
+        pnls,
+        r_multiples=r_mults if len(r_mults) == len(pnls) else None,
+        initial_capital=initial_capital,
+    )
 
 @router.get("/market/candles")
 def get_market_candles(

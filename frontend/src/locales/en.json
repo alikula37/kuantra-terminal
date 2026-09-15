@@ -324,7 +324,11 @@
     "unverified_count": "{count} unverified",
     "all_verified": "all verified",
     "unknown_results": "UNKNOWN RESULTS",
-    "of_closed": "of {count} closed"
+    "of_closed": "of {count} closed",
+    "sharpe": "SHARPE",
+    "tooltip_sharpe": "Annualized Sharpe of realized per-trade returns (mean / std × √252, risk-free 0, scaled by the starting capital)",
+    "sharpe_over_trades": "{count} closed trades",
+    "sharpe_insufficient": "not enough data (needs 2+ varying results)"
   },
   "equity_curve": {
     "loading": "Loading Cumulative Equity Curve...",

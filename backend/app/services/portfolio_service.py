@@ -6,11 +6,13 @@ PnL Calendar Heatmap, and Cumulative Equity Curve.
 """
 
 import logging
+import statistics
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from app.core.position_math import instrument_unit_basis
 from app.services.market_data.instrument_catalog import instrument_catalog
 from app.db.sqlite_driver import sqlite_driver
+from app.quant.quant_engine import quant_engine
 from app.services.quote_refresh import QuoteRefreshService, quote_refresh_service
 from app.services.trade_read_adapter import trade_read_adapter
 
@@ -227,6 +229,16 @@ class PortfolioAnalyticsService:
         else:
             open_exposure_basis = "PARTIAL"
 
+        # 3c. Annualized Sharpe from the realized return series (one trade per day):
+        # the same formula and inputs the quant scorecard uses, but scaled by the
+        # owner's configured balance so the dashboard and Analytics agree.
+        known_returns = [float(t["pnl"]) / balance for t in known_closed] if balance > 0 else []
+        sharpe_trades = len(known_returns)
+        sharpe_ratio: Optional[float] = None
+        if sharpe_trades >= 2 and statistics.stdev(known_returns) > 1e-9:
+            sharpe_ratio = quant_engine.calculate_sharpe_ratio(known_returns)
+        sharpe_basis = "READY" if sharpe_ratio is not None else "NOT_AVAILABLE"
+
         # 4. Win Rate, Profit Factor, and R-Multiple Math
         win_trades = [t for t in known_closed if float(t["pnl"]) > 0]
         loss_trades = [t for t in known_closed if float(t["pnl"]) < 0]
@@ -288,6 +300,9 @@ class PortfolioAnalyticsService:
             "total_closed_trades": len(closed_trades),
             "unknown_pnl_trades": unknown_pnl_trades,
             "known_r_trades": len(r_multiples),
+            "sharpe_ratio": round(sharpe_ratio, 2) if sharpe_ratio is not None else None,
+            "sharpe_basis": sharpe_basis,
+            "sharpe_trades": sharpe_trades,
             "win_rate": round(win_rate, 2),
             "profit_factor": round(profit_factor, 2),
             "profit_factor_basis": "INFINITE_NO_LOSS" if profit_factor >= 999.0 else "READY",

@@ -85,6 +85,24 @@ themes at 1680x1050 (temporary copy of the owner database; nothing user-facing c
 and the layout was measured through the DOM to prove the overlap is gone
 (chart/right column bottom 874px, positions card starts at 886px).
 
+## Round 3 — Sharpe on the dashboard (owner request)
+
+Owner request (2026-09-15): "sharpe oranı hangisi oluyor?" then "ekle". The Sharpe ratio
+lived only in the plugin-gated Analytics page (invisible in Lite mode) and used the
+quant engine's default capital, which would have disagreed with the dashboard.
+
+- `portfolio/summary` now reports `sharpe_ratio` (annualized mean/std × √252 of the
+  realized per-trade returns scaled by the configured balance), `sharpe_basis`
+  (`READY` / `NOT_AVAILABLE`) and `sharpe_trades` (known closed results used). Fewer
+  than two results or a flat series report `null`/`NOT_AVAILABLE`, never `0.00`.
+- The Analytics endpoint now passes the same configured initial capital into the quant
+  engine, so the dashboard and the Analytics scorecard show one number with one meaning.
+- The KPI strip gains a "SHARPE" cell with the formula tooltip, the closed-trade count
+  under the value, and the honest "not enough data" state; EN/TR/DE strings added.
+- Tests: `test_portfolio_service.py` **18 passed** (computable series matches the quant
+  engine value, one trade / flat series / unknown results stay unavailable) and the KPI
+  grid DOM test covers the ready and missing states.
+
 ## Scope boundaries
 
 - No new endpoints beyond the existing summary fields; no fabricated values — every
@@ -102,6 +120,8 @@ and the layout was measured through the DOM to prove the overlap is gone
   plus the localized-title test; all earlier dashboard truth tests still pass.
 - Full backend **964 passed / 2 warnings**; i18n **1022/1022/1022**; `npx tsc --noEmit`
   clean.
+- Round 3: full backend **966 passed / 2 warnings**; frontend **39 files / 221 tests**;
+  i18n **1026/1026/1026**; both-theme screenshot re-checked with the seven-cell strip.
 - Round 2: frontend rerun **39 files / 220 tests** (unchanged tests keep passing through
   the token migration), both-theme screenshots reviewed, DOM-measured layout check
   (no overlap; the grid row now sizes to its content).

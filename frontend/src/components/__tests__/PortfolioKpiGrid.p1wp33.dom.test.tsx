@@ -216,3 +216,22 @@ it("flags unpriced exposure and unknown today results instead of hiding them", a
   ));
   expect(host.textContent).toContain("portfolio.exposure_unavailable");
 });
+
+it("shows the annualized Sharpe with its data basis, or an honest missing state", async () => {
+  await act(async () => root.render(
+    <PortfolioKpiGrid
+      summary={{ ...baseSummary, sharpe_ratio: 1.42, sharpe_basis: "READY", sharpe_trades: 4 }}
+    />,
+  ));
+  expect(host.textContent).toContain("portfolio.sharpe");
+  expect(host.textContent).toContain("1.42");
+  expect(host.textContent).toContain("portfolio.sharpe_over_trades:4");
+
+  await act(async () => root.render(
+    <PortfolioKpiGrid
+      summary={{ ...baseSummary, sharpe_ratio: null, sharpe_basis: "NOT_AVAILABLE", sharpe_trades: 1 }}
+    />,
+  ));
+  expect(host.textContent).toContain("portfolio.sharpe_insufficient");
+  expect(host.textContent).not.toContain("portfolio.sharpe_over_trades");
+});
