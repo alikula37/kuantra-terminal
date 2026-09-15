@@ -103,10 +103,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.publish }}" = "false" ] && [ "$RELEASE_TAG" = "v1.0.0" ]; then
-            # The trusted pilot does not ship node_modules. Keep the runtime
-            # dependency gate strict, while recording the known development
-            # toolchain findings that the owner intentionally deferred.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.publish }}" = "false" ]; then
+            # Any manual candidate run (a trusted-pilot candidate that does not
+            # publish a GitHub Release) does not ship node_modules. Keep the
+            # runtime dependency gate strict, while recording the known
+            # development toolchain findings that the owner intentionally
+            # deferred. Published releases stay strict.
             npm --prefix frontend audit --omit=dev --audit-level=moderate
             if ! npm --prefix frontend audit --audit-level=moderate; then
               echo "::warning::Known development-only npm audit findings are retained for the trusted pilot; production publish remains blocked until remediated or explicitly accepted."
