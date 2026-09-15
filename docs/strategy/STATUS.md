@@ -457,6 +457,14 @@ money correctly. Both themes were verified with headless-Chrome screenshots and 
 DOM-measured overlap check. Frontend **39/220**, i18n **1022/1022/1022**, TypeScript
 clean.
 
+**P1-WP36 round-2 clean install (2026-09-15):** Source `ffa3a77` passed canonical arm64
+local CI with `COMPLETE` provenance and a clean tree (backend **964**, frontend
+**39/220**, i18n **1022/1022/1022**; report `f13e3c4a…`, executable `fa00cd73…`); arm64
+DMG `9c779575…` passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications`
+was replaced after a graceful quit (installed executable matches the CI build, PID
+`61170`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data
+preserved).
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

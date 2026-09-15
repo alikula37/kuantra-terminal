@@ -106,7 +106,20 @@ and the layout was measured through the DOM to prove the overlap is gone
   the token migration), both-theme screenshots reviewed, DOM-measured layout check
   (no overlap; the grid row now sizes to its content).
 
-### Clean build and installed-app update
+### Round 2 clean build and installed-app update
+
+- Source `ffa3a77` passed canonical arm64 local CI with **COMPLETE** provenance and a
+  clean tree; report `dist/p1-wp36b-clean-local-ci.json` SHA-256
+  `f13e3c4a6a0ec7e0aaf3af05733d791d8d3b4573a5697d71f1eb8e238fd6a192`, executable
+  `fa00cd733caba6413ea2f0a98e4e998d1f5f07964650d9f72e06107a4621da14`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp36b.dmg` `hdiutil verify` VALID,
+  SHA-256 `9c779575497a2edc8eddbf2d7cadb9d540adc93f5a9643b1ee34e8f57d783dc8`; mounted
+  read-only smoke **PASS** (`dist/p1-wp36b-dmg-smoke.json`).
+- `/Applications` replaced after a graceful quit; installed executable matches the CI
+  build, launched PID `61170`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`,
+  user data preserved (5 trades).
+
+### First-pass clean build and installed-app update
 
 Per the owner standing instruction, the verified change was committed (`4b874ad`,
 pushed) and the Mac's installed application was rebuilt from the clean commit:
