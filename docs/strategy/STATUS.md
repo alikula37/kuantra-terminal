@@ -536,6 +536,13 @@ instruments such as XAUUSD, whose contract size no free provider metadata can ve
 (P1-WP34 covers only spot crypto). Evidence: frontend **39 files / 226 tests**, i18n
 **1032/1032/1032**, TypeScript clean.
 
+**P1-WP37 clean install (2026-09-15):** Source `03c447e` passed canonical arm64 local CI
+with `COMPLETE` provenance and a clean tree (backend **966**, frontend **39/226**, i18n
+**1032/1032/1032**; report `f6319e1d…`, executable `fb571fb5…`); arm64 DMG `22e51a2c…`
+passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications` was replaced
+after a graceful quit (installed executable matches the CI build, PID `69084`, runtime
+`{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved).
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

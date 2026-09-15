@@ -54,5 +54,16 @@ warning.
 
 ### Clean build and installed-app update
 
-Per the owner standing instruction, the verified change was committed and the Mac's
-installed application was rebuilt from the clean commit (details appended after the run).
+Per the owner standing instruction, the verified change was committed (`03c447e`,
+pushed) and the Mac's installed application was rebuilt from the clean commit:
+
+- Canonical arm64 local CI on `03c447e`: **MERGE READY**, provenance **COMPLETE**,
+  clean tree; report `dist/p1-wp37-clean-local-ci.json` SHA-256
+  `f6319e1d4515417ed6ce8c22f3ea9e67f50ecb2e64be5393ade6a24f7a9fce94`, executable
+  `fb571fb5807f556013b662c952cc447cf8daec22a6e526d11900b12e9ee32b0c`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp37.dmg` `hdiutil verify` VALID,
+  SHA-256 `22e51a2cb56b1cefd8d4260c2da05a48a747a035aa20c405728f11b9917c85f7`; mounted
+  read-only smoke **PASS** (`dist/p1-wp37-dmg-smoke.json`).
+- `/Applications` replaced after a graceful quit; installed executable matches the CI
+  build, launched PID `69084`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`,
+  user data preserved.
