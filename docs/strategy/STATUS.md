@@ -511,6 +511,14 @@ and unknown-result trades stay excluded from monetary aggregates rather than cou
 zero. The rail now has six cells and keeps the hide/reflow behaviour. Evidence:
 frontend **39/223**, i18n **1028/1028/1028**, TypeScript clean.
 
+**P1-WP36 round-5 clean install (2026-09-15):** Source `1906625` passed canonical arm64
+local CI with `COMPLETE` provenance and a clean tree (backend **966**, frontend
+**39/223**, i18n **1028/1028/1028**; report `84dfffb2…`, executable `5902efbd…`); arm64
+DMG `1eae1302…` passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications`
+was replaced after a graceful quit (installed executable matches the CI build, PID
+`67360`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data
+preserved).
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

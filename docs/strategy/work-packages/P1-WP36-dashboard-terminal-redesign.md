@@ -165,6 +165,19 @@ those trades remain excluded from monetary aggregates instead of being counted a
   the token migration), both-theme screenshots reviewed, DOM-measured layout check
   (no overlap; the grid row now sizes to its content).
 
+### Round 5 clean build and installed-app update
+
+- Source `1906625` passed canonical arm64 local CI with **COMPLETE** provenance and a
+  clean tree; report `dist/p1-wp36e-clean-local-ci.json` SHA-256
+  `84dfffb2293d71ae62052d38986166cee13622d81ecf70b83aa54a45c2eaae93`, executable
+  `5902efbdad2b8c63ef433deb152bc212340fb8aefe558ff654207fdc449d2d58`.
+- arm64 DMG `dist/Kuantra-Terminal-1.1.0-arm64-wp36e.dmg` `hdiutil verify` VALID,
+  SHA-256 `1eae1302be6e13586a3808767a2bea8928b35e8933b470e674c19afd1096f893`; mounted
+  read-only smoke **PASS** (`dist/p1-wp36e-dmg-smoke.json`).
+- `/Applications` replaced after a graceful quit; installed executable matches the CI
+  build, launched PID `67360`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`,
+  user data preserved.
+
 ### Round 4 clean build and installed-app update
 
 - Source `3ad50ed` passed canonical arm64 local CI with **COMPLETE** provenance and a
