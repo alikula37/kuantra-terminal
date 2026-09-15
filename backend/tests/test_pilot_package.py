@@ -18,7 +18,7 @@ from scripts.release_truth import DEFAULT_MATRIX_PATH, canonical_matrix_digest, 
 
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 
 def _sha256(path: Path) -> str:
@@ -212,7 +212,7 @@ def test_arm64_pilot_package_is_explicitly_m_series_only(tmp_path):
         output=tmp_path / "pilot-arm64",
         artifacts={"arm64": chain},
         instructions=instructions,
-        pilot_tag="pilot-v1.0.0-arm64",
+        pilot_tag="pilot-v1.1.0",
     )
 
     output = tmp_path / "pilot-arm64"
@@ -220,14 +220,14 @@ def test_arm64_pilot_package_is_explicitly_m_series_only(tmp_path):
     assert manifest["pilot_scope"] == "APPLE_SILICON_M_SERIES_ONLY"
     assert manifest["distribution"]["artifact_status"] == "AD_HOC_TRUSTED_PILOT_ONLY_ARM64"
     assert manifest["distribution"]["release_channel"] == "PRIVATE_PRERELEASE_PILOT"
-    assert manifest["distribution"]["pilot_tag"] == "pilot-v1.0.0-arm64"
+    assert manifest["distribution"]["pilot_tag"] == "pilot-v1.1.0"
     assert manifest["distribution"]["architectures"] == ["arm64"]
     assert manifest["distribution"]["dual_architecture_complete"] is False
     assert manifest["distribution"]["intel_artifact_included"] is False
     assert manifest["access_boundary"]["hardware_scope"] == "Apple Silicon M-series only (native arm64)"
     assert manifest["access_boundary"]["intel_support_claim"] is False
     assert {item["architecture"] for item in manifest["artifacts"]} == {"arm64"}
-    assert (output / "Kuantra-Terminal-1.0.0-arm64.dmg").is_file()
+    assert (output / "Kuantra-Terminal-1.1.0-arm64.dmg").is_file()
     assert (output / INSTRUCTIONS_NAME).read_text(encoding="utf-8") == "M-series pilot instructions"
 
 
@@ -240,7 +240,7 @@ def test_pilot_package_rejects_canonical_product_tag(tmp_path):
             output=tmp_path / "pilot-arm64",
             artifacts={"arm64": _chain(tmp_path, "arm64")},
             instructions=instructions,
-            pilot_tag="v1.0.0",
+            pilot_tag="v1.1.0",
         )
 
 

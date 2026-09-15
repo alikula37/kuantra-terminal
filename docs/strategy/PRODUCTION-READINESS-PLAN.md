@@ -23,6 +23,10 @@ simplified New Trade/Edit form. The standard journal's primary action becomes Ed
 replay remains a secondary closed-trade view. Local tracking rules (LIVE,
 provider-event, <=60s) are not weakened. See STATUS for the selected package.
 
+Owner decision (2026-09-15): the pilot artifact train advances to `v1.1.0`
+(accepted truth matrix `truth-matrix.v1.1.0.json`); the private transport tag becomes
+`pilot-v1.1.0`. The canonical product Release/tag stays unpublished.
+
 Owner-approved addition (2026-09-12): P1-WP31 local TP1/TP2/TP3/SL tracking follows
 the completed journal entry work. Delivery order is persistence/revisions, exact
 fresh provider quotes, deterministic local partial/full close, then UI and dual

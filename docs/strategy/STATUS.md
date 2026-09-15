@@ -209,6 +209,13 @@ sonucu seçilip ayrıca onaylanmadan sembol etkinleşmez, fiyat/mum isteği baş
 serbest metin Enter ile başka bir ürüne dönüştürülmez. Katalogda doğrulanmayan semboller
 sessizce eklenmez; bu sınır kapsam dışı veri sağlayıcısı/yanlış eşleşme riskini önler.
 
+**Version train decision (2026-09-15):** The P1-WP32 journal-trust feature set moves
+the pilot artifact train to `v1.1.0`. The release truth matrix
+[`truth-matrix.v1.1.0.json`](../release/truth-matrix.v1.1.0.json) is the current accepted
+matrix and `pilot-v1.1.0` is the private prerelease transport carrying the native arm64 and
+x86_64 DMGs. The canonical product Release/tag remains unpublished and the
+ad-hoc/trusted-pilot-only boundary is unchanged.
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel

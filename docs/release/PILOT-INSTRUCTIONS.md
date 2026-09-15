@@ -1,6 +1,6 @@
-# Kuantra Terminal v1.0.0 — kapalı macOS pilotu
+# Kuantra Terminal v1.1.0 — kapalı macOS pilotu
 
-**Güncel pilot Release:** [`pilot-v1.0.0-arm64`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64)<br>
+**Güncel pilot Release:** [`pilot-v1.1.0`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.0)<br>
 **Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
 ve local audit paketinde tutulur. Güncel Release indirme alanında yalnızca iki native
 DMG bulunur: `arm64` Apple Silicon ve `x86_64` Intel.
@@ -38,7 +38,9 @@ it is not quote or execution proof. No paid data service or quote API key is req
 ## Yerel TP1/TP2/TP3 takibi
 
 - Yeni manuel kayıtta otomatik yerel takip varsayılan açıktır; kapatabilirsiniz.
-  Eski/import edilmiş kayıtlarda kendiliğinden açılmaz.
+  Eski/import edilmiş kayıtlarda kendiliğinden açılmaz. Yerel takip ve parasal
+  hesaplar için **miktarın temel birim olduğunu açıkça beyan etmeniz** gerekir;
+  sağlayıcı etiketi veya fiyat tek başına sözleşme büyüklüğünü doğrulamaz.
 - Long veya short için 1–3 hedef fiyatı ve her hedefte kapanacak yüzdeyi girin.
   Yüzdeleri siz belirlersiniz; toplam %100 olmalıdır. Yalnız SL de kullanılabilir.
 - Yerel takip panelindeki **TP/SL düzenle** ile kalan hedefleri ve SL'yi değiştirin.
@@ -67,7 +69,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 4. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
 
    ```text
-   hdiutil verify Kuantra-Terminal-1.0.0-<architecture>.dmg
+   hdiutil verify Kuantra-Terminal-1.1.0-<architecture>.dmg
    ```
 
    Çıktı başarılı olmalıdır. Bu kontrol DMG
@@ -77,7 +79,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 İsteğe bağlı olarak Release metadata'sını GitHub CLI ile de kontrol edebilirsiniz:
 
 ```text
-gh release view pilot-v1.0.0-arm64 --repo alikula37/kuantra-terminal
+gh release view pilot-v1.1.0 --repo alikula37/kuantra-terminal
 ```
 
 GitHub metadata'sı Apple Gatekeeper güveninin yerine geçmez; asıl dosya doğrulaması
@@ -108,6 +110,17 @@ Pilot sahibi teknik N03 install-lifecycle kanıtı istiyorsa, ayrı temiz bir ma
 profilinde `run_n03_macos_clean_profile_audit.py` çalıştırılmalı ve
 `--expected-architecture x86_64` Intel cihazda açıkça verilmelidir. Normal kişisel
 profilde yapılan deneme pilot runtime kanıtıdır; temiz profil kanıtı olarak yazılmaz.
+
+## İşlem tarihi ve düzenleme
+
+- Yeni işlemde tarih ve saat **Türkiye saatine** göre dakika hassasiyetinde girilir.
+  İşlem hâlâ açık mı, daha önce mi kapandı açıkça seçilir; geçmiş tarihli açık kayıt
+  için yerel takip ancak kayıttan sonraki ilk uygun fiyat gözlemiyle başlar.
+- Jurnal satırındaki **Düzenle** ile giriş fiyatı, işlem zamanı, miktar, kaldıraç,
+  notlar ve plan TP/SL değerleri düzeltilebilir. Kısmi kapanıştan sonra giriş
+  fiyatı ve miktar kilitlidir; tamamlanmış işlemde yalnızca not düzeltilebilir.
+- Her düzeltme revizyonlanır ve önceki değerler kanıt geçmişinde korunur; eski bir
+  ekran yeni değişikliğin üzerine yazamaz.
 
 ## Kurulum ve ilk açılış
 

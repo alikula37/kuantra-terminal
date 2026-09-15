@@ -46,6 +46,19 @@ def _fail(message: str) -> None:
     raise ValueError(message)
 
 
+def _resolve_truth_matrix_path(root: Path) -> Path:
+    """Return the truth matrix matching the app version, never a stale file."""
+
+    version_text = _read(root / "backend" / "app" / "version.py")
+    match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', version_text)
+    if match is None:
+        _fail("could not read the app version for the truth matrix")
+    matrix_path = root / "docs" / "release" / f"truth-matrix.v{match.group(1)}.json"
+    if not matrix_path.is_file():
+        _fail(f"missing audit input: {matrix_path}")
+    return matrix_path
+
+
 def _read(path: Path) -> str:
     if not path.is_file():
         _fail(f"missing audit input: {path}")
@@ -166,7 +179,7 @@ def audit(
     status = _read(root / "docs" / "strategy" / "PHASE-0-STATUS.md")
     _check_work_packages(status)
     _check_workflows(root)
-    matrix_path = root / "docs" / "release" / "truth-matrix.v1.0.0.json"
+    matrix_path = _resolve_truth_matrix_path(root)
     matrix = load_matrix(matrix_path)
     run_checks(root, matrix_path=matrix_path)
 

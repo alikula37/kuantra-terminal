@@ -1,9 +1,9 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.0.0 — Trusted macOS Pilot
+# Kuantra Terminal v1.1.0 — Trusted macOS Pilot
 
-**Pilot Release tag:** `pilot-v1.0.0-arm64`
+**Pilot Release tag:** `pilot-v1.1.0`
 
-**Artifact source commit:** `4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0`
+**Artifact source commit:** `bfd52b3a724f3de0dc24646a3276b1e1a564f947`
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -12,50 +12,58 @@
 This private Release is intentionally scoped for the three-person pilot and exposes exactly
 two downloads:
 
-- **`Kuantra-Terminal-1.0.0-arm64.dmg`** for Apple Silicon M-series Macs;
-- **`Kuantra-Terminal-1.0.0-x86_64.dmg`** for native Intel Macs.
+- **`Kuantra-Terminal-1.1.0-arm64.dmg`** for Apple Silicon M-series Macs;
+- **`Kuantra-Terminal-1.1.0-x86_64.dmg`** for native Intel Macs.
 
 Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
-Silicon artifact.
+Silicon artifact. The native arm64 and x86_64 builds, desktop smoke and exact read-only
+mounted-DMG smoke pass on their matching hosts with WKWebView identity and complete source
+provenance in the recorded GitHub Actions run; the exact run and artifact hashes are kept
+in the repository audit evidence.
 
-The native arm64 and x86_64 build, desktop smoke and exact read-only mounted-DMG smoke
-passed on their matching hosts with WKWebView identity and complete source provenance in
-GitHub Actions run `34721385803`. Both exact DMGs also passed the synthetic local TP
-creation, partial close, editor/theme and remaining-close lifecycle. DMG SHA-256 values are:
+**New in this pilot release:** the trade journal now records the user-supplied trade date
+and time in Turkey time (minute precision, stored as UTC), explicitly separates a
+still-open entry from an already-closed one, and replaces the Replay row action with a
+working **Edit** surface. Corrections are revisioned: previous values stay in the
+append-only history, completed targets are locked after a partial close, and entry/quantity
+changes reset a local TP/SL plan only before any close evidence exists. Journal stop and
+target edits are applied to the active local plan in the same transaction. Declared
+leverage is journal metadata: price return, position return and margin return stay
+separate and the position P/L is never multiplied by leverage. Open-trade quotes refresh
+automatically and on demand with explicit `LIVE`, `DELAYED` and stale last-known states,
+and the New Trade form is grouped into Trade / Size / Targets / Summary sections with an
+equal-split helper and concrete field errors.
 
-- arm64: `03671ca814ba9299fcf47429cb0c585fbccd550e6201e747c5f2c2e5c32c5e93`;
-- x86_64: `e43e0026c118bff9ed338e9e8560dc3758c64fa9052de83d1a23977e906240c2`.
+**Monetary calculation boundary:** position size, margin and money P/L are produced only
+for an explicitly declared base-unit quantity (`qty_unit=BASE`); provider labels and symbol
+suffixes are price provenance, not contract verification. Unverified instruments stay
+`UNAVAILABLE`, cannot open a local tracking plan, and a user-reported close stores an
+unknown P/L instead of a synthetic zero. Local tracking still requires an exact
+provider/instrument `LIVE` event no older than 60 seconds; Binance/Bybit recent-trade
+feeds qualify, while Yahoo/Stooq/Biquote feeds (including gold) remain display-only when
+event freshness cannot be proven. No qualifying quote means waiting, not an assumed close.
+Local results are gross estimates, never external fills or verified net profit. The app
+must be open and awake.
 
-Mounted executable SHA-256 values are arm64
-`ee5683af6c5571fb3da6797faac50bf5fd0cf7dc1840c360d46a98dd032b05b6` and x86_64
-`9714d539a03dbf4a3eb363ed89ddc4cbeedfaf04af5846c82b7249fd9e65cdff`. Technical JSON/
-manifest evidence remains in the repository and local audit package, not as separate
-Release downloads.
+No live broker order, paid data service, credential, migration or automatic update is
+included. Experimental and disabled surfaces remain `EXPERIMENTAL_DISABLED`; AI has
+no execution authority, and connector secrets remain bounded by the OS keychain.
+Settings' update button only opens this fixed Release page.
 
 The DMGs are ad-hoc trusted-pilot artifacts without Apple Developer ID signing or
 notarization. On first launch, use Finder → right-click → **Open**. This is not a public,
 production or commercial-support release. Pilot instructions:
 [`Trusted macOS pilot instructions`](https://github.com/alikula37/kuantra-terminal/blob/main/docs/release/PILOT-INSTRUCTIONS.md).
 
-**New in this pilot refresh:** editable TP1/TP2/TP3 and SL for long/short records,
-explicit target allocations, and partial/full local tracking closes. New manual records
-enable tracking by default; historical/imported records do not. Local results are gross
-estimates, never external fills or verified net profit. The app must be open and awake.
-Automatic triggers require an exact provider/instrument LIVE event no older than 60 seconds;
-Binance/Bybit recent-trade feeds qualify. Existing Yahoo/Stooq/Biquote feeds (including
-gold) remain display-only for automatic tracking when event freshness cannot be proven.
-No recent qualifying quote means waiting, not an assumed close.
-
-No live broker order, paid data service, credential, migration or automatic update is
-included. Experimental and disabled surfaces remain `EXPERIMENTAL_DISABLED`; AI has
-no execution authority, and connector secrets remain bounded by the OS keychain.
-Settings’ update button only opens this fixed Release page.
+DMG and mounted-executable SHA-256 values for both architectures are recorded from the
+exact downloaded Release artifacts in the repository audit evidence and below before the
+Release is published.
 
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed
 from GitHub on 2026-09-11 and must not be used. The exact canonical product tag is guarded by
-`docs/release/truth-matrix.v1.0.0.json`.
+`docs/release/truth-matrix.v1.1.0.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)

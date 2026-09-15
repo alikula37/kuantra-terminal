@@ -119,7 +119,7 @@ def _source_identity(report: Mapping[str, Any], *, architecture: str, dmg: Path)
     truth = report.get("truth_matrix")
     _require(isinstance(truth, Mapping), f"{architecture} truth-matrix identity is missing")
     _require(truth.get("document_id") == "KTR-001", f"{architecture} truth-matrix document mismatch")
-    _require(truth.get("version") == "1.0.0", f"{architecture} truth-matrix version mismatch")
+    _require(truth.get("version") == __version__, f"{architecture} truth-matrix version mismatch")
     _require(truth.get("product_version") == __version__, f"{architecture} truth-matrix product mismatch")
     _require(truth.get("sha256") == expected_digest, f"{architecture} truth-matrix digest mismatch")
 
@@ -389,9 +389,9 @@ def _prepare_pilot_package(
         },
         "source": common,
         "truth_matrix": {
-            "path": "docs/release/truth-matrix.v1.0.0.json",
+            "path": DEFAULT_MATRIX_PATH.relative_to(ROOT).as_posix(),
             "document_id": "KTR-001",
-            "version": "1.0.0",
+            "version": __version__,
             "sha256": common["truth_matrix_sha256"],
         },
         "distribution": {

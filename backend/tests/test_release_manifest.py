@@ -24,13 +24,13 @@ class TestReleaseManifestAndPackaging:
         with open(notes_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        assert "Kuantra Terminal v1.0.0 — Trusted macOS Pilot" in content
-        assert "Kuantra-Terminal-1.0.0-arm64.dmg" in content
-        assert "Kuantra-Terminal-1.0.0-x86_64.dmg" in content
+        assert "Kuantra Terminal v1.1.0 — Trusted macOS Pilot" in content
+        assert "Kuantra-Terminal-1.1.0-arm64.dmg" in content
+        assert "Kuantra-Terminal-1.1.0-x86_64.dmg" in content
         assert "CURRENT_RELEASE_NOTES:START" in content
         assert "CURRENT_RELEASE_NOTES:END" in content
         assert "Historical release archive (non-current)" in content
-        assert "docs/release/truth-matrix.v1.0.0.json" in content
+        assert "docs/release/truth-matrix.v1.1.0.json" in content
         # Historical notes remain auditable in the repository, but they are not the current
         # release body. The renderer/checker enforce that boundary before publishing.
         assert "v1.2.0-modular" in content
@@ -63,7 +63,7 @@ class TestReleaseManifestAndPackaging:
         assert manifest["version"] == __version__
         assert manifest["product_name"] == "Kuantra Terminal"
         assert manifest["truth_matrix"]["document_id"] == "KTR-001"
-        assert manifest["truth_matrix"]["version"] == "1.0.0"
+        assert manifest["truth_matrix"]["version"] == "1.1.0"
         assert manifest["truth_matrix"]["sha256"] == canonical_matrix_digest(load_matrix())
         assert manifest["total_artifacts"] == 2
         assert len(manifest["artifacts"]) == 2
