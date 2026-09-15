@@ -15,6 +15,17 @@ Read relevant code/tests before implementing. Load an Accepted ADR, local CI pol
 platform runbook or historical package only when needed by the current task. Documents
 describe contracts; implemented behavior still requires inspection and tests.
 
+## Owner standing instruction (2026-09-15)
+
+After every successful bounded development, commit it and update the installed
+application on this Mac — every time, without waiting for a separate request:
+commit the verified change on `main`, push it, build the native arm64 artifact
+from the clean commit, verify its exact hashes, and replace
+`/Applications/Kuantra Terminal.app` while preserving user data (the journal
+database and preferences are never deleted or reset). The built app's local
+runtime status/version and executable hash are reported after the install.
+GitHub Release/tag refreshes remain a separate explicit owner decision.
+
 ## Authority and scope
 
 - Current user instructions take precedence over repository guidance. The product
