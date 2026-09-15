@@ -171,7 +171,14 @@ class PortfolioAnalyticsService:
             for t in closed_trades
             if t.get("r_multiple") is not None
         ]
-        avg_r_multiple = (sum(r_multiples) / len(r_multiples)) if r_multiples else 0.0
+        avg_r_multiple = (sum(r_multiples) / len(r_multiples)) if r_multiples else None
+
+        if unverified_open_positions == 0:
+            open_risk_basis = "COMPLETE"
+        elif unverified_open_positions == len(open_trades):
+            open_risk_basis = "NOT_AVAILABLE"
+        else:
+            open_risk_basis = "PARTIAL"
 
         # 5. Peak-to-Trough Drawdown Calculation
         max_drawdown_usd, max_drawdown_pct = self._calculate_max_drawdown(closed_trades, balance)
@@ -188,11 +195,14 @@ class PortfolioAnalyticsService:
             "open_risk_r": round(open_risk_r, 2),
             "active_positions_count": active_positions_count,
             "unverified_open_positions": unverified_open_positions,
+            "open_risk_basis": open_risk_basis,
             "total_closed_trades": len(closed_trades),
             "unknown_pnl_trades": unknown_pnl_trades,
+            "known_r_trades": len(r_multiples),
             "win_rate": round(win_rate, 2),
             "profit_factor": round(profit_factor, 2),
-            "avg_r_multiple": round(avg_r_multiple, 2),
+            "profit_factor_basis": "INFINITE_NO_LOSS" if profit_factor >= 999.0 else "READY",
+            "avg_r_multiple": round(avg_r_multiple, 2) if avg_r_multiple is not None else None,
             "gross_profit": round(gross_profit, 2),
             "gross_loss": round(gross_loss, 2),
             "max_drawdown_usd": round(max_drawdown_usd, 2),
@@ -358,10 +368,28 @@ class PortfolioAnalyticsService:
             key=lambda t: str(t.get("exit_time") or t.get("entry_time") or "")
         )
 
-        series = []
+        series: List[Dict[str, Any]] = []
         running_equity = balance
         peak_equity = balance
         cumulative_pnl = 0.0
+
+        first_time_str = str(sorted_trades[0].get("exit_time") or sorted_trades[0].get("entry_time") or "")
+        try:
+            first_dt = datetime.fromisoformat(first_time_str.replace("Z", "+00:00"))
+            baseline_ts = int(first_dt.timestamp() * 1000) - 1
+            baseline_date = first_dt.strftime("%Y-%m-%d")
+        except Exception:
+            baseline_ts = today_ts
+            baseline_date = today_str
+        series.append({
+            "timestamp": baseline_ts,
+            "date": baseline_date,
+            "equity": round(balance, 2),
+            "drawdown_pct": 0.0,
+            "trade_pnl": 0.0,
+            "cumulative_pnl": 0.0,
+            "symbol": "INITIAL",
+        })
 
         for t in sorted_trades:
             if t.get("pnl") is None:

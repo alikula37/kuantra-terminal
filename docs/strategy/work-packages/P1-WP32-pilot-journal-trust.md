@@ -445,3 +445,36 @@ pushed) and the Mac's installed application was rebuilt from the clean commit:
   executable matches the CI build, `codesign --verify --deep --strict` passes, launched
   PID `41077`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`. User data
   preserved.
+
+## Round-7: dashboard shows unknown as unknown (no synthetic zeros)
+
+Owner review of the pilot dashboard found four misleading representations. Data
+inspection confirmed them: one closed trade had no R observation (no stop), one
+open position had an unverified quantity unit, drawdown was rendered as `-0.00%`,
+and the equity curve drew a single point without the account baseline.
+
+Fix (unknown is never presented as zero):
+
+- `avg_r_multiple` is now `null` when no closed trade carries an R observation,
+  and the summary exposes `known_r_trades`. The KPI shows `—` with
+  "No R data (no stop recorded)" instead of `+0.00R`; a computed average shows
+  the number of trades it covers.
+- The summary exposes `open_risk_basis` = `COMPLETE | PARTIAL | NOT_AVAILABLE`.
+  When any open position has an unverified unit, the KPI shows `—` with
+  "N position(s) with an unverified unit; risk not calculated" instead of
+  `0.0R ($0.00)`.
+- Maximum drawdown renders `0.00%` without a negative sign for zero.
+- Infinite profit factor (`profit_factor_basis = INFINITE_NO_LOSS`) is labeled
+  "No losses yet" instead of an unexplained `∞`.
+- The equity-curve series starts with an explicit `INITIAL` baseline point at
+  the configured balance, so a one-trade history is readable.
+- Asset breakdown marks `volume_basis = PARTIAL` ("partial volume") when
+  unverified units were excluded from the volume total.
+- The dashboard response validator accepts a null average R instead of rejecting
+  the summary as malformed.
+
+Evidence: `test_portfolio_service.py` **12 passed** (unknown vs zero basis,
+partial/unavailable open risk, missing R); `PortfolioKpiGrid.p1wp33` DOM tests
+**3 passed** (`—` for unknown R/risk, no `-0.00%`, computed R only when known);
+full backend **948 passed / 2 warnings**, frontend **39 files / 207 tests**,
+i18n **989/989/989**, TypeScript clean.

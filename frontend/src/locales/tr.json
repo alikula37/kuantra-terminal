@@ -288,7 +288,11 @@
     "trades_count": "{count} İşlem",
     "profit_loss_ratio": "Kâr / Zarar Oranı",
     "peak_to_trough": "-${amount} (Zirveden Dibe)",
-    "ev_per_trade": "Beklenti / İşlem"
+    "ev_per_trade": "Beklenti / İşlem",
+    "no_losses": "Henüz kayıp yok",
+    "no_r_data": "R verisi yok (stop girilmemiş)",
+    "r_over_trades": "{count} işlemde R",
+    "open_risk_unverified": "{count} pozisyonun birimi doğrulanmadı; risk hesaplanamıyor"
   },
   "equity_curve": {
     "loading": "Kümülatif Kasa Eğrisi Yükleniyor...",
@@ -312,7 +316,8 @@
     "trades_count": "{count} İşlem",
     "win_rate": "%{rate} WR",
     "volume": "Hacim: ${vol}",
-    "instruments_count": "{count} Enstrüman"
+    "instruments_count": "{count} Enstrüman",
+    "partial_volume": "hacim kısmi"
   },
   "open_positions": {
     "loading": "Açık Pozisyonlar Yükleniyor...",

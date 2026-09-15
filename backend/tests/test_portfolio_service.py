@@ -48,7 +48,10 @@ class TestPortfolioAnalyticsService:
             assert summary["today_pnl"] == 0.0
             assert summary["win_rate"] == 0.0
             assert summary["profit_factor"] == 0.0
-            assert summary["avg_r_multiple"] == 0.0
+            assert summary["avg_r_multiple"] is None
+            assert summary["known_r_trades"] == 0
+            assert summary["open_risk_basis"] == "COMPLETE"
+            assert summary["profit_factor_basis"] == "READY"
             assert summary["open_risk_usd"] == 0.0
             assert summary["open_risk_r"] == 0.0
             assert summary["active_positions_count"] == 0
@@ -176,11 +179,44 @@ class TestPortfolioAnalyticsService:
 
             # Check equity curve series points
             curve = service.get_equity_curve_series(initial_balance=100000.0)
-            assert len(curve) == 4
-            assert curve[0]["equity"] == 105000.0
-            assert curve[1]["equity"] == 95000.0
-            assert curve[2]["equity"] == 97000.0
-            assert curve[3]["equity"] == 112000.0
+            assert len(curve) == 5
+            assert curve[0]["symbol"] == "INITIAL"
+            assert curve[0]["equity"] == 100000.0
+            assert curve[0]["cumulative_pnl"] == 0.0
+            assert curve[1]["equity"] == 105000.0
+            assert curve[2]["equity"] == 95000.0
+            assert curve[3]["equity"] == 97000.0
+            assert curve[4]["equity"] == 112000.0
+
+    def test_open_risk_and_r_basis_distinguish_unknown_from_zero(self):
+        """Unverified units and missing R data must be reported as unknown."""
+        service = PortfolioAnalyticsService(default_initial_balance=100000.0)
+        mock_trades = [
+            {"symbol": "BTCUSDT", "status": "OPEN", "side": "BUY", "entry_price": 100.0,
+             "stop_loss": 95.0, "qty": 2.0, "qty_unit": "BASE"},
+            {"symbol": "XAUUSD", "status": "OPEN", "side": "BUY", "entry_price": 2000.0,
+             "stop_loss": None, "qty": 1.0, "qty_unit": "UNKNOWN"},
+            {"symbol": "ETHUSDT", "status": "CLOSED", "pnl": 10.0, "r_multiple": None,
+             "qty_unit": "BASE", "exit_time": "2026-08-28T16:00:00Z"},
+        ]
+
+        with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
+            summary = service.get_portfolio_summary()
+
+        assert summary["active_positions_count"] == 2
+        assert summary["unverified_open_positions"] == 1
+        assert summary["open_risk_basis"] == "PARTIAL"
+        assert summary["known_r_trades"] == 0
+        assert summary["avg_r_multiple"] is None
+        assert summary["unknown_pnl_trades"] == 0
+
+        all_unverified = [mock_trades[1], {"symbol": "GOLD", "status": "OPEN", "side": "BUY",
+                                           "entry_price": 2000.0, "qty": 1.0, "qty_unit": "UNKNOWN"}]
+        with patch.object(trade_read_adapter, "list_trades", return_value=all_unverified):
+            summary = service.get_portfolio_summary()
+        assert summary["open_risk_basis"] == "NOT_AVAILABLE"
+        assert summary["open_risk_usd"] == 0.0
+        assert summary["open_risk_r"] == 0.0
 
     def test_daily_pnl_heatmap_aggregation(self):
         """Validates daily aggregation, win rate, and intensity normalization for calendar heatmap."""
@@ -265,7 +301,10 @@ class TestPortfolioAnalyticsService:
             assert summary["total_closed_trades"] == 0
             assert summary["win_rate"] == 0.0
             assert summary["profit_factor"] == 0.0
-            assert summary["avg_r_multiple"] == 0.0
+            assert summary["avg_r_multiple"] is None
+            assert summary["known_r_trades"] == 0
+            assert summary["open_risk_basis"] == "COMPLETE"
+            assert summary["profit_factor_basis"] == "READY"
             assert summary["max_drawdown_usd"] == 0.0
             assert summary["max_drawdown_pct"] == 0.0
 

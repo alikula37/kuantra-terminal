@@ -48,9 +48,10 @@ function isPortfolioSummaryData(value: unknown): value is PortfolioSummaryData {
   const numericFields = [
     "initial_balance", "total_equity", "net_pnl", "net_pnl_pct", "today_pnl", "today_pnl_pct",
     "open_risk_usd", "open_risk_r", "active_positions_count", "total_closed_trades", "win_rate",
-    "profit_factor", "avg_r_multiple", "max_drawdown_usd", "max_drawdown_pct",
+    "profit_factor", "max_drawdown_usd", "max_drawdown_pct",
   ];
-  return numericFields.every((field) => isFiniteNumber(candidate[field]))
+  const avgRKnown = candidate["avg_r_multiple"] === null || isFiniteNumber(candidate["avg_r_multiple"]);
+  return avgRKnown && numericFields.every((field) => isFiniteNumber(candidate[field]))
     && !!counts && typeof counts === "object"
     && ["wins", "losses", "total"].every((field) => isFiniteNumber((counts as Record<string, unknown>)[field]));
 }

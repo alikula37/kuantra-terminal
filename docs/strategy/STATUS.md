@@ -299,6 +299,17 @@ arm64 local CI with `COMPLETE` provenance and a clean tree (backend **947**, fro
 was replaced (installed executable `38a59ad1…`, runtime
 `{"status":"online","version":"1.1.0"}`, user data preserved).
 
+**P1-WP32 round-7 dashboard truth (2026-09-15):** Owner review found misleading
+dashboard values. Average R is `null` when no closed trade has an R observation (KPI shows
+"—" + "no R data", not `+0.00R`); open risk carries an explicit
+`open_risk_basis = COMPLETE|PARTIAL|NOT_AVAILABLE` and shows "risk not calculated" for
+unverified units instead of `0.0R ($0.00)`; drawdown renders `0.00%` without a negative
+zero; infinite profit factor is labeled "No losses yet"; the equity curve starts with an
+explicit INITIAL baseline point; asset breakdown marks partial volume; and the dashboard
+validator accepts a null average R. Evidence: `test_portfolio_service.py` **12 passed**,
+`PortfolioKpiGrid.p1wp33` DOM tests **3 passed**, full backend **948 passed / 2 warnings**,
+frontend **39 files / 207 tests**, i18n **989/989/989**.
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel

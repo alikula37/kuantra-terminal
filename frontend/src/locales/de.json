@@ -288,7 +288,11 @@
     "trades_count": "{count} Trades",
     "profit_loss_ratio": "Gewinn / Verlust",
     "peak_to_trough": "-${amount} (Peak-to-Trough)",
-    "ev_per_trade": "Erwartung / Trade"
+    "ev_per_trade": "Erwartung / Trade",
+    "no_losses": "Noch keine Verluste",
+    "no_r_data": "Keine R-Daten (kein Stop erfasst)",
+    "r_over_trades": "R über {count} Trades",
+    "open_risk_unverified": "{count} Position(en) mit unverifizierter Einheit; Risiko nicht berechnet"
   },
   "equity_curve": {
     "loading": "Kumulative Kapitalkurve wird geladen...",
@@ -312,7 +316,8 @@
     "trades_count": "{count} Trades",
     "win_rate": "{rate}% WR",
     "volume": "Vol: ${vol}",
-    "instruments_count": "{count} Instrumente"
+    "instruments_count": "{count} Instrumente",
+    "partial_volume": "Volumen teilweise"
   },
   "open_positions": {
     "loading": "Offene Positionen werden geladen...",

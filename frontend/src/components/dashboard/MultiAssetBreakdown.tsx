@@ -12,6 +12,9 @@ export interface AssetBreakdownItem {
   open_positions: number;
   win_rate: number;
   total_volume: number;
+  unknown_pnl_trades?: number;
+  unverified_unit_trades?: number;
+  volume_basis?: "READY" | "PARTIAL";
 }
 
 interface MultiAssetBreakdownProps {
@@ -103,7 +106,12 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
               </div>
 
               <div className="flex items-center justify-between text-[9px] text-slate-500 mt-1">
-                <span>{t("breakdown.volume", { vol: item.total_volume.toLocaleString("en-US", { maximumFractionDigits: 0 }) })}</span>
+                <span>
+                  {t("breakdown.volume", { vol: item.total_volume.toLocaleString("en-US", { maximumFractionDigits: 0 }) })}
+                  {item.volume_basis === "PARTIAL" && (
+                    <span className="ml-1 text-amber-300">· {t("breakdown.partial_volume")}</span>
+                  )}
+                </span>
                 {item.open_positions > 0 && (
                   <span className="text-amber-400 font-semibold">{item.open_positions} {t("header.positions")}</span>
                 )}

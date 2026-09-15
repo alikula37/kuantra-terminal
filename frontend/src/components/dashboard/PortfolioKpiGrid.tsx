@@ -34,6 +34,9 @@ export interface PortfolioSummaryData {
   max_drawdown_pct: number;
   unknown_pnl_trades?: number;
   unverified_open_positions?: number;
+  known_r_trades?: number;
+  open_risk_basis?: "COMPLETE" | "PARTIAL" | "NOT_AVAILABLE";
+  profit_factor_basis?: "READY" | "INFINITE_NO_LOSS";
 }
 
 interface PortfolioKpiGridProps {
@@ -60,7 +63,12 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
   }
 
   const isNetPnlPositive = summary.net_pnl >= 0;
-  const isAvgRPositive = summary.avg_r_multiple >= 0;
+  const knownRTrades = summary.known_r_trades ?? 0;
+  const avgR = knownRTrades > 0 && summary.avg_r_multiple != null ? summary.avg_r_multiple : null;
+  const isAvgRPositive = avgR != null && avgR >= 0;
+  const openRiskBasis = summary.open_risk_basis ?? "COMPLETE";
+  const drawdownPct = Math.abs(summary.max_drawdown_pct) < 0.005 ? 0 : summary.max_drawdown_pct;
+  const infiniteProfitFactor = (summary.profit_factor_basis ?? (summary.profit_factor >= 999 ? "INFINITE_NO_LOSS" : "READY")) === "INFINITE_NO_LOSS";
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 select-none font-mono">
@@ -122,10 +130,10 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
         </div>
         <div className="mt-1">
           <div className="text-base font-bold text-emerald-400">
-            {summary.profit_factor >= 999 ? "∞" : summary.profit_factor.toFixed(2)}
+            {infiniteProfitFactor ? "∞" : summary.profit_factor.toFixed(2)}
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            {t("portfolio.profit_loss_ratio")}
+            {infiniteProfitFactor ? t("portfolio.no_losses") : t("portfolio.profit_loss_ratio")}
           </div>
         </div>
       </div>
@@ -140,7 +148,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
         </div>
         <div className="mt-1">
           <div className="text-base font-bold text-loss">
-            -{summary.max_drawdown_pct.toFixed(2)}%
+            {drawdownPct === 0 ? "0.00%" : `-${Math.abs(drawdownPct).toFixed(2)}%`}
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
             {t("portfolio.peak_to_trough", { amount: summary.max_drawdown_usd.toFixed(2) })}
@@ -157,11 +165,11 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
           <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
         </div>
         <div className="mt-1">
-          <div className={`text-base font-bold ${isAvgRPositive ? "text-purple-300" : "text-loss"}`}>
-            {isAvgRPositive ? "+" : ""}{summary.avg_r_multiple.toFixed(2)}R
+          <div className={`text-base font-bold ${avgR == null ? "text-slate-400" : isAvgRPositive ? "text-purple-300" : "text-loss"}`}>
+            {avgR == null ? "—" : `${isAvgRPositive ? "+" : ""}${avgR.toFixed(2)}R`}
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            {t("portfolio.ev_per_trade")}
+            {avgR == null ? t("portfolio.no_r_data") : t("portfolio.r_over_trades", { count: knownRTrades })}
           </div>
         </div>
       </div>
@@ -175,11 +183,13 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
           <Zap className="w-3.5 h-3.5 text-amber-400" />
         </div>
         <div className="mt-1">
-          <div className="text-base font-bold text-amber-400">
-            {summary.open_risk_r.toFixed(1)}R
+          <div className={`text-base font-bold ${openRiskBasis === "COMPLETE" ? "text-amber-400" : "text-slate-400"}`}>
+            {openRiskBasis === "COMPLETE" ? `${summary.open_risk_r.toFixed(1)}R` : "—"}
           </div>
           <div className="text-[10px] text-slate-400 mt-0.5">
-            ${summary.open_risk_usd.toFixed(2)} ({summary.active_positions_count} {t("header.positions")})
+            {openRiskBasis === "COMPLETE"
+              ? `$${summary.open_risk_usd.toFixed(2)} (${summary.active_positions_count} ${t("header.positions")})`
+              : t("portfolio.open_risk_unverified", { count: summary.unverified_open_positions ?? summary.active_positions_count })}
           </div>
         </div>
       </div>

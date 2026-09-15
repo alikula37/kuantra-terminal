@@ -288,7 +288,11 @@
     "trades_count": "{count} Trades",
     "profit_loss_ratio": "Profit / Loss",
     "peak_to_trough": "-${amount} (Peak-to-Trough)",
-    "ev_per_trade": "EV / Trade"
+    "ev_per_trade": "EV / Trade",
+    "no_losses": "No losses yet",
+    "no_r_data": "No R data (no stop recorded)",
+    "r_over_trades": "R over {count} trades",
+    "open_risk_unverified": "{count} position(s) with an unverified unit; risk not calculated"
   },
   "equity_curve": {
     "loading": "Loading Cumulative Equity Curve...",
@@ -312,7 +316,8 @@
     "trades_count": "{count} Trades",
     "win_rate": "{rate}% WR",
     "volume": "Vol: ${vol}",
-    "instruments_count": "{count} Instruments"
+    "instruments_count": "{count} Instruments",
+    "partial_volume": "partial volume"
   },
   "open_positions": {
     "loading": "Loading Open Positions...",
