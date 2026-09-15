@@ -9,7 +9,7 @@ export interface TrackingState {
   entry_price: string; initial_qty: string; remaining_qty: string; gross_pnl: string;
   targets: Array<TargetDraft & { id: string }>; closures: TrackingClosure[];
   stop_loss: string | null; basis: "LOCAL_ESTIMATE"; external_status?: string;
-  tracking_status?: string;
+  tracking_status?: string; armed_at?: string; unit_status?: "BASE_UNIT" | "UNVERIFIED";
   last_quote?: { price: string; observed_at: string } | null;
 }
 

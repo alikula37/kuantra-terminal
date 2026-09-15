@@ -8,7 +8,8 @@ async def test_shared_poll_and_disable(setup):
     driver, service, _ = setup
     service.edit("t1", plan(), expected_revision=0)
     driver.record_trade_with_evidence(
-        {"id": "t2", "symbol": "BTCUSDT", "side": "BUY", "entry_price": 100, "qty": 2},
+        {"id": "t2", "symbol": "BTCUSDT", "side": "BUY", "entry_price": 100, "qty": 2,
+         "qty_unit": "BASE"},
         event_type="IntentRecorded", idempotency_key="create2", local_tracking_plan=plan())
     calls = []
     async def fetch(source, symbol):

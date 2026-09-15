@@ -20,6 +20,10 @@ class SyncPipeline:
         provenance_extra: Optional[Dict[str, Any]] = None,
         causation_id: Optional[str] = None,
         local_tracking_plan: Optional[Dict[str, Any]] = None,
+        local_tracking_reset: bool = False,
+        local_tracking_expected_revision: Optional[int] = None,
+        occurred_at: Optional[str] = None,
+        expected_revision: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Persist a journal mutation and evidence event before OLAP projection."""
         payload = dict(trade_data)
@@ -49,7 +53,7 @@ class SyncPipeline:
                 if value is not None:
                     provenance[str(key)] = value
 
-        occurred_at = payload.get("exit_time") or payload.get("entry_time")
+        occurred_at = occurred_at or payload.get("exit_time") or payload.get("entry_time")
         saved = sqlite_driver.record_trade_with_evidence(
             payload,
             event_type=event_type,
@@ -58,6 +62,9 @@ class SyncPipeline:
             causation_id=causation_id,
             provenance=provenance,
             local_tracking_plan=local_tracking_plan,
+            local_tracking_reset=local_tracking_reset,
+            local_tracking_expected_revision=local_tracking_expected_revision,
+            expected_revision=expected_revision,
         )
         if getattr(duckdb_driver, "is_available", False):
             duckdb_driver.sync_trade(saved)

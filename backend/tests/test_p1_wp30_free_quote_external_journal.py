@@ -223,6 +223,7 @@ def test_spot_position_survives_reopen_and_evidence_rebuild(monkeypatch, tmp_pat
     client = TestClient(create_app())
     result = client.post("/api/v1/trades", json={
         "symbol": "LINKUSDT", "side": "BUY", "position_type": "SPOT", "entry_price": 10, "qty": 2,
+        "qty_unit": "BASE",
     })
     assert result.status_code == 200
     saved = result.json()

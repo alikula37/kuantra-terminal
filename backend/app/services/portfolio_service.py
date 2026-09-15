@@ -8,6 +8,7 @@ PnL Calendar Heatmap, and Cumulative Equity Curve.
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from app.core.position_math import instrument_unit_basis
 from app.db.sqlite_driver import sqlite_driver
 from app.services.trade_read_adapter import trade_read_adapter
 
@@ -83,15 +84,21 @@ class PortfolioAnalyticsService:
         """
         Computes holistic portfolio health, equity metrics, and open risk exposures.
         Guarantees zero divide-by-zero errors even on empty or initial states.
+
+        A missing PnL (for example an unknown contract size) is never summed as
+        a synthetic zero; those trades are counted separately and excluded from
+        monetary aggregates.
         """
         balance = initial_balance if initial_balance is not None else self.get_configured_initial_balance()
         trades = trade_read_adapter.list_trades(limit=100000)
 
         closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
         open_trades = [t for t in trades if str(t.get("status", "")).upper() == "OPEN"]
+        known_closed = [t for t in closed_trades if t.get("pnl") is not None]
+        unknown_pnl_trades = len(closed_trades) - len(known_closed)
 
-        # 1. Realized Net PnL & Total Equity
-        net_pnl = sum(float(t.get("pnl") or 0.0) for t in closed_trades)
+        # 1. Realized Net PnL & Total Equity (known results only)
+        net_pnl = sum(float(t["pnl"]) for t in known_closed)
         total_equity = balance + net_pnl
         net_pnl_pct = (net_pnl / balance * 100.0) if balance > 0 else 0.0
 
@@ -101,24 +108,34 @@ class PortfolioAnalyticsService:
             t for t in closed_trades
             if (str(t.get("exit_time") or t.get("entry_time") or "")).startswith(today_utc)
         ]
-        today_pnl = sum(float(t.get("pnl") or 0.0) for t in today_closed)
+        today_known = [t for t in today_closed if t.get("pnl") is not None]
+        today_pnl = sum(float(t["pnl"]) for t in today_known)
         today_pnl_pct = (today_pnl / balance * 100.0) if balance > 0 else 0.0
-        today_wins = len([t for t in today_closed if float(t.get("pnl") or 0.0) > 0])
-        today_losses = len([t for t in today_closed if float(t.get("pnl") or 0.0) < 0])
+        today_wins = len([t for t in today_known if float(t["pnl"]) > 0])
+        today_losses = len([t for t in today_known if float(t["pnl"]) < 0])
         today_trades_count = {
             "wins": today_wins,
             "losses": today_losses,
-            "total": len(today_closed)
+            "total": len(today_closed),
+            "unknown_pnl": len(today_closed) - len(today_known),
         }
 
         # 3. Open Positions Risk Exposure Calculation
         open_risk_usd = 0.0
         open_risk_r = 0.0
+        unverified_open_positions = 0
         for t in open_trades:
             entry = float(t.get("entry_price") or 0.0)
             qty = float(t.get("qty") or 0.0)
             side = str(t.get("side", "BUY")).upper()
             sl = float(t["stop_loss"]) if t.get("stop_loss") is not None else None
+            verified_unit = instrument_unit_basis(
+                t.get("symbol"),
+                qty_unit=t.get("qty_unit"),
+            )["contract_size"] == "BASE_UNIT"
+            if not verified_unit:
+                unverified_open_positions += 1
+                continue
 
             if sl is not None and sl > 0:
                 if side in ("BUY", "LONG"):
@@ -136,12 +153,12 @@ class PortfolioAnalyticsService:
         active_positions_count = len(open_trades)
 
         # 4. Win Rate, Profit Factor, and R-Multiple Math
-        win_trades = [t for t in closed_trades if float(t.get("pnl") or 0.0) > 0]
-        loss_trades = [t for t in closed_trades if float(t.get("pnl") or 0.0) < 0]
-        win_rate = (len(win_trades) / len(closed_trades) * 100.0) if closed_trades else 0.0
+        win_trades = [t for t in known_closed if float(t["pnl"]) > 0]
+        loss_trades = [t for t in known_closed if float(t["pnl"]) < 0]
+        win_rate = (len(win_trades) / len(known_closed) * 100.0) if known_closed else 0.0
 
-        gross_profit = sum(float(t.get("pnl") or 0.0) for t in win_trades)
-        gross_loss = abs(sum(float(t.get("pnl") or 0.0) for t in loss_trades))
+        gross_profit = sum(float(t["pnl"]) for t in win_trades)
+        gross_loss = abs(sum(float(t["pnl"]) for t in loss_trades))
         if gross_loss > 0:
             profit_factor = gross_profit / gross_loss
         elif gross_profit > 0:
@@ -170,7 +187,9 @@ class PortfolioAnalyticsService:
             "open_risk_usd": round(open_risk_usd, 2),
             "open_risk_r": round(open_risk_r, 2),
             "active_positions_count": active_positions_count,
+            "unverified_open_positions": unverified_open_positions,
             "total_closed_trades": len(closed_trades),
+            "unknown_pnl_trades": unknown_pnl_trades,
             "win_rate": round(win_rate, 2),
             "profit_factor": round(profit_factor, 2),
             "avg_r_multiple": round(avg_r_multiple, 2),
@@ -197,7 +216,10 @@ class PortfolioAnalyticsService:
         max_dd_pct = 0.0
 
         for t in sorted_trades:
-            pnl = float(t.get("pnl") or 0.0)
+            if t.get("pnl") is None:
+                # An unknown result cannot move a monetary equity curve.
+                continue
+            pnl = float(t["pnl"])
             running_equity += pnl
             if running_equity > peak_equity:
                 peak_equity = running_equity
@@ -220,9 +242,9 @@ class PortfolioAnalyticsService:
         grouped: Dict[str, Dict[str, Any]] = {}
 
         total_portfolio_pnl = sum(
-            float(t.get("pnl") or 0.0)
+            float(t["pnl"])
             for t in trades
-            if str(t.get("status", "")).upper() == "CLOSED"
+            if str(t.get("status", "")).upper() == "CLOSED" and t.get("pnl") is not None
         )
 
         for t in trades:
@@ -246,18 +268,29 @@ class PortfolioAnalyticsService:
                     "open_positions": 0,
                     "wins": 0,
                     "losses": 0,
+                    "unknown_pnl_trades": 0,
+                    "unverified_unit_trades": 0,
                     "total_volume": 0.0
                 }
 
             entry_price = float(t.get("entry_price") or 0.0)
             qty = float(t.get("qty") or 0.0)
-            volume = entry_price * qty
-            grouped[raw_sym]["total_volume"] += volume
+            verified_unit = instrument_unit_basis(
+                raw_sym,
+                qty_unit=t.get("qty_unit"),
+            )["contract_size"] == "BASE_UNIT"
+            if verified_unit:
+                grouped[raw_sym]["total_volume"] += entry_price * qty
+            else:
+                grouped[raw_sym]["unverified_unit_trades"] += 1
 
             if status == "CLOSED":
-                pnl = float(t.get("pnl") or 0.0)
-                grouped[raw_sym]["net_pnl"] += pnl
                 grouped[raw_sym]["closed_trades"] += 1
+                if t.get("pnl") is None:
+                    grouped[raw_sym]["unknown_pnl_trades"] += 1
+                    continue
+                pnl = float(t["pnl"])
+                grouped[raw_sym]["net_pnl"] += pnl
                 if pnl > 0:
                     grouped[raw_sym]["wins"] += 1
                 elif pnl < 0:
@@ -268,8 +301,9 @@ class PortfolioAnalyticsService:
         results = []
         for sym, data in grouped.items():
             closed_cnt = data["closed_trades"]
+            known_cnt = closed_cnt - data["unknown_pnl_trades"]
             total_cnt = closed_cnt + data["open_positions"]
-            win_rate = (data["wins"] / closed_cnt * 100.0) if closed_cnt > 0 else 0.0
+            win_rate = (data["wins"] / known_cnt * 100.0) if known_cnt > 0 else 0.0
             pnl_share_pct = (
                 (data["net_pnl"] / abs(total_portfolio_pnl) * 100.0)
                 if total_portfolio_pnl != 0
@@ -284,6 +318,9 @@ class PortfolioAnalyticsService:
                 "trade_count": total_cnt,
                 "closed_count": closed_cnt,
                 "open_positions": data["open_positions"],
+                "unknown_pnl_trades": data["unknown_pnl_trades"],
+                "unverified_unit_trades": data["unverified_unit_trades"],
+                "volume_basis": "PARTIAL" if data["unverified_unit_trades"] else "READY",
                 "win_rate": round(win_rate, 2),
                 "total_volume": round(data["total_volume"], 2)
             })
@@ -327,7 +364,11 @@ class PortfolioAnalyticsService:
         cumulative_pnl = 0.0
 
         for t in sorted_trades:
-            pnl = float(t.get("pnl") or 0.0)
+            if t.get("pnl") is None:
+                # Unknown monetary results do not create an equity/drawdown
+                # point; they are surfaced through the summary's unknown count.
+                continue
+            pnl = float(t["pnl"])
             cumulative_pnl += pnl
             running_equity = balance + cumulative_pnl
 
@@ -370,6 +411,8 @@ class PortfolioAnalyticsService:
 
         daily_groups: Dict[str, Dict[str, Any]] = {}
         for t in closed_trades:
+            if t.get("pnl") is None:
+                continue
             time_str = str(t.get("exit_time") or t.get("entry_time") or "")
             try:
                 dt = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
@@ -386,7 +429,7 @@ class PortfolioAnalyticsService:
                     "losses": 0
                 }
 
-            pnl = float(t.get("pnl") or 0.0)
+            pnl = float(t["pnl"])
             daily_groups[date_str]["pnl"] += pnl
             daily_groups[date_str]["trades_count"] += 1
             if pnl > 0:

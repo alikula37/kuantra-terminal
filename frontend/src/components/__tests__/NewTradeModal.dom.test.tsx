@@ -88,6 +88,8 @@ it("creates a three-target local plan with explicit allocations and enabled defa
   mocks.apiFetch.mockResolvedValue(response(savedTrade));
   await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
   await act(async () => setInputValue(host.querySelector('input[type=number]') as HTMLInputElement, "100"));
+  await act(async () => setInputValue(host.querySelectorAll('input[type=number]')[1] as HTMLInputElement, "1"));
+  await act(async () => (host.querySelector("[data-testid=new-trade-qty-unit-base]") as HTMLInputElement).click());
   for (let i = 1; i <= 3; i++) {
     if (i > 1) await act(async () => (Array.from(host.querySelectorAll("button")).find(b => b.textContent === "tracking.add") as HTMLButtonElement).click());
     await act(async () => {
@@ -182,6 +184,7 @@ it("uses a free quote only when the exact quote is available and records the ret
   expect((host.querySelectorAll("input[type=number]")[0] as HTMLInputElement).value).toBe("123.45");
   expect(host.querySelector("[data-testid=trade-quote-status]")?.textContent).toContain("order_ticket.quote_status:LIVE");
 
+  await act(async () => setInputValue(host.querySelectorAll("input[type=number]")[1] as HTMLInputElement, "1"));
   await act(async () => (host.querySelector("button[type=submit]") as HTMLButtonElement).click());
   await flush();
 
@@ -223,6 +226,7 @@ it.each([['order_ticket.side_spot', 'SPOT', 'BUY'], ['order_ticket.side_buy', 'L
     const button = Array.from(host.querySelectorAll("button")).find((element) => element.textContent === label)!;
     await act(async () => button.click());
     await act(async () => setInputValue(host.querySelector('input[type="number"]') as HTMLInputElement, "100"));
+    await act(async () => setInputValue(host.querySelectorAll('input[type="number"]')[1] as HTMLInputElement, "1"));
     await act(async () => (host.querySelector('button[type="submit"]') as HTMLButtonElement).click());
     await flush();
     expect(payload).toMatchObject({ position_type: positionType, side, record_mode: "EXTERNAL" });
@@ -385,6 +389,7 @@ it("requires an explicit simulation choice and still posts only to the journal e
 
   const numberInputs = host.querySelectorAll("input[type=number]");
   await act(async () => setInputValue(numberInputs[0] as HTMLInputElement, "100"));
+  await act(async () => setInputValue(numberInputs[1] as HTMLInputElement, "1"));
   await act(async () => (host.querySelector("button[type=submit]") as HTMLButtonElement).click());
   await flush();
 

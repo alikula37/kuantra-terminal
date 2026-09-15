@@ -137,11 +137,11 @@ class TestPortfolioAnalyticsService:
         service = PortfolioAnalyticsService(default_initial_balance=100000.0)
         mock_trades = [
             # Long BTC: Entry 65,000, SL 64,000, Qty 0.5 -> Risk = 1,000 * 0.5 = 500 USD
-            {"symbol": "BTCUSDT", "status": "OPEN", "side": "BUY", "entry_price": 65000.0, "stop_loss": 64000.0, "qty": 0.5},
+            {"symbol": "BTCUSDT", "status": "OPEN", "side": "BUY", "entry_price": 65000.0, "stop_loss": 64000.0, "qty": 0.5, "qty_unit": "BASE"},
             # Short ETH: Entry 3,500, SL 3,600, Qty 2.0 -> Risk = 100 * 2.0 = 200 USD
-            {"symbol": "ETHUSDT", "status": "OPEN", "side": "SELL", "entry_price": 3500.0, "stop_loss": 3600.0, "qty": 2.0},
+            {"symbol": "ETHUSDT", "status": "OPEN", "side": "SELL", "entry_price": 3500.0, "stop_loss": 3600.0, "qty": 2.0, "qty_unit": "BASE"},
             # Unhedged SOL (No SL): Entry 150, Qty 10.0 -> Risk = 1,500 * 0.02 = 30 USD
-            {"symbol": "SOLUSDT", "status": "OPEN", "side": "BUY", "entry_price": 150.0, "stop_loss": None, "qty": 10.0}
+            {"symbol": "SOLUSDT", "status": "OPEN", "side": "BUY", "entry_price": 150.0, "stop_loss": None, "qty": 10.0, "qty_unit": "BASE"}
         ]
 
         with patch.object(trade_read_adapter, "list_trades", return_value=mock_trades):
@@ -257,7 +257,8 @@ class TestPortfolioAnalyticsService:
             assert summary["net_pnl_pct"] == 0.0
             assert summary["today_pnl"] == 0.0
             assert summary["today_pnl_pct"] == 0.0
-            assert summary["today_trades_count"] == {"wins": 0, "losses": 0, "total": 0}
+            assert summary["today_trades_count"] == {"wins": 0, "losses": 0, "total": 0, "unknown_pnl": 0}
+            assert summary["unknown_pnl_trades"] == 0
             assert summary["open_risk_usd"] == 0.0
             assert summary["open_risk_r"] == 0.0
             assert summary["active_positions_count"] == 0

@@ -19,6 +19,10 @@ class SQLiteOperationResourceLimit(RuntimeError):
     """A cooperative resource check rejected an operation."""
 
 
+class SQLiteRevisionConflict(RuntimeError):
+    """An optimistic revision check rejected a stale trade mutation."""
+
+
 class SQLiteDriver:
     """OLTP SQLite Database Driver configured with WAL mode and robust schema."""
 
@@ -76,6 +80,12 @@ class SQLiteDriver:
                     price_status TEXT NOT NULL DEFAULT 'UNAVAILABLE',
                     price_observed_at TEXT,
                     price_origin TEXT NOT NULL DEFAULT 'UNKNOWN',
+                    leverage REAL,
+                    revision INTEGER NOT NULL DEFAULT 1,
+                    entry_time_source TEXT NOT NULL DEFAULT 'UNKNOWN',
+                    close_source TEXT,
+                    tracking_started_at TEXT,
+                    qty_unit TEXT NOT NULL DEFAULT 'UNKNOWN',
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
@@ -217,6 +227,17 @@ class SQLiteDriver:
             "price_status": "TEXT NOT NULL DEFAULT 'UNAVAILABLE'",
             "price_observed_at": "TEXT",
             "price_origin": "TEXT NOT NULL DEFAULT 'UNKNOWN'",
+            # Journal trust fields are additive.  Missing values stay explicit:
+            # an existing trade never gains a declared leverage, a user-supplied
+            # time source or a close source it did not have.
+            "leverage": "REAL",
+            "revision": "INTEGER NOT NULL DEFAULT 1",
+            "entry_time_source": "TEXT NOT NULL DEFAULT 'UNKNOWN'",
+            "close_source": "TEXT",
+            "tracking_started_at": "TEXT",
+            # An explicit quantity-unit contract is the only journal-side way to
+            # establish base-unit math without a provider-confirmed identity.
+            "qty_unit": "TEXT NOT NULL DEFAULT 'UNKNOWN'",
             "created_at": "TEXT DEFAULT ''",
             "updated_at": "TEXT DEFAULT ''",
         }
@@ -238,7 +259,8 @@ class SQLiteDriver:
         "stop_loss", "take_profit", "entry_time", "exit_time", "status", "pnl",
         "r_multiple", "commission", "notes", "record_mode", "execution_venue",
         "price_source", "price_source_symbol", "price_status", "price_observed_at",
-        "price_origin", "position_type",
+        "price_origin", "position_type", "leverage", "revision", "entry_time_source",
+        "close_source", "tracking_started_at", "qty_unit",
     )
 
     @staticmethod
@@ -258,7 +280,7 @@ class SQLiteDriver:
             "entry_time": trade.get("entry_time") or now,
             "exit_time": trade.get("exit_time"),
             "status": str(trade.get("status", "OPEN")).upper(),
-            "pnl": float(trade.get("pnl", 0.0)),
+            "pnl": float(trade["pnl"]) if trade.get("pnl") is not None else None,
             "r_multiple": float(trade["r_multiple"]) if trade.get("r_multiple") is not None else None,
             "commission": float(trade.get("commission", 0.0)),
             "notes": trade.get("notes", ""),
@@ -270,6 +292,12 @@ class SQLiteDriver:
             "price_status": str(trade.get("price_status", "UNAVAILABLE")).upper(),
             "price_observed_at": trade.get("price_observed_at"),
             "price_origin": str(trade.get("price_origin", "UNKNOWN")).upper(),
+            "leverage": float(trade["leverage"]) if trade.get("leverage") is not None else None,
+            "revision": int(trade.get("revision", 1) or 1),
+            "entry_time_source": str(trade.get("entry_time_source", "UNKNOWN")).upper(),
+            "close_source": str(trade["close_source"]).upper() if trade.get("close_source") else None,
+            "tracking_started_at": trade.get("tracking_started_at"),
+            "qty_unit": str(trade.get("qty_unit", "UNKNOWN")).upper(),
             "created_at": trade.get("created_at") or now,
             "updated_at": trade.get("updated_at") or now,
         }
@@ -282,8 +310,9 @@ class SQLiteDriver:
                     stop_loss, take_profit, entry_time, exit_time,
                     status, pnl, r_multiple, commission, notes, record_mode,
                     execution_venue, price_source, price_source_symbol, price_status,
-                    price_observed_at, price_origin, created_at, updated_at, position_type
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    price_observed_at, price_origin, position_type, leverage, revision,
+                    entry_time_source, close_source, tracking_started_at, qty_unit, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     symbol = excluded.symbol,
                     side = excluded.side,
@@ -307,13 +336,20 @@ class SQLiteDriver:
                     price_status = excluded.price_status,
                     price_observed_at = excluded.price_observed_at,
                     price_origin = excluded.price_origin,
+                    leverage = excluded.leverage,
+                    revision = excluded.revision,
+                    entry_time_source = excluded.entry_time_source,
+                    close_source = excluded.close_source,
+                    tracking_started_at = excluded.tracking_started_at,
+                    qty_unit = excluded.qty_unit,
                     updated_at = excluded.updated_at
             """, tuple(trade[field] for field in (
                 "id", "symbol", "side", "entry_price", "exit_price", "qty",
                 "stop_loss", "take_profit", "entry_time", "exit_time", "status",
                 "pnl", "r_multiple", "commission", "notes", "record_mode",
                 "execution_venue", "price_source", "price_source_symbol", "price_status",
-                "price_observed_at", "price_origin", "created_at", "updated_at", "position_type",
+                "price_observed_at", "price_origin", "position_type", "leverage", "revision",
+                "entry_time_source", "close_source", "tracking_started_at", "qty_unit", "created_at", "updated_at",
             )))
 
     def insert_trade(self, trade: Dict[str, Any]) -> Dict[str, Any]:
@@ -339,6 +375,9 @@ class SQLiteDriver:
         event_id: Optional[str] = None,
         resource_check: Optional[Callable[[str], None]] = None,
         local_tracking_plan: Optional[Dict[str, Any]] = None,
+        local_tracking_reset: bool = False,
+        local_tracking_expected_revision: Optional[int] = None,
+        expected_revision: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Persist a journal mutation and its evidence event atomically.
 
@@ -368,6 +407,14 @@ class SQLiteDriver:
             existing = conn.execute(
                 "SELECT * FROM trades WHERE id = ?", (resolved_id,)
             ).fetchone()
+            if (
+                expected_revision is not None
+                and existing is not None
+                and int(existing["revision"] or 1) != int(expected_revision)
+            ):
+                raise SQLiteRevisionConflict(
+                    "Trade was changed by another edit; reload before saving"
+                )
             if existing is not None:
                 merged = dict(existing)
                 merged.update({key: value for key, value in trade.items() if key != "id"})
@@ -417,7 +464,13 @@ class SQLiteDriver:
             # validation/constraint error must roll back the whole journal write.
             projection.upsert_event_in_transaction(conn, event)
             if tracking is not None:
-                tracking.edit_in_transaction(conn, dict(stored), local_tracking_plan)
+                tracking.edit_in_transaction(
+                    conn,
+                    dict(stored),
+                    local_tracking_plan,
+                    expected_revision=local_tracking_expected_revision,
+                    reset=bool(local_tracking_reset),
+                )
             self._notify_transaction_hook("after_projection_update", conn)
             if resource_check is not None:
                 resource_check("after_projection_update")

@@ -387,7 +387,7 @@ def test_previous_projection_schema_upgrades_to_quote_provenance(tmp_path, stamp
             return
         assert connection.execute(
             "SELECT version_num FROM alembic_version"
-        ).fetchone()[0] == "005_trade_position_type"
+        ).fetchone()[0] == "007_trade_qty_unit"
 
 
 @pytest.mark.parametrize("stamped", [True, False])

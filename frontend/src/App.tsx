@@ -96,6 +96,9 @@ const ModStoreStudio = lazy(() =>
 const NewTradeModal = lazy(() =>
   import("./components/NewTradeModal").then((m) => ({ default: m.NewTradeModal }))
 );
+const TradeEditModal = lazy(() =>
+  import("./components/TradeEditModal").then((m) => ({ default: m.TradeEditModal }))
+);
 const InitialBalanceModal = lazy(() =>
   import("./components/modals/InitialBalanceModal").then((m) => ({ default: m.InitialBalanceModal }))
 );
@@ -123,6 +126,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [activePreset, setActivePreset] = useState<string>("day_trader");
   const [replayTradeId, setReplayTradeId] = useState<string>("TRD-DEFAULT");
+  const [editTradeId, setEditTradeId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState<boolean>(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
@@ -165,6 +169,11 @@ export default function App() {
   const handleLaunchReplay = (tradeId: string) => {
     setReplayTradeId(tradeId);
     setActiveTab("replay");
+  };
+
+  const handleTradeSaved = () => {
+    setEditTradeId(null);
+    setTradeRefreshNonce((current) => current + 1);
   };
 
   // If detached pop-out window, render target subcomponent in full screen
@@ -260,7 +269,7 @@ export default function App() {
             <JournalView
               onOpenNewTrade={() => setIsModalOpen(true)}
               onOpenCsvImport={() => setIsCsvModalOpen(true)}
-              onReplayTrade={handleLaunchReplay}
+              onEditTrade={(tradeId) => setEditTradeId(tradeId)}
               refreshNonce={tradeRefreshNonce}
             />
           )}
@@ -310,8 +319,22 @@ export default function App() {
         {isModalOpen && (
           <NewTradeModal
             isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
+            onClose={() => {
+              setIsModalOpen(false);
+              setTradeRefreshNonce((current) => current + 1);
+            }}
             onOpenApiKeySettings={() => setIsApiKeyModalOpen(true)}
+          />
+        )}
+        {editTradeId && (
+          <TradeEditModal
+            tradeId={editTradeId}
+            onClose={() => setEditTradeId(null)}
+            onSaved={handleTradeSaved}
+            onOpenReplay={(tradeId) => {
+              setEditTradeId(null);
+              handleLaunchReplay(tradeId);
+            }}
           />
         )}
         {isCsvModalOpen && (

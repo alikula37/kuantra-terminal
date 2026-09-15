@@ -1,3 +1,5 @@
+import type { PositionSizing } from "../lib/positionMath";
+
 export type TradeSide = "BUY" | "SELL" | "LONG" | "SHORT";
 export type TradeStatus = "OPEN" | "CLOSED" | "CANCELED";
 export type TradeRecordMode = "EXTERNAL" | "SIMULATION" | "UNKNOWN";
@@ -33,6 +35,53 @@ export interface Trade {
   updated_at?: string;
   unrealized_pnl?: number | null;
   current_price?: number | null;
+  leverage?: number | null;
+  revision?: number;
+  entry_time_source?: "USER" | "SERVER" | "IMPORT" | "UNKNOWN" | string;
+  close_source?: string | null;
+  tracking_started_at?: string | null;
+  qty_unit?: "BASE" | "UNKNOWN" | string;
+  sizing?: PositionSizing | null;
+}
+
+export interface TradeQuote {
+  quote_status: QuoteStatus;
+  price: number | null;
+  price_kind: "LAST" | "CLOSE" | null;
+  source_id: string | null;
+  source_symbol: string | null;
+  observed_at: string | null;
+  checked_at: string;
+  age_seconds: number | null;
+  reason?: string | null;
+  last_known?: {
+    price: number;
+    observed_at: string | null;
+    quote_status: QuoteStatus;
+    stale: boolean;
+  } | null;
+}
+
+export interface QuoteRefreshResponse {
+  checked_at: string;
+  requested: number;
+  identities: number;
+  skipped_identities: number;
+  quotes: Record<string, TradeQuote>;
+}
+
+export interface TradeRevision {
+  event_id: string;
+  occurred_at_utc: string;
+  revision: number | null;
+  changed_fields: Record<string, { from: unknown; to: unknown }>;
+  edit_source: string;
+}
+
+export interface TradeRevisionHistory {
+  trade_id: string;
+  current_revision: number;
+  revisions: TradeRevision[];
 }
 
 export interface MarketQuote {

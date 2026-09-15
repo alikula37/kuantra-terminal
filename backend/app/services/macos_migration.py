@@ -36,7 +36,7 @@ from app.core.input_limits import (
 
 BUNDLE_SCHEMA_VERSION = 1
 BUNDLE_TYPE = "kuantra-macos-migration"
-CURRENT_SQLITE_SCHEMA_VERSION = 5
+CURRENT_SQLITE_SCHEMA_VERSION = 7
 LEGACY_SQLITE_SCHEMA_VERSION = 1
 _SQLITE_RELATIVE_PATH = Path("data") / "kuantra_oltp.sqlite3"
 _COLD_STORAGE_RELATIVE_ROOT = Path("data") / "cold_storage"
@@ -81,6 +81,12 @@ _CURRENT_TRADE_COLUMNS = frozenset(
         "price_status",
         "price_observed_at",
         "price_origin",
+        "leverage",
+        "revision",
+        "entry_time_source",
+        "close_source",
+        "tracking_started_at",
+        "qty_unit",
     }
 )
 _LEDGER_COLUMNS = frozenset(
@@ -125,7 +131,9 @@ _KNOWN_ALEMBIC_REVISIONS = {
     "002_evidence_ledger": 2,
     "003_trade_projection": 3,
     "004_trade_quote_provenance": 4,
-    "005_trade_position_type": CURRENT_SQLITE_SCHEMA_VERSION,
+    "005_trade_position_type": 5,
+    "006_trade_time_edit_sizing": 6,
+    "007_trade_qty_unit": CURRENT_SQLITE_SCHEMA_VERSION,
 }
 
 
@@ -234,11 +242,19 @@ def _inspect_sqlite_schema(conn: sqlite3.Connection) -> dict[str, Any]:
             "missing_current_columns": current_missing,
         }
     if (
-        revision in (None, "003_trade_projection", "004_trade_quote_provenance")
+        revision in (
+            None,
+            "003_trade_projection",
+            "004_trade_quote_provenance",
+            "005_trade_position_type",
+            "006_trade_time_edit_sizing",
+        )
         and user_version < CURRENT_SQLITE_SCHEMA_VERSION
         and set(current_missing).issubset({
             "record_mode", "execution_venue", "price_source", "price_source_symbol",
             "price_status", "price_observed_at", "price_origin", "position_type",
+            "leverage", "revision", "entry_time_source", "close_source",
+            "tracking_started_at", "qty_unit",
         })
         and _LEDGER_COLUMNS.issubset(ledger_columns)
         and _PROJECTION_COLUMNS.issubset(projection_columns)
@@ -976,7 +992,7 @@ def upgrade_sqlite_schema(
             if _table_exists(staged_conn, "alembic_version"):
                 staged_conn.execute(
                     "UPDATE alembic_version SET version_num = ?",
-                    ("005_trade_position_type",),
+                    ("007_trade_qty_unit",),
                 )
             staged_conn.commit()
         finally:

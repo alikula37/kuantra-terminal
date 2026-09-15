@@ -3,6 +3,7 @@ import { AlertTriangle, CalendarClock, CheckCircle2, RefreshCw, X, XCircle } fro
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { useDialogAccessibility } from "../hooks/useDialogAccessibility";
+import { istanbulDateKey } from "../lib/tradeTime";
 
 type ReviewStatus = "NOT_READY" | "STALE_REVIEW" | "LIMITED" | "READY" | "COMPLETED" | string;
 
@@ -42,13 +43,7 @@ interface WeeklyReviewPanelProps {
 
 const isoDate = (value: Date): string => value.toISOString().slice(0, 10);
 
-const defaultTimezone = (): string => {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  } catch {
-    return "UTC";
-  }
-};
+const defaultTimezone = (): string => "Europe/Istanbul";
 
 const shortHash = (value: string | undefined): string => {
   if (!value) return "—";
@@ -107,8 +102,8 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
   const closeRef = useRef<HTMLButtonElement>(null);
   useDialogAccessibility(dialogRef, onClose, closeRef);
   const today = new Date();
-  const [periodStart, setPeriodStart] = useState(() => isoDate(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)));
-  const [periodEnd, setPeriodEnd] = useState(() => isoDate(today));
+  const [periodStart, setPeriodStart] = useState(() => istanbulDateKey(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()) || isoDate(today));
+  const [periodEnd, setPeriodEnd] = useState(() => istanbulDateKey(today.toISOString()) || isoDate(today));
   const [timezone, setTimezone] = useState(defaultTimezone);
   const [asOfUtc, setAsOfUtc] = useState(() => new Date().toISOString());
   const [note, setNote] = useState("");

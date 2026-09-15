@@ -16,6 +16,15 @@ is a goal to measure, not a proven profitability claim.
   analytics. Tracking runs only while the application is awake; no broker order
   authority, fee inference or retrospective fill reconstruction is granted.
 
+- Owner-approved journal trust (2026-09-14): the user supplies the trade date/time
+  in Turkey time (minute precision, stored UTC) and explicitly chooses whether a
+  historical entry is still open or already closed. Journal corrections are
+  revisioned, preserve prior values in the append-only ledger and never rewrite
+  partial-close evidence. Declared leverage is user metadata, not exchange
+  configuration: price return, position return and margin return stay separate,
+  unknown contract sizes never produce a definitive margin/liquidation claim, and
+  skipped closes while the app is closed or the Mac is asleep are not invented.
+
 - Entry market for automated account evidence: Binance/OKX crypto perpetual users.
   Exact supported venue/market, settlement, position mode and source format must be
   stated and independently tested. Spot public testnet is not perps account

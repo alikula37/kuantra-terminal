@@ -10,11 +10,16 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation, localcontext
 
+from app.core.position_math import instrument_unit_basis
 from app.db.repositories.evidence_ledger_repo import EvidenceLedgerRepository, canonical_json
 
 
 class TrackingConflict(ValueError):
     pass
+
+
+class TrackingUnsupported(ValueError):
+    """The instrument cannot support a monetary local tracking plan."""
 
 
 def now_utc():
@@ -144,22 +149,34 @@ class LocalTrackingService:
             "AND venue='local-journal' AND event_type='PositionProjectionUpdated' "
             "ORDER BY chain_date_utc, chain_sequence", (trade_id,),
         )
-        latest, event_id = None, None
+        latest, event_id, reset_count = None, None, 0
         for row in rows:
+            try:
+                payload = json.loads(row["normalized_payload_json"])
+            except (TypeError, json.JSONDecodeError):
+                payload = {}
+            action = payload.get("action") if isinstance(payload, dict) else None
             state = project_tracking_event(None, dict(row))
             if state is not None:
+                if action == "PLAN_RESET":
+                    # A reset is only written when the previous plan has no
+                    # closures, so it starts a clean lineage without touching
+                    # any close evidence.
+                    reset_count += 1
+                    latest, event_id = state, row["event_id"]
+                    continue
                 if state["revision"] != (latest["revision"] + 1 if latest else 1) or row["causation_id"] != event_id:
                     raise ValueError("Broken tracking revision lineage")
                 if latest and (state["closures"][:len(latest["closures"])] != latest["closures"]
                     or any(state[k] != latest[k] for k in ("initial_qty", "entry_price", "side", "symbol"))):
                     raise ValueError("Tracking history was changed")
                 latest, event_id = state, row["event_id"]
-        return latest, event_id
+        return latest, event_id, reset_count
 
     def get(self, trade_id):
         self._verified()
         with self.driver.get_connection() as conn:
-            state, _ = self._load(conn, trade_id)
+            state, _, _ = self._load(conn, trade_id)
             return state
 
     def history(self, trade_id):
@@ -183,7 +200,7 @@ class LocalTrackingService:
             ).fetchall()
             results = []
             for row in ids:
-                state, _ = self._load(conn, row[0])
+                state, _, _ = self._load(conn, row[0])
                 trade = conn.execute("SELECT * FROM trades WHERE id=?", (row[0],)).fetchone()
                 if state:
                     state = deepcopy(state)
@@ -192,14 +209,23 @@ class LocalTrackingService:
                         or decimal(trade["entry_price"]) != decimal(state["entry_price"])
                         or decimal(trade["qty"]) != decimal(state["initial_qty"])):
                         state["external_status"] = "CORRECTED"
+                    state["unit_status"] = (
+                        "BASE_UNIT"
+                        if trade and self._unit_verified(trade)
+                        else "UNVERIFIED"
+                    )
                     results.append(state)
             return results
 
-    def _save(self, conn, state, action, previous_event=None, observation=None):
+    def _save(self, conn, state, action, previous_event=None, observation=None, reset_index=0):
         validate_snapshot(state)
+        if action == "PLAN_RESET":
+            idempotency_key = f"local-tracking:{state['trade_id']}:reset:{reset_index}:{state['revision']}"
+        else:
+            idempotency_key = f"local-tracking:{state['trade_id']}:{state['revision']}"
         event = self.ledger.append_event_in_transaction(
             conn, event_type="PositionProjectionUpdated", account_id="local-journal", venue="local-journal",
-            idempotency_key=f"local-tracking:{state['trade_id']}:{state['revision']}",
+            idempotency_key=idempotency_key,
             correlation_id=state["trade_id"], causation_id=previous_event,
             normalized_payload={"local_tracking": state, "action": action, "observation": observation},
             occurred_at=now_utc(), schema_version="1", adapter_version="local-tracking-v1",
@@ -210,15 +236,47 @@ class LocalTrackingService:
         self.driver._notify_transaction_hook("after_local_tracking_projection", conn)
         return state
 
-    def edit_in_transaction(self, conn, trade, plan, expected_revision=0):
-        old, event_id = self._load(conn, trade["id"])
-        if (old["revision"] if old else 0) != expected_revision:
+    @staticmethod
+    def _row_value(row, key):
+        try:
+            return row[key]
+        except (KeyError, IndexError):
+            return None
+
+    @classmethod
+    def _unit_verified(cls, trade) -> bool:
+        """Verified base unit requires an explicit user declaration.
+
+        A plan's provider label is client-supplied and is not verification, so
+        it never enables monetary close evidence on its own; the trade must
+        carry ``qty_unit=BASE``.
+        """
+
+        return instrument_unit_basis(
+            cls._row_value(trade, "symbol"),
+            qty_unit=cls._row_value(trade, "qty_unit"),
+        )["contract_size"] == "BASE_UNIT"
+
+    def edit_in_transaction(self, conn, trade, plan, expected_revision=0, reset=False):
+        if not self._unit_verified(trade):
+            raise TrackingUnsupported(
+                "Local tracking needs an explicit base-unit declaration "
+                "(qty_unit=BASE); the contract or lot size of this symbol is not verified."
+            )
+        old, event_id, reset_count = self._load(conn, trade["id"])
+        old_revision = old["revision"] if old else 0
+        if expected_revision is not None and old_revision != expected_revision:
             raise TrackingConflict("Tracking plan changed; reload before saving")
         if trade["status"] != "OPEN" or (old and decimal(old["remaining_qty"], positive=False) == 0):
             raise TrackingConflict("Tracking is already closed or canceled")
-        if old and any(str(trade[k]) != str(old[k]) for k in ("symbol", "side")):
+        if reset:
+            # Correcting quantity/entry is only safe before any close evidence
+            # exists.  After that the plan lineage is immutable.
+            if old and old["closures"]:
+                raise TrackingConflict("Cannot reset tracking after a partial close")
+        elif old and any(str(trade[k]) != str(old[k]) for k in ("symbol", "side")):
             raise TrackingConflict("External trade identity changed")
-        state = deepcopy(old) if old else {
+        state = deepcopy(old) if old and not reset else {
             "version": 1, "basis": "LOCAL_ESTIMATE", "trade_id": trade["id"],
             "symbol": trade["symbol"], "side": trade["side"],
             "entry_price": number(decimal(trade["entry_price"])),
@@ -262,8 +320,17 @@ class LocalTrackingService:
                 raise TrackingConflict("Completed targets are immutable")
         if normalized and sum((decimal(t["percent"]) for t in normalized), Decimal(0)) != 100:
             raise ValueError("Target percentages must sum to 100")
-        state.update(targets=normalized, revision=expected_revision + 1, armed_at=now_utc())
-        return self._save(conn, state, "PLAN_SAVED", event_id)
+        state.update(
+            targets=normalized,
+            revision=1 if reset else old_revision + 1,
+            armed_at=now_utc(),
+        )
+        return self._save(
+            conn, state,
+            "PLAN_RESET" if reset else "PLAN_SAVED",
+            event_id,
+            reset_index=reset_count + 1 if reset else 0,
+        )
 
     def edit(self, trade_id, plan, *, expected_revision):
         self._verified()
@@ -301,13 +368,23 @@ class LocalTrackingService:
         try:
             conn.execute("PRAGMA synchronous=FULL")
             conn.execute("BEGIN IMMEDIATE")
-            state, event_id = self._load(conn, trade_id)
+            state, event_id, _ = self._load(conn, trade_id)
             if state is None:
                 raise LookupError("Tracking not found")
             if manual and state["revision"] != expected_revision:
                 raise TrackingConflict("Tracking plan changed; reload")
             trade = conn.execute("SELECT * FROM trades WHERE id=?", (trade_id,)).fetchone()
             if not trade or trade["status"] != "OPEN" or decimal(state["remaining_qty"], positive=False) == 0:
+                return state
+            if not self._unit_verified(trade):
+                # No monetary close evidence without an explicit declaration.
+                # A manual close reports the boundary; the automatic monitor
+                # simply keeps waiting instead of backing off forever.
+                if manual:
+                    raise TrackingUnsupported(
+                        "Local tracking needs an explicit base-unit declaration "
+                        "(qty_unit=BASE); the contract or lot size of this symbol is not verified."
+                    )
                 return state
             if (trade["symbol"] != state["symbol"] or trade["side"] != state["side"]
                 or decimal(trade["entry_price"]) != decimal(state["entry_price"])

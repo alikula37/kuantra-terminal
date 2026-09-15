@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, PlayCircle, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2 } from "lucide-react";
+import { Filter, Plus, Pencil, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2, RefreshCw } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
 import { ReconciliationInbox } from "./ReconciliationInbox";
 import { WeeklyReviewPanel } from "./WeeklyReviewPanel";
-import type { Trade } from "../types";
+import { useOpenQuoteRefresh, quoteAgeSeconds } from "../hooks/useOpenQuoteRefresh";
+import { formatIstanbulDateTime, istanbulDateKey, relativeAgeLabel } from "../lib/tradeTime";
+import { formatPrice } from "../lib/positionMath";
+import type { Trade, TradeQuote } from "../types";
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
   onOpenCsvImport?: () => void;
-  onReplayTrade?: (tradeId: string) => void;
+  onEditTrade?: (tradeId: string) => void;
   refreshNonce?: number;
 }
 
@@ -22,7 +25,7 @@ function isFiniteNumber(value: unknown): value is number {
 function isTrade(value: unknown): value is Trade {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
-  const optionalNumbers = ["exit_price", "pnl", "r_multiple", "commission", "unrealized_pnl", "current_price"];
+  const optionalNumbers = ["exit_price", "pnl", "r_multiple", "commission", "unrealized_pnl", "current_price", "leverage"];
   return typeof candidate.id === "string"
     && typeof candidate.symbol === "string"
     && (candidate.side === "BUY" || candidate.side === "SELL" || candidate.side === "LONG" || candidate.side === "SHORT")
@@ -51,11 +54,13 @@ async function readTradeList(response: Response): Promise<Trade[]> {
   return payload;
 }
 
-export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onReplayTrade, refreshNonce = 0 }) => {
-  const { t } = useTranslation();
+export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onEditTrade, refreshNonce = 0 }) => {
+  const { t, locale } = useTranslation();
   const { trades, setTrades, openPositions, updatePositionPnl } = useTradeStore();
   const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
   const [reconciliationInboxOpen, setReconciliationInboxOpen] = useState(false);
   const [weeklyReviewOpen, setWeeklyReviewOpen] = useState(false);
@@ -71,6 +76,17 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [cancellationNotice, setCancellationNotice] = useState<string | null>(null);
   const loadControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+
+  const hasOpenTrades = trades.some((trade) => trade.status === "OPEN");
+  const {
+    quotes,
+    refresh: refreshQuotes,
+    busy: quoteBusy,
+    error: quoteError,
+    lastSuccessAt,
+    lastAttemptAt,
+    nowMs,
+  } = useOpenQuoteRefresh(hasOpenTrades);
 
   const loadTrades = useCallback(async () => {
     loadControllerRef.current?.abort();
@@ -189,40 +205,78 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
     }
   };
 
-  const filteredTrades = trades.filter((t) => {
-    if (filterSymbol !== "ALL" && t.symbol !== filterSymbol) return false;
-    if (filterStatus !== "ALL" && t.status !== filterStatus) return false;
+  const filteredTrades = trades.filter((trade) => {
+    if (filterSymbol !== "ALL" && trade.symbol !== filterSymbol) return false;
+    if (filterStatus !== "ALL" && trade.status !== filterStatus) return false;
+    const dayKey = istanbulDateKey(trade.entry_time);
+    if (filterDateFrom && (!dayKey || dayKey < filterDateFrom)) return false;
+    if (filterDateTo && (!dayKey || dayKey > filterDateTo)) return false;
     return true;
   });
 
+  const symbols = Array.from(new Set(trades.map((trade) => trade.symbol))).sort();
+
+  const renderQuote = (trade: Trade) => {
+    if (trade.status !== "OPEN") return <span className="text-slate-500">—</span>;
+    const quote: TradeQuote | undefined = quotes[trade.id];
+    if (!quote) return <span className="k-help">{t("journal.quote_pending")}</span>;
+    const live = quote.price != null;
+    const stale = quote.last_known?.stale === true;
+    const age = quoteAgeSeconds(quote, nowMs);
+    return (
+      <div className="leading-tight">
+        {live ? (
+          <span className="font-semibold text-slate-100">{formatPrice(trade.symbol, quote.price)}</span>
+        ) : (
+          <span className="font-semibold text-amber-300">{t("journal.quote_unavailable")}</span>
+        )}
+        <span className={`ml-2 text-sm ${live ? (quote.quote_status === "LIVE" ? "text-gain" : "text-amber-300") : "text-loss"}`}>
+          {quote.quote_status}
+          {age != null && <span className="ml-1 text-slate-400">· {relativeAgeLabel(age)}</span>}
+        </span>
+        {stale && quote.last_known && (
+          <span className="block k-help text-amber-300">
+            {t("journal.quote_last_known", {
+              price: formatPrice(trade.symbol, quote.last_known.price),
+              time: formatIstanbulDateTime(quote.last_known.observed_at, locale),
+            })}
+          </span>
+        )}
+        {quote.observed_at && !stale && (
+          <span className="block k-help">{formatIstanbulDateTime(quote.observed_at, locale)}</span>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-hidden p-4 select-none font-mono">
-      <div className="flex items-center justify-between pb-4 border-b border-surface-border">
+    <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-hidden p-4 select-none font-sans">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-surface-border">
         <div>
-          <h2 className="text-base font-bold text-white">{t("journal.title")}</h2>
-          <p className="text-xs text-slate-400">{t("journal.subtitle")}</p>
+          <h2 className="text-lg font-bold text-white">{t("journal.title")}</h2>
+          <p className="k-help">{t("journal.subtitle")}</p>
         </div>
 
-        <div className="flex items-center space-x-3 text-xs">
-          <div className="flex items-center space-x-2 bg-[#111722] px-3 py-1.5 rounded border border-surface-border">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
+            <Filter className="w-4 h-4 text-slate-400" />
             <select
+              aria-label={t("journal.filter_all_symbols")}
               value={filterSymbol}
               onChange={(e) => setFilterSymbol(e.target.value)}
-              className="bg-transparent text-white focus:outline-none"
+              className="bg-transparent text-white focus:outline-none text-sm py-2"
             >
               <option value="ALL">{t("journal.filter_all_symbols")}</option>
-              <option value="BTCUSDT">BTCUSDT</option>
-              <option value="ETHUSDT">ETHUSDT</option>
-              <option value="SOLUSDT">SOLUSDT</option>
+              {symbols.map((symbol) => <option key={symbol} value={symbol}>{symbol}</option>)}
             </select>
           </div>
 
-          <div className="flex items-center space-x-2 bg-[#111722] px-3 py-1.5 rounded border border-surface-border">
+          <div className="flex items-center gap-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
             <select
+              aria-label={t("journal.filter_all_status")}
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-transparent text-white focus:outline-none"
+              className="bg-transparent text-white focus:outline-none text-sm py-2"
             >
               <option value="ALL">{t("journal.filter_all_status")}</option>
               <option value="OPEN">{t("journal.status_open")}</option>
@@ -231,82 +285,121 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
             </select>
           </div>
 
+          <div className="flex items-center gap-1 bg-[#111722] px-3 py-1 rounded border border-surface-border">
+            <input
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              aria-label={t("journal.filter_date_from")}
+              className="bg-transparent text-white focus:outline-none text-sm py-2"
+            />
+            <span className="text-slate-500">–</span>
+            <input
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              aria-label={t("journal.filter_date_to")}
+              className="bg-transparent text-white focus:outline-none text-sm py-2"
+            />
+            <span className="k-help">{t("order_ticket.turkey_time")}</span>
+          </div>
+
+          <button
+            type="button"
+            data-testid="journal-refresh-all"
+            onClick={() => void refreshQuotes()}
+            disabled={quoteBusy || !hasOpenTrades}
+            className="k-btn border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200 disabled:opacity-50"
+            title={t("journal.refresh_all_title")}
+          >
+            <RefreshCw className={`w-4 h-4 text-accent ${quoteBusy ? "animate-spin" : ""}`} />
+            <span>{quoteBusy ? t("journal.refresh_busy") : t("journal.refresh_all")}</span>
+          </button>
+
           <button
             onClick={onOpenCsvImport}
-            className="flex items-center space-x-1.5 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold px-3 py-1.5 rounded transition shadow-sm cursor-pointer"
+            className="k-btn border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200"
           >
-            <Upload className="w-3.5 h-3.5 text-accent" />
+            <Upload className="w-4 h-4 text-accent" />
             <span>{t("journal.import_csv")}</span>
           </button>
 
           <button
             onClick={() => setReconciliationInboxOpen(true)}
-            className="flex items-center space-x-1.5 bg-[#162032] hover:bg-[#1f2d47] border border-amber-400/40 text-amber-300 font-semibold px-3 py-1.5 rounded transition shadow-sm cursor-pointer"
+            className="k-btn border border-amber-400/40 bg-[#162032] hover:bg-[#1f2d47] text-amber-300"
           >
-            <ClipboardCheck className="w-3.5 h-3.5" />
+            <ClipboardCheck className="w-4 h-4" />
             <span>{t("journal.reconciliation_inbox")}</span>
           </button>
 
           <button
             onClick={() => setWeeklyReviewOpen(true)}
-            className="flex items-center space-x-1.5 bg-[#162032] hover:bg-[#1f2d47] border border-accent/40 text-accent font-semibold px-3 py-1.5 rounded transition shadow-sm cursor-pointer"
+            className="k-btn border border-accent/40 bg-[#162032] hover:bg-[#1f2d47] text-accent"
           >
-            <CalendarClock className="w-3.5 h-3.5" />
+            <CalendarClock className="w-4 h-4" />
             <span>{t("journal.weekly_review")}</span>
           </button>
 
           <button
             onClick={onOpenNewTrade}
-            className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold px-3 py-1.5 rounded transition shadow-md cursor-pointer"
+            className="k-btn bg-accent hover:bg-sky-400 text-black"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>{t("journal.manual_entry")}</span>
           </button>
         </div>
       </div>
 
-      {cancellationNotice && (
-        <div role="status" data-testid="journal-cancel-success" className="mt-3 rounded border border-gain/40 bg-gain/10 px-3 py-2 text-xs text-gain">
+      {(cancellationNotice || quoteError || lastSuccessAt) && (
+        <div role="status" data-testid="journal-cancel-success" className={`mt-3 rounded border px-3 py-2 text-sm ${quoteError ? "border-amber-400/40 bg-amber-950/20 text-amber-200" : "border-gain/40 bg-gain/10 text-gain"}`}>
+          {quoteError && (
+            <span>
+              {t("journal.refresh_failed")}: {quoteError}
+              {lastAttemptAt && <span className="k-help"> · {t("journal.refresh_attempt", { time: formatIstanbulDateTime(lastAttemptAt, locale) })}</span>}
+              {lastSuccessAt && <span className="k-help"> · {t("journal.refresh_last_success", { time: formatIstanbulDateTime(lastSuccessAt, locale) })}</span>}
+            </span>
+          )}
           {cancellationNotice}
+          {!quoteError && lastSuccessAt && <span className="k-help"> · {t("journal.refresh_checked", { time: formatIstanbulDateTime(lastSuccessAt, locale) })}</span>}
         </div>
       )}
 
       {isLoading ? (
-        <div role="status" data-testid="journal-loading" className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none font-mono text-slate-400 text-xs space-y-3">
+        <div role="status" data-testid="journal-loading" className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none text-slate-400 text-sm space-y-3">
           <span>{t("journal.loading")}</span>
-          <button type="button" data-testid="journal-cancel" onClick={cancelLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <button type="button" data-testid="journal-cancel" onClick={cancelLoad} className="k-btn border border-surface-border text-slate-300 hover:bg-slate-800">
             {t("journal.cancel_load")}
           </button>
         </div>
       ) : error ? (
-        <div role="alert" data-testid={cancelled ? "journal-cancelled" : "journal-error"} className="flex-1 mt-4 rounded-lg border border-loss/50 bg-loss/10 flex flex-col items-center justify-center p-8 text-center select-none font-mono text-loss text-xs space-y-3">
+        <div role="alert" data-testid={cancelled ? "journal-cancelled" : "journal-error"} className="flex-1 mt-4 rounded-lg border border-loss/50 bg-loss/10 flex flex-col items-center justify-center p-8 text-center select-none text-loss text-sm space-y-3">
           <span className="break-words">{error}</span>
-          <button type="button" data-testid="journal-retry" onClick={() => void loadTrades()} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">
+          <button type="button" data-testid="journal-retry" onClick={() => void loadTrades()} className="k-btn border border-loss/50 text-loss font-bold hover:bg-loss/10">
             {t("journal.retry")}
           </button>
         </div>
       ) : trades.length === 0 ? (
-        <div data-testid="journal-empty" className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none font-mono">
+        <div data-testid="journal-empty" className="flex-1 mt-4 rounded-lg border border-surface-border bg-[#0d121c] flex flex-col items-center justify-center p-8 text-center select-none">
           <div className="w-14 h-14 rounded-full bg-[#162032] flex items-center justify-center mb-3 border border-surface-border">
             <BookOpen className="w-7 h-7 text-accent" />
           </div>
-          <h3 className="text-base font-bold text-white mb-1.5 uppercase tracking-wide">
+          <h3 className="text-base font-bold text-white mb-1.5">
             {t("journal.empty_title")}
           </h3>
-          <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+          <p className="k-help max-w-md mb-6">
             {t("journal.empty_desc")}
           </p>
           <div className="flex items-center space-x-3">
             <button
               onClick={onOpenNewTrade}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs transition shadow-md cursor-pointer"
+              className="k-btn bg-accent hover:bg-sky-400 text-black"
             >
               <Plus className="w-4 h-4" />
               <span>{t("journal.manual_entry")}</span>
             </button>
             <button
               onClick={onOpenCsvImport}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-semibold rounded text-xs transition cursor-pointer"
+              className="k-btn border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200"
             >
               <Upload className="w-4 h-4 text-accent" />
               <span>{t("journal.import_csv")}</span>
@@ -314,27 +407,28 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           </div>
         </div>
       ) : (
-        <div className="flex-1 mt-4 overflow-y-auto rounded-lg border border-surface-border bg-[#0d121c]">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#090d14] text-[10px] text-slate-400 uppercase tracking-wider sticky top-0 border-b border-surface-border">
+        <div className="flex-1 mt-4 overflow-auto rounded-lg border border-surface-border bg-[#0d121c]">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-[#090d14] text-sm text-slate-400 sticky top-0 border-b border-surface-border">
               <tr>
-                <th className="px-4 py-3">{t("journal.col_trade_id")}</th>
-                <th className="px-4 py-3">{t("journal.col_symbol")}</th>
-                <th className="px-4 py-3">{t("journal.col_side")}</th>
-                <th className="px-4 py-3">{t("journal.col_entry")}</th>
-                <th className="px-4 py-3">{t("journal.col_exit")}</th>
-                <th className="px-4 py-3">{t("journal.col_qty")}</th>
-                <th className="px-4 py-3">{t("journal.col_pnl")}</th>
-                <th className="px-4 py-3">{t("journal.col_r")}</th>
-                <th className="px-4 py-3">{t("journal.col_time")}</th>
-                <th className="px-4 py-3">{t("journal.col_status")}</th>
-                <th className="px-4 py-3 text-right">{t("journal.col_actions")}</th>
+                <th className="px-3 py-3">{t("journal.col_trade_id")}</th>
+                <th className="px-3 py-3">{t("journal.col_symbol")}</th>
+                <th className="px-3 py-3">{t("journal.col_side")}</th>
+                <th className="px-3 py-3">{t("journal.col_entry")}</th>
+                <th className="px-3 py-3">{t("journal.col_exit")}</th>
+                <th className="px-3 py-3">{t("journal.col_qty")}</th>
+                <th className="px-3 py-3">{t("journal.col_pnl")}</th>
+                <th className="px-3 py-3">{t("journal.col_r")}</th>
+                <th className="px-3 py-3">{t("journal.col_time")}</th>
+                <th className="px-3 py-3">{t("journal.col_quote")}</th>
+                <th className="px-3 py-3">{t("journal.col_status")}</th>
+                <th className="px-3 py-3 text-right">{t("journal.col_actions")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-border/40 text-[11px]">
+            <tbody className="divide-y divide-surface-border/40">
               {filteredTrades.length === 0 ? (
                 <tr>
-                    <td colSpan={11} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={12} className="px-4 py-12 text-center text-slate-500">
                     {t("journal.no_matching")}
                   </td>
                 </tr>
@@ -345,11 +439,11 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                 const isWin = hasPnl && pnl > 0;
                 return (
                   <tr key={tItem.id} className="hover:bg-[#111722] transition">
-                    <td className="px-4 py-2.5 font-bold text-accent">{tItem.id}</td>
-                    <td className="px-4 py-2.5 font-bold text-white">{tItem.symbol}</td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-3 py-3 font-bold text-accent">{tItem.id}</td>
+                    <td className="px-3 py-3 font-bold text-white">{tItem.symbol}</td>
+                    <td className="px-3 py-3">
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        className={`px-2 py-0.5 rounded text-sm font-bold ${
                           tItem.side === "BUY" || tItem.side === "LONG"
                             ? "bg-gain/20 text-gain"
                             : "bg-loss/20 text-loss"
@@ -358,23 +452,24 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                         {tItem.position_type === "SPOT" ? t("order_ticket.side_spot") : tItem.side}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-slate-200">${Number(tItem.entry_price).toFixed(2)}</td>
-                    <td className="px-4 py-2.5 text-slate-200">
-                      {tItem.exit_price != null ? `$${Number(tItem.exit_price).toFixed(2)}` : "-"}
+                    <td className="px-3 py-3 text-slate-200 font-semibold">{formatPrice(tItem.symbol, tItem.entry_price)}</td>
+                    <td className="px-3 py-3 text-slate-200">
+                      {tItem.exit_price != null ? formatPrice(tItem.symbol, tItem.exit_price) : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-slate-300">{tItem.qty}</td>
-                    <td className={`px-4 py-2.5 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
-                      {tItem.status !== "CLOSED" ? "-" : hasPnl ? `${isWin ? "+" : ""}$${pnl.toFixed(2)}` : t("journal.unknown_value")}
+                    <td className="px-3 py-3 text-slate-300">{tItem.qty}</td>
+                    <td className={`px-3 py-3 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
+                      {tItem.status !== "CLOSED" ? "—" : hasPnl ? `${isWin ? "+" : ""}${pnl.toFixed(2)}` : t("journal.unknown_value")}
                     </td>
-                    <td className={`px-4 py-2.5 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
-                      {tItem.r_multiple != null ? `${tItem.r_multiple > 0 ? "+" : ""}${tItem.r_multiple}R` : "-"}
+                    <td className={`px-3 py-3 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
+                      {tItem.r_multiple != null ? `${tItem.r_multiple > 0 ? "+" : ""}${tItem.r_multiple}R` : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-slate-400 text-[10px]">
-                      {new Date(tItem.entry_time).toLocaleString()}
+                    <td className="px-3 py-3 text-slate-400 text-sm">
+                      {formatIstanbulDateTime(tItem.entry_time, locale)}
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-3 py-3">{renderQuote(tItem)}</td>
+                    <td className="px-3 py-3">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`px-2 py-0.5 rounded text-sm font-bold ${
                           tItem.status === "OPEN"
                             ? "bg-sky-500/20 text-accent border border-accent/30"
                             : "bg-slate-800 text-slate-300"
@@ -383,21 +478,24 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                         {tItem.status}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="px-3 py-3 text-right whitespace-nowrap">
                       <button
-                        onClick={() => onReplayTrade && onReplayTrade(tItem.id)}
-                        className="inline-flex items-center space-x-1 px-2 py-0.5 bg-accent/15 hover:bg-accent/30 border border-accent/40 text-accent font-bold rounded text-[10px] transition"
-                        title={t("journal.replay_title")}
+                        type="button"
+                        data-testid="journal-edit-action"
+                        data-trade-id={tItem.id}
+                        onClick={() => onEditTrade && onEditTrade(tItem.id)}
+                        className="k-btn border border-accent/40 bg-accent/15 hover:bg-accent/30 text-accent px-3"
+                        title={t("journal.edit_title")}
                       >
-                        <PlayCircle className="w-3 h-3" />
-                        <span>{t("journal.replay_btn")}</span>
+                        <Pencil className="w-4 h-4" />
+                        <span>{t("journal.edit_action")}</span>
                       </button>
                       <button
                         onClick={() => setEvidenceTradeId(tItem.id)}
-                        className="inline-flex items-center space-x-1 px-2 py-0.5 ml-1 bg-[#162032] hover:bg-[#1f2d47] border border-surface-border text-slate-200 font-bold rounded text-[10px] transition"
+                        className="k-btn ml-1 border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200 px-3"
                         title={t("journal.evidence_title")}
                       >
-                        <FileCheck2 className="w-3 h-3 text-accent" />
+                        <FileCheck2 className="w-4 h-4 text-accent" />
                         <span>{t("journal.evidence_action")}</span>
                       </button>
                       {tItem.status !== "CANCELED" && (
@@ -410,10 +508,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                             setCancellationError(null);
                             setCancellationNotice(null);
                           }}
-                          className="inline-flex items-center space-x-1 px-2 py-0.5 ml-1 bg-loss/10 hover:bg-loss/20 border border-loss/40 text-loss font-bold rounded text-[10px] transition"
+                          className="k-btn ml-1 border border-loss/40 bg-loss/10 hover:bg-loss/20 text-loss px-3"
                           title={t("journal.cancel_action_title")}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4" />
                           <span>{t("journal.cancel_action")}</span>
                         </button>
                       )}
@@ -425,9 +523,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           </tbody>
         </table>
         {loadMoreError && (
-          <div role="alert" className="flex items-center justify-center gap-3 border-t border-loss/30 p-3 text-xs text-loss">
+          <div role="alert" className="flex items-center justify-center gap-3 border-t border-loss/30 p-3 text-sm text-loss">
             <span className="break-words">{loadMoreError}</span>
-            <button type="button" onClick={() => void loadMoreTrades()} className="px-2 py-1 rounded border border-loss/50 font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">
+            <button type="button" onClick={() => void loadMoreTrades()} className="k-btn border border-loss/50 font-bold hover:bg-loss/10">
               {t("journal.retry")}
             </button>
           </div>
@@ -438,7 +536,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
               type="button"
               onClick={() => void loadMoreTrades()}
               disabled={isLoadingMore}
-              className="px-3 py-1.5 rounded border border-accent/50 text-accent text-xs font-bold hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="k-btn border border-accent/50 text-accent hover:bg-accent/10 disabled:opacity-50"
             >
               {isLoadingMore ? t("journal.loading_more") : t("journal.load_more")}
             </button>
@@ -469,13 +567,13 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
         >
           <div className="w-full max-w-md rounded-lg border border-surface-border bg-[#0d121c] p-5 shadow-2xl">
-            <h2 id="journal-cancel-title" className="text-base font-bold text-white">{t("journal.cancel_title")}</h2>
-            <p id="journal-cancel-description" className="mt-3 text-xs leading-relaxed text-slate-300">
+            <h2 id="journal-cancel-title" className="text-lg font-bold text-white">{t("journal.cancel_title")}</h2>
+            <p id="journal-cancel-description" className="mt-3 text-sm leading-relaxed text-slate-300">
               {t("journal.cancel_description", { id: cancellationTarget.id, symbol: cancellationTarget.symbol })}
             </p>
-            <p className="mt-2 text-xs leading-relaxed text-slate-400">{t("journal.cancel_audit_note")}</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">{t("journal.cancel_audit_note")}</p>
             {cancellationError && (
-              <div role="alert" data-testid="journal-cancel-error" className="mt-3 rounded border border-loss/40 bg-loss/10 px-3 py-2 text-xs text-loss">
+              <div role="alert" data-testid="journal-cancel-error" className="mt-3 rounded border border-loss/40 bg-loss/10 px-3 py-2 text-sm text-loss">
                 {cancellationError}
               </div>
             )}
@@ -487,7 +585,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                   setCancellationError(null);
                 }}
                 disabled={cancellingTradeId === cancellationTarget.id}
-                className="rounded border border-surface-border px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="k-btn border border-surface-border text-slate-300 hover:bg-slate-800 disabled:opacity-50"
               >
                 {t("journal.cancel_keep")}
               </button>
@@ -496,9 +594,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                 data-testid="journal-cancel-confirm"
                 onClick={() => void cancelTrade()}
                 disabled={cancellingTradeId === cancellationTarget.id}
-                className="inline-flex items-center gap-1.5 rounded bg-loss px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss"
+                className="k-btn bg-loss text-white hover:bg-rose-700 disabled:opacity-50"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
                 {cancellingTradeId === cancellationTarget.id ? t("journal.cancel_in_progress") : t("journal.cancel_confirm")}
               </button>
             </div>

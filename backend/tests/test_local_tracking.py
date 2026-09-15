@@ -10,7 +10,8 @@ from app.services.local_tracking import LocalTrackingService, TrackingConflict
 def setup(tmp_path):
     driver = SQLiteDriver(str(tmp_path / "journal.sqlite3"))
     trade = driver.record_trade_with_evidence(
-        {"id": "t1", "symbol": "BTCUSDT", "side": "BUY", "entry_price": 100, "qty": 2},
+        {"id": "t1", "symbol": "BTCUSDT", "side": "BUY", "entry_price": 100, "qty": 2,
+         "qty_unit": "BASE"},
         event_type="IntentRecorded", idempotency_key="create",
     )
     return driver, LocalTrackingService(driver), trade
@@ -132,7 +133,8 @@ def test_create_plan_failure_rolls_back_external_trade(setup):
     driver, svc, _ = setup
     with pytest.raises(ValueError):
         driver.record_trade_with_evidence(
-            {"id": "bad", "symbol": "BTCUSDT", "side": "BUY", "entry_price": 100, "qty": 2},
+            {"id": "bad", "symbol": "BTCUSDT", "side": "BUY", "entry_price": 100, "qty": 2,
+             "qty_unit": "BASE"},
             event_type="IntentRecorded", idempotency_key="bad-create",
             local_tracking_plan={**plan(), "targets": [{"price": 110, "percent": 50}]},
         )
@@ -204,7 +206,8 @@ def test_tracking_api_is_revisioned_and_never_closes_external_trade(setup, monke
 
 def test_no_targets_disabled_and_short_stop(setup):
     driver, svc, _ = setup
-    svc.edit("t1", {"enabled": True, "targets": []}, expected_revision=0)
+    svc.edit("t1", {"enabled": True, "targets": [],
+              "source_id": "binance_public", "source_symbol": "BTCUSDT"}, expected_revision=0)
     assert svc.observe("t1", quote(150))["remaining_qty"] == "2"
     svc.edit("t1", {**plan(), "enabled": False}, expected_revision=1)
     assert svc.observe("t1", quote(150))["remaining_qty"] == "2"

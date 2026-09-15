@@ -136,7 +136,8 @@ class EvidenceTradeProjectionRepository:
                 "entry_time": entry_time,
                 "exit_time": raw_trade.get("exit_time"),
                 "status": status,
-                "pnl": _finite_number(raw_trade.get("pnl"), "trade.pnl", default=0.0),
+                "pnl": _finite_number(raw_trade.get("pnl"), "trade.pnl")
+                if raw_trade.get("pnl") is not None else None,
                 "r_multiple": _finite_number(raw_trade.get("r_multiple"), "trade.r_multiple")
                 if raw_trade.get("r_multiple") is not None else None,
                 "commission": _finite_number(raw_trade.get("commission"), "trade.commission", default=0.0),
@@ -164,6 +165,23 @@ class EvidenceTradeProjectionRepository:
                     else None
                 ),
                 "price_origin": str(raw_trade.get("price_origin") or "UNKNOWN").upper(),
+                # Journal trust fields are additive; older events keep explicit
+                # unknown values instead of being promoted to a declared trade.
+                "leverage": _finite_number(raw_trade.get("leverage"), "trade.leverage")
+                if raw_trade.get("leverage") is not None else None,
+                "revision": int(raw_trade.get("revision") or 1),
+                "entry_time_source": str(raw_trade.get("entry_time_source") or "UNKNOWN").upper(),
+                "close_source": (
+                    str(raw_trade.get("close_source")).strip().upper()
+                    if raw_trade.get("close_source") is not None
+                    else None
+                ),
+                "tracking_started_at": (
+                    str(raw_trade.get("tracking_started_at")).strip()
+                    if raw_trade.get("tracking_started_at") is not None
+                    else None
+                ),
+                "qty_unit": str(raw_trade.get("qty_unit") or "UNKNOWN").upper(),
             }
         )
         snapshot_json = canonical_json(normalized_trade)
@@ -181,7 +199,10 @@ class EvidenceTradeProjectionRepository:
             "entry_time": entry_time,
             "exit_time": normalized_trade["exit_time"],
             "status": status,
-            "pnl": normalized_trade["pnl"],
+            # The typed column is NOT NULL; an unknown PnL keeps 0.0 here only
+            # as a storage placeholder.  The authoritative snapshot_json keeps
+            # NULL so reads never turn missing money into a realized zero.
+            "pnl": normalized_trade["pnl"] if normalized_trade["pnl"] is not None else 0.0,
             "r_multiple": normalized_trade["r_multiple"],
             "commission": normalized_trade["commission"],
             "notes": normalized_trade["notes"],

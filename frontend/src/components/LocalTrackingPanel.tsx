@@ -3,6 +3,7 @@ import { apiFetch, apiUrl } from "../lib/backend";
 import { useTranslation } from "../context/I18nContext";
 import { TargetPlanFields } from "./TargetPlanFields";
 import { isTrackingState, targetPayload, validTargets, type TargetDraft, type TrackingState } from "../lib/localTracking";
+import { formatIstanbulDateTime } from "../lib/tradeTime";
 import type { Trade } from "../types";
 
 const sources = ["binance_public", "bybit_public", "yahoo_public", "stooq_public", "biquote_public"];
@@ -10,7 +11,7 @@ const sources = ["binance_public", "bybit_public", "yahoo_public", "stooq_public
 export function LocalTrackingPanel({ editTrade, onEditorClose }: {
   editTrade: Trade | null; onEditorClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [states, setStates] = useState<TrackingState[]>([]);
   const [error, setError] = useState(false);
   const [editor, setEditor] = useState<{ trade: Trade; plan: TrackingState | null; history: Array<{ state: TrackingState }> } | null>(null);
@@ -119,8 +120,8 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
   const inactive = editor && (editor.trade.status !== "OPEN" || current?.external_status !== undefined && current.external_status !== "OPEN");
 
   return <section className="bg-[#111722] text-white border border-surface-border p-4 rounded space-y-3" data-testid="local-tracking">
-    <h3 className="font-semibold">{t("tracking.title")}</h3>
-    <p className="text-xs text-slate-400">{t("tracking.disclaimer")}</p>
+    <h3 className="font-semibold text-base">{t("tracking.title")}</h3>
+    <p className="k-help">{t("tracking.disclaimer")}</p>
     {error && <p role="alert" className="text-loss">{t("tracking.error")} <button onClick={() => void refresh()}>{t("tracking.reload")}</button></p>}
     {!states.length && !error && <p className="text-sm text-slate-400">{t("tracking.empty")}</p>}
     <div className="space-y-2">{states.map(state => <article key={state.trade_id} className="rounded border border-surface-border p-3 text-sm">
@@ -132,7 +133,9 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
           entry_time: "", status: (state.external_status || "OPEN") as Trade["status"] })}>{t("tracking.edit")}</button>
       </div>
       <p>{t("tracking.remaining")}: {state.remaining_qty} / {state.initial_qty} · {t("tracking.gross")}: {state.gross_pnl}</p>
-      <p className="text-xs text-slate-400">{state.source_id ? t(`tracking.${state.source_id}`) : t("tracking.no_source")} · {state.source_symbol}</p>
+      <p className="k-help">{t("tracking.started_at")}: {formatIstanbulDateTime(state.armed_at, locale)}</p>
+      {state.unit_status === "UNVERIFIED" && <p className="k-help text-amber-300">{t("tracking.unit_unverified")}</p>}
+      <p className="k-help">{state.source_id ? t(`tracking.${state.source_id}`) : t("tracking.no_source")} · {state.source_symbol}</p>
       {state.targets.map(target => <span className="inline-block mr-4" key={target.id}>
         {target.id}: {target.price} ({target.percent}%) {state.closures.some(c => c.target_id === target.id) ? t("tracking.hit") : ""}
       </span>)}
@@ -183,7 +186,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
           <br />{h.state.targets.map(target => `${target.id}: ${target.price} (${target.percent}%)`).join(" · ")}
           {" · "}{t("tracking.stop")}: {h.state.stop_loss ?? "—"}
         </p>)}
-        {editor.plan?.closures.map((c, i) => <p className="text-xs my-1" key={i}>{c.target_id} · {c.qty} @ {c.price} · {c.observed_at}</p>)}
+        {editor.plan?.closures.map((c, i) => <p className="text-sm my-1" key={i}>{c.target_id} · {c.qty} @ {c.price} · {formatIstanbulDateTime(c.observed_at, locale)}</p>)}
       </details>
     </dialog>}
   </section>;

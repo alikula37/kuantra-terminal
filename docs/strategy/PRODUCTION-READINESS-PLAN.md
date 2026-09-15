@@ -14,6 +14,15 @@ audit: KRR-001@1.0.0
 
 ## 1. Karar özeti ve yetki
 
+Owner-approved addition (2026-09-14): P1-WP32 pilot journal trust. Pilot traders
+need user-supplied trade date/time in `Europe/Istanbul` stored as UTC, an explicit
+open/closed-at-entry choice, a working edit/correction flow with revision control
+and partial-close protection, declared leverage with separated price/position/
+margin returns, automatic open-trade quote refresh with visible freshness, and a
+simplified New Trade/Edit form. The standard journal's primary action becomes Edit;
+replay remains a secondary closed-trade view. Local tracking rules (LIVE,
+provider-event, <=60s) are not weakened. See STATUS for the selected package.
+
 Owner-approved addition (2026-09-12): P1-WP31 local TP1/TP2/TP3/SL tracking follows
 the completed journal entry work. Delivery order is persistence/revisions, exact
 fresh provider quotes, deterministic local partial/full close, then UI and dual

@@ -1,5 +1,13 @@
 from app.api.webhook_tv import webhook_router
 from app.core.position_type import normalize_position_type
+from app.core.position_math import instrument_unit_basis, position_summary
+from app.core.trade_rules import TradeRuleError, normalize_leverage
+from app.core.trade_time import (
+    TradeTimeError,
+    parse_user_time,
+    to_utc_iso,
+    validate_not_future,
+)
 from app.api.plugin_endpoints import router as plugin_router
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query, UploadFile, File, Response
 from fastapi.responses import JSONResponse
@@ -7,11 +15,13 @@ from typing import List, Optional, Dict, Any, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 import json
 import time
-from datetime import datetime
-from app.db.sqlite_driver import sqlite_driver
+from datetime import datetime, timezone
+from app.db.sqlite_driver import SQLiteRevisionConflict, sqlite_driver
 from app.db.duckdb_driver import duckdb_driver
 from app.db.sync_pipeline import sync_pipeline
 from app.db.repositories.candles_repo import candles_repo
+from app.services.trade_edit import TradeEditError, trade_edit_service
+from app.services.quote_refresh import quote_refresh_service
 from app.services.market_data.public_fetcher import (
     FREE_QUOTE_SOURCES,
     public_market_fetcher,
@@ -136,11 +146,18 @@ class TradeCreateSchema(BaseModel):
     side: str = "BUY"
     position_type: Literal["SPOT", "LONG", "SHORT", "UNKNOWN"] = "UNKNOWN"
     entry_price: float = Field(..., gt=0, le=10**15)
-    qty: float = Field(..., gt=0, le=10**12)
+    qty: Optional[float] = Field(default=None, gt=0, le=10**12)
+    size_input_mode: Literal["QTY", "NOTIONAL"] = "QTY"
+    notional_size: Optional[float] = Field(default=None, gt=0, le=10**18)
+    leverage: Optional[float] = Field(default=None, gt=0, le=1000)
     stop_loss: Optional[float] = Field(default=None, gt=0, le=10**15)
     take_profit: Optional[float] = Field(default=None, gt=0, le=10**15)
+    status: Literal["OPEN", "CLOSED"] = "OPEN"
+    exit_price: Optional[float] = Field(default=None, gt=0, le=10**15)
+    exit_time: Optional[str] = Field(default=None, min_length=1, max_length=64)
     entry_time: Optional[str] = Field(default=None, min_length=1, max_length=64)
     notes: Optional[str] = Field(default="", max_length=2000)
+    qty_unit: Literal["BASE", "UNKNOWN"] = "UNKNOWN"
     record_mode: Literal["EXTERNAL", "SIMULATION"] = "EXTERNAL"
     execution_venue: Optional[str] = Field(default=None, max_length=120)
     price_source: Literal[
@@ -154,7 +171,7 @@ class TradeCreateSchema(BaseModel):
         "MANUAL", "PUBLIC_QUOTE", "TRADINGVIEW_ALERT", "BROKER_IMPORT", "UNKNOWN",
     ] = "MANUAL"
 
-    @field_validator("execution_venue", "price_source_symbol", "entry_time", "price_observed_at")
+    @field_validator("execution_venue", "price_source_symbol", "entry_time", "exit_time", "price_observed_at")
     @classmethod
     def _validate_optional_text(cls, value: Optional[str]) -> Optional[str]:
         if value is None:
@@ -175,6 +192,24 @@ class TradeCreateSchema(BaseModel):
     def _validate_price_provenance(self):
         """Reject provenance combinations that would overstate quote evidence."""
         normalize_position_type(self.position_type, self.side)
+        if self.size_input_mode == "NOTIONAL":
+            if self.qty is not None:
+                raise ValueError("Provide either quantity or position size, not both")
+            if self.notional_size is None:
+                raise ValueError("Position size is required in notional mode")
+        else:
+            if self.qty is None:
+                raise ValueError("Quantity is required")
+            if self.notional_size is not None:
+                raise ValueError("Provide either quantity or position size, not both")
+        normalize_leverage(self.leverage, self.position_type.upper())
+        if self.status == "CLOSED":
+            if self.exit_price is None or self.exit_time is None:
+                raise ValueError("A closed trade requires exit price and exit time")
+            if self.local_tracking is not None:
+                raise ValueError("A historical closed trade cannot enable live tracking")
+        elif self.exit_price is not None or self.exit_time is not None:
+            raise ValueError("An open trade cannot carry exit price or exit time")
         if self.price_origin == "PUBLIC_QUOTE":
             if self.price_source not in FREE_QUOTE_SOURCES:
                 raise ValueError("PUBLIC_QUOTE requires an approved free quote source")
@@ -204,6 +239,48 @@ class TradeCloseSchema(BaseModel):
     commission: Optional[float] = 0.0
 
 
+class TradeEditSchema(BaseModel):
+    """A bounded journal correction.  Omitted fields stay untouched.
+
+    An explicit ``null`` clears an optional value (for example a take profit or
+    a declared leverage); the endpoint distinguishes omitted vs null through
+    ``model_dump(exclude_unset=True)``.  Identity fields (symbol, side, position
+    type) and realized close data are deliberately not editable here.
+    """
+
+    expected_revision: int = Field(ge=1)
+    entry_price: Optional[float] = Field(default=None, gt=0, le=10**15)
+    entry_time: Optional[str] = Field(default=None, min_length=1, max_length=64)
+    qty: Optional[float] = Field(default=None, gt=0, le=10**12)
+    leverage: Optional[float] = Field(default=None, gt=0, le=1000)
+    stop_loss: Optional[float] = Field(default=None, gt=0, le=10**15)
+    take_profit: Optional[float] = Field(default=None, gt=0, le=10**15)
+    notes: Optional[str] = Field(default=None, max_length=2000)
+    qty_unit: Optional[Literal["BASE", "UNKNOWN"]] = None
+    local_tracking: Optional[TrackingEditSchema] = None
+
+    @field_validator("entry_time")
+    @classmethod
+    def _validate_entry_time(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        if any(ord(character) < 32 for character in value):
+            raise ValueError("entry time cannot contain control characters")
+        cleaned = value.strip()
+        return cleaned or None
+
+    @field_validator("notes")
+    @classmethod
+    def _validate_notes(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and any(ord(character) < 32 for character in value):
+            raise ValueError("notes cannot contain control characters")
+        return value
+
+
+class QuoteRefreshSchema(BaseModel):
+    trade_ids: Optional[List[str]] = Field(default=None, max_length=200)
+
+
 class ReconciliationDecisionSchema(BaseModel):
     decision: str = Field(..., min_length=1, max_length=32)
     note: Optional[str] = Field(default=None, max_length=500)
@@ -225,11 +302,12 @@ def list_trades(
     symbol: Optional[str] = None,
     status: Optional[str] = None
 ):
-    return trade_read_adapter.list_trades(limit=limit, offset=offset, symbol=symbol, status=status)
+    trades = trade_read_adapter.list_trades(limit=limit, offset=offset, symbol=symbol, status=status)
+    return [attach_position_summary(trade) for trade in trades]
 
 @router.get("/trades/open")
 def get_open_trades():
-    return trade_read_adapter.get_open_trades()
+    return [attach_position_summary(trade) for trade in trade_read_adapter.get_open_trades()]
 
 @router.get("/trades/{trade_id}/evidence")
 def get_trade_evidence(trade_id: str):
@@ -281,29 +359,139 @@ def get_trade(trade_id: str):
     trade = trade_read_adapter.get_trade(trade_id)
     if not trade:
         raise HTTPException(status_code=404, detail="Trade not found")
-    return trade
+    return attach_position_summary(trade)
+
+
+def attach_position_summary(trade: Dict[str, Any]) -> Dict[str, Any]:
+    """Attach the labeled sizing/return view without mutating stored data."""
+
+    enriched = dict(trade)
+    enriched["sizing"] = position_summary(
+        symbol=trade.get("symbol"),
+        position_type=trade.get("position_type") or "UNKNOWN",
+        side=trade.get("side") or "BUY",
+        entry_price=trade.get("entry_price"),
+        qty=trade.get("qty"),
+        leverage=trade.get("leverage"),
+        exit_price=trade.get("exit_price"),
+        commission=trade.get("commission"),
+        qty_unit=trade.get("qty_unit"),
+    )
+    return enriched
 
 @router.post("/trades")
 def create_trade(trade: TradeCreateSchema):
-    now = datetime.utcnow().isoformat()
+    reference = datetime.now(timezone.utc)
+    try:
+        entry_at = (
+            parse_user_time(trade.entry_time, field="entry_time", now=reference)
+            if trade.entry_time
+            else reference
+        )
+        validate_not_future(entry_at, field="entry_time", now=reference)
+        exit_at = None
+        if trade.exit_time:
+            exit_at = parse_user_time(trade.exit_time, field="exit_time", now=reference)
+            validate_not_future(exit_at, field="exit_time", now=reference)
+            if exit_at < entry_at:
+                raise TradeTimeError(
+                    "EXIT_BEFORE_ENTRY",
+                    "The exit time cannot be earlier than the entry time.",
+                    field="exit_time",
+                )
+    except TradeTimeError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": exc.reason, "message": str(exc), "field": exc.field},
+        ) from exc
+
     price_source = trade.price_source.lower()
     if price_source not in FREE_QUOTE_SOURCES and price_source not in {
         "manual", "tradingview_alert", "broker_import", "unknown",
     }:
         raise HTTPException(status_code=422, detail="Unsupported price source")
+    try:
+        leverage = normalize_leverage(trade.leverage, trade.position_type)
+    except TradeRuleError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": exc.reason, "message": str(exc), "field": exc.field},
+        ) from exc
+
+    if trade.size_input_mode == "NOTIONAL":
+        qty = float(trade.notional_size) / float(trade.entry_price)
+    else:
+        qty = float(trade.qty)
+    if not qty or qty <= 0 or qty != qty or qty in (float("inf"), float("-inf")):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "reason": "QTY_INVALID",
+                "message": "The computed position quantity must be a positive finite number.",
+                "field": "qty",
+            },
+        )
+
+    side = trade.side.upper()
+    long = side in ("BUY", "LONG")
+    direction = 1.0 if long else -1.0
+    unit_basis = instrument_unit_basis(trade.symbol, qty_unit=trade.qty_unit)
+    monetary_ready = unit_basis["contract_size"] == "BASE_UNIT"
+    exit_price = float(trade.exit_price) if trade.status == "CLOSED" else None
+    pnl: Optional[float] = 0.0
+    r_multiple = None
+    if exit_price is not None and monetary_ready:
+        pnl = direction * (exit_price - float(trade.entry_price)) * qty
+        if trade.stop_loss:
+            risk_unit = (
+                (float(trade.entry_price) - float(trade.stop_loss)) if long and float(trade.entry_price) > float(trade.stop_loss)
+                else (float(trade.stop_loss) - float(trade.entry_price)) if not long and float(trade.stop_loss) > float(trade.entry_price)
+                else None
+            )
+            if risk_unit and qty > 0:
+                r_multiple = round(pnl / (risk_unit * qty), 2)
+    elif exit_price is not None:
+        # The contract/lot size is unknown, so no realized money figure is
+        # produced; the close evidence itself is still recorded.
+        pnl = None
+
+    tracking_plan = (
+        trade.local_tracking.model_dump()
+        if trade.local_tracking is not None and trade.status == "OPEN"
+        else None
+    )
+    # The local plan is the authority for the effective stop/targets; mirror the
+    # plan's first values into the compatibility columns so journal analytics,
+    # R-multiple and the tracking engine never disagree.
+    effective_stop = trade.stop_loss
+    effective_target = trade.take_profit
+    if tracking_plan is not None:
+        plan_targets = tracking_plan.get("targets") or []
+        if effective_stop is None and tracking_plan.get("stop_loss") is not None:
+            effective_stop = float(tracking_plan["stop_loss"])
+        if effective_target is None and plan_targets:
+            effective_target = float(plan_targets[0]["price"])
+    tracking_started_at = (
+        to_utc_iso(reference)
+        if tracking_plan is not None and tracking_plan.get("enabled")
+        else None
+    )
     trade_data = {
         "symbol": trade.symbol.upper(),
-        "side": trade.side.upper(),
+        "side": side,
         "position_type": trade.position_type,
         "entry_price": trade.entry_price,
-        "qty": trade.qty,
-        "stop_loss": trade.stop_loss,
-        "take_profit": trade.take_profit,
-        "entry_time": trade.entry_time or now,
-        "status": "OPEN",
-        "notes": trade.notes,
-        "pnl": 0.0,
+        "qty": qty,
+        "stop_loss": effective_stop,
+        "take_profit": effective_target,
+        "entry_time": to_utc_iso(entry_at),
+        "status": trade.status,
+        "exit_price": exit_price,
+        "exit_time": to_utc_iso(exit_at) if exit_at is not None else None,
+        "pnl": round(pnl, 2) if pnl is not None else None,
+        "r_multiple": r_multiple,
         "commission": 0.0,
+        "notes": trade.notes,
         "record_mode": trade.record_mode,
         "execution_venue": trade.execution_venue,
         "price_source": price_source,
@@ -311,10 +499,16 @@ def create_trade(trade: TradeCreateSchema):
         "price_status": trade.price_status,
         "price_observed_at": trade.price_observed_at,
         "price_origin": trade.price_origin,
+        "leverage": leverage,
+        "revision": 1,
+        "entry_time_source": "USER" if trade.entry_time else "SERVER",
+        "close_source": "USER_REPORTED" if trade.status == "CLOSED" else None,
+        "tracking_started_at": tracking_started_at,
+        "qty_unit": trade.qty_unit,
     }
     saved = tracking_call(lambda: sync_pipeline.record_and_sync_trade(
         trade_data,
-        local_tracking_plan=trade.local_tracking.model_dump() if trade.local_tracking is not None else None,
+        local_tracking_plan=tracking_plan,
         source="journal_simulation" if trade.record_mode == "SIMULATION" else "journal_external",
         source_ref=trade.execution_venue or "manual",
         provenance_extra={
@@ -325,54 +519,172 @@ def create_trade(trade: TradeCreateSchema):
             "price_status": trade.price_status,
             "price_observed_at": trade.price_observed_at,
             "price_origin": trade.price_origin,
+            "entry_time_source": trade_data["entry_time_source"],
+            "size_input_mode": trade.size_input_mode,
+            "close_source": trade_data["close_source"],
+            "qty_unit": trade.qty_unit,
         },
     ))
-    return saved
+    return attach_position_summary(saved)
+
+
+@router.patch("/trades/{trade_id}")
+def edit_trade(trade_id: str, payload: TradeEditSchema):
+    changes = payload.model_dump(exclude_unset=True)
+    expected_revision = changes.pop("expected_revision")
+    tracking_plan = changes.pop("local_tracking", None)
+    try:
+        return trade_edit_service.edit(
+            trade_id,
+            changes,
+            expected_revision=expected_revision,
+            tracking_plan=tracking_plan,
+        )
+    except TradeEditError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail={"reason": exc.reason, "message": str(exc), "field": exc.field},
+        ) from exc
+    except TradeRuleError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": exc.reason, "message": str(exc), "field": exc.field},
+        ) from exc
+    except TradeTimeError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": exc.reason, "message": str(exc), "field": exc.field},
+        ) from exc
+
+
+@router.get("/trades/{trade_id}/revisions")
+def get_trade_revisions(trade_id: str):
+    existing = trade_read_adapter.get_trade(trade_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Trade not found")
+    return {
+        "trade_id": trade_id,
+        "current_revision": int(existing.get("revision") or 1),
+        "revisions": trade_edit_service.revision_history(trade_id),
+    }
 
 @router.post("/trades/{trade_id}/close")
 def close_trade(trade_id: str, close_data: TradeCloseSchema):
     existing = sqlite_driver.get_trade(trade_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Trade not found")
-    
+    if str(existing.get("status")) != "OPEN":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "reason": "TRADE_NOT_OPEN",
+                "message": "Only an open trade can be closed; the recorded status is preserved.",
+            },
+        )
+
+    reference = datetime.now(timezone.utc)
+    try:
+        exit_at = (
+            parse_user_time(close_data.exit_time, field="exit_time", now=reference)
+            if close_data.exit_time
+            else reference
+        )
+        validate_not_future(exit_at, field="exit_time", now=reference)
+        entry_at = parse_user_time(str(existing["entry_time"]), field="entry_time", now=reference)
+        if exit_at < entry_at:
+            raise TradeTimeError(
+                "EXIT_BEFORE_ENTRY",
+                "The exit time cannot be earlier than the entry time.",
+                field="exit_time",
+            )
+    except TradeTimeError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": exc.reason, "message": str(exc), "field": exc.field},
+        ) from exc
+
     entry_price = float(existing["entry_price"])
     qty = float(existing["qty"])
     side = existing["side"].upper()
     exit_price = close_data.exit_price
     sl = float(existing["stop_loss"]) if existing.get("stop_loss") else None
+    monetary_ready = instrument_unit_basis(
+        existing.get("symbol"),
+        qty_unit=existing.get("qty_unit"),
+    )["contract_size"] == "BASE_UNIT"
 
-    if side in ("BUY", "LONG"):
+    if not monetary_ready:
+        # User-reported close evidence is stored; no realized money figure is
+        # produced because the quantity unit/contract multiplier is unknown.
+        pnl = None
+        r_multiple = None
+    elif side in ("BUY", "LONG"):
         pnl = (exit_price - entry_price) * qty - (close_data.commission or 0.0)
         r_unit = (entry_price - sl) if sl and (entry_price > sl) else None
+        r_multiple = (pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
     else:
         pnl = (entry_price - exit_price) * qty - (close_data.commission or 0.0)
         r_unit = (sl - entry_price) if sl and (sl > entry_price) else None
-
-    r_multiple = (pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
+        r_multiple = (pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
 
     update_payload = {
         "status": "CLOSED",
         "exit_price": exit_price,
-        "exit_time": close_data.exit_time or datetime.utcnow().isoformat(),
-        "pnl": round(pnl, 2),
+        "exit_time": to_utc_iso(exit_at),
+        "pnl": round(pnl, 2) if pnl is not None else None,
         "r_multiple": round(r_multiple, 2) if r_multiple is not None else None,
-        "commission": close_data.commission or 0.0
+        "commission": close_data.commission or 0.0,
+        "close_source": "USER_REPORTED",
+        "revision": int(existing.get("revision") or 1) + 1,
     }
 
-    updated = sync_pipeline.record_and_sync_trade({"id": trade_id, **update_payload})
-    return updated
+    try:
+        updated = sync_pipeline.record_and_sync_trade(
+            {"id": trade_id, **update_payload},
+            expected_revision=int(existing.get("revision") or 1),
+        )
+    except SQLiteRevisionConflict as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"reason": "REVISION_CONFLICT", "message": str(exc)},
+        ) from exc
+    return attach_position_summary(updated)
 
 @router.delete("/trades/{trade_id}")
 def delete_trade(trade_id: str):
     existing = sqlite_driver.get_trade(trade_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Trade not found")
+    if str(existing.get("status")) == "CANCELED":
+        raise HTTPException(
+            status_code=409,
+            detail={"reason": "TRADE_ALREADY_CANCELED", "message": "The trade is already canceled."},
+        )
     canceled = sync_pipeline.record_and_sync_trade(
-        {"id": trade_id, "status": "CANCELED"},
+        {
+            "id": trade_id,
+            "status": "CANCELED",
+            "revision": int(existing.get("revision") or 1) + 1,
+        },
         source="journal_delete",
         source_ref="api",
+        expected_revision=int(existing.get("revision") or 1),
     )
     return {"status": "canceled", "id": trade_id, "trade": canceled}
+
+@router.post("/trades/quotes/refresh")
+async def refresh_trade_quotes(payload: QuoteRefreshSchema):
+    """Refresh open-trade quotes for the exact confirmed provider identity."""
+
+    if payload.trade_ids:
+        selected = []
+        for trade_id in payload.trade_ids[:200]:
+            trade = trade_read_adapter.get_trade(trade_id)
+            if trade:
+                selected.append(trade)
+    else:
+        selected = trade_read_adapter.get_open_trades()[:200]
+    return await quote_refresh_service.refresh(selected)
 
 @router.post("/journal/import-csv")
 async def import_csv_trades(file: UploadFile = File(...)):

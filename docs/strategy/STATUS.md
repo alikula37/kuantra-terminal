@@ -3,7 +3,113 @@
 
 Updated: 2026-09-13. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 trusted pilot obligations](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+**Selected work: [P1-WP32 pilot journal trust](work-packages/P1-WP32-pilot-journal-trust.md).**
+Owner instruction (2026-09-14): pilot traders need a readable journal with
+user-supplied Turkey-time trade dates, working edit/correction with revision
+control, declared leverage with separated price/position/margin returns, automatic
+open-trade quote refresh and a simplified New Trade/Edit form. The standard
+journal's primary row action becomes Edit; Replay moves to a secondary action for
+closed trades. Prior package [P1-WP29 trusted pilot obligations](work-packages/P1-WP29-trusted-macos-pilot-package.md)
+remains open for N03/N05/H05/pilot-access owner-host obligations.
+
+**P1-WP32 implementation evidence (this change, uncommitted):** Trade time is now
+user-supplied in `Europe/Istanbul` and stored as timezone-aware UTC
+(`entry_time_source=USER|SERVER`), future realized times are rejected, and a
+historical entry explicitly declares still-open vs closed-earlier; closed-at-entry
+requires exit price/time and never enables live tracking. Historical open entries
+arm local tracking after recording (`armed_at > entry_time`), so the untracked gap
+cannot close a position. Corrections append `TradeCorrected` events with previous
+values per field and an atomic `expected_revision` guard (409 on stale editors);
+quantity/entry edits reset an existing local TP plan only before any close
+evidence and are locked after a partial close, while completed trades accept notes
+only and canceled tombstones are immutable. Declared leverage is journal metadata:
+price return, position return and margin return stay separate, PnL is never
+multiplied by leverage, spot rejects leverage, notional/quantity inputs cannot
+conflict, and unknown contract sizes (XAUUSD) never produce a margin/liquidation
+claim. Open-trade quotes refresh automatically and on demand through one batched
+endpoint keyed to the exact confirmed provider identity, with shared requests,
+concurrency 4, exponential backoff, visible LIVE/DELAYED/stale states and a
+stale-only "last known" fallback; the LIVE + provider-event + <=60s automatic
+close contract is unchanged. Schema revision `006_trade_time_edit_sizing` is
+additive; Alembic head, migration classification and the two head assertions were
+updated. Backend **903 passed / 2 warnings** (23 new focused tests), frontend
+**36 files / 180 tests** (26 new), i18n **944/944/944** EN/TR/DE, TypeScript and
+production build clean, docs/release-truth/`git diff --check` PASS. Canonical Mac
+arm64 local CI is **MERGE READY** with 13/13 steps and native WKWebView smoke;
+report `dist/p1-wp32-local-ci-final2.json` SHA-256
+`95a096b47a9eb63ca7bb364720fb88353f1d26fc45d01c4253943ab2659c2dc5`, tracked tree
+`e38dc91cc50f836a87c8c72bb4bfc72c43a63fc81dd539602807043725b06d62`, provenance
+`DEVELOPER_DIRTY` (uncommitted development evidence). Installed application and
+GitHub Releases are untouched; the read-only replay, fee/funding accrual and
+exchange-verified close boundaries remain open.
+
+**P1-WP32 independent-review fixes (round 2):** Four reproduced findings are
+fixed with red-first tests. (1) A journal stop correction now updates the local
+plan and the trade row in one transaction; the legacy TP column mirrors TP1, a
+single pending target accepts a TP correction, multi-target/completed plans
+reject it (`TARGETS_MANAGED_BY_PLAN`), the edit screen edits the plan itself
+with completed-target locks and its own plan `expected_revision`, and a failed
+plan write rolls the correction back. Before: plan stop stayed `95` after the
+trade stop became `90`, and a `94` quote closed the trade; now `94` produces no
+close and `89` closes exactly once. (2) `entry_time` edits persist (old/new
+instants normalized separately, equal instants idempotent, `entry_time_source`
+set to `USER`, history/rebuild consistent); before, the API returned
+`no_change: true`. (3) A failed quote refresh now demotes every displayed price
+to an explicit stale last-known value, tracks last attempt and last success
+separately, ages the price from its observation time each second, and recovers
+to `LIVE` on the next success; the automatic-close freshness contract is
+unchanged. (4) Unknown contract sizes (gold/futures/provider-symbol/generic)
+produce no notional, margin or money P/L (`null` +
+`CONTRACT_SIZE_UNVERIFIED`), local tracking refuses plans for them, legacy plans
+cannot close, unverified user-reported closes store `pnl = null` (never a
+synthetic zero) and portfolio aggregates exclude/count unknown results; verified
+base-unit crypto pairs keep their existing math. Evidence: focused
+`test_p1_wp32_review_fixes.py` **11 passed**, full backend **914 passed / 2
+warnings**, frontend **37 files / 192 tests**, TypeScript clean, i18n
+**956/956/956**. Canonical Mac arm64 local CI on the fixed tree is **MERGE
+READY** (13/13) with native WKWebView smoke; report
+`dist/p1-wp32-review-local-ci-final.json` SHA-256
+`7f5b6d4513ff3df217b9517a231c6da3304d87d6b4779d8ee6fcc421dd39a2eb`, tracked tree
+`245b63db3791e5a2f6c1e7107c721b3a4aefb5ee156a3449e3e85759fb88c563`, provenance
+`DEVELOPER_DIRTY`. One earlier gate run transiently failed the backend step with
+no reproducible failure; three consecutive clean full-suite runs and the final
+gate run passed. No commit, release or installed-app change was made.
+
+**P1-WP32 round-3 fixes:** Plan-only corrections (TP2/TP3, allocations, enabled
+flag) were previously answered as `no_change` because only the mirrored trade
+columns were compared; the whole plan payload is now compared, plan-only edits
+save with their own revision and a `tracking_plan` history marker, and a stale
+plan revision still conflicts. Symbol suffixes no longer grant verified
+base-unit status: monetary math, local tracking and close P/L require a
+provider-confirmed instrument identity (Binance/Bybit exact symbol) or an
+explicit `qty_unit=BASE` contract (schema revision `007_trade_qty_unit`);
+`EURUSD`, `GBPUSD`, `FAKEUSD` and undeclared manual symbols produce no money
+figures, while verified crypto pairs keep their math. Round-3 focused tests
+**10 passed**; full backend **924 passed / 2 warnings**; frontend **37 files /
+198 tests**; i18n **964/964/964**; TypeScript clean. Canonical Mac arm64 local
+CI is **MERGE READY** (13/13) with native WKWebView smoke; report
+`dist/p1-wp32-round3-local-ci.json` SHA-256
+`6a7a1bc79832fc70be12eaf9b423632e021a9c293a33b275dab9cd0e424f45ce`, tracked tree
+`5d8f7b13c3ca08b67a6d5ed638597b376f1b67f9d709e42dcca271f00261f3df`, provenance
+`DEVELOPER_DIRTY`. No commit, release or installed-app change was made.
+
+**P1-WP32 round-4 fix:** A client-supplied provider label was still treated as
+instrument verification (`FAKEUSD + binance_public + FAKEUSD` produced
+`PROVIDER_INSTRUMENT`/`READY`). The provider path is closed: monetary math,
+local tracking, close P/L and portfolio aggregation now require an explicit
+`qty_unit=BASE` user declaration, labeled
+`EXPLICIT_QTY_UNIT / USER_DECLARATION`; provider fields remain price provenance
+only, and the frontend exposes the declaration checkbox plus the label. Round-4
+focused tests **5 passed** (fake symbol + fake provider label, real symbol
+without declaration, valid explicit declaration, revocation, plan gate); full
+backend **929 passed / 2 warnings**; frontend **37 files / 198 tests**; i18n
+**963/963/963**; TypeScript clean. Canonical Mac arm64 local CI is **MERGE
+READY** (13/13) with native WKWebView smoke; report
+`dist/p1-wp32-round4-local-ci.json` SHA-256
+`d4bb14afb05b3d2f9eb292196cd7ba4f905137d01b058450c59a8e38f4ae0e72`, tracked tree
+`daa3e351d1b00a6715cea14fd562719035675c7a88aa32193ba085ce2e8e75d9`, provenance
+`DEVELOPER_DIRTY`. No commit, release or installed-app change was made.
+
 [P1-WP31 local TP tracking](../archive/strategy/work-packages/P1-WP31-local-tp-tracking.md)
 is bounded complete and archived. Source `4298acdbfa2e7de0028dcaf7a1c3780b4f69c1d0`
 passed canonical Mac CI: **880 backend / 154 frontend / 813-key i18n**, all 13 steps
@@ -1138,6 +1244,7 @@ and frontend lock hashes remain
 | P1-WP28 | BOUNDED COMPLETE / RELEASE GATES OPEN | macOS 12+ native arm64/x86_64 build, executable-derived provenance, exact per-architecture DMG smoke and native-host release contract | Source `dd58142` plus GitHub Actions run `34664574672` proves native arm64 and native `macos-15-intel` x86_64 build/test/package/exact mounted-DMG smoke. Both reports have `COMPLETE` provenance, matching executable architecture, `wkwebview`, `hdiutil verify: VALID` and truth-matrix SHA-256 `8c647721dc2349cc8fd99d046bf14738121ac4f9a0b7c8b87cdb9f1ccfe681ab`; Intel is no longer `PENDING_NATIVE_CI`. Phase 0 final release audit remains separate because N05 is intentionally ad-hoc `BLOCKED`; Universal2, Windows/Linux, N03 and signing are separate gates. |
 | P1-WP29 | IN PROGRESS / OWNER-HOST OBLIGATIONS | Architecture-scoped trusted pilot package, exact evidence bundle, manifest/checksums and user instructions | Source `4298acd`, run `34721385803`: dual native package, exact DMG/local-tracking smoke and checksum PASS. Existing private Release refreshed with exactly two DMGs; installed Mac app updated with data preserved. Current hashes/tests are at the top of STATUS and archived WP31. N03 clean second profile/host, N05 signing/notarization, H05 commercial/dependency disposition and pilot-user read access remain separate obligations. |
 | P1-WP31 | CLOSED / BOUNDED COMPLETE | Local TP1/TP2/TP3/SL revisions, exact provider-event quotes and separate estimated partial/full closes | Source `4298acd`, canonical Mac CI and both native exact DMGs PASS; pilot Release and installed app refreshed. [Archived WP31](../archive/strategy/work-packages/P1-WP31-local-tp-tracking.md) retains red/green, concurrency, rollback, rebuild/export/restore and UI evidence. Display-only quotes, old/imported records and actual external fills are not silently promoted. |
+| P1-WP32 | IN PROGRESS / DEV EVIDENCE | Turkey-time trade dates, revisioned edit/correction, plan-synchronized TP/SL, declared leverage sizing, bounded quote refresh and unverified-unit money gating | Review round 2: stop/TP edits now drive the local plan (94 after a 95→90 stop edit no longer closes; 89 closes once), entry-time edits persist, failed refreshes demote prices to explicit stale last-known and recover, and unknown contract sizes produce no monetary figures. Backend **914** / frontend **192** / i18n **956**; focused review tests **11 passed**. Installed app and Releases unchanged; docs close-out and commit/push await owner direction. |
 | P1-WP30 | CLOSED / BOUNDED COMPLETE | Free multi-asset journal entry, exact public quote provenance, explicit simulation and TradingView pending-observation boundary | Archived [P1-WP30](../archive/strategy/work-packages/P1-WP30-free-multi-asset-journal.md) with focused backend/regression **35 passed / 2 warnings** and current clean regression/local-CI evidence recorded above. No paid data/live order/release claim. |
 | N03 | DEFERRED / HOST_REQUIRED | Clean second macOS profile/host install-lifecycle, quarantine observation and synthetic value-chain reopen | Execute at final macOS distribution/pilot validation with the exact packaged artifact; the pilot team's Intel Mac may be the selected host if clean-profile attestation is supplied. Current developer profile/temp data directory is insufficient and the criterion must not be marked PASS |
 | N04 | CLOSED | Manual update/interrupted-update/uninstall data preservation and fail-closed schema rollback policy | Bounded packaged audit `3f4ba82` PASS; exact previous/current provenance and hashes recorded above. No automatic updater or real migration was added. |
