@@ -262,6 +262,17 @@ VALID and mounted-DMG smoke PASS (`acddbaaf…`), installed executable `eeb16e89
 CI build, launched with runtime `{"status":"online","version":"1.1.0"}`; the journal database
 was preserved.
 
+**P1-WP32 round-6 pilot report fix (2026-09-15):** A completed trade that was
+closed without an explicit base-unit declaration stored an unknown P/L, portfolio
+aggregates exclude unknown results, and the editor blocked the declaration afterwards
+(422), so the Dashboard appeared not to change after an edit/close. Completed trades now
+accept `qty_unit`, `exit_price` and `exit_time` corrections while entry/quantity stay
+locked; each correction recomputes the user-reported gross P/L and R for a declared base
+unit, keeps previous values in the correction provenance, and revoking the unit returns
+the result to unknown. The Dashboard shows an explicit unknown-result count. Evidence:
+focused status-edit tests **12 passed**, full backend **941 passed / 2 warnings**,
+frontend **37 files / 200 tests**, i18n **979/979/979**, TypeScript clean.
+
 **Version reset decision (2026-09-10):** Kullanılamaz durumdaki v1.4.0 yayın kaydı geri
 çekilmişti; 2026-09-11 cleanup kararıyla GitHub release/tag/assets kaldırıldı. Eski truth
 matrix ve audit belgeleri repository içinde yalnızca tarihsel kanıt olarak tutulur. Güncel

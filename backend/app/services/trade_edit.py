@@ -31,7 +31,7 @@ from app.services.local_tracking import TrackingConflict
 _OPEN_EDITABLE = frozenset(
     {"entry_price", "entry_time", "qty", "leverage", "stop_loss", "take_profit", "notes", "qty_unit"}
 )
-_CLOSED_EDITABLE = frozenset({"notes"})
+_CLOSED_EDITABLE = frozenset({"notes", "qty_unit", "exit_price", "exit_time"})
 _CANCELED_EDITABLE: frozenset[str] = frozenset()
 
 
@@ -221,6 +221,34 @@ class TradeEditService:
             return True
         return new_targets != old_targets
 
+    @staticmethod
+    def _close_result(
+        *,
+        side: str,
+        entry_price: Optional[float],
+        exit_price: float,
+        qty_value: Optional[float],
+        commission_value: float,
+        stop_value: Optional[float],
+        unit_ready: bool,
+    ) -> tuple[Optional[float], Optional[float]]:
+        """Return the user-reported gross P/L and R only for a verified unit."""
+
+        if not unit_ready or qty_value is None or entry_price is None:
+            return None, None
+        direction = 1.0 if side in ("BUY", "LONG") else -1.0
+        gross = direction * (exit_price - entry_price) * qty_value - commission_value
+        r_multiple = None
+        if stop_value:
+            risk_unit = (
+                (entry_price - stop_value) if side in ("BUY", "LONG") and entry_price > stop_value
+                else (stop_value - entry_price) if side not in ("BUY", "LONG") and stop_value > entry_price
+                else None
+            )
+            if risk_unit and qty_value > 0:
+                r_multiple = round(gross / (risk_unit * qty_value), 2)
+        return round(gross, 2), r_multiple
+
     # -- write ------------------------------------------------------------
 
     def edit(
@@ -253,10 +281,10 @@ class TradeEditService:
         status_change = requested_status != status
         requested = {key: value for key, value in changes.items() if key in _OPEN_EDITABLE}
         if "exit_price" in changes or "exit_time" in changes:
-            if not (status_change and requested_status == "CLOSED"):
+            if not ((status_change and requested_status == "CLOSED") or (status == "CLOSED" and not status_change)):
                 raise TradeEditError(
                     "EXIT_FIELDS_REQUIRE_CLOSE",
-                    "Exit price and time can only be set while closing the trade.",
+                    "Exit price and time can only be set for a completed trade.",
                     field="exit_price" if "exit_price" in changes else "exit_time",
                 )
         if status == "CLOSED" and not status_change:
@@ -347,24 +375,18 @@ class TradeEditService:
                     existing.get("symbol"),
                     qty_unit=payload.get("qty_unit", existing.get("qty_unit")),
                 )["contract_size"] == "BASE_UNIT"
-                commission_value = _number(existing.get("commission")) or 0.0
-                gross: Optional[float] = None
-                if unit_ready and qty_value is not None and entry_value is not None:
-                    direction = 1.0 if side in ("BUY", "LONG") else -1.0
-                    gross = direction * (exit_price_value - entry_value) * qty_value - commission_value
-                stop_value = _number(payload.get("stop_loss", existing.get("stop_loss")))
-                r_multiple_value = None
-                if gross is not None and stop_value:
-                    risk_unit = (
-                        (entry_value - stop_value) if side in ("BUY", "LONG") and entry_value > stop_value
-                        else (stop_value - entry_value) if side not in ("BUY", "LONG") and stop_value > entry_value
-                        else None
-                    )
-                    if risk_unit and qty_value and qty_value > 0:
-                        r_multiple_value = round(gross / (risk_unit * qty_value), 2)
+                gross, r_multiple_value = self._close_result(
+                    side=side,
+                    entry_price=entry_value,
+                    exit_price=exit_price_value,
+                    qty_value=qty_value,
+                    commission_value=_number(existing.get("commission")) or 0.0,
+                    stop_value=_number(payload.get("stop_loss", existing.get("stop_loss"))),
+                    unit_ready=unit_ready,
+                )
                 apply("exit_price", _number(existing.get("exit_price")), exit_price_value)
                 apply("exit_time", existing.get("exit_time"), to_utc_iso(parsed_exit))
-                apply("pnl", _number(existing.get("pnl")), round(gross, 2) if gross is not None else None)
+                apply("pnl", _number(existing.get("pnl")), gross)
                 apply("r_multiple", _number(existing.get("r_multiple")), r_multiple_value)
                 apply("close_source", existing.get("close_source"), "USER_REPORTED")
 
@@ -431,6 +453,61 @@ class TradeEditService:
         if "notes" in requested:
             notes = validate_notes(requested["notes"])
             apply("notes", str(existing.get("notes") or ""), notes)
+
+        correction_requested = (
+            ("exit_price" in changes)
+            or ("exit_time" in changes)
+            or ("qty_unit" in changes and "qty_unit" in changed)
+        )
+        if status == "CLOSED" and not status_change and correction_requested:
+            # Correcting a completed trade's unit or exit data recomputes the
+            # user-reported result; the previous values stay in provenance.
+            exit_price_value = (
+                _number(changes.get("exit_price"))
+                if "exit_price" in changes
+                else _number(existing.get("exit_price"))
+            )
+            exit_time_raw = changes.get("exit_time") if "exit_time" in changes else existing.get("exit_time")
+            if exit_price_value is None or exit_price_value <= 0:
+                raise TradeRuleError(
+                    "EXIT_REQUIRED_FOR_CLOSED",
+                    "A completed trade needs a positive exit price and time.",
+                    field="exit_price",
+                )
+            if not exit_time_raw:
+                raise TradeRuleError(
+                    "EXIT_REQUIRED_FOR_CLOSED",
+                    "A completed trade needs a positive exit price and time.",
+                    field="exit_time",
+                )
+            parsed_exit = parse_user_time(str(exit_time_raw), field="exit_time", now=reference_time)
+            validate_not_future(parsed_exit, field="exit_time", now=reference_time)
+            parsed_entry = parse_user_time(str(existing.get("entry_time")), now=reference_time)
+            if parsed_exit < parsed_entry:
+                raise TradeRuleError(
+                    "EXIT_BEFORE_ENTRY",
+                    "The exit cannot be earlier than the entry.",
+                    field="exit_time",
+                )
+            unit_ready = instrument_unit_basis(
+                existing.get("symbol"),
+                qty_unit=payload.get("qty_unit", existing.get("qty_unit")),
+            )["contract_size"] == "BASE_UNIT"
+            gross, r_multiple_value = self._close_result(
+                side=str(existing.get("side") or "BUY"),
+                entry_price=_number(existing.get("entry_price")),
+                exit_price=exit_price_value,
+                qty_value=_number(existing.get("qty")),
+                commission_value=_number(existing.get("commission")) or 0.0,
+                stop_value=_number(existing.get("stop_loss")),
+                unit_ready=unit_ready,
+            )
+            apply("exit_price", _number(existing.get("exit_price")), exit_price_value)
+            apply("exit_time", existing.get("exit_time"), to_utc_iso(parsed_exit))
+            apply("pnl", _number(existing.get("pnl")), gross)
+            apply("r_multiple", _number(existing.get("r_multiple")), r_multiple_value)
+            if existing.get("close_source") is None:
+                payload["close_source"] = "USER_REPORTED"
 
         plan_dirty = False
         if tracking_plan is not None and requested_status == "OPEN":

@@ -332,9 +332,37 @@ it("unlocks a completed trade when the editor selects Open", async () => {
   await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
   await flush();
 
-  expect(host.querySelector("[data-testid=trade-edit-closed-notice]")).not.toBeNull();
+  expect(host.querySelector("[data-testid=trade-edit-completed-notice]")).not.toBeNull();
   expect((host.querySelector("[data-testid=trade-edit-qty]") as HTMLInputElement).disabled).toBe(true);
   await act(async () => (host.querySelector("[data-testid=trade-edit-status-open]") as HTMLButtonElement).click());
   expect(host.querySelector("[data-testid=trade-edit-reopen-notice]")).not.toBeNull();
   expect((host.querySelector("[data-testid=trade-edit-qty]") as HTMLInputElement).disabled).toBe(false);
+});
+
+it("lets a completed trade declare its unit and correct the exit", async () => {
+  const closedTrade = {
+    ...openTrade,
+    status: "CLOSED",
+    exit_price: 110,
+    exit_time: "2026-09-14T06:00:00Z",
+    qty_unit: "UNKNOWN",
+    revision: 3,
+  };
+  const captured = respond(closedTrade);
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+
+  expect(host.querySelector("[data-testid=trade-edit-completed-notice]")).not.toBeNull();
+  expect((host.querySelector("[data-testid=trade-edit-exit-price]") as HTMLInputElement).value).toBe("110");
+  expect((host.querySelector("[data-testid=trade-edit-qty-unit]") as HTMLInputElement).disabled).toBe(false);
+  expect((host.querySelector("[data-testid=trade-edit-qty]") as HTMLInputElement).disabled).toBe(true);
+
+  await act(async () => (host.querySelector("[data-testid=trade-edit-qty-unit]") as HTMLInputElement).click());
+  await act(async () => setInputValue(host.querySelector("[data-testid=trade-edit-exit-price]") as HTMLInputElement, "112"));
+  await act(async () => (host.querySelector("[data-testid=trade-edit-save]") as HTMLButtonElement).click());
+  await flush();
+
+  expect(captured.patch).toMatchObject({ qty_unit: "BASE", exit_price: 112, expected_revision: 3 });
+  expect(captured.patch.status).toBeUndefined();
+  expect(captured.patch.qty).toBeUndefined();
 });

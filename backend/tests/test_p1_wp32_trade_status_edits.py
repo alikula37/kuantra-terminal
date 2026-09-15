@@ -265,3 +265,123 @@ def test_invalid_status_value_is_rejected(journal):
         json={"expected_revision": 1, "status": "PENDING"},
     )
     assert invalid.status_code == 422
+
+
+def test_completed_trade_unit_declaration_computes_realized_pnl(journal):
+    driver, client = journal
+    entry_wall = datetime.now(timezone.utc) - timedelta(days=1)
+    exit_wall = datetime.now(timezone.utc) - timedelta(hours=2)
+    trade = _create(
+        client,
+        symbol="ETHUSDT",
+        side="SELL",
+        position_type="SHORT",
+        entry_price=2532.5,
+        qty=1,
+        qty_unit="UNKNOWN",
+        entry_time=_naive_input(entry_wall),
+    )
+    closed = client.patch(
+        f"/api/v1/trades/{trade['id']}",
+        json={
+            "expected_revision": 1,
+            "status": "CLOSED",
+            "exit_price": 2461,
+            "exit_time": _naive_input(exit_wall),
+        },
+    ).json()
+    assert closed["trade"]["pnl"] is None
+    before = client.get("/api/v1/portfolio/summary").json()
+    assert before["unknown_pnl_trades"] == 1 and before["net_pnl"] == 0
+
+    declared = client.patch(
+        f"/api/v1/trades/{trade['id']}",
+        json={"expected_revision": closed["revision"], "qty_unit": "BASE"},
+    )
+    assert declared.status_code == 200, declared.text
+    body = declared.json()
+    assert body["trade"]["pnl"] == pytest.approx(71.5)
+    assert body["trade"]["close_source"] == "USER_REPORTED"
+    assert body["changed_fields"]["qty_unit"] == {"from": "UNKNOWN", "to": "BASE"}
+    assert body["changed_fields"]["pnl"] == {"from": None, "to": 71.5}
+
+    after = client.get("/api/v1/portfolio/summary").json()
+    assert after["net_pnl"] == pytest.approx(71.5)
+    assert after["unknown_pnl_trades"] == 0
+    assert after["win_rate"] == 100.0
+
+
+def test_completed_trade_exit_correction_recomputes_result(journal):
+    driver, client = journal
+    entry_wall = datetime.now(timezone.utc) - timedelta(days=1)
+    exit_wall = datetime.now(timezone.utc) - timedelta(hours=2)
+    trade = _create(
+        client,
+        symbol="ETHUSDT",
+        side="SELL",
+        position_type="SHORT",
+        entry_price=2532.5,
+        qty=1,
+        qty_unit="BASE",
+        entry_time=_naive_input(entry_wall),
+    )
+    closed = client.patch(
+        f"/api/v1/trades/{trade['id']}",
+        json={
+            "expected_revision": 1,
+            "status": "CLOSED",
+            "exit_price": 2461,
+            "exit_time": _naive_input(exit_wall),
+        },
+    ).json()
+    assert closed["trade"]["pnl"] == pytest.approx(71.5)
+
+    fixed = client.patch(
+        f"/api/v1/trades/{trade['id']}",
+        json={"expected_revision": closed["revision"], "exit_price": 2450},
+    )
+    assert fixed.status_code == 200, fixed.text
+    body = fixed.json()
+    assert body["trade"]["pnl"] == pytest.approx(82.5)
+    assert body["changed_fields"]["exit_price"] == {"from": 2461.0, "to": 2450.0}
+    assert body["changed_fields"]["pnl"] == {"from": 71.5, "to": 82.5}
+
+    # Entry and quantity stay locked on a completed trade.
+    blocked = client.patch(
+        f"/api/v1/trades/{trade['id']}",
+        json={"expected_revision": body["revision"], "qty": 5},
+    )
+    assert blocked.status_code == 422
+    assert blocked.json()["detail"]["reason"] == "TRADE_CLOSED_NOTES_ONLY"
+
+
+def test_completed_trade_unit_revocation_clears_pnl(journal):
+    driver, client = journal
+    entry_wall = datetime.now(timezone.utc) - timedelta(days=1)
+    exit_wall = datetime.now(timezone.utc) - timedelta(hours=2)
+    trade = _create(
+        client,
+        symbol="ETHUSDT",
+        side="SELL",
+        position_type="SHORT",
+        entry_price=2532.5,
+        qty=1,
+        qty_unit="BASE",
+        entry_time=_naive_input(entry_wall),
+    )
+    closed = client.patch(
+        f"/api/v1/trades/{trade['id']}",
+        json={
+            "expected_revision": 1,
+            "status": "CLOSED",
+            "exit_price": 2461,
+            "exit_time": _naive_input(exit_wall),
+        },
+    ).json()
+    revoked = client.patch(
+        f"/api/v1/trades/{trade['id']}",
+        json={"expected_revision": closed["revision"], "qty_unit": "UNKNOWN"},
+    )
+    assert revoked.status_code == 200, revoked.text
+    assert revoked.json()["trade"]["pnl"] is None
+    assert driver.get_trade(trade["id"])["pnl"] is None

@@ -397,3 +397,33 @@ commit:
   User data under `~/Library/Application Support/Kuantra Terminal` was preserved.
 - The GitHub pilot prerelease was not changed by this local update; a Release refresh remains a
   separate owner decision.
+
+## Round-6: completed-trade corrections move the dashboard
+
+Pilot report: a manually journaled ETHUSDT short was edited and closed, but the
+Dashboard values did not change. Reproduction showed why: without an explicit
+`qty_unit=BASE` declaration the close stored an unknown P/L, portfolio aggregates
+exclude unknown results, and the edit surface also blocked the declaration on a
+completed trade (422 `TRADE_CLOSED_NOTES_ONLY`) — so there was no way to make the
+realized result visible.
+
+Fix:
+
+- A completed trade now accepts corrections to `qty_unit`, `exit_price` and
+  `exit_time`. Entry price and quantity stay locked; notes remain editable.
+- Every such correction recomputes the user-reported gross P/L and R from the
+  stored exit data, but only for an explicitly declared base unit (verification
+  rules unchanged). Declaring the unit turns the unknown result into the realized
+  figure; revoking it returns the result to unknown. Previous values stay in the
+  correction provenance (`from`/`to` for unit, exit price and P/L).
+- The edit surface shows the exit price/time fields for a completed trade, keeps
+  the quantity-unit declaration available, and explains that entry/quantity are
+  locked while the note, unit and exit can be corrected.
+- The Dashboard shows an explicit "N completed trade(s) have an unknown result"
+  note when unknown-P/L trades exist, so closing such a trade is never silent.
+
+Evidence: `test_p1_wp32_trade_status_edits.py` **12 passed** (unit declaration
+recomputes 71.5 for the reported ETHUSDT short; exit correction recomputes 82.5
+with provenance; revocation clears P/L; entry/quantity stay locked); full backend
+**941 passed / 2 warnings**; frontend **37 files / 200 tests**; i18n
+**979/979/979**; TypeScript clean.

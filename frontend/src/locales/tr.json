@@ -170,7 +170,8 @@
     "error": "Dashboard verileri güvenli biçimde yüklenemedi.",
     "retry": "Tekrar dene",
     "refresh": "Yenile",
-    "refresh_title": "Verileri yenile"
+    "refresh_title": "Verileri yenile",
+    "unknown_pnl_note": "{count} tamamlanmış işlemde sonuç bilinmiyor çünkü miktar birimi beyan edilmedi."
   },
   "orderflow": {
     "footprint_title": "Emir Akışı Footprint Matrisi",
@@ -1055,6 +1056,8 @@
     "reopen_notice": "Yeniden açmak, kayıtlı kapanış sonucunu temizler; önceki değerler düzeltme geçmişinde kalır.",
     "reason_exit_required": "Bir işlemi kapatmak için gerçekleşen çıkış fiyatı ve saati gerekir.",
     "reason_exit_fields_require_close": "Çıkış fiyatı ve saati yalnızca işlem kapatılırken girilebilir.",
-    "reason_status_invalid": "İşlem durumu açık, kapalı veya iptal edildi olmalı."
+    "reason_status_invalid": "İşlem durumu açık, kapalı veya iptal edildi olmalı.",
+    "completed_correction_notice": "İşlem tamamlandıktan sonra giriş fiyatı ve miktar kilitlidir; notu, miktar birimini ve kullanıcı beyanlı çıkış fiyatı/saatini düzeltebilirsiniz.",
+    "unit_unlocks_pnl": "Temel birim beyan edilince kayıtlı çıkış bilgisinden gerçekleşen K/Z hesaplanır."
   }
 }

@@ -236,6 +236,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         loading={loading} 
         onOpenInitialBalanceModal={onOpenInitialBalanceModal} 
       />
+      {!loading && summary && (summary.unknown_pnl_trades ?? 0) > 0 && (
+        <p role="status" data-testid="dashboard-unknown-pnl-note" className="text-sm text-amber-300">
+          {t("dashboard.unknown_pnl_note", { count: summary.unknown_pnl_trades ?? 0 })}
+        </p>
+      )}
 
       {/* Section 2: Two-Column Grid -> Equity Curve Chart & Multi-Asset Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[320px]">

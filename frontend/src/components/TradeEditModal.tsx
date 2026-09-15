@@ -160,10 +160,12 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
   const status = trade?.status || "OPEN";
   const statusChange = statusSelection !== status;
   const closingFromHere = statusSelection === "CLOSED" && status !== "CLOSED";
-  // A completed trade keeps its realized evidence: only notes (or a status
-  // change that reopens/cancels it) are allowed.
-  const notesOnly = (status === "CLOSED" && !statusChange)
-    || (status === "CLOSED" && statusSelection === "CANCELED");
+  const showExitFields = statusSelection === "CLOSED";
+  // Canceling a completed trade only takes a status (+note) change.
+  const notesOnly = status === "CLOSED" && statusSelection === "CANCELED";
+  // Entry/size/time/leverage are final once a trade is completed; a correction
+  // can still amend notes, the quantity unit and the user-reported exit.
+  const completedLocked = statusSelection === "CLOSED";
   const sizeLocked = statusSelection === "OPEN" && hasClosures;
 
   const sizing = useMemo(() => trade ? positionSizing({
@@ -214,23 +216,23 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
     }
     const changes: Record<string, unknown> = {};
     if (statusChange) changes.status = statusSelection;
-    if (closingFromHere) {
+    if (showExitFields) {
       const exitValue = Number(exitPrice);
       const exitTimeIso = exitTime ? istanbulInputToUtcIso(exitTime) : null;
-      if (!Number.isFinite(exitValue) || exitValue <= 0) {
+      if (!Number.isFinite(exitValue) || exitValue <= 0 || !exitTimeIso) {
         setSaveError(t("journal_edit.reason_exit_required"));
         return;
       }
-      if (!exitTimeIso) {
-        setSaveError(t("journal_edit.reason_exit_required"));
-        return;
+      const storedExit = trade.exit_price != null ? Number(trade.exit_price) : null;
+      const storedExitIso = trade.exit_time ? new Date(trade.exit_time).toISOString() : null;
+      if (closingFromHere || exitValue !== storedExit || exitTimeIso !== storedExitIso) {
+        changes.exit_price = exitValue;
+        changes.exit_time = exitTimeIso;
       }
-      changes.exit_price = exitValue;
-      changes.exit_time = exitTimeIso;
     }
     const originalEntryTimeIso = trade.entry_time ? new Date(trade.entry_time).toISOString() : "";
     const nextEntryTimeIso = entryTime ? istanbulInputToUtcIso(entryTime) : null;
-    if (!notesOnly && !sizeLocked) {
+    if (!completedLocked && !sizeLocked) {
       if (Number(entryPrice) !== Number(trade.entry_price)) changes.entry_price = Number(entryPrice);
       if (Number(qty) !== Number(trade.qty)) changes.qty = Number(qty);
       if (nextEntryTimeIso && nextEntryTimeIso !== originalEntryTimeIso) changes.entry_time = nextEntryTimeIso;
@@ -398,6 +400,11 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                 {t("journal_edit.reason_closed_notes_only")}
               </p>
             )}
+            {status === "CLOSED" && !statusChange && (
+              <p role="status" data-testid="trade-edit-completed-notice" className="rounded border border-surface-border bg-[#0b0e14] p-3 text-sm text-slate-300">
+                {t("journal_edit.completed_correction_notice")}
+              </p>
+            )}
             {status === "CLOSED" && statusSelection === "OPEN" && (
               <p role="status" data-testid="trade-edit-reopen-notice" className="rounded border border-amber-400/40 bg-amber-950/20 p-3 text-sm text-amber-200">
                 {t("journal_edit.reopen_notice")}
@@ -458,7 +465,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   </button>
                 </div>
                 <p className="k-help">{t("journal_edit.status_help")}</p>
-                {closingFromHere && (
+                {showExitFields && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 rounded border border-surface-border bg-[#0b0e14] p-3">
                     <label className="block">
                       <span className="k-label">{t("order_ticket.exit_price_label")}</span>
@@ -488,8 +495,8 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   <span className="k-label">{t("order_ticket.entry_label")}</span>
                   <input
                     type="number" step="any" min="0" data-testid="trade-edit-entry"
-                    value={entryPrice} disabled={notesOnly || sizeLocked}
-                    autoFocus={!notesOnly && !sizeLocked}
+                    value={entryPrice} disabled={completedLocked || sizeLocked}
+                    autoFocus={!completedLocked && !sizeLocked}
                     onChange={(e) => setEntryPrice(e.target.value)}
                     className="k-input mt-1" aria-label={t("order_ticket.entry_label")}
                   />
@@ -498,7 +505,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   <span className="k-label">{t("order_ticket.qty_label")}</span>
                   <input
                     type="number" step="any" min="0" data-testid="trade-edit-qty"
-                    value={qty} disabled={notesOnly || sizeLocked}
+                    value={qty} disabled={completedLocked || sizeLocked}
                     onChange={(e) => setQty(e.target.value)}
                     className="k-input mt-1" aria-label={t("order_ticket.qty_label")}
                   />
@@ -507,7 +514,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   <span className="k-label">{t("order_ticket.trade_time_label")}</span>
                   <input
                     type="datetime-local" data-testid="trade-edit-entry-time"
-                    value={entryTime} disabled={notesOnly || sizeLocked}
+                    value={entryTime} disabled={completedLocked || sizeLocked}
                     onChange={(e) => setEntryTime(e.target.value)}
                     className="k-input mt-1" aria-label={t("order_ticket.trade_time_label")}
                   />
@@ -517,7 +524,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   <span className="k-label">{t("order_ticket.leverage_label")}</span>
                   <input
                     type="number" step="any" min="1" max="1000" data-testid="trade-edit-leverage"
-                    value={leverage} disabled={notesOnly || trade.position_type === "SPOT" || sizeLocked}
+                    value={leverage} disabled={completedLocked || trade.position_type === "SPOT" || sizeLocked}
                     onChange={(e) => setLeverage(e.target.value)}
                     className="k-input mt-1" aria-label={t("order_ticket.leverage_label")}
                   />
@@ -528,7 +535,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                       <span className="k-label">{t("order_ticket.sl_label")}</span>
                       <input
                         type="number" step="any" min="0" data-testid="trade-edit-stop"
-                        value={stopLoss} disabled={notesOnly}
+                        value={stopLoss} disabled={completedLocked}
                         onChange={(e) => setStopLoss(e.target.value)}
                         className="k-input mt-1 text-loss" aria-label={t("order_ticket.sl_label")}
                       />
@@ -537,7 +544,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                       <span className="k-label">{t("order_ticket.tp_label")}</span>
                       <input
                         type="number" step="any" min="0" data-testid="trade-edit-target"
-                        value={takeProfit} disabled={notesOnly}
+                        value={takeProfit} disabled={completedLocked}
                         onChange={(e) => setTakeProfit(e.target.value)}
                         className="k-input mt-1 text-gain" aria-label={t("order_ticket.tp_label")}
                       />

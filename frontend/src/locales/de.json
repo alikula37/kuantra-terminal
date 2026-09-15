@@ -170,7 +170,8 @@
     "error": "Dashboard-Daten konnten nicht sicher geladen werden.",
     "retry": "Erneut versuchen",
     "refresh": "Aktualisieren",
-    "refresh_title": "Daten aktualisieren"
+    "refresh_title": "Daten aktualisieren",
+    "unknown_pnl_note": "{count} abgeschlossene(r) Trade(s) haben ein unbekanntes Ergebnis, weil keine Basis-Einheit erklärt wurde."
   },
   "orderflow": {
     "footprint_title": "Orderflow-Footprint-Matrix",
@@ -1055,6 +1056,8 @@
     "reopen_notice": "Beim Wiederöffnen wird das gespeicherte Abschlussergebnis geleert; die vorherigen Werte bleiben im Korrekturverlauf.",
     "reason_exit_required": "Zum Schließen sind realisierter Ausstiegspreis und -zeit erforderlich.",
     "reason_exit_fields_require_close": "Ausstiegspreis und -zeit können nur beim Schließen gesetzt werden.",
-    "reason_status_invalid": "Der Trade-Status muss offen, geschlossen oder storniert sein."
+    "reason_status_invalid": "Der Trade-Status muss offen, geschlossen oder storniert sein.",
+    "completed_correction_notice": "Nach Abschluss sind Einstiegspreis und Menge gesperrt; Sie können Notiz, Mengeneinheit und den nutzerangegebenen Ausstiegspreis/-zeit korrigieren.",
+    "unit_unlocks_pnl": "Mit der Basis-Einheit-Erklärung wird das realisierte P/L aus den gespeicherten Ausstiegsdaten berechnet."
   }
 }

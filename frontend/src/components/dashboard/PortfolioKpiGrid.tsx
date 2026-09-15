@@ -32,6 +32,8 @@ export interface PortfolioSummaryData {
   gross_loss?: number;
   max_drawdown_usd: number;
   max_drawdown_pct: number;
+  unknown_pnl_trades?: number;
+  unverified_open_positions?: number;
 }
 
 interface PortfolioKpiGridProps {

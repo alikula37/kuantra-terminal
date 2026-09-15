@@ -170,7 +170,8 @@
     "error": "Dashboard data could not be loaded safely.",
     "retry": "Retry",
     "refresh": "Refresh",
-    "refresh_title": "Refresh data"
+    "refresh_title": "Refresh data",
+    "unknown_pnl_note": "{count} completed trade(s) have an unknown result because no base unit was declared."
   },
   "orderflow": {
     "footprint_title": "Order Flow Footprint Matrix",
@@ -1055,6 +1056,8 @@
     "reopen_notice": "Reopening clears the recorded exit result; the previous values stay in the correction history.",
     "reason_exit_required": "Closing a trade requires the realized exit price and time.",
     "reason_exit_fields_require_close": "Exit price and time can only be set while closing the trade.",
-    "reason_status_invalid": "Trade status must be open, closed or canceled."
+    "reason_status_invalid": "Trade status must be open, closed or canceled.",
+    "completed_correction_notice": "Entry price and quantity are locked once a trade is completed; you can correct the note, the quantity unit and the user-reported exit price/time.",
+    "unit_unlocks_pnl": "Declaring the base unit computes the realized P/L from the stored exit data."
   }
 }
