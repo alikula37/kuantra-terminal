@@ -1175,6 +1175,10 @@ class EvidenceLedgerRepository:
             "would_append": 0,
             "appended": 0,
             "duplicates": 0,
+            # Trades already represented by canonical journal events must never
+            # receive a second legacy snapshot: that would fork the evidence
+            # lineage and duplicate the trade projection during a staged upgrade.
+            "already_evidenced": 0,
             "errors": [],
         }
         for trade in source_rows:
@@ -1186,6 +1190,18 @@ class EvidenceLedgerRepository:
                 "trade": self._redact_legacy_trade(trade),
             }
             occurred_at = trade.get("entry_time") or trade.get("created_at") or _now_utc()
+            canonical_events = [
+                event
+                for event in self.list_events_for_trade(
+                    source_id,
+                    account_id=account_id,
+                    venues=(venue, "local-journal"),
+                )
+                if event.get("event_type") != "LegacyTradeImported"
+            ]
+            if canonical_events:
+                report["already_evidenced"] += 1
+                continue
             existing = self.get_event_by_identity(
                 account_id, venue, "LegacyTradeImported", idempotency_key
             )

@@ -90,6 +90,7 @@
     "docs/strategy/work-packages/N05-macos-signing-notarization-preflight.md": "reference",
     "docs/strategy/work-packages/P1-WP28-macos-dual-architecture.md": "reference",
     "docs/strategy/work-packages/P1-WP29-trusted-macos-pilot-package.md": "current-work-package",
+    "docs/archive/strategy/work-packages/P1-WP39-broker-observation-projection.md": "archived",
     "docs/strategy/work-packages/P1-WP32-pilot-journal-trust.md": "reference",
     "docs/archive/strategy/work-packages/P1-WP31-local-tp-tracking.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP30-free-multi-asset-journal.md": "archived",
@@ -135,6 +136,7 @@
   "archived_unchecked_counts": {
     "docs/archive/strategy/work-packages/P1-WP31-local-tp-tracking.md": 0,
     "docs/archive/strategy/work-packages/P1-WP38-a0-data-accuracy-findings.md": 0,
+    "docs/archive/strategy/work-packages/P1-WP39-broker-observation-projection.md": 0,
     "docs/archive/strategy/work-packages/P0-WP03-frontend-toolchain-security.md": 0,
     "docs/archive/strategy/work-packages/P0-WP01-execution-risk-contract.md": 0,
     "docs/archive/strategy/work-packages/P0-WP04-ci-truth-and-release-gates.md": 0,

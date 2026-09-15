@@ -7,6 +7,7 @@ from app.core.paths import get_sqlite_path
 from app.core.position_type import normalize_position_type
 from app.db.evidence_schema import initialize_evidence_schema
 from app.db.projection_schema import initialize_trade_projection_schema
+from app.db.broker_observation_schema import initialize_broker_observation_schema
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +176,7 @@ class SQLiteDriver:
             # explicit migration command is invoked.
             initialize_evidence_schema(conn)
             initialize_trade_projection_schema(conn)
+            initialize_broker_observation_schema(conn)
             conn.commit()
             logger.info("SQLite OLTP schema initialized with WAL mode and candle cache.")
 

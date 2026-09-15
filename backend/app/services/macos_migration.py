@@ -36,7 +36,7 @@ from app.core.input_limits import (
 
 BUNDLE_SCHEMA_VERSION = 1
 BUNDLE_TYPE = "kuantra-macos-migration"
-CURRENT_SQLITE_SCHEMA_VERSION = 7
+CURRENT_SQLITE_SCHEMA_VERSION = 8
 LEGACY_SQLITE_SCHEMA_VERSION = 1
 _SQLITE_RELATIVE_PATH = Path("data") / "kuantra_oltp.sqlite3"
 _COLD_STORAGE_RELATIVE_ROOT = Path("data") / "cold_storage"
@@ -133,7 +133,8 @@ _KNOWN_ALEMBIC_REVISIONS = {
     "004_trade_quote_provenance": 4,
     "005_trade_position_type": 5,
     "006_trade_time_edit_sizing": 6,
-    "007_trade_qty_unit": CURRENT_SQLITE_SCHEMA_VERSION,
+    "007_trade_qty_unit": 7,
+    "008_broker_observation_projection": CURRENT_SQLITE_SCHEMA_VERSION,
 }
 
 
@@ -207,6 +208,8 @@ def _inspect_sqlite_schema(conn: sqlite3.Connection) -> dict[str, Any]:
     )
     if not current_missing and _table_exists(conn, "evidence_events") and _table_exists(
         conn, "evidence_trade_projections"
+    ) and _table_exists(conn, "broker_observation_log") and _table_exists(
+        conn, "broker_projection_state"
     ):
         return {
             "status": "current",
@@ -248,6 +251,7 @@ def _inspect_sqlite_schema(conn: sqlite3.Connection) -> dict[str, Any]:
             "004_trade_quote_provenance",
             "005_trade_position_type",
             "006_trade_time_edit_sizing",
+            "007_trade_qty_unit",
         )
         and user_version < CURRENT_SQLITE_SCHEMA_VERSION
         and set(current_missing).issubset({
@@ -992,7 +996,7 @@ def upgrade_sqlite_schema(
             if _table_exists(staged_conn, "alembic_version"):
                 staged_conn.execute(
                     "UPDATE alembic_version SET version_num = ?",
-                    ("007_trade_qty_unit",),
+                    ("008_broker_observation_projection",),
                 )
             staged_conn.commit()
         finally:

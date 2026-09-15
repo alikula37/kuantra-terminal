@@ -4,17 +4,29 @@
 Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
-The package is selected only for its still-open owner-host obligations (N03/N05/H05/pilot
-access); no development proceeds under it without owner approval.
+The package is selected again strictly for its still-open owner-host obligations
+(N03/N05/H05/pilot access); no development proceeds under it without owner approval, and
+**A1.2 and every other integration package remain unapproved**.
+[P1-WP39 broker observation projection (A1.1)](../archive/strategy/work-packages/P1-WP39-broker-observation-projection.md)
+completed its account-scope closure and is complete and archived. The closure found that
+the caller-declared local bucket was being used as an economic account scope: two
+documents in the same bucket with the same fill id would have merged (same content) or
+been declared conflicting (different content) without proof of account equality. The
+producer trace confirmed no verifiable account namespace exists (credential refs are per
+`exchange_id`, `account_id` is free text, file hashes are not identities), so every
+observation is now projected individually with `account_scope_state = UNVERIFIED`, no
+economic merge/dedup/conflict runs while the scope is unverified, duplicate claims are
+counted and preserved with lineage, and source-level idempotency stays separate. Focused
+tests **20 passed**; related regressions **106 + 121 passed**; full backend **1003 passed
+/ 2 warnings**; frontend unchanged. No commit/push, Release, installed-app change or real
+user-data operation.
 [P1-WP38 A0 data-accuracy findings](../archive/strategy/work-packages/P1-WP38-a0-data-accuracy-findings.md)
 is complete and archived with its evidence (including the closure review). Owner
 instruction (2026-09-15): apply **only** A0 — verify the two reported data-accuracy
-findings and fix them if real. A1, an MT4/MT5 statement parser, cTrader, an XM bridge, a
-new cloud service and a new broker identity schema are **not** approved; no commit/push,
-Release, installed-app update or real-data migration. Both findings were reproduced and
-fixed; the closure review additionally verified user-visible unknown-PnL reporting and
-tightened the projection lifecycle-event classifier: full backend **983 passed / 2
-warnings**, frontend **39 files / 229 tests**, focused A0 tests **17 passed**, i18n
+findings and fix them if real. Both findings were reproduced and fixed; the closure
+review additionally verified user-visible unknown-PnL reporting and tightened the
+projection lifecycle-event classifier: full backend **983 passed / 2 warnings**,
+frontend **39 files / 229 tests**, focused A0 tests **17 passed**, i18n
 **1036/1036/1036**. Broker observations are not converted into journal trades; a future
 design must use a separate broker view, explicit matching and double-count prevention.
 [P1-WP37 multi-select journal filters and one-click unit declaration](work-packages/P1-WP37-journal-filters-and-unit-declaration.md)
@@ -598,6 +610,43 @@ an open follow-up. No commit, Release or installed-app change was made; A1 and e
 integration package remain unapproved. **Broker observations are not converted into
 journal trades; a future design must use a separate broker view, explicit matching and
 double-count prevention.**
+
+**P1-WP39 broker observation projection (A1.1) — complete and archived (2026-09-15,
+uncommitted):** Broker lifecycle observations now have a rebuildable observation log
+(`broker_observation_log` and `broker_projection_state`, additive revision
+`008_broker_observation_projection`): order and fill identities are separate (a fill
+identity is the source fill/deal id, never the order id, ledger event id or a content
+hash), and valid observations without a resolvable source scope stay unresolved and are
+not projected. **Account-scope closure (2026-09-15):** the caller-declared local bucket
+(`account_id`) is not a broker-verified account identity — credential refs are per
+`exchange_id`, `account_id` is free text and file hashes are not identities — so every
+observation is stored individually with `account_scope_state = UNVERIFIED`, no economic
+merge/dedup/content conflict runs while the scope is unverified, duplicate claims on the
+same declared scope are counted
+(`unverified_duplicate_claim_count`/`unverified_duplicate_identity_count`) and preserved
+with lineage, and source-level idempotency (same document re-sent) stays a separate
+ledger property. The two mandated scenarios (same bucket/fill/content and same
+bucket/fill/different content across two documents) now stay two unverified observations
+instead of one merged record plus repeat or an `UNRESOLVED_CONFLICT`. Environment/context
+remain changeable metadata and are never inferred. The earlier metadata/identity and
+`007 → 008` migration closures stand (metadata is not identity; the legacy backfill skips
+trades with canonical evidence via `already_evidenced`). Rebuild materializes one
+evidence snapshot with a verified processed-through boundary and an evidence digest,
+never mixes concurrently appended events, excludes operational fields from
+`snapshot_sha256`, and keeps the previous snapshot on failure while recording the failure
+in a separate transaction. Internal read service only: no user API, no journal
+conversion, no portfolio PnL. The additive migration was exercised only in isolated test
+databases and preserves existing rows; the rows table was renamed to
+`broker_observation_log` so unreleased first-draft tables in dev profiles cannot collide
+(no table or row was dropped; the owner database was read-only inspected and not
+modified, and was not re-accessed by this task). Evidence: `test_a1_wp39_broker_observations.py` **20 passed**, related
+regressions **106 + 121 passed**, full backend **1003 passed / 2 warnings**; frontend
+unchanged. Canonical arm64 local CI (`KDG-002@1.1.0`) on the account-scope closure tree is
+**MERGE READY** with 13/13 steps and provenance `DEVELOPER_DIRTY` (uncommitted by
+instruction; report `dist/p1-wp39-account-scope-local-ci.json` SHA-256
+`8ab45595e7918a34e8f14c8165d805463ceea81216db273aa9a9a21d87819e5d`, executable
+`485b9604…`). No commit, Release or installed-app change; A1.2 and every other
+integration package remain unapproved.
 
 ## Selected next work
 
