@@ -1,9 +1,9 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # P1-WP36 — Dashboard terminal redesign
 
 ```yaml
 work_package: P1-WP36
-status: InProgress
+status: Complete
 branch: main
 baseline: 3fc5047
 ```

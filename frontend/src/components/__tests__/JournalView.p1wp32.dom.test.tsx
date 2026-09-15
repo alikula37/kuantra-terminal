@@ -234,3 +234,59 @@ it("advances the displayed quote age between refreshes", async () => {
     vi.useRealTimers();
   }
 });
+
+it("filters by several symbols and statuses at once", async () => {
+  const trade = (id: string, symbol: string, status: string) => ({
+    id, symbol, side: "BUY", status, position_type: "LONG",
+    entry_price: 100, qty: 1, entry_time: "2026-09-15T10:00:00Z",
+    exit_price: null, exit_time: null, pnl: null, notes: "", qty_unit: "BASE",
+    created_at: "2026-09-15T10:00:00Z", updated_at: "2026-09-15T10:00:00Z", revision: 1,
+  });
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/api/v1/trades?")) {
+      return Promise.resolve(response([
+        trade("T-ETH", "ETHUSDT", "OPEN"),
+        trade("T-XAU", "XAUUSD", "OPEN"),
+        trade("T-BTC", "BTCUSDT", "CLOSED"),
+      ]));
+    }
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({
+        checked_at: new Date().toISOString(), requested: 2, identities: 2, skipped_identities: 0, quotes: {},
+      }));
+    }
+    return Promise.resolve(response([]));
+  });
+
+  await act(async () => root.render(<JournalView onOpenNewTrade={vi.fn()} />));
+  await flush();
+  const rowsText = () => Array.from(host.querySelectorAll("tbody tr")).map((row) => row.textContent).join(" | ");
+  expect(rowsText()).toContain("ETHUSDT");
+  expect(rowsText()).toContain("XAUUSD");
+  expect(rowsText()).toContain("BTCUSDT");
+
+  await act(async () => (host.querySelector("[data-testid=journal-filter-symbols]") as HTMLButtonElement).click());
+  await act(async () => (host.querySelector("[data-testid=journal-filter-symbols-option-ETHUSDT]") as HTMLInputElement).click());
+  await act(async () => (host.querySelector("[data-testid=journal-filter-symbols-option-XAUUSD]") as HTMLInputElement).click());
+  await flush();
+
+  expect(rowsText()).toContain("ETHUSDT");
+  expect(rowsText()).toContain("XAUUSD");
+  expect(rowsText()).not.toContain("BTCUSDT");
+
+  await act(async () => (host.querySelector("[data-testid=journal-filter-symbols-clear]") as HTMLButtonElement).click());
+  await flush();
+  expect(rowsText()).toContain("BTCUSDT");
+
+  await act(async () => (host.querySelector("[data-testid=journal-filter-statuses]") as HTMLButtonElement).click());
+  await act(async () => (host.querySelector("[data-testid=journal-filter-statuses-option-CLOSED]") as HTMLInputElement).click());
+  await flush();
+
+  expect(rowsText()).not.toContain("ETHUSDT");
+  expect(rowsText()).not.toContain("XAUUSD");
+  expect(rowsText()).toContain("BTCUSDT");
+
+  await act(async () => (host.querySelector("[data-testid=journal-filter-statuses-clear]") as HTMLButtonElement).click());
+  await flush();
+  expect(rowsText()).toContain("ETHUSDT");
+});

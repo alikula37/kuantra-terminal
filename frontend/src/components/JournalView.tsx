@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, Pencil, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2, RefreshCw } from "lucide-react";
+import { Filter, Plus, Pencil, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2, RefreshCw, ChevronDown } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
@@ -10,6 +10,92 @@ import { useOpenQuoteRefresh, quoteAgeSeconds } from "../hooks/useOpenQuoteRefre
 import { formatIstanbulDateTime, istanbulDateKey, relativeAgeLabel } from "../lib/tradeTime";
 import { formatPrice } from "../lib/positionMath";
 import type { Trade, TradeQuote } from "../types";
+
+interface MultiSelectFilterProps {
+  label: string;
+  testId: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}
+
+const MultiSelectFilter: React.FC<MultiSelectFilterProps> = ({
+  label,
+  testId,
+  options,
+  selected,
+  onChange,
+}) => {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [open]);
+
+  const toggleOption = (value: string) => {
+    onChange(selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative flex items-center gap-2 bg-[#111722] px-3 py-1 rounded border border-surface-border"
+    >
+      <Filter className="w-4 h-4 text-slate-400" />
+      <button
+        type="button"
+        data-testid={testId}
+        aria-label={label}
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="flex items-center gap-1 bg-transparent text-white text-sm py-2 focus:outline-none"
+      >
+        <span>
+          {selected.length > 0
+            ? `${label}: ${t("journal.filter_selected_count", { count: selected.length })}`
+            : label}
+        </span>
+        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+      </button>
+      {open && (
+        <div
+          data-testid={`${testId}-panel`}
+          className="absolute left-0 top-full z-30 mt-1 w-56 rounded border border-surface-border bg-elevated p-2 shadow-lg"
+        >
+          <button
+            type="button"
+            data-testid={`${testId}-clear`}
+            onClick={() => onChange([])}
+            className="w-full rounded px-2 py-1 text-left text-sm text-muted hover:bg-hover"
+          >
+            {t("journal.filter_clear")}
+          </button>
+          {options.map((option) => (
+            <label
+              key={option.value}
+              className="flex items-center gap-2 rounded px-2 py-1 text-sm text-ink hover:bg-hover"
+            >
+              <input
+                type="checkbox"
+                data-testid={`${testId}-option-${option.value}`}
+                checked={selected.includes(option.value)}
+                onChange={() => toggleOption(option.value)}
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface JournalViewProps {
   onOpenNewTrade: () => void;
@@ -57,8 +143,8 @@ async function readTradeList(response: Response): Promise<Trade[]> {
 export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onEditTrade, refreshNonce = 0 }) => {
   const { t, locale } = useTranslation();
   const { trades, setTrades, openPositions, updatePositionPnl } = useTradeStore();
-  const [filterSymbol, setFilterSymbol] = useState<string>("ALL");
-  const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [filterSymbols, setFilterSymbols] = useState<string[]>([]);
+  const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
   const [filterDateFrom, setFilterDateFrom] = useState<string>("");
   const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
@@ -206,8 +292,8 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   };
 
   const filteredTrades = trades.filter((trade) => {
-    if (filterSymbol !== "ALL" && trade.symbol !== filterSymbol) return false;
-    if (filterStatus !== "ALL" && trade.status !== filterStatus) return false;
+    if (filterSymbols.length > 0 && !filterSymbols.includes(trade.symbol)) return false;
+    if (filterStatuses.length > 0 && !filterStatuses.includes(trade.status)) return false;
     const dayKey = istanbulDateKey(trade.entry_time);
     if (filterDateFrom && (!dayKey || dayKey < filterDateFrom)) return false;
     if (filterDateTo && (!dayKey || dayKey > filterDateTo)) return false;
@@ -258,32 +344,25 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <div className="flex items-center gap-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              aria-label={t("journal.filter_all_symbols")}
-              value={filterSymbol}
-              onChange={(e) => setFilterSymbol(e.target.value)}
-              className="bg-transparent text-white focus:outline-none text-sm py-2"
-            >
-              <option value="ALL">{t("journal.filter_all_symbols")}</option>
-              {symbols.map((symbol) => <option key={symbol} value={symbol}>{symbol}</option>)}
-            </select>
-          </div>
+          <MultiSelectFilter
+            label={t("journal.filter_all_symbols")}
+            testId="journal-filter-symbols"
+            options={symbols.map((symbol) => ({ value: symbol, label: symbol }))}
+            selected={filterSymbols}
+            onChange={setFilterSymbols}
+          />
 
-          <div className="flex items-center gap-2 bg-[#111722] px-3 py-1 rounded border border-surface-border">
-            <select
-              aria-label={t("journal.filter_all_status")}
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="bg-transparent text-white focus:outline-none text-sm py-2"
-            >
-              <option value="ALL">{t("journal.filter_all_status")}</option>
-              <option value="OPEN">{t("journal.status_open")}</option>
-              <option value="CLOSED">{t("journal.status_closed")}</option>
-              <option value="CANCELED">{t("journal.status_canceled")}</option>
-            </select>
-          </div>
+          <MultiSelectFilter
+            label={t("journal.filter_all_status")}
+            testId="journal-filter-statuses"
+            options={[
+              { value: "OPEN", label: t("journal.status_open") },
+              { value: "CLOSED", label: t("journal.status_closed") },
+              { value: "CANCELED", label: t("journal.status_canceled") },
+            ]}
+            selected={filterStatuses}
+            onChange={setFilterStatuses}
+          />
 
           <div className="flex items-center gap-1 bg-[#111722] px-3 py-1 rounded border border-surface-border">
             <input

@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP36-dashboard-terminal-redesign.md"
+    "docs/strategy/work-packages/P1-WP37-journal-filters-and-unit-declaration.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -128,7 +128,8 @@
     "docs/strategy/work-packages/P1-WP33-market-chart-history.md": "reference",
     "docs/strategy/work-packages/P1-WP34-verified-instrument-catalog.md": "reference",
     "docs/strategy/work-packages/P1-WP35-refresh-and-sync-truth.md": "reference",
-    "docs/strategy/work-packages/P1-WP36-dashboard-terminal-redesign.md": "current-work-package"
+    "docs/strategy/work-packages/P1-WP36-dashboard-terminal-redesign.md": "reference",
+    "docs/strategy/work-packages/P1-WP37-journal-filters-and-unit-declaration.md": "current-work-package"
   },
   "archived_unchecked_counts": {
     "docs/archive/strategy/work-packages/P1-WP31-local-tp-tracking.md": 0,

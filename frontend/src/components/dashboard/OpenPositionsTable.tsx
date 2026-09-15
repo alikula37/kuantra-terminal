@@ -224,6 +224,17 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                       <span className={`font-bold ${!hasPnl ? "text-slate-400" : isProfitable ? "text-gain" : "text-loss"}`}>
                         {hasPnl ? `${isProfitable ? "+" : ""}${pnl.toFixed(2)}` : t("open_positions.unknown_value")}
                       </span>
+                      {!monetaryReady && onEditPosition && (
+                        <button
+                          type="button"
+                          data-testid={`declare-unit-${p.id}`}
+                          onClick={() => onEditPosition(p)}
+                          title={t("open_positions.declare_unit_help")}
+                          className="block text-sm text-accent underline focus:outline-none"
+                        >
+                          {t("open_positions.declare_unit")}
+                        </button>
+                      )}
                     </td>
                     <td className="py-3 px-3">
                       <span className={`font-bold ${!hasRMultiple ? "text-slate-400" : rMult >= 0 ? "text-purple-300" : "text-loss"}`}>

@@ -175,3 +175,65 @@ it("refreshes quotes when the parent bumps the refresh nonce", async () => {
 
   expect(refreshCalls.length).toBe(initialCalls + 1);
 });
+
+it("offers a one-click unit declaration for positions that cannot be priced", async () => {
+  const position = {
+    id: "TRD-DECLARE", symbol: "XAUUSD", side: "SELL", position_type: "SHORT",
+    entry_price: 4294.732, qty: 1000, entry_time: "2026-09-15T10:00:00Z", status: "OPEN",
+    qty_unit: "UNKNOWN",
+  };
+  const onEditPosition = vi.fn();
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/market-data/instrument")) {
+      return Promise.resolve(response({ status: "UNVERIFIED" }));
+    }
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({
+        checked_at: new Date().toISOString(), requested: 1, identities: 1, skipped_identities: 0,
+        quotes: {
+          "TRD-DECLARE": {
+            quote_status: "LIVE", price: 4286.05, price_kind: "LAST",
+            source_id: "biquote_public", source_symbol: "XAUUSD",
+            observed_at: new Date().toISOString(), checked_at: new Date().toISOString(),
+            age_seconds: 1, reason: null, last_known: null,
+          },
+        },
+      }));
+    }
+    return Promise.resolve(response([]));
+  });
+
+  await act(async () => root.render(
+    <OpenPositionsTable positions={[position] as never} onClosePosition={vi.fn()} onEditPosition={onEditPosition} />,
+  ));
+  await flush();
+
+  const declare = host.querySelector("[data-testid=declare-unit-TRD-DECLARE]") as HTMLButtonElement;
+  expect(declare).toBeTruthy();
+  await act(async () => declare.click());
+  expect(onEditPosition).toHaveBeenCalledWith(expect.objectContaining({ id: "TRD-DECLARE" }));
+});
+
+it("does not offer the declaration once the unit is verified", async () => {
+  const position = {
+    id: "TRD-VERIFIED", symbol: "ETHUSDT", side: "BUY", position_type: "LONG",
+    entry_price: 2500, qty: 1, entry_time: "2026-09-15T10:00:00Z", status: "OPEN",
+    qty_unit: "BASE",
+  };
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({
+        checked_at: new Date().toISOString(), requested: 1, identities: 1, skipped_identities: 0,
+        quotes: {},
+      }));
+    }
+    return Promise.resolve(response([]));
+  });
+
+  await act(async () => root.render(
+    <OpenPositionsTable positions={[position] as never} onClosePosition={vi.fn()} onEditPosition={vi.fn()} />,
+  ));
+  await flush();
+
+  expect(host.querySelector("[data-testid=declare-unit-TRD-VERIFIED]")).toBeNull();
+});

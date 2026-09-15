@@ -377,7 +377,9 @@
     "unknown_value": "Bilinmiyor",
     "edit_btn": "Düzenle",
     "local_unrealized": "Yerel: {value}",
-    "monetary_unavailable": "Sözleşme büyüklüğü doğrulanmadı — parasal K/Z hesaplanmaz"
+    "monetary_unavailable": "Sözleşme büyüklüğü doğrulanmadı — parasal K/Z hesaplanmaz",
+    "declare_unit": "Birim beyan et",
+    "declare_unit_help": "Düzenle'yi açıp miktar birimini BASE olarak işaretleyin; sonrasında parasal K/Z hesaplanır."
   },
   "heatmap": {
     "loading": "Performans Isı Haritası Yükleniyor...",
@@ -690,7 +692,9 @@
     "filter_date_from": "Başlangıç tarihi",
     "filter_date_to": "Bitiş tarihi",
     "refresh_attempt": "Son deneme: {time}",
-    "refresh_last_success": "Son başarılı: {time}"
+    "refresh_last_success": "Son başarılı: {time}",
+    "filter_selected_count": "{count} seçili",
+    "filter_clear": "Temizle"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION GELEN KUTUSU",

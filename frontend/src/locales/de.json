@@ -377,7 +377,9 @@
     "unknown_value": "Unbekannt",
     "edit_btn": "Bearbeiten",
     "local_unrealized": "Lokal: {value}",
-    "monetary_unavailable": "Kontraktgröße unverifiziert — Geld-P/L wird nicht berechnet"
+    "monetary_unavailable": "Kontraktgröße unverifiziert — Geld-P/L wird nicht berechnet",
+    "declare_unit": "Einheit angeben",
+    "declare_unit_help": "Im Editor die Mengeneinheit als BASE kennzeichnen; danach wird der monetäre G/V berechnet."
   },
   "heatmap": {
     "loading": "Performance-Heatmap wird geladen...",
@@ -690,7 +692,9 @@
     "filter_date_from": "Startdatum",
     "filter_date_to": "Enddatum",
     "refresh_attempt": "Letzter Versuch: {time}",
-    "refresh_last_success": "Letzter Erfolg: {time}"
+    "refresh_last_success": "Letzter Erfolg: {time}",
+    "filter_selected_count": "{count} ausgewählt",
+    "filter_clear": "Zurücksetzen"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION-INBOX",

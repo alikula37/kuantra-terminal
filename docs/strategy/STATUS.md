@@ -3,7 +3,14 @@
 
 Updated: 2026-09-13. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP36 dashboard terminal redesign](work-packages/P1-WP36-dashboard-terminal-redesign.md).**
+**Selected work: [P1-WP37 multi-select journal filters and one-click unit declaration](work-packages/P1-WP37-journal-filters-and-unit-declaration.md).**
+Owner report (2026-09-15): the journal filters must allow multi-selection, and the open
+XAUUSD position still shows "contract size not verified — monetary P/L is not
+calculated". The package makes the symbol/status filters multi-select dropdowns and turns
+the unverified-unit warning in each position row into a "Birim beyan et" action that
+opens the trade editor, where the owner declares the unit for commodity/CFD instruments
+that no public provider metadata can verify. [P1-WP36 dashboard terminal redesign](work-packages/P1-WP36-dashboard-terminal-redesign.md)
+is complete with its evidence below.
 Owner report (2026-09-15): the dashboard is "çok basit ve anlaması zor"; it must be more
 effective. Owner decisions: the top of the page shows live cash + open P/L + risk at one
 glance, in a professional trading-terminal style. The package adds a dense hero row and
@@ -518,6 +525,16 @@ DMG `1eae1302…` passed `hdiutil verify` and the exact mounted-DMG smoke; `/App
 was replaced after a graceful quit (installed executable matches the CI build, PID
 `67360`, runtime `{"status":"online","gateway":true,"version":"1.1.0"}`, user data
 preserved).
+
+**P1-WP37 multi-select filters and unit declaration (2026-09-15):** Journal symbol and
+status filters are now multi-select checkbox dropdowns (OR within a filter, AND across
+filters, selected-count trigger, clear action, outside-click close). The open-positions
+row turns the "contract size not verified" state into an action: "Birim beyan et" opens
+the editor with a tooltip explaining that declaring `qty_unit=BASE` enables monetary P/L;
+verified rows keep no button. This is the honest resolution path for commodity/CFD
+instruments such as XAUUSD, whose contract size no free provider metadata can verify
+(P1-WP34 covers only spot crypto). Evidence: frontend **39 files / 226 tests**, i18n
+**1032/1032/1032**, TypeScript clean.
 
 ## Selected next work
 

@@ -377,7 +377,9 @@
     "unknown_value": "Unknown",
     "edit_btn": "Edit",
     "local_unrealized": "Local: {value}",
-    "monetary_unavailable": "Unverified contract size — money P/L is not calculated"
+    "monetary_unavailable": "Unverified contract size — money P/L is not calculated",
+    "declare_unit": "Declare unit",
+    "declare_unit_help": "Open the editor and mark the quantity unit as BASE; monetary P/L is calculated after that."
   },
   "heatmap": {
     "loading": "Loading Performance Heatmap...",
@@ -690,7 +692,9 @@
     "filter_date_from": "From date",
     "filter_date_to": "To date",
     "refresh_attempt": "Last attempt: {time}",
-    "refresh_last_success": "Last success: {time}"
+    "refresh_last_success": "Last success: {time}",
+    "filter_selected_count": "{count} selected",
+    "filter_clear": "Clear"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION INBOX",
