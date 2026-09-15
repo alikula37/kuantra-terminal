@@ -350,6 +350,17 @@ monetary K/Z. Evidence: `test_instrument_catalog.py` **9 passed**, full backend
 **957 passed / 2 warnings**, frontend **39 files / 209 tests**, i18n **990/990/990**,
 TypeScript clean.
 
+**P1-WP34 clean install (2026-09-15):** Source `2d0106e` passed canonical arm64 local
+CI with `COMPLETE` provenance and a clean tree (backend **957**, frontend **39/209**, i18n
+**990/990/990**; report `8d380b2c…`, executable `9d492a41…`); arm64 DMG `204887dc…`
+passed `hdiutil verify` and the exact mounted-DMG smoke; `/Applications` was replaced
+(installed executable matches the CI build; runtime
+`{"status":"online","gateway":true,"version":"1.1.0"}`, user data preserved). Live check:
+the installed app verified the owner's open ETHUSDT position at startup
+(`verified_instruments` row `ETHUSDT | binance_spot | ETH | USDT`) and an isolated copy
+of the owner database reports `PROVIDER_CATALOG` / money **READY** for
+`TRD-1789460532666` without rewriting the trade.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates
