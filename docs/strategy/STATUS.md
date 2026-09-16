@@ -802,6 +802,32 @@ release: this is a source + dev-toolchain change, so the trusted pilot artifacts
 `v1.1.2` (`truth-matrix.v1.1.2.json`); build, Release and installed-app evidence are recorded
 in the post-build evidence section below.
 
+**v1.1.2 artifacts built, released and installed (2026-09-16):** build commit
+`5ea112fbe1db0801f564ee63c0cf1bf973db5694` (clean tree). Canonical arm64 local CI is
+**MERGE READY** 13/13 with provenance `COMPLETE` (report
+`dist/p1-v112-committed-local-ci.json` SHA-256
+`7ec87db20ad104c832bc1e97140fe40951d87db12f0afb91231c3eb13557e570`, executable
+`5575d0d2…`, artifact `c56fd881…`). Release run `35065925107` built both native DMGs from
+the same commit (arm64 executable `936ee7f8…`, x86_64 `a17f7629…`) with native and exact
+mounted-DMG smoke PASS; the pilot-package `SHA256SUMS` verified locally; a local native
+arm64 exact-DMG smoke passed (`dist/v112-arm64-exact-dmg-smoke.json` SHA-256
+`78a59cc09c45cbfcfcaa132d3ffdc2b587ad2168f48650e3930213bf5f516421`). The
+`pilot-v1.1.2` prerelease (tag on the build commit above) carries exactly two assets —
+`Kuantra-Terminal-1.1.2-arm64.dmg` SHA-256
+`bdc5f43693695740d2e26db2606e193cdfdf20bd107d26481db21f8373f15d9a` and
+`Kuantra-Terminal-1.1.2-x86_64.dmg` SHA-256
+`a95336f8d290e7519b149c9403d0f29414e7ba6862e902deeaddc56e559219bf` — both downloaded back
+after upload and re-hashed; `pilot-v1.1.1` was superseded in place (title/body redirect) and
+**keeps its historical 1.1.1 packages**; no tag was moved. `/Applications/Kuantra Terminal.app`
+was replaced with the verified arm64 artifact (installed executable `936ee7f8…`, version 1.1.2,
+`codesign` structure OK, launch verified, previous bundle retained at
+`/tmp/kuantra-v112-update.dmnlQX`, user data preserved). The bundled update target was
+verified inside the installed app: `Contents/Resources/frontend/index.html` contains
+`https://github.com/alikula37/kuantra-terminal/releases` and no longer contains
+`pilot-v1.0.0-arm64`. The installed signature remains ad-hoc (`TeamIdentifier=not set`):
+Developer ID signing/notarization is still **absent** and remains an open pilot/distribution
+gate; `codesign` OK is not Apple approval.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates
