@@ -715,6 +715,34 @@ found and fixed this way). Canonical arm64 local CI is **MERGE READY** 13/13 wit
 6.19.0` (BSD-3-Clause) test-only; a targeted OSV query returned no advisories and the lock
 was regenerated. Real pilot-data review and layout acceptance remain open obligations.
 
+**v1.1.3 artifacts built, released and installed (2026-09-16, owner-approved):** commits
+`142dc79` (feature) and `3e64572` (train) on `main`; build commit
+`3e64572343d1117953ea2592448d13826c23ec69` (clean tree). Canonical arm64 local CI is
+**MERGE READY** 13/13 with provenance `COMPLETE` (report
+`dist/p1-wp41-committed-local-ci.json` SHA-256
+`2c690143fa70de7152d8f2a10fe64cfaf4f189fcd469e2bedf950eff29da30d3`, executable
+`1e920d0b…`, artifact `0674dcd0…`). Release run `35150481616` built both native DMGs from
+the same commit (arm64 executable `d1649078…`, x86_64 `24d66761…`) with native and exact
+mounted-DMG smoke PASS; the pilot-package `SHA256SUMS` verified locally; a local native
+arm64 exact-DMG smoke passed (`dist/v113-arm64-exact-dmg-smoke.json` SHA-256
+`2efe647369f85966f16c2852371e50c8896171f448a2e001848606ea017699eb`). The
+`pilot-v1.1.3` prerelease (tag on the build commit above) carries exactly two assets —
+`Kuantra-Terminal-1.1.3-arm64.dmg` SHA-256
+`76a1345945b9dc1a6cba207000827193b69720dd8931ed0a3997e60c75840869` and
+`Kuantra-Terminal-1.1.3-x86_64.dmg` SHA-256
+`3ac3bd6d67530b83e4d07b5a7179266e42d2d2edc23866f4146711fcbc1eb7e4` — both downloaded back
+after upload and re-hashed; `pilot-v1.1.2` was superseded in place (title/body redirect) and
+**keeps its historical 1.1.2 packages**; no tag was moved.
+`/Applications/Kuantra Terminal.app` was replaced with the verified arm64 artifact
+(installed executable `d1649078…`, version 1.1.3, `codesign` structure OK, launch verified,
+user data preserved); the bundled frontend contains the export UI (`journal-export-open`)
+and the update button still targets `https://github.com/alikula37/kuantra-terminal/releases`.
+Previous-version app backups and old local DMG artifacts were removed from this Mac per the
+owner's instruction; rollback is available by re-downloading the historical DMGs from the
+superseded GitHub prereleases. The installed signature remains ad-hoc
+(`TeamIdentifier=not set`): Developer ID signing/notarization is still **absent** and
+remains an open pilot/distribution gate; `codesign` OK is not Apple approval.
+
 **Security review (`ersinkoc/security-check` v1.2.0, deep profile, whole repository,
 sandboxed local checks) — complete and remediated (2026-09-15):** Independent hunt and
 verification passes produced 21 confirmed findings (4 High, 10 Medium, 7 Low) and 3
