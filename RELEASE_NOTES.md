@@ -1,13 +1,13 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
 
-# Kuantra Terminal v1.1.2 — Trusted macOS Pilot (update-flow patch)
+# Kuantra Terminal v1.1.3 — Trusted macOS Pilot (journal export + PDF reports)
 
-**Pilot Release tag:** `pilot-v1.1.2` (release and tag point at the artifact source commit
-below; the former `pilot-v1.1.1` prerelease keeps its historical 1.1.1 packages and directs
+**Pilot Release tag:** `pilot-v1.1.3` (release and tag point at the artifact source commit
+below; the former `pilot-v1.1.2` prerelease keeps its historical 1.1.2 packages and directs
 users here)
 
-**Artifact source commit:** `5ea112fbe1db0801f564ee63c0cf1bf973db5694` (clean build
-commit; GitHub Actions release run `35065925107`, `workflow_dispatch`, `publish=false`)
+**Artifact source commit:** the clean build commit of this release; the exact SHA and run id
+are recorded in the post-build install evidence in `docs/strategy/STATUS.md`.
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -16,32 +16,40 @@ commit; GitHub Actions release run `35065925107`, `workflow_dispatch`, `publish=
 This private Release is intentionally scoped for the three-person pilot and exposes exactly
 two downloads:
 
-- **`Kuantra-Terminal-1.1.2-arm64.dmg`** for Apple Silicon M-series Macs;
-- **`Kuantra-Terminal-1.1.2-x86_64.dmg`** for native Intel Macs.
+- **`Kuantra-Terminal-1.1.3-arm64.dmg`** for Apple Silicon M-series Macs;
+- **`Kuantra-Terminal-1.1.3-x86_64.dmg`** for native Intel Macs.
 
 Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
 Silicon artifact. Both native builds come from the same clean commit in the pinned GitHub
 Actions release workflow and pass the native desktop smoke plus the exact read-only
-mounted-DMG smoke on their matching hosts. DMG SHA-256 values are:
+mounted-DMG smoke on their matching hosts. The run id, source commit, DMG SHA-256 and mounted
+executable SHA-256 values are recorded in the post-build install evidence and in
+`docs/strategy/STATUS.md`; technical JSON/manifest evidence remains in the repository and
+local audit package, not as separate Release downloads.
 
-- arm64: `bdc5f43693695740d2e26db2606e193cdfdf20bd107d26481db21f8373f15d9a`;
-- x86_64: `a95336f8d290e7519b149c9403d0f29414e7ba6862e902deeaddc56e559219bf`.
+**New in this release:** the trade journal now has a bounded **Export** flow. Choose the
+scope explicitly (filtered results — every record matching the current filters, not just the
+loaded page — or all records), a date range with a month preset, and the date basis (entry or
+close). CSV is spreadsheet-ready (UTF-8 BOM, formula-injection-safe cells); PDF is a readable
+list plus a period summary with numbered pages and repeating table headers. Dates are
+Europe/Istanbul and the artifact states the period, basis and time zone. OPEN / CLOSED /
+CANCELED records are separated; canceled records never join performance figures; an unknown
+PnL is counted and excluded, never treated as zero; money totals are produced only inside one
+server-verified quote asset and unverified records are counted and excluded without any
+conversion; local TP/SL tracking results are reported separately as an estimated gross
+result and are never added to realized results. CSV and PDF share one snapshot and one
+snapshot SHA-256. Exceeding the record (2000) or artifact (8 MiB) ceiling fails with an
+explicit error instead of silently truncating, and a cancelled save dialog is never reported
+as a successful save. The single-trade **Evidence Pack** now also offers a direct PDF
+summary next to JSON/HTML/CSV. The PDF renderer uses vendored Bitstream Vera fonts and works
+fully offline.
 
-Mounted executable SHA-256 values are arm64
-`936ee7f852bbd9484f77bb374297971aa0a5deedfb5e85eaaf128b02eff8be93` and x86_64
-`a17f7629bdd937ec2f4a6e88b60268e5f340b4b32d8dc13fba179a59ed9a0373`. Exact
-smoke/N05 (ad-hoc blocked) JSON/manifest evidence remains in the repository and local
-audit package, not as separate Release downloads.
-
-**New in this patch:** the in-app update notifier now opens this repository's GitHub Releases
-list instead of a version-pinned page (no version check is claimed; a failed open shows an
-error and never reports "up to date"), and the dev-only vitest toolchain is upgraded to the
-patched 4.1.11 release, clearing the single dev-toolchain advisory (`npm audit` reports zero
-vulnerabilities). The v1.1.1 security hardening remains in place: migration archive and
-manifest byte ceilings, bounded broker-import review output, the shared paper-mode execution
-guard, contained model-artifact path handling, constant-time webhook comparisons and
-copy-signal HMAC verification, with SHA-pinned GitHub Actions.
+The v1.1.2 update-flow patch and the v1.1.1 security hardening remain in place: the update
+button opens this repository's Releases list (no version-pinned link), the dev-only vitest
+toolchain is on the patched 4.1.11, and the security fixes (migration archive/manifest
+ceilings, bounded import reviews, paper-mode execution guard, contained model paths,
+constant-time webhook checks, copy-signal HMAC, SHA-pinned actions) are unchanged.
 
 **v1.1.0 pilot features (unchanged):** the trade journal records the user-supplied trade date
 and time in Turkey time (minute precision, stored as UTC), explicitly separates a still-open
@@ -83,7 +91,7 @@ their checksums are re-verified locally with `shasum -a 256 -c SHA256SUMS` and
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed
 from GitHub on 2026-09-11 and must not be used. The exact canonical product tag is guarded by
-`docs/release/truth-matrix.v1.1.2.json`.
+`docs/release/truth-matrix.v1.1.3.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)

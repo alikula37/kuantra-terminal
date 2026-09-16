@@ -4,10 +4,14 @@
 Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
-The package is selected again strictly for its still-open owner-host obligations
+The package is selected again for its still-open owner-host obligations
 (N03/N05/H05/pilot access); no development proceeds under it without owner approval, and
 **A1.2 (including the deferred OKX identity work) and every other integration package
 remain unapproved**.
+[P1-WP41 journal bulk CSV export and readable PDF reports](../archive/strategy/work-packages/P1-WP41-journal-bulk-export-and-pdf-reports.md)
+is complete and archived: the journal export flow, the readable PDF reports and the
+single-trade Evidence Pack PDF shipped in `v1.1.3` (real pilot-data review and layout
+acceptance remain open obligations).
 [P1-WP40 MT5 HTML report preview](../archive/strategy/work-packages/P1-WP40-mt5-html-report-preview.md)
 is complete and archived: safe parsing of the defined English MT5 ReportHistory HTML
 format with a preview-only UI, separated order/deal identities and no persistent writes.
@@ -681,6 +685,35 @@ owner/pilot obligation:** the
 real anonymized XM report validation (terminal MT4/MT5, build/language, preview-vs-source
 comparison of counts, identity relations, quantities and timestamps) is tracked here and
 separate from this completed preview package.
+
+**P1-WP41 journal bulk CSV export and readable PDF reports — complete and archived
+(2026-09-16; owner-approved commit/push, shipped as `v1.1.3`):** the journal toolbar now has an **Export**
+flow (scope **filtered results** = every record matching the current filters, explicitly
+not the loaded page, or **all records**; date range with **entry/close basis** and a month
+preset; **CSV** for spreadsheets or a **PDF** report) and the single-trade Evidence Pack
+offers a direct **PDF** artifact next to JSON/HTML/CSV. One snapshot object feeds both CSV
+and PDF (same records, totals and snapshot SHA-256); dates are Europe/Istanbul with the
+period and basis stated in the artifact; OPEN/CLOSED/CANCELED are separated and CANCELED
+never joins performance; unknown PnL is counted, never zero-filled; money totals are only
+produced inside one server-verified quote asset (unverified records counted and excluded;
+no conversion); local TP/SL estimates (`LOCAL_ESTIMATE`, gross) are reported separately as
+"estimated gross result". Limits fail closed (`MAX_EXPORT_TRADES = 2000`,
+`MAX_EXPORT_BYTES = 8 MiB` below the desktop bridge cap) with honest UI states for cancel,
+limit and failure. **Evidence:** backend **1108 passed** (33 new journal-export tests
+including HTTP endpoints and Evidence Pack PDF, with JSON/HTML/CSV regressions intact);
+frontend **41 files / 253 tests** (new export modal + journal entry + evidence PDF/limit
+tests); i18n 1110 keys parity, `tsc` and production build clean; generated PDFs rendered to
+PNG (Quartz) and visually inspected (numbered pages, repeating table headers, wrapped long
+notes, correct Turkish/German glyphs, no empty trailing page — two real layout defects were
+found and fixed this way). Canonical arm64 local CI is **MERGE READY** 13/13 with provenance
+`DEVELOPER_DIRTY` (report `dist/p1-wp41-local-ci.json` SHA-256
+`1439ff09509409d9bf35b7faf471303e912634df3189f0dbe04944586714ec03`, executable
+`86ae3a55…`, artifact `e21095b7…`); the frozen packaged smoke now includes a
+`journal_export` check that proved both artifacts render offline in the app bundle
+(`PIL` exclusion removed, `app/assets/fonts/*.ttf` collected). New dependencies:
+`reportlab 5.0.1` (BSD-3-Clause) and its `pillow 12.3.0` (MIT-CMU) at runtime, `pypdf
+6.19.0` (BSD-3-Clause) test-only; a targeted OSV query returned no advisories and the lock
+was regenerated. Real pilot-data review and layout acceptance remain open obligations.
 
 **Security review (`ersinkoc/security-check` v1.2.0, deep profile, whole repository,
 sandboxed local checks) — complete and remediated (2026-09-15):** Independent hunt and

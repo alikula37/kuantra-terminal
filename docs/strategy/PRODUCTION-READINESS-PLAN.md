@@ -48,6 +48,11 @@ dev-only vitest advisory are fixed in source and shipped as the `v1.1.2` patch
 commit). The former `pilot-v1.1.1` release keeps its historical 1.1.1 packages and redirects
 users to v1.1.2. The canonical product Release/tag is not moved.
 
+Owner decision (2026-09-16): the owner-approved journal export/report package (P1-WP41) ships
+as `v1.1.3` (`truth-matrix.v1.1.3.json`, `pilot-v1.1.3` prerelease with the tag on the
+verified build commit). The former `pilot-v1.1.2` release keeps its historical 1.1.2 packages
+and redirects users to v1.1.3. The canonical product Release/tag is not moved.
+
 Owner-approved addition (2026-09-12): P1-WP31 local TP1/TP2/TP3/SL tracking follows
 the completed journal entry work. Delivery order is persistence/revisions, exact
 fresh provider quotes, deterministic local partial/full close, then UI and dual

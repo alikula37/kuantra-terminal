@@ -1,6 +1,6 @@
-# Kuantra Terminal v1.1.2 — kapalı macOS pilotu
+# Kuantra Terminal v1.1.3 — kapalı macOS pilotu
 
-**Güncel pilot Release:** [`pilot-v1.1.2`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.2)<br>
+**Güncel pilot Release:** [`pilot-v1.1.3`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.3)<br>
 **Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
 ve local audit paketinde tutulur. Güncel Release indirme alanında yalnızca iki native
 DMG bulunur: `arm64` Apple Silicon ve `x86_64` Intel.
@@ -69,7 +69,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 4. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
 
    ```text
-   hdiutil verify Kuantra-Terminal-1.1.2-<architecture>.dmg
+   hdiutil verify Kuantra-Terminal-1.1.3-<architecture>.dmg
    ```
 
    Çıktı başarılı olmalıdır. Bu kontrol DMG
@@ -79,7 +79,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 İsteğe bağlı olarak Release metadata'sını GitHub CLI ile de kontrol edebilirsiniz:
 
 ```text
-gh release view pilot-v1.1.2 --repo alikula37/kuantra-terminal
+gh release view pilot-v1.1.3 --repo alikula37/kuantra-terminal
 ```
 
 GitHub metadata'sı Apple Gatekeeper güveninin yerine geçmez; asıl dosya doğrulaması
@@ -127,6 +127,29 @@ profilde yapılan deneme pilot runtime kanıtıdır; temiz profil kanıtı olara
 - Her düzeltme revizyonlanır ve önceki değerler kanıt geçmişinde korunur; eski bir
   ekran yeni değişikliğin üzerine yazamaz.
 
+## Dışa aktarma ve raporlar (çalışma kopyası — henüz yayımlanmadı)
+
+İşlem Günlüğü başlığındaki **Dışa aktar** düğmesi CSV veya PDF üretir:
+
+- **Kapsam:** *Filtrelenmiş sonuçlar* ekranda yüklü sayfayı değil, mevcut filtreye uyan
+  **tüm** kayıtları dışa aktarır; *Tüm kayıtlar* filtreyi yok sayar. Ekran size kaç kaydın
+  seçildiğini ve varsa veri kalitesi uyarılarını önceden gösterir.
+- **Dönem:** Başlangıç/bitiş tarihi veya tek adımda **ay** seçilebilir. Tarihler
+  **Europe/Istanbul** takvim gününe göredir ve artefakt bunu açıkça yazar. Filtre
+  **giriş tarihine** ya da **kapanış tarihine** göre uygulanır; seçim belgede belirtilir.
+- **CSV:** Excel uyumlu (UTF-8 BOM), formül enjeksiyonuna karşı korumalı hücreler.
+  **PDF:** dönem özeti + açık/kapanmış listeler, sayfa numaralı ve uzun tabloları böler.
+- **Güvenilirlik:** İptal edilen kayıtlar performansa katılmaz; bilinmeyen PnL sıfır
+  sayılmaz (sayısı ve kapsamı gösterilir); para toplamları yalnızca sunucu tarafından
+  doğrulanmış kotasyon birimi içinde üretilir ve doğrulanmamış kayıtlar toplama katılmaz
+  (dönüşüm uygulanmaz); yerel TP/SL tahminleri gerçekleşmiş sonuca eklenmez, ayrı bir
+  "tahmini brüt sonuç (ücretler hariç)" bölümünde gösterilir.
+- **Sınırlar:** Seçim 2.000 kaydı veya 8 MiB artefaktı aşarsa dışa aktarma sessizce
+  kırpılmaz; açık bir hata gösterilir (tarih aralığını daraltın). Kaydetme iptal edilirse
+  "kaydedildi" denmez.
+- **Tek işlem kanıt paketi:** JSON/HTML/CSV yanında doğrudan **PDF** özeti
+  kaydedilebilir; tam kanıt yükü JSON artefaktındadır.
+
 ## Kurulum ve ilk açılış
 
 Ayarlar → **Uygulama güncellemeleri → Releases sayfasını aç** düğmesi deponun GitHub
@@ -134,7 +157,7 @@ Releases listesini varsayılan tarayıcınızda açar; sabit bir sürüm bağlan
 GitHub hesabınızla giriş yapmanız gerekebilir. Bu düğme sürüm karşılaştırması veya
 otomatik kurulum yapmaz; başarısız açılışta hata gösterir, "güncelsiniz" demez. Yeni DMG'yi
 indirip doğrulayın; uygulamayı kapatarak Applications içindeki uygulamayı değiştirin.
-1.1.2 öncesi kurulumlarda bu düğme daha eski bir sayfayı açabilir; bu durumda bir defalık
+1.1.3 öncesi kurulumlarda bu düğme daha eski bir sayfayı açabilir; bu durumda bir defalık
 manuel güncelleme gerekir.
 Mevcut veriyle ilk açılıştan önce schema uyumluluğunu doğrulayın; uygulama dosyasının
 değiştirilmesi, veritabanı geçişinin doğrulandığı anlamına gelmez.
