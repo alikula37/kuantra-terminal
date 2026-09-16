@@ -161,6 +161,27 @@ def _toggle_plugin(ctx, enable: bool):
     )
 
 
+def _check_journal_export(ctx) -> bool:
+    """Prove the frozen bundle renders the offline CSV/PDF export artifacts.
+
+    An empty journal is a valid input: the point is that the packaged app can
+    resolve its vendored PDF fonts and build both artifacts without network.
+    """
+
+    pdf = ctx.runtime.call(
+        "GET", "/api/v1/journal/export", "format=pdf&scope=all&lang=tr"
+    )
+    if pdf.status != 200 or not pdf.content.startswith(b"%PDF"):
+        return False
+    csv_resp = ctx.runtime.call(
+        "GET", "/api/v1/journal/export", "format=csv&scope=all&lang=tr"
+    )
+    if csv_resp.status != 200 or not csv_resp.content.startswith(b"\xef\xbb\xbf"):
+        return False
+    preview = ctx.runtime.call("GET", "/api/v1/journal/export/preview", "scope=all")
+    return preview.status == 200
+
+
 def _check_plugin_boundary(ctx) -> bool:
     """Prove the packaged app rejects unsigned experimental runtime activation.
 
@@ -188,7 +209,7 @@ def _check_plugin_boundary(ctx) -> bool:
 
 def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
     checks = {"react_mounted": False, "bridge_roundtrip": False, "health": False, "push_sink": False,
-              "plugin_boundary": False}
+              "plugin_boundary": False, "journal_export": False}
     # pywebview's evaluate_js waits 20 seconds per call when the native controller never became
     # ready. Check the readiness event once so a renderer failure produces a bounded diagnostic
     # instead of multiplying that wait across every smoke assertion.
@@ -210,7 +231,14 @@ def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
                 checks["health"] = resp.status == 200 and json.loads(resp.content).get("status") == "online"
                 if checks["health"] and not checks["plugin_boundary"]:
                     checks["plugin_boundary"] = _check_plugin_boundary(ctx)
-            if all(checks.values()):
+            gate_ready = all(
+                value for name, value in checks.items() if name != "journal_export"
+            )
+            if gate_ready:
+                try:
+                    checks["journal_export"] = _check_journal_export(ctx)
+                except Exception:  # noqa: BLE001
+                    checks["journal_export"] = False
                 if os.environ.get("KUANTRA_SMOKE_LOCAL_TRACKING") == "1":
                     try:
                         checks["local_tracking"] = _check_local_tracking(window, ctx)

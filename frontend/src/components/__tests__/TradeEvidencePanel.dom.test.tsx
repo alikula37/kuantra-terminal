@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), fetchEvidencePack: vi.fn(), download: vi.fn() }));
 vi.mock("../../lib/backend", () => ({ apiUrl: (path: string) => path, apiFetch: mocks.apiFetch, fetchEvidencePack: mocks.fetchEvidencePack }));
-vi.mock("../../lib/desktop", () => ({ downloadFromBackend: mocks.download }));
+vi.mock("../../lib/desktop", () => ({ downloadFromBackendDetailed: mocks.download }));
 
 import { TradeEvidencePanel } from "../TradeEvidencePanel";
 import { I18nProvider } from "../../context/I18nContext";
@@ -203,7 +203,7 @@ it("renders explicit coverage, applicable rule provenance, snapshot identity, an
 
 it("uses the native download bridge and reports only an actual save as ready", async () => {
   mockPanelResponse(basePack);
-  mocks.download.mockResolvedValue(true);
+  mocks.download.mockResolvedValue({ saved: true, status: 200 });
   await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
   await flush();
 
@@ -219,9 +219,41 @@ it("uses the native download bridge and reports only an actual save as ready", a
   expect(host.textContent).toContain("CSV export ready.");
 });
 
+it("offers a direct PDF export of the evidence pack", async () => {
+  mockPanelResponse(basePack);
+  mocks.download.mockResolvedValue({ saved: true, status: 200 });
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  const pdfButton = Array.from(host.querySelectorAll("button")).find((button) => button.textContent?.includes("PDF")) as HTMLButtonElement;
+  await act(async () => pdfButton.click());
+  await flush();
+
+  expect(mocks.download).toHaveBeenCalledWith(
+    "/api/v1/trades/TRD-1/evidence/export",
+    "kuantra-evidence-TRD-1.pdf",
+    "format=pdf",
+  );
+  expect(host.textContent).toContain("PDF export ready.");
+});
+
+it("reports an export limit without claiming a save", async () => {
+  mockPanelResponse(basePack);
+  mocks.download.mockResolvedValue({ saved: false, status: 413 });
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+
+  const pdfButton = Array.from(host.querySelectorAll("button")).find((button) => button.textContent?.includes("PDF")) as HTMLButtonElement;
+  await act(async () => pdfButton.click());
+  await flush();
+
+  expect(host.textContent).toContain("Export limit exceeded; nothing was saved.");
+  expect(host.textContent).not.toContain("PDF export ready.");
+});
+
 it("does not report a cancelled native export as ready", async () => {
   mockPanelResponse(basePack);
-  mocks.download.mockResolvedValue(false);
+  mocks.download.mockResolvedValue({ saved: false, status: 200 });
   await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
   await flush();
 

@@ -14,9 +14,9 @@ import hashlib
 import html
 import io
 import re
-from decimal import Decimal, InvalidOperation
 from typing import Any, Callable, Dict, Optional
 
+from app.core.csv_safety import safe_csv_cell
 from app.db.repositories.evidence_ledger_repo import canonical_json
 from app.services.trade_read_adapter import TradeReadAdapter, trade_read_adapter
 
@@ -177,20 +177,7 @@ class EvidencePackExportService:
 
     @staticmethod
     def _csv_cell(value: Any) -> str:
-        if value is None:
-            text = ""
-        elif isinstance(value, (dict, list)):
-            text = canonical_json(value)
-        else:
-            text = str(value)
-        if text.startswith(("=", "@")):
-            return f"'{text}"
-        if text.startswith(("+", "-")):
-            try:
-                Decimal(text)
-            except InvalidOperation:
-                return f"'{text}"
-        return text
+        return safe_csv_cell(value)
 
     def _csv_artifact(self, trade_id: str, pack: Dict[str, Any]) -> EvidencePackArtifact:
         _, payload_sha256 = self._json_payload(pack)
@@ -252,6 +239,57 @@ class EvidencePackExportService:
             artifact_sha256=hashlib.sha256(content).hexdigest(),
         )
 
+    def _pdf_artifact(self, trade_id: str, pack: Dict[str, Any]) -> EvidencePackArtifact:
+        from app.services.pdf_report import TableBlock, render_report_pdf
+
+        _, payload_sha256 = self._json_payload(pack)
+        trade = pack.get("trade") if isinstance(pack.get("trade"), dict) else {}
+        coverage = pack.get("coverage_summary") if isinstance(pack.get("coverage_summary"), dict) else {}
+        integrity = pack.get("ledger_integrity") if isinstance(pack.get("ledger_integrity"), dict) else {}
+        rules = pack.get("applicable_rules") if isinstance(pack.get("applicable_rules"), list) else []
+        rows = [
+            ["Trade ID", str(trade_id)],
+            ["Symbol", str(trade.get("symbol") or "—")],
+            ["Side / type", f"{trade.get('side') or '—'} / {trade.get('position_type') or '—'}"],
+            ["Status", str(trade.get("status") or "—")],
+            ["Entry price", str(trade.get("entry_price") if trade.get("entry_price") is not None else "—")],
+            ["Exit price", str(trade.get("exit_price") if trade.get("exit_price") is not None else "—")],
+            ["Quantity", str(trade.get("qty") if trade.get("qty") is not None else "—")],
+            ["PnL (recorded)", str(trade.get("pnl") if trade.get("pnl") is not None else "unknown")],
+            ["Commission", str(trade.get("commission") if trade.get("commission") is not None else "—")],
+            ["Entry time (UTC)", str(trade.get("entry_time") or "—")],
+            ["Exit time (UTC)", str(trade.get("exit_time") or "—")],
+            ["Read source", str(pack.get("read_source") or "UNKNOWN")],
+            ["Coverage (overall)", str(coverage.get("overall") or "UNKNOWN")],
+            ["Ledger integrity", "verified" if integrity.get("valid") is True else "unverified"],
+            ["Events", str(pack.get("event_count") or 0)],
+            ["Rule ids", ", ".join(str(rule.get("rule_id")) for rule in rules if isinstance(rule, dict) and rule.get("rule_id")) or "—"],
+            ["Payload SHA-256", payload_sha256],
+        ]
+        content = render_report_pdf(
+            title=f"Kuantra Trade Evidence Pack — {trade_id}",
+            meta_lines=[
+                "Read-only, source-linked evidence summary",
+                "Europe/Istanbul times are shown in the app; this artifact keeps stored UTC values",
+            ],
+            blocks=[
+                ("table", TableBlock(headers=["Field", "Value"], rows=rows, widths=[130, 330])),
+                ("warning", "The full append-only evidence payload is the JSON artifact; this PDF is a readable summary."),
+            ],
+            footer_text=f"Kuantra Trade Evidence Pack · {trade_id}",
+            page_word="Page",
+        )
+        return EvidencePackArtifact(
+            trade_id=trade_id,
+            artifact_format="pdf",
+            artifact_version=self.ARTIFACT_VERSION,
+            content=content,
+            media_type="application/pdf",
+            filename=f"kuantra-evidence-{trade_id}.pdf",
+            payload_sha256=payload_sha256,
+            artifact_sha256=hashlib.sha256(content).hexdigest(),
+        )
+
     def export(
         self,
         trade_id: str,
@@ -263,8 +301,8 @@ class EvidencePackExportService:
             raise TypeError("resource_check must be callable")
         normalized_trade_id = _safe_trade_id(trade_id)
         normalized_format = str(artifact_format or "").strip().lower()
-        if normalized_format not in {"json", "html", "csv"}:
-            raise EvidencePackExportError("format must be json, html, or csv")
+        if normalized_format not in {"json", "html", "csv", "pdf"}:
+            raise EvidencePackExportError("format must be json, html, csv, or pdf")
         pack = self._load_pack(
             normalized_trade_id,
             resource_check=resource_check,
@@ -273,6 +311,8 @@ class EvidencePackExportService:
             return self._json_artifact(normalized_trade_id, pack)
         if normalized_format == "csv":
             return self._csv_artifact(normalized_trade_id, pack)
+        if normalized_format == "pdf":
+            return self._pdf_artifact(normalized_trade_id, pack)
         return self._html_artifact(normalized_trade_id, pack)
 
 

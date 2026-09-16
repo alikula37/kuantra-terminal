@@ -737,7 +737,8 @@
     "refresh_attempt": "Letzter Versuch: {time}",
     "refresh_last_success": "Letzter Erfolg: {time}",
     "filter_selected_count": "{count} ausgewählt",
-    "filter_clear": "Zurücksetzen"
+    "filter_clear": "Zurücksetzen",
+    "export": "Exportieren"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION-INBOX",
@@ -866,7 +867,9 @@
     "event_risk_policy_snapshot": "Snapshot der Risikorichtlinie",
     "event_playbook_snapshot": "Playbook-Snapshot",
     "event_playbook_review": "Playbook-Prüfung",
-    "export_cancelled": "Export abgebrochen oder nicht gespeichert."
+    "export_cancelled": "Export abgebrochen oder nicht gespeichert.",
+    "pdf_export": "PDF-Zusammenfassung",
+    "export_limit": "Exportlimit überschritten; es wurde nichts gespeichert."
   },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE-SCORECARD",
@@ -1159,5 +1162,37 @@
     "reason_status_invalid": "Der Trade-Status muss offen, geschlossen oder storniert sein.",
     "completed_correction_notice": "Nach Abschluss sind Einstiegspreis und Menge gesperrt; Sie können Notiz, Mengeneinheit und den nutzerangegebenen Ausstiegspreis/-zeit korrigieren.",
     "unit_unlocks_pnl": "Mit der Basis-Einheit-Erklärung wird das realisierte P/L aus den gespeicherten Ausstiegsdaten berechnet."
+  },
+  "journal_export": {
+    "title": "Journal exportieren",
+    "scope": "Umfang",
+    "scope_filtered": "Gefilterte Ergebnisse",
+    "scope_filtered_hint": "Exportiert alle Datensätze, die den aktuellen Filtern entsprechen – nicht nur die geladene Seite.",
+    "scope_all": "Alle Datensätze",
+    "scope_all_hint": "Exportiert alle Datensätze des Journals und ignoriert die Filter.",
+    "period": "Zeitraum (Europe/Istanbul)",
+    "date_from": "Startdatum",
+    "date_to": "Enddatum",
+    "month": "Monat",
+    "timezone_note": "Datumsangaben folgen den Kalendertagen von Europe/Istanbul; das Artefakt nennt Zeitzone und Datumsbasis.",
+    "date_basis_entry": "Nach Einstiegsdatum filtern",
+    "date_basis_close": "Nach Schlussdatum filtern",
+    "format": "Format",
+    "format_csv": "CSV (Excel-kompatibel)",
+    "format_pdf": "PDF-Bericht (Liste + Zeitraum-Zusammenfassung)",
+    "preview_loading": "Auswahl wird geprüft…",
+    "preview_failed": "Die Auswahl konnte nicht geprüft werden. Es wurde nichts exportiert.",
+    "preview_counts": "Auswahl: {total} Datensätze · {open} offen · {closed} geschlossen · {canceled} storniert",
+    "warn_unknown_pnl": "Unbekannter PnL: {count} Datensätze (nicht in Summen, nicht als Null gezählt).",
+    "warn_unverified_currency": "Unverifizierte Notierung: {count} Datensätze (von Geldsummen ausgeschlossen; keine Umrechnung).",
+    "warn_local_estimates": "Lokale TP/SL-Schätzungen: {count} Datensätze (separat als geschätztes Bruttoergebnis).",
+    "warn_canceled": "Stornierte Datensätze: {count} (nicht in der Performance).",
+    "limit_exceeded": "Die Auswahl umfasst {count} Datensätze; das sichere Limit ist {max}. Zeitraum eingrenzen — es wird nicht still gekürzt.",
+    "export": "Exportieren",
+    "exporting": "Wird exportiert…",
+    "saved": "Datei gespeichert.",
+    "cancelled": "Export abgebrochen oder nicht gespeichert.",
+    "failed": "Export fehlgeschlagen. Es wurde nichts gespeichert.",
+    "close": "Schließen"
   }
 }

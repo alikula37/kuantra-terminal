@@ -86,3 +86,20 @@ the same 2 moderate dev-only entries. Independent OSV query agrees.
   monitoring. No CI job currently repeats this scan.
 - The npm dev-only advisory remains open until a vitest major upgrade is scheduled.
 - macOS signing / notarization remains a separate distribution-trust gap.
+
+## P1-WP41 additions (2026-09-16, targeted check)
+
+The journal export/report feature added three locked packages:
+
+| Package | Version | Role | License (official source) | Targeted OSV query |
+|---------|---------|------|---------------------------|--------------------|
+| reportlab | 5.0.1 | runtime (PDF rendering) | BSD-3-Clause (PyPI metadata) | no advisories |
+| pillow | 12.3.0 | runtime (reportlab dependency) | MIT-CMU (PyPI license expression) | no advisories |
+| pypdf | 6.19.0 | test-only (PDF text extraction) | BSD-3-Clause (repository LICENSE) | no advisories |
+
+Only `{ecosystem, name, version}` triples were sent to `api.osv.dev`; payload SHA-256
+`7343d6aa6b4b062ef61e3215076b04dcc3f43386e3236470c711e8bf54d2af5a`. The lockfile was
+regenerated with the documented `uv pip compile --universal` command and the packaging spec
+now collects `app/assets/fonts/*.ttf` (vendored Bitstream Vera Sans, Bitstream Vera license
+included) while the legacy `PIL` exclusion was removed because reportlab imports it at
+module load. Continuous monitoring remains an open follow-up.

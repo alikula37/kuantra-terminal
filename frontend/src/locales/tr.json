@@ -737,7 +737,8 @@
     "refresh_attempt": "Son deneme: {time}",
     "refresh_last_success": "Son başarılı: {time}",
     "filter_selected_count": "{count} seçili",
-    "filter_clear": "Temizle"
+    "filter_clear": "Temizle",
+    "export": "Dışa aktar"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION GELEN KUTUSU",
@@ -866,7 +867,9 @@
     "event_risk_policy_snapshot": "Risk politikası snapshot'ı",
     "event_playbook_snapshot": "Playbook snapshot'ı",
     "event_playbook_review": "Playbook denetim incelemesi",
-    "export_cancelled": "Dışa aktarma iptal edildi veya kaydedilmedi."
+    "export_cancelled": "Dışa aktarma iptal edildi veya kaydedilmedi.",
+    "pdf_export": "PDF özeti",
+    "export_limit": "Dışa aktarma sınırı aşıldı; hiçbir şey kaydedilmedi."
   },
   "analytics": {
     "title": "KANTİTATİF PERFORMANS SKOR KARTI",
@@ -1159,5 +1162,37 @@
     "reason_status_invalid": "İşlem durumu açık, kapalı veya iptal edildi olmalı.",
     "completed_correction_notice": "İşlem tamamlandıktan sonra giriş fiyatı ve miktar kilitlidir; notu, miktar birimini ve kullanıcı beyanlı çıkış fiyatı/saatini düzeltebilirsiniz.",
     "unit_unlocks_pnl": "Temel birim beyan edilince kayıtlı çıkış bilgisinden gerçekleşen K/Z hesaplanır."
+  },
+  "journal_export": {
+    "title": "Günlüğü dışa aktar",
+    "scope": "Kapsam",
+    "scope_filtered": "Filtrelenmiş sonuçlar",
+    "scope_filtered_hint": "Ekranda yüklü sayfa değil, mevcut filtreye uyan tüm kayıtlar dışa aktarılır.",
+    "scope_all": "Tüm kayıtlar",
+    "scope_all_hint": "Filtreler yok sayılarak günlükteki tüm kayıtlar dışa aktarılır.",
+    "period": "Dönem (Europe/Istanbul)",
+    "date_from": "Başlangıç tarihi",
+    "date_to": "Bitiş tarihi",
+    "month": "Ay",
+    "timezone_note": "Tarihler Europe/Istanbul takvim günlerine göredir; artefakt saat dilimini ve tarih bazını açıkça yazar.",
+    "date_basis_entry": "Giriş tarihine göre filtrele",
+    "date_basis_close": "Kapanış tarihine göre filtrele",
+    "format": "Biçim",
+    "format_csv": "CSV (Excel uyumlu)",
+    "format_pdf": "PDF raporu (liste + dönem özeti)",
+    "preview_loading": "Seçim kontrol ediliyor…",
+    "preview_failed": "Seçim kontrol edilemedi. Hiçbir şey dışa aktarılmadı.",
+    "preview_counts": "Seçim: {total} kayıt · {open} açık · {closed} kapanmış · {canceled} iptal",
+    "warn_unknown_pnl": "Bilinmeyen PnL: {count} kayıt (toplama katılmaz, sıfır sayılmaz).",
+    "warn_unverified_currency": "Doğrulanmamış kotasyon birimi: {count} kayıt (para toplamlarına katılmaz; dönüşüm uygulanmaz).",
+    "warn_local_estimates": "Yerel TP/SL tahminleri: {count} kayıt (ayrı 'tahmini brüt sonuç' bölümünde gösterilir).",
+    "warn_canceled": "İptal edilen kayıtlar: {count} (performansa katılmaz).",
+    "limit_exceeded": "Seçim {count} kayıt içeriyor; güvenli sınır {max}. Tarih aralığını daraltın — sessizce kırpma yapılmaz.",
+    "export": "Dışa aktar",
+    "exporting": "Dışa aktarılıyor…",
+    "saved": "Dosya kaydedildi.",
+    "cancelled": "Dışa aktarma iptal edildi veya kaydedilmedi.",
+    "failed": "Dışa aktarma başarısız. Hiçbir şey kaydedilmedi.",
+    "close": "Kapat"
   }
 }

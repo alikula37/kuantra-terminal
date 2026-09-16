@@ -22,5 +22,7 @@ pyyaml>=6.0.1
 python-multipart>=0.0.9
 ccxt>=4.2.0
 
-
-
+# PDF report rendering (ReportLab open source, BSD-3-Clause) and test-only PDF text
+# extraction (pypdf, BSD-3-Clause); fonts are vendored under app/assets/fonts.
+reportlab>=5.0,<6
+pypdf>=6,<7

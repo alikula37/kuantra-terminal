@@ -34,6 +34,11 @@ from app.services.evidence_pack_export import (
     EvidencePackNotFoundError,
     evidence_pack_export_service,
 )
+from app.services.journal_export import (
+    JournalExportLimitError,
+    JournalExportRequestError,
+    journal_export_service,
+)
 from app.services.csv_importer import csv_trade_importer
 from app.services.broker_import_service import broker_import_service, BrokerImportValidationError
 from app.services.mt5_statement_preview import (
@@ -738,6 +743,99 @@ def get_template_csv():
         content=csv_data,
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=kuantra_trade_template.csv"}
+    )
+
+
+def _journal_export_filters(
+    symbols: Optional[str],
+    statuses: Optional[str],
+) -> tuple[Optional[list[str]], Optional[list[str]]]:
+    def split(value: Optional[str]) -> Optional[list[str]]:
+        if not value:
+            return None
+        items = [item.strip() for item in value.split(",") if item.strip()]
+        if len(items) > 50 or any(len(item) > 40 for item in items):
+            raise JournalExportRequestError("too many filter values")
+        return items
+
+    return split(symbols), split(statuses)
+
+
+@router.get("/journal/export/preview")
+def preview_journal_export(
+    scope: str = Query("filtered", min_length=3, max_length=16),
+    symbols: Optional[str] = Query(None, max_length=1000),
+    statuses: Optional[str] = Query(None, max_length=500),
+    date_from: Optional[str] = Query(None, max_length=10),
+    date_to: Optional[str] = Query(None, max_length=10),
+    date_basis: str = Query("entry", min_length=5, max_length=5),
+):
+    """Describe the exact snapshot a subsequent CSV/PDF export would cover."""
+
+    try:
+        symbol_list, status_list = _journal_export_filters(symbols, statuses)
+        return journal_export_service.preview(
+            scope=scope,
+            symbols=symbol_list,
+            statuses=status_list,
+            date_from=date_from or None,
+            date_to=date_to or None,
+            date_basis=date_basis,
+        )
+    except JournalExportLimitError as exc:
+        raise HTTPException(
+            status_code=413,
+            detail={"reason": "EXPORT_LIMIT_EXCEEDED", "message": str(exc)},
+        ) from exc
+    except JournalExportRequestError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail="Journal export preview failed safely.") from exc
+
+
+@router.get("/journal/export")
+def export_journal(
+    format: str = Query("csv", min_length=2, max_length=8),
+    scope: str = Query("filtered", min_length=3, max_length=16),
+    lang: str = Query("en", min_length=2, max_length=5),
+    symbols: Optional[str] = Query(None, max_length=1000),
+    statuses: Optional[str] = Query(None, max_length=500),
+    date_from: Optional[str] = Query(None, max_length=10),
+    date_to: Optional[str] = Query(None, max_length=10),
+    date_basis: str = Query("entry", min_length=5, max_length=5),
+):
+    """Download the filtered journal as a spreadsheet-ready CSV or a PDF report."""
+
+    try:
+        symbol_list, status_list = _journal_export_filters(symbols, statuses)
+        artifact = journal_export_service.export(
+            format=format,
+            lang=lang,
+            scope=scope,
+            symbols=symbol_list,
+            statuses=status_list,
+            date_from=date_from or None,
+            date_to=date_to or None,
+            date_basis=date_basis,
+        )
+    except JournalExportLimitError as exc:
+        raise HTTPException(
+            status_code=413,
+            detail={"reason": "EXPORT_LIMIT_EXCEEDED", "message": str(exc)},
+        ) from exc
+    except JournalExportRequestError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail="Journal export failed safely.") from exc
+    return Response(
+        content=artifact.content,
+        media_type=artifact.media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{artifact.filename}"',
+            "X-Kuantra-Snapshot-SHA256": artifact.snapshot_sha256,
+            "X-Kuantra-Artifact-SHA256": artifact.artifact_sha256,
+            "X-Kuantra-Record-Count": str(artifact.record_count),
+        },
     )
 
 

@@ -234,3 +234,26 @@ it("loads older journal pages without silently replacing the first page", async 
   expect(mocks.trades).toHaveLength(201);
   expect(host.textContent).toContain("TRD-201");
 });
+
+it("opens the export modal with the current filters from the toolbar", async () => {
+  const previewFixture = {
+    record_count: 2, counts: { total: 2, open: 1, closed: 1, canceled: 0 }, warnings: [],
+    exceeds_limit: false, max_records: 2000, unknown_pnl_closed: 0, unverified_currency_records: 0,
+    estimated_trades: 0, snapshot_sha256: "ab".repeat(32),
+  };
+  mocks.apiFetch.mockImplementation((path: string) =>
+    Promise.resolve(path.includes("/journal/export/preview") ? response(previewFixture) : response([])));
+  await act(async () => root.render(<JournalView {...props} onOpenCsvImport={vi.fn()} />));
+  await flush();
+
+  const open = host.querySelector('[data-testid="journal-export-open"]') as HTMLButtonElement;
+  expect(open).not.toBeNull();
+  await act(async () => open.click());
+  await flush();
+
+  expect(host.textContent).toContain("journal_export.scope_filtered_hint");
+  expect(host.textContent).toContain("journal_export.scope_all_hint");
+  const previewCall = String(mocks.apiFetch.mock.calls.find((call) => String(call[0]).includes("/journal/export/preview"))?.[0]);
+  expect(previewCall).toContain("scope=filtered");
+  expect(previewCall).toContain("date_basis=entry");
+});

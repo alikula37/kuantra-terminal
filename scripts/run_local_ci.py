@@ -45,6 +45,7 @@ REQUIRED_SMOKE_CHECKS = {
     "health",
     "push_sink",
     "plugin_boundary",
+    "journal_export",
 }
 QT_FAILURE_MARKERS = (
     "Frozen Qt runtime preflight failed",

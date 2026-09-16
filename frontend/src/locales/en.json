@@ -737,7 +737,8 @@
     "refresh_attempt": "Last attempt: {time}",
     "refresh_last_success": "Last success: {time}",
     "filter_selected_count": "{count} selected",
-    "filter_clear": "Clear"
+    "filter_clear": "Clear",
+    "export": "Export"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION INBOX",
@@ -866,7 +867,9 @@
     "event_risk_policy_snapshot": "Risk policy snapshot",
     "event_playbook_snapshot": "Playbook snapshot",
     "event_playbook_review": "Playbook audit review",
-    "export_cancelled": "Export cancelled or was not saved."
+    "export_cancelled": "Export cancelled or was not saved.",
+    "pdf_export": "PDF summary",
+    "export_limit": "Export limit exceeded; nothing was saved."
   },
   "analytics": {
     "title": "QUANTITATIVE PERFORMANCE SCORECARD",
@@ -1159,5 +1162,37 @@
     "reason_status_invalid": "Trade status must be open, closed or canceled.",
     "completed_correction_notice": "Entry price and quantity are locked once a trade is completed; you can correct the note, the quantity unit and the user-reported exit price/time.",
     "unit_unlocks_pnl": "Declaring the base unit computes the realized P/L from the stored exit data."
+  },
+  "journal_export": {
+    "title": "Export journal",
+    "scope": "Scope",
+    "scope_filtered": "Filtered results",
+    "scope_filtered_hint": "Exports every record matching the current filters, not only the page loaded on screen.",
+    "scope_all": "All records",
+    "scope_all_hint": "Exports every record in the journal, ignoring the filters.",
+    "period": "Period (Europe/Istanbul)",
+    "date_from": "Start date",
+    "date_to": "End date",
+    "month": "Month",
+    "timezone_note": "Dates use Europe/Istanbul calendar days; the exported artifact states the time zone and the date basis.",
+    "date_basis_entry": "Filter by entry date",
+    "date_basis_close": "Filter by close date",
+    "format": "Format",
+    "format_csv": "CSV (Excel-compatible)",
+    "format_pdf": "PDF report (list + period summary)",
+    "preview_loading": "Checking the selection…",
+    "preview_failed": "The selection could not be checked. Nothing was exported.",
+    "preview_counts": "Selection: {total} records · {open} open · {closed} closed · {canceled} canceled",
+    "warn_unknown_pnl": "Unknown PnL: {count} records (kept out of totals, never counted as zero).",
+    "warn_unverified_currency": "Unverified quote unit: {count} records (excluded from money totals; no conversion applied).",
+    "warn_local_estimates": "Local TP/SL estimates: {count} records (reported separately as estimated gross result).",
+    "warn_canceled": "Canceled records: {count} (excluded from performance).",
+    "limit_exceeded": "Selection has {count} records; the safe limit is {max}. Narrow the date range — nothing is truncated silently.",
+    "export": "Export",
+    "exporting": "Exporting…",
+    "saved": "File saved.",
+    "cancelled": "Export cancelled or not saved.",
+    "failed": "Export failed. Nothing was saved.",
+    "close": "Close"
   }
 }

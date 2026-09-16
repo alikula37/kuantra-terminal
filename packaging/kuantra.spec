@@ -22,7 +22,7 @@ datas = [
     (os.path.join(BACKEND, "alembic.ini"), "."),
     (os.path.join(BACKEND, "alembic"), "alembic"),
 ]
-datas += collect_data_files("app", includes=["**/*.json", "**/*.yaml", "**/*.yml", "**/*.sql", "**/*.md", "**/*.txt"])
+datas += collect_data_files("app", includes=["**/*.json", "**/*.yaml", "**/*.yml", "**/*.sql", "**/*.md", "**/*.txt", "**/*.ttf"])
 # The bundled plugin packages have no __init__.py, so collect_submodules("app") never sees them and
 # their plugin.py files would be dropped. DynamicPluginManager loads each one through
 # spec_from_file_location(manifest_dir/"plugin.py"), so shipping the tree verbatim as data makes the
@@ -63,7 +63,7 @@ else:
         "qtpy.QtWebEngineWidgets",
     ]
 
-excludes = ["torch", "bleak", "web3", "quickfix", "PIL", "matplotlib", "tkinter", "pytest", "test",
+excludes = ["torch", "bleak", "web3", "quickfix", "matplotlib", "tkinter", "pytest", "test",
             "alembic.testing", "setuptools", "pkg_resources", "ccxt.pro", "aiohttp.test_utils"]
 if not IS_WIN:
     excludes.append("winloop")

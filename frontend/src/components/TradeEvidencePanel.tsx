@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FileCheck2, Hash, X, XCircle } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { fetchEvidencePack } from "../lib/backend";
-import { downloadFromBackend } from "../lib/desktop";
+import { downloadFromBackendDetailed } from "../lib/desktop";
 import { EvidenceEvent, TradeEvidencePack } from "../types";
 import { useDialogAccessibility } from "../hooks/useDialogAccessibility";
 
@@ -161,7 +161,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
   const [pack, setPack] = useState<TradeEvidencePack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [exporting, setExporting] = useState<"json" | "html" | "csv" | null>(null);
+  const [exporting, setExporting] = useState<"json" | "html" | "csv" | "pdf" | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [retryNonce, setRetryNonce] = useState(0);
   const requestControllerRef = useRef<AbortController | null>(null);
@@ -226,13 +226,19 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
   const ledgerVerified = Boolean(pack?.ledger_integrity.valid && pack.ledger_integrity.checked_events > 0);
   const contextSourceVerified = pack?.market_context.market_context?.source_verified === true;
 
-  const downloadExport = async (format: "json" | "html" | "csv") => {
+  const downloadExport = async (format: "json" | "html" | "csv" | "pdf") => {
     setExporting(format);
     setExportMessage(null);
     try {
       const path = `/api/v1/trades/${encodeURIComponent(tradeId)}/evidence/export`;
-      const saved = await downloadFromBackend(path, `kuantra-evidence-${tradeId}.${format}`, `format=${encodeURIComponent(format)}`);
-      setExportMessage(t(saved ? "evidence_pack.export_ready" : "evidence_pack.export_cancelled", { format: format.toUpperCase() }));
+      const outcome = await downloadFromBackendDetailed(path, `kuantra-evidence-${tradeId}.${format}`, `format=${encodeURIComponent(format)}`);
+      if (outcome.saved) {
+        setExportMessage(t("evidence_pack.export_ready", { format: format.toUpperCase() }));
+      } else if (outcome.status === 413) {
+        setExportMessage(t("evidence_pack.export_limit"));
+      } else {
+        setExportMessage(t("evidence_pack.export_cancelled", { format: format.toUpperCase() }));
+      }
     } catch (reason: unknown) {
       setExportMessage(reason instanceof Error ? reason.message : t("evidence_pack.export_failed"));
     } finally {
@@ -284,7 +290,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
               <div className="bg-[#111722] border border-surface-border rounded p-3">
                 <span className="block text-[10px] text-slate-500 uppercase">{t("evidence_pack.exports")}</span>
                 <div className="flex gap-2 mt-1">
-                  {(["json", "html", "csv"] as const).map((format) => (
+                  {(["json", "html", "csv", "pdf"] as const).map((format) => (
                     <button key={format} type="button" onClick={() => downloadExport(format)} disabled={exporting !== null} className="inline-flex items-center gap-1 px-2 py-1 rounded border border-accent/50 text-accent hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                       <Download className="w-3 h-3" />{exporting === format ? "…" : t(`evidence_pack.${format}_export`)}
                     </button>

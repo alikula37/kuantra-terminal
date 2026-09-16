@@ -30,24 +30,39 @@ export async function saveTextFile(filename: string, text: string, mime = "text/
   }
 }
 
-export async function downloadFromBackend(path: string, filename?: string, query = ""): Promise<boolean> {
+export interface DownloadOutcome {
+  saved: boolean;
+  status?: number;
+}
+
+/**
+ * Status-aware download used where the caller must distinguish "the user
+ * cancelled the save dialog" from "the backend refused the artifact".  The
+ * boolean `downloadFromBackend` keeps its existing contract for other callers.
+ */
+export async function downloadFromBackendDetailed(path: string, filename?: string, query = ""): Promise<DownloadOutcome> {
   const api = getBridge();
   if (api) {
     try {
-      return (await api.download({ path, query, filename })).saved;
+      const result = await api.download({ path, query, filename });
+      return { saved: result?.saved === true, status: result?.status };
     } catch (e) {
       console.warn("download failed:", e);
-      return false;
+      return { saved: false };
     }
   }
   try {
     const separator = query ? (path.includes("?") ? "&" : "?") : "";
     host().open(`${apiUrl(path)}${separator}${query}`, "_blank");
-    return true;
+    return { saved: true, status: 200 };
   } catch (e) {
     console.warn("browser download failed:", e);
-    return false;
+    return { saved: false };
   }
+}
+
+export async function downloadFromBackend(path: string, filename?: string, query = ""): Promise<boolean> {
+  return (await downloadFromBackendDetailed(path, filename, query)).saved;
 }
 
 export async function copyText(text: string): Promise<boolean> {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, Pencil, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2, RefreshCw, ChevronDown } from "lucide-react";
+import { Filter, Plus, Pencil, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2, RefreshCw, ChevronDown, Download } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
@@ -8,6 +8,7 @@ import { ReconciliationInbox } from "./ReconciliationInbox";
 import { WeeklyReviewPanel } from "./WeeklyReviewPanel";
 import { useOpenQuoteRefresh, quoteAgeSeconds } from "../hooks/useOpenQuoteRefresh";
 import { formatIstanbulDateTime, istanbulDateKey, relativeAgeLabel } from "../lib/tradeTime";
+import { JournalExportModal } from "./modals/JournalExportModal";
 import { formatPrice } from "../lib/positionMath";
 import type { Trade, TradeQuote } from "../types";
 
@@ -147,6 +148,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
   const [filterDateFrom, setFilterDateFrom] = useState<string>("");
   const [filterDateTo, setFilterDateTo] = useState<string>("");
+  const [exportOpen, setExportOpen] = useState(false);
   const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
   const [reconciliationInboxOpen, setReconciliationInboxOpen] = useState(false);
   const [weeklyReviewOpen, setWeeklyReviewOpen] = useState(false);
@@ -393,6 +395,16 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           >
             <RefreshCw className={`w-4 h-4 text-accent ${quoteBusy ? "animate-spin" : ""}`} />
             <span>{quoteBusy ? t("journal.refresh_busy") : t("journal.refresh_all")}</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="journal-export-open"
+            onClick={() => setExportOpen(true)}
+            className="k-btn border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200"
+          >
+            <Download className="w-4 h-4 text-accent" />
+            <span>{t("journal.export")}</span>
           </button>
 
           <button
@@ -681,6 +693,17 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
             </div>
           </div>
         </div>
+      )}
+      {exportOpen && (
+        <JournalExportModal
+          onClose={() => setExportOpen(false)}
+          filters={{
+            symbols: filterSymbols,
+            statuses: filterStatuses,
+            dateFrom: filterDateFrom,
+            dateTo: filterDateTo,
+          }}
+        />
       )}
   </div>
   );
