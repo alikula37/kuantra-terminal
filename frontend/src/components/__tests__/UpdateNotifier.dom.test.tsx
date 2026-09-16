@@ -9,7 +9,10 @@ vi.mock("../../lib/bridge", () => ({
 }));
 vi.mock("../../context/I18nContext", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 import { UpdateNotifier } from "../updater/UpdateNotifier";
-const url = "https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64";
+import en from "../../locales/en.json";
+import tr from "../../locales/tr.json";
+import de from "../../locales/de.json";
+const url = "https://github.com/alikula37/kuantra-terminal/releases";
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 beforeEach(async () => {
@@ -69,4 +72,24 @@ it("uses a safe browser link in web development mode", async () => {
   expect(link.target).toBe("_blank");
   expect(link.rel).toBe("noopener noreferrer");
   expect(host.querySelector("button")).toBeNull();
+});
+it("opens the releases list without pinning any version, for current and older installs alike", async () => {
+  mocks.open.mockResolvedValue({ ok: true });
+  await render(); await click();
+  const calledWith = mocks.open.mock.calls[0][0] as string;
+  expect(calledWith).toBe("https://github.com/alikula37/kuantra-terminal/releases");
+  expect(calledWith).not.toContain("/tag/");
+  expect(calledWith).not.toContain("pilot-v");
+});
+it.each([
+  ["en", en],
+  ["tr", tr],
+  ["de", de],
+])("labels the flow as opening the Releases page (%s) without claiming a version check", (_locale, bundle) => {
+  const updates = (bundle as { updates: Record<string, string> }).updates;
+  expect(updates.description).toContain("Releases");
+  expect(updates.open).toContain("Releases");
+  for (const text of Object.values(updates)) {
+    expect(text).not.toMatch(/up[- ]?to[- ]?date|automatically (checked|updates)/i);
+  }
 });

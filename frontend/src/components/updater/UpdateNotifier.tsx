@@ -4,7 +4,7 @@ import packageJson from "../../../package.json";
 import { useTranslation } from "../../context/I18nContext";
 import { expectsDesktop, getBridge } from "../../lib/bridge";
 
-const RELEASE_URL = "https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.0.0-arm64";
+const RELEASE_URL = "https://github.com/alikula37/kuantra-terminal/releases";
 
 export const UpdateNotifier: React.FC = () => {
   const { t } = useTranslation();

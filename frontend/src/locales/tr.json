@@ -48,8 +48,8 @@
   "updates": {
     "title": "Uygulama güncellemeleri",
     "version": "Yüklü sürüm: {version}",
-    "description": "En yeni pilot paketini indirmek için pilot Release sayfasını açın. GitHub hesabınızla giriş yapmanız gerekebilir; kurulum manueldir.",
-    "open": "Güncelleme sayfasını aç",
+    "description": "Deponun GitHub Releases sayfasını tarayıcınızda açar; Mac'inize uygun paketi buradan seçebilirsiniz. Bu ekran sürümünüzü otomatik denetlemez; kurulum manueldir ve GitHub hesabınızla giriş yapmanız gerekebilir.",
+    "open": "Releases sayfasını aç",
     "opening": "Tarayıcı açılıyor…",
     "retry": "Tekrar dene",
     "error": "Tarayıcı açılamadı. Lütfen tekrar deneyin."

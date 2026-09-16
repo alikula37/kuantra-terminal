@@ -48,8 +48,8 @@
   "updates": {
     "title": "Anwendungsupdates",
     "version": "Installierte Version: {version}",
-    "description": "Öffnen Sie die Pilot-Release-Seite, um das aktuelle Paket herunterzuladen. Möglicherweise müssen Sie sich bei GitHub anmelden; die Installation erfolgt manuell.",
-    "open": "Update-Seite öffnen",
+    "description": "Öffnet die GitHub-Releases-Seite des Repositorys im Browser, damit Sie das passende Paket für Ihren Mac auswählen können. Dieser Bildschirm prüft Ihre Version nicht automatisch; die Installation ist manuell und erfordert ggf. eine GitHub-Anmeldung.",
+    "open": "Releases-Seite öffnen",
     "opening": "Browser wird geöffnet…",
     "retry": "Erneut versuchen",
     "error": "Der Browser konnte nicht geöffnet werden. Bitte versuchen Sie es erneut."

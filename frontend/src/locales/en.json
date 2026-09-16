@@ -48,8 +48,8 @@
   "updates": {
     "title": "Application updates",
     "version": "Installed version: {version}",
-    "description": "Open the pilot release page to download the latest package. You may need to sign in to your GitHub account; installation is manual.",
-    "open": "Open update page",
+    "description": "Opens the repository's GitHub Releases page in your browser so you can choose the package for your Mac. This screen does not check your version automatically; installation is manual and you may need to sign in to your GitHub account.",
+    "open": "Open Releases page",
     "opening": "Opening browser…",
     "retry": "Try again",
     "error": "Could not open the browser. Please try again."
