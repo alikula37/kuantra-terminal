@@ -80,7 +80,7 @@ class TestCICDWorkflowsAndPackaging:
         assert "push" in triggers
         assert triggers["push"]["tags"] == ["v*"]
         assert "workflow_dispatch" in triggers
-        assert triggers["workflow_dispatch"]["inputs"]["release_tag"]["default"] == "v1.1.1"
+        assert triggers["workflow_dispatch"]["inputs"]["release_tag"]["default"] == "v1.1.2"
         assert triggers["workflow_dispatch"]["inputs"]["publish"]["default"] is False
 
         # Jobs

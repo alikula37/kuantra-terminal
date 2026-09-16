@@ -194,7 +194,7 @@ release run `35017352321` (`publish: false`, both native runners green).
 | Item | Blocker | Safe next check |
 |------|---------|-----------------|
 | Continuous dependency monitoring | The OSV scan is point-in-time; no CI job repeats it | Add an owner-approved `pip-audit`/OSV job to CI where network use is acceptable |
-| npm dev-only vitest advisory | Fix requires a vitest 3.x → 4.x major upgrade; dev-only, intentionally not forced | Schedule a bounded vitest 4 upgrade with its own test run |
+| npm dev-only vitest advisory | **Resolved 2026-09-16:** vitest upgraded to the patched 4.1.11; `npm audit` (production and full) reports 0 vulnerabilities, full frontend suite green | — |
 | macOS signing/notarization | Unsigned pilot channel; unchanged by this review | Notarize before public distribution |
 | Real XM statement parser correctness | No real sample (tracked product obligation) | Anonymized XM report validation |
 | Live network probing of provider APIs | Audit constraints prohibit live probing and credential use | Owner-approved staging probe |

@@ -42,6 +42,12 @@ as the `pilot-v1.1.1` prerelease whose tag points at the verified build commit; 
 `pilot-v1.1.0` transport release is superseded and keeps no downloads. The canonical product
 Release/tag is not moved.
 
+Owner decision (2026-09-16): the update-notifier defect (version-pinned release link) and the
+dev-only vitest advisory are fixed in source and shipped as the `v1.1.2` patch
+(`truth-matrix.v1.1.2.json`, `pilot-v1.1.2` prerelease with the tag on the verified build
+commit). The former `pilot-v1.1.1` release keeps its historical 1.1.1 packages and redirects
+users to v1.1.2. The canonical product Release/tag is not moved.
+
 Owner-approved addition (2026-09-12): P1-WP31 local TP1/TP2/TP3/SL tracking follows
 the completed journal entry work. Delivery order is persistence/revisions, exact
 fresh provider quotes, deterministic local partial/full close, then UI and dual

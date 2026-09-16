@@ -1,6 +1,6 @@
-# Kuantra Terminal v1.1.1 — kapalı macOS pilotu
+# Kuantra Terminal v1.1.2 — kapalı macOS pilotu
 
-**Güncel pilot Release:** [`pilot-v1.1.1`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.1)<br>
+**Güncel pilot Release:** [`pilot-v1.1.2`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.2)<br>
 **Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
 ve local audit paketinde tutulur. Güncel Release indirme alanında yalnızca iki native
 DMG bulunur: `arm64` Apple Silicon ve `x86_64` Intel.
@@ -69,7 +69,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 4. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
 
    ```text
-   hdiutil verify Kuantra-Terminal-1.1.1-<architecture>.dmg
+   hdiutil verify Kuantra-Terminal-1.1.2-<architecture>.dmg
    ```
 
    Çıktı başarılı olmalıdır. Bu kontrol DMG
@@ -79,7 +79,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 İsteğe bağlı olarak Release metadata'sını GitHub CLI ile de kontrol edebilirsiniz:
 
 ```text
-gh release view pilot-v1.1.1 --repo alikula37/kuantra-terminal
+gh release view pilot-v1.1.2 --repo alikula37/kuantra-terminal
 ```
 
 GitHub metadata'sı Apple Gatekeeper güveninin yerine geçmez; asıl dosya doğrulaması
@@ -129,11 +129,13 @@ profilde yapılan deneme pilot runtime kanıtıdır; temiz profil kanıtı olara
 
 ## Kurulum ve ilk açılış
 
-Ayarlar → **Uygulama güncellemeleri → Güncelleme sayfasını aç** düğmesi pilot
-Release sayfasını varsayılan tarayıcınızda açar. GitHub hesabınızla giriş yapmanız
-gerekebilir. Bu düğme sürüm karşılaştırması veya otomatik kurulum yapmaz. Yeni DMG'yi
+Ayarlar → **Uygulama güncellemeleri → Releases sayfasını aç** düğmesi deponun GitHub
+Releases listesini varsayılan tarayıcınızda açar; sabit bir sürüm bağlantısı kullanmaz.
+GitHub hesabınızla giriş yapmanız gerekebilir. Bu düğme sürüm karşılaştırması veya
+otomatik kurulum yapmaz; başarısız açılışta hata gösterir, "güncelsiniz" demez. Yeni DMG'yi
 indirip doğrulayın; uygulamayı kapatarak Applications içindeki uygulamayı değiştirin.
-Eski kurulumun bu düğmeyi alması için bir defalık manuel güncelleme gerekir.
+1.1.2 öncesi kurulumlarda bu düğme daha eski bir sayfayı açabilir; bu durumda bir defalık
+manuel güncelleme gerekir.
 Mevcut veriyle ilk açılıştan önce schema uyumluluğunu doğrulayın; uygulama dosyasının
 değiştirilmesi, veritabanı geçişinin doğrulandığı anlamına gelmez.
 

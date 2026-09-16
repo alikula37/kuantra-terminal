@@ -22,6 +22,14 @@ owner approval; A1.2 and every other integration package remain unapproved.
 
 ## Current continuation evidence
 
+2026-09-16 — **v1.1.2 update-flow and dev-toolchain patch (pilot artifact train):** the
+in-app update notifier no longer pins `pilot-v1.0.0-arm64`; it opens the repository Releases
+list with explicit non-version-checking labels (EN/TR/DE) and failure states that never claim
+"up to date". The dev-only vitest toolchain is upgraded to the patched 4.1.11
+(`GHSA-82fw-gwwq-j7x9` cleared; `npm audit` = 0). Both changes are source-side; the pilot
+prerelease `pilot-v1.1.2` and installed-app evidence are recorded in STATUS with full hashes.
+Developer ID/notarization remains absent and is not claimed.
+
 P1-WP31 local TP tracking is completed and archived with full evidence at
 [P1-WP31](../../archive/strategy/work-packages/P1-WP31-local-tp-tracking.md).
 Source `4298acd`, native run `34721385803`: both architectures passed **879 backend /

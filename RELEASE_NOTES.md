@@ -1,12 +1,13 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
 
-# Kuantra Terminal v1.1.1 — Trusted macOS Pilot (security patch)
+# Kuantra Terminal v1.1.2 — Trusted macOS Pilot (update-flow patch)
 
-**Pilot Release tag:** `pilot-v1.1.1` (release and tag point at the artifact source commit
-below; the former `pilot-v1.1.0` prerelease is superseded and keeps no downloads)
+**Pilot Release tag:** `pilot-v1.1.2` (release and tag point at the artifact source commit
+below; the former `pilot-v1.1.1` prerelease keeps its historical 1.1.1 packages and directs
+users here)
 
-**Artifact source commit:** `6c1e03c9c8a42f2e32d8c730beab828482338506` (clean build
-commit; GitHub Actions release run `35023961123`, `workflow_dispatch`, `publish=false`)
+**Artifact source commit:** the clean build commit of this patch; the exact SHA and run id
+are recorded in the post-build install evidence in `docs/strategy/STATUS.md`.
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -15,33 +16,26 @@ commit; GitHub Actions release run `35023961123`, `workflow_dispatch`, `publish=
 This private Release is intentionally scoped for the three-person pilot and exposes exactly
 two downloads:
 
-- **`Kuantra-Terminal-1.1.1-arm64.dmg`** for Apple Silicon M-series Macs;
-- **`Kuantra-Terminal-1.1.1-x86_64.dmg`** for native Intel Macs.
+- **`Kuantra-Terminal-1.1.2-arm64.dmg`** for Apple Silicon M-series Macs;
+- **`Kuantra-Terminal-1.1.2-x86_64.dmg`** for native Intel Macs.
 
 Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
 Silicon artifact. Both native builds come from the same clean commit in the pinned GitHub
 Actions release workflow and pass the native desktop smoke plus the exact read-only
-mounted-DMG smoke on their matching hosts. DMG SHA-256 values are:
+mounted-DMG smoke on their matching hosts. The run id, source commit, DMG SHA-256 and mounted
+executable SHA-256 values are recorded in the post-build install evidence and in
+`docs/strategy/STATUS.md`; technical JSON/manifest evidence remains in the repository and
+local audit package, not as separate Release downloads.
 
-- arm64: `df4656bce6e7f841a6981cde0ad6347042e10ad102f98dc305a3775cac65961a`;
-- x86_64: `a541ce7dc94a418bd3f98234798e99b63bcf950d803758061745e2e34742d436`.
-
-Mounted executable SHA-256 values are arm64
-`a9db9c464a032dd997876f85f194087dd98832974e63c9b1dc370c18d1387ad7` and x86_64
-`77b692e9197a44bedbd8d2b156cbf737bfa39a6cb9009a55bbbea070e4fa71a6`. Exact
-smoke/N05 (ad-hoc blocked) JSON/manifest evidence remains in the repository and local
-audit package, not as separate Release downloads.
-
-**New in this patch:** v1.1.1 is the security-hardened rebuild of the v1.1.0 pilot. The deep
-security review's confirmed findings are fixed and pinned by regression tests, including the
-migration archive and manifest byte ceilings, the bounded broker-import review output, the
-shared paper-mode execution guard, contained model-artifact path handling, constant-time
-webhook comparisons and copy-signal HMAC verification. The Python lock is unchanged and the
-OSV dependency scan reported no runtime advisories (Python 0 affected; the single npm
-advisory is dev-only and not shipped). A crafted-ZIP validation suite now covers
-central-directory falsification, size/metadata inconsistencies and resource limits. GitHub
-Actions are pinned to full commit SHAs, including the release job.
+**New in this patch:** the in-app update notifier now opens this repository's GitHub Releases
+list instead of a version-pinned page (no version check is claimed; a failed open shows an
+error and never reports "up to date"), and the dev-only vitest toolchain is upgraded to the
+patched 4.1.11 release, clearing the single dev-toolchain advisory (`npm audit` reports zero
+vulnerabilities). The v1.1.1 security hardening remains in place: migration archive and
+manifest byte ceilings, bounded broker-import review output, the shared paper-mode execution
+guard, contained model-artifact path handling, constant-time webhook comparisons and
+copy-signal HMAC verification, with SHA-pinned GitHub Actions.
 
 **v1.1.0 pilot features (unchanged):** the trade journal records the user-supplied trade date
 and time in Turkey time (minute precision, stored as UTC), explicitly separates a still-open
@@ -83,7 +77,7 @@ their checksums are re-verified locally with `shasum -a 256 -c SHA256SUMS` and
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed
 from GitHub on 2026-09-11 and must not be used. The exact canonical product tag is guarded by
-`docs/release/truth-matrix.v1.1.1.json`.
+`docs/release/truth-matrix.v1.1.2.json`.
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)

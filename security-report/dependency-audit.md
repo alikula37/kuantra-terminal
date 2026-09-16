@@ -57,11 +57,13 @@ unmaintained and will not receive the fix; the npm registry confirms `vitest@3` 
 3.2.7 while the patched line is 4.1.11 (and 5.0.x). There is therefore **no narrower fix than a
 major upgrade**, which was intentionally not forced for a dev-only tool with no reachable path.
 
-**Bounded fix proposal (not started, no app binary impact):** upgrade the dev-only `vitest`
-(and its bundled `@vitest/mocker`) from 3.2.7 to 4.1.11 in `frontend/package.json` +
-lockfile, adjust the vitest config/API if the major requires it, and run the full frontend
-suite and CI before merge. Blocker for shipping: **none** (no reachable path); the advisory
-remains open as a tracked dev-toolchain follow-up.
+**Resolved (2026-09-16):** the dev-only `vitest` toolchain was upgraded from 3.2.7 to the
+patched **4.1.11** (`@vitest/mocker@4.1.11`) in `frontend/package.json` + lockfile; npm registry
+verified the patched version from the official advisory line. `npm audit` now reports **0
+vulnerabilities** (both `--omit=dev` and full), and the complete frontend suite
+(40 files / 240 tests), typecheck, i18n parity and production build pass on vitest 4. The
+former bounded-fix proposal is therefore implemented; no `audit fix --force` was used. No
+app/runtime dependency or binary content changed by this dev-toolchain upgrade.
 
 ### Cross-check
 

@@ -788,6 +788,20 @@ will not receive it). Bounded fix (not started): upgrade the dev-only vitest dep
 4.1.11 and run the full frontend suite; no app/runtime binary impact. Details:
 `security-report/dependency-audit.md`.
 
+**v1.1.2 update-flow and dev-toolchain patch train (2026-09-16):** two bounded changes.
+(1) **Update flow:** `frontend/src/components/updater/UpdateNotifier.tsx` no longer pins
+`releases/tag/pilot-v1.0.0-arm64`; it opens the repository Releases list
+(`.../releases`) with explicit EN/TR/DE labels stating that the screen does not check the
+version automatically, and failure paths keep showing an error (never "up to date"). Tests
+were written first (6 failing cases incl. locale-label assertions) and now pass
+(11 UpdateNotifier tests). (2) **Vitest:** the dev-only toolchain is upgraded to the patched
+`vitest@4.1.11` (`@vitest/mocker@4.1.11`) from the unmaintained 3.x line, clearing
+`GHSA-82fw-gwwq-j7x9` (`npm audit` = 0, production and full); frontend suite **40 files /
+240 tests** green plus typecheck/i18n/production build on the upgraded runner. Artifact
+release: this is a source + dev-toolchain change, so the trusted pilot artifacts advance to
+`v1.1.2` (`truth-matrix.v1.1.2.json`); build, Release and installed-app evidence are recorded
+in the post-build evidence section below.
+
 ## Selected next work
 
 **Previous spot/search UX evidence (2026-09-12; superseded by WP31 above):** New Trade now separates

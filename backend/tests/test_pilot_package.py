@@ -18,7 +18,7 @@ from scripts.release_truth import DEFAULT_MATRIX_PATH, canonical_matrix_digest, 
 
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 
 def _sha256(path: Path) -> str:
@@ -227,7 +227,7 @@ def test_arm64_pilot_package_is_explicitly_m_series_only(tmp_path):
     assert manifest["access_boundary"]["hardware_scope"] == "Apple Silicon M-series only (native arm64)"
     assert manifest["access_boundary"]["intel_support_claim"] is False
     assert {item["architecture"] for item in manifest["artifacts"]} == {"arm64"}
-    assert (output / "Kuantra-Terminal-1.1.1-arm64.dmg").is_file()
+    assert (output / "Kuantra-Terminal-1.1.2-arm64.dmg").is_file()
     assert (output / INSTRUCTIONS_NAME).read_text(encoding="utf-8") == "M-series pilot instructions"
 
 
@@ -240,7 +240,7 @@ def test_pilot_package_rejects_canonical_product_tag(tmp_path):
             output=tmp_path / "pilot-arm64",
             artifacts={"arm64": _chain(tmp_path, "arm64")},
             instructions=instructions,
-            pilot_tag="v1.1.1",
+            pilot_tag="v1.1.2",
         )
 
 
