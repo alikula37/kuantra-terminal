@@ -1,9 +1,9 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
 # P1-WP44 — Confirmed identity, simulation separation and reachable journal actions
 
 ```yaml
 work_package: P1-WP44
-status: InProgress
+status: Complete
 branch: main
 baseline: f6286a5
 ```
@@ -120,7 +120,7 @@ visible keyboard focus rings, verified focusable at this window size.
   regressions for the simulation badge, the local-plan row (status + remaining + completed
   note) and the sticky/focus-visible actions; `OpenPositionsTable` simulation badge test.
   Full suites: backend **1164 passed**, frontend **41 files / 284 tests**, i18n
-  **1213/1213/1213**, `tsc` clean, production build clean.
+  **1221/1221/1221**, `tsc` clean, production build clean.
 - **Real runs (isolated data, credential-free):** API-level reproduction before the fix
   (`NO_VERIFIED_QUOTE_IDENTITY` / `PROVIDER_NOT_DECLARED`); after the fix the same flow
   returned a LIVE `binance_public BTCUSDT` quote (76362.0) and
@@ -131,5 +131,16 @@ visible keyboard focus rings, verified focusable at this window size.
   (`WAITING_QUOTE · remaining 0.001`) and completed-plan row with the external-open notice
   all rendered. Screenshots and measurements:
   `artifacts/evidence/p1-wp44/`.
-- Implementation and install evidence (commit SHAs, canonical CI report hash, installed
-  executable hash) are recorded in `docs/strategy/STATUS.md`.
+### Delivery verification (2026-09-17)
+
+Commits `789d3e1` (backend), `88ee5ea` (frontend), `a36fcdd` (docs) are pushed. Clean commit
+`a36fcdd` canonical arm64 local CI: **MERGE READY**, provenance **COMPLETE**, clean tree;
+report `dist/p1-wp44-committed-local-ci.json` SHA-256
+`b91e1b906be211ee7093117cf137fc4eb93ba046be05afd7c8540ba4ebb4565d`, executable
+`302455ee63adc51c2e93a99b6230532d33bd1971876c4377200610c410a4cba8`. arm64 DMG
+`dist/Kuantra-Terminal-1.1.3-wp44-arm64.dmg` SHA-256
+`19cc416c7400d2df8647b9551f69623e46c0a3311ac4f0d6ab56eba41035dc16`; exact read-only
+mounted-DMG smoke **PASS** (`dist/p1-wp44-exact-dmg-smoke.json`). `/Applications/Kuantra
+Terminal.app` was replaced and verified: installed executable matches the CI build,
+`codesign --verify --deep --strict` passes, version 1.1.3, launch path and clean quit
+verified, user data preserved. GitHub Releases and tags were untouched.

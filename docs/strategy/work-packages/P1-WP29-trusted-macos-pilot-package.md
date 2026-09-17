@@ -1,4 +1,4 @@
-<!-- doc-role: reference -->
+<!-- doc-role: current-work-package -->
 # P1-WP29 — Trusted macOS Pilot Package
 
 ```yaml

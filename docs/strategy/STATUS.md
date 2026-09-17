@@ -21,11 +21,23 @@ unchecked (OLAP projection lacks `record_mode`; owner decision needed) along wit
 seed-data fallback. (3) Row actions are pinned to the right edge at 1229×768 (measured inside
 the viewport and keyboard-focusable despite `scrollWidth 1717 > clientWidth 971`), with no
 font-size change; DOM and visual regressions added. Full suites: backend **1164 passed**,
-frontend **41 files / 284 tests**, i18n **1213/1213/1213**, `tsc`/build clean. Working
+frontend **41 files / 284 tests**, i18n **1221/1221/1221**, `tsc`/build clean. Working
 behaviours preserved: quantity/leverage/TP edit saves, local automatic closes, the LIVE +
 provider-event + <=60s contract and the real-vs-local split. Evidence:
-`artifacts/evidence/p1-wp44/`. Commit SHAs, canonical CI report and installed executable
-hash are recorded below once verified.
+`artifacts/evidence/p1-wp44/`.
+
+**P1-WP44 delivery verification (2026-09-17):** commits `789d3e1` (backend), `88ee5ea`
+(frontend), `a36fcdd` (docs; WP44 archived Complete with 2 tracked unchecked items). Clean
+commit `a36fcdd` canonical arm64 local CI: **MERGE READY**, provenance **COMPLETE**, clean
+tree; report `dist/p1-wp44-committed-local-ci.json` SHA-256
+`b91e1b906be211ee7093117cf137fc4eb93ba046be05afd7c8540ba4ebb4565d`, executable
+`302455ee63adc51c2e93a99b6230532d33bd1971876c4377200610c410a4cba8`. arm64 DMG
+`dist/Kuantra-Terminal-1.1.3-wp44-arm64.dmg` SHA-256
+`19cc416c7400d2df8647b9551f69623e46c0a3311ac4f0d6ab56eba41035dc16`; exact read-only
+mounted-DMG smoke **PASS** (`dist/p1-wp44-exact-dmg-smoke.json`). `/Applications/Kuantra
+Terminal.app` was replaced and verified: installed executable matches the CI build,
+`codesign --verify --deep --strict` passes, version 1.1.3, launch path and clean quit
+verified, user data preserved. GitHub Releases and tags were untouched.
 [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
 returns to a reference package; its owner-host obligations (N03/N05/H05/pilot access) remain
 tracked.
