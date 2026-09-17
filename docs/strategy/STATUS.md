@@ -3,7 +3,7 @@
 
 Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP44 confirmed identity, simulation separation and reachable journal actions](work-packages/P1-WP44-identity-sim-separation-journal-actions.md).**
+**Selected work: [P1-WP44 confirmed identity, simulation separation and reachable journal actions](../archive/strategy/work-packages/P1-WP44-identity-sim-separation-journal-actions.md).**
 Owner instruction (2026-09-17): three real-UI-test findings on the installed app were
 reproduced, diagnosed and fixed in isolated synthetic data. (1) A hand-typed entry price no
 longer erases the confirmed provider identity: creation now sends the confirmed
