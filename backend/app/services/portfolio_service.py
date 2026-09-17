@@ -33,6 +33,12 @@ EQUITY_SYMBOLS = {
 }
 
 
+def real_trades_only(trades: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Simulation records are practice data; real aggregates never include them."""
+
+    return [t for t in trades if str(t.get("record_mode") or "").upper() != "SIMULATION"]
+
+
 def classify_asset_class(symbol: str) -> str:
     """Categorizes a financial symbol into crypto, forex, commodity, or equity."""
     cleaned = symbol.upper().replace("/", "").replace("_", "").replace("-", "").strip()
@@ -104,10 +110,17 @@ class PortfolioAnalyticsService:
         balance = initial_balance if initial_balance is not None else self.get_configured_initial_balance()
         trades = trade_read_adapter.list_trades(limit=100000)
 
-        closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
-        open_trades = [t for t in trades if str(t.get("status", "")).upper() == "OPEN"]
+        # Simulation records are practice data: they are counted explicitly and
+        # never summed into the real monetary aggregates below.
+        real_trades = [t for t in trades if str(t.get("record_mode") or "").upper() != "SIMULATION"]
+        simulation_trades = [t for t in trades if str(t.get("record_mode") or "").upper() == "SIMULATION"]
+        closed_trades = [t for t in real_trades if str(t.get("status", "")).upper() == "CLOSED"]
+        open_trades = [t for t in real_trades if str(t.get("status", "")).upper() == "OPEN"]
         known_closed = [t for t in closed_trades if t.get("pnl") is not None]
         unknown_pnl_trades = len(closed_trades) - len(known_closed)
+        simulation_closed = [t for t in simulation_trades if str(t.get("status", "")).upper() == "CLOSED"]
+        simulation_known = [t for t in simulation_closed if t.get("pnl") is not None]
+        simulation_pnl = sum(float(t["pnl"]) for t in simulation_known) if simulation_known else 0.0
 
         # 1. Realized Net PnL & Total Equity (known results only)
         net_pnl = sum(float(t["pnl"]) for t in known_closed)
@@ -311,6 +324,10 @@ class PortfolioAnalyticsService:
             "gross_loss": round(gross_loss, 2),
             "max_drawdown_usd": round(max_drawdown_usd, 2),
             "max_drawdown_pct": round(max_drawdown_pct, 2),
+            # Simulation records stay visible but never enter the real totals.
+            "simulation_closed_trades": len(simulation_closed),
+            "simulation_open_positions": len(simulation_trades) - len(simulation_closed),
+            "simulation_realized_pnl": round(simulation_pnl, 2),
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
@@ -352,7 +369,7 @@ class PortfolioAnalyticsService:
         Aggregates performance, volume, and trade metrics grouped by asset symbol.
         Supports heterogeneous assets (Crypto, Forex, Commodities, Equities).
         """
-        trades = trade_read_adapter.list_trades(limit=100000)
+        trades = real_trades_only(trade_read_adapter.list_trades(limit=100000))
         grouped: Dict[str, Dict[str, Any]] = {}
 
         total_portfolio_pnl = sum(
@@ -450,7 +467,7 @@ class PortfolioAnalyticsService:
         Ideal for rendering continuous equity growth charts in the frontend.
         """
         balance = initial_balance if initial_balance is not None else self.get_configured_initial_balance()
-        trades = trade_read_adapter.list_trades(limit=100000)
+        trades = real_trades_only(trade_read_adapter.list_trades(limit=100000))
         closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
 
         today_utc = datetime.now(timezone.utc)
@@ -536,7 +553,7 @@ class PortfolioAnalyticsService:
         """
         Aggregates daily performance into calendar heatmap data with normalized intensity.
         """
-        trades = trade_read_adapter.list_trades(limit=100000)
+        trades = real_trades_only(trade_read_adapter.list_trades(limit=100000))
         closed_trades = [t for t in trades if str(t.get("status", "")).upper() == "CLOSED"]
 
         if not closed_trades:

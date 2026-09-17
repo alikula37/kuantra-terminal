@@ -228,10 +228,15 @@ class TradeCreateSchema(BaseModel):
             if self.price_status == "UNAVAILABLE":
                 raise ValueError("PUBLIC_QUOTE cannot have UNAVAILABLE status")
         elif self.price_origin == "MANUAL":
+            # The entry price is user-recorded (no quote observation), but the
+            # tracked instrument identity may still be the free provider the
+            # user confirmed; the two claims are separate columns.
             if self.price_status != "UNAVAILABLE":
                 raise ValueError("MANUAL price origin must remain UNAVAILABLE")
-            if self.price_source not in {"manual", "tradingview_alert", "broker_import", "unknown"}:
+            if self.price_source not in {"manual", "tradingview_alert", "broker_import", "unknown"} | FREE_QUOTE_SOURCES:
                 raise ValueError("MANUAL price origin cannot claim a public quote source")
+            if self.price_source in FREE_QUOTE_SOURCES and not self.price_source_symbol:
+                raise ValueError("A confirmed free quote source requires its provider symbol")
         elif self.price_origin == "BROKER_IMPORT":
             if self.price_source != "broker_import":
                 raise ValueError("BROKER_IMPORT requires broker_import source")
