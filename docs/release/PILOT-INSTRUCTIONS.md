@@ -1,6 +1,6 @@
-# Kuantra Terminal v1.1.4 — kapalı macOS pilotu
+# Kuantra Terminal v1.1.5 — kapalı macOS pilotu
 
-**Güncel pilot Release:** [`pilot-v1.1.4`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.4)<br>
+**Güncel pilot Release:** [`pilot-v1.1.5`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.5)<br>
 **Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
 ve local audit paketinde tutulur. Güncel Release indirme alanında yalnızca iki native
 DMG bulunur: `arm64` Apple Silicon ve `x86_64` Intel.
@@ -69,7 +69,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 4. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
 
    ```text
-   hdiutil verify Kuantra-Terminal-1.1.4-<architecture>.dmg
+   hdiutil verify Kuantra-Terminal-1.1.5-<architecture>.dmg
    ```
 
    Çıktı başarılı olmalıdır. Bu kontrol DMG
@@ -79,7 +79,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 İsteğe bağlı olarak Release metadata'sını GitHub CLI ile de kontrol edebilirsiniz:
 
 ```text
-gh release view pilot-v1.1.4 --repo alikula37/kuantra-terminal
+gh release view pilot-v1.1.5 --repo alikula37/kuantra-terminal
 ```
 
 GitHub metadata'sı Apple Gatekeeper güveninin yerine geçmez; asıl dosya doğrulaması
@@ -177,6 +177,20 @@ profilde yapılan deneme pilot runtime kanıtıdır; temiz profil kanıtı olara
   İptal et) dar pencerede sağ kenara sabitlenir ve klavyeyle odaklanabilir; yazı boyutları
   değiştirilmedi.
 
+## USD pozisyon değeri (v1.1.5)
+
+- Artık tek boyut alanı **Pozisyon değeri (USD)**'dir: gerçekte bağladığınız tutarı yazın.
+  K/Z, marjin ve R bu değerden hesaplanır; kontrat büyüklüğü doğrulaması gerekmez.
+- Kotasyonu USD olmayan paritelerde (ör. ETHBTC) USD değeri sonucu **yaklaşıktır** ve
+  arayüz bunu açıkça etiketler.
+- Günlük, açık işlemler, düzenleme, yerel takip ve dışa aktarımlar değeri USD olarak
+  gösterir. Eski `BASE`/`UNKNOWN` kayıtlar okunabilir kalır; yalnızca değeri değiştirip
+  kaydettiğinizde USD'ye dönüşür.
+- **Günlük sıfırlandı (sahip kararı):** eski miktar modeli pilot iş akışına uymadığı için
+  tüm işlem kayıtları silindi; silmeden önce tüm veri dizini yedeklendi
+  (`Documents/Kuantra-Backups/` altında zaman damgalı kopya). Tercihler, playbook'lar ve
+  piyasa mumu önbelleği korundu.
+
 ## Kurulum ve ilk açılış
 
 Ayarlar → **Uygulama güncellemeleri → Releases sayfasını aç** düğmesi deponun GitHub
@@ -184,7 +198,7 @@ Releases listesini varsayılan tarayıcınızda açar; sabit bir sürüm bağlan
 GitHub hesabınızla giriş yapmanız gerekebilir. Bu düğme sürüm karşılaştırması veya
 otomatik kurulum yapmaz; başarısız açılışta hata gösterir, "güncelsiniz" demez. Yeni DMG'yi
 indirip doğrulayın; uygulamayı kapatarak Applications içindeki uygulamayı değiştirin.
-1.1.4 öncesi kurulumlarda bu düğme daha eski bir sayfayı açabilir; bu durumda bir defalık
+1.1.5 öncesi kurulumlarda bu düğme daha eski bir sayfayı açabilir; bu durumda bir defalık
 manuel güncelleme gerekir.
 Mevcut veriyle ilk açılıştan önce schema uyumluluğunu doğrulayın; uygulama dosyasının
 değiştirilmesi, veritabanı geçişinin doğrulandığı anlamına gelmez.

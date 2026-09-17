@@ -1,12 +1,12 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.1.4 — Trusted macOS Pilot (chart review + journal trust fixes)
+# Kuantra Terminal v1.1.5 — Trusted macOS Pilot (USD position value sizing)
 
-**Pilot Release tag:** `pilot-v1.1.4` (release and tag point at the artifact source commit
-below; the former `pilot-v1.1.3` prerelease keeps its historical 1.1.3 packages and directs
+**Pilot Release tag:** `pilot-v1.1.5` (release and tag point at the artifact source commit
+below; the former `pilot-v1.1.4` prerelease keeps its historical 1.1.4 packages and directs
 users here)
 
-**Artifact source commit:** `ab2c933bd26a1f05c0b24b56740ea9847c4e445b` (clean build
-commit; GitHub Actions release run `35216823564`, `workflow_dispatch`, `publish=false`)
+**Artifact source commit:** the clean build commit of this release; the exact SHA and run id
+are recorded in the post-build install evidence in `docs/strategy/STATUS.md`.
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -15,88 +15,63 @@ commit; GitHub Actions release run `35216823564`, `workflow_dispatch`, `publish=
 This private Release is intentionally scoped for the three-person pilot and exposes exactly
 two downloads:
 
-- **`Kuantra-Terminal-1.1.4-arm64.dmg`** for Apple Silicon M-series Macs;
-- **`Kuantra-Terminal-1.1.4-x86_64.dmg`** for native Intel Macs.
+- **`Kuantra-Terminal-1.1.5-arm64.dmg`** for Apple Silicon M-series Macs;
+- **`Kuantra-Terminal-1.1.5-x86_64.dmg`** for native Intel Macs.
 
 Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
 Silicon artifact. Both native builds come from the same clean commit in the pinned GitHub
 Actions release workflow and pass the native desktop smoke plus the exact read-only
-mounted-DMG smoke on their matching hosts. DMG SHA-256 values are:
+mounted-DMG smoke on their matching hosts. The run id, source commit, DMG SHA-256 and mounted
+executable SHA-256 values are recorded in the post-build install evidence in
+`docs/strategy/STATUS.md`; technical JSON/manifest evidence remains in the repository and
+local audit package, not as separate Release downloads.
 
-- arm64: `ad3fd146bbf2b4f6c5a50dba4761d2ef6032e37e8bf9234756b83b0ae4a09dc3`;
-- x86_64: `05ea2367c56b923e80b8e4f354683e411ebc13c0d8b6a922ef1e15c43ca218be`.
+**New in this release: traders size in USD.** Every trade entry and edit now carries a single
+**USD position value** instead of a base-unit quantity:
 
-Mounted executable SHA-256 values are arm64
-`42ef84c426004bb6e24b404c93e72757184ccff35e0b71682cdc6af582e00fab` and x86_64
-`c6995532b85811e468a79baa373f2897c18c988ed616652ac8033923de433bed`; the arm64 executable
-matches the app installed and verified on the owner's Mac. Exact smoke/N05 (ad-hoc blocked)
-JSON/manifest evidence remains in the repository and local audit package, not as separate
-Release downloads.
+- **One sizing field:** New Trade asks for the position value in USD (the amount actually
+  committed); the value is stored with `qty_unit=USD` and every money figure derives from it
+  — notional equals the value, margin is the value divided by the declared leverage (spot
+  pays in full), gross P/L is the price return applied to the value, and the R multiple is
+  the P/L over the price-risk fraction of the value. No contract-size verification is
+  required for this path, so gold, FX and CFD journals get full monetary math from the
+  amount the trader actually used.
+- **Approximate labels stay honest:** for a pair whose quote is not USD (for example
+  `ETHBTC`) the USD-value result is an approximation and the UI labels it
+  `QUOTE_NOT_USD_APPROXIMATE` instead of pretending exactness.
+- **Everywhere:** the journal, open-positions table, edit dialog, local tracking panel
+  (remaining value, closures, gross estimate) and the exports show the USD value as
+  currency; legacy `BASE`/`UNKNOWN` rows stay readable and are only converted to a USD value
+  when the user explicitly saves a changed value.
+- **Journal reset notice (owner decision):** the previous quantity model was wrong for the
+  pilot's workflow, so the owner instructed that all existing trade records be deleted. The
+  whole data directory was backed up first (a timestamped copy under the owner's
+  `Documents/Kuantra-Backups/` folder) and only trade-domain data was removed — trades,
+  their audit events and projections, local tracking plans and the analytics projection.
+  Preferences, playbooks, instrument verification cache and the market candle cache are
+  kept. The journal intentionally starts empty in this release; the backup makes the old
+  records recoverable.
 
-**New in this release:** the read-only chart review and journal-trust fixes.
+The v1.1.4 chart review and journal-trust fixes, the v1.1.3 journal export and readable PDF
+reports, the v1.1.2 update-flow patch and the v1.1.1 security hardening remain in place: the
+read-only chart review renders recorded candles or a session-fetched declared-provider
+snapshot (never a cache row or a substituted product) with an independent product
+consistency check, the export flow produces spreadsheet-ready CSV and readable PDF reports
+from one snapshot, the update button opens this repository's Releases list, the dev-only
+vitest toolchain is on the patched 4.1.11, and the security fixes (migration
+archive/manifest ceilings, bounded import reviews, paper-mode execution guard, contained
+model paths, constant-time webhook checks, copy-signal HMAC, SHA-pinned actions) are
+unchanged.
 
-- **Chart review (read-only):** a closed trade renders its recorded entry-to-exit candles
-  with the labelled plan levels and the recorded close source, disclosed as a one-minute bar
-  approximation, never broker fills. An **open** trade gets a separate review that never
-  poses as data it does not have: with no session-verified candles it asks for a manual
-  refresh and shows nothing from the cache; the refresh fetches candles **only** from the
-  trade's declared free public provider and exact provider symbol (no fallback, no product
-  substitution — a `GOLD` symbol can never silently become a `GC=F` future), and the
-  fetched snapshot is what the chart displays. Freshness, coverage gaps and identity limits
-  are explicit; the review produces no performance numbers and writes nothing.
-- **Independent product consistency check:** inside the same manual refresh, exactly ONE
-  additional free-source request compares the declared spot product (for example XAUUSD)
-  with one independent same-class source and reports the aligned overlap and median
-  deviation against a documented tolerance as `CONSISTENT`, `DIVERGENT` or `UNVERIFIABLE`.
-  Futures and tokens are structurally non-comparable; "consistent" means independent-source
-  agreement, never broker execution evidence, and an unreachable independent source is
-  reported honestly instead of being papered over.
-- **Confirmed identity vs manual entry price:** recording a trade with a confirmed market
-  (for example Binance BTCUSDT) and then typing the entry price by hand keeps the confirmed
-  provider identity on the trade — journal quote refresh, the editor and the chart review
-  all resolve the same identity — while the entry price itself stays an explicitly manual,
-  unobserved record that never claims a quote status. No provider is ever inferred from
-  symbol text, and a trade without a confirmed identity stays honestly `UNAVAILABLE`.
-- **Journal clarity and reachable actions:** Simulation records are labelled in the journal
-  and open-positions table; journal rows show the local plan state and remaining quantity
-  separately from the external status, and local plan completion is explicitly an estimate
-  while the external trade stays OPEN. Simulation records no longer enter real monetary
-  aggregates (portfolio summary, asset breakdown, equity curve, daily heatmap), which now
-  report separate simulation counters. Row actions stay pinned at the right edge of the
-  journal table at the pilot's window sizes (verified at 1229x768) and are keyboard
-  focusable, with no font-size changes.
-
-The v1.1.3 journal export and readable PDF reports, the v1.1.2 update-flow patch and the
-v1.1.1 security hardening remain in place: the export flow produces spreadsheet-ready CSV
-and readable PDF reports from one snapshot with explicit scope/basis statements, the update
-button opens this repository's Releases list (no version-pinned link), the dev-only vitest
-toolchain is on the patched 4.1.11, and the security fixes (migration archive/manifest
-ceilings, bounded import reviews, paper-mode execution guard, contained model paths,
-constant-time webhook checks, copy-signal HMAC, SHA-pinned actions) are unchanged.
-
-**v1.1.0 pilot features (unchanged):** the trade journal records the user-supplied trade date
-and time in Turkey time (minute precision, stored as UTC), explicitly separates a still-open
-entry from an already-closed one, and replaces the Replay row action with a working **Edit**
-surface. Corrections are revisioned: previous values stay in the append-only history,
-completed targets are locked after a partial close, and entry/quantity changes reset a local
-TP/SL plan only before any close evidence exists. Journal stop and target edits are applied
-to the active local plan in the same transaction. Declared leverage is journal metadata:
-price return, position return and margin return stay separate and the position P/L is never
-multiplied by leverage. Open-trade quotes refresh automatically and on demand with explicit
-`LIVE`, `DELAYED` and stale last-known states, and the New Trade form is grouped into Trade /
-Size / Targets / Summary sections with an equal-split helper and concrete field errors.
-
-**Monetary calculation boundary:** position size, margin and money P/L are produced only
-for an explicitly declared base-unit quantity (`qty_unit=BASE`); provider labels and symbol
-suffixes are price provenance, not contract verification. Unverified instruments stay
-`UNAVAILABLE`, cannot open a local tracking plan, and a user-reported close stores an
-unknown P/L instead of a synthetic zero. Local tracking still requires an exact
-provider/instrument `LIVE` event no older than 60 seconds; Binance/Bybit recent-trade
-feeds qualify, while Yahoo/Stooq/Biquote feeds (including gold) remain display-only when
-event freshness cannot be proven. No qualifying quote means waiting, not an assumed close.
-Local results are gross estimates, never external fills or verified net profit. The app
-must be open and awake.
+**Monetary calculation boundary:** money figures are produced for a USD position value or an
+explicitly declared/verified base-unit quantity; without either, monetary amounts stay
+`UNAVAILABLE` with an explicit reason instead of a synthetic number. Local tracking still
+requires an exact provider/instrument `LIVE` event no older than 60 seconds; Binance/Bybit
+recent-trade feeds qualify, while Yahoo/Stooq/Biquote feeds (including gold) remain
+display-only when event freshness cannot be proven. No qualifying quote means waiting, not
+an assumed close. Local results are gross estimates, never external fills or verified net
+profit. The app must be open and awake.
 
 No live broker order, paid data service, credential, migration or automatic update is
 included. Experimental and disabled surfaces remain `EXPERIMENTAL_DISABLED`; AI has
@@ -115,7 +90,7 @@ their checksums are re-verified locally with `shasum -a 256 -c SHA256SUMS` and
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed
 from GitHub on 2026-09-11 and must not be used. The exact canonical product tag is guarded by
-`docs/release/truth-matrix.v1.1.4.json`.
+`docs/release/truth-matrix.v1.1.5.json`.
 
 <!-- CURRENT_RELEASE_NOTES:END -->
 

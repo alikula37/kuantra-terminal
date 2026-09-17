@@ -1,0 +1,190 @@
+{
+  "document_id": "KTR-001",
+  "version": "1.1.5",
+  "status": "Accepted",
+  "last_updated": "2026-09-17",
+  "product": {
+    "name": "Kuantra Terminal",
+    "version": "1.1.5",
+    "release_tag": "v1.1.5",
+    "release_status": "PHASE_0_TRUTH_SAFETY",
+    "positioning": "Local-first Execution Intelligence & Trade Forensics Workstation"
+  },
+  "distribution": {
+    "release_scope": "macOS arm64 and x86_64",
+    "minimum_os": "macOS 12 Monterey or later",
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "artifact": "Developer ID signed and notarized DMG",
+    "current_artifact_status": "AD_HOC_DEVELOPMENT_ONLY",
+    "architecture_evidence": {
+      "arm64": "VERIFIED_CURRENT_CANDIDATE",
+      "x86_64": "VERIFIED_CURRENT_CANDIDATE"
+    },
+    "unclaimed_platforms": [
+      "Windows",
+      "Linux"
+    ]
+  },
+  "policy": {
+    "current_release_notes_start": "<!-- CURRENT_RELEASE_NOTES:START -->",
+    "current_release_notes_end": "<!-- CURRENT_RELEASE_NOTES:END -->",
+    "required_phrases": [
+      "local-first",
+      "EXPERIMENTAL_DISABLED",
+      "no execution authority",
+      "OS keychain"
+    ],
+    "release_facing_files": [
+      "README.md",
+      "RELEASE_NOTES.md",
+      "package.json",
+      "package-lock.json",
+      "frontend/package.json",
+      "frontend/package-lock.json",
+      "backend/app/version.py",
+      "packaging/kuantra.spec",
+      "packaging/linux/kuantra-terminal.desktop",
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml",
+      "scripts/generate_release_manifest.py"
+    ],
+    "forbidden_patterns": [
+      {
+        "id": "zero_mock_claim",
+        "regex": "\\bzero[- ](?:mock|fake)\\b",
+        "message": "A current release cannot claim zero-mock or zero-fake integrity."
+      },
+      {
+        "id": "production_ready_claim",
+        "regex": "(?:production[- ]ready|ready for production)",
+        "message": "Production readiness is not a blanket capability claim."
+      },
+      {
+        "id": "institutional_hft_claim",
+        "regex": "institutional\\s+high[- ]frequency|high[- ]frequency\\s+(?:algorithmic|desktop|trading|terminal|execution)",
+        "message": "The current release does not claim institutional HFT capability."
+      },
+      {
+        "id": "certified_dma_claim",
+        "regex": "certified\\s+fix|direct\\s+market\\s+access|cme.{0,20}dma",
+        "message": "FIX/DMA transport and certification are not current capabilities."
+      },
+      {
+        "id": "latency_sla_claim",
+        "regex": "sub[- ]?10\\s*(?:µ|u)?s|sub[- ]?50\\s*ms",
+        "message": "Synthetic latency targets must not appear as release claims."
+      },
+      {
+        "id": "autonomous_execution_claim",
+        "regex": "autonomous.{0,30}execution|autonomous.{0,30}agent",
+        "message": "AI has no autonomous execution authority."
+      },
+      {
+        "id": "defi_execution_claim",
+        "regex": "flash[- ]loan\\s+execution|live\\s+dex",
+        "message": "DEX/flash-loan execution is disabled."
+      },
+      {
+        "id": "downloadable_plugin_claim",
+        "regex": "downloadable.{0,20}plugin|verified\\s+institutional\\s+(?:module|extension)",
+        "message": "Remote plugin download and marketplace claims are disabled."
+      }
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "trade_journal_forensics",
+      "status": "VERIFIED_CORE",
+      "claim": "Trade journal, setup/playbook context and deterministic forensics are available when evidence exists.",
+      "provenance": "RECORDED_USER_INPUT",
+      "external_execution_authority": false
+    },
+    {
+      "id": "deterministic_risk_boundary",
+      "status": "VERIFIED_CORE",
+      "claim": "Risk and compliance checks are deterministic gates for the supported paper route.",
+      "provenance": "RECORDED_JOURNAL_AND_EXPLICIT_ORDER_INPUT",
+      "external_execution_authority": false
+    },
+    {
+      "id": "paper_execution",
+      "status": "VERIFIED_CORE",
+      "claim": "Paper orders require a finite positive price and are recorded locally with explicit provenance.",
+      "provenance": "EXPLICIT_USER_OR_RECORDED_MARKET_INPUT",
+      "external_execution_authority": false
+    },
+    {
+      "id": "recorded_market_context_and_replay",
+      "status": "VERIFIED_CORE",
+      "claim": "Recorded candles/trades can be analysed and replay surfaces return no-data when evidence is absent.",
+      "provenance": "RECORDED_FEED_OR_USER_IMPORT",
+      "external_execution_authority": false
+    },
+    {
+      "id": "sqlite_duckdb_projection",
+      "status": "VERIFIED_CORE",
+      "claim": "SQLite WAL stores transactional journal state and DuckDB projects recorded analytics data.",
+      "provenance": "LOCAL_PERSISTED_DATA",
+      "external_execution_authority": false
+    },
+    {
+      "id": "local_desktop_shell",
+      "status": "VERIFIED_CORE",
+      "claim": "React, FastAPI and pywebview are wired for native local macOS arm64 or x86_64 desktop shells on macOS 12 or later; each architecture requires its own reproducible build and exact mounted-DMG smoke evidence before it is claimed as current support.",
+      "provenance": "LOCAL_BUILD_AND_SMOKE_EVIDENCE",
+      "external_execution_authority": false
+    },
+    {
+      "id": "os_keychain_credentials",
+      "status": "VERIFIED_CORE",
+      "claim": "Connector secrets require an operating-system keychain; plaintext SQLite fallback is unsupported.",
+      "provenance": "OS_CREDENTIAL_MANAGER",
+      "external_execution_authority": false
+    },
+    {
+      "id": "live_broker_execution",
+      "status": "EXPERIMENTAL_DISABLED",
+      "claim": "Live broker order submission and reconciliation are disabled until transport and certification gates exist.",
+      "provenance": "UNVERIFIED_EXTERNAL_TRANSPORT",
+      "external_execution_authority": false
+    },
+    {
+      "id": "fix_dma_and_hft_orderflow",
+      "status": "EXPERIMENTAL_DISABLED",
+      "claim": "FIX/DMA, venue-grade order flow and latency SLA surfaces are disabled research code.",
+      "provenance": "FIX_SERIALIZATION_OR_RUNTIME_INGEST_ONLY",
+      "external_execution_authority": false
+    },
+    {
+      "id": "local_ai_and_swarm",
+      "status": "EXPERIMENTAL_DISABLED",
+      "claim": "Local LLM, GPU telemetry and AI swarm surfaces have no model or execution authority in this release.",
+      "provenance": "UNVERIFIED_MODEL_SIDECAR",
+      "external_execution_authority": false
+    },
+    {
+      "id": "defai_and_flash_loan",
+      "status": "EXPERIMENTAL_DISABLED",
+      "claim": "DEX/RPC/DeFAI and flash-loan paths are disabled until chain-state, security and transaction controls are verified.",
+      "provenance": "UNVERIFIED_CHAIN_DATA",
+      "external_execution_authority": false
+    },
+    {
+      "id": "biometric_safety_authority",
+      "status": "EXPERIMENTAL_DISABLED",
+      "claim": "Wearable biometrics and FIDO/WebAuthn lockout override are not safety authorities.",
+      "provenance": "UNVERIFIED_HARDWARE",
+      "external_execution_authority": false
+    },
+    {
+      "id": "remote_plugin_marketplace",
+      "status": "EXPERIMENTAL_DISABLED",
+      "claim": "Remote plugin download, hot-mount and arbitrary execution are disabled.",
+      "provenance": "UNVERIFIED_PLUGIN_SOURCE",
+      "external_execution_authority": false
+    }
+  ]
+}

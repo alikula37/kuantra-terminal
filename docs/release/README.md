@@ -1,12 +1,12 @@
 # Kuantra release truth contract
 
 Release-facing claims are governed by the versioned matrix in
-[`truth-matrix.v1.1.4.json`](truth-matrix.v1.1.4.json). The matrix is a contract, not a
+[`truth-matrix.v1.1.5.json`](truth-matrix.v1.1.5.json). The matrix is a contract, not a
 marketing inventory: it records what the current product can prove, what remains disabled,
 and which files are scanned before a build or GitHub Release.
 
-The current release train targets v1.1.4 on macOS 12+ with separate native arm64 and x86_64
-artifacts; v1.1.4 adds the read-only chart review (closed-trade candles and a
+The current release train targets v1.1.5 on macOS 12+ with separate native arm64 and x86_64
+artifacts; v1.1.5 makes the USD position value the only trade sizing (one value field, notional/margin/PnL/R derived from it, approximate labeling for non-USD quotes, the base-quantity entry retired, and the journal reset with a full backup by owner decision); v1.1.4 added the read-only chart review (closed-trade candles and a
 provider-matched open-position review whose refresh fetches only the declared free provider
 and exact provider symbol, never a cache row or a substituted product), an independent
 one-request spot-product consistency check with measured overlap/deviation, the separation
@@ -28,13 +28,13 @@ declaration. Both architectures are verified current candidates; Intel evidence 
 the native `macos-15-intel` release workflow lane, arm64 from the native Apple Silicon host.
 
 The private pilot Release
-[`pilot-v1.1.4`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.4)
+[`pilot-v1.1.5`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.5)
 carries both native DMGs; it remains ad-hoc and trusted-pilot-only. Its tag points at the
 verified build commit. The former `pilot-v1.1.0` prerelease is superseded, keeps no downloads
 and directs users to `pilot-v1.1.1`; `pilot-v1.1.1` keeps its historical 1.1.1 packages and
 directs users to `pilot-v1.1.2`; `pilot-v1.1.2` keeps its historical 1.1.2 packages and
 directs users to `pilot-v1.1.3`; `pilot-v1.1.3` keeps its historical 1.1.3 packages and
-directs users to `pilot-v1.1.4`. The previous
+directs users to `pilot-v1.1.4`; `pilot-v1.1.4` keeps its historical 1.1.4 packages and directs users to `pilot-v1.1.5`. The previous
 `pilot-v1.0.0-arm64` transport is historical. The prior
 v1.4.0 matrix and historical documentation remain in the repository for audit context only.
 Its GitHub publication, tag and assets were removed on 2026-09-11; v1.4.0 is not a download
@@ -46,7 +46,7 @@ The three-person pilot distribution and technical validation path is documented 
 [`PILOT-INSTRUCTIONS.md`](PILOT-INSTRUCTIONS.md). The private GitHub Release carries
 only the two native architecture DMGs for users with repository read access.
 Evidence and checksums remain in the audit package and Release notes. The separate
-`pilot-v1.1.4` tag is a private prerelease transport identifier, not a canonical product
+`pilot-v1.1.5` tag is a private prerelease transport identifier, not a canonical product
 release tag. That transport does not provide Apple Developer ID trust; an ad-hoc DMG remains
 trusted-pilot-only and requires manual Gatekeeper approval. Technical smoke/N05 evidence,
 manifest, instructions and checksums remain in the repository and local audit package rather
@@ -58,7 +58,7 @@ final artifacts, recovery, security, product evidence and owner approval. It doe
 grant release authority or change this truth matrix; an engineering gate alone is
 not proof that the read-only product is ready for production.
 
-The current matrix is `KTR-001@1.1.4`. The prior `KTR-001@1.0.1` matrix remains as
+The current matrix is `KTR-001@1.1.5`. The prior `KTR-001@1.0.1` matrix remains as
 repository-only historical evidence for the withdrawn v1.4.0 line; it is not overwritten
 because release truth is immutable per product version.
 

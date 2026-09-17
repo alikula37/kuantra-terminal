@@ -23,6 +23,17 @@ notes-only edit keeps them; a changed value declares USD). Evidence: `test_wp45_
 passed**, full backend **1173 passed**, frontend **41 files / 286 tests**, i18n
 **1228/1228/1228**, `tsc`/build clean. The trade-domain wipe and the v1.1.5 release/install
 evidence are recorded below once executed.
+
+**v1.1.5 release train (2026-09-17, owner-approved):** the USD position-value sizing change
+ships as `v1.1.5` (`truth-matrix.v1.1.5.json`, `pilot-v1.1.5` prerelease with the tag on the
+verified build commit); `pilot-v1.1.4` keeps its historical packages and redirects users to
+v1.1.5. **Trade-domain wipe complete (owner instruction):** full data-directory backup at
+`~/Documents/Kuantra-Backups/backup-20260917-155320` first; then trades, evidence events,
+trade projections, local tracking plans and the OLAP trade table were emptied (all verified
+0), the append-only triggers were restored, and preferences, playbooks, the instrument
+verification cache and the 17,424-row market candle cache were kept. Release run id, DMG
+and mounted-executable hashes and the installed-app verification are recorded below once
+verified.
 Owner instruction (2026-09-17): the three real-UI-test findings on the installed app were
 reproduced, diagnosed and fixed in isolated synthetic data under
 [P1-WP44 confirmed identity, simulation separation and reachable journal actions](../archive/strategy/work-packages/P1-WP44-identity-sim-separation-journal-actions.md)

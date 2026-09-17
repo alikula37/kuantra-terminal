@@ -48,6 +48,14 @@ dev-only vitest advisory are fixed in source and shipped as the `v1.1.2` patch
 commit). The former `pilot-v1.1.1` release keeps its historical 1.1.1 packages and redirects
 users to v1.1.2. The canonical product Release/tag is not moved.
 
+Owner decision (2026-09-17): trade sizing moves to USD position value only
+(P1-WP45). The base-quantity entry is retired, every money figure derives from the declared
+USD value, non-USD-quoted pairs are labeled approximate, and — by explicit owner
+instruction — all existing trade records were deleted after a full data-directory backup
+(preferences, playbooks and the candle cache kept). The change ships as `v1.1.5`
+(`truth-matrix.v1.1.5.json`, `pilot-v1.1.5` prerelease with the tag on the verified build
+commit); `pilot-v1.1.4` keeps its historical packages and redirects users to v1.1.5.
+
 Owner decision (2026-09-17): the owner-approved chart-review package (P1-WP42), the
 independent spot-product consistency check (P1-WP43) and the identity/simulation/journal-action
 fixes (P1-WP44) ship as `v1.1.4` (`truth-matrix.v1.1.4.json`, `pilot-v1.1.4` prerelease with
