@@ -1,7 +1,7 @@
 <!-- doc-role: current-status -->
 # Current development status
 
-Updated: 2026-09-15. Branch: `main` (latest owner instruction).
+Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
 The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot

@@ -255,3 +255,10 @@ i18n parity and production build clean; screenshots and provider evidence under
   without ledger-origin inference (decision for the next plan).
 - [ ] P2–P4 and hypothetical scenarios (not approved).
 - [ ] Real pilot-data visual acceptance of the review surface.
+
+**Shipped in `v1.1.4` (2026-09-17, owner-approved release):** tag `pilot-v1.1.4` on the
+release train commit `ab2c933`; GitHub prerelease with the verified arm64/x86_64 DMGs
+(arm64 SHA-256 `ad3fd146bbf2b4f6c5a50dba4761d2ef6032e37e8bf9234756b83b0ae4a09dc3`, x86_64
+`05ea2367c56b923e80b8e4f354683e411ebc13c0d8b6a922ef1e15c43ca218be`); the arm64 executable
+`42ef84c426004bb6e24b404c93e72757184ccff35e0b71682cdc6af582e00fab` matches the app installed
+and verified on the owner's Mac. `pilot-v1.1.3` is marked superseded and directs users here.
