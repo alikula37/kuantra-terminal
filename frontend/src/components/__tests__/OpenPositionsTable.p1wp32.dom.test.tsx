@@ -293,4 +293,6 @@ it("shows a USD position value and computes unrealized from the value", async ()
   const row = host.querySelector("tbody tr");
   expect(row?.textContent).toContain("$1,000.00");
   expect(row?.textContent).toContain("open_positions.local_unrealized:+10.00");
+  // The open PnL column is the mark-to-market value, never the stored zero.
+  expect(host.querySelector('[data-testid="open-pnl-TRD-XAU-USD"]')?.textContent).toBe("+10.00");
 });

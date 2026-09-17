@@ -101,12 +101,18 @@ async function readDashboardResponse<T>(response: Response, validate: (value: un
   return payload;
 }
 
+function isOpenTradeRow(value: unknown): value is Trade {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Record<string, unknown>;
+  return typeof row.id === "string" && typeof row.symbol === "string" && row.status === "OPEN";
+}
+
 export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenNewTrade,
   onOpenInitialBalanceModal
 }) => {
   const { t } = useTranslation();
-  const { openPositions } = useTradeStore();
+  const { openPositions, setOpenPositions } = useTradeStore();
   const { isLiteMode } = usePluginRegistry();
 
   const [summary, setSummary] = useState<PortfolioSummaryData | null>(null);
@@ -135,11 +141,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     setCancelled(false);
 
     try {
-      const [summary, nextBreakdown, nextEquityCurve, nextHeatmap] = await Promise.all([
+      const [summary, nextBreakdown, nextEquityCurve, nextHeatmap, nextOpenTrades] = await Promise.all([
         apiFetch(apiUrl("/api/v1/portfolio/summary"), { signal: controller.signal }).then((response) => readDashboardResponse(response, isPortfolioSummaryData, "Portfolio summary")),
         apiFetch(apiUrl("/api/v1/portfolio/multi-asset-breakdown"), { signal: controller.signal }).then((response) => readDashboardResponse(response, (value): value is AssetBreakdownItem[] => Array.isArray(value) && value.every(isAssetBreakdown), "Portfolio breakdown")),
         apiFetch(apiUrl("/api/v1/portfolio/equity-curve"), { signal: controller.signal }).then((response) => readDashboardResponse(response, (value): value is EquityCurvePoint[] => Array.isArray(value) && value.every(isEquityCurvePoint), "Equity curve")),
-        apiFetch(apiUrl("/api/v1/portfolio/heatmap"), { signal: controller.signal }).then((response) => readDashboardResponse(response, (value): value is DailyHeatmapItem[] => Array.isArray(value) && value.every(isHeatmapItem), "Portfolio heatmap"))
+        apiFetch(apiUrl("/api/v1/portfolio/heatmap"), { signal: controller.signal }).then((response) => readDashboardResponse(response, (value): value is DailyHeatmapItem[] => Array.isArray(value) && value.every(isHeatmapItem), "Portfolio heatmap")),
+        // Open positions load from the server so trades recorded earlier (or in
+        // the installed app) appear here too, not only those added this session.
+        apiFetch(apiUrl("/api/v1/trades/open"), { signal: controller.signal }).then((response) => readDashboardResponse(response, (value): value is Trade[] => Array.isArray(value) && value.every((item: unknown) => isOpenTradeRow(item)), "Open trades"))
       ]);
 
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
@@ -148,6 +157,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       setBreakdown(nextBreakdown);
       setEquityCurve(nextEquityCurve);
       setHeatmap(nextHeatmap);
+      setOpenPositions(nextOpenTrades);
       setError(null);
     } catch (err) {
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;

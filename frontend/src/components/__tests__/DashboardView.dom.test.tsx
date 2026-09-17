@@ -3,13 +3,13 @@ import React, { act } from "react";
 vi.mock("../LocalTrackingPanel", () => ({ LocalTrackingPanel: () => null }));
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), t: (key: string) => key }));
+const mocks = vi.hoisted(() => ({ apiFetch: vi.fn(), setOpenPositions: vi.fn(), t: (key: string) => key }));
 vi.mock("../../lib/backend", () => ({ apiBase: () => "", apiUrl: (path: string) => path, apiFetch: mocks.apiFetch }));
 vi.mock("../../context/I18nContext", () => ({
   useTranslation: () => ({ t: mocks.t }),
 }));
 vi.mock("../../stores/tradeStore", () => ({
-  useTradeStore: () => ({ openPositions: [], updatePositionPnl: vi.fn() }),
+  useTradeStore: () => ({ openPositions: [], setOpenPositions: mocks.setOpenPositions, updatePositionPnl: vi.fn() }),
 }));
 vi.mock("../../stores/marketStore", () => ({
   useMarketStore: () => ({ currentPrice: null, marketDataStatus: "UNAVAILABLE" }),
@@ -90,7 +90,7 @@ it("keeps displayed cards mounted during background refresh and does not abort s
   expect(card?.textContent).toBe("equity");
   expect(host.querySelector("[data-testid=dashboard-loading]")).toBeNull();
   await act(async () => vi.advanceTimersByTime(12000));
-  expect(signals).toHaveLength(4);
+  expect(signals).toHaveLength(5);
   expect(signals.every((signal) => !signal.aborted)).toBe(true);
 });
 
@@ -130,7 +130,7 @@ it("cancels all dashboard read requests without showing partial success", async 
   await act(async () => cancel.click());
   await flush();
 
-  expect(signals).toHaveLength(4);
+  expect(signals).toHaveLength(5);
   expect(signals.every((signal) => signal?.aborted)).toBe(true);
   expect(host.querySelector("[data-testid=dashboard-cancelled]")).not.toBeNull();
   expect(host.querySelector("[data-testid=dashboard-summary]")?.textContent).not.toBe("summary");
@@ -185,4 +185,19 @@ it("uses the localized dashboard title instead of a hardcoded bilingual string",
 
   expect(host.textContent).toContain("dashboard.title_lite");
   expect(host.textContent).not.toContain("LITE PORTFÖY");
+});
+
+it("loads open positions from the server so earlier trades appear on the dashboard", async () => {
+  const openTrade = {
+    id: "TRD-SERVER", symbol: "BTCUSDT", side: "BUY", position_type: "LONG", status: "OPEN",
+    entry_price: 76601, qty: 500, qty_unit: "USD", record_mode: "SIMULATION",
+    entry_time: "2026-09-17T13:23:56Z",
+  };
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(
+    path.endsWith("/trades/open") ? [openTrade] : path.endsWith("/summary") ? { ...validSummary, today_trades_count: { wins: 0, losses: 0, total: 0 } } : [],
+  )));
+  await act(async () => root.render(<DashboardView />));
+  await flush();
+
+  expect(mocks.setOpenPositions).toHaveBeenCalledWith([openTrade]);
 });

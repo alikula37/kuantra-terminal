@@ -149,9 +149,6 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
             <tbody className="divide-y divide-surface-border/50">
               {positions.map((p) => {
                 const isLong = (p.side || "BUY").toUpperCase() === "BUY" || (p.side || "").toUpperCase() === "LONG";
-                const pnl = p.pnl;
-                const hasPnl = pnl != null;
-                const isProfitable = hasPnl && pnl >= 0;
                 const rMult = p.r_multiple;
                 const hasRMultiple = rMult != null;
                 const quote = quotes[p.id];
@@ -205,7 +202,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                             {quoteAge != null && <span className="ml-1 text-slate-400">· {relativeAgeLabel(quoteAge)}</span>}
                           </span>
                           {unrealized != null && (
-                            <span className={`block text-sm font-semibold ${unrealized >= 0 ? "text-gain" : "text-loss"}`}>
+                            <span className={`block text-sm font-semibold ${unrealized >= 0 ? "text-gain" : "text-loss"}`} data-testid={`open-local-unrealized-${p.id}`}>
                               {t("open_positions.local_unrealized", { value: `${unrealized >= 0 ? "+" : ""}${unrealized.toFixed(2)}` })}
                             </span>
                           )}
@@ -232,8 +229,9 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                     <td className="py-3 px-3 text-loss font-semibold">{p.stop_loss ? formatPrice(p.symbol, p.stop_loss) : "—"}</td>
                     <td className="py-3 px-3 text-gain font-semibold">{p.take_profit ? formatPrice(p.symbol, p.take_profit) : "—"}</td>
                     <td className="py-3 px-3">
-                      <span className={`font-bold ${!hasPnl ? "text-slate-400" : isProfitable ? "text-gain" : "text-loss"}`}>
-                        {hasPnl ? `${isProfitable ? "+" : ""}${pnl.toFixed(2)}` : t("open_positions.unknown_value")}
+                      <span className={`font-bold ${unrealized == null ? "text-slate-400" : unrealized >= 0 ? "text-gain" : "text-loss"}`}
+                            data-testid={`open-pnl-${p.id}`}>
+                        {unrealized == null ? t("open_positions.unknown_value") : `${unrealized >= 0 ? "+" : ""}${unrealized.toFixed(2)}`}
                       </span>
                       {!monetaryReady && onEditPosition && (
                         <button
