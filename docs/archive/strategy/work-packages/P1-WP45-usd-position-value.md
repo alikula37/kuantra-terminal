@@ -1,9 +1,9 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
 # P1-WP45 — USD position value as the only trade sizing
 
 ```yaml
 work_package: P1-WP45
-status: InProgress
+status: Complete
 branch: main
 baseline: 5fbc1af
 ```
@@ -54,9 +54,9 @@ comprehensively ("fix everywhere"):
   USD sizing (including the approximate-quote warning, R-multiple, margin, legacy rows kept
   working), frontend DOM regressions for the single USD entry field and USD displays; full
   suites, i18n, `tsc`, production build, canonical CI.
-- [ ] Data hygiene: full backup taken and the trade-domain wipe executed and verified (empty
+- [x] Data hygiene: full backup taken and the trade-domain wipe executed and verified (empty
   journal on the installed app), with the backup path reported.
-- [ ] v1.1.5 release train, tag, release assets and the data-preserving install (recorded in
+- [x] v1.1.5 release train, tag, release assets and the data-preserving install (recorded in
   STATUS with the exact hashes).
 
 ## Scope boundaries
@@ -94,5 +94,17 @@ comprehensively ("fix everywhere"):
   the journal and open positions, edit-modal declaration), i18n **1228/1228/1228**, `tsc`
   clean, production build clean, `check_docs` PASS, `git diff --check` clean.
 
-**Pending in this change:** the trade-domain data wipe (backup first) and the `v1.1.5`
-release/tag/install evidence, recorded in `docs/strategy/STATUS.md`.
+### Delivery verification (2026-09-17)
+
+Commits `a3d489a` (backend), `79a4c21` (frontend), `857842a` (docs) plus the release train
+`592e04c` (tag `pilot-v1.1.5` on it) are pushed. **Data wipe:** full data-directory backup at
+`~/Documents/Kuantra-Backups/backup-20260917-155320`; trades, evidence events, trade
+projections, local tracking plans and the OLAP trade table emptied and verified 0 (also 0
+after the first launch of the new build); append-only triggers restored; preferences,
+playbooks, the instrument cache and 17,424 candle rows kept. **Release:** candidate run
+`35223913627` **success** with all artifact checksums verified locally; DMG SHA-256 arm64
+`b6efc575…`, x86_64 `99a770d8…`; mounted executables arm64 `1e38bc5b…`, x86_64 `93c62ff1…`.
+`/Applications/Kuantra Terminal.app` was replaced with the verified arm64 artifact: installed
+executable matches the CI build, `codesign --verify --deep --strict` passes, version 1.1.5,
+launch verified with the journal intentionally empty. GitHub prerelease `pilot-v1.1.5` and
+the `pilot-v1.1.4` supersede notice are recorded in STATUS.

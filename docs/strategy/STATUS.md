@@ -3,13 +3,15 @@
 
 Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP45 USD position value as the only trade sizing](work-packages/P1-WP45-usd-position-value.md).**
-Owner instruction (2026-09-17): traders size positions in USD, not base units — USD value
-becomes the only entry/edit sizing (stored as `qty` with `qty_unit=USD`), money math (PnL,
-margin, risk, R) works from the value, non-USD-quoted pairs are computed approximately with
-an explicit label, the old sizing logic is retired, **all existing trade records are deleted
-by explicit owner instruction** ("hepsini sil. mantık hatalıydı"; full backup first, settings
-kept), and the change ships as the `v1.1.5` pilot release.
+**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot
+access); no development proceeds under it without owner approval. Owner instruction
+(2026-09-17): traders size positions in USD, not base units — the bounded
+[P1-WP45 USD position value package](../archive/strategy/work-packages/P1-WP45-usd-position-value.md)
+retired the base-quantity entry, made USD value the only sizing (stored as `qty` with
+`qty_unit=USD`), derived money math from the value with an explicit approximate label for
+non-USD quotes, and — by explicit owner instruction ("hepsini sil. mantık hatalıydı") —
+deleted all existing trade records after a full backup, shipping as `v1.1.5`.
 
 **P1-WP45 implementation evidence (this change, uncommitted):** entry/edit now have a single
 USD position-value field (payload `size_input_mode=NOTIONAL`, `qty_unit=USD`; the base pair the
@@ -32,8 +34,22 @@ v1.1.5. **Trade-domain wipe complete (owner instruction):** full data-directory 
 trade projections, local tracking plans and the OLAP trade table were emptied (all verified
 0), the append-only triggers were restored, and preferences, playbooks, the instrument
 verification cache and the 17,424-row market candle cache were kept. Release run id, DMG
-and mounted-executable hashes and the installed-app verification are recorded below once
-verified.
+and mounted-executable hashes and the installed-app verification are recorded below.
+
+**v1.1.5 release and install evidence (2026-09-17):** train commit `592e04c` (tag
+`pilot-v1.1.5` on it); candidate release run `35223913627` **success**; all artifact
+checksums re-verified locally (`sha256sum -c SHA256SUMS` OK); DMG SHA-256 arm64
+`b6efc5758aeb9d9891d032eb3c6dae050118d432d4dd5d595ad40e2ffd031184`, x86_64
+`99a770d89c5f9436c5c1e8dbfc62014d152a69c8f2fd169103b466e291b184e3`; mounted executables
+arm64 `1e38bc5bf641f0e94899ef451c8ed8139bfe30edf75b296c19ea22a04d837391`, x86_64
+`93c62ff12b0a7d8a128bf7d1c6a70a4da3ed444cac597b291b7a1817b4333ea0`; exact mounted-DMG
+smoke **PASS** on both lanes; N05 ad-hoc `BLOCKED / OWNER_REVIEW_REQUIRED` as expected. The
+arm64 artifact was installed over `/Applications/Kuantra Terminal.app` (backup at
+`/tmp/kuantra-v115-update.dsIlgF`): installed executable matches the CI build, codesign OK,
+version 1.1.5, launch verified and the journal confirmed intentionally empty
+(trades/events/tracking 0 after launch). GitHub prerelease `pilot-v1.1.5` and the
+`pilot-v1.1.4` supersede notice follow this commit; app backup and data backup paths are
+recorded above.
 Owner instruction (2026-09-17): the three real-UI-test findings on the installed app were
 reproduced, diagnosed and fixed in isolated synthetic data under
 [P1-WP44 confirmed identity, simulation separation and reachable journal actions](../archive/strategy/work-packages/P1-WP44-identity-sim-separation-journal-actions.md)
