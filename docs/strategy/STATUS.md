@@ -3,9 +3,13 @@
 
 Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP44 confirmed identity, simulation separation and reachable journal actions](../archive/strategy/work-packages/P1-WP44-identity-sim-separation-journal-actions.md).**
-Owner instruction (2026-09-17): three real-UI-test findings on the installed app were
-reproduced, diagnosed and fixed in isolated synthetic data. (1) A hand-typed entry price no
+**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot
+access); no development proceeds under it without owner approval.
+Owner instruction (2026-09-17): the three real-UI-test findings on the installed app were
+reproduced, diagnosed and fixed in isolated synthetic data under
+[P1-WP44 confirmed identity, simulation separation and reachable journal actions](../archive/strategy/work-packages/P1-WP44-identity-sim-separation-journal-actions.md)
+(complete and archived). (1) A hand-typed entry price no
 longer erases the confirmed provider identity: creation now sends the confirmed
 provider/symbol separately from `price_origin=MANUAL`, so the journal quote refresh returns
 LIVE, the chart review resolves the declared provider and the local plan keeps the same
@@ -38,9 +42,9 @@ mounted-DMG smoke **PASS** (`dist/p1-wp44-exact-dmg-smoke.json`). `/Applications
 Terminal.app` was replaced and verified: installed executable matches the CI build,
 `codesign --verify --deep --strict` passes, version 1.1.3, launch path and clean quit
 verified, user data preserved. GitHub Releases and tags were untouched.
+The owner-host obligations of the selected
 [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
-returns to a reference package; its owner-host obligations (N03/N05/H05/pilot access) remain
-tracked.
+(N03/N05/H05/pilot access) remain tracked there and are unchanged.
 Owner instruction (2026-09-17): the WP42 instrument-product blocker was closed with the
 bounded [P1-WP43 spot-product consistency package](../archive/strategy/work-packages/P1-WP43-spot-product-consistency.md),
 now complete and archived. The open review refresh now runs exactly ONE extra independent
