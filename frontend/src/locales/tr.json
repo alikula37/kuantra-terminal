@@ -1308,13 +1308,24 @@
       "provider": "Sağlayıcı (bu oturumda indirildi): {provider}",
       "provider_unknown": "Sağlayıcı önbellekte kayıtlı değil; aynı sembol yazısı sağlayıcıyı doğrulamaz.",
       "identity_note": "Enstrüman kimliği: {instrument} — kaynak beyanı, doğrulanmadı.",
-      "partial_history": "İşlem girişinden bu yana tam geçmiş yok; gösterilen aralık {start} – {end} ({minutes} dk eksik)."
+      "partial_history": "İşlem girişinden bu yana tam geçmiş yok; gösterilen aralık {start} – {end} ({minutes} dk eksik).",
+      "product_consistent": "Ürün kontrolü: bağımsız {provider} ile {instrument} medyan sapma {deviation}% (n={bars} hizalı bar, tolerans {tolerance}%) — aynı ürün sınıfı; broker gerçekleşme kanıtı değildir.",
+      "product_divergent": "Ürün kontrolü: bağımsız {provider} ayrışıyor ({instrument}; medyan {deviation}% > {tolerance}% tolerans, n={bars} bar) — grafik kaynak beyanı olarak kalır; broker gerçekleşme kanıtı değildir.",
+      "product_unverifiable": "Ürün kontrolü: kullanılamıyor ({reason}); enstrüman kaynak beyanı olarak kalır, broker gerçekleşme kanıtı değildir."
     },
     "refresh": {
       "action": "Yenile",
       "refreshing": "Yenileniyor…",
       "error": "Yenileme başarısız; grafik değişmedi. Tekrar deneyin."
     },
-    "boundary_note_open": "Beyan edilen sağlayıcı anlık görüntüsü · broker gerçekleşmesi değil · R brüt fiyat hareketidir"
+    "boundary_note_open": "Beyan edilen sağlayıcı anlık görüntüsü · broker gerçekleşmesi değil · R brüt fiyat hareketidir",
+    "product_reason": {
+      "NO_INDEPENDENT_SOURCE": "bu ürünü sunan bağımsız ücretsiz kaynak yok",
+      "INSUFFICIENT_OVERLAP": "yeterli hizalı örtüşen bar yok",
+      "FETCH_FAILED": "bağımsız kaynak yanıt vermedi",
+      "NO_PRODUCT_KEY": "bu sembol için ücretsiz kaynak ürün eşlemesi yok",
+      "CHECK_NOT_RUN": "kontrol çalışmadı",
+      "UNKNOWN": "tanınmayan ürün kontrolü gerekçesi"
+    }
   }
 }

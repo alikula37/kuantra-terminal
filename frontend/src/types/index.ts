@@ -306,6 +306,26 @@ export interface ReplayCloseEvidence {
   close_source_raw: string | null;
 }
 
+export interface InstrumentProductCheck {
+  status: "CONSISTENT" | "DIVERGENT" | "UNVERIFIABLE";
+  reason: string | null;
+  reason_detail?: string | null;
+  product_key: string | null;
+  asset_class: string | null;
+  declared_provider: string | null;
+  declared_symbol: string | null;
+  independent_provider: string | null;
+  independent_symbol: string | null;
+  alignment: "EXACT_BAR" | "UTC_DAY" | null;
+  alignment_note?: string | null;
+  overlap_bars: number;
+  median_deviation_pct: number | null;
+  max_deviation_pct: number | null;
+  tolerance_pct: number | null;
+  checked_at: string | null;
+  note: string;
+}
+
 export interface OpenReviewBlock {
   history_status: "FULL_SINCE_ENTRY" | "PARTIAL_SINCE_ENTRY";
   timeframe?: string | null;
@@ -332,6 +352,7 @@ export interface OpenReviewBlock {
   instrument: string | null;
   cache_symbol: string | null;
   store: string | null;
+  instrument_product?: InstrumentProductCheck | null;
 }
 
 export interface ReplaySessionResponse {

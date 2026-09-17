@@ -40,7 +40,7 @@ vi.mock("../../context/ThemeContext", () => ({
   }),
 }));
 
-import { TradeReplayCanvas } from "../TradeReplayCanvas";
+import { productCheckText, TradeReplayCanvas } from "../TradeReplayCanvas";
 
 const candles = [
   { time: 1, open: 100, high: 101, low: 99, close: 100.5 },
@@ -335,6 +335,69 @@ describe("open position review (OP-01)", () => {
     expect(banner?.textContent).not.toMatch(/canlı veri|LIVE DATA/i);
     expect(byTestId("replay-provider")?.textContent).toContain("replay.open_review.provider_unknown");
     expect(byTestId("replay-identity")?.textContent).toContain("replay.open_review.identity_note");
+  });
+
+  it("renders the product check with the independent source, never a bare verified claim", async () => {
+    apiFetch.mockResolvedValue(response(openReady({
+      instrument_product: {
+        status: "CONSISTENT", reason: null, product_key: "SPOT_METAL:XAU:USD", asset_class: "SPOT_METAL",
+        declared_provider: "biquote_public", declared_symbol: "XAUUSD",
+        independent_provider: "yahoo_public", independent_symbol: "XAUUSD=X",
+        alignment: "EXACT_BAR", overlap_bars: 42, median_deviation_pct: 0.034, max_deviation_pct: 0.09,
+        tolerance_pct: 0.5, checked_at: "2026-09-17T09:20:00Z", note: "NOT_BROKER_EXECUTION_EVIDENCE",
+      },
+    })));
+    await act(async () => root.render(<TradeReplayCanvas tradeId="open" />)); await flush();
+    const line = byTestId("replay-product-check");
+    expect(line?.getAttribute("data-product-status")).toBe("CONSISTENT");
+    expect(line?.getAttribute("data-product-provider")).toBe("yahoo_public");
+    expect(line?.getAttribute("data-product-key")).toBe("SPOT_METAL:XAU:USD");
+    expect(line?.textContent).toContain("replay.open_review.product_consistent");
+    expect(host.textContent).not.toMatch(/ürün doğrulandı|product verified/i);
+  });
+
+  it("shows divergent and unverifiable product states honestly", async () => {
+    apiFetch.mockResolvedValue(response(openReady({
+      instrument_product: {
+        status: "DIVERGENT", reason: null, product_key: "SPOT_METAL:XAU:USD", asset_class: "SPOT_METAL",
+        declared_provider: "biquote_public", declared_symbol: "XAUUSD",
+        independent_provider: "yahoo_public", independent_symbol: "XAUUSD=X",
+        alignment: "EXACT_BAR", overlap_bars: 30, median_deviation_pct: 2.4, max_deviation_pct: 3.1,
+        tolerance_pct: 0.5, checked_at: "2026-09-17T09:20:00Z", note: "NOT_BROKER_EXECUTION_EVIDENCE",
+      },
+    })));
+    await act(async () => root.render(<TradeReplayCanvas tradeId="open" />)); await flush();
+    expect(byTestId("replay-product-check")?.getAttribute("data-product-status")).toBe("DIVERGENT");
+    expect(byTestId("replay-product-check")?.textContent).toContain("replay.open_review.product_divergent");
+
+    apiFetch.mockResolvedValue(response(openReady({
+      instrument_product: {
+        status: "UNVERIFIABLE", reason: "INSUFFICIENT_OVERLAP", product_key: "SPOT_METAL:XAU:USD",
+        asset_class: "SPOT_METAL", declared_provider: "biquote_public", declared_symbol: "XAUUSD",
+        independent_provider: "stooq_public", independent_symbol: "xauusd",
+        alignment: "UTC_DAY", overlap_bars: 3, median_deviation_pct: null, max_deviation_pct: null,
+        tolerance_pct: 0.5, checked_at: "2026-09-17T09:20:00Z", note: "NOT_BROKER_EXECUTION_EVIDENCE",
+      },
+    })));
+    await act(async () => root.render(<TradeReplayCanvas tradeId="open-unverifiable" />)); await flush();
+    expect(byTestId("replay-product-check")?.getAttribute("data-product-status")).toBe("UNVERIFIABLE");
+    expect(byTestId("replay-product-check")?.textContent).toContain("replay.open_review.product_unverifiable");
+  });
+
+  it("never renders an unrecognized product-check reason raw", () => {
+    const calls: Array<[string, Record<string, string> | undefined]> = [];
+    const t = (key: string, params?: Record<string, string>) => { calls.push([key, params]); return key; };
+    const text = productCheckText({
+      status: "UNVERIFIABLE", reason: "SOMETHING_NEW", product_key: null, asset_class: null,
+      declared_provider: "biquote_public", declared_symbol: "XAUUSD",
+      independent_provider: null, independent_symbol: null, alignment: null, overlap_bars: 0,
+      median_deviation_pct: null, max_deviation_pct: null, tolerance_pct: null,
+      checked_at: null, note: "NOT_BROKER_EXECUTION_EVIDENCE",
+    }, t);
+    expect(text).toBe("replay.open_review.product_unverifiable");
+    expect(calls.map(([key]) => key)).toEqual([
+      "replay.product_reason.UNKNOWN", "replay.open_review.product_unverifiable",
+    ]);
   });
 
   it("shows partial history with the covered range and gap note", async () => {

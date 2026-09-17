@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createChart, IChartApi, IPriceLine, ISeriesApi, LineStyle } from "lightweight-charts";
-import { OpenReviewBlock, ReplayCloseEvidence, ReplayPlanReference, ReplaySessionResponse } from "../types";
+import { InstrumentProductCheck, OpenReviewBlock, ReplayCloseEvidence, ReplayPlanReference, ReplaySessionResponse } from "../types";
 import { formatIstanbulDateTime } from "../lib/tradeTime";
 import { Play, Pause, SkipBack, SkipForward, FastForward, RotateCcw } from "lucide-react";
 import { apiBase, apiFetch } from "../lib/backend";
@@ -57,6 +57,31 @@ export const originKey = (origin: string | null | undefined): string => {
   if (origin === "JOURNAL") return "replay.origin.journal";
   if (origin === "IMPORTED_FILE") return "replay.origin.imported_file";
   return "replay.origin.unknown";
+};
+
+const PRODUCT_CHECK_REASONS = new Set([
+  "NO_INDEPENDENT_SOURCE", "INSUFFICIENT_OVERLAP", "FETCH_FAILED", "NO_PRODUCT_KEY", "CHECK_NOT_RUN",
+]);
+
+/** Independent-source agreement only; never a bare "verified" product claim. */
+export const productCheckText = (
+  check: InstrumentProductCheck,
+  t: (key: string, params?: Record<string, string>) => string,
+): string => {
+  if (check.status === "CONSISTENT" || check.status === "DIVERGENT") {
+    const params = {
+      provider: check.independent_provider ?? "—",
+      instrument: check.declared_symbol ?? "—",
+      bars: String(check.overlap_bars),
+      deviation: isFiniteNumber(check.median_deviation_pct ?? null) ? (check.median_deviation_pct as number).toFixed(2) : "—",
+      tolerance: isFiniteNumber(check.tolerance_pct ?? null) ? String(check.tolerance_pct) : "—",
+    };
+    return check.status === "CONSISTENT"
+      ? t("replay.open_review.product_consistent", params)
+      : t("replay.open_review.product_divergent", params);
+  }
+  const reason = check.reason && PRODUCT_CHECK_REASONS.has(check.reason) ? check.reason : "UNKNOWN";
+  return t("replay.open_review.product_unverifiable", { reason: t(`replay.product_reason.${reason}`) });
 };
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -360,6 +385,17 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
           </span>
           <span data-testid="replay-identity">{t("replay.open_review.identity_note", { instrument: openReview.instrument ?? session.symbol ?? "—" })}</span>
         </p>
+        {openReview.instrument_product && (
+          <p
+            data-testid="replay-product-check"
+            data-product-status={openReview.instrument_product.status}
+            data-product-key={openReview.instrument_product.product_key ?? ""}
+            data-product-provider={openReview.instrument_product.independent_provider ?? ""}
+            className={openReview.instrument_product.status === "CONSISTENT" ? "text-emerald-300" : "text-amber-300"}
+          >
+            {productCheckText(openReview.instrument_product, t)}
+          </p>
+        )}
         {openReview.history_status === "PARTIAL_SINCE_ENTRY" && (
           <p data-testid="replay-partial-history" className="text-amber-300">
             {t("replay.open_review.partial_history", {

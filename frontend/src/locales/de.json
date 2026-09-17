@@ -1308,13 +1308,24 @@
       "provider": "Anbieter (in dieser Sitzung geladen): {provider}",
       "provider_unknown": "Anbieter ist im Cache nicht erfasst; gleicher Symboltext beweist keinen Anbieter.",
       "identity_note": "Instrumentenidentität: {instrument} — Quellenangabe, nicht verifiziert.",
-      "partial_history": "Keine vollständige Historie seit dem Einstieg; gezeigter Bereich {start} – {end} ({minutes} Min fehlen)."
+      "partial_history": "Keine vollständige Historie seit dem Einstieg; gezeigter Bereich {start} – {end} ({minutes} Min fehlen).",
+      "product_consistent": "Produktprüfung: unabhängige Quelle {provider} stimmt bei {instrument} zu (Median-Abweichung {deviation}%, n={bars} überlappende Bars, Toleranz {tolerance}%) — gleiche Produktklasse, kein Broker-Ausführungsnachweis.",
+      "product_divergent": "Produktprüfung: unabhängige Quelle {provider} weicht bei {instrument} ab (Median {deviation}% > {tolerance}% Toleranz, n={bars} Bars) — der Chart bleibt eine Quellendeklaration, kein Broker-Ausführungsnachweis.",
+      "product_unverifiable": "Produktprüfung: nicht verfügbar ({reason}); das Instrument bleibt eine Quellendeklaration, kein Broker-Ausführungsnachweis."
     },
     "refresh": {
       "action": "Aktualisieren",
       "refreshing": "Wird aktualisiert…",
       "error": "Aktualisierung fehlgeschlagen; das Chart blieb unverändert. Erneut versuchen."
     },
-    "boundary_note_open": "Snapshot des deklarierten Anbieters · keine Broker-Ausführungen · R ist eine Bruttopreisbewegung"
+    "boundary_note_open": "Snapshot des deklarierten Anbieters · keine Broker-Ausführungen · R ist eine Bruttopreisbewegung",
+    "product_reason": {
+      "NO_INDEPENDENT_SOURCE": "keine unabhängige kostenlose Quelle für dieses Produkt",
+      "INSUFFICIENT_OVERLAP": "zu wenige überlappende ausgerichtete Bars",
+      "FETCH_FAILED": "die unabhängige Quelle antwortete nicht",
+      "NO_PRODUCT_KEY": "kein Free-Source-Produktmapping für dieses Symbol",
+      "CHECK_NOT_RUN": "die Prüfung wurde nicht ausgeführt",
+      "UNKNOWN": "unbekannter Produktprüfungsgrund"
+    }
   }
 }

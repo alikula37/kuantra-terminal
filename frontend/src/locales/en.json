@@ -1308,13 +1308,24 @@
       "provider": "Provider (fetched in this session): {provider}",
       "provider_unknown": "Provider is not recorded in the cache; the same symbol text does not prove the provider.",
       "identity_note": "Instrument identity: {instrument} — source declaration, not verified.",
-      "partial_history": "No complete history since the entry; shown range {start} – {end} ({minutes} min missing)."
+      "partial_history": "No complete history since the entry; shown range {start} – {end} ({minutes} min missing).",
+      "product_consistent": "Product check: independent {provider} agreed on {instrument} within {deviation}% median deviation (n={bars} aligned bars, tolerance {tolerance}%) — same product class, not broker execution evidence.",
+      "product_divergent": "Product check: independent {provider} disagrees on {instrument} (median {deviation}% > {tolerance}% tolerance, n={bars} bars) — the chart stays a source declaration; not broker execution evidence.",
+      "product_unverifiable": "Product check: not available ({reason}); the instrument remains a source declaration, not broker execution evidence."
     },
     "refresh": {
       "action": "Refresh",
       "refreshing": "Refreshing…",
       "error": "Refresh failed; the chart was not changed. Try again."
     },
-    "boundary_note_open": "Declared provider snapshot · not broker fills · R is a gross price move"
+    "boundary_note_open": "Declared provider snapshot · not broker fills · R is a gross price move",
+    "product_reason": {
+      "NO_INDEPENDENT_SOURCE": "no independent free source serves this product",
+      "INSUFFICIENT_OVERLAP": "not enough aligned overlapping bars",
+      "FETCH_FAILED": "the independent source did not answer",
+      "NO_PRODUCT_KEY": "no free-source product mapping for this symbol",
+      "CHECK_NOT_RUN": "the check did not run",
+      "UNKNOWN": "unrecognized product-check reason"
+    }
   }
 }
