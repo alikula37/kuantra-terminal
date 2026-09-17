@@ -277,3 +277,69 @@ it("offers a read-only chart inspection action per trade and routes it to the re
   expect(onOpenReplay).toHaveBeenCalledExactlyOnceWith("TRD-REPLAY");
   expect(host.querySelector('[data-testid="journal-replay-action"][data-trade-id="TRD-CANCELED"]')).toBeNull();
 });
+
+it("labels a simulation row and shows the local plan separately from the external status", async () => {
+  const simTrade = {
+    id: "TRD-SIM", symbol: "BTCUSDT", side: "BUY", position_type: "LONG", status: "OPEN",
+    entry_price: 76000, exit_price: null, qty: 0.001, stop_loss: 70000, take_profit: 90000,
+    entry_time: "2026-09-17T09:00:00.000000Z", exit_time: null, pnl: null, commission: 0,
+    revision: 1, record_mode: "SIMULATION", price_source: "binance_public",
+  };
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/local-tracking")) {
+      return Promise.resolve(response([{
+        trade_id: "TRD-SIM", tracking_status: "COMPLETED", remaining_qty: "0", initial_qty: "0.001",
+      }]));
+    }
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({ checked_at: new Date().toISOString(), requested: 1, identities: 1, skipped_identities: 0, quotes: {} }));
+    }
+    return Promise.resolve(response([simTrade]));
+  });
+  mocks.trades = [simTrade];
+  await act(async () => root.render(<JournalView {...props} />));
+  await flush();
+
+  const badge = host.querySelector('[data-testid="journal-sim-badge-TRD-SIM"]');
+  expect(badge?.textContent).toContain("journal.simulation_badge");
+  const tracking = host.querySelector('[data-testid="journal-local-tracking-TRD-SIM"]');
+  expect(tracking?.getAttribute("data-tracking-status")).toBe("COMPLETED");
+  expect(tracking?.textContent).toContain("journal.local_status_completed");
+  expect(host.querySelector('[data-testid="journal-local-completed-note-TRD-SIM"]')?.textContent)
+    .toContain("journal.local_completed_external_open");
+  // The external lifecycle status is never rewritten by the local estimate.
+  expect(tracking?.parentElement?.textContent).toContain("OPEN");
+});
+
+it("keeps the row actions in a sticky column with keyboard focus styling", async () => {
+  const openTrade = {
+    id: "TRD-ACTIONS", symbol: "BTCUSDT", side: "BUY", position_type: "LONG", status: "OPEN",
+    entry_price: 76000, exit_price: null, qty: 0.001, stop_loss: 70000, take_profit: 90000,
+    entry_time: "2026-09-17T09:00:00.000000Z", exit_time: null, pnl: null, commission: 0,
+    revision: 1,
+  };
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/local-tracking")) return Promise.resolve(response([]));
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({ checked_at: new Date().toISOString(), requested: 1, identities: 1, skipped_identities: 0, quotes: {} }));
+    }
+    return Promise.resolve(response([openTrade]));
+  });
+  mocks.trades = [openTrade];
+  await act(async () => root.render(<JournalView {...props} onEditTrade={vi.fn()} onOpenReplay={vi.fn()} />));
+  await flush();
+
+  const actionsHeader = Array.from(host.querySelectorAll("th"))
+    .find((cell) => cell.textContent === "journal.col_actions");
+  expect(actionsHeader?.className).toContain("sticky");
+  expect(actionsHeader?.className).toContain("right-0");
+  const editCell = host.querySelector('[data-testid="journal-edit-action"]')?.closest("td");
+  expect(editCell?.className).toContain("sticky");
+  expect(editCell?.className).toContain("right-0");
+  for (const testId of ["journal-edit-action", "journal-evidence-action", "journal-replay-action", "journal-cancel-action"]) {
+    const button = host.querySelector(`[data-testid="${testId}"]`) as HTMLButtonElement | null;
+    expect(button).not.toBeNull();
+    expect(button?.type).toBe("button");
+    expect(button?.className).toContain("focus-visible:ring-accent");
+  }
+});

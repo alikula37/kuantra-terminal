@@ -401,3 +401,57 @@ it("requires an explicit simulation choice and still posts only to the journal e
   });
   expect(mocks.apiFetch.mock.calls.some(([path]) => path === "/api/v1/execution/order")).toBe(false);
 });
+
+it("keeps the confirmed provider identity when the entry price is typed manually", async () => {
+  let submittedBody: any;
+  mocks.apiFetch.mockImplementation((path: string, init?: RequestInit) => {
+    if (path.startsWith("/api/v1/market-data/quote")) {
+      return Promise.resolve(response({
+        requested_symbol: "BTCUSDT",
+        source_id: "binance_public",
+        source_symbol: "BTCUSDT",
+        price: 61234.5,
+        status: "LIVE",
+        price_kind: "LAST",
+        observed_at: "2026-09-17T09:00:00Z",
+        reason: null,
+        free_source: true,
+        credentials_required: false,
+      }));
+    }
+    if (path === "/api/v1/trades") {
+      submittedBody = JSON.parse(String(init?.body));
+      return Promise.resolve(response(savedTrade));
+    }
+    return Promise.resolve(response({}));
+  });
+  const { onClose } = renderModal();
+  await act(async () => root.render(<NewTradeModal isOpen onClose={onClose} />));
+  const simulation = Array.from(host.querySelectorAll("button"))
+    .find((element) => element.textContent === "order_ticket.mode_simulation") as HTMLButtonElement;
+  await act(async () => simulation.click());
+  const longSide = Array.from(host.querySelectorAll("button"))
+    .find((element) => element.textContent === "order_ticket.side_buy") as HTMLButtonElement;
+  await act(async () => longSide.click());
+  await act(async () => (host.querySelector('button[title="order_ticket.fetch_price_btn"]') as HTMLButtonElement).click());
+  await flush();
+  // The reported flow: replace the quoted price with the real entry fill.
+  await act(async () => setInputValue(host.querySelectorAll("input[type=number]")[0] as HTMLInputElement, "76000"));
+  await act(async () => setInputValue(host.querySelectorAll("input[type=number]")[1] as HTMLInputElement, "0.001"));
+  const baseUnit = host.querySelector("[data-testid=new-trade-qty-unit-base]") as HTMLInputElement | null;
+  if (baseUnit) await act(async () => baseUnit.click());
+  await act(async () => (host.querySelector("button[type=submit]") as HTMLButtonElement).click());
+  await flush();
+
+  expect(submittedBody).toMatchObject({
+    entry_price: 76000,
+    record_mode: "SIMULATION",
+    price_source: "binance_public",
+    price_source_symbol: "BTCUSDT",
+    price_status: "UNAVAILABLE",
+    price_observed_at: null,
+    price_origin: "MANUAL",
+  });
+  expect(submittedBody.local_tracking?.source_id).toBe("binance_public");
+  expect(submittedBody.local_tracking?.source_symbol).toBe("BTCUSDT");
+});

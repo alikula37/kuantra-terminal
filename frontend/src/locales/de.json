@@ -739,7 +739,15 @@
     "filter_selected_count": "{count} ausgewählt",
     "filter_clear": "Zurücksetzen",
     "export": "Exportieren",
-    "replay_action": "Im Chart prüfen"
+    "replay_action": "Im Chart prüfen",
+    "simulation_badge": "SIMULATION",
+    "local_status_active": "Lokaler Plan: aktiv · verbleibend {remaining}",
+    "local_status_waiting_quote": "Lokaler Plan: wartet auf Live-Kurs · verbleibend {remaining}",
+    "local_status_waiting_targets": "Lokaler Plan: Ziele ausstehend · verbleibend {remaining}",
+    "local_status_paused": "Lokaler Plan: pausiert · verbleibend {remaining}",
+    "local_status_completed": "Lokaler Plan abgeschlossen · verbleibend {remaining}",
+    "local_status_unknown": "Lokaler Plan: unbekannter Status · verbleibend {remaining}",
+    "local_completed_external_open": "Lokale Fertigstellung ist eine Schätzung: der externe Trade ist weiterhin offen."
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION-INBOX",

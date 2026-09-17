@@ -374,14 +374,17 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       priceOrigin === "PUBLIC_QUOTE" && quote?.source_id && Number(quote.price) === numericEntry
     );
     const selectedQuote = useQuoteProvenance ? quote : null;
-    const trackingSource = selectedInstrument && FREE_QUOTE_SOURCE_IDS.has(selectedInstrument.source_id)
+    // The confirmed instrument identity is separate from the entry-price
+    // provenance: a hand-typed execution price must never erase the provider
+    // the user confirmed, and the identity is never inferred from symbol text.
+    const confirmedIdentity = selectedInstrument && FREE_QUOTE_SOURCE_IDS.has(selectedInstrument.source_id)
       ? selectedInstrument : quote?.source_id && FREE_QUOTE_SOURCE_IDS.has(quote.source_id) ? quote : null;
     const trackingPayload = tradeStatus === "OPEN" && trackingSupported ? {
       enabled: trackingEnabled,
       targets: targetPayload(targets),
       stop_loss: stopLoss === "" ? null : Number(stopLoss),
-      source_id: trackingSource?.source_id || null,
-      source_symbol: trackingSource?.source_symbol || null,
+      source_id: confirmedIdentity?.source_id || null,
+      source_symbol: confirmedIdentity?.source_symbol || null,
     } : null;
     const tradePayload: Record<string, unknown> = {
       symbol: tradeSymbol.toUpperCase(),
@@ -402,8 +405,8 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       local_tracking: trackingPayload,
       record_mode: recordMode,
       execution_venue: executionVenue.trim() || null,
-      price_source: selectedQuote?.source_id || "manual",
-      price_source_symbol: selectedQuote?.source_symbol || null,
+      price_source: confirmedIdentity?.source_id || "manual",
+      price_source_symbol: confirmedIdentity?.source_symbol || null,
       price_status: selectedQuote?.status || "UNAVAILABLE",
       price_observed_at: selectedQuote?.observed_at || null,
       price_origin: useQuoteProvenance ? "PUBLIC_QUOTE" : "MANUAL",

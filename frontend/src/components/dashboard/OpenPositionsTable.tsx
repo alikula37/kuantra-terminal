@@ -177,6 +177,14 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                   <tr key={p.id} className="hover:bg-[#0d121c] transition">
                     <td className="py-3 px-3 font-bold text-white">
                       <span>{p.symbol}</span>
+                      {p.record_mode === "SIMULATION" && (
+                        <span
+                          data-testid={`open-sim-badge-${p.id}`}
+                          className="ml-2 align-middle px-2 py-0.5 rounded text-sm font-bold bg-amber-400/15 text-amber-300 border border-amber-400/40"
+                        >
+                          {t("journal.simulation_badge")}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-3">
                       <span className={`text-sm px-2 py-0.5 rounded font-bold ${isLong ? "bg-emerald-500/10 text-gain border border-emerald-500/20" : "bg-rose-500/10 text-loss border border-rose-500/20"}`}>

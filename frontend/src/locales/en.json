@@ -739,7 +739,15 @@
     "filter_selected_count": "{count} selected",
     "filter_clear": "Clear",
     "export": "Export",
-    "replay_action": "Inspect chart"
+    "replay_action": "Inspect chart",
+    "simulation_badge": "SIMULATION",
+    "local_status_active": "Local plan: active · remaining {remaining}",
+    "local_status_waiting_quote": "Local plan: waiting for a live quote · remaining {remaining}",
+    "local_status_waiting_targets": "Local plan: targets pending · remaining {remaining}",
+    "local_status_paused": "Local plan: paused · remaining {remaining}",
+    "local_status_completed": "Local plan completed · remaining {remaining}",
+    "local_status_unknown": "Local plan: unknown state · remaining {remaining}",
+    "local_completed_external_open": "Local completion is an estimate: the external trade is still open."
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION INBOX",

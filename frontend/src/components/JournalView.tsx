@@ -110,6 +110,8 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+const LOCAL_TRACKING_STATUSES = new Set(["ACTIVE", "WAITING_QUOTE", "WAITING_TARGETS", "PAUSED", "COMPLETED", "UNKNOWN"]);
+
 function isTrade(value: unknown): value is Trade {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
@@ -163,8 +165,30 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [cancellingTradeId, setCancellingTradeId] = useState<string | null>(null);
   const [cancellationError, setCancellationError] = useState<string | null>(null);
   const [cancellationNotice, setCancellationNotice] = useState<string | null>(null);
+  const [trackingByTrade, setTrackingByTrade] = useState<Record<string, Record<string, unknown>>>({});
   const loadControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+
+  // Local tracking status is a separate row annotation: it is an estimate, not
+  // the external trade's lifecycle state, and the journal never rewrites one
+  // into the other.
+  const loadLocalTracking = useCallback(async () => {
+    try {
+      const response = await apiFetch(apiUrl("/api/v1/local-tracking"));
+      if (!response.ok) return;
+      const payload: unknown = await response.json();
+      if (!Array.isArray(payload)) return;
+      const next: Record<string, Record<string, unknown>> = {};
+      for (const view of payload) {
+        if (view && typeof view === "object" && typeof (view as Record<string, unknown>).trade_id === "string") {
+          next[String((view as Record<string, unknown>).trade_id)] = view as Record<string, unknown>;
+        }
+      }
+      setTrackingByTrade(next);
+    } catch {
+      // The row stays without the local annotation; no invented status.
+    }
+  }, []);
 
   const hasOpenTrades = trades.some((trade) => trade.status === "OPEN");
   const {
@@ -193,6 +217,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
       setTrades(nextTrades.slice(0, 200));
       setHasMore(nextTrades.length > 200);
+      void loadLocalTracking();
     } catch (cause) {
       if (controller.signal.aborted || requestId !== requestIdRef.current) return;
       console.warn("[JournalView] Failed to fetch trade list:", cause);
@@ -203,7 +228,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         loadControllerRef.current = null;
       }
     }
-  }, [setTrades, t]);
+  }, [setTrades, t, loadLocalTracking]);
 
   const loadMoreTrades = async () => {
     if (!hasMore || isLoadingMore || isLoading) return;
@@ -304,6 +329,40 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   });
 
   const symbols = Array.from(new Set(trades.map((trade) => trade.symbol))).sort();
+
+  const renderSimulationBadge = (trade: Trade) => trade.record_mode === "SIMULATION" ? (
+    <span
+      data-testid={`journal-sim-badge-${trade.id}`}
+      className="ml-2 align-middle px-2 py-0.5 rounded text-sm font-bold bg-amber-400/15 text-amber-300 border border-amber-400/40"
+    >
+      {t("journal.simulation_badge")}
+    </span>
+  ) : null;
+
+  const renderLocalTracking = (trade: Trade) => {
+    const view = trackingByTrade[trade.id];
+    const rawStatus = view && typeof view.tracking_status === "string" ? view.tracking_status : null;
+    if (!rawStatus) return null;
+    const status = LOCAL_TRACKING_STATUSES.has(rawStatus) ? rawStatus : "UNKNOWN";
+    const rawRemaining = view.remaining_qty;
+    const remaining = rawRemaining == null || rawRemaining === "" ? "—" : String(rawRemaining);
+    return (
+      <span
+        className="mt-1 block leading-tight"
+        data-testid={`journal-local-tracking-${trade.id}`}
+        data-tracking-status={status}
+      >
+        <span className="block text-sm text-slate-400 whitespace-nowrap">
+          {t(`journal.local_status_${status.toLowerCase()}`, { remaining })}
+        </span>
+        {status === "COMPLETED" && trade.status === "OPEN" && (
+          <span className="block text-sm text-amber-300" data-testid={`journal-local-completed-note-${trade.id}`}>
+            {t("journal.local_completed_external_open")}
+          </span>
+        )}
+      </span>
+    );
+  };
 
   const renderQuote = (trade: Trade) => {
     if (trade.status !== "OPEN") return <span className="text-slate-500">—</span>;
@@ -514,7 +573,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                 <th className="px-3 py-3">{t("journal.col_time")}</th>
                 <th className="px-3 py-3">{t("journal.col_quote")}</th>
                 <th className="px-3 py-3">{t("journal.col_status")}</th>
-                <th className="px-3 py-3 text-right">{t("journal.col_actions")}</th>
+                <th className="px-3 py-3 text-right sticky right-0 z-10 bg-[#090d14] border-l border-surface-border/40">{t("journal.col_actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border/40">
@@ -530,9 +589,12 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                 const hasPnl = pnl != null;
                 const isWin = hasPnl && pnl > 0;
                 return (
-                  <tr key={tItem.id} className="hover:bg-[#111722] transition">
+                  <tr key={tItem.id} className="group hover:bg-[#111722] transition">
                     <td className="px-3 py-3 font-bold text-accent">{tItem.id}</td>
-                    <td className="px-3 py-3 font-bold text-white">{tItem.symbol}</td>
+                    <td className="px-3 py-3 font-bold text-white">
+                      <span>{tItem.symbol}</span>
+                      {renderSimulationBadge(tItem)}
+                    </td>
                     <td className="px-3 py-3">
                       <span
                         className={`px-2 py-0.5 rounded text-sm font-bold ${
@@ -569,22 +631,25 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                       >
                         {tItem.status}
                       </span>
+                      {renderLocalTracking(tItem)}
                     </td>
-                    <td className="px-3 py-3 text-right whitespace-nowrap">
+                    <td className="px-3 py-3 text-right whitespace-nowrap sticky right-0 z-10 bg-[#0d121c] group-hover:bg-[#111722] border-l border-surface-border/40 transition">
                       <button
                         type="button"
                         data-testid="journal-edit-action"
                         data-trade-id={tItem.id}
                         onClick={() => onEditTrade && onEditTrade(tItem.id)}
-                        className="k-btn border border-accent/40 bg-accent/15 hover:bg-accent/30 text-accent px-3"
+                        className="k-btn border border-accent/40 bg-accent/15 hover:bg-accent/30 text-accent px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                         title={t("journal.edit_title")}
                       >
                         <Pencil className="w-4 h-4" />
                         <span>{t("journal.edit_action")}</span>
                       </button>
                       <button
+                        type="button"
+                        data-testid="journal-evidence-action"
                         onClick={() => setEvidenceTradeId(tItem.id)}
-                        className="k-btn ml-1 border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200 px-3"
+                        className="k-btn ml-1 border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200 px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                         title={t("journal.evidence_title")}
                       >
                         <FileCheck2 className="w-4 h-4 text-accent" />
@@ -596,7 +661,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                           data-testid="journal-replay-action"
                           data-trade-id={tItem.id}
                           onClick={() => onOpenReplay(tItem.id)}
-                          className="k-btn ml-1 border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200 px-3"
+                          className="k-btn ml-1 border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200 px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                           title={t("journal.replay_title")}
                         >
                           <CandlestickChart className="w-4 h-4 text-accent" />
@@ -613,7 +678,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                             setCancellationError(null);
                             setCancellationNotice(null);
                           }}
-                          className="k-btn ml-1 border border-loss/40 bg-loss/10 hover:bg-loss/20 text-loss px-3"
+                          className="k-btn ml-1 border border-loss/40 bg-loss/10 hover:bg-loss/20 text-loss px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                           title={t("journal.cancel_action_title")}
                         >
                           <Trash2 className="w-4 h-4" />

@@ -237,3 +237,27 @@ it("does not offer the declaration once the unit is verified", async () => {
 
   expect(host.querySelector("[data-testid=declare-unit-TRD-VERIFIED]")).toBeNull();
 });
+
+it("labels a simulation position explicitly without touching real rows", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({
+        checked_at: new Date().toISOString(), requested: 2, identities: 2, skipped_identities: 0,
+        quotes: {},
+      }));
+    }
+    if (path.includes("/market-data/instrument")) {
+      return Promise.resolve(response({ status: "UNVERIFIED" }));
+    }
+    return Promise.resolve(response([]));
+  });
+  const simPosition = { ...positions[1], id: "TRD-SIM", record_mode: "SIMULATION" };
+  await act(async () => root.render(
+    <OpenPositionsTable positions={[positions[0], simPosition] as never} onClosePosition={vi.fn()} />,
+  ));
+  await flush();
+
+  const badge = host.querySelector('[data-testid="open-sim-badge-TRD-SIM"]');
+  expect(badge?.textContent).toContain("journal.simulation_badge");
+  expect(host.querySelector('[data-testid="open-sim-badge-TRD-GOLD"]')).toBeNull();
+});

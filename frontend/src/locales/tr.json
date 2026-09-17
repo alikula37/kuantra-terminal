@@ -739,7 +739,15 @@
     "filter_selected_count": "{count} seçili",
     "filter_clear": "Temizle",
     "export": "Dışa aktar",
-    "replay_action": "Grafikte incele"
+    "replay_action": "Grafikte incele",
+    "simulation_badge": "SİMÜLASYON",
+    "local_status_active": "Yerel plan: etkin · kalan {remaining}",
+    "local_status_waiting_quote": "Yerel plan: canlı fiyat bekliyor · kalan {remaining}",
+    "local_status_waiting_targets": "Yerel plan: hedefler bekliyor · kalan {remaining}",
+    "local_status_paused": "Yerel plan: duraklatıldı · kalan {remaining}",
+    "local_status_completed": "Yerel plan tamamlandı · kalan {remaining}",
+    "local_status_unknown": "Yerel plan: durum bilinmiyor · kalan {remaining}",
+    "local_completed_external_open": "Yerel tamamlanma bir tahmindir: harici işlem hâlâ açık."
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION GELEN KUTUSU",
