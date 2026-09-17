@@ -75,7 +75,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
   const [stopLoss, setStopLoss] = useState("");
   const [takeProfit, setTakeProfit] = useState("");
   const [notes, setNotes] = useState("");
-  const [qtyUnit, setQtyUnit] = useState<"BASE" | "UNKNOWN">("UNKNOWN");
+  const qtyUnit: "USD" = "USD";
   const [serverVerified, setServerVerified] = useState(false);
   const [statusSelection, setStatusSelection] = useState<"OPEN" | "CLOSED" | "CANCELED">("OPEN");
   const [exitPrice, setExitPrice] = useState("");
@@ -95,7 +95,6 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
     setStopLoss(next.stop_loss != null ? String(next.stop_loss) : "");
     setTakeProfit(next.take_profit != null ? String(next.take_profit) : "");
     setNotes(next.notes || "");
-    setQtyUnit(next.qty_unit === "BASE" ? "BASE" : "UNKNOWN");
     setServerVerified(next.sizing?.instrument?.verification === "PROVIDER_CATALOG");
     setStatusSelection((next.status as "OPEN" | "CLOSED" | "CANCELED") || "OPEN");
     setExitPrice(next.exit_price != null ? String(next.exit_price) : "");
@@ -258,8 +257,10 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
       // stored seconds of the entry timestamp.
       changes.entry_time = nextEntryTimeIso;
     }
-    if (!notesOnly && qtyUnit !== (trade.qty_unit === "BASE" ? "BASE" : "UNKNOWN")) {
-      changes.qty_unit = qtyUnit;
+    if (!notesOnly && changes.qty !== undefined && trade.qty_unit !== "USD") {
+      // Declaring the corrected size as a USD position value is explicit: a
+      // legacy row only converts when the user actually changed the value.
+      changes.qty_unit = "USD";
     }
     if (!notesOnly && !tracking) {
       // The single stop/target fields are only authoritative when no local
@@ -520,13 +521,14 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   />
                 </label>
                 <label className="block">
-                  <span className="k-label">{t("order_ticket.qty_label")}</span>
+                  <span className="k-label">{t("order_ticket.position_value_label")}</span>
                   <input
                     type="number" step="any" min="0" data-testid="trade-edit-qty"
                     value={qty} disabled={completedLocked || sizeLocked}
                     onChange={(e) => setQty(e.target.value)}
-                    className="k-input mt-1" aria-label={t("order_ticket.qty_label")}
+                    className="k-input mt-1" aria-label={t("order_ticket.position_value_label")}
                   />
+                  <span className="k-help">{t("order_ticket.position_value_edit_help")}</span>
                 </label>
                 <label className="block">
                   <span className="k-label">{t("order_ticket.trade_time_label")}</span>
@@ -622,22 +624,9 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                 />
               </label>
 
-              {sizing?.instrument.verification === "PROVIDER_CATALOG" ? (
-                <p className="k-help text-gain" data-testid="trade-edit-verified-instrument">
-                  {t("order_ticket.verification_PROVIDER_CATALOG")}
-                </p>
-              ) : (
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    data-testid="trade-edit-qty-unit"
-                    checked={qtyUnit === "BASE"}
-                    disabled={notesOnly}
-                    onChange={(e) => setQtyUnit(e.target.checked ? "BASE" : "UNKNOWN")}
-                  />
-                  {t("order_ticket.qty_unit_base_label")}
-                </label>
-              )}
+              <p className="k-help text-gain" data-testid="trade-edit-usd-value">
+                {t("order_ticket.usd_value_declared")}
+              </p>
               {sizing && (
                 <p className="k-help">
                   {t(`order_ticket.verification_${sizing.instrument.verification}`)}

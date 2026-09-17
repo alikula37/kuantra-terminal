@@ -261,3 +261,36 @@ it("labels a simulation position explicitly without touching real rows", async (
   expect(badge?.textContent).toContain("journal.simulation_badge");
   expect(host.querySelector('[data-testid="open-sim-badge-TRD-GOLD"]')).toBeNull();
 });
+
+it("shows a USD position value and computes unrealized from the value", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({
+        checked_at: new Date().toISOString(), requested: 1, identities: 1, skipped_identities: 0,
+        quotes: {
+          "TRD-XAU-USD": {
+            quote_status: "LIVE", price: 4343, price_kind: "LAST",
+            source_id: "biquote_public", source_symbol: "XAUUSD",
+            observed_at: new Date().toISOString(), checked_at: new Date().toISOString(),
+            age_seconds: 1, reason: null, last_known: null,
+          },
+        },
+      }));
+    }
+    if (path.includes("/market-data/instrument")) return Promise.resolve(response({ status: "UNVERIFIED" }));
+    return Promise.resolve(response([]));
+  });
+  const usdPosition = {
+    id: "TRD-XAU-USD", symbol: "XAUUSD", side: "BUY", position_type: "LONG",
+    entry_price: 4300, qty: 1000, qty_unit: "USD", entry_time: "2026-09-17T09:00:00Z",
+    status: "OPEN",
+  };
+  await act(async () => root.render(
+    <OpenPositionsTable positions={[usdPosition] as never} onClosePosition={vi.fn()} />,
+  ));
+  await flush();
+
+  const row = host.querySelector("tbody tr");
+  expect(row?.textContent).toContain("$1,000.00");
+  expect(row?.textContent).toContain("open_positions.local_unrealized:+10.00");
+});

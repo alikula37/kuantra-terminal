@@ -43,7 +43,7 @@
     "stooq_public": "Stooq (ücretsiz)",
     "biquote_public": "Biquote (ücretsiz)",
     "started_at": "Takip başlangıcı",
-    "unit_unverified": "Sözleşme/lot büyüklüğü doğrulanmadı; parasal yerel takip kapalı."
+    "unit_unverified": "Birim beyanı yok: para bazlı takip sonucu için Düzenle'de USD pozisyon değeri beyan edin."
   },
   "updates": {
     "title": "Uygulama güncellemeleri",
@@ -669,7 +669,14 @@
     "verification_NONE": "Birim beyan edilmedi",
     "margin_source_UNVERIFIED_CONTRACT_SIZE": "Sözleşme büyüklüğü doğrulanmadı",
     "reason_TIME_IN_FUTURE": "Gerçekleşmiş işlem gelecekte olamaz.",
-    "verification_PROVIDER_CATALOG": "Sunucu doğrulamalı sağlayıcı enstrümanı"
+    "verification_PROVIDER_CATALOG": "Sunucu doğrulamalı sağlayıcı enstrümanı",
+    "position_value_label": "Pozisyon değeri (USD)",
+    "position_value_placeholder": "örn. 1000",
+    "position_value_help": "Traderlar USD ile boyutlandırır: gerçekte bağladığınız değer. K/Z, marjin ve R bu değerden hesaplanır.",
+    "position_value_edit_help": "USD cinsinden düzeltme: değiştirilen değer kaydedilince işlem USD pozisyon değeri olarak beyan edilir.",
+    "usd_value_declared": "USD pozisyon değeri beyan edildi — kontrat büyüklüğü doğrulaması gerekmez.",
+    "summary_position_value": "Pozisyon değeri: {value}",
+    "warning_QUOTE_NOT_USD_APPROXIMATE": "Paritenin kotasyonu USD değil; USD değeri sonucu yaklaşıktır."
   },
   "journal": {
     "title": "İŞLEM GÜNLÜĞÜ",

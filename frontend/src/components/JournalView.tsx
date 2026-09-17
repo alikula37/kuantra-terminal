@@ -9,7 +9,7 @@ import { WeeklyReviewPanel } from "./WeeklyReviewPanel";
 import { useOpenQuoteRefresh, quoteAgeSeconds } from "../hooks/useOpenQuoteRefresh";
 import { formatIstanbulDateTime, istanbulDateKey, relativeAgeLabel } from "../lib/tradeTime";
 import { JournalExportModal } from "./modals/JournalExportModal";
-import { formatPrice } from "../lib/positionMath";
+import { formatPositionValue, formatPrice } from "../lib/positionMath";
 import type { Trade, TradeQuote } from "../types";
 
 interface MultiSelectFilterProps {
@@ -610,7 +610,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                     <td className="px-3 py-3 text-slate-200">
                       {tItem.exit_price != null ? formatPrice(tItem.symbol, tItem.exit_price) : "—"}
                     </td>
-                    <td className="px-3 py-3 text-slate-300">{tItem.qty}</td>
+                    <td className="px-3 py-3 text-slate-300">{tItem.qty_unit === "USD" ? formatPositionValue(tItem.qty) : tItem.qty}</td>
                     <td className={`px-3 py-3 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
                       {tItem.status !== "CLOSED" ? "—" : hasPnl ? `${isWin ? "+" : ""}${pnl.toFixed(2)}` : t("journal.unknown_value")}
                     </td>

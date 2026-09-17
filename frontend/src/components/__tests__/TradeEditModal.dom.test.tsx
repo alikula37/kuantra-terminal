@@ -341,7 +341,7 @@ it("unlocks a completed trade when the editor selects Open", async () => {
   expect((host.querySelector("[data-testid=trade-edit-qty]") as HTMLInputElement).disabled).toBe(false);
 });
 
-it("lets a completed trade declare its unit and correct the exit", async () => {
+it("lets a completed trade correct the exit and declare a USD value", async () => {
   const closedTrade = {
     ...openTrade,
     status: "CLOSED",
@@ -356,17 +356,15 @@ it("lets a completed trade declare its unit and correct the exit", async () => {
 
   expect(host.querySelector("[data-testid=trade-edit-completed-notice]")).not.toBeNull();
   expect((host.querySelector("[data-testid=trade-edit-exit-price]") as HTMLInputElement).value).toBe("110");
-  expect((host.querySelector("[data-testid=trade-edit-qty-unit]") as HTMLInputElement).disabled).toBe(false);
+  expect(host.querySelector("[data-testid=trade-edit-usd-value]")).not.toBeNull();
   expect((host.querySelector("[data-testid=trade-edit-qty]") as HTMLInputElement).disabled).toBe(true);
 
-  await act(async () => (host.querySelector("[data-testid=trade-edit-qty-unit]") as HTMLInputElement).click());
-  await act(async () => setInputValue(host.querySelector("[data-testid=trade-edit-exit-price]") as HTMLInputElement, "112"));
+  await act(async () => (host.querySelector("[data-testid=trade-edit-status-open]") as HTMLButtonElement).click());
+  await act(async () => setInputValue(host.querySelector("[data-testid=trade-edit-qty]") as HTMLInputElement, "1000"));
   await act(async () => (host.querySelector("[data-testid=trade-edit-save]") as HTMLButtonElement).click());
   await flush();
 
-  expect(captured.patch).toMatchObject({ qty_unit: "BASE", exit_price: 112, expected_revision: 3 });
-  expect(captured.patch.status).toBeUndefined();
-  expect(captured.patch.qty).toBeUndefined();
+  expect(captured.patch).toMatchObject({ qty: 1000, qty_unit: "USD", expected_revision: 3, status: "OPEN" });
 });
 
 it("keeps the stored entry seconds when an unrelated field is saved", async () => {

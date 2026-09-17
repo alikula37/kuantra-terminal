@@ -43,7 +43,7 @@
     "stooq_public": "Stooq (öffentlich)",
     "biquote_public": "Biquote (öffentlich)",
     "started_at": "Verfolgungsstart",
-    "unit_unverified": "Kontrakt-/Lotgröße unverifiziert; monetäre lokale Verfolgung bleibt geschlossen."
+    "unit_unverified": "Keine Einheit deklariert: Im Bearbeiten-Dialog einen USD-Positionswert deklarieren, um geldbasierte Tracking-Ergebnisse zu erhalten."
   },
   "updates": {
     "title": "Anwendungsupdates",
@@ -669,7 +669,14 @@
     "verification_NONE": "Einheit nicht erklärt",
     "margin_source_UNVERIFIED_CONTRACT_SIZE": "Kontraktgröße unverifiziert",
     "reason_TIME_IN_FUTURE": "Ein realisierter Trade kann nicht in der Zukunft liegen.",
-    "verification_PROVIDER_CATALOG": "Server-verifiziertes Anbieter-Instrument"
+    "verification_PROVIDER_CATALOG": "Server-verifiziertes Anbieter-Instrument",
+    "position_value_label": "Positionswert (USD)",
+    "position_value_placeholder": "z. B. 1000",
+    "position_value_help": "Trader dimensionieren in USD: der tatsächlich eingesetzte Wert. PnL, Margin und R werden aus diesem Wert berechnet.",
+    "position_value_edit_help": "Korrektur in USD: Ein geänderter und gespeicherter Wert deklariert den Trade als USD-Positionswert.",
+    "usd_value_declared": "USD-Positionswert deklariert — keine Kontraktgrößen-Prüfung nötig.",
+    "summary_position_value": "Positionswert: {value}",
+    "warning_QUOTE_NOT_USD_APPROXIMATE": "Die Quote des Paares ist nicht USD; das USD-Wert-Ergebnis ist eine Näherung."
   },
   "journal": {
     "title": "HANDELSJOURNAL",

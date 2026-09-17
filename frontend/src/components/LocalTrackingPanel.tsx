@@ -4,6 +4,7 @@ import { useTranslation } from "../context/I18nContext";
 import { TargetPlanFields } from "./TargetPlanFields";
 import { isTrackingState, targetPayload, validTargets, type TargetDraft, type TrackingState } from "../lib/localTracking";
 import { formatIstanbulDateTime } from "../lib/tradeTime";
+import { formatPositionValue } from "../lib/positionMath";
 import type { Trade } from "../types";
 
 const sources = ["binance_public", "bybit_public", "yahoo_public", "stooq_public", "biquote_public"];
@@ -132,7 +133,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
           side: state.side as Trade["side"], entry_price: Number(state.entry_price), qty: Number(state.initial_qty),
           entry_time: "", status: (state.external_status || "OPEN") as Trade["status"] })}>{t("tracking.edit")}</button>
       </div>
-      <p>{t("tracking.remaining")}: {state.remaining_qty} / {state.initial_qty} · {t("tracking.gross")}: {state.gross_pnl}</p>
+      <p>{t("tracking.remaining")}: {state.qty_unit === "USD" ? formatPositionValue(Number(state.remaining_qty)) : state.remaining_qty} / {state.qty_unit === "USD" ? formatPositionValue(Number(state.initial_qty)) : state.initial_qty} · {t("tracking.gross")}: {state.qty_unit === "USD" ? formatPositionValue(Number(state.gross_pnl)) : state.gross_pnl}</p>
       <p className="k-help">{t("tracking.started_at")}: {formatIstanbulDateTime(state.armed_at, locale)}</p>
       {state.unit_status === "UNVERIFIED" && <p className="k-help text-amber-300">{t("tracking.unit_unverified")}</p>}
       <p className="k-help">{state.source_id ? t(`tracking.${state.source_id}`) : t("tracking.no_source")} · {state.source_symbol}</p>
@@ -154,7 +155,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
       <div className="flex justify-between gap-3 mb-3"><h3 id="tracking-editor-title">{t("tracking.edit")} · {editor.trade.symbol}</h3>
         <button type="button" onClick={close} disabled={busy}>{t("tracking.dismiss")}</button></div>
       <p className="text-xs text-slate-400 mb-3">{t("tracking.disclaimer")}</p>
-      {editor.plan && <p className="text-sm mb-2">{t("tracking.remaining")}: {editor.plan.remaining_qty} / {editor.plan.initial_qty}</p>}
+      {editor.plan && <p className="text-sm mb-2">{t("tracking.remaining")}: {editor.plan.qty_unit === "USD" ? formatPositionValue(Number(editor.plan.remaining_qty)) : editor.plan.remaining_qty} / {editor.plan.qty_unit === "USD" ? formatPositionValue(Number(editor.plan.initial_qty)) : editor.plan.initial_qty}</p>}
       <form onSubmit={e => { e.preventDefault(); void submit(false); }} className="space-y-3">
         <fieldset disabled={busy || Boolean(completed) || Boolean(inactive)} className="space-y-3">
           <label className="flex gap-2"><input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />{t("tracking.enabled")}</label>
@@ -182,11 +183,11 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
       </form>
       <details className="mt-3"><summary>{t("tracking.history")}</summary>
         {editor.history.slice(-20).map(h => <p className="text-xs my-1" key={h.state.revision}>
-          {t("tracking.revision")}: {h.state.revision} · {t("tracking.remaining")}: {h.state.remaining_qty} · {t("tracking.gross")}: {h.state.gross_pnl}
+          {t("tracking.revision")}: {h.state.revision} · {t("tracking.remaining")}: {h.state.qty_unit === "USD" ? formatPositionValue(Number(h.state.remaining_qty)) : h.state.remaining_qty} · {t("tracking.gross")}: {h.state.qty_unit === "USD" ? formatPositionValue(Number(h.state.gross_pnl)) : h.state.gross_pnl}
           <br />{h.state.targets.map(target => `${target.id}: ${target.price} (${target.percent}%)`).join(" · ")}
           {" · "}{t("tracking.stop")}: {h.state.stop_loss ?? "—"}
         </p>)}
-        {editor.plan?.closures.map((c, i) => <p className="text-sm my-1" key={i}>{c.target_id} · {c.qty} @ {c.price} · {formatIstanbulDateTime(c.observed_at, locale)}</p>)}
+        {editor.plan?.closures.map((c, i) => <p className="text-sm my-1" key={i}>{c.target_id} · {editor.plan?.qty_unit === "USD" ? formatPositionValue(Number(c.qty)) : c.qty} @ {c.price} · {formatIstanbulDateTime(c.observed_at, locale)}</p>)}
       </details>
     </dialog>}
   </section>;

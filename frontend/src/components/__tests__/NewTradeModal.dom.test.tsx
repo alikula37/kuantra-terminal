@@ -88,8 +88,7 @@ it("creates a three-target local plan with explicit allocations and enabled defa
   mocks.apiFetch.mockResolvedValue(response(savedTrade));
   await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
   await act(async () => setInputValue(host.querySelector('input[type=number]') as HTMLInputElement, "100"));
-  await act(async () => setInputValue(host.querySelectorAll('input[type=number]')[1] as HTMLInputElement, "1"));
-  await act(async () => (host.querySelector("[data-testid=new-trade-qty-unit-base]") as HTMLInputElement).click());
+  await act(async () => setInputValue(host.querySelectorAll('input[type=number]')[1] as HTMLInputElement, "1000"));
   for (let i = 1; i <= 3; i++) {
     if (i > 1) await act(async () => (Array.from(host.querySelectorAll("button")).find(b => b.textContent === "tracking.add") as HTMLButtonElement).click());
     await act(async () => {
@@ -101,6 +100,8 @@ it("creates a three-target local plan with explicit allocations and enabled defa
   const payload = JSON.parse(String(mocks.apiFetch.mock.calls.at(-1)?.[1]?.body));
   expect(payload.local_tracking.enabled).toBe(true);
   expect(payload.local_tracking.targets).toEqual([{ price: 110, percent: 50 }, { price: 120, percent: 25 }, { price: 130, percent: 25 }]);
+  expect(payload.qty_unit).toBe("USD");
+  expect(payload.size_input_mode).toBe("NOTIONAL");
 });
 
 it("keeps a chart-selected non-catalog instrument and searches the same ticker explicitly", async () => {

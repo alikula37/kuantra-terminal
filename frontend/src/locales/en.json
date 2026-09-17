@@ -43,7 +43,7 @@
     "stooq_public": "Stooq (public)",
     "biquote_public": "Biquote (public)",
     "started_at": "Tracking start",
-    "unit_unverified": "Contract/lot size unverified; monetary local tracking stays closed."
+    "unit_unverified": "No unit declaration: declare a USD position value in Edit to enable money-based tracking results."
   },
   "updates": {
     "title": "Application updates",
@@ -669,7 +669,14 @@
     "verification_NONE": "Unit not declared",
     "margin_source_UNVERIFIED_CONTRACT_SIZE": "Contract size unverified",
     "reason_TIME_IN_FUTURE": "A realized trade cannot be in the future.",
-    "verification_PROVIDER_CATALOG": "Server-verified provider instrument"
+    "verification_PROVIDER_CATALOG": "Server-verified provider instrument",
+    "position_value_label": "Position value (USD)",
+    "position_value_placeholder": "e.g. 1000",
+    "position_value_help": "Traders size in USD: the value you actually committed. PnL, margin and R are computed from this value.",
+    "position_value_edit_help": "Savings/correction in USD: saving a changed value declares this trade as a USD position.",
+    "usd_value_declared": "USD position value declared — no contract-size verification needed.",
+    "summary_position_value": "Position value: {value}",
+    "warning_QUOTE_NOT_USD_APPROXIMATE": "The pair's quote is not USD; the USD value result is an approximation."
   },
   "journal": {
     "title": "TRADE LOGGING JOURNAL",

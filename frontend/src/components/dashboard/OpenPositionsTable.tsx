@@ -5,7 +5,7 @@ import { Trade } from "../../types";
 import { useOpenQuoteRefresh, quoteAgeSeconds } from "../../hooks/useOpenQuoteRefresh";
 import { apiFetch, apiUrl } from "../../lib/backend";
 import { formatIstanbulDateTime, relativeAgeLabel } from "../../lib/tradeTime";
-import { formatPrice, positionSizing } from "../../lib/positionMath";
+import { formatPositionValue, formatPrice, positionSizing } from "../../lib/positionMath";
 
 interface OpenPositionsTableProps {
   positions: Trade[];
@@ -168,8 +168,11 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                     || p.sizing?.instrument?.verification === "PROVIDER_CATALOG",
                 });
                 const monetaryReady = sizing.monetaryCalculation.status === "READY";
+                const usdValue = p.qty_unit === "USD";
                 const unrealized = monetaryReady && quotePrice != null && p.entry_price != null && p.qty != null
-                  ? (isLong ? 1 : -1) * (quotePrice - p.entry_price) * p.qty
+                  ? (usdValue
+                    ? (isLong ? 1 : -1) * (quotePrice - p.entry_price) / p.entry_price * p.qty
+                    : (isLong ? 1 : -1) * (quotePrice - p.entry_price) * p.qty)
                   : null;
                 const quoteAge = quoteAgeSeconds(quote, nowMs);
 
@@ -191,7 +194,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                         {p.position_type === "SPOT" ? t("order_ticket.side_spot") : isLong ? "LONG" : "SHORT"}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-slate-300">{p.qty}</td>
+                    <td className="py-3 px-3 text-slate-300">{p.qty_unit === "USD" ? formatPositionValue(p.qty) : p.qty}</td>
                     <td className="py-3 px-3 text-slate-200 font-semibold">{formatPrice(p.symbol, p.entry_price)}</td>
                     <td className="py-3 px-3">
                       {quotePrice != null ? (

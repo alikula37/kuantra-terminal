@@ -55,9 +55,9 @@ const capturedPayload = () => {
   return captured;
 };
 
-const fillBase = async (entry = "100", qty = "1") => {
+const fillBase = async (entry = "100", value = "1000") => {
   await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.entry_label"]') as HTMLInputElement, entry));
-  await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.qty_label"]') as HTMLInputElement, qty));
+  await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.position_value_label"]') as HTMLInputElement, value));
 };
 
 beforeEach(async () => {
@@ -89,9 +89,11 @@ it("sends the Turkey-time trade date as UTC with an explicit open status", async
   expect(captured.body).toMatchObject({
     status: "OPEN",
     entry_time: "2026-01-15T07:30:00.000Z",
-    size_input_mode: "QTY",
-    qty: 1,
+    size_input_mode: "NOTIONAL",
+    notional_size: 1000,
+    qty_unit: "USD",
   });
+  expect(captured.body.qty).toBeUndefined();
   expect(host.textContent).toContain("order_ticket.turkey_time");
 });
 
@@ -99,7 +101,7 @@ it("hides live tracking and collects user-reported close data for a closed trade
   const captured = capturedPayload();
   await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
   await act(async () => (host.querySelector("[data-testid=new-trade-status-closed]") as HTMLButtonElement).click());
-  await fillBase("100", "2");
+  await fillBase("100", "2000");
   await act(async () => setInputValue(host.querySelector('input[type="datetime-local"]') as HTMLInputElement, "2026-01-15T10:30"));
   await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.exit_price_label"]') as HTMLInputElement, "112"));
   await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.exit_time_label"]') as HTMLInputElement, "2026-01-16T09:00"));
@@ -145,36 +147,34 @@ it("offers the previous leverage only as an explicit suggestion", async () => {
   expect(leverage.value).toBe("7");
 });
 
-it("derives quantity from a position-size input without conflicting fields", async () => {
+it("submits the USD position value as the only sizing input", async () => {
   const captured = capturedPayload();
   await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
   await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.entry_label"]') as HTMLInputElement, "100"));
-  await act(async () => (host.querySelector("[data-testid=new-trade-qty-unit-base]") as HTMLInputElement).click());
-  await act(async () => (host.querySelector("[data-testid=new-trade-size-notional]") as HTMLButtonElement).click());
-  await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.position_size_label"]') as HTMLInputElement, "500"));
-  expect(host.querySelector('input[aria-label="order_ticket.qty_label"]')).toBeNull();
+  await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.position_value_label"]') as HTMLInputElement, "500"));
   await act(async () => (host.querySelector("button[type=submit]") as HTMLButtonElement).click());
   await flush();
 
-  expect(captured.body).toMatchObject({ size_input_mode: "NOTIONAL", notional_size: 500 });
+  expect(captured.body).toMatchObject({ size_input_mode: "NOTIONAL", notional_size: 500, qty_unit: "USD" });
   expect(captured.body.qty).toBeUndefined();
-  expect(host.textContent).toContain("order_ticket.summary_quantity_notional");
+  expect(host.querySelector("[data-testid=new-trade-summary-value]")?.textContent).toContain("$500.00");
 });
 
-it("hides live tracking and monetary math for an unverified contract size", async () => {
+it("prices a manual symbol from the USD value without contract verification", async () => {
   mocks.symbol = "XAUUSD";
   const captured = capturedPayload();
   await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
 
-  expect(host.querySelector("[data-testid=new-trade-tracking-enabled]")).toBeNull();
-  expect(host.textContent).toContain("order_ticket.tracking_requires_verified_unit");
-  expect(host.querySelector("[data-testid=new-trade-monetary-unavailable]")).not.toBeNull();
-  await fillBase("2000", "2");
+  await fillBase("2000", "1000");
+  expect(host.querySelector("[data-testid=new-trade-usd-value-declared]")).not.toBeNull();
+  expect(host.textContent).toContain("order_ticket.verification_EXPLICIT_USD_VALUE");
+  expect(host.querySelector("[data-testid=new-trade-monetary-unavailable]")).toBeNull();
+  expect(host.querySelector("[data-testid=new-trade-tracking-enabled]")).not.toBeNull();
   await act(async () => (host.querySelector("button[type=submit]") as HTMLButtonElement).click());
   await flush();
 
-  expect(captured.body.local_tracking).toBeNull();
-  expect(host.textContent).toContain("order_ticket.estimate_unavailable");
+  expect(captured.body.qty_unit).toBe("USD");
+  expect(captured.body.local_tracking).toMatchObject({ enabled: true });
 });
 
 it("blocks a future realized trade before calling the backend", async () => {
@@ -189,30 +189,20 @@ it("blocks a future realized trade before calling the backend", async () => {
   expect(captured.body).toBeUndefined();
 });
 
-it("requires an explicit unit declaration before money math and tracking for a manual symbol", async () => {
+it("declares the USD position value for a manual symbol end to end", async () => {
   const captured = capturedPayload();
   await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
-
-  // Manual BTCUSDT without provider identity or declaration: no tracking,
-  // no monetary derivation.
-  expect(host.querySelector("[data-testid=new-trade-tracking-enabled]")).toBeNull();
-  expect(host.querySelector("[data-testid=new-trade-tracking-unverified]")).not.toBeNull();
-  expect((host.textContent || "")).toContain("order_ticket.verification_NONE");
-  expect(host.querySelector("[data-testid=new-trade-monetary-unavailable]")).not.toBeNull();
-
-  await act(async () => (host.querySelector("[data-testid=new-trade-qty-unit-base]") as HTMLInputElement).click());
   await fillBase();
-  expect(host.querySelector("[data-testid=new-trade-tracking-enabled]")).not.toBeNull();
-  expect((host.textContent || "")).toContain("order_ticket.verification_EXPLICIT_QTY_UNIT");
-  expect(host.querySelector("[data-testid=new-trade-monetary-unavailable]")).toBeNull();
+  expect((host.textContent || "")).toContain("order_ticket.verification_EXPLICIT_USD_VALUE");
   await act(async () => (host.querySelector("button[type=submit]") as HTMLButtonElement).click());
   await flush();
 
-  expect(captured.body.qty_unit).toBe("BASE");
+  expect(captured.body.qty_unit).toBe("USD");
+  expect(captured.body.notional_size).toBe(1000);
   expect(captured.body.local_tracking).toMatchObject({ enabled: true });
 });
 
-it("hides the manual declaration once the server verifies the instrument", async () => {
+it("keeps the USD value declaration and still shows the provider verification", async () => {
   const quote = {
     requested_symbol: "BTCUSDT", source_id: "binance_public", source_symbol: "BTCUSDT",
     price: 65000, status: "LIVE", price_kind: "LAST",
@@ -227,12 +217,9 @@ it("hides the manual declaration once the server verifies the instrument", async
   });
 
   await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
-  expect(host.querySelector("[data-testid=new-trade-qty-unit-base]")).not.toBeNull();
-
   await act(async () => (host.querySelector('button[title="order_ticket.fetch_price_btn"]') as HTMLButtonElement).click());
   await flush();
 
-  expect(host.querySelector("[data-testid=new-trade-verified-instrument]")).not.toBeNull();
-  expect(host.textContent).toContain("order_ticket.verification_PROVIDER_CATALOG");
-  expect(host.querySelector("[data-testid=new-trade-qty-unit-base]")).toBeNull();
+  expect(host.querySelector("[data-testid=new-trade-usd-value-declared]")).not.toBeNull();
+  expect(host.textContent).toContain("order_ticket.verification_EXPLICIT_USD_VALUE");
 });

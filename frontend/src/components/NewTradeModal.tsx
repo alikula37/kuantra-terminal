@@ -11,7 +11,7 @@ import { useInstrumentSearch } from "../hooks/useInstrumentSearch";
 import { TargetPlanFields } from "./TargetPlanFields";
 import { targetPayload, validTargets, type TargetDraft } from "../lib/localTracking";
 import { istanbulInputToUtcIso, istanbulInputValue, isFutureIstanbulInput } from "../lib/tradeTime";
-import { equalPercentages, formatNotional, positionSizing } from "../lib/positionMath";
+import { equalPercentages, formatNotional, positionSizing, formatPositionValue } from "../lib/positionMath";
 
 const FREE_QUOTE_SOURCE_IDS = new Set([
   "binance_public",
@@ -124,10 +124,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const [tradeTime, setTradeTime] = useState<string>(() => istanbulInputValue());
   const [exitTime, setExitTime] = useState<string>("");
   const [entryPrice, setEntryPrice] = useState<string>("");
-  const [qty, setQty] = useState<string>("");
-  const [sizeMode, setSizeMode] = useState<"QTY" | "NOTIONAL">("QTY");
   const [notionalSize, setNotionalSize] = useState<string>("");
-  const [qtyUnit, setQtyUnit] = useState<"BASE" | "UNKNOWN">("UNKNOWN");
   const [leverage, setLeverage] = useState<string>("");
   const [exitPrice, setExitPrice] = useState<string>("");
   const [stopLoss, setStopLoss] = useState<string>("");
@@ -135,7 +132,6 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const takeProfit = Number(targets[0]?.price || 0);
   const [trackingEnabled, setTrackingEnabled] = useState(true);
   const [serverVerified, setServerVerified] = useState(false);
-  const [verifiedProvider, setVerifiedProvider] = useState<string | null>(null);
   const [selectedInstrument, setSelectedInstrument] = useState<MarketInstrument | null>(null);
   const [executionVenue, setExecutionVenue] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
@@ -171,14 +167,11 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       const payload = await response.json() as { status?: string; provider?: string; base_asset?: string; quote_asset?: string };
       if (payload.status === "VERIFIED") {
         setServerVerified(true);
-        setVerifiedProvider(payload.provider ? `${payload.provider} · ${payload.base_asset}/${payload.quote_asset}` : null);
       } else {
         setServerVerified(false);
-        setVerifiedProvider(null);
       }
     } catch {
       setServerVerified(false);
-      setVerifiedProvider(null);
     }
   };
 
@@ -191,9 +184,8 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   if (!isOpen) return null;
 
   const numericEntry = Number(entryPrice);
-  const numericQty = sizeMode === "NOTIONAL"
-    ? (Number(notionalSize) > 0 && numericEntry > 0 ? Number(notionalSize) / numericEntry : 0)
-    : Number(qty);
+  // WP45: the position value in USD is the only sizing input.
+  const numericQty = Number(notionalSize);
   const numericLeverage = positionType === "SPOT" ? null : Number(leverage) || null;
   const sizing = positionSizing({
     symbol: tradeSymbol,
@@ -203,13 +195,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     qty: Number.isFinite(numericQty) && numericQty > 0 ? numericQty : null,
     leverage: numericLeverage,
     exitPrice: tradeStatus === "CLOSED" && Number(exitPrice) > 0 ? Number(exitPrice) : null,
-    qtyUnit,
+    qtyUnit: "USD",
     serverVerified,
   });
   const validStop = Number(stopLoss) > 0;
   const validTarget = takeProfit > 0;
   const monetaryReady = sizing.monetaryCalculation.status === "READY";
-  const trackingSupported = sizing.instrument.contractSize === "BASE_UNIT";
+  const trackingSupported = sizing.instrument.contractSize === "BASE_UNIT" || sizing.instrument.contractSize === "USD_NOTIONAL";
   const totalRisk = monetaryReady && validStop && numericQty > 0 ? Math.abs(numericEntry - Number(stopLoss)) * numericQty : null;
   const totalReward = monetaryReady && validTarget && numericQty > 0 ? Math.abs(takeProfit - numericEntry) * numericQty : null;
   const rrRatio = totalRisk !== null && totalRisk > 0 && totalReward !== null
@@ -298,7 +290,6 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     setTradeSymbol(pendingInstrument.symbol);
     setSelectedInstrument(pendingInstrument);
     setServerVerified(false);
-    setVerifiedProvider(null);
     void verifyInstrument(pendingInstrument.symbol);
     cancelQuoteRequest();
     if (pendingInstrument.symbol !== tradeSymbol) {
@@ -331,11 +322,9 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
     const next: TradeFormErrors = {};
     if (isSymbolSearchPending) next.symbol = t("order_ticket.select_result_to_confirm");
     if (!Number.isFinite(numericEntry) || numericEntry <= 0) next.entry = t("order_ticket.errors.entry_required");
-    if (sizeMode === "NOTIONAL") {
-      const notional = Number(notionalSize);
-      if (!Number.isFinite(notional) || notional <= 0) next.size = t("order_ticket.errors.position_size_required");
-    } else if (!Number.isFinite(Number(qty)) || Number(qty) <= 0) {
-      next.qty = t("order_ticket.errors.qty_required");
+    {
+      const positionValue = Number(notionalSize);
+      if (!Number.isFinite(positionValue) || positionValue <= 0) next.size = t("order_ticket.errors.position_size_required");
     }
     if (positionType !== "SPOT" && leverage !== "" && (!Number.isFinite(Number(leverage)) || Number(leverage) < 1)) {
       next.leverage = t("order_ticket.errors.leverage_range");
@@ -391,10 +380,10 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       side,
       position_type: positionType,
       entry_price: Number(numericEntry),
-      size_input_mode: sizeMode,
-      ...(sizeMode === "QTY" ? { qty: Number(qty) } : { notional_size: Number(notionalSize) }),
+      size_input_mode: "NOTIONAL",
+      notional_size: Number(notionalSize),
       leverage: positionType === "SPOT" ? null : (leverage === "" ? null : Number(leverage)),
-      qty_unit: qtyUnit,
+      qty_unit: "USD",
       stop_loss: stopLoss === "" ? null : Number(stopLoss),
       take_profit: takeProfit ? Number(takeProfit) : null,
       status: tradeStatus,
@@ -771,63 +760,23 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 />
                 {fieldError("entry")}
               </label>
-              <div>
-                <span className="k-label">{t("order_ticket.size_mode_label")}</span>
-                <div className="grid grid-cols-2 gap-2 mt-1" role="group" aria-label={t("order_ticket.size_mode_label")}>
-                  <button
-                    type="button"
-                    data-testid="new-trade-size-qty"
-                    aria-pressed={sizeMode === "QTY"}
-                    onClick={() => setSizeMode("QTY")}
-                    className={`k-btn justify-center ${sizeMode === "QTY" ? "bg-accent/20 text-accent border border-accent/40" : "bg-[#1a2234] text-slate-300"}`}
-                  >
-                    {t("order_ticket.size_mode_qty")}
-                  </button>
-                  <button
-                    type="button"
-                    data-testid="new-trade-size-notional"
-                    aria-pressed={sizeMode === "NOTIONAL"}
-                    onClick={() => setSizeMode("NOTIONAL")}
-                    className={`k-btn justify-center ${sizeMode === "NOTIONAL" ? "bg-accent/20 text-accent border border-accent/40" : "bg-[#1a2234] text-slate-300"}`}
-                  >
-                    {t("order_ticket.size_mode_notional")}
-                  </button>
-                </div>
-              </div>
+              <label className="block">
+                <span className="k-label">{t("order_ticket.position_value_label")}</span>
+                <input
+                  type="number"
+                  step="any"
+                  value={notionalSize}
+                  onChange={(e) => { setNotionalSize(e.target.value); setErrors((c) => ({ ...c, size: undefined })); }}
+                  placeholder={t("order_ticket.position_value_placeholder")}
+                  min="0"
+                  className="k-input mt-1"
+                  aria-label={t("order_ticket.position_value_label")}
+                />
+                <span className="k-help">{t("order_ticket.position_value_help")}</span>
+                {fieldError("size")}
+              </label>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {sizeMode === "QTY" ? (
-                <label className="block">
-                  <span className="k-label">{t("order_ticket.qty_label")}</span>
-                  <input
-                    type="number"
-                    step="any"
-                    value={qty}
-                    onChange={(e) => { setQty(e.target.value); setErrors((c) => ({ ...c, qty: undefined })); }}
-                    placeholder={t("order_ticket.qty_placeholder")}
-                    min="0"
-                    className="k-input mt-1"
-                    aria-label={t("order_ticket.qty_label")}
-                    required
-                  />
-                  {fieldError("qty")}
-                </label>
-              ) : (
-                <label className="block">
-                  <span className="k-label">{t("order_ticket.position_size_label")}</span>
-                  <input
-                    type="number"
-                    step="any"
-                    value={notionalSize}
-                    onChange={(e) => { setNotionalSize(e.target.value); setErrors((c) => ({ ...c, size: undefined })); }}
-                    placeholder={t("order_ticket.position_size_placeholder")}
-                    min="0"
-                    className="k-input mt-1"
-                    aria-label={t("order_ticket.position_size_label")}
-                  />
-                  {fieldError("size")}
-                </label>
-              )}
               {positionType !== "SPOT" && (
                 <label className="block">
                   <span className="k-label">{t("order_ticket.leverage_label")}</span>
@@ -877,31 +826,10 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 <span className="font-semibold text-slate-100 break-words">{t(`order_ticket.verification_${sizing.instrument.verification}`)}</span>
               </div>
               <div className="col-span-full">
-                {sizing.instrument.verification === "PROVIDER_CATALOG" ? (
-                  <p className="k-help text-gain" data-testid="new-trade-verified-instrument">
-                    {t("order_ticket.verification_PROVIDER_CATALOG")}
-                    {verifiedProvider && <span className="ml-1 text-slate-400">({verifiedProvider})</span>}
-                  </p>
-                ) : (
-                  <>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        data-testid="new-trade-qty-unit-base"
-                        checked={qtyUnit === "BASE"}
-                        onChange={(e) => setQtyUnit(e.target.checked ? "BASE" : "UNKNOWN")}
-                      />
-                      {t("order_ticket.qty_unit_base_label")}
-                    </label>
-                    <p className="k-help">{t("order_ticket.qty_unit_base_help")}</p>
-                  </>
-                )}
-              </div>
-              {!monetaryReady && (
-                <p className="col-span-full k-help text-amber-300" data-testid="new-trade-monetary-unavailable">
-                  {t("order_ticket.monetary_unavailable_reason")}
+                <p className="k-help text-gain" data-testid="new-trade-usd-value-declared">
+                  {t("order_ticket.usd_value_declared")}
                 </p>
-              )}
+              </div>
               {sizing.warnings.length > 0 && (
                 <p className="col-span-full k-help text-amber-300">
                   {sizing.warnings.map((warning) => t(`order_ticket.warning_${warning}`)).join(" ")}
@@ -981,7 +909,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.col_time")}</dt><dd className="font-semibold">{t("order_ticket.summary_time", { value: tradeTime.replace("T", " ") })}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.status_label")}</dt><dd className="font-semibold">{t(tradeStatus === "OPEN" ? "order_ticket.status_still_open" : "order_ticket.status_already_closed")}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.entry_label")}</dt><dd className="font-semibold">{entryPrice || "—"}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.col_size")}</dt><dd className="font-semibold">{sizeMode === "QTY" ? (qty || "—") : (notionalSize || "—")}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.col_size")}</dt><dd className="font-semibold">{notionalSize ? `$${Number(notionalSize).toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—"}</dd></div>
               {tradeStatus === "CLOSED" && (
                 <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.exit_price_label")}</dt><dd className="font-semibold">{exitPrice || "—"}</dd></div>
               )}
@@ -993,11 +921,10 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               <span>{t("order_ticket.reward_amount")}: <span className="font-bold text-gain">{totalReward === null ? t("order_ticket.estimate_unavailable") : totalReward.toFixed(2)}</span></span>
               <span>{t("order_ticket.rr_ratio")}: <span className="font-bold text-accent">{rrRatio === null ? t("order_ticket.estimate_unavailable") : `1 : ${rrRatio}`}</span></span>
             </div>
-            {sizing.notional.value != null && numericQty > 0 && (
-              <p className="k-help">
-                {t("order_ticket.summary_quantity_notional", {
-                  qty: numericQty.toLocaleString("en-US", { maximumFractionDigits: 8 }),
-                  notional: formatNotional(tradeSymbol, sizing.notional.value),
+            {numericQty > 0 && (
+              <p className="k-help" data-testid="new-trade-summary-value">
+                {t("order_ticket.summary_position_value", {
+                  value: formatPositionValue(numericQty),
                 })}
               </p>
             )}

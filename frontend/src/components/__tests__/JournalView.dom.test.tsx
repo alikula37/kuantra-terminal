@@ -343,3 +343,28 @@ it("keeps the row actions in a sticky column with keyboard focus styling", async
     expect(button?.className).toContain("focus-visible:ring-accent");
   }
 });
+
+it("shows a USD position value as currency and keeps legacy quantities raw", async () => {
+  const usdTrade = {
+    id: "TRD-USD", symbol: "XAUUSD", side: "BUY", position_type: "LONG", status: "OPEN",
+    entry_price: 4300, exit_price: null, qty: 1000, qty_unit: "USD", stop_loss: 4270,
+    take_profit: 4360, entry_time: "2026-09-17T09:00:00.000000Z", exit_time: null,
+    pnl: null, commission: 0, revision: 1,
+  };
+  const legacyTrade = { ...usdTrade, id: "TRD-LEGACY", qty: 2, qty_unit: "UNKNOWN" };
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/local-tracking")) return Promise.resolve(response([]));
+    if (path.includes("/quotes/refresh")) {
+      return Promise.resolve(response({ checked_at: new Date().toISOString(), requested: 2, identities: 2, skipped_identities: 0, quotes: {} }));
+    }
+    return Promise.resolve(response([usdTrade, legacyTrade]));
+  });
+  mocks.trades = [usdTrade, legacyTrade];
+  await act(async () => root.render(<JournalView {...props} />));
+  await flush();
+
+  const row = (id: string) => Array.from(host.querySelectorAll("tbody tr"))
+    .find((tr) => tr.textContent?.includes(id));
+  expect(row("TRD-USD")?.textContent).toContain("$1,000.00");
+  expect(row("TRD-LEGACY")?.textContent).toContain("2");
+});
