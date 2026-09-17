@@ -50,6 +50,27 @@ version 1.1.5, launch verified and the journal confirmed intentionally empty
 (trades/events/tracking 0 after launch). GitHub prerelease `pilot-v1.1.5` and the
 `pilot-v1.1.4` supersede notice follow this commit; app backup and data backup paths are
 recorded above.
+
+**Live test trade and post-release fixes (2026-09-17, owner-requested):** a simulated
+BTCUSDT LONG was opened at the live 76,601.0 quote with a $500 USD position value, 10x
+leverage and a ±0.05 % SL/TP bracket. The local plan **auto-closed via SL** at 76,531.48
+(gross -0.4538 USD, `LOCAL_ESTIMATE`, provider event 13:31:23.99Z) while the external record
+correctly stayed OPEN; the portfolio's real aggregates stayed untouched and only the
+simulation counters moved. The cross-screen check (journal, dashboard open positions, local
+tracking panel, edit modal, portfolio tiles) found and fixed two gaps: the dashboard
+open-positions table now loads server-side open positions (it previously showed nothing
+after a restart) and the open PnL column shows the mark-to-market value instead of the
+stored zero. Commits `9dbde34` (fix + tests: frontend 41 files / **287 tests**, backend
+**1173 passed**); canonical arm64 local CI on the clean commit **MERGE READY** (report
+`dist/p1-wp45-postfix-local-ci.json`, executable
+`add409088cfb7eea2e8550f0f507cbf6809866e737033d0bce48190af305fd4c`). arm64 DMG
+`dist/Kuantra-Terminal-1.1.5-postfix-arm64.dmg` SHA-256
+`775cbeba122134e4d6a0235304f7b017241f1c2eb6b21aeff7f49d597120b387` (exact-DMG smoke PASS)
+was installed over `/Applications/Kuantra Terminal.app` (backup
+`/tmp/kuantra-postfix-update.Gd40oc`): installed executable matches the CI build, codesign
+OK, version 1.1.5, launch verified. The test trade remains in the journal for the owner's
+inspection; evidence `artifacts/evidence/p1-wp45-test/`. GitHub Release/tag for these
+post-release fixes awaits a separate owner decision.
 Owner instruction (2026-09-17): the three real-UI-test findings on the installed app were
 reproduced, diagnosed and fixed in isolated synthetic data under
 [P1-WP44 confirmed identity, simulation separation and reachable journal actions](../archive/strategy/work-packages/P1-WP44-identity-sim-separation-journal-actions.md)
