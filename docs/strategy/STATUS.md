@@ -3,9 +3,32 @@
 
 Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
-The package is selected again for its still-open owner-host obligations
-(N03/N05/H05/pilot access); no development proceeds under it without owner approval.
+**Selected work: [P1-WP44 confirmed identity, simulation separation and reachable journal actions](work-packages/P1-WP44-identity-sim-separation-journal-actions.md).**
+Owner instruction (2026-09-17): three real-UI-test findings on the installed app were
+reproduced, diagnosed and fixed in isolated synthetic data. (1) A hand-typed entry price no
+longer erases the confirmed provider identity: creation now sends the confirmed
+provider/symbol separately from `price_origin=MANUAL`, so the journal quote refresh returns
+LIVE, the chart review resolves the declared provider and the local plan keeps the same
+identity (backend end-to-end tests; real `binance_public BTCUSDT` run returned LIVE 76362.0
+and `PROVIDER_MATCH_REQUIRED`; no provider is ever inferred from symbol text and legacy rows
+are untouched). (2) Simulation records are labelled in the journal and open-positions table,
+journal rows show the local plan state/remaining quantity with an explicit "local completion
+is an estimate; the external trade is still open" notice while the lifecycle stays OPEN, and
+simulation records no longer enter real monetary aggregates (portfolio summary, asset
+breakdown, equity curve, daily heatmap) which now expose explicit simulation counters.
+Verified finding: they previously did mix; `/analytics/overview` and the pivot grid remain
+unchecked (OLAP projection lacks `record_mode`; owner decision needed) along with the pivot
+seed-data fallback. (3) Row actions are pinned to the right edge at 1229×768 (measured inside
+the viewport and keyboard-focusable despite `scrollWidth 1717 > clientWidth 971`), with no
+font-size change; DOM and visual regressions added. Full suites: backend **1164 passed**,
+frontend **41 files / 284 tests**, i18n **1213/1213/1213**, `tsc`/build clean. Working
+behaviours preserved: quantity/leverage/TP edit saves, local automatic closes, the LIVE +
+provider-event + <=60s contract and the real-vs-local split. Evidence:
+`artifacts/evidence/p1-wp44/`. Commit SHAs, canonical CI report and installed executable
+hash are recorded below once verified.
+[P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
+returns to a reference package; its owner-host obligations (N03/N05/H05/pilot access) remain
+tracked.
 Owner instruction (2026-09-17): the WP42 instrument-product blocker was closed with the
 bounded [P1-WP43 spot-product consistency package](../archive/strategy/work-packages/P1-WP43-spot-product-consistency.md),
 now complete and archived. The open review refresh now runs exactly ONE extra independent
