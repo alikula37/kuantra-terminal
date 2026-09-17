@@ -1181,7 +1181,15 @@ class ReplaySpeedSchema(BaseModel):
     speed: float = Field(allow_inf_nan=False)
 
 @router.get("/replay/session/{trade_id}")
-def get_replay_session_for_trade(trade_id: str):
+async def get_replay_session_for_trade(trade_id: str, refresh: bool = False):
+    """Open review: `refresh=true` performs the manual market-cache refresh.
+
+    The refresh path may update the public market cache only; it never writes
+    journal, plan or ledger records, and closed-trade replay ignores it.
+    """
+
+    if refresh:
+        return await replay_service.create_open_review_session(trade_id=trade_id, refresh=True)
     return replay_service.create_session_for_trade(trade_id=trade_id)
 
 @router.post("/replay/{session_id}/step")

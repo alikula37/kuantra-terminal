@@ -212,6 +212,14 @@ def normalize_interval(interval: str) -> str:
     return normalized
 
 
+class ProviderFetchError(ValueError):
+    """A declared-provider fetch failed; no other provider may be substituted."""
+
+    def __init__(self, reason: str, message: str):
+        super().__init__(message)
+        self.reason, self.message = reason, message
+
+
 class PublicMarketDataFetcher:
     """
     Zero-auth public market data fetcher with high-availability failover.
@@ -249,6 +257,10 @@ class PublicMarketDataFetcher:
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
         self._binance_instrument_cache: List[Dict[str, Any]] = []
         self._binance_instrument_cache_at = 0.0
+
+    @staticmethod
+    def _now_iso() -> str:
+        return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
     def _get_headers(self) -> Dict[str, str]:
         return {
@@ -925,6 +937,143 @@ class PublicMarketDataFetcher:
             return "1mo", period or "5y"
         return "1d", period or "1mo"
 
+    async def _fetch_yahoo_candles(
+        self,
+        ticker: str,
+        *,
+        interval: str = "1d",
+        period: Optional[str] = None,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Single-source Yahoo Finance fetch; never falls back to another provider."""
+
+        yahoo_interval, auto_range = self._map_yahoo_interval_and_range(interval, period)
+        url = self.YAHOO_CHART_URL.format(ticker=ticker)
+        if start_time is not None:
+            end_ms = int(end_time) if end_time is not None else int(time.time() * 1000)
+            clamped_start = self._clamp_yahoo_period1(yahoo_interval, int(start_time), end_ms)
+            params = {
+                "interval": yahoo_interval,
+                "period1": clamped_start // 1000,
+                "period2": max(end_ms // 1000, clamped_start // 1000 + 1),
+                "includePrePost": "false",
+                "events": "div|split",
+            }
+        else:
+            params = {
+                "interval": yahoo_interval,
+                "range": auto_range,
+                "includePrePost": "false",
+                "events": "div|split",
+            }
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            res = await client.get(url, params=params, headers=self._get_headers())
+        if res.status_code != 200:
+            return []
+        return self._parse_yahoo_chart(res.json())
+
+    async def _fetch_stooq_candles(self, ticker: str) -> List[Dict[str, Any]]:
+        """Single-source Stooq fetch; never falls back to another provider."""
+
+        stooq_url = self.STOOQ_CSV_URL.format(ticker=ticker)
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            res = await client.get(stooq_url, headers=self._get_headers())
+        if res.status_code != 200 or "Date" not in res.text:
+            return []
+        return self._parse_stooq_csv(res.text)
+
+    async def _fetch_binance_klines_once(
+        self, symbol: str, *, interval: str = "1h", limit: int = 500
+    ) -> List[Dict[str, Any]]:
+        """Single Binance klines page; no Bybit fallback on this path."""
+
+        params = {"symbol": symbol, "interval": normalize_interval(interval),
+                  "limit": max(1, min(self.BINANCE_PAGE_LIMIT, int(limit)))}
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            res = await client.get(self.BINANCE_KLINES_URL, params=params, headers=self._get_headers())
+        if res.status_code != 200:
+            return []
+        return self._parse_binance_klines(res.json())
+
+    async def _fetch_bybit_klines_once(
+        self, symbol: str, *, interval: str = "1h", limit: int = 500
+    ) -> List[Dict[str, Any]]:
+        """Single Bybit klines page; no Binance fallback on this path."""
+
+        bybit_params = {
+            "category": "spot", "symbol": symbol,
+            "interval": BYBIT_INTERVAL_MAP.get(normalize_interval(interval), "60"),
+            "limit": max(1, min(1000, int(limit))),
+        }
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            res = await client.get(self.BYBIT_KLINES_URL, params=bybit_params, headers=self._get_headers())
+        if res.status_code != 200:
+            return []
+        return self._parse_bybit_klines(res.json())
+
+    async def fetch_declared_provider_candles(
+        self,
+        provider: str,
+        provider_symbol: str,
+        *,
+        interval: str = "1m",
+        limit: int = 500,
+    ) -> Dict[str, Any]:
+        """Fetch candles ONLY from the declared provider and instrument.
+
+        No silent fallback is permitted: if the declared provider fails, cannot
+        serve the instrument, or the provider's own symbol mapping would change
+        the product (for example ``GOLD`` mapped to the ``GC=F`` future), this
+        raises :class:`ProviderFetchError` with an explicit reason instead.
+        """
+
+        declared = str(provider or "").strip().lower()
+        symbol = str(provider_symbol or "").strip().upper()
+        if declared not in FREE_QUOTE_SOURCES:
+            raise ProviderFetchError("PROVIDER_NOT_SUPPORTED", "The declared quote provider is not a supported free public source.")
+        if not symbol:
+            raise ProviderFetchError("PROVIDER_NOT_DECLARED", "The trade has no declared provider instrument symbol.")
+
+        candles: List[Dict[str, Any]] = []
+        resolved_symbol = symbol
+        if declared in {"binance_public", "bybit_public"}:
+            if symbol in MACRO_SYMBOL_MAP:
+                raise ProviderFetchError("PROVIDER_INSTRUMENT_UNSUPPORTED", "The declared provider does not serve this instrument.")
+            resolved_symbol = normalize_crypto_symbol(symbol)
+            if declared == "binance_public":
+                candles = await self._fetch_binance_klines_once(resolved_symbol, interval=interval, limit=limit)
+            else:
+                candles = await self._fetch_bybit_klines_once(resolved_symbol, interval=interval, limit=limit)
+        elif declared == "biquote_public":
+            resolved_symbol = BIQUOTE_SYMBOL_MAP.get(symbol)
+            if not resolved_symbol:
+                raise ProviderFetchError("PROVIDER_INSTRUMENT_UNSUPPORTED", "The declared provider does not serve this instrument.")
+            candles = await self._fetch_biquote_candles(resolved_symbol, interval=interval, limit=limit)
+        elif declared == "yahoo_public":
+            if symbol in MACRO_SYMBOL_MAP and MACRO_SYMBOL_MAP[symbol][0] != symbol:
+                raise ProviderFetchError(
+                    "PROVIDER_INSTRUMENT_UNSUPPORTED",
+                    "The declared symbol maps to a different product on this provider and will not be substituted.",
+                )
+            candles = await self._fetch_yahoo_candles(resolved_symbol, interval=interval)
+        elif declared == "stooq_public":
+            if symbol in MACRO_SYMBOL_MAP and MACRO_SYMBOL_MAP[symbol][1] != symbol.lower():
+                raise ProviderFetchError(
+                    "PROVIDER_INSTRUMENT_UNSUPPORTED",
+                    "The declared symbol maps to a different product on this provider and will not be substituted.",
+                )
+            candles = await self._fetch_stooq_candles(resolved_symbol.lower())
+        if not candles:
+            raise ProviderFetchError("PROVIDER_FETCH_FAILED", "The declared provider did not return candles; nothing was substituted.")
+        return {
+            "provider": declared,
+            "provider_symbol": resolved_symbol,
+            "candles": candles,
+            "interval": normalize_interval(interval),
+            "fetched_at": self._now_iso(),
+        }
+
     async def fetch_crypto_candles(
         self,
         symbol: str,
@@ -1139,48 +1288,23 @@ class PublicMarketDataFetcher:
         # period1/period2 so the chart can walk years back for daily+ bars; the
         # provider's intraday window is honored by clamping, never invented.
         try:
-            url = self.YAHOO_CHART_URL.format(ticker=yahoo_ticker)
-            if start_time is not None:
-                end_ms = int(end_time) if end_time is not None else int(time.time() * 1000)
-                clamped_start = self._clamp_yahoo_period1(yahoo_interval, int(start_time), end_ms)
-                params = {
-                    "interval": yahoo_interval,
-                    "period1": clamped_start // 1000,
-                    "period2": max(end_ms // 1000, clamped_start // 1000 + 1),
-                    "includePrePost": "false",
-                    "events": "div|split"
-                }
-            else:
-                params = {
-                    "interval": yahoo_interval,
-                    "range": auto_range,
-                    "includePrePost": "false",
-                    "events": "div|split"
-                }
-            headers = self._get_headers()
-
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                res = await client.get(url, params=params, headers=headers)
-                if res.status_code == 200:
-                    data = res.json()
-                    candles = self._parse_yahoo_chart(data)
-                    if candles:
-                        logger.info(f"[PUBLIC-FETCHER] Successfully fetched {len(candles)} macro candles for {clean_sym} ({yahoo_ticker}) via Yahoo Finance.")
-                        return candles
-                logger.warning(f"[PUBLIC-FETCHER] Yahoo Finance returned status {res.status_code} for {yahoo_ticker}")
+            candles = await self._fetch_yahoo_candles(
+                yahoo_ticker, interval=interval, period=period,
+                start_time=start_time, end_time=end_time,
+            )
+            if candles:
+                logger.info(f"[PUBLIC-FETCHER] Successfully fetched {len(candles)} macro candles for {clean_sym} ({yahoo_ticker}) via Yahoo Finance.")
+                return candles
+            logger.warning(f"[PUBLIC-FETCHER] Yahoo Finance returned no candles for {yahoo_ticker}")
         except Exception as e:
             logger.warning(f"[PUBLIC-FETCHER] Yahoo Finance fetch error for {clean_sym} ({yahoo_ticker}): {e}")
 
         # 2. Try the same-instrument Stooq Public CSV fallback.
         try:
-            stooq_url = self.STOOQ_CSV_URL.format(ticker=stooq_ticker)
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                res = await client.get(stooq_url, headers=self._get_headers())
-                if res.status_code == 200 and "Date" in res.text:
-                    candles = self._parse_stooq_csv(res.text)
-                    if candles:
-                        logger.info(f"[PUBLIC-FETCHER] Successfully fetched {len(candles)} macro candles for {clean_sym} ({stooq_ticker}) via Stooq.")
-                        return candles
+            candles = await self._fetch_stooq_candles(stooq_ticker)
+            if candles:
+                logger.info(f"[PUBLIC-FETCHER] Successfully fetched {len(candles)} macro candles for {clean_sym} ({stooq_ticker}) via Stooq.")
+                return candles
         except Exception as e:
             logger.error(f"[PUBLIC-FETCHER] Stooq fallback error for {clean_sym}: {e}")
 
