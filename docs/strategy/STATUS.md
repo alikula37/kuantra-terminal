@@ -48,9 +48,19 @@ independent product-consistency check (P1-WP43) and the identity/simulation/jour
 fixes (P1-WP44) ship as `v1.1.4` (`truth-matrix.v1.1.4.json`, `pilot-v1.1.4` prerelease
 with the tag on the verified build commit). The former `pilot-v1.1.3` release keeps its
 historical 1.1.3 packages and redirects users to `pilot-v1.1.4`; the canonical product
-Release/tag is not moved. The release run id, artifact source commit, DMG SHA-256 and
-mounted-executable SHA-256 values are recorded in the post-build install evidence below
-once verified.
+Release/tag is not moved. **v1.1.4 release evidence (2026-09-17):** train commit `ab2c933` (tag `pilot-v1.1.4` on
+it); candidate release run `35216823564` (`workflow_dispatch`, `publish=false`) **success**;
+all artifact checksums re-verified locally with `sha256sum -c SHA256SUMS` (OK). DMG SHA-256:
+arm64 `ad3fd146bbf2b4f6c5a50dba4761d2ef6032e37e8bf9234756b83b0ae4a09dc3`, x86_64
+`05ea2367c56b923e80b8e4f354683e411ebc13c0d8b6a922ef1e15c43ca218be`; mounted executables:
+arm64 `42ef84c426004bb6e24b404c93e72757184ccff35e0b71682cdc6af582e00fab`, x86_64
+`c6995532b85811e468a79baa373f2897c18c988ed616652ac8033923de433bed`. Exact mounted-DMG smoke
+**PASS** on both native lanes; N05 ad-hoc status `BLOCKED / OWNER_REVIEW_REQUIRED` as
+expected (no Developer ID/notarization). The GitHub prerelease `pilot-v1.1.4` is created
+with the two DMGs and `pilot-v1.1.3` is marked superseded; the arm64 DMG was mounted, its
+checksum verified, and `/Applications/Kuantra Terminal.app` was replaced with the verified
+artifact: installed executable SHA-256 matches the CI build, `codesign --verify --deep
+--strict` passes, version 1.1.4, launch/quit verified, user data preserved.
 The owner-host obligations of the selected
 [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
 (N03/N05/H05/pilot access) remain tracked there and are unchanged.
