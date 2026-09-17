@@ -3,9 +3,26 @@
 
 Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
-The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot
-access); no development proceeds under it without owner approval.
+**Selected work: [P1-WP45 USD position value as the only trade sizing](work-packages/P1-WP45-usd-position-value.md).**
+Owner instruction (2026-09-17): traders size positions in USD, not base units — USD value
+becomes the only entry/edit sizing (stored as `qty` with `qty_unit=USD`), money math (PnL,
+margin, risk, R) works from the value, non-USD-quoted pairs are computed approximately with
+an explicit label, the old sizing logic is retired, **all existing trade records are deleted
+by explicit owner instruction** ("hepsini sil. mantık hatalıydı"; full backup first, settings
+kept), and the change ships as the `v1.1.5` pilot release.
+
+**P1-WP45 implementation evidence (this change, uncommitted):** entry/edit now have a single
+USD position-value field (payload `size_input_mode=NOTIONAL`, `qty_unit=USD`; the base pair the
+old model proved is retired); the backend prices from the value (`USD_NOTIONAL` basis:
+notional = value, margin = value/leverage, PnL = price-return × value, R from the price-risk
+fraction) and labels non-USD-quoted pairs `QUOTE_NOT_USD_APPROXIMATE`; local tracking stores
+the unit and prices USD closures from the value; portfolio risk/margin/unrealized/volume use
+the value; journal, open positions, edit modal, tracking panel and exports state the USD
+unit. Legacy `BASE`/`UNKNOWN` rows remain readable and are never rewritten automatically (a
+notes-only edit keeps them; a changed value declares USD). Evidence: `test_wp45_...` **9
+passed**, full backend **1173 passed**, frontend **41 files / 286 tests**, i18n
+**1228/1228/1228**, `tsc`/build clean. The trade-domain wipe and the v1.1.5 release/install
+evidence are recorded below once executed.
 Owner instruction (2026-09-17): the three real-UI-test findings on the installed app were
 reproduced, diagnosed and fixed in isolated synthetic data under
 [P1-WP44 confirmed identity, simulation separation and reachable journal actions](../archive/strategy/work-packages/P1-WP44-identity-sim-separation-journal-actions.md)
