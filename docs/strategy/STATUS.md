@@ -5,7 +5,14 @@ Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
 The package is selected again for its still-open owner-host obligations
-(N03/N05/H05/pilot access); no development proceeds under it without owner approval, and
+(N03/N05/H05/pilot access); no development proceeds under it without owner approval.
+[P1-WP42 read-only chart review](../archive/strategy/work-packages/P1-WP42-chart-trade-review-p1.md)
+is complete and archived: the closed-trade chart review, the provider-matched open position
+review and the trade-editor time fixes shipped in commits `7b6c379` / `71a3640` (remaining
+unchecked items are tracked in the archived package). The still-open owner-host obligations of
+[P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
+(N03/N05/H05/pilot access) remain tracked there and are unchanged; no development proceeds
+under WP29 without owner approval, and
 **A1.2 (including the deferred OKX identity work) and every other integration package
 remain unapproved**.
 [P1-WP41 journal bulk CSV export and readable PDF reports](../archive/strategy/work-packages/P1-WP41-journal-bulk-export-and-pdf-reports.md)
@@ -714,6 +721,73 @@ found and fixed this way). Canonical arm64 local CI is **MERGE READY** 13/13 wit
 `reportlab 5.0.1` (BSD-3-Clause) and its `pillow 12.3.0` (MIT-CMU) at runtime, `pypdf
 6.19.0` (BSD-3-Clause) test-only; a targeted OSV query returned no advisories and the lock
 was regenerated. Real pilot-data review and layout acceptance remain open obligations.
+
+**P1-WP42 read-only single-trade chart review — implemented and verified (2026-09-16,
+working tree; no commit/push):** the journal row now has **"Grafikte incele"** (hidden for
+canceled trades) which opens the existing replay surface with a labelled plan reference:
+entry solid, SL/targets dashed and clearly marked as the **current plan reference** ("geçmişte
+bu seviyelerin geçerli olduğu doğrulanmadı"), levels from the local tracking plan when its
+entry matches the trade (else the recorded trade row, missing levels omitted, no invented
+weights), price/side/target-weight labels, and the recorded close marker with its provenance
+(user report / imported file — explicitly **not** broker-verified / simulation / unknown)
+disclosed only once the cursor reaches the exit bar. Open trades and missing candle history
+show localized honest states (gold without recorded candles: "Bu işlemi kapsayan kayıtlı 1m
+mum geçmişi yok; yerine başka veri konulmadı"), provider strip shows symbol/venue/feed/
+timeframe/gaps plus the "not broker execution evidence" line, and the review path performs
+**no writes** (regression test compares trades and ledger events before/after). The visual
+check with synthetic data (isolated data dir, Chrome) found and fixed one real backend bug
+(adapter origin lookup always returned UNKNOWN), the unlocalized `NO_CANDLE_HISTORY` state
+with raw English leakage, and a light-theme contrast failure; screenshots are in
+`artifacts/evidence/p1-wp42/`. Evidence: backend `test_replay_plan_reference.py` (14 tests,
+full backend **1122 passed**), frontend `TradeReplayCanvas.dom.test.tsx` (16 tests) plus the
+JournalView action test (full frontend **41 files / 264 tests**), i18n 100% parity and
+production build clean. **Completion boundary (do not overstate):** completed = read-only
+entry/SL/TP view for **closed** trades with suitable recorded 1m candle history; **not
+completed** = open position chart review (tracked as OP-01 with an approved-ready plan in
+WP42), real gold/FX candle coverage in the evidence store (free gold candles currently live
+only in the SQLite UI cache; GC=F must not substitute XAUUSD spot), historical plan
+revisions (P2), TP4/break-even stop (P4) and multi-trade/scenario work. A trader wanting to
+inspect an open position is not fully served yet and that obligation stays visible.
+**Close-source label hardening (2026-09-16):** tracing the producer showed no API payload can
+write `close_source` (only the server writes `USER_REPORTED`) and no broker-verification
+infrastructure exists, so the previous string-based "broker-verified" promotion was removed:
+unrecognised explicit values now render as **source declaration (not verified)** with the raw
+value kept visible and `broker_verified` always false; negative tests pin that forged
+`BROKER_VERIFIED`/`BROKER_CONFIRMED` values cannot open a verified label. Full backend
+**1125 passed** (17 label/review tests), frontend **41 files / 265 tests**, i18n/build clean.
+
+**OP-01 open position review delivered in the working tree (2026-09-17, not committed):**
+an open trade is now shown read-only on its **exact instrument's existing SQLite cache
+candles** without exit data: labelled current-plan levels and weights, manual **Refresh**
+(updates only the market cache; keeps the chart on failure with a retry error), step/seek,
+and honest loading/empty/partial/stale/error states (delay is an indicator only; gaps say
+"this range cannot be assessed"; no touch analysis, no PnL/MAE/MFE). The closed replay
+contract is untouched, no new table/migration was added, and the open path performs no
+journal/plan/ledger writes. The visual check with synthetic cache data found and fixed two
+real defects (cache `timestamp` vs chart `time` blank-screen crash; unlocalized
+`NO_CACHED_CANDLES`) and captured the delayed/partial gold panel, the GOLD identity refusal
+(no XAUUSD substitution) and the refresh failure state in
+`artifacts/evidence/p1-wp42/op01/`. Evidence: backend **1139 passed** (14 new open-review
+tests), frontend **41 files / 270 tests**, i18n/build clean. **Provider-match hardening (2026-09-17):** cache rows of unknown provenance are no longer
+presented as the trade's chart. A matched chart now requires a manual fetch from the trade's
+**declared free public provider + exact provider symbol** (single-provider fetch, no
+fallback; `GOLD`→`GC=F`-style product substitutions are rejected), the fetched snapshot is
+what is displayed, and the market cache may be updated but is never read back as proof.
+Sessions without a match ask for the refresh (`PROVIDER_MATCH_REQUIRED`) or explain the
+missing declaration (`PROVIDER_NOT_DECLARED`). A limited credential-free Biquote XAUUSD 1m
+check succeeded (61 real candles, 2026-09-17 08:19–09:19 UTC, last close 4312.764) and is
+recorded in `artifacts/evidence/p1-wp42/provider-match/` together with the real matched-chart
+screenshot — provider identity is established per session, but the **instrument product
+remains source-declared** (spot XAUUSD has no verified catalog entry and futures are never
+equated); this stays the open blocker, and no broker-price-equality claim is made.
+**Edit-flow fixes (same change):** a notes-only save no longer rewrites the stored entry
+seconds (minute-precision dirty check), a cleared/unparsable entry time now shows a
+validation error instead of being skipped silently, and the entry time is editable after a
+partial close while price/quantity stay locked. Canceled records keep their pinned
+note-style editing contract (an initial lock was reverted after the WP32 tests showed it was
+wrong). Evidence: backend **1142 passed**, frontend **41 files / 277 tests**, i18n/build
+clean. A durable import marker on journal trades would still remove the ledger-origin
+inference, and P2–P4/scenario work remains unapproved.
 
 **v1.1.3 artifacts built, released and installed (2026-09-16, owner-approved):** commits
 `142dc79` (feature) and `3e64572` (train) on `main`; build commit
