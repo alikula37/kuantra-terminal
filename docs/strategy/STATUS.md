@@ -6,6 +6,26 @@ Updated: 2026-09-15. Branch: `main` (latest owner instruction).
 **Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
 The package is selected again for its still-open owner-host obligations
 (N03/N05/H05/pilot access); no development proceeds under it without owner approval.
+Owner instruction (2026-09-17): the WP42 instrument-product blocker was closed with the
+bounded [P1-WP43 spot-product consistency package](../archive/strategy/work-packages/P1-WP43-spot-product-consistency.md),
+now complete and archived. The open review refresh now runs exactly ONE extra independent
+free-source request and reports `CONSISTENT`/`DIVERGENT`/`UNVERIFIABLE` with the declared
+product key, the independent source, the aligned overlap and the measured deviation —
+futures (`GC=F`) and tokens are structurally non-comparable, and "consistent" is only
+independent-source agreement within the recorded tolerance, never broker execution
+evidence. Implementation evidence: backend **1158 passed** (12 comparator + 4 integration
+tests), frontend **41 files / 280 tests**, i18n **1213/1213/1213**, `tsc`/build clean.
+Real runs (2026-09-17, 2 credential-free requests each, evidence in
+`artifacts/evidence/p1-wp43/`): a real biquote XAUUSD refresh returned 301 real 1m bars
+(05:26-10:26 UTC) and the honest **UNVERIFIABLE/FETCH_FAILED** product check because
+yahoo's `XAUUSD=X` spot route answers HTTP 404 and stooq now serves a JavaScript challenge
+instead of CSV — so **no reachable independent free source exists for spot gold/FX today**
+and a real CONSISTENT/DIVERGENT verdict remains an unchecked item in the archived package.
+Remaining WP43 unchecked items: the real independent-source verdict and real pilot-data
+visual acceptance. The implementing commit, canonical CI report and installed-app hash are
+recorded below once verified.
+[P1-WP42 read-only chart review](../archive/strategy/work-packages/P1-WP42-chart-trade-review-p1.md)
+remains complete and archived (commits `7b6c379` / `71a3640`).
 [P1-WP42 read-only chart review](../archive/strategy/work-packages/P1-WP42-chart-trade-review-p1.md)
 is complete and archived: the closed-trade chart review, the provider-matched open position
 review and the trade-editor time fixes shipped in commits `7b6c379` / `71a3640` (remaining
