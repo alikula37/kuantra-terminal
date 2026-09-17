@@ -1,13 +1,12 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
+# Kuantra Terminal v1.1.4 — Trusted macOS Pilot (chart review + journal trust fixes)
 
-# Kuantra Terminal v1.1.3 — Trusted macOS Pilot (journal export + PDF reports)
-
-**Pilot Release tag:** `pilot-v1.1.3` (release and tag point at the artifact source commit
-below; the former `pilot-v1.1.2` prerelease keeps its historical 1.1.2 packages and directs
+**Pilot Release tag:** `pilot-v1.1.4` (release and tag point at the artifact source commit
+below; the former `pilot-v1.1.3` prerelease keeps its historical 1.1.3 packages and directs
 users here)
 
-**Artifact source commit:** `3e64572343d1117953ea2592448d13826c23ec69` (clean build
-commit; GitHub Actions release run `35150481616`, `workflow_dispatch`, `publish=false`)
+**Artifact source commit:** the clean build commit of this release; the exact SHA and run id
+are recorded in the post-build install evidence in `docs/strategy/STATUS.md`.
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -16,42 +15,54 @@ commit; GitHub Actions release run `35150481616`, `workflow_dispatch`, `publish=
 This private Release is intentionally scoped for the three-person pilot and exposes exactly
 two downloads:
 
-- **`Kuantra-Terminal-1.1.3-arm64.dmg`** for Apple Silicon M-series Macs;
-- **`Kuantra-Terminal-1.1.3-x86_64.dmg`** for native Intel Macs.
+- **`Kuantra-Terminal-1.1.4-arm64.dmg`** for Apple Silicon M-series Macs;
+- **`Kuantra-Terminal-1.1.4-x86_64.dmg`** for native Intel Macs.
 
 Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
 Silicon artifact. Both native builds come from the same clean commit in the pinned GitHub
 Actions release workflow and pass the native desktop smoke plus the exact read-only
-mounted-DMG smoke on their matching hosts. DMG SHA-256 values are:
+mounted-DMG smoke on their matching hosts. The run id, source commit, DMG SHA-256 and mounted
+executable SHA-256 values are recorded in the post-build install evidence and in
+`docs/strategy/STATUS.md`; technical JSON/manifest evidence remains in the repository and
+local audit package, not as separate Release downloads.
 
-- arm64: `76a1345945b9dc1a6cba207000827193b69720dd8931ed0a3997e60c75840869`;
-- x86_64: `3ac3bd6d67530b83e4d07b5a7179266e42d2d2edc23866f4146711fcbc1eb7e4`.
+**New in this release:** the read-only chart review and journal-trust fixes.
 
-Mounted executable SHA-256 values are arm64
-`d1649078cf97b88b4afaa567981b99a83633595fe7ebbf3b61595e5dffe0a9b2` and x86_64
-`24d66761d3fd16cb8ef16b4b7314fdc76100cce4fdeeb0772f6f453d71b75d77`. Exact
-smoke/N05 (ad-hoc blocked) JSON/manifest evidence remains in the repository and local
-audit package, not as separate Release downloads.
+- **Chart review (read-only):** a closed trade renders its recorded entry-to-exit candles
+  with the labelled plan levels and the recorded close source, disclosed as a one-minute bar
+  approximation, never broker fills. An **open** trade gets a separate review that never
+  poses as data it does not have: with no session-verified candles it asks for a manual
+  refresh and shows nothing from the cache; the refresh fetches candles **only** from the
+  trade's declared free public provider and exact provider symbol (no fallback, no product
+  substitution — a `GOLD` symbol can never silently become a `GC=F` future), and the
+  fetched snapshot is what the chart displays. Freshness, coverage gaps and identity limits
+  are explicit; the review produces no performance numbers and writes nothing.
+- **Independent product consistency check:** inside the same manual refresh, exactly ONE
+  additional free-source request compares the declared spot product (for example XAUUSD)
+  with one independent same-class source and reports the aligned overlap and median
+  deviation against a documented tolerance as `CONSISTENT`, `DIVERGENT` or `UNVERIFIABLE`.
+  Futures and tokens are structurally non-comparable; "consistent" means independent-source
+  agreement, never broker execution evidence, and an unreachable independent source is
+  reported honestly instead of being papered over.
+- **Confirmed identity vs manual entry price:** recording a trade with a confirmed market
+  (for example Binance BTCUSDT) and then typing the entry price by hand keeps the confirmed
+  provider identity on the trade — journal quote refresh, the editor and the chart review
+  all resolve the same identity — while the entry price itself stays an explicitly manual,
+  unobserved record that never claims a quote status. No provider is ever inferred from
+  symbol text, and a trade without a confirmed identity stays honestly `UNAVAILABLE`.
+- **Journal clarity and reachable actions:** Simulation records are labelled in the journal
+  and open-positions table; journal rows show the local plan state and remaining quantity
+  separately from the external status, and local plan completion is explicitly an estimate
+  while the external trade stays OPEN. Simulation records no longer enter real monetary
+  aggregates (portfolio summary, asset breakdown, equity curve, daily heatmap), which now
+  report separate simulation counters. Row actions stay pinned at the right edge of the
+  journal table at the pilot's window sizes (verified at 1229x768) and are keyboard
+  focusable, with no font-size changes.
 
-**New in this release:** the trade journal now has a bounded **Export** flow. Choose the
-scope explicitly (filtered results — every record matching the current filters, not just the
-loaded page — or all records), a date range with a month preset, and the date basis (entry or
-close). CSV is spreadsheet-ready (UTF-8 BOM, formula-injection-safe cells); PDF is a readable
-list plus a period summary with numbered pages and repeating table headers. Dates are
-Europe/Istanbul and the artifact states the period, basis and time zone. OPEN / CLOSED /
-CANCELED records are separated; canceled records never join performance figures; an unknown
-PnL is counted and excluded, never treated as zero; money totals are produced only inside one
-server-verified quote asset and unverified records are counted and excluded without any
-conversion; local TP/SL tracking results are reported separately as an estimated gross
-result and are never added to realized results. CSV and PDF share one snapshot and one
-snapshot SHA-256. Exceeding the record (2000) or artifact (8 MiB) ceiling fails with an
-explicit error instead of silently truncating, and a cancelled save dialog is never reported
-as a successful save. The single-trade **Evidence Pack** now also offers a direct PDF
-summary next to JSON/HTML/CSV. The PDF renderer uses vendored Bitstream Vera fonts and works
-fully offline.
-
-The v1.1.2 update-flow patch and the v1.1.1 security hardening remain in place: the update
+The v1.1.3 journal export and readable PDF reports, the v1.1.2 update-flow patch and the
+v1.1.1 security hardening remain in place: the export flow produces spreadsheet-ready CSV
+and readable PDF reports from one snapshot with explicit scope/basis statements, the update
 button opens this repository's Releases list (no version-pinned link), the dev-only vitest
 toolchain is on the patched 4.1.11, and the security fixes (migration archive/manifest
 ceilings, bounded import reviews, paper-mode execution guard, contained model paths,
@@ -97,7 +108,8 @@ their checksums are re-verified locally with `shasum -a 256 -c SHA256SUMS` and
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed
 from GitHub on 2026-09-11 and must not be used. The exact canonical product tag is guarded by
-`docs/release/truth-matrix.v1.1.3.json`.
+`docs/release/truth-matrix.v1.1.4.json`.
+
 <!-- CURRENT_RELEASE_NOTES:END -->
 
 ## Historical release archive (non-current)

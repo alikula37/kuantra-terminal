@@ -8,7 +8,7 @@ on:
       release_tag:
         description: "Exact release tag validated by the truth matrix"
         required: true
-        default: "v1.1.3"
+        default: "v1.1.4"
         type: string
       publish:
         description: "Publish a GitHub Release after all final-artifact gates pass"

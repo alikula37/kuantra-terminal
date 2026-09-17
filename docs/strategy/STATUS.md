@@ -41,7 +41,16 @@ tree; report `dist/p1-wp44-committed-local-ci.json` SHA-256
 mounted-DMG smoke **PASS** (`dist/p1-wp44-exact-dmg-smoke.json`). `/Applications/Kuantra
 Terminal.app` was replaced and verified: installed executable matches the CI build,
 `codesign --verify --deep --strict` passes, version 1.1.3, launch path and clean quit
-verified, user data preserved. GitHub Releases and tags were untouched.
+verified, user data preserved. GitHub Releases and tags were untouched for the bounded fix itself.
+
+**v1.1.4 release train (2026-09-17, owner-approved):** the chart review (P1-WP42), the
+independent product-consistency check (P1-WP43) and the identity/simulation/journal-action
+fixes (P1-WP44) ship as `v1.1.4` (`truth-matrix.v1.1.4.json`, `pilot-v1.1.4` prerelease
+with the tag on the verified build commit). The former `pilot-v1.1.3` release keeps its
+historical 1.1.3 packages and redirects users to `pilot-v1.1.4`; the canonical product
+Release/tag is not moved. The release run id, artifact source commit, DMG SHA-256 and
+mounted-executable SHA-256 values are recorded in the post-build install evidence below
+once verified.
 The owner-host obligations of the selected
 [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
 (N03/N05/H05/pilot access) remain tracked there and are unchanged.

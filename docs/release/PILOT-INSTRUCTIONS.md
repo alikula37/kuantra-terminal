@@ -1,6 +1,6 @@
-# Kuantra Terminal v1.1.3 — kapalı macOS pilotu
+# Kuantra Terminal v1.1.4 — kapalı macOS pilotu
 
-**Güncel pilot Release:** [`pilot-v1.1.3`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.3)<br>
+**Güncel pilot Release:** [`pilot-v1.1.4`](https://github.com/alikula37/kuantra-terminal/releases/tag/pilot-v1.1.4)<br>
 **Kaynak ve artifact kimliği:** Teknik manifest, checksum ve smoke kanıtları repository
 ve local audit paketinde tutulur. Güncel Release indirme alanında yalnızca iki native
 DMG bulunur: `arm64` Apple Silicon ve `x86_64` Intel.
@@ -69,7 +69,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 4. İndirdiğiniz DMG'nin disk-imaj bütünlüğünü mount etmeden önce doğrulayın:
 
    ```text
-   hdiutil verify Kuantra-Terminal-1.1.3-<architecture>.dmg
+   hdiutil verify Kuantra-Terminal-1.1.4-<architecture>.dmg
    ```
 
    Çıktı başarılı olmalıdır. Bu kontrol DMG
@@ -79,7 +79,7 @@ it is not quote or execution proof. No paid data service or quote API key is req
 İsteğe bağlı olarak Release metadata'sını GitHub CLI ile de kontrol edebilirsiniz:
 
 ```text
-gh release view pilot-v1.1.3 --repo alikula37/kuantra-terminal
+gh release view pilot-v1.1.4 --repo alikula37/kuantra-terminal
 ```
 
 GitHub metadata'sı Apple Gatekeeper güveninin yerine geçmez; asıl dosya doğrulaması
@@ -150,6 +150,33 @@ profilde yapılan deneme pilot runtime kanıtıdır; temiz profil kanıtı olara
 - **Tek işlem kanıt paketi:** JSON/HTML/CSV yanında doğrudan **PDF** özeti
   kaydedilebilir; tam kanıt yükü JSON artefaktındadır.
 
+## Grafik incelemesi ve günlük düzeltmeleri (v1.1.4)
+
+- **Grafikte incele (salt okunur):** Kapanmış işlem kaydedilmiş giriş–çıkış mumlarını,
+  planlanan seviyeleri ve kayıtlı kapanış kaynağını gösterir; bu bir 1 dakikalık bar
+  yaklaşımdır, broker gerçekleşmesi değildir. **Açık** işlemde inceleme, sahip olmadığı
+  veriyi varmış gibi göstermez: oturumda doğrulanmış mum yoksa **Yenile** istenir ve
+  önbellekten hiçbir satır gösterilmez; yenileme mumları yalnızca işlemde beyan edilen
+  ücretsiz sağlayıcıdan ve tam sağlayıcı sembolünden çeker (yedek sağlayıcı yok, ürün
+  değiştirme yok; `GOLD` asla sessizce `GC=F` vadelines dönüşmez).
+- **Ürün tutarlılık kontrolü:** Aynı yenilemede en fazla bir ek ücretsiz istek, beyan edilen
+  spot ürünü (örneğin XAUUSD) bir bağımsız kaynakla karşılaştırır ve ölçülen örtüşme ile
+  medyan sapmayı `CONSISTENT` / `DIVERGENT` / `UNVERIFIABLE` olarak yazar. Vadeli ve token
+  ürünler yapısal olarak karşılaştırılamaz; "tutarlı" yalnızca bağımsız kaynak uzlaşmasıdır,
+  broker kanıtı değildir.
+- **Manuel giriş fiyatı kimliği silmez:** Onayladığınız piyasa (örneğin Binance BTCUSDT)
+  kayıtta kalır; giriş fiyatını elle yazsanız da günlük fiyat yenilemesi, düzenleme ve
+  grafik incelemesi aynı kimliği kullanır. Fiyatın kendisi "manuel, gözlemlenmemiş" olarak
+  işaretlenir; sembolden sağlayıcı uydurulmaz.
+- **Simülasyon ve yerel takip ayrımı:** Simülasyon kayıtları günlükte ve açık işlemler
+  tablosunda açıkça etiketlenir; günlük satırı yerel plan durumunu ve kalan miktarı ayrı
+  gösterir; yerel plan tamamlandığında harici işlem hâlâ açıktır ve bu bir tahmindir.
+  Simülasyonlar gerçek para toplamlarına (portföy özeti, varlık kırılımı, equity eğrisi,
+  günlük ısı haritası) karışmaz; ayrı sayaçlarla raporlanır.
+- **Eylemler erişilebilir:** Günlük satır eylemleri (Düzenle / Kanıt / Grafikte incele /
+  İptal et) dar pencerede sağ kenara sabitlenir ve klavyeyle odaklanabilir; yazı boyutları
+  değiştirilmedi.
+
 ## Kurulum ve ilk açılış
 
 Ayarlar → **Uygulama güncellemeleri → Releases sayfasını aç** düğmesi deponun GitHub
@@ -157,7 +184,7 @@ Releases listesini varsayılan tarayıcınızda açar; sabit bir sürüm bağlan
 GitHub hesabınızla giriş yapmanız gerekebilir. Bu düğme sürüm karşılaştırması veya
 otomatik kurulum yapmaz; başarısız açılışta hata gösterir, "güncelsiniz" demez. Yeni DMG'yi
 indirip doğrulayın; uygulamayı kapatarak Applications içindeki uygulamayı değiştirin.
-1.1.3 öncesi kurulumlarda bu düğme daha eski bir sayfayı açabilir; bu durumda bir defalık
+1.1.4 öncesi kurulumlarda bu düğme daha eski bir sayfayı açabilir; bu durumda bir defalık
 manuel güncelleme gerekir.
 Mevcut veriyle ilk açılıştan önce schema uyumluluğunu doğrulayın; uygulama dosyasının
 değiştirilmesi, veritabanı geçişinin doğrulandığı anlamına gelmez.

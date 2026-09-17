@@ -9,7 +9,7 @@ from typing import Any
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-DEFAULT_MATRIX_PATH = ROOT_DIR / "docs" / "release" / "truth-matrix.v1.1.3.json"
+DEFAULT_MATRIX_PATH = ROOT_DIR / "docs" / "release" / "truth-matrix.v1.1.4.json"
 DEFAULT_RELEASE_NOTES_PATH = ROOT_DIR / "RELEASE_NOTES.md"
 
 
