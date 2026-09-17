@@ -19,6 +19,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from app.quant.instrument_product import not_run_payload
+
 MAX_OPEN_REVIEW_BARS = 2_000
 FRESH_DELAY_SECONDS = 300
 TIMEFRAME_SECONDS = {
@@ -134,6 +136,7 @@ class OpenPositionEvidence:
     coverage: Dict[str, Any] = field(default_factory=dict)
     freshness: Dict[str, Any] = field(default_factory=dict)
     provenance: Dict[str, Any] = field(default_factory=dict)
+    product_check: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def symbol(self) -> str:
@@ -157,6 +160,7 @@ def load_open_position_evidence(
     trade: Dict[str, Any],
     *,
     snapshot: Dict[str, Any],
+    product_check: Optional[Dict[str, Any]] = None,
     now: Optional[datetime] = None,
 ) -> OpenPositionEvidence:
     """Build the review from a snapshot fetched from the trade's declared provider.
@@ -253,6 +257,8 @@ def load_open_position_evidence(
         "last_download_at": fetched_at,
         "refresh_result": "REFRESHED",
     }
+    product = product_check if isinstance(product_check, dict) else not_run_payload(
+        declared_provider=declared["provider"], declared_symbol=declared["provider_symbol"])
     provenance = {
         "store": "DECLARED_PROVIDER_FETCH",
         "source": declared["provider"],
@@ -267,9 +273,10 @@ def load_open_position_evidence(
         "provider_symbol": snapshot_symbol,
         "provider_note": "NOT_BROKER_EXECUTION_EVIDENCE",
         "fetched_at": fetched_at,
+        "instrument_product": product,
     }
     return OpenPositionEvidence(
         trade=normalized, candles=candles, timeframe=timeframe, entry_index=entry_index,
         entry_bar_present=entry_bar_present, history_status=history_status,
-        coverage=coverage, freshness=freshness, provenance=provenance,
+        coverage=coverage, freshness=freshness, provenance=provenance, product_check=product,
     )

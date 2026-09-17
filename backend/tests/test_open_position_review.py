@@ -104,14 +104,15 @@ class FakeTrackingReader:
         return self.state
 
 
-def service(trade, *, snapshot_result=None, tracking=None):
+def service(trade, *, snapshot_result=None, independent_result=None, tracking=None):
     calls = []
 
     async def fetcher(provider, provider_symbol, **kwargs):
         calls.append((provider, provider_symbol, kwargs))
-        if isinstance(snapshot_result, Exception):
-            raise snapshot_result
-        return snapshot_result if snapshot_result is not None else snapshot()
+        result = snapshot_result if len(calls) == 1 else independent_result
+        if isinstance(result, Exception):
+            raise result
+        return result if result is not None else snapshot()
 
     replay = ReplayService(
         trade_reader=FakeTradeReader(trade),
@@ -119,6 +120,20 @@ def service(trade, *, snapshot_result=None, tracking=None):
         provider_fetcher=fetcher,
     )
     return replay, calls
+
+
+def aligned_candles(*, count=12, start_ts=ENTRY_TS, price=4264.0, step=60, drift=0.0):
+    """Deterministic bars for the independent source of the same product."""
+
+    return candles_from(start_ts, [
+        (price * (1 + drift * index), price * (1 + drift * index) + 1.0,
+         price * (1 + drift * index) - 1.0, price * (1 + drift * index))
+        for index in range(count)
+    ], step=step)
+
+
+def independent_snapshot(candles=None, *, provider="yahoo_public", provider_symbol="XAUUSD=X"):
+    return snapshot(candles, provider=provider, provider_symbol=provider_symbol)
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +284,18 @@ def test_manual_refresh_fetches_only_the_declared_provider_and_displays_its_rows
     before = {"trades": driver.list_trades(limit=10), "events": ledger_count()}
     replay, calls = service(trade, tracking=tracking_state())
     payload = asyncio.run(replay.create_open_review_session("TRD-OPEN", refresh=True))
-    assert calls == [("biquote_public", "XAUUSD", {"interval": "1m", "limit": 2001})]
+    # Exactly two requests: the declared provider plus ONE independent
+    # same-product candidate; nothing else may be contacted.
+    assert calls == [
+        ("biquote_public", "XAUUSD", {"interval": "1m", "limit": 2001}),
+        ("yahoo_public", "XAUUSD=X", {"interval": "1m", "limit": 2001}),
+    ]
+    product = payload["open_review"]["instrument_product"]
+    assert product["independent_provider"] == "yahoo_public"
+    assert product["product_key"] == "SPOT_METAL:XAU:USD"
+    assert product["status"] == "UNVERIFIABLE"
+    assert product["reason"] == "INSUFFICIENT_OVERLAP"  # the fake repeats 4 bars
+    assert product["note"] == "NOT_BROKER_EXECUTION_EVIDENCE"
     assert payload["status"] == "READY"
     assert payload["review_mode"] == "OPEN"
     assert payload["open_review"]["provider"] == "biquote_public"
@@ -304,6 +330,71 @@ def test_refresh_failure_is_reported_and_never_substituted():
     payload3 = asyncio.run(unsupported.create_open_review_session("TRD-OPEN", refresh=True))
     assert payload3["status"] == "UNAVAILABLE"
     assert payload3["reason"] == "PROVIDER_INSTRUMENT_UNSUPPORTED"
+
+
+def test_independent_check_reports_consistency_with_measured_overlap():
+    replay, calls = service(
+        open_trade(),
+        snapshot_result=snapshot(aligned_candles(count=12)),
+        independent_result=independent_snapshot(aligned_candles(count=12, drift=0.00001)),
+    )
+    payload = asyncio.run(replay.create_open_review_session("TRD-OPEN", refresh=True))
+    assert len(calls) == 2
+    product = payload["open_review"]["instrument_product"]
+    assert product["status"] == "CONSISTENT"
+    assert product["reason"] is None
+    assert product["alignment"] == "EXACT_BAR"
+    assert product["overlap_bars"] == 12
+    assert product["tolerance_pct"] == 0.5
+    assert product["median_deviation_pct"] is not None
+    assert product["median_deviation_pct"] <= product["tolerance_pct"]
+    assert product["independent_provider"] == "yahoo_public"
+    assert product["independent_symbol"] == "XAUUSD=X"
+    assert product["checked_at"]
+    assert product["note"] == "NOT_BROKER_EXECUTION_EVIDENCE"
+
+
+def test_divergent_independent_source_is_reported_not_hidden():
+    replay, _ = service(
+        open_trade(),
+        snapshot_result=snapshot(aligned_candles(count=12)),
+        independent_result=independent_snapshot(aligned_candles(count=12, drift=0.05)),
+    )
+    payload = asyncio.run(replay.create_open_review_session("TRD-OPEN", refresh=True))
+    product = payload["open_review"]["instrument_product"]
+    assert product["status"] == "DIVERGENT"
+    assert product["median_deviation_pct"] > product["tolerance_pct"]
+    assert product["overlap_bars"] == 12
+
+
+def test_independent_check_failure_keeps_the_chart_and_reports_unverifiable():
+    replay, calls = service(
+        open_trade(),
+        independent_result=ProviderFetchError("PROVIDER_FETCH_FAILED", "yahoo returned nothing"),
+    )
+    payload = asyncio.run(replay.create_open_review_session("TRD-OPEN", refresh=True))
+    assert len(calls) == 2
+    assert payload["status"] == "READY"
+    assert payload["visible_candles"][0]["close"] == 4265.0
+    product = payload["open_review"]["instrument_product"]
+    assert product["status"] == "UNVERIFIABLE"
+    assert product["reason"] == "FETCH_FAILED"
+    assert product["reason_detail"] == "PROVIDER_FETCH_FAILED"
+    assert product["independent_provider"] == "yahoo_public"
+
+
+def test_futures_declaration_never_gets_an_independent_candidate():
+    trade = open_trade(price_source="yahoo_public", price_source_symbol="GC=F")
+    replay, calls = service(
+        trade, snapshot_result=snapshot(FOUR_BARS, provider="yahoo_public", provider_symbol="GC=F"))
+    payload = asyncio.run(replay.create_open_review_session("TRD-OPEN", refresh=True))
+    assert calls == [("yahoo_public", "GC=F", {"interval": "1m", "limit": 2001})]
+    product = payload["open_review"]["instrument_product"]
+    assert product["status"] == "UNVERIFIABLE"
+    assert product["reason"] == "NO_INDEPENDENT_SOURCE"
+    assert product["product_key"] == "FUTURE:GC"
+    assert product["independent_provider"] is None
+    assert payload["status"] == "READY"
 
 
 def test_closed_replay_payload_stays_on_the_closed_contract(monkeypatch, recorded_trade, recorded_candles):

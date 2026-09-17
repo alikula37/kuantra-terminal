@@ -2,11 +2,15 @@
 
 import time
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from app.quant.candle_evidence import (
     CandleEvidence, EvidenceError, excursion_metrics, finite_number,
     load_candle_evidence, provenance,
+)
+from app.quant.instrument_product import (
+    evaluate_product_consistency, independent_candidate,
 )
 from app.quant.open_position_evidence import (
     MAX_OPEN_REVIEW_BARS, OpenPositionEvidence, OpenReviewError,
@@ -127,6 +131,7 @@ class OpenReviewSession:
             "store": evidence.provenance.get("store"),
             "fetched_at": evidence.provenance.get("fetched_at"),
             "provider_note": evidence.provenance.get("provider_note"),
+            "instrument_product": evidence.provenance.get("instrument_product"),
         }
 
     @staticmethod
@@ -257,9 +262,11 @@ class ReplayService:
         return self._open_review_unmatched_payload(trade)
 
     def _create_open_review_session(self, trade: dict[str, Any], *,
-                                    snapshot: dict[str, Any]) -> dict[str, Any]:
+                                    snapshot: dict[str, Any],
+                                    product_check: dict[str, Any] | None = None) -> dict[str, Any]:
         try:
-            evidence = load_open_position_evidence(trade, snapshot=snapshot)
+            evidence = load_open_position_evidence(
+                trade, snapshot=snapshot, product_check=product_check)
         except OpenReviewError as error:
             payload = self._open_review_unmatched_payload(trade)
             payload.update({
@@ -316,7 +323,44 @@ class ReplayService:
             })
             return payload
         self._cache_snapshot_best_effort(declared["provider_symbol"], snapshot)
-        return self._create_open_review_session(trade, snapshot=snapshot)
+        product_check = await self._product_consistency_check(declared, snapshot)
+        return self._create_open_review_session(
+            trade, snapshot=snapshot, product_check=product_check)
+
+    async def _product_consistency_check(self, declared: dict[str, str],
+                                         snapshot: dict[str, Any]) -> dict[str, Any]:
+        """At most ONE extra free-source request; any failure degrades honestly.
+
+        The check never changes the chart contract and never writes a record: it
+        compares the session-fetched declared series with one independent
+        same-product source and records the measured overlap and deviation.
+        """
+
+        candidate = independent_candidate(declared["provider"], declared["provider_symbol"])
+        checked_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        if candidate is None:
+            return evaluate_product_consistency(
+                declared_provider=declared["provider"], declared_symbol=declared["provider_symbol"],
+                declared_candles=snapshot.get("candles") or [], candidate=None,
+                checked_at=checked_at,
+            )
+        try:
+            independent = await self.provider_fetcher(
+                candidate.provider, candidate.symbol,
+                interval=candidate.interval, limit=MAX_OPEN_REVIEW_BARS + 1)
+        except Exception as exc:  # noqa: BLE001 - the check degrades, the chart stands
+            return evaluate_product_consistency(
+                declared_provider=declared["provider"], declared_symbol=declared["provider_symbol"],
+                declared_candles=snapshot.get("candles") or [], candidate=candidate,
+                failure_reason=getattr(exc, "reason", None) or type(exc).__name__,
+                checked_at=checked_at,
+            )
+        return evaluate_product_consistency(
+            declared_provider=declared["provider"], declared_symbol=declared["provider_symbol"],
+            declared_candles=snapshot.get("candles") or [], candidate=candidate,
+            independent_candles=(independent or {}).get("candles") or [],
+            checked_at=checked_at,
+        )
 
     @staticmethod
     def _cache_snapshot_best_effort(provider_symbol: str, snapshot: dict[str, Any]) -> None:
