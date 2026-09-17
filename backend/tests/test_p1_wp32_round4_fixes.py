@@ -136,7 +136,7 @@ def test_api_close_and_plan_gate_fake_provider_label(journal):
         },
     )
     assert rejected.status_code == 422
-    assert "base-unit" in rejected.text
+    assert "explicit unit declaration" in rejected.text
     # Only the first (closed) trade exists; the rejected create rolled back.
     assert len(driver.list_trades(limit=10)) == 1
 

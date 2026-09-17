@@ -306,7 +306,7 @@ def test_local_plan_gate_requires_explicit_declaration(journal):
         },
     )
     assert rejected.status_code == 422
-    assert "base-unit" in rejected.text
+    assert "explicit unit declaration" in rejected.text
 
     declared = _create(client, qty_unit="BASE", local_tracking=_plan())
     assert LocalTrackingService(driver).get(declared["id"]) is not None

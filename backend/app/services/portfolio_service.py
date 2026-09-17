@@ -165,11 +165,13 @@ class PortfolioAnalyticsService:
             qty = float(t.get("qty") or 0.0)
             side = str(t.get("side", "BUY")).upper()
             sl = float(t["stop_loss"]) if t.get("stop_loss") is not None else None
-            verified_unit = instrument_unit_basis(
+            basis = instrument_unit_basis(
                 t.get("symbol"),
                 qty_unit=t.get("qty_unit"),
                 server_verified=instrument_catalog.is_verified(str(t.get("symbol") or "")),
-            )["contract_size"] == "BASE_UNIT"
+            )
+            verified_unit = basis["contract_size"] in {"BASE_UNIT", "USD_NOTIONAL"}
+            usd_notional = basis["contract_size"] == "USD_NOTIONAL"
             if not verified_unit:
                 unverified_open_positions += 1
                 live_positions_unpriced += 1
@@ -181,18 +183,22 @@ class PortfolioAnalyticsService:
                     risk_per_unit = max(0.0, entry - sl)
                 else:
                     risk_per_unit = max(0.0, sl - entry)
-                trade_dollar_risk = risk_per_unit * qty
+                if usd_notional:
+                    trade_dollar_risk = (risk_per_unit / entry * qty) if entry > 0 else 0.0
+                else:
+                    trade_dollar_risk = risk_per_unit * qty
             else:
                 # Conservative fallback: 2% of position notional value
-                trade_dollar_risk = entry * qty * 0.02
+                trade_dollar_risk = (qty if usd_notional else entry * qty) * 0.02
 
             open_risk_usd += trade_dollar_risk
             open_risk_r += 1.0  # 1R planned risk unit per open trade
 
-            # Exposure is measured only on verified base units; margin uses the
-            # trade's recorded leverage when present and is counted separately so
-            # an assumed 1x is never mixed silently into the margin figure.
-            position_notional = entry * qty
+            # Exposure is measured only on a verified basis (base unit or a
+            # declared USD position value); margin uses the trade's recorded
+            # leverage when present and is counted separately so an assumed 1x
+            # is never mixed silently into the margin figure.
+            position_notional = qty if usd_notional else entry * qty
             open_notional_usd += position_notional
             raw_leverage = t.get("leverage")
             try:
@@ -211,7 +217,10 @@ class PortfolioAnalyticsService:
                 live_positions_unpriced += 1
                 continue
             direction = 1.0 if side in ("BUY", "LONG") else -1.0
-            unrealized_pnl_usd += direction * (float(quote["price"]) - entry) * qty
+            if usd_notional:
+                unrealized_pnl_usd += direction * (float(quote["price"]) - entry) / entry * qty if entry > 0 else 0.0
+            else:
+                unrealized_pnl_usd += direction * (float(quote["price"]) - entry) * qty
             live_positions_covered += 1
             if quote.get("stale"):
                 live_quotes_stale = True
@@ -406,13 +415,15 @@ class PortfolioAnalyticsService:
 
             entry_price = float(t.get("entry_price") or 0.0)
             qty = float(t.get("qty") or 0.0)
-            verified_unit = instrument_unit_basis(
+            basis = instrument_unit_basis(
                 raw_sym,
                 qty_unit=t.get("qty_unit"),
                 server_verified=instrument_catalog.is_verified(raw_sym),
-            )["contract_size"] == "BASE_UNIT"
+            )
+            verified_unit = basis["contract_size"] in {"BASE_UNIT", "USD_NOTIONAL"}
             if verified_unit:
-                grouped[raw_sym]["total_volume"] += entry_price * qty
+                grouped[raw_sym]["total_volume"] += (
+                    qty if basis["contract_size"] == "USD_NOTIONAL" else entry_price * qty)
             else:
                 grouped[raw_sym]["unverified_unit_trades"] += 1
 

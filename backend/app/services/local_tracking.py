@@ -106,6 +106,9 @@ def validate_snapshot(state):
             raise ValueError("Invalid canonical stop")
     seen = set()
     gross = Decimal(0)
+    usd_notional = str(state.get("qty_unit") or "BASE").upper() == "USD"
+    if usd_notional and entry == 0:
+        raise ValueError("Invalid USD value basis entry")
     for closure in closures:
         if closure["target_id"] in seen or closure["basis"] != "LOCAL_ESTIMATE":
             raise ValueError("Duplicate or invalid local closure")
@@ -115,7 +118,11 @@ def validate_snapshot(state):
             raise ValueError("Unsupported close target")
         with localcontext() as ctx:
             ctx.prec = 60
-            expected = (decimal(closure["price"]) - entry) * decimal(closure["qty"]) * (1 if long else -1)
+            move = decimal(closure["price"]) - entry
+            if usd_notional:
+                expected = move / entry * decimal(closure["qty"]) * (1 if long else -1)
+            else:
+                expected = move * decimal(closure["qty"]) * (1 if long else -1)
             if expected != decimal(closure["gross_pnl"], positive=False):
                 raise ValueError("Invalid canonical gross result")
             gross += expected
@@ -214,11 +221,14 @@ class LocalTrackingService:
                         or decimal(trade["entry_price"]) != decimal(state["entry_price"])
                         or decimal(trade["qty"]) != decimal(state["initial_qty"])):
                         state["external_status"] = "CORRECTED"
-                    state["unit_status"] = (
-                        "BASE_UNIT"
-                        if trade and self._unit_verified(trade)
-                        else "UNVERIFIED"
-                    )
+                    if trade and self._unit_verified(trade):
+                        state["unit_status"] = (
+                            "USD_NOTIONAL"
+                            if str(trade["qty_unit"] or "").upper() == "USD"
+                            else "BASE_UNIT"
+                        )
+                    else:
+                        state["unit_status"] = "UNVERIFIED"
                     results.append(state)
             return results
 
@@ -265,13 +275,13 @@ class LocalTrackingService:
             symbol,
             qty_unit=self._row_value(trade, "qty_unit"),
             server_verified=server_verified,
-        )["contract_size"] == "BASE_UNIT"
+        )["contract_size"] in {"BASE_UNIT", "USD_NOTIONAL"}
 
     def edit_in_transaction(self, conn, trade, plan, expected_revision=0, reset=False):
         if not self._unit_verified(trade):
             raise TrackingUnsupported(
-                "Local tracking needs an explicit base-unit declaration "
-                "(qty_unit=BASE); the contract or lot size of this symbol is not verified."
+                "Local tracking needs an explicit unit declaration "
+                "(a USD position value or qty_unit=BASE); neither is recorded for this symbol."
             )
         old, event_id, reset_count = self._load(conn, trade["id"])
         old_revision = old["revision"] if old else 0
@@ -292,6 +302,7 @@ class LocalTrackingService:
             "entry_price": number(decimal(trade["entry_price"])),
             "initial_qty": number(decimal(trade["qty"])), "remaining_qty": number(decimal(trade["qty"])),
             "gross_pnl": "0", "closures": [], "targets": [],
+            "qty_unit": "USD" if str(trade.get("qty_unit") or "").upper() == "USD" else "BASE",
         }
         if type(plan.get("enabled", True)) is not bool:
             raise ValueError("Invalid enabled flag")
@@ -392,8 +403,8 @@ class LocalTrackingService:
                 # simply keeps waiting instead of backing off forever.
                 if manual:
                     raise TrackingUnsupported(
-                        "Local tracking needs an explicit base-unit declaration "
-                        "(qty_unit=BASE); the contract or lot size of this symbol is not verified."
+                        "Local tracking needs an explicit unit declaration "
+                        "(a USD position value or qty_unit=BASE); neither is recorded for this symbol."
                     )
                 return state
             if (trade["symbol"] != state["symbol"] or trade["side"] != state["side"]
@@ -427,8 +438,12 @@ class LocalTrackingService:
                     remaining = decimal(state["remaining_qty"])
                 if not hit:
                     return state
+                unit_usd = str(state.get("qty_unit") or "BASE").upper() == "USD"
+                if unit_usd and entry == 0:
+                    return state
                 for target_id, amount, target_price in hit:
-                    pnl = direction * (price - entry) * amount
+                    move = price - entry
+                    pnl = (move / entry * amount if unit_usd else move * amount) * direction
                     state["closures"].append({"target_id": target_id, "qty": number(amount),
                         "price": number(price), "target_price": target_price, "gross_pnl": number(pnl),
                         "observed_at": now_utc() if manual else observation["observed_at"],

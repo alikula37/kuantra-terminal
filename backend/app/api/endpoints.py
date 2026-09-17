@@ -167,7 +167,7 @@ class TradeCreateSchema(BaseModel):
     exit_time: Optional[str] = Field(default=None, min_length=1, max_length=64)
     entry_time: Optional[str] = Field(default=None, min_length=1, max_length=64)
     notes: Optional[str] = Field(default="", max_length=2000)
-    qty_unit: Literal["BASE", "UNKNOWN"] = "UNKNOWN"
+    qty_unit: Literal["BASE", "UNKNOWN", "USD"] = "UNKNOWN"
     record_mode: Literal["EXTERNAL", "SIMULATION"] = "EXTERNAL"
     execution_venue: Optional[str] = Field(default=None, max_length=120)
     price_source: Literal[
@@ -271,7 +271,7 @@ class TradeEditSchema(BaseModel):
     stop_loss: Optional[float] = Field(default=None, gt=0, le=10**15)
     take_profit: Optional[float] = Field(default=None, gt=0, le=10**15)
     notes: Optional[str] = Field(default=None, max_length=2000)
-    qty_unit: Optional[Literal["BASE", "UNKNOWN"]] = None
+    qty_unit: Optional[Literal["BASE", "UNKNOWN", "USD"]] = None
     status: Optional[Literal["OPEN", "CLOSED", "CANCELED"]] = None
     exit_price: Optional[float] = Field(default=None, gt=0, le=10**15)
     exit_time: Optional[str] = Field(default=None, min_length=1, max_length=64)
@@ -439,7 +439,12 @@ def create_trade(trade: TradeCreateSchema):
         ) from exc
 
     if trade.size_input_mode == "NOTIONAL":
-        qty = float(trade.notional_size) / float(trade.entry_price)
+        if str(trade.qty_unit).upper() == "USD":
+            # A USD-declared position value is stored as-is: no contract-size
+            # conversion, no division by the entry price.
+            qty = float(trade.notional_size)
+        else:
+            qty = float(trade.notional_size) / float(trade.entry_price)
     else:
         qty = float(trade.qty)
     if not qty or qty <= 0 or qty != qty or qty in (float("inf"), float("-inf")):
@@ -460,20 +465,27 @@ def create_trade(trade: TradeCreateSchema):
         qty_unit=trade.qty_unit,
         server_verified=instrument_catalog.is_verified(trade.symbol),
     )
-    monetary_ready = unit_basis["contract_size"] == "BASE_UNIT"
+    monetary_ready = unit_basis["contract_size"] in {"BASE_UNIT", "USD_NOTIONAL"}
+    usd_notional = unit_basis["contract_size"] == "USD_NOTIONAL"
     exit_price = float(trade.exit_price) if trade.status == "CLOSED" else None
     pnl: Optional[float] = 0.0
     r_multiple = None
     if exit_price is not None and monetary_ready:
-        pnl = direction * (exit_price - float(trade.entry_price)) * qty
-        if trade.stop_loss:
+        entry_price = float(trade.entry_price)
+        if usd_notional:
+            pnl = direction * (exit_price - entry_price) / entry_price * qty if entry_price > 0 else None
+        else:
+            pnl = direction * (exit_price - entry_price) * qty
+        if trade.stop_loss and pnl is not None and entry_price > 0:
             risk_unit = (
-                (float(trade.entry_price) - float(trade.stop_loss)) if long and float(trade.entry_price) > float(trade.stop_loss)
-                else (float(trade.stop_loss) - float(trade.entry_price)) if not long and float(trade.stop_loss) > float(trade.entry_price)
+                (entry_price - float(trade.stop_loss)) if long and entry_price > float(trade.stop_loss)
+                else (float(trade.stop_loss) - entry_price) if not long and float(trade.stop_loss) > entry_price
                 else None
             )
             if risk_unit and qty > 0:
-                r_multiple = round(pnl / (risk_unit * qty), 2)
+                risk_value = (risk_unit / entry_price * qty) if usd_notional else (risk_unit * qty)
+                if risk_value > 0:
+                    r_multiple = round(pnl / risk_value, 2)
     elif exit_price is not None:
         # The contract/lot size is unknown, so no realized money figure is
         # produced; the close evidence itself is still recorded.
@@ -632,17 +644,29 @@ def close_trade(trade_id: str, close_data: TradeCloseSchema):
     side = existing["side"].upper()
     exit_price = close_data.exit_price
     sl = float(existing["stop_loss"]) if existing.get("stop_loss") else None
-    monetary_ready = instrument_unit_basis(
+    close_basis = instrument_unit_basis(
         existing.get("symbol"),
         qty_unit=existing.get("qty_unit"),
         server_verified=instrument_catalog.is_verified(str(existing.get("symbol") or "")),
-    )["contract_size"] == "BASE_UNIT"
+    )
+    monetary_ready = close_basis["contract_size"] in {"BASE_UNIT", "USD_NOTIONAL"}
+    usd_notional = close_basis["contract_size"] == "USD_NOTIONAL"
 
     if not monetary_ready:
         # User-reported close evidence is stored; no realized money figure is
         # produced because the quantity unit/contract multiplier is unknown.
         pnl = None
         r_multiple = None
+    elif usd_notional:
+        direction = 1.0 if side in ("BUY", "LONG") else -1.0
+        pnl = (direction * (exit_price - entry_price) / entry_price * qty - (close_data.commission or 0.0)) if entry_price > 0 else None
+        r_unit = (
+            (entry_price - sl) if side in ("BUY", "LONG") and sl and entry_price > sl
+            else (sl - entry_price) if side not in ("BUY", "LONG") and sl and sl > entry_price
+            else None
+        )
+        risk_value = (r_unit / entry_price * qty) if (r_unit and entry_price > 0) else None
+        r_multiple = (pnl / risk_value) if (pnl is not None and risk_value and risk_value > 0) else None
     elif side in ("BUY", "LONG"):
         pnl = (exit_price - entry_price) * qty - (close_data.commission or 0.0)
         r_unit = (entry_price - sl) if sl and (entry_price > sl) else None

@@ -439,7 +439,7 @@ def test_local_tracking_plan_is_rejected_for_unverified_instrument(journal):
         },
     )
     assert response.status_code == 422
-    assert "base-unit" in response.text
+    assert "explicit unit declaration" in response.text
     assert driver.list_trades(limit=10) == []
 
 

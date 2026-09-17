@@ -242,13 +242,23 @@ class TradeEditService:
         commission_value: float,
         stop_value: Optional[float],
         unit_ready: bool,
+        usd_notional: bool = False,
     ) -> tuple[Optional[float], Optional[float]]:
-        """Return the user-reported gross P/L and R only for a verified unit."""
+        """Return the user-reported gross P/L and R only for a declared unit.
+
+        ``usd_notional`` trades carry the position value in USD, so the gross
+        result is the price return applied to that value.
+        """
 
         if not unit_ready or qty_value is None or entry_price is None:
             return None, None
         direction = 1.0 if side in ("BUY", "LONG") else -1.0
-        gross = direction * (exit_price - entry_price) * qty_value - commission_value
+        if usd_notional:
+            if entry_price <= 0:
+                return None, None
+            gross = direction * (exit_price - entry_price) / entry_price * qty_value - commission_value
+        else:
+            gross = direction * (exit_price - entry_price) * qty_value - commission_value
         r_multiple = None
         if stop_value:
             risk_unit = (
@@ -257,7 +267,9 @@ class TradeEditService:
                 else None
             )
             if risk_unit and qty_value > 0:
-                r_multiple = round(gross / (risk_unit * qty_value), 2)
+                risk_value = (risk_unit / entry_price * qty_value) if usd_notional else (risk_unit * qty_value)
+                if risk_value > 0:
+                    r_multiple = round(gross / risk_value, 2)
         return round(gross, 2), r_multiple
 
     # -- write ------------------------------------------------------------
@@ -382,11 +394,12 @@ class TradeEditService:
                 side = str(existing.get("side") or "BUY")
                 qty_value = _number(payload.get("qty", existing.get("qty")))
                 entry_value = _number(payload.get("entry_price", existing.get("entry_price")))
-                unit_ready = instrument_unit_basis(
+                basis = instrument_unit_basis(
                     existing.get("symbol"),
                     qty_unit=payload.get("qty_unit", existing.get("qty_unit")),
                     server_verified=self._catalog_verified(existing.get("symbol")),
-                )["contract_size"] == "BASE_UNIT"
+                )
+                unit_ready = basis["contract_size"] in {"BASE_UNIT", "USD_NOTIONAL"}
                 gross, r_multiple_value = self._close_result(
                     side=side,
                     entry_price=entry_value,
@@ -395,6 +408,7 @@ class TradeEditService:
                     commission_value=_number(existing.get("commission")) or 0.0,
                     stop_value=_number(payload.get("stop_loss", existing.get("stop_loss"))),
                     unit_ready=unit_ready,
+                    usd_notional=basis["contract_size"] == "USD_NOTIONAL",
                 )
                 apply("exit_price", _number(existing.get("exit_price")), exit_price_value)
                 apply("exit_time", existing.get("exit_time"), to_utc_iso(parsed_exit))
@@ -420,8 +434,8 @@ class TradeEditService:
 
         if "qty_unit" in requested:
             unit = str(requested["qty_unit"] or "UNKNOWN").upper()
-            if unit not in {"BASE", "UNKNOWN"}:
-                raise TradeRuleError("QTY_UNIT_INVALID", "Quantity unit must be BASE or UNKNOWN.", field="qty_unit")
+            if unit not in {"USD", "BASE", "UNKNOWN"}:
+                raise TradeRuleError("QTY_UNIT_INVALID", "Quantity unit must be USD, BASE or UNKNOWN.", field="qty_unit")
             apply("qty_unit", str(existing.get("qty_unit") or "UNKNOWN").upper(), unit)
 
         effective_entry = payload.get("entry_price", _number(existing.get("entry_price")))
