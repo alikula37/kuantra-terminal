@@ -708,7 +708,7 @@
     "load_more": "Weitere Trades laden",
     "trades_found": "{count} Trades gefunden",
     "total_records": "{count} Datensätze insgesamt",
-    "replay_title": "Diesen Trade Balken für Balken wiedergeben",
+    "replay_title": "Diesen Trade im aufgezeichneten Kerzenchart öffnen (schreibgeschützt)",
     "evidence_title": "Quellverknüpftes Evidence Pack öffnen",
     "evidence_action": "Evidenz",
     "cancel_action": "Stornieren",
@@ -738,7 +738,8 @@
     "refresh_last_success": "Letzter Erfolg: {time}",
     "filter_selected_count": "{count} ausgewählt",
     "filter_clear": "Zurücksetzen",
-    "export": "Exportieren"
+    "export": "Exportieren",
+    "replay_action": "Im Chart prüfen"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION-INBOX",
@@ -1161,7 +1162,8 @@
     "reason_exit_fields_require_close": "Ausstiegspreis und -zeit können nur beim Schließen gesetzt werden.",
     "reason_status_invalid": "Der Trade-Status muss offen, geschlossen oder storniert sein.",
     "completed_correction_notice": "Nach Abschluss sind Einstiegspreis und Menge gesperrt; Sie können Notiz, Mengeneinheit und den nutzerangegebenen Ausstiegspreis/-zeit korrigieren.",
-    "unit_unlocks_pnl": "Mit der Basis-Einheit-Erklärung wird das realisierte P/L aus den gespeicherten Ausstiegsdaten berechnet."
+    "unit_unlocks_pnl": "Mit der Basis-Einheit-Erklärung wird das realisierte P/L aus den gespeicherten Ausstiegsdaten berechnet.",
+    "reason_time_invalid": "Geben Sie ein gültiges Handelsdatum und eine Uhrzeit ein (Europe/Istanbul)."
   },
   "journal_export": {
     "title": "Journal exportieren",
@@ -1194,5 +1196,125 @@
     "cancelled": "Export abgebrochen oder nicht gespeichert.",
     "failed": "Export fehlgeschlagen. Es wurde nichts gespeichert.",
     "close": "Schließen"
+  },
+  "replay": {
+    "bar_of": "Bar {current} / {total}",
+    "boundary_note": "Bar-Näherung · DuckDB-Kerzen · keine Broker-Ausführungen · R ist eine Bruttopreisbewegung",
+    "reference_banner": "Referenz auf den aktuellen Plan — es ist nicht bestätigt, dass diese Level zum gezeigten Zeitpunkt galten.",
+    "plan_after_entry": "Dieser Plan wurde nach dem Einstieg erstellt oder überarbeitet.",
+    "plan_kind": {
+      "local": "Quelle: lokaler Tracking-Plan",
+      "trade_row": "Quelle: erfasste Trade-Level"
+    },
+    "level": {
+      "entry": "Einstieg",
+      "stop": "Stop",
+      "take_profit": "Ziel",
+      "weight": "· Gewicht {weight}"
+    },
+    "side": {
+      "long": "LONG",
+      "short": "SHORT"
+    },
+    "origin": {
+      "journal": "Herkunft: Journal",
+      "imported_file": "Herkunft: importierte Datei",
+      "unknown": "Herkunft unbekannt"
+    },
+    "close_source": {
+      "user": "Schluss: Nutzerangabe",
+      "imported": "Schluss: importierte Datei (nicht broker-bestätigt)",
+      "simulation": "Schluss: Simulation (Papier)",
+      "unknown": "Schlussquelle: unbekannt",
+      "source_declared": "Schluss: Quellenangabe (nicht bestätigt)"
+    },
+    "close_marker": "Ausstieg",
+    "source_strip": {
+      "gap_note": "Datenlücke: {count} — in diesem Bereich wurde keine Berührungsprüfung durchgeführt"
+    },
+    "disclaimer": "Erfasste Kerzen sind kein Broker-Ausführungsnachweis; 1m-Bar-Näherung.",
+    "phase": {
+      "pre_entry": "VOR EINSTIEG",
+      "active": "AKTIV",
+      "closed": "GESCHLOSSEN"
+    },
+    "summary": {
+      "current": "Preis",
+      "unrealized": "Unrealisiert",
+      "realized": "Realisiert",
+      "r": "R",
+      "mae": "MAE",
+      "mfe": "MFE",
+      "risk_unavailable": "R-Metriken nicht verfügbar: keine gültige Stop-Risikoeinheit."
+    },
+    "state": {
+      "loading": "Aufgezeichnete Kerzen-Replay wird geladen",
+      "loading_detail": "Es wird auf gültige aufgezeichnete Kerzenhistorie gewartet.",
+      "unavailable": "Replay nicht verfügbar",
+      "no_data": "Keine Replay-Daten",
+      "open_trade": "Offener Trade"
+    },
+    "reason": {
+      "TRADE_NOT_CLOSED": "Die schreibgeschützte Chart-Ansicht unterstützt derzeit nur geschlossene Trades.",
+      "TRADE_NOT_FOUND": "Dieser Trade wurde im Journal nicht gefunden.",
+      "CANDLE_STORE_UNAVAILABLE": "Der aufgezeichnete Kerzenspeicher konnte nicht gelesen werden.",
+      "CANDLE_ROW_LIMIT": "Die Kerzenhistorie überschreitet das begrenzte Leselimit; Vollständigkeit unbekannt.",
+      "WINDOW_TOO_LARGE": "Das Trade-Fenster überschreitet das Evidenzlimit.",
+      "NO_DATA": "Keine gültige aufgezeichnete Kerzenhistorie verfügbar.",
+      "unknown": "Dieser Zustand ist nicht bekannt",
+      "NO_CANDLE_HISTORY": "Für diesen Trade gibt es keine erfasste 1m-Kerzenhistorie; es wurde nichts ersetzt.",
+      "INCOMPLETE_CANDLE_HISTORY": "Die erfasste Kerzenhistorie deckt das Trade-Fenster nicht vollständig ab; die Ansicht wird nicht gezeigt.",
+      "CANDLE_IDENTITY_MISMATCH": "Die erfassten Kerzen passen nicht zur Instrumentenidentität dieses Trades.",
+      "CONFLICTING_CANDLES": "Für dieses Fenster wurden widersprüchliche doppelte Kerzen gefunden; sie wurden nicht zusammengeführt.",
+      "UNALIGNED_CANDLE": "Ein erfasster Kerzen-Zeitstempel ist nicht minutengenau.",
+      "INVALID_CANDLE_PROVENANCE": "Eine erfasste Kerze hat ungültige Venue/Feed-Herkunft.",
+      "INVALID_OHLC": "Eine erfasste Kerze hat einen ungültigen OHLC-Wert.",
+      "INVALID_TIMESTAMP": "Eine erfasste Kerze hat einen ungültigen Zeitstempel.",
+      "INVALID_VOLUME": "Eine erfasste Kerze hat ein ungültiges Volumen.",
+      "INVALID_TRADE": "Dem Trade fehlen gültiges Symbol, Seite, Preis oder Menge.",
+      "INVALID_TRADE_WINDOW": "Das Trade-Fenster ist ungültig (Ausstieg vor Einstieg oder Zeit fehlt).",
+      "INVALID_CONTEXT_WINDOW": "Das angeforderte Replay-Kontextfenster liegt außerhalb der Grenzen.",
+      "NO_CACHED_CANDLES": "Für dieses Instrument gibt es keine Kerzen im Cache; es wurde nichts ersetzt. Mit „Aktualisieren“ freie öffentliche Daten anfordern.",
+      "NO_CANDLES_SINCE_ENTRY": "Die zwischengespeicherten Kerzen enden vor dem Einstieg dieses Trades; Marktdaten aktualisieren, um die offene Position zu sehen.",
+      "TRADE_NOT_OPEN": "Dieser Trade ist nicht offen; geschlossene Trades nutzen die geschlossene Replay-Ansicht.",
+      "REFRESH_FAILED": "Die Marktdaten-Aktualisierung lieferte keine Kerzen; das Chart blieb unverändert.",
+      "PROVIDER_MATCH_REQUIRED": "Für diesen Trade gibt es noch keine bestätigte Chart-Zuordnung. Mit „Aktualisieren“ Kerzen vom deklarierten Anbieter laden.",
+      "PROVIDER_NOT_DECLARED": "Für diesen Trade sind kein freier öffentlicher Anbieter und kein Instrumentensymbol deklariert; eine Chart-Zuordnung ist nicht möglich. Zuerst die Instrumentenquelle im Trade setzen.",
+      "PROVIDER_IDENTITY_MISMATCH": "Die geladenen Kerzen passen nicht zur deklarierten Anbieteridentität des Trades; es wurde nichts ersetzt.",
+      "PROVIDER_NOT_SUPPORTED": "Der deklarierte Anbieter ist keine unterstützte freie öffentliche Quelle.",
+      "PROVIDER_INSTRUMENT_UNSUPPORTED": "Der deklarierte Anbieter führt für dieses Symbol ein anderes Produkt; es wird nicht ersetzt.",
+      "PROVIDER_FETCH_FAILED": "Der deklarierte Anbieter lieferte keine Kerzen; es wurde nichts ersetzt."
+    },
+    "closed_only_note": "Die Chart-Ansicht ist schreibgeschützt und öffnet sich, sobald der Trade einen erfassten Ausstieg hat.",
+    "action": {
+      "seek": "Replay-Position",
+      "reset": "Replay zurücksetzen",
+      "step_back": "Schritt zurück",
+      "step_forward": "Schritt vor",
+      "play": "ABSPIELEN",
+      "pause": "PAUSE"
+    },
+    "open_review": {
+      "badge": "OFFENE POSITION",
+      "no_performance": "Keine Performance-Kennzahlen in dieser Ansicht: offene Positionen erhalten hier kein PnL/MAE/MFE.",
+      "freshness_fresh": "Verzögerungsindikator: letzte Kerze ≤5 Min (kein Beweis für Live-Daten).",
+      "freshness_delayed": "Verzögerungsindikator: letzte Kerze älter als 5 Min; keine Live-Daten.",
+      "freshness_unknown": "Verzögerungsindikator: UNBEKANNT (keine nutzbare Kerzenzeit).",
+      "last_candle": "Letzte Kerze: {time} (Istanbul) · {state}",
+      "last_download": "Letzter erfolgreicher Download: {time}",
+      "candle_state_open": "läuft",
+      "candle_state_closed": "geschlossen",
+      "candle_state_unknown": "Status unbekannt",
+      "provider": "Anbieter (in dieser Sitzung geladen): {provider}",
+      "provider_unknown": "Anbieter ist im Cache nicht erfasst; gleicher Symboltext beweist keinen Anbieter.",
+      "identity_note": "Instrumentenidentität: {instrument} — Quellenangabe, nicht verifiziert.",
+      "partial_history": "Keine vollständige Historie seit dem Einstieg; gezeigter Bereich {start} – {end} ({minutes} Min fehlen)."
+    },
+    "refresh": {
+      "action": "Aktualisieren",
+      "refreshing": "Wird aktualisiert…",
+      "error": "Aktualisierung fehlgeschlagen; das Chart blieb unverändert. Erneut versuchen."
+    },
+    "boundary_note_open": "Snapshot des deklarierten Anbieters · keine Broker-Ausführungen · R ist eine Bruttopreisbewegung"
   }
 }

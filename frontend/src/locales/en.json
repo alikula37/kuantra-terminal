@@ -708,7 +708,7 @@
     "load_more": "Load more trades",
     "trades_found": "{count} trades found",
     "total_records": "{count} total records",
-    "replay_title": "Replay this trade bar by bar",
+    "replay_title": "Open this trade on the recorded candle chart (read-only)",
     "evidence_title": "Open source-linked Trade Evidence Pack",
     "evidence_action": "Evidence",
     "cancel_action": "Cancel",
@@ -738,7 +738,8 @@
     "refresh_last_success": "Last success: {time}",
     "filter_selected_count": "{count} selected",
     "filter_clear": "Clear",
-    "export": "Export"
+    "export": "Export",
+    "replay_action": "Inspect chart"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION INBOX",
@@ -1161,7 +1162,8 @@
     "reason_exit_fields_require_close": "Exit price and time can only be set while closing the trade.",
     "reason_status_invalid": "Trade status must be open, closed or canceled.",
     "completed_correction_notice": "Entry price and quantity are locked once a trade is completed; you can correct the note, the quantity unit and the user-reported exit price/time.",
-    "unit_unlocks_pnl": "Declaring the base unit computes the realized P/L from the stored exit data."
+    "unit_unlocks_pnl": "Declaring the base unit computes the realized P/L from the stored exit data.",
+    "reason_time_invalid": "Enter a valid trade date and time (Europe/Istanbul)."
   },
   "journal_export": {
     "title": "Export journal",
@@ -1194,5 +1196,125 @@
     "cancelled": "Export cancelled or not saved.",
     "failed": "Export failed. Nothing was saved.",
     "close": "Close"
+  },
+  "replay": {
+    "bar_of": "Bar {current} / {total}",
+    "boundary_note": "Bar approximation · DuckDB candles · not broker fills · R is a gross price move",
+    "reference_banner": "Current plan reference — it is not verified that these levels applied at the time shown.",
+    "plan_after_entry": "This plan was created or revised after the entry.",
+    "plan_kind": {
+      "local": "Source: local tracking plan",
+      "trade_row": "Source: recorded trade levels"
+    },
+    "level": {
+      "entry": "Entry",
+      "stop": "Stop",
+      "take_profit": "Target",
+      "weight": "· {weight}"
+    },
+    "side": {
+      "long": "LONG",
+      "short": "SHORT"
+    },
+    "origin": {
+      "journal": "Origin: journal",
+      "imported_file": "Origin: imported file",
+      "unknown": "Origin: unknown"
+    },
+    "close_source": {
+      "user": "Close: user report",
+      "imported": "Close: imported file (not broker-verified)",
+      "simulation": "Close: simulation (paper)",
+      "unknown": "Close source: unknown",
+      "source_declared": "Close: source declaration (not verified)"
+    },
+    "close_marker": "Exit",
+    "source_strip": {
+      "gap_note": "Data gap: {count} — no touch assessment was made in this range"
+    },
+    "disclaimer": "Recorded candles are not broker execution evidence; 1m bar approximation.",
+    "phase": {
+      "pre_entry": "PRE-ENTRY",
+      "active": "ACTIVE",
+      "closed": "CLOSED"
+    },
+    "summary": {
+      "current": "Price",
+      "unrealized": "Unrealized",
+      "realized": "Realized",
+      "r": "R",
+      "mae": "MAE",
+      "mfe": "MFE",
+      "risk_unavailable": "R metrics unavailable: no valid stop risk unit."
+    },
+    "state": {
+      "loading": "Loading recorded candle replay",
+      "loading_detail": "Waiting for valid recorded candle history.",
+      "unavailable": "Replay unavailable",
+      "no_data": "No replay data",
+      "open_trade": "Open trade"
+    },
+    "reason": {
+      "TRADE_NOT_CLOSED": "The read-only chart review currently supports closed trades only.",
+      "TRADE_NOT_FOUND": "This trade was not found in the journal.",
+      "CANDLE_STORE_UNAVAILABLE": "The recorded candle store could not be read.",
+      "CANDLE_ROW_LIMIT": "Recorded candle history exceeds the bounded read limit; completeness is unknown.",
+      "WINDOW_TOO_LARGE": "The trade window exceeds the recorded-evidence limit.",
+      "NO_DATA": "No valid recorded candle history is available.",
+      "unknown": "This state is not recognized",
+      "NO_CANDLE_HISTORY": "No recorded one-minute candle history covers this trade; nothing was substituted.",
+      "INCOMPLETE_CANDLE_HISTORY": "Recorded candle history does not fully cover the trade window; the review is not shown.",
+      "CANDLE_IDENTITY_MISMATCH": "The recorded candles do not match this trade's instrument identity.",
+      "CONFLICTING_CANDLES": "Conflicting duplicate candles were found for this window; they were not merged.",
+      "UNALIGNED_CANDLE": "A recorded candle timestamp is not minute-aligned.",
+      "INVALID_CANDLE_PROVENANCE": "A recorded candle has invalid venue/feed provenance.",
+      "INVALID_OHLC": "A recorded candle has an invalid OHLC value.",
+      "INVALID_TIMESTAMP": "A recorded candle has an invalid timestamp.",
+      "INVALID_VOLUME": "A recorded candle has an invalid volume.",
+      "INVALID_TRADE": "The recorded trade is missing a valid symbol, side, price or quantity.",
+      "INVALID_TRADE_WINDOW": "The recorded trade window is invalid (exit before entry or missing time).",
+      "INVALID_CONTEXT_WINDOW": "The requested replay context window is outside the supported bounds.",
+      "NO_CACHED_CANDLES": "No cached candles exist for this instrument; nothing was substituted. Use Refresh to request free public data.",
+      "NO_CANDLES_SINCE_ENTRY": "Cached candles end before this trade's entry; refresh the market data to see the open position.",
+      "TRADE_NOT_OPEN": "This trade is not open; closed trades use the closed replay view.",
+      "REFRESH_FAILED": "The market data refresh did not return candles; the chart was not changed.",
+      "PROVIDER_MATCH_REQUIRED": "No verified chart match exists for this trade yet. Use Refresh to fetch candles from the declared provider.",
+      "PROVIDER_NOT_DECLARED": "This trade has no declared free public provider and instrument symbol; a chart match cannot be established. Set the instrument source on the trade first.",
+      "PROVIDER_IDENTITY_MISMATCH": "The fetched candles do not match the trade's declared provider identity; nothing was substituted.",
+      "PROVIDER_NOT_SUPPORTED": "The trade's declared provider is not a supported free public source.",
+      "PROVIDER_INSTRUMENT_UNSUPPORTED": "The declared provider serves a different product for this symbol; no substitution is made.",
+      "PROVIDER_FETCH_FAILED": "The declared provider did not return candles; nothing was substituted."
+    },
+    "closed_only_note": "The chart review is read-only and will open once the trade has a recorded exit.",
+    "action": {
+      "seek": "Replay position",
+      "reset": "Reset replay",
+      "step_back": "Step backward",
+      "step_forward": "Step forward",
+      "play": "PLAY",
+      "pause": "PAUSE"
+    },
+    "open_review": {
+      "badge": "OPEN POSITION",
+      "no_performance": "No performance metrics in this review: open positions get no PnL/MAE/MFE here.",
+      "freshness_fresh": "Delay indicator: last candle ≤5 min old (this is not proof of live data).",
+      "freshness_delayed": "Delay indicator: last candle is older than 5 min; not live data.",
+      "freshness_unknown": "Delay indicator: UNKNOWN (no usable candle time).",
+      "last_candle": "Last candle: {time} (Istanbul) · {state}",
+      "last_download": "Last successful download: {time}",
+      "candle_state_open": "in progress",
+      "candle_state_closed": "closed",
+      "candle_state_unknown": "state unknown",
+      "provider": "Provider (fetched in this session): {provider}",
+      "provider_unknown": "Provider is not recorded in the cache; the same symbol text does not prove the provider.",
+      "identity_note": "Instrument identity: {instrument} — source declaration, not verified.",
+      "partial_history": "No complete history since the entry; shown range {start} – {end} ({minutes} min missing)."
+    },
+    "refresh": {
+      "action": "Refresh",
+      "refreshing": "Refreshing…",
+      "error": "Refresh failed; the chart was not changed. Try again."
+    },
+    "boundary_note_open": "Declared provider snapshot · not broker fills · R is a gross price move"
   }
 }

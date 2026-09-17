@@ -270,6 +270,7 @@ export default function App() {
               onOpenNewTrade={() => setIsModalOpen(true)}
               onOpenCsvImport={() => setIsCsvModalOpen(true)}
               onEditTrade={(tradeId) => setEditTradeId(tradeId)}
+              onOpenReplay={handleLaunchReplay}
               refreshNonce={tradeRefreshNonce}
             />
           )}

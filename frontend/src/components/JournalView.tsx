@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTradeStore } from "../stores/tradeStore";
-import { Filter, Plus, Pencil, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2, RefreshCw, ChevronDown, Download } from "lucide-react";
+import { Filter, Plus, Pencil, BookOpen, Upload, FileCheck2, ClipboardCheck, CalendarClock, Trash2, RefreshCw, ChevronDown, Download, CandlestickChart } from "lucide-react";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
@@ -102,6 +102,7 @@ interface JournalViewProps {
   onOpenNewTrade: () => void;
   onOpenCsvImport?: () => void;
   onEditTrade?: (tradeId: string) => void;
+  onOpenReplay?: (tradeId: string) => void;
   refreshNonce?: number;
 }
 
@@ -141,7 +142,7 @@ async function readTradeList(response: Response): Promise<Trade[]> {
   return payload;
 }
 
-export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onEditTrade, refreshNonce = 0 }) => {
+export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpenCsvImport, onEditTrade, onOpenReplay, refreshNonce = 0 }) => {
   const { t, locale } = useTranslation();
   const { trades, setTrades, openPositions, updatePositionPnl } = useTradeStore();
   const [filterSymbols, setFilterSymbols] = useState<string[]>([]);
@@ -589,6 +590,19 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                         <FileCheck2 className="w-4 h-4 text-accent" />
                         <span>{t("journal.evidence_action")}</span>
                       </button>
+                      {tItem.status !== "CANCELED" && onOpenReplay && (
+                        <button
+                          type="button"
+                          data-testid="journal-replay-action"
+                          data-trade-id={tItem.id}
+                          onClick={() => onOpenReplay(tItem.id)}
+                          className="k-btn ml-1 border border-surface-border bg-[#162032] hover:bg-[#1f2d47] text-slate-200 px-3"
+                          title={t("journal.replay_title")}
+                        >
+                          <CandlestickChart className="w-4 h-4 text-accent" />
+                          <span>{t("journal.replay_action")}</span>
+                        </button>
+                      )}
                       {tItem.status !== "CANCELED" && (
                         <button
                           type="button"

@@ -708,7 +708,7 @@
     "load_more": "Daha fazla işlem yükle",
     "trades_found": "{count} işlem bulundu",
     "total_records": "{count} toplam kayıt",
-    "replay_title": "Bu işlemi çubuk çubuk yeniden oynat",
+    "replay_title": "Bu işlemi kayıtlı mum grafiğinde aç (salt okunur)",
     "evidence_title": "Kaynağa bağlı Trade Evidence Pack'i aç",
     "evidence_action": "Kanıt",
     "cancel_action": "İptal et",
@@ -738,7 +738,8 @@
     "refresh_last_success": "Son başarılı: {time}",
     "filter_selected_count": "{count} seçili",
     "filter_clear": "Temizle",
-    "export": "Dışa aktar"
+    "export": "Dışa aktar",
+    "replay_action": "Grafikte incele"
   },
   "reconciliation_inbox": {
     "title": "RECONCILIATION GELEN KUTUSU",
@@ -1161,7 +1162,8 @@
     "reason_exit_fields_require_close": "Çıkış fiyatı ve saati yalnızca işlem kapatılırken girilebilir.",
     "reason_status_invalid": "İşlem durumu açık, kapalı veya iptal edildi olmalı.",
     "completed_correction_notice": "İşlem tamamlandıktan sonra giriş fiyatı ve miktar kilitlidir; notu, miktar birimini ve kullanıcı beyanlı çıkış fiyatı/saatini düzeltebilirsiniz.",
-    "unit_unlocks_pnl": "Temel birim beyan edilince kayıtlı çıkış bilgisinden gerçekleşen K/Z hesaplanır."
+    "unit_unlocks_pnl": "Temel birim beyan edilince kayıtlı çıkış bilgisinden gerçekleşen K/Z hesaplanır.",
+    "reason_time_invalid": "Geçerli bir işlem tarihi ve saati girin (Europe/Istanbul)."
   },
   "journal_export": {
     "title": "Günlüğü dışa aktar",
@@ -1194,5 +1196,125 @@
     "cancelled": "Dışa aktarma iptal edildi veya kaydedilmedi.",
     "failed": "Dışa aktarma başarısız. Hiçbir şey kaydedilmedi.",
     "close": "Kapat"
+  },
+  "replay": {
+    "bar_of": "Bar {current} / {total}",
+    "boundary_note": "Bar yaklaşımı · DuckDB mumları · broker gerçekleşmesi değil · R brüt fiyat hareketidir",
+    "reference_banner": "Güncel plan referansı — geçmişte bu seviyelerin geçerli olduğu doğrulanmadı.",
+    "plan_after_entry": "Bu plan giriş işleminden sonra oluşturuldu veya revize edildi.",
+    "plan_kind": {
+      "local": "Kaynak: yerel takip planı",
+      "trade_row": "Kaynak: kayıtlı işlem seviyeleri"
+    },
+    "level": {
+      "entry": "Giriş",
+      "stop": "Stop",
+      "take_profit": "Hedef",
+      "weight": "· ağırlık {weight}"
+    },
+    "side": {
+      "long": "LONG",
+      "short": "SHORT"
+    },
+    "origin": {
+      "journal": "Kayıt: günlük",
+      "imported_file": "Kayıt: dosyadan aktarım",
+      "unknown": "Kayıt kaynağı bilinmiyor"
+    },
+    "close_source": {
+      "user": "Kapanış: kullanıcı bildirimi",
+      "imported": "Kapanış: dosyadan aktarım (broker doğrulaması değil)",
+      "simulation": "Kapanış: simülasyon (kağıt)",
+      "unknown": "Kapanış kaynağı bilinmiyor",
+      "source_declared": "Kapanış: kaynak beyanı (doğrulanmadı)"
+    },
+    "close_marker": "Çıkış",
+    "source_strip": {
+      "gap_note": "Veri boşluğu: {count} — bu aralıkta temas değerlendirmesi yapılmadı"
+    },
+    "disclaimer": "Kayıtlı mumlar broker gerçekleşme kanıtı değildir; 1m bar yaklaşımıdır.",
+    "phase": {
+      "pre_entry": "GİRİŞ ÖNCESİ",
+      "active": "AÇIK",
+      "closed": "KAPANMIŞ"
+    },
+    "summary": {
+      "current": "Fiyat",
+      "unrealized": "Açık K/Z",
+      "realized": "Gerçekleşen",
+      "r": "R",
+      "mae": "MAE",
+      "mfe": "MFE",
+      "risk_unavailable": "R metrikleri yok: geçerli stop risk birimi yok."
+    },
+    "state": {
+      "loading": "Kayıtlı mum tekrarı yükleniyor",
+      "loading_detail": "Geçerli kayıtlı mum geçmişi bekleniyor.",
+      "unavailable": "Tekrar kullanılamıyor",
+      "no_data": "Tekrar verisi yok",
+      "open_trade": "Açık işlem"
+    },
+    "reason": {
+      "TRADE_NOT_CLOSED": "Salt okunur grafik incelemesi şu an yalnızca kapanmış işlemleri destekliyor.",
+      "TRADE_NOT_FOUND": "Bu işlem günlükte bulunamadı.",
+      "CANDLE_STORE_UNAVAILABLE": "Kayıtlı mum deposu okunamadı.",
+      "CANDLE_ROW_LIMIT": "Kayıtlı mum geçmişi sınırlı okuma limitini aşıyor; bütünlük bilinmiyor.",
+      "WINDOW_TOO_LARGE": "İşlem aralığı kayıt kanıtı limitini aşıyor.",
+      "NO_DATA": "Geçerli kayıtlı mum geçmişi yok.",
+      "unknown": "Bu durum tanınmıyor",
+      "NO_CANDLE_HISTORY": "Bu işlemi kapsayan kayıtlı 1m mum geçmişi yok; yerine başka veri konulmadı.",
+      "INCOMPLETE_CANDLE_HISTORY": "Kayıtlı mum geçmişi işlem aralığını tam kapsamıyor; inceleme gösterilmiyor.",
+      "CANDLE_IDENTITY_MISMATCH": "Kayıtlı mumlar bu işlemin enstrüman kimliğiyle eşleşmiyor.",
+      "CONFLICTING_CANDLES": "Bu aralıkta çelişkili yinelenen mumlar bulundu; birleştirilmedi.",
+      "UNALIGNED_CANDLE": "Kayıtlı mum zaman damgası dakika hizalı değil.",
+      "INVALID_CANDLE_PROVENANCE": "Bir kayıtlı mumun venue/feed kaynağı geçersiz.",
+      "INVALID_OHLC": "Bir kayıtlı mumun OHLC değeri geçersiz.",
+      "INVALID_TIMESTAMP": "Bir kayıtlı mumun zaman damgası geçersiz.",
+      "INVALID_VOLUME": "Bir kayıtlı mumun hacmi geçersiz.",
+      "INVALID_TRADE": "Kayıtlı işlemde geçerli sembol, yön, fiyat veya miktar eksik.",
+      "INVALID_TRADE_WINDOW": "Kayıtlı işlem aralığı geçersiz (çıkış girişten önce veya zaman eksik).",
+      "INVALID_CONTEXT_WINDOW": "İstenen tekrar bağlam aralığı desteklenen sınırların dışında.",
+      "NO_CACHED_CANDLES": "Bu enstrüman için önbellekte mum yok; yerine başka veri konulmadı. Ücretsiz genel veriyi istemek için Yenile'yi kullanın.",
+      "NO_CANDLES_SINCE_ENTRY": "Önbellekteki mumlar bu işlemin girişinden önce bitiyor; açık pozisyonu görmek için piyasa verisini yenileyin.",
+      "TRADE_NOT_OPEN": "Bu işlem açık değil; kapanmış işlemler kapanmış replay görünümünü kullanır.",
+      "REFRESH_FAILED": "Piyasa verisi yenilemesi mum döndürmedi; grafik değişmedi.",
+      "PROVIDER_MATCH_REQUIRED": "Bu işlem için henüz doğrulanmış bir grafik eşleşmesi yok. Beyan edilen sağlayıcıdan mum almak için Yenile'yi kullanın.",
+      "PROVIDER_NOT_DECLARED": "Bu işlemde beyan edilmiş ücretsiz genel sağlayıcı ve enstrüman sembolü yok; grafik eşleşmesi kurulamaz. Önce işlemdeki enstrüman kaynağını belirleyin.",
+      "PROVIDER_IDENTITY_MISMATCH": "İndirilen mumlar işlemin beyan edilen sağlayıcı kimliğiyle eşleşmiyor; yerine başka veri konulmadı.",
+      "PROVIDER_NOT_SUPPORTED": "İşlemin beyan ettiği sağlayıcı desteklenen ücretsiz genel kaynak değil.",
+      "PROVIDER_INSTRUMENT_UNSUPPORTED": "Beyan edilen sağlayıcı bu sembol için farklı bir ürün sunuyor; ikame yapılmaz.",
+      "PROVIDER_FETCH_FAILED": "Beyan edilen sağlayıcı mum döndürmedi; yerine başka veri konulmadı."
+    },
+    "closed_only_note": "Grafik incelemesi salt okunurdur ve işlem kaydedilmiş bir çıkış kazandığında açılır.",
+    "action": {
+      "seek": "Tekrar konumu",
+      "reset": "Tekrarı sıfırla",
+      "step_back": "Geri adım",
+      "step_forward": "İleri adım",
+      "play": "OYNAT",
+      "pause": "DURAKLAT"
+    },
+    "open_review": {
+      "badge": "AÇIK POZİSYON",
+      "no_performance": "Bu incelemede performans metriği yok: açık pozisyon için PnL/MAE/MFE hesaplanmaz.",
+      "freshness_fresh": "Gecikme göstergesi: son mum ≤5 dk (bu canlı veri kanıtı değildir).",
+      "freshness_delayed": "Gecikme göstergesi: son mum 5 dakikadan eski; canlı veri değil.",
+      "freshness_unknown": "Gecikme göstergesi: BİLİNMİYOR (kullanılabilir mum zamanı yok).",
+      "last_candle": "Son mum: {time} (İstanbul) · {state}",
+      "last_download": "Son başarılı indirme: {time}",
+      "candle_state_open": "devam ediyor",
+      "candle_state_closed": "kapandı",
+      "candle_state_unknown": "durum bilinmiyor",
+      "provider": "Sağlayıcı (bu oturumda indirildi): {provider}",
+      "provider_unknown": "Sağlayıcı önbellekte kayıtlı değil; aynı sembol yazısı sağlayıcıyı doğrulamaz.",
+      "identity_note": "Enstrüman kimliği: {instrument} — kaynak beyanı, doğrulanmadı.",
+      "partial_history": "İşlem girişinden bu yana tam geçmiş yok; gösterilen aralık {start} – {end} ({minutes} dk eksik)."
+    },
+    "refresh": {
+      "action": "Yenile",
+      "refreshing": "Yenileniyor…",
+      "error": "Yenileme başarısız; grafik değişmedi. Tekrar deneyin."
+    },
+    "boundary_note_open": "Beyan edilen sağlayıcı anlık görüntüsü · broker gerçekleşmesi değil · R brüt fiyat hareketidir"
   }
 }

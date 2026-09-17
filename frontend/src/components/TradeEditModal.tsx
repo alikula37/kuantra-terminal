@@ -211,6 +211,12 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
 
   const save = async () => {
     if (!trade || isSaving) return;
+    const originalEntryInput = trade.entry_time ? utcIsoToIstanbulInput(trade.entry_time) || "" : "";
+    const entryTimeDirty = entryTime !== originalEntryInput;
+    if (!completedLocked && entryTimeDirty && !(entryTime && istanbulInputToUtcIso(entryTime))) {
+      setSaveError(t("journal_edit.reason_time_invalid"));
+      return;
+    }
     if (entryPrice !== "" && Number(entryPrice) <= 0) {
       setSaveError(t("order_ticket.errors.entry_required"));
       return;
@@ -239,15 +245,18 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
         changes.exit_time = exitTimeIso;
       }
     }
-    const originalEntryTimeIso = trade.entry_time ? new Date(trade.entry_time).toISOString() : "";
     const nextEntryTimeIso = entryTime ? istanbulInputToUtcIso(entryTime) : null;
     if (!completedLocked && !sizeLocked) {
       if (Number(entryPrice) !== Number(trade.entry_price)) changes.entry_price = Number(entryPrice);
       if (Number(qty) !== Number(trade.qty)) changes.qty = Number(qty);
-      if (nextEntryTimeIso && nextEntryTimeIso !== originalEntryTimeIso) changes.entry_time = nextEntryTimeIso;
       const nextLeverage = leverage === "" ? null : Number(leverage);
       const currentLeverage = trade.leverage ?? null;
       if (nextLeverage !== currentLeverage) changes.leverage = nextLeverage;
+    }
+    if (!completedLocked && entryTimeDirty && nextEntryTimeIso) {
+      // A minute-precision comparison: an unrelated save never rewrites the
+      // stored seconds of the entry timestamp.
+      changes.entry_time = nextEntryTimeIso;
     }
     if (!notesOnly && qtyUnit !== (trade.qty_unit === "BASE" ? "BASE" : "UNKNOWN")) {
       changes.qty_unit = qtyUnit;
@@ -523,7 +532,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   <span className="k-label">{t("order_ticket.trade_time_label")}</span>
                   <input
                     type="datetime-local" data-testid="trade-edit-entry-time"
-                    value={entryTime} disabled={completedLocked || sizeLocked}
+                    value={entryTime} disabled={completedLocked}
                     onChange={(e) => setEntryTime(e.target.value)}
                     className="k-input mt-1" aria-label={t("order_ticket.trade_time_label")}
                   />

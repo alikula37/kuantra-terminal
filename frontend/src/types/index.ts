@@ -281,6 +281,59 @@ export interface ReplayProvenance {
   [key: string]: unknown;
 }
 
+export interface ReplayPlanLevel {
+  kind: string;
+  price: number;
+  weight_pct?: number | null;
+}
+
+export interface ReplayPlanReference {
+  kind: "LOCAL_PLAN" | "TRADE_ROW";
+  reference: true;
+  reference_code: "CURRENT_PLAN_REFERENCE";
+  plan_revision: number | null;
+  plan_reset_count: number | null;
+  created_after_entry: boolean | null;
+  plan_mismatch?: boolean;
+  levels: ReplayPlanLevel[];
+}
+
+export interface ReplayCloseEvidence {
+  price: number | null;
+  time_utc: string | null;
+  source: "USER_REPORTED" | "IMPORTED_FILE" | "SIMULATION" | "SOURCE_DECLARED" | "UNKNOWN";
+  broker_verified: boolean;
+  close_source_raw: string | null;
+}
+
+export interface OpenReviewBlock {
+  history_status: "FULL_SINCE_ENTRY" | "PARTIAL_SINCE_ENTRY";
+  timeframe?: string | null;
+  entry_bar_present: boolean;
+  bars: number;
+  coverage_start_utc: string | null;
+  coverage_end_utc: string | null;
+  missing_before_entry_minutes: number;
+  gap_count: number;
+  gap_ranges: { start_utc: string | null; end_utc: string | null }[];
+  gap_note: string;
+  bars_truncated: boolean;
+  last_candle_time_utc: string | null;
+  last_candle_age_seconds: number | null;
+  last_candle_state: "OPEN" | "CLOSED" | "UNKNOWN";
+  delay_indicator: "FRESH_DELAY" | "DELAYED" | "UNKNOWN";
+  provider_latency: string;
+  last_download_at: string | null;
+  refresh_result: string;
+  provider: string | null;
+  provider_symbol: string | null;
+  identity_verified: boolean;
+  identity_note: string | null;
+  instrument: string | null;
+  cache_symbol: string | null;
+  store: string | null;
+}
+
 export interface ReplaySessionResponse {
   status: "READY" | "NO_DATA" | "UNAVAILABLE";
   reason: string | null;
@@ -297,6 +350,15 @@ export interface ReplaySessionResponse {
   current_candle: Candle | null;
   trade: ReplayTradeState | null;
   visible_candles: Candle[];
+  plan?: ReplayPlanReference | null;
+  close_evidence?: ReplayCloseEvidence | null;
+  origin_class?: "IMPORTED_FILE" | "JOURNAL" | "UNKNOWN" | null;
+  market_context?: Record<string, unknown> | null;
+  review_mode?: "CLOSED" | "OPEN";
+  open_review?: OpenReviewBlock | null;
+  instrument?: string | null;
+  provider?: string | null;
+  provider_symbol?: string | null;
 }
 
 export interface PlaybookRule {

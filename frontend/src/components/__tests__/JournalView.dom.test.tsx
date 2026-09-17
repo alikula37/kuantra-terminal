@@ -257,3 +257,23 @@ it("opens the export modal with the current filters from the toolbar", async () 
   expect(previewCall).toContain("scope=filtered");
   expect(previewCall).toContain("date_basis=entry");
 });
+
+it("offers a read-only chart inspection action per trade and routes it to the replay tab", async () => {
+  const closedTrade = {
+    id: "TRD-REPLAY", symbol: "BTCUSDT", side: "BUY", position_type: "LONG", status: "CLOSED",
+    entry_price: 100, exit_price: 110, qty: 1, stop_loss: 95, take_profit: 110,
+    entry_time: "2026-09-01T10:00:00.000000Z", exit_time: "2026-09-01T12:00:00.000000Z",
+    pnl: 9.5, commission: 0.5, revision: 1,
+  };
+  const canceledTrade = { ...closedTrade, id: "TRD-CANCELED", status: "CANCELED", pnl: null, exit_price: null, exit_time: null };
+  mocks.apiFetch.mockImplementation(() => Promise.resolve(response([closedTrade, canceledTrade])));
+  const onOpenReplay = vi.fn();
+  await act(async () => root.render(<JournalView {...props} onOpenCsvImport={vi.fn()} onOpenReplay={onOpenReplay} />));
+  await flush();
+
+  const action = host.querySelector('[data-testid="journal-replay-action"][data-trade-id="TRD-REPLAY"]') as HTMLButtonElement;
+  expect(action).not.toBeNull();
+  await act(async () => action.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+  expect(onOpenReplay).toHaveBeenCalledExactlyOnceWith("TRD-REPLAY");
+  expect(host.querySelector('[data-testid="journal-replay-action"][data-trade-id="TRD-CANCELED"]')).toBeNull();
+});

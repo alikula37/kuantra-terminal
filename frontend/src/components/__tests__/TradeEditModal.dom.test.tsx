@@ -17,6 +17,7 @@ vi.mock("../../context/I18nContext", () => ({
 }));
 
 import { TradeEditModal } from "../TradeEditModal";
+import { istanbulInputToUtcIso } from "../../lib/tradeTime";
 
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -74,8 +75,9 @@ const flush = async () => {
   });
 };
 
-const setInputValue = (input: HTMLInputElement, value: string) => {
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+const setInputValue = (input: HTMLInputElement | HTMLTextAreaElement, value: string) => {
+  const prototype = input.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
   setter?.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
@@ -365,4 +367,60 @@ it("lets a completed trade declare its unit and correct the exit", async () => {
   expect(captured.patch).toMatchObject({ qty_unit: "BASE", exit_price: 112, expected_revision: 3 });
   expect(captured.patch.status).toBeUndefined();
   expect(captured.patch.qty).toBeUndefined();
+});
+
+it("keeps the stored entry seconds when an unrelated field is saved", async () => {
+  const trade = { ...openTrade, entry_time: "2026-09-13T21:00:15Z" };
+  const captured = respond(trade);
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+
+  const notes = host.querySelector("textarea") as HTMLTextAreaElement;
+  setInputValue(notes, "sadece not");
+  await act(async () => (host.querySelector('[data-testid="trade-edit-save"]') as HTMLButtonElement).click());
+  await flush();
+
+  expect(captured.patch.notes).toBe("sadece not");
+  expect(captured.patch.entry_time).toBeUndefined();
+});
+
+it("sends an explicitly changed entry time at minute precision", async () => {
+  const trade = { ...openTrade, entry_time: "2026-09-13T21:00:15Z" };
+  const captured = respond(trade);
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+
+  const entryTime = host.querySelector('[data-testid="trade-edit-entry-time"]') as HTMLInputElement;
+  setInputValue(entryTime, "2026-09-14T00:30");
+  await act(async () => (host.querySelector('[data-testid="trade-edit-save"]') as HTMLButtonElement).click());
+  await flush();
+
+  expect(captured.patch.entry_time).toBe(istanbulInputToUtcIso("2026-09-14T00:30"));
+});
+
+it("rejects a cleared entry time instead of silently skipping the save", async () => {
+  const trade = { ...openTrade, entry_time: "2026-09-13T21:00:15Z" };
+  const captured = respond(trade);
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+
+  const entryTime = host.querySelector('[data-testid="trade-edit-entry-time"]') as HTMLInputElement;
+  setInputValue(entryTime, "");
+  const notes = host.querySelector("textarea") as HTMLTextAreaElement;
+  setInputValue(notes, "saat yok");
+  await act(async () => (host.querySelector('[data-testid="trade-edit-save"]') as HTMLButtonElement).click());
+  await flush();
+
+  expect((host.querySelector('[data-testid="trade-edit-error"]') as HTMLElement).textContent).toContain("journal_edit.reason_time_invalid");
+  expect(captured.patch).toBeUndefined();
+});
+
+it("allows fixing the entry time after a partial close while price and quantity stay locked", async () => {
+  respond({ ...openTrade }, { plan: planWithClosure });
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+
+  expect((host.querySelector('[data-testid="trade-edit-entry"]') as HTMLInputElement).disabled).toBe(true);
+  expect((host.querySelector('[data-testid="trade-edit-qty"]') as HTMLInputElement).disabled).toBe(true);
+  expect((host.querySelector('[data-testid="trade-edit-entry-time"]') as HTMLInputElement).disabled).toBe(false);
 });
