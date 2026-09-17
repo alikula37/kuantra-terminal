@@ -22,8 +22,20 @@ yahoo's `XAUUSD=X` spot route answers HTTP 404 and stooq now serves a JavaScript
 instead of CSV — so **no reachable independent free source exists for spot gold/FX today**
 and a real CONSISTENT/DIVERGENT verdict remains an unchecked item in the archived package.
 Remaining WP43 unchecked items: the real independent-source verdict and real pilot-data
-visual acceptance. The implementing commit, canonical CI report and installed-app hash are
-recorded below once verified.
+visual acceptance.
+
+**P1-WP43 delivery verification (2026-09-17):** commits `4a6d44b` (backend), `a17fc5a`
+(frontend), `f6286a5` (docs; WP43 archived Complete with 2 tracked unchecked items). Clean
+commit `f6286a5` canonical arm64 local CI: **MERGE READY**, provenance **COMPLETE**, clean
+tree; report `dist/p1-wp43-committed-local-ci.json` SHA-256
+`acd10378f4fdb6e99bf06caf07180dae71196cd9ee11e9b6e943a52918f21c90`, executable
+`b86bbd742144e923bbbb49263ea103e4fa3a9e3356334dde28298700a10d9af7`. arm64 DMG
+`dist/Kuantra-Terminal-1.1.3-wp43-arm64.dmg` SHA-256
+`3d5b02387df969909fb25568d37651d0b3fd9b753899d59a6cf8244890dfe52e`; exact read-only
+mounted-DMG smoke **PASS** (`dist/p1-wp43-exact-dmg-smoke.json`). `/Applications/Kuantra
+Terminal.app` was replaced after a graceful quit: installed executable matches the CI build,
+`codesign --verify --deep --strict` passes, version 1.1.3, launched and quit cleanly, user
+data preserved. GitHub Releases and tags were untouched (no version train approved).
 [P1-WP42 read-only chart review](../archive/strategy/work-packages/P1-WP42-chart-trade-review-p1.md)
 remains complete and archived (commits `7b6c379` / `71a3640`).
 [P1-WP42 read-only chart review](../archive/strategy/work-packages/P1-WP42-chart-trade-review-p1.md)
