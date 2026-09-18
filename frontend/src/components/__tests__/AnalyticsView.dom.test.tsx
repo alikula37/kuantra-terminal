@@ -174,3 +174,19 @@ it("keeps a fully known book free of unknown-result notes", async () => {
   expect(host.textContent).not.toContain("analytics.unknown_all_title");
   expect(host.textContent).toContain("SYSTEM QUALITY NUMBER");
 });
+
+it("states that simulations are excluded when the counter is non-zero", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => {
+    if (path.includes("/analytics/quant")) {
+      return Promise.resolve(response({ ...scorecard, simulation_trades: 3 }));
+    }
+    return Promise.resolve(response(path.includes("/analytics/pivot")
+      ? { dimensions: ["symbol"], total_buckets: 0, rows: [], basis: "NO_CLOSED_TRADES" }
+      : [symbolRow()]));
+  });
+  await act(async () => root.render(<AnalyticsView />));
+  await flush();
+
+  const note = host.querySelector('[data-testid="analytics-simulation-excluded"]');
+  expect(note?.textContent).toContain("analytics.simulation_excluded");
+});

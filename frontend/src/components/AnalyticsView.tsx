@@ -141,6 +141,11 @@ export const AnalyticsView: React.FC = () => {
         <div>
           <h2 className="text-base font-bold text-white">{t("analytics.title")}</h2>
           <p className="text-xs text-slate-400">{t("analytics.subtitle")}</p>
+          {Number((scorecard as unknown as Record<string, unknown>).simulation_trades ?? 0) > 0 && (
+            <p data-testid="analytics-simulation-excluded" className="text-xs text-amber-300">
+              {t("analytics.simulation_excluded", { count: Number((scorecard as unknown as Record<string, unknown>).simulation_trades) })}
+            </p>
+          )}
         </div>
         <div className="bg-[#111722] px-3 py-1.5 rounded border border-surface-border text-xs text-accent font-bold">
           {t("analytics.total_closed", { count: scorecard.total_trades })}

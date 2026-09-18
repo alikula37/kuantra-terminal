@@ -909,7 +909,10 @@
     "cancel_load": "Cancel loading",
     "cancelled": "Loading was cancelled. No analytics result is shown.",
     "error": "Quantitative analytics could not be loaded safely.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "simulation_excluded": "Simulation records are excluded from these metrics ({count} closed simulation records).",
+    "pivot_empty_title": "No closed trades yet",
+    "pivot_empty_desc": "The pivot grid shows nothing until real closed results exist; simulated records never appear here."
   },
   "mae_mfe": {
     "title": "MAXIMUM ADVERSE / FAVORABLE EXCURSION (MAE / MFE)",

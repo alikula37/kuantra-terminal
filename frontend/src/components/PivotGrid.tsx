@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { PivotGridResponse, PivotRow } from "../types";
+import { useTranslation } from "../context/I18nContext";
 import { Layers, ArrowUpDown, Download, Filter, CheckSquare, Square } from "lucide-react";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { saveTextFile } from "../lib/desktop";
 
 export const PivotGrid: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedDimensions, setSelectedDimensions] = useState<string[]>(["symbol", "session"]);
   const [pivotData, setPivotData] = useState<PivotGridResponse | null>(null);
   const [sortField, setSortField] = useState<keyof PivotRow>("total_pnl");
@@ -151,6 +153,11 @@ export const PivotGrid: React.FC = () => {
       <div className="flex-1 overflow-y-auto rounded-lg border border-surface-border bg-[#0d121c]">
         {isLoading ? (
           <div className="p-12 text-center text-slate-400">Computing DuckDB aggregation matrix...</div>
+        ) : pivotData && pivotData.rows.length === 0 ? (
+          <div data-testid="pivot-empty" className="p-12 text-center text-slate-400 space-y-1">
+            <p className="font-bold text-white">{t("analytics.pivot_empty_title")}</p>
+            <p className="text-xs text-slate-500">{t("analytics.pivot_empty_desc")}</p>
+          </div>
         ) : (
           <table className="w-full text-left text-xs">
             <thead className="bg-[#090d14] text-[10px] text-slate-400 uppercase tracking-wider sticky top-0 border-b border-surface-border">

@@ -909,7 +909,10 @@
     "cancel_load": "Yüklemeyi iptal et",
     "cancelled": "Yükleme iptal edildi. Analitik sonucu gösterilmiyor.",
     "error": "Kantitatif analitik güvenli biçimde yüklenemedi.",
-    "retry": "Tekrar dene"
+    "retry": "Tekrar dene",
+    "simulation_excluded": "Simülasyon kayıtları bu metriklerden hariç tutulur ({count} kapanmış simülasyon kaydı).",
+    "pivot_empty_title": "Henüz kapanmış işlem yok",
+    "pivot_empty_desc": "Gerçek kapanmış sonuçlar oluşana kadar pivot tablo boş kalır; simülasyon kayıtları burada asla görünmez."
   },
   "mae_mfe": {
     "title": "MAKSİMUM TERS / LEHTE HAREKET (MAE / MFE)",

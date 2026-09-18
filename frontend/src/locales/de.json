@@ -909,7 +909,10 @@
     "cancel_load": "Laden abbrechen",
     "cancelled": "Laden abgebrochen. Kein Analyseergebnis wird angezeigt.",
     "error": "Quantitative Analysen konnten nicht sicher geladen werden.",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "simulation_excluded": "Simulationsdatensätze sind von diesen Kennzahlen ausgeschlossen ({count} abgeschlossene Simulationsdatensätze).",
+    "pivot_empty_title": "Noch keine abgeschlossenen Trades",
+    "pivot_empty_desc": "Das Pivot-Raster bleibt leer, bis echte abgeschlossene Ergebnisse vorliegen; Simulationsdatensätze erscheinen hier nie."
   },
   "mae_mfe": {
     "title": "MAXIMALE ADVERSE / GÜNSTIGE EXKURSION (MAE / MFE)",
