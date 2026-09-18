@@ -13,6 +13,22 @@ from app.db.duckdb_driver import duckdb_driver
 
 logger = logging.getLogger(__name__)
 
+
+def _build_ssl_context() -> "ssl.SSLContext":
+    """Certificate context for the market stream, pinned to certifi.
+
+    The packaged macOS app once failed the websocket handshake with
+    ``CERTIFICATE_VERIFY_FAILED`` while the REST paths (httpx/certifi) worked:
+    the stream relied on the interpreter's default trust store.  Pinning the
+    stream to the same certifi bundle keeps certificate verification intact.
+    """
+
+    import ssl
+
+    import certifi
+
+    return ssl.create_default_context(cafile=certifi.where())
+
 LIVE = "LIVE"
 DEGRADED = "DEGRADED"
 UNAVAILABLE = "UNAVAILABLE"
@@ -91,7 +107,7 @@ class BinanceStreamClient:
                 self._set_degraded()
                 await self._broadcast_status()
                 logger.info(f"Connecting to Binance WS at {url}...")
-                async with websockets.connect(url, ping_interval=20, ping_timeout=10) as ws:
+                async with websockets.connect(url, ping_interval=20, ping_timeout=10, ssl=_build_ssl_context()) as ws:
                     retry_count = 0
                     logger.info("Connected to Binance live market stream.")
                     while self.is_running:
