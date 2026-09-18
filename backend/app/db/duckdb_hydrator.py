@@ -128,7 +128,8 @@ class DuckDBHydrator:
                         "r_multiple": float(t["r_multiple"]) if t.get("r_multiple") is not None else None,
                         "commission": float(t.get("commission") or 0.0),
                         "duration_seconds": duration,
-                        "is_winner": (pnl > 0) if pnl is not None else None
+                        "is_winner": (pnl > 0) if pnl is not None else None,
+                        "record_mode": str(t.get("record_mode") or "").upper() or None,
                     })
 
                 df = pd.DataFrame(trade_records)
@@ -194,8 +195,11 @@ class DuckDBHydrator:
                 r_multiple DOUBLE,
                 commission DOUBLE,
                 duration_seconds DOUBLE,
-                is_winner BOOLEAN
+                is_winner BOOLEAN,
+                record_mode VARCHAR
             );
+
+            ALTER TABLE olap_trades ADD COLUMN IF NOT EXISTS record_mode VARCHAR;
 
             CREATE INDEX IF NOT EXISTS idx_candles_lookup ON market_candles(symbol, timeframe, timestamp);
         """)

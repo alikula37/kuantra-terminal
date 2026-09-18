@@ -54,8 +54,11 @@ class DuckDBDriver:
                     r_multiple DOUBLE,
                     commission DOUBLE,
                     duration_seconds DOUBLE,
-                    is_winner BOOLEAN
+                    is_winner BOOLEAN,
+                    record_mode VARCHAR
                 );
+
+                ALTER TABLE olap_trades ADD COLUMN IF NOT EXISTS record_mode VARCHAR;
 
                 CREATE INDEX IF NOT EXISTS idx_candles_lookup ON market_candles(symbol, timeframe, timestamp);
             """)
@@ -322,7 +325,8 @@ class DuckDBDriver:
                 "r_multiple": float(trade["r_multiple"]) if trade.get("r_multiple") is not None else None,
                 "commission": float(trade.get("commission", 0.0) or 0.0),
                 "duration_seconds": duration,
-                "is_winner": is_win
+                "is_winner": is_win,
+                "record_mode": str(trade.get("record_mode") or "").upper() or None,
             }
 
             df = pd.DataFrame([trade_record])
@@ -366,7 +370,7 @@ class DuckDBDriver:
                     COALESCE(AVG(duration_seconds), 0.0) as avg_duration_seconds,
                     COALESCE(SUM(commission), 0.0) as total_commission
                 FROM olap_trades
-                WHERE status = 'CLOSED'
+                WHERE status = 'CLOSED' AND COALESCE(record_mode, '') <> 'SIMULATION'
             """
             row = conn.execute(query).fetchone()
             if not row or row[0] == 0:
@@ -387,8 +391,14 @@ class DuckDBDriver:
                     "profit_factor": 0.0,
                     "avg_r_multiple": 0.0,
                     "avg_duration_seconds": 0.0,
-                    "total_commission": 0.0
+                    "total_commission": 0.0,
+                    "simulation_trades": 0,
                 }
+
+            simulation_row = conn.execute(
+                "SELECT COUNT(*) FROM olap_trades WHERE status = 'CLOSED' AND record_mode = 'SIMULATION'"
+            ).fetchone()
+            simulation_trades = int(simulation_row[0]) if simulation_row else 0
 
             total_trades = row[0]
             known_pnl_trades = row[1]
@@ -405,6 +415,7 @@ class DuckDBDriver:
             profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else (gross_profit if gross_profit > 0 else 0.0)
 
             return {
+                "simulation_trades": simulation_trades,
                 "total_trades": total_trades,
                 "known_pnl_trades": known_pnl_trades,
                 "unknown_pnl_trades": unknown_pnl_trades,
@@ -439,7 +450,7 @@ class DuckDBDriver:
                     COALESCE(AVG(pnl), 0.0) as avg_pnl,
                     COALESCE(AVG(CASE WHEN pnl IS NULL THEN NULL WHEN pnl > 0 THEN 1.0 ELSE 0.0 END), 0.0) * 100 as win_rate
                 FROM olap_trades
-                WHERE status = 'CLOSED'
+                WHERE status = 'CLOSED' AND COALESCE(record_mode, '') <> 'SIMULATION'
                 GROUP BY symbol
                 ORDER BY total_pnl DESC
             """
@@ -465,6 +476,7 @@ class DuckDBDriver:
                     r_multiple
                 FROM olap_trades
                 WHERE status = 'CLOSED' AND exit_time IS NOT NULL AND pnl IS NOT NULL
+                  AND COALESCE(record_mode, '') <> 'SIMULATION'
                 ORDER BY exit_time ASC
             """
             result = conn.execute(query).fetchall()

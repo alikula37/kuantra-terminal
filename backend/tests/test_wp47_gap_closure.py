@@ -136,7 +136,7 @@ def test_closed_usd_trade_flows_through_analytics_and_export(monkeypatch, tmp_pa
 def test_pivot_grid_uses_the_stored_value_based_result(monkeypatch, tmp_path):
     driver = _isolated_journal(monkeypatch, tmp_path)
     client = TestClient(create_app())
-    created = client.post("/api/v1/trades", json=_usd_trade_payload()).json()
+    created = client.post("/api/v1/trades", json=_usd_trade_payload(record_mode="EXTERNAL")).json()
     client.post(f"/api/v1/trades/{created['id']}/close",
                 json={"exit_price": 4343.0, "commission": 1.0})
 

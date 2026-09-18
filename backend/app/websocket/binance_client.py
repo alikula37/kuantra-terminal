@@ -13,6 +13,33 @@ from app.db.duckdb_driver import duckdb_driver
 
 logger = logging.getLogger(__name__)
 
+_CANDLE_PERSIST_LOCK_WARNED = False
+
+
+def _persist_closed_candle(candle: "dict") -> None:
+    """Persist one closed candle with bounded retries and a single warning.
+
+    A DuckDB file lock (for example while a maintenance process hydrates the
+    warehouse) must not spam ERROR lines for every closed minute: retry a few
+    times, then warn once per process and stay quiet afterwards.
+    """
+
+    global _CANDLE_PERSIST_LOCK_WARNED
+
+    last_error = None
+    for attempt in range(3):
+        try:
+            duckdb_driver.insert_candles([candle])
+            return
+        except Exception as exc:  # noqa: BLE001 - persistence is best effort
+            last_error = exc
+            time.sleep(0.5 * (attempt + 1))
+    if not _CANDLE_PERSIST_LOCK_WARNED:
+        _CANDLE_PERSIST_LOCK_WARNED = True
+        logger.warning("Candle persistence is unavailable (DuckDB): %s", last_error)
+    else:
+        logger.debug("Candle persistence still unavailable: %s", last_error)
+
 
 def _build_ssl_context() -> "ssl.SSLContext":
     """Certificate context for the market stream, pinned to certifi.
@@ -187,11 +214,7 @@ class BinanceStreamClient:
             }, channel="kline_updates")
 
             if candle["is_closed"]:
-                # Persist closed candle to DuckDB columnar storage
-                try:
-                    duckdb_driver.insert_candles([candle])
-                except Exception as e:
-                    logger.error(f"Error persisting candle to DuckDB: {e}")
+                _persist_closed_candle(candle)
 
     async def _process_tick(self, price: float, timestamp_ms: int, volume: float, taker_side: str):
         self._set_live()

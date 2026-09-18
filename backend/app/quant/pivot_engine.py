@@ -31,13 +31,17 @@ class PivotEngine:
             dimensions = ["symbol"]
 
         # Fetch closed trades from SQLite
-        all_trades = sqlite_driver.list_trades(limit=10000, symbol=symbol_filter, status="CLOSED")
+        all_trades = [
+            t for t in sqlite_driver.list_trades(limit=10000, symbol=symbol_filter, status="CLOSED")
+            if str(t.get("record_mode") or "").upper() != "SIMULATION"
+        ]
         if side_filter and side_filter != "ALL":
             all_trades = [t for t in all_trades if str(t.get("side", "")).upper() == side_filter.upper()]
 
         if not all_trades:
-            # Return baseline seed data if db has no closed trades
-            return cls._generate_seed_pivot(dimensions)
+            # No closed trades means no analytics.  Invented "seed" rows were a
+            # silent fabrication and are never returned; the basis is explicit.
+            return {"dimensions": dimensions, "total_buckets": 0, "rows": [], "basis": "NO_CLOSED_TRADES"}
 
         # Enrich trade records with analytical dimensions
         enriched = []
@@ -175,53 +179,5 @@ class PivotEngine:
         finally:
             conn.close()
 
-    @classmethod
-    def _generate_seed_pivot(cls, dimensions: List[str]) -> Dict[str, Any]:
-        """Provides seed institutional data when terminal starts without historical database."""
-        seeds = [
-            {"symbol": "BTCUSDT", "side": "LONG", "day_of_week": "Tuesday", "session": "New York", "hold_time_range": "Day Trade (15m-4h)", "trades_count": 18, "win_rate": 72.22, "total_pnl": 9450.0, "avg_pnl": 525.0, "profit_factor": 3.45, "avg_r_multiple": 2.15, "sqn": 2.85, "expectancy": 480.0, "max_win": 1850.0, "max_loss": -450.0},
-            {"symbol": "BTCUSDT", "side": "SHORT", "day_of_week": "Thursday", "session": "London", "hold_time_range": "Scalp (<15m)", "trades_count": 12, "win_rate": 58.33, "total_pnl": 3400.0, "avg_pnl": 283.33, "profit_factor": 2.10, "avg_r_multiple": 1.45, "sqn": 1.95, "expectancy": 240.0, "max_win": 950.0, "max_loss": -350.0},
-            {"symbol": "ETHUSDT", "side": "LONG", "day_of_week": "Wednesday", "session": "London", "hold_time_range": "Day Trade (15m-4h)", "trades_count": 10, "win_rate": 60.00, "total_pnl": 4200.0, "avg_pnl": 420.0, "profit_factor": 2.65, "avg_r_multiple": 1.80, "sqn": 2.20, "expectancy": 380.0, "max_win": 1200.0, "max_loss": -400.0},
-            {"symbol": "SOLUSDT", "side": "SHORT", "day_of_week": "Friday", "session": "New York", "hold_time_range": "Swing (>4h)", "trades_count": 8, "win_rate": 50.00, "total_pnl": 1850.0, "avg_pnl": 231.25, "profit_factor": 1.75, "avg_r_multiple": 1.25, "sqn": 1.65, "expectancy": 190.0, "max_win": 800.0, "max_loss": -320.0},
-            {"symbol": "BTCUSDT", "side": "LONG", "day_of_week": "Monday", "session": "Asia", "hold_time_range": "Scalp (<15m)", "trades_count": 6, "win_rate": 66.67, "total_pnl": 1250.0, "avg_pnl": 208.33, "profit_factor": 2.25, "avg_r_multiple": 1.35, "sqn": 1.80, "expectancy": 175.0, "max_win": 600.0, "max_loss": -250.0},
-        ]
-
-        # Aggregate seeds based on chosen dimensions
-        df = pd.DataFrame(seeds)
-        grouped = df.groupby(dimensions)
-        rows = []
-        for key, group in grouped:
-            if not isinstance(key, tuple):
-                key = (key,)
-            dim_dict = {dimensions[i]: key[i] for i in range(len(dimensions))}
-            trades_sum = int(group["trades_count"].sum())
-            pnl_sum = float(group["total_pnl"].sum())
-            win_rate_avg = float(group["win_rate"].mean())
-            pf_avg = float(group["profit_factor"].mean())
-            r_avg = float(group["avg_r_multiple"].mean())
-            sqn_avg = float(group["sqn"].mean())
-            ev_avg = float(group["expectancy"].mean())
-
-            rows.append({
-                "dimensions": dim_dict,
-                "group_key": " | ".join(str(dim_dict[d]) for d in dimensions),
-                "trades_count": trades_sum,
-                "win_rate": round(win_rate_avg, 2),
-                "total_pnl": round(pnl_sum, 2),
-                "avg_pnl": round(pnl_sum / trades_sum, 2) if trades_sum > 0 else 0.0,
-                "profit_factor": round(pf_avg, 2),
-                "avg_r_multiple": round(r_avg, 2),
-                "sqn": round(sqn_avg, 2),
-                "expectancy": round(ev_avg, 2),
-                "max_win": round(float(group["max_win"].max()), 2),
-                "max_loss": round(float(group["max_loss"].min()), 2),
-            })
-
-        rows.sort(key=lambda x: x["total_pnl"], reverse=True)
-        return {
-            "dimensions": dimensions,
-            "total_buckets": len(rows),
-            "rows": rows
-        }
 
 pivot_engine = PivotEngine()

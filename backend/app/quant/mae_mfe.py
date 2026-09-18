@@ -40,7 +40,10 @@ class MaeMfeAnalyzer:
         """
         store_error = None
         try:
-            candidates = sqlite_driver.list_trades(limit=1000, symbol=symbol, status="CLOSED", order_by_utc=True)
+            candidates = [
+                t for t in sqlite_driver.list_trades(limit=1000, symbol=symbol, status="CLOSED", order_by_utc=True)
+                if str(t.get("record_mode") or "").upper() != "SIMULATION"
+            ]
         except Exception:
             candidates = []
             store_error = EvidenceError("TRADE_STORE_UNAVAILABLE", "The recorded trade store could not be read.", "UNAVAILABLE")
