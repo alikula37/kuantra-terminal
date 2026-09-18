@@ -226,3 +226,30 @@ def test_monitor_view_reports_disabled_market_data(tmp_path):
     view = monitor.view(service.get("TRD-WS-USD"))
     assert view["monitor"]["enabled"] is False
     assert view["monitor"]["wait_reason"] == "MARKET_DATA_DISABLED"
+
+
+def test_provider_clock_skew_is_tolerated_but_future_stamps_are_not(tmp_path):
+    """A provider event a moment ahead of the local clock is fresh, not stale.
+
+    Binance event timestamps can lead the local clock by fractions of a second;
+    the old ``0 <= age`` check rejected those fresh events forever, so automatic
+    closes waited with a misleading "fresh event" reason.  Only a small bounded
+    skew is tolerated; clearly future stamps stay ineligible.
+    """
+
+    service, _state = _tracking_state(tmp_path)
+    now = datetime.now(timezone.utc)
+
+    def observation(offset_seconds: float):
+        return {
+            "status": "LIVE", "price": "77000", "timestamp_basis": "PROVIDER_EVENT",
+            "source_id": "binance_public", "source_symbol": "BTCUSDT",
+            "observed_at": (now + timedelta(seconds=offset_seconds)).isoformat(),
+        }
+
+    armed = {"source_id": "binance_public", "source_symbol": "BTCUSDT",
+             "armed_at": (now - timedelta(minutes=5)).isoformat()}
+    assert service.eligible(armed, observation(0.4), now=now) is True       # slight skew
+    assert service.eligible(armed, observation(-2.0), now=now) is True      # normal fresh
+    assert service.eligible(armed, observation(30.0), now=now) is False     # clearly future
+    assert service.eligible(armed, observation(-120.0), now=now) is False   # clearly stale

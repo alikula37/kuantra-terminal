@@ -371,6 +371,11 @@ class LocalTrackingService:
         finally:
             conn.close()
 
+    # Provider event clocks can lead the local clock by a fraction of a second.
+    # A bounded skew is still a fresh provider event; a clearly future stamp is
+    # not evidence of freshness and stays ineligible.
+    CLOCK_SKEW_TOLERANCE_SECONDS = 5
+
     @staticmethod
     def eligible(state, observation, now=None):
         try:
@@ -378,7 +383,8 @@ class LocalTrackingService:
             return (observation["status"] == "LIVE" and observation.get("timestamp_basis") == "PROVIDER_EVENT"
                     and observation["source_id"] == state["source_id"]
                     and observation["source_symbol"] == state["source_symbol"]
-                    and 0 <= age <= 60 and decimal(observation["price"]) > 0
+                    and -LocalTrackingService.CLOCK_SKEW_TOLERANCE_SECONDS <= age <= 60
+                    and decimal(observation["price"]) > 0
                     and timestamp(observation["observed_at"]) > timestamp(state["armed_at"]))
         except (ValueError, KeyError, TypeError, InvalidOperation):
             return False
