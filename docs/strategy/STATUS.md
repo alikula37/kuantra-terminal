@@ -3,9 +3,14 @@
 
 Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
-The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot
-access); no development proceeds under it without owner approval. Owner instruction
+**Selected work: [P1-WP47 gap closure](work-packages/P1-WP47-gap-closure.md).**
+Owner instruction (2026-09-18): close the gaps the previous delivery honestly reported —
+a live TP-specific automatic-close proof with a new labelled simulation record, the forensic
+cadence reconstruction for the pre-fix wait, end-to-end USD analytics/export tests, a
+`/trades/open` metadata regression, an exhaustive dynamic-localization audit with a
+source-scan guard, and the packaged-app websocket TLS certificate fix. The owner-host
+obligations of [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
+(N03/N05/H05/pilot access) remain tracked. Owner instruction
 (2026-09-18): the four real-UI findings on installed 1.1.5 were fixed with red-first
 regressions under the bounded
 [P1-WP46 package](../archive/strategy/work-packages/P1-WP46-usd-math-monitor-and-label-fixes.md)
@@ -20,6 +25,22 @@ retired the base-quantity entry, made USD value the only sizing (stored as `qty`
 `qty_unit=USD`), derived money math from the value with an explicit approximate label for
 non-USD quotes, and — by explicit owner instruction ("hepsini sil. mantık hatalıydı") —
 deleted all existing trade records after a full backup, shipping as `v1.1.5`.
+
+**P1-WP47 implementation evidence (this change, uncommitted):** (1) the Binance market
+stream now pins its TLS context to the certifi bundle used by REST (the packaged app logged
+`CERTIFICATE_VERIFY_FAILED` while REST worked); (2) `/trades/open` carries `qty_unit`,
+`record_mode` and value-based sizing (regression test); (3) a closed USD simulation flows
+through portfolio summary/breakdown/equity/heatmap, the pivot grid and the journal export
+snapshot with value-based results and explicit units (tests); (4) the pre-fix cadence is
+reconstructed as "consistent with" the old 30/60/120 s backoff arithmetic against the
+surviving 31/61/122 s log gaps, and the new stale-retry policy is pinned; (5) the
+localization audit now covers every dynamically composed key family discovered in the
+source, with a guard that fails on new uncovered prefixes, and it found and fixed three
+real missing keys (`tracking.status_UNKNOWN`, `journal_edit.field_exit_price`,
+`journal_edit.field_exit_time`). Evidence: backend `test_wp47_gap_closure.py` **6 passed**
+(red-first), full backend **1187 passed**, frontend **43 files / 295 tests** plus the extended
+audit, i18n **1238/1238/1238**, `tsc`/build clean. Commit/CI/install and the live TP retest
+are recorded below once done.
 
 **P1-WP46 delivery and installed-app retest (2026-09-18):** commits `bd31ba4`, `909aeca`,
 `af185ca`, `8b092b8`; backend **1182 passed**, frontend **43 files / 295 tests**, i18n
