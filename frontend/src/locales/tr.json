@@ -49,7 +49,8 @@
     "wait_reason_PROVIDER_ERROR": "Sağlayıcıya ulaşılamadı; takip artan aralıklarla yeniden deniyor.",
     "wait_reason_WAITING_FRESH_PROVIDER_EVENT": "Taze bir sağlayıcı olayı bekleniyor (son gözlem bayat ya da plan kaydından eski).",
     "wait_reason_WAITING_PROVIDER_OBSERVATION": "Bu kimlik için ilk sağlayıcı gözlemi bekleniyor.",
-    "monitor_next_poll": "Sonraki deneme ~{seconds} sn içinde"
+    "monitor_next_poll": "Sonraki deneme ~{seconds} sn içinde",
+    "status_UNKNOWN": "Bilinmeyen durum"
   },
   "updates": {
     "title": "Uygulama güncellemeleri",
@@ -1185,7 +1186,9 @@
     "reason_status_invalid": "İşlem durumu açık, kapalı veya iptal edildi olmalı.",
     "completed_correction_notice": "İşlem tamamlandıktan sonra giriş fiyatı ve miktar kilitlidir; notu, miktar birimini ve kullanıcı beyanlı çıkış fiyatı/saatini düzeltebilirsiniz.",
     "unit_unlocks_pnl": "Temel birim beyan edilince kayıtlı çıkış bilgisinden gerçekleşen K/Z hesaplanır.",
-    "reason_time_invalid": "Geçerli bir işlem tarihi ve saati girin (Europe/Istanbul)."
+    "reason_time_invalid": "Geçerli bir işlem tarihi ve saati girin (Europe/Istanbul).",
+    "field_exit_price": "Çıkış fiyatı",
+    "field_exit_time": "Çıkış saati"
   },
   "journal_export": {
     "title": "Günlüğü dışa aktar",

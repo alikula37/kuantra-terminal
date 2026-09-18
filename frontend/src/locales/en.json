@@ -49,7 +49,8 @@
     "wait_reason_PROVIDER_ERROR": "The provider could not be reached; tracking retries with backoff.",
     "wait_reason_WAITING_FRESH_PROVIDER_EVENT": "Waiting for a fresh provider event (the last observation was stale or older than the plan save).",
     "wait_reason_WAITING_PROVIDER_OBSERVATION": "Waiting for the first provider observation for this identity.",
-    "monitor_next_poll": "Next attempt in ~{seconds}s"
+    "monitor_next_poll": "Next attempt in ~{seconds}s",
+    "status_UNKNOWN": "Unknown state"
   },
   "updates": {
     "title": "Application updates",
@@ -1185,7 +1186,9 @@
     "reason_status_invalid": "Trade status must be open, closed or canceled.",
     "completed_correction_notice": "Entry price and quantity are locked once a trade is completed; you can correct the note, the quantity unit and the user-reported exit price/time.",
     "unit_unlocks_pnl": "Declaring the base unit computes the realized P/L from the stored exit data.",
-    "reason_time_invalid": "Enter a valid trade date and time (Europe/Istanbul)."
+    "reason_time_invalid": "Enter a valid trade date and time (Europe/Istanbul).",
+    "field_exit_price": "Exit price",
+    "field_exit_time": "Exit time"
   },
   "journal_export": {
     "title": "Export journal",

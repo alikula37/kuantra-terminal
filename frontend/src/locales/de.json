@@ -49,7 +49,8 @@
     "wait_reason_PROVIDER_ERROR": "Der Anbieter war nicht erreichbar; das Tracking wiederholt mit Backoff.",
     "wait_reason_WAITING_FRESH_PROVIDER_EVENT": "Es wird auf ein frisches Anbieter-Ereignis gewartet (letzte Beobachtung veraltet oder älter als das Planspeichern).",
     "wait_reason_WAITING_PROVIDER_OBSERVATION": "Erste Anbieter-Beobachtung für diese Identität wird erwartet.",
-    "monitor_next_poll": "Nächster Versuch in ~{seconds}s"
+    "monitor_next_poll": "Nächster Versuch in ~{seconds}s",
+    "status_UNKNOWN": "Unbekannter Status"
   },
   "updates": {
     "title": "Anwendungsupdates",
@@ -1185,7 +1186,9 @@
     "reason_status_invalid": "Der Trade-Status muss offen, geschlossen oder storniert sein.",
     "completed_correction_notice": "Nach Abschluss sind Einstiegspreis und Menge gesperrt; Sie können Notiz, Mengeneinheit und den nutzerangegebenen Ausstiegspreis/-zeit korrigieren.",
     "unit_unlocks_pnl": "Mit der Basis-Einheit-Erklärung wird das realisierte P/L aus den gespeicherten Ausstiegsdaten berechnet.",
-    "reason_time_invalid": "Geben Sie ein gültiges Handelsdatum und eine Uhrzeit ein (Europe/Istanbul)."
+    "reason_time_invalid": "Geben Sie ein gültiges Handelsdatum und eine Uhrzeit ein (Europe/Istanbul).",
+    "field_exit_price": "Ausstiegspreis",
+    "field_exit_time": "Ausstiegszeit"
   },
   "journal_export": {
     "title": "Journal exportieren",
