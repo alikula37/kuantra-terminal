@@ -3,15 +3,38 @@
 
 Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
-The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot
-access); no development proceeds under it without owner approval. Owner instruction
-(2026-09-17): traders size positions in USD, not base units — the bounded
+**Selected work: [P1-WP46 USD money math everywhere, monitor visibility, label/i18n fixes](work-packages/P1-WP46-usd-math-monitor-and-label-fixes.md).**
+Owner instruction (2026-09-18): four real-UI findings on installed 1.1.5 are being fixed
+with red-first regressions — remaining base-quantity money paths (create-form risk/reward,
+dashboard live feed, replay payload), the tracking monitor's silent backoff (the automatic
+TP close did happen; stale observations were counted as failures and hidden the reason),
+lost simulation metadata from live position updates, and a raw
+`verification_EXPLICIT_USD_VALUE` locale key. Owner instruction (2026-09-17): traders size
+positions in USD, not base units — the bounded
 [P1-WP45 USD position value package](../archive/strategy/work-packages/P1-WP45-usd-position-value.md)
 retired the base-quantity entry, made USD value the only sizing (stored as `qty` with
 `qty_unit=USD`), derived money math from the value with an explicit approximate label for
 non-USD quotes, and — by explicit owner instruction ("hepsini sil. mantık hatalıydı") —
 deleted all existing trade records after a full backup, shipping as `v1.1.5`.
+
+**P1-WP46 implementation evidence (this change, uncommitted):** confirmed root causes —
+`NewTradeModal` computed USD risk/reward as `|price-diff| x value` (600,000/1,400,000 instead
+of 7.89/18.42); `binance_client._recalculate_open_positions` (dashboard live feed) showed
+78,770 instead of 1.04 USD and its rows lacked `qty_unit`/`record_mode`, so live updates
+overwrote server rows and the simulation badge/unit math vanished; the log reconstruction
+(monitor fetches at 17:43:25-17:48:20 UTC, single automatic TP close at 76,606 with correct
+0.4538-style value math) showed the delay came from counting stale/ineligible observations
+as fetch failures with 15→30→60→120 s backoff while the UI silently said "waiting for a live
+quote"; `order_ticket.verification_EXPLICIT_USD_VALUE` had no EN/TR/DE text. Fixes: value
+math in the form, live feed (with unit/label metadata) and replay payload; short retry
+without backoff for stale observations and a visible `monitor` block
+(enabled/wait_reason/last_error/next poll) in `/local-tracking` plus the tracking panel;
+pre-save already-reached alert; frontend merges live position updates instead of replacing
+rows; locale texts for every dynamic verification/basis key with a content test. Evidence:
+`test_wp46_usd_money_and_monitor.py` **8 passed** (red-first), frontend **43 files / 295
+tests** (merge helper, localization content, USD risk/reward, waiting reasons), backend
+suite green except the STATUS selection link fixed in this change. Commit/CI/install and the
+new labelled simulation re-test are recorded below once done.
 
 **P1-WP45 implementation evidence (this change, uncommitted):** entry/edit now have a single
 USD position-value field (payload `size_input_mode=NOTIONAL`, `qty_unit=USD`; the base pair the
