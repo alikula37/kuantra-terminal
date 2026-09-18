@@ -1,0 +1,70 @@
+{
+  "work_package": "P1-WP46",
+  "kind": "INSTALLED_APP_RETEST_USD_MONEY_MONITOR_LABEL_I18N",
+  "ran_at": "2026-09-18T10:20:10.815738Z",
+  "installed": {
+    "version": "1.1.5",
+    "executable_sha256": "55d020631c0c863eb22739491567eeed973ffaab7d7aafae9c6edd64c9af3fe1",
+    "dmg_sha256": "acb429437921afadda8776af6a12ff8a77351e4715c2971e7e5a6553ae81a86c"
+  },
+  "test_trade": {
+    "id": "TRD-1789714741027",
+    "note": "QA-WP46-RETEST | SIMULASYON | gercek islem degil",
+    "entry": 78210.0,
+    "value_usd": 100.0,
+    "leverage": 2,
+    "record_mode": "SIMULATION"
+  },
+  "finding_1_usd_math": {
+    "previous": "risk/reward 600000/1400000 in the form; 78770 in the dashboard live feed (base-quantity formulas)",
+    "root_cause": "NewTradeModal multiplied the price difference by the USD value; binance_client._recalculate_open_positions (dashboard live feed / WS open_positions) did the same and dropped qty_unit/record_mode",
+    "new_ui_result": "form risk/reward = value x return (7.89/18.42 for the reported numbers); live feed = value x return (1.04) and keeps unit/label metadata",
+    "evidence": [
+      "backend/tests/test_wp46_usd_money_and_monitor.py (feed/replay/legacy)",
+      "frontend NewTradeModal DOM regression red->green",
+      "merge helper test"
+    ]
+  },
+  "finding_2_auto_close": {
+    "previous": "~2 minutes of 'waiting for a live quote' with no visible reason",
+    "root_cause": "provider event timestamps can lead the local clock by fractions of a second; the eligibility check required 0 <= age, so fresh events were permanently rejected; ineligible observations were also counted as fetch failures (15->30->60->120 s backoff) and the reason was invisible",
+    "new_ui_result": "the monitor retries stale events without backoff, shows the waiting reason/last error/next attempt, tolerates a bounded 5 s clock skew, and the automatic SL/TP close fired within ~3 s of arming (this retest: SL at 78204 vs stop 78209, value-based gross -0.0077 USD, single closure, external stays OPEN)",
+    "evidence": [
+      "backend/tests/test_wp46_usd_money_and_monitor.py (stale/backoff/single-close/skew)",
+      "live log: monitor fetches 7-9 s cadence, closure event observed_at 2026-09-18T10:19:09.516Z",
+      "closure record:",
+      {
+        "basis": "LOCAL_ESTIMATE",
+        "gross_pnl": "-0.00767165324127349443805140007671653241273494438051400076716532",
+        "observed_at": "2026-09-18T10:19:09.516000+00:00",
+        "plan_revision": 2,
+        "price": "78204",
+        "qty": "100",
+        "target_id": "SL",
+        "target_price": "78209"
+      }
+    ]
+  },
+  "finding_3_simulation_label": {
+    "previous": "dashboard row lost the SIMULATION badge after live updates",
+    "root_cause": "the WS open_positions payload (no record_mode/qty_unit) replaced server rows in the store",
+    "new_ui_result": "live updates merge into server rows; the badge and USD unit survive (DOM test + live dashboard check)",
+    "evidence": [
+      "frontend/src/lib/__tests__/openPositions.test.ts",
+      "live dashboard badge check"
+    ]
+  },
+  "finding_4_locale_key": {
+    "previous": "order_ticket.verification_EXPLICIT_USD_VALUE rendered raw",
+    "root_cause": "the key had no EN/TR/DE text",
+    "new_ui_result": "translated text in create/edit; a content test asserts every dynamically composed verification key and monitor reason resolves in all three locales",
+    "evidence": [
+      "frontend/src/lib/__tests__/localizationKeys.test.ts"
+    ]
+  },
+  "screenshots": [
+    "02-presave-warning.png",
+    "04-journal-final.png",
+    "05-tracking-completed.png"
+  ]
+}

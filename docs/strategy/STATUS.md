@@ -3,19 +3,39 @@
 
 Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP46 USD money math everywhere, monitor visibility, label/i18n fixes](work-packages/P1-WP46-usd-math-monitor-and-label-fixes.md).**
-Owner instruction (2026-09-18): four real-UI findings on installed 1.1.5 are being fixed
-with red-first regressions — remaining base-quantity money paths (create-form risk/reward,
-dashboard live feed, replay payload), the tracking monitor's silent backoff (the automatic
-TP close did happen; stale observations were counted as failures and hidden the reason),
-lost simulation metadata from live position updates, and a raw
-`verification_EXPLICIT_USD_VALUE` locale key. Owner instruction (2026-09-17): traders size
+**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot
+access); no development proceeds under it without owner approval. Owner instruction
+(2026-09-18): the four real-UI findings on installed 1.1.5 were fixed with red-first
+regressions under the bounded
+[P1-WP46 package](../archive/strategy/work-packages/P1-WP46-usd-math-monitor-and-label-fixes.md)
+— remaining base-quantity money paths (create-form risk/reward, dashboard live feed, replay
+payload), the tracking monitor's silent rejection of fresh provider events (provider clock
+skew) and invisible backoff, lost simulation metadata from live position updates, and a raw
+`verification_EXPLICIT_USD_VALUE` locale key. It is complete and archived; the
+installed-app retest with a new labelled simulation record is recorded below. Owner instruction (2026-09-17): traders size
 positions in USD, not base units — the bounded
 [P1-WP45 USD position value package](../archive/strategy/work-packages/P1-WP45-usd-position-value.md)
 retired the base-quantity entry, made USD value the only sizing (stored as `qty` with
 `qty_unit=USD`), derived money math from the value with an explicit approximate label for
 non-USD quotes, and — by explicit owner instruction ("hepsini sil. mantık hatalıydı") —
 deleted all existing trade records after a full backup, shipping as `v1.1.5`.
+
+**P1-WP46 delivery and installed-app retest (2026-09-18):** commits `bd31ba4`, `909aeca`,
+`af185ca`, `8b092b8`; backend **1182 passed**, frontend **43 files / 295 tests**, i18n
+**1235/1235/1235**; canonical arm64 CI **MERGE READY** on the clean commit
+(`dist/p1-wp46b-local-ci.json`, executable
+`55d020631c0c863eb22739491567eeed973ffaab7d7aafae9c6edd64c9af3fe1`); arm64 DMG
+`Kuantra-Terminal-1.1.5-wp46b-arm64.dmg` (exact-DMG smoke PASS) installed over
+`/Applications/Kuantra Terminal.app` (backup `/tmp/kuantra-wp46b-update.HB7wlX`; installed
+executable matches, codesign OK, version 1.1.5). **Retest with the new labelled simulation
+record `TRD-1789714741027` (existing records untouched):** the already-reached warning is a
+prominent `role=alert` before saving; the monitor now fetches on a 7–9 s cadence and the
+value-based automatic SL close fired within ~3 s of arming (SL 78,204 vs stop 78,209, gross
+-0.0077 USD, single closure, external stays OPEN, `USD_NOTIONAL`), with a second close
+rejected 409. Evidence `artifacts/evidence/p1-wp46-retest/`. Known limit: the desktop Binance
+websocket logs an environment SSL certificate failure (tracking does not use it), and the
+pre-fix reason split cannot be fully reconstructed because those sessions logged at DEBUG.
 
 **P1-WP46 implementation evidence (this change, uncommitted):** confirmed root causes —
 `NewTradeModal` computed USD risk/reward as `|price-diff| x value` (600,000/1,400,000 instead
