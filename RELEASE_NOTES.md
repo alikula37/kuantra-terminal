@@ -5,8 +5,8 @@
 below; the former `pilot-v1.1.5` prerelease keeps its historical 1.1.5 packages and directs
 users here)
 
-**Artifact source commit:** the clean build commit of this release; the exact SHA and run id
-are recorded in the post-build install evidence in `docs/strategy/STATUS.md`.
+**Artifact source commit:** `a1c98c4ffbbea390ed790455588afb44438df6a3` (clean build
+commit; GitHub Actions release run `35338202211`, `workflow_dispatch`, `publish=false`)
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -22,10 +22,17 @@ Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
 Silicon artifact. Both native builds come from the same clean commit in the pinned GitHub
 Actions release workflow and pass the native desktop smoke plus the exact read-only
-mounted-DMG smoke on their matching hosts. The run id, source commit, DMG SHA-256 and mounted
-executable SHA-256 values are recorded in the post-build install evidence in
-`docs/strategy/STATUS.md`; technical JSON/manifest evidence remains in the repository and
-local audit package, not as separate Release downloads.
+mounted-DMG smoke on their matching hosts. DMG SHA-256 values are:
+
+- arm64: `8e348796c8130358db0fb06e0a0de2cc183b991596d93eac8c5afd8b4609d0b8`;
+- x86_64: `49f9d7c7547a88b65c4d9e89704672c2fda7a05213fd408b8a075abb2d0cf3b4`.
+
+Mounted executable SHA-256 values are arm64
+`eda6ec7f46f633a3a7eb1daa4f271a5cf881f1f96fed98d16c5ebfc19c7fcd7e` and x86_64
+`473102ae01194899ab23902dbffe4ba9483c1a42b1ca6e85282c9c67c1c66aac`; the arm64 executable
+matches the app installed and verified on the owner's Mac. Exact smoke/N05 (ad-hoc blocked)
+JSON/manifest evidence remains in the repository and local audit package, not as separate
+Release downloads.
 
 **New in this release: analytics honesty and separation.**
 

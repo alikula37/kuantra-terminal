@@ -1,0 +1,53 @@
+{
+  "scope": "all",
+  "date_basis": "entry",
+  "preview": {
+    "total_records": null,
+    "records_with_data": null
+  },
+  "csv": {
+    "bytes": 1456,
+    "rows": 4,
+    "status_split": {
+      "?": 4
+    },
+    "headers": [
+      "kayit_no",
+      "trade_id",
+      "durum",
+      "sembol",
+      "yon",
+      "pozisyon_tipi",
+      "giris_zamani_istanbul",
+      "giris_zamani_utc",
+      "giris_fiyati",
+      "miktar",
+      "miktar_birimi",
+      "kapanis_zamani_istanbul",
+      "kapanis_zamani_utc",
+      "kapanis_fiyati",
+      "pnl_kayitli",
+      "pnl_biliniyor",
+      "pnl_kaynagi",
+      "komisyon",
+      "kapanis_kaynagi",
+      "kayit_modu",
+      "dogrulanmis_kotasyon",
+      "tahmini_brut_pnl",
+      "notlar",
+      "snapshot_sha256"
+    ]
+  },
+  "pdf": {
+    "bytes": 43516,
+    "magic_ok": true
+  },
+  "files": [
+    "journal-all.csv",
+    "journal-all.pdf",
+    "result.json"
+  ],
+  "limits": [
+    "Review on a journal that currently contains only cancelled test records; no real closed results exist, so totals are zero by design."
+  ]
+}

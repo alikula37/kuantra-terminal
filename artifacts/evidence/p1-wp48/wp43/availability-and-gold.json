@@ -1,0 +1,25 @@
+{
+  "probed_at": "2026-09-18T11:32:04.470428Z",
+  "independent_sources": {
+    "yahoo_XAUUSD": {
+      "status": 404,
+      "bytes": 108,
+      "csv_like": "{\"chart\":{\"result\":null,\"error\":{\"code\":\"Not Found\",\"descrip"
+    },
+    "stooq_xauusd": {
+      "status": 200,
+      "bytes": 796,
+      "csv_like": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name="
+    },
+    "stooq_eurusd": {
+      "status": 200,
+      "bytes": 796,
+      "csv_like": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name="
+    }
+  },
+  "gold_trade": {
+    "id": "TRD-1789720324442",
+    "identity": "biquote_public XAUUSD",
+    "value_usd": 200.0
+  }
+}

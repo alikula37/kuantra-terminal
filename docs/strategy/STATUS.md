@@ -3,35 +3,34 @@
 
 Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP48 analytics honesty and acceptance](work-packages/P1-WP48-analytics-honesty-and-acceptance.md).**
-Owner instruction (2026-09-18): close every remaining doable item; agent decides at decision
-points. Decisions: OLAP `record_mode` approved (additive, rebuildable); the product `LICENSE`
-text stays an owner/legal gate (H05's recorded disposition — inventory only); P2–P4 and OKX
-A1.2 remain unapproved scope; notarization and the real XM report need owner/external inputs.
-Scope: no invented analytics (pivot seed fabrication removed), OLAP simulation separation
-(`/analytics/overview`, `/analytics/quant`, symbols/equity, pivot, MAE/MFE), candle
-persistence robustness under a locked DuckDB, WP43/WP41 acceptance evidence, the H05
-third-party inventory, the journal test-record cleanup and the `v1.1.6` release train.
-Owner-host obligations of [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
-remain tracked.
+**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot access);
+no development proceeds under it without owner approval. Owner instruction (2026-09-18): the
+remaining doable items were closed under the bounded
+[P1-WP48 analytics-honesty and acceptance package](../archive/strategy/work-packages/P1-WP48-analytics-honesty-and-acceptance.md)
+(complete and archived): fabricated pivot seed data removed, simulation separation extended
+to every real analytics surface (including the additive OLAP `record_mode` projection),
+candle-persistence robustness, WP43/WP41 acceptance evidence, the H05 third-party inventory,
+the journal test-record cleanup and the `v1.1.6` release.
 
-**v1.1.6 release train (2026-09-18, owner-approved batch):** the analytics-honesty and
-acceptance package ships as `v1.1.6` (`truth-matrix.v1.1.6.json`, `pilot-v1.1.6` prerelease
-with the tag on the verified build commit); `pilot-v1.1.5` keeps its historical packages and
-redirects users here. Release run id, DMG and mounted-executable hashes, the installed-app
-verification and the acceptance/cleanup evidence are recorded below once done.
-
-**P1-WP48 implementation evidence (this change, uncommitted):** the pivot engine no longer
-fabricates "seed" rows — an empty journal returns `rows: []` with an explicit
-`NO_CLOSED_TRADES` basis and the UI states it; `olap_trades` carries `record_mode` (schema,
-`ADD COLUMN IF NOT EXISTS` migration, both positional insert paths) and the DuckDB
-aggregated stats, symbol breakdown and equity curve exclude simulations; `/analytics/quant`
-excludes them from the real suite and reports `simulation_trades`; the pivot and MAE/MFE
-sources filter them too; closed-candle persistence retries bounded and warns once per process
-instead of ERROR spam under a DuckDB lock. Tests: `test_wp48_analytics_honesty.py` **6
-passed** (red-first), updated WP47 pivot fixture, frontend pivot empty-state and analytics
-exclusion-note tests. The acceptance evidence, cleanup, H05 inventory and v1.1.6 train are
-recorded below once done.
+**P1-WP48 delivery and acceptance evidence (2026-09-18):** commits `975a875`, `e76153d`,
+`9188217` plus the v1.1.6 train `a1c98c4` (tag `pilot-v1.1.6`); backend **1194 passed**,
+frontend **44 files / 297 tests**, i18n **1241/1241/1241**; canonical arm64 CI **MERGE
+READY** (`dist/p1-wp48-local-ci.json`, executable
+`4765098be8ec871a68a7e1e9fa8b0dc0cf9ddb17e4bba6bf229255e3b8d9018a`). Candidate run
+`35338202211` **success**; DMG SHA-256 arm64 `8e348796…`, x86_64 `49f9d7c7…`; mounted execs
+arm64 `eda6ec7f…`, x86_64 `473102ae…`; exact-DMG smoke PASS both lanes; arm64 installed over
+`/Applications/Kuantra Terminal.app` (backup `/tmp/kuantra-v116-update.iqEpxZ`; installed
+executable matches, codesign OK, version 1.1.6). Acceptance: WP41 export review on the
+installed build (counts/units/canceled separation/estimated section/pages verified; no real
+closed results exist so monetary totals are zero by design), WP43 gold product-check visual
+(`UNVERIFIABLE` with the honest reason; yahoo 404 + stooq JS challenge re-probed, so no real
+verdict is possible today), H05 third-party inventory (101 Python / 37 npm components; the
+root LICENSE choice remains the owner/legal gate), journal test records cancelled
+(audit-safe tombstones; the WP43 visual record remains labelled). Evidence
+`artifacts/evidence/p1-wp48/`. GitHub prerelease `pilot-v1.1.6` and the `pilot-v1.1.5`
+supersede notice follow; the true second-macOS-profile install audit remains an owner-host
+obligation. Release/tag policy unchanged.
 
 **P1-WP47 delivery and installed-app proof (2026-09-18):** commits `f70fa36`, `f07d5f6`,
 `f0bf150`; backend **1187 passed**, frontend **43 files / 295 tests** plus the audit, i18n

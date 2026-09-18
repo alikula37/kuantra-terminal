@@ -1,0 +1,708 @@
+{
+  "generated_at": "2026-09-18T11:09:55.627504Z",
+  "python": {
+    "total": 101,
+    "with_license": 85,
+    "unknown": [
+      {
+        "name": "clr-loader",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "colorama",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "greenlet",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "jeepney",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "pefile",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "pyqt6",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "pyqt6-qt6",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "pyqt6-sip",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "pyqt6-webengine",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "pyqt6-webengine-qt6",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "pythonnet",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "pywin32-ctypes",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "qtpy",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "secretstorage",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "tzdata",
+        "version": null,
+        "license": null
+      },
+      {
+        "name": "winloop",
+        "version": null,
+        "license": null
+      }
+    ],
+    "packages": [
+      {
+        "name": "aiohappyeyeballs",
+        "version": "2.7.1",
+        "license": "PSF-2.0"
+      },
+      {
+        "name": "aiohttp",
+        "version": "3.14.3",
+        "license": "Apache-2.0 AND MIT"
+      },
+      {
+        "name": "aiohttp-fast-zlib",
+        "version": "0.3.0",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "aiosignal",
+        "version": "1.4.0",
+        "license": "Apache 2.0"
+      },
+      {
+        "name": "alembic",
+        "version": "1.19.2",
+        "license": "MIT"
+      },
+      {
+        "name": "altgraph",
+        "version": "0.17.5",
+        "license": "MIT"
+      },
+      {
+        "name": "annotated-doc",
+        "version": "0.0.5",
+        "license": "MIT"
+      },
+      {
+        "name": "annotated-types",
+        "version": "0.8.0",
+        "license": "MIT"
+      },
+      {
+        "name": "anyio",
+        "version": "4.15.0",
+        "license": "MIT"
+      },
+      {
+        "name": "attrs",
+        "version": "26.1.0",
+        "license": "MIT"
+      },
+      {
+        "name": "backports.tarfile",
+        "version": "1.2.0",
+        "license": "MIT License"
+      },
+      {
+        "name": "bottle",
+        "version": "0.13.4",
+        "license": "MIT"
+      },
+      {
+        "name": "ccxt",
+        "version": "4.5.77",
+        "license": "MIT"
+      },
+      {
+        "name": "certifi",
+        "version": "2026.6.17",
+        "license": "MPL-2.0"
+      },
+      {
+        "name": "cffi",
+        "version": "2.0.0",
+        "license": "MIT"
+      },
+      {
+        "name": "charset-normalizer",
+        "version": "3.4.7",
+        "license": "MIT"
+      },
+      {
+        "name": "click",
+        "version": "8.5.0",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "coincurve",
+        "version": "21.0.0",
+        "license": "MIT OR Apache-2.0"
+      },
+      {
+        "name": "cryptography",
+        "version": "50.0.1",
+        "license": "Apache-2.0 OR BSD-3-Clause"
+      },
+      {
+        "name": "duckdb",
+        "version": "1.5.5",
+        "license": "MIT License"
+      },
+      {
+        "name": "fastapi",
+        "version": "0.141.1",
+        "license": "MIT"
+      },
+      {
+        "name": "frozenlist",
+        "version": "1.8.0",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "h11",
+        "version": "0.16.0",
+        "license": "MIT"
+      },
+      {
+        "name": "httpcore",
+        "version": "1.0.9",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "httptools",
+        "version": "0.8.0",
+        "license": "MIT"
+      },
+      {
+        "name": "httpx",
+        "version": "0.28.1",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "idna",
+        "version": "3.18",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "importlib_metadata",
+        "version": "9.0.1",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "iniconfig",
+        "version": "2.3.0",
+        "license": "MIT"
+      },
+      {
+        "name": "jaraco.classes",
+        "version": "3.4.0",
+        "license": "MIT License"
+      },
+      {
+        "name": "jaraco.context",
+        "version": "6.1.2",
+        "license": "MIT"
+      },
+      {
+        "name": "jaraco.functools",
+        "version": "4.6.0",
+        "license": "MIT"
+      },
+      {
+        "name": "keyring",
+        "version": "25.7.0",
+        "license": "MIT"
+      },
+      {
+        "name": "macholib",
+        "version": "1.16.4",
+        "license": "MIT"
+      },
+      {
+        "name": "Mako",
+        "version": "1.4.1",
+        "license": "MIT"
+      },
+      {
+        "name": "MarkupSafe",
+        "version": "3.0.3",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "more-itertools",
+        "version": "11.1.0",
+        "license": "MIT"
+      },
+      {
+        "name": "multidict",
+        "version": "6.7.1",
+        "license": "Apache License 2.0"
+      },
+      {
+        "name": "numpy",
+        "version": "2.4.6",
+        "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0"
+      },
+      {
+        "name": "orjson",
+        "version": "3.11.9",
+        "license": "MPL-2.0 AND (Apache-2.0 OR MIT)"
+      },
+      {
+        "name": "packaging",
+        "version": "26.3",
+        "license": "Apache-2.0 OR BSD-2-Clause"
+      },
+      {
+        "name": "pandas",
+        "version": "3.0.5",
+        "license": "BSD 3-Clause License"
+      },
+      {
+        "name": "pillow",
+        "version": "12.3.0",
+        "license": "MIT-CMU"
+      },
+      {
+        "name": "pluggy",
+        "version": "1.6.0",
+        "license": "MIT"
+      },
+      {
+        "name": "propcache",
+        "version": "0.5.2",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "proxy_tools",
+        "version": "0.1.0",
+        "license": "MIT"
+      },
+      {
+        "name": "psutil",
+        "version": "7.2.2",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "pycparser",
+        "version": "3.0",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "pydantic",
+        "version": "2.13.5",
+        "license": "MIT"
+      },
+      {
+        "name": "pydantic-settings",
+        "version": "2.15.0",
+        "license": "MIT"
+      },
+      {
+        "name": "pydantic_core",
+        "version": "2.46.5",
+        "license": "MIT"
+      },
+      {
+        "name": "Pygments",
+        "version": "2.21.0",
+        "license": "BSD-2-Clause"
+      },
+      {
+        "name": "pyinstaller",
+        "version": "6.22.2",
+        "license": "GPLv2-or-later with a special exception which allows to use PyInstaller to build"
+      },
+      {
+        "name": "pyinstaller-hooks-contrib",
+        "version": "2026.7",
+        "license": "Apache Software License"
+      },
+      {
+        "name": "pyobjc-core",
+        "version": "12.2.2",
+        "license": "MIT"
+      },
+      {
+        "name": "pyobjc-framework-Cocoa",
+        "version": "12.2.2",
+        "license": "MIT"
+      },
+      {
+        "name": "pyobjc-framework-Quartz",
+        "version": "12.2.2",
+        "license": "MIT"
+      },
+      {
+        "name": "pyobjc-framework-Security",
+        "version": "12.2.2",
+        "license": "MIT"
+      },
+      {
+        "name": "pyobjc-framework-UniformTypeIdentifiers",
+        "version": "12.2.2",
+        "license": "MIT"
+      },
+      {
+        "name": "pyobjc-framework-WebKit",
+        "version": "12.2.2",
+        "license": "MIT"
+      },
+      {
+        "name": "pypdf",
+        "version": "6.19.0",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "pytest",
+        "version": "9.1.1",
+        "license": "MIT"
+      },
+      {
+        "name": "pytest-asyncio",
+        "version": "1.4.0",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "python-dateutil",
+        "version": "2.9.0.post0",
+        "license": "Dual License"
+      },
+      {
+        "name": "python-dotenv",
+        "version": "1.2.3",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "python-multipart",
+        "version": "0.0.32",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "pywebview",
+        "version": "6.2.1",
+        "license": "BSD 3-Clause License"
+      },
+      {
+        "name": "PyYAML",
+        "version": "6.0.3",
+        "license": "MIT"
+      },
+      {
+        "name": "reportlab",
+        "version": "5.0.1",
+        "license": "BSD license (see license.txt for details), Copyright (c) 2000-2025, ReportLab In"
+      },
+      {
+        "name": "requests",
+        "version": "2.34.2",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "scipy",
+        "version": "1.17.1",
+        "license": "Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers."
+      },
+      {
+        "name": "setuptools",
+        "version": "84.0.0",
+        "license": "MIT"
+      },
+      {
+        "name": "six",
+        "version": "1.17.0",
+        "license": "MIT"
+      },
+      {
+        "name": "SQLAlchemy",
+        "version": "2.0.52",
+        "license": "MIT"
+      },
+      {
+        "name": "starlette",
+        "version": "1.6.0",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "typing-inspection",
+        "version": "0.4.4",
+        "license": "MIT"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0",
+        "license": "PSF-2.0"
+      },
+      {
+        "name": "urllib3",
+        "version": "2.7.0",
+        "license": "MIT"
+      },
+      {
+        "name": "uvicorn",
+        "version": "0.52.4",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "uvloop",
+        "version": "0.22.1",
+        "license": "MIT License"
+      },
+      {
+        "name": "watchfiles",
+        "version": "1.2.0",
+        "license": "MIT"
+      },
+      {
+        "name": "websockets",
+        "version": "17.1",
+        "license": "BSD-3-Clause"
+      },
+      {
+        "name": "yarl",
+        "version": "1.24.5",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "zipp",
+        "version": "4.1.0",
+        "license": "MIT"
+      },
+      {
+        "name": "zlib-ng",
+        "version": "1.0.0",
+        "license": "PSF-2.0"
+      }
+    ]
+  },
+  "npm_production": {
+    "total": 37,
+    "with_license": 37,
+    "unknown": [],
+    "packages": [
+      {
+        "name": "@babel/runtime",
+        "version": "7.29.7",
+        "license": "MIT"
+      },
+      {
+        "name": "@rc-component/dropdown",
+        "version": "1.0.3",
+        "license": "MIT"
+      },
+      {
+        "name": "@rc-component/menu",
+        "version": "1.1.5",
+        "license": "MIT"
+      },
+      {
+        "name": "@rc-component/motion",
+        "version": "1.3.3",
+        "license": "MIT"
+      },
+      {
+        "name": "@rc-component/portal",
+        "version": "2.2.1",
+        "license": "MIT"
+      },
+      {
+        "name": "@rc-component/resize-observer",
+        "version": "1.1.2",
+        "license": "MIT"
+      },
+      {
+        "name": "@rc-component/tabs",
+        "version": "1.5.2",
+        "license": "MIT"
+      },
+      {
+        "name": "@rc-component/trigger",
+        "version": "3.10.1",
+        "license": "MIT"
+      },
+      {
+        "name": "@rc-component/util",
+        "version": "1.12.0",
+        "license": "MIT"
+      },
+      {
+        "name": "@tanstack/react-virtual",
+        "version": "3.14.10",
+        "license": "MIT"
+      },
+      {
+        "name": "@tanstack/virtual-core",
+        "version": "3.17.8",
+        "license": "MIT"
+      },
+      {
+        "name": "@types/prop-types",
+        "version": "15.7.15",
+        "license": "MIT"
+      },
+      {
+        "name": "@types/react",
+        "version": "18.3.31",
+        "license": "MIT"
+      },
+      {
+        "name": "bowser",
+        "version": "2.14.1",
+        "license": "MIT"
+      },
+      {
+        "name": "classnames",
+        "version": "2.5.1",
+        "license": "MIT"
+      },
+      {
+        "name": "clsx",
+        "version": "2.1.1",
+        "license": "MIT"
+      },
+      {
+        "name": "csstype",
+        "version": "3.2.3",
+        "license": "MIT"
+      },
+      {
+        "name": "fancy-canvas",
+        "version": "2.1.0",
+        "license": "MIT"
+      },
+      {
+        "name": "is-mobile",
+        "version": "5.0.0",
+        "license": "MIT"
+      },
+      {
+        "name": "js-tokens",
+        "version": "4.0.0",
+        "license": "MIT"
+      },
+      {
+        "name": "lightweight-charts",
+        "version": "4.2.3",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "lodash",
+        "version": "4.18.1",
+        "license": "MIT"
+      },
+      {
+        "name": "loose-envify",
+        "version": "1.4.0",
+        "license": "MIT"
+      },
+      {
+        "name": "lucide-react",
+        "version": "0.475.0",
+        "license": "ISC"
+      },
+      {
+        "name": "rc-dock",
+        "version": "4.0.0-alpha.2",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "rc-new-window",
+        "version": "0.1.13",
+        "license": "Apache-2.0"
+      },
+      {
+        "name": "rc-overflow",
+        "version": "1.5.0",
+        "license": "MIT"
+      },
+      {
+        "name": "rc-resize-observer",
+        "version": "1.4.3",
+        "license": "MIT"
+      },
+      {
+        "name": "rc-util",
+        "version": "5.44.4",
+        "license": "MIT"
+      },
+      {
+        "name": "react",
+        "version": "18.3.1",
+        "license": "MIT"
+      },
+      {
+        "name": "react-dom",
+        "version": "18.3.1",
+        "license": "MIT"
+      },
+      {
+        "name": "react-is",
+        "version": "18.3.1",
+        "license": "MIT"
+      },
+      {
+        "name": "react-is",
+        "version": "19.2.8",
+        "license": "MIT"
+      },
+      {
+        "name": "resize-observer-polyfill",
+        "version": "1.5.1",
+        "license": "MIT"
+      },
+      {
+        "name": "scheduler",
+        "version": "0.23.2",
+        "license": "MIT"
+      },
+      {
+        "name": "tailwind-merge",
+        "version": "3.6.0",
+        "license": "MIT"
+      },
+      {
+        "name": "zustand",
+        "version": "5.0.15",
+        "license": "MIT"
+      }
+    ]
+  }
+}

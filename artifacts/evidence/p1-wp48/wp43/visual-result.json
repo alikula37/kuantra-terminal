@@ -1,0 +1,14 @@
+{
+  "unmatched": {
+    "state": "PROVIDER_MATCH_REQUIRED",
+    "declared": "Sağlayıcı (bu oturumda indirildi): biquote_public · XAUUSD",
+    "refresh": true
+  },
+  "matched": {
+    "provider": "biquote_public",
+    "product": "UNVERIFIABLE",
+    "productKey": "SPOT_METAL:XAU:USD",
+    "productText": "Ürün kontrolü: kullanılamıyor (bağımsız kaynak yanıt vermedi); enstrüman kaynak beyanı olarak kalır, broker gerçekleşme kanıtı değildir.",
+    "strip": "XAUUSD · DECLARED_PROVIDER · biquote_public · 1m"
+  }
+}
