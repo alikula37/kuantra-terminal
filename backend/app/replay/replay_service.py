@@ -47,6 +47,18 @@ class ReplaySession:
         self.origin_class = origin_class
         self.close_class = close_source_class(self.trade, origin_class)
 
+    def _unrealized(self, price: float) -> float | None:
+        """Value-based for USD trades; legacy base rows keep their old math."""
+
+        entry = self.trade["entry_price"]
+        qty = self.trade["qty"]
+        direction = 1 if self.trade["side"] in ("BUY", "LONG") else -1
+        if str(self.trade.get("qty_unit") or "UNKNOWN").upper() == "USD":
+            if entry in (None, 0):
+                return None
+            return finite_number(direction * (price - entry) / entry * qty)
+        return finite_number(direction * (price - entry) * qty)
+
     def to_dict(self) -> dict[str, Any]:
         current = self.candles[self.current_index]
         # A frame shows a completed bar. At the exit bar the recorded trade has
@@ -67,7 +79,7 @@ class ReplaySession:
             "take_profit": self.trade["take_profit"], "risk_unit": self.trade["risk_unit"],
             "risk_reason": self.trade["risk_reason"], "phase": phase,
             "is_active": phase == "ACTIVE", "is_past_exit": closed,
-            "unrealized_pnl": finite_number(direction * (current["close"] - self.trade["entry_price"]) * self.trade["qty"]) if phase == "ACTIVE" else None,
+            "unrealized_pnl": self._unrealized(current["close"]) if phase == "ACTIVE" else None,
             "realized_pnl": self.trade["pnl"] if closed else None,
             "r_multiple": metrics["r_multiple"], "mae_r": metrics["mae_r"], "mfe_r": metrics["mfe_r"],
             "entry_index": self.entry_index, "exit_index": self.exit_index,

@@ -224,17 +224,32 @@ class BinanceStreamClient:
                     and tr.get("price_source", "unknown") == "binance_public"
                     and tr.get("price_source_symbol") == self.symbol.upper())
                 position_price = current_price if quote_matches else None
+                qty_unit = str(tr.get("qty_unit") or "UNKNOWN").upper()
+                usd_notional = qty_unit == "USD"
                 if position_price is None:
                     unrealized_pnl = None
                     r_multiple = None
-                elif side in ("BUY", "LONG"):
-                    unrealized_pnl = (position_price - entry) * qty
-                    r_unit = (entry - sl) if sl and (entry > sl) else None
-                    r_multiple = (unrealized_pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
                 else:
-                    unrealized_pnl = (entry - position_price) * qty
-                    r_unit = (sl - entry) if sl and (sl > entry) else None
-                    r_multiple = (unrealized_pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
+                    direction = 1.0 if side in ("BUY", "LONG") else -1.0
+                    if usd_notional:
+                        # qty is the USD position value: PnL = direction x
+                        # price-return x value; the risk fraction is the R base.
+                        unrealized_pnl = (direction * (position_price - entry) / entry * qty) if entry > 0 else None
+                        r_unit = (
+                            (entry - sl) if side in ("BUY", "LONG") and sl and entry > sl
+                            else (sl - entry) if side not in ("BUY", "LONG") and sl and sl > entry
+                            else None
+                        )
+                        risk_value = (r_unit / entry * qty) if (r_unit and entry > 0) else None
+                        r_multiple = (unrealized_pnl / risk_value) if (unrealized_pnl is not None and risk_value and risk_value > 0) else None
+                    else:
+                        if side in ("BUY", "LONG"):
+                            unrealized_pnl = (position_price - entry) * qty
+                            r_unit = (entry - sl) if sl and (entry > sl) else None
+                        else:
+                            unrealized_pnl = (entry - position_price) * qty
+                            r_unit = (sl - entry) if sl and (sl > entry) else None
+                        r_multiple = (unrealized_pnl / (r_unit * qty)) if (r_unit and qty > 0) else None
 
                 updated_trades.append({
                     "id": tr["id"],
@@ -243,6 +258,10 @@ class BinanceStreamClient:
                     "entry_price": entry,
                     "current_price": position_price,
                     "qty": qty,
+                    "qty_unit": qty_unit,
+                    "record_mode": str(tr.get("record_mode") or "UNKNOWN").upper(),
+                    "position_type": tr.get("position_type"),
+                    "leverage": tr.get("leverage"),
                     "stop_loss": sl,
                     "take_profit": tr.get("take_profit"),
                     "unrealized_pnl": round(unrealized_pnl, 2) if unrealized_pnl is not None else None,

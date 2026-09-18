@@ -19,8 +19,38 @@ class TrackingMonitor:
         self.next_poll = {}
         self.failures = {}
         self.provider_backoff = {}
+        self.notes = {}
         self.task = None
         self.enabled = True
+
+    def _note(self, key, reason, *, error=None, attempt=True):
+        note = {
+            "wait_reason": reason,
+            "last_error": error,
+            "last_attempt_at": time.time() if attempt else (self.notes.get(key) or {}).get("last_attempt_at"),
+            "last_observation_at": time.time() if reason is None else (self.notes.get(key) or {}).get("last_observation_at"),
+        }
+        self.notes[key] = note
+
+    def _monitor_view(self, key):
+        if not self.enabled:
+            reason = "MARKET_DATA_DISABLED"
+        elif self.provider_backoff.get(key[0], 0) > time.monotonic():
+            reason = "PROVIDER_RATE_LIMIT"
+        elif self.failures.get(key, 0) > 0:
+            reason = "PROVIDER_ERROR"
+        else:
+            reason = (self.notes.get(key) or {}).get("wait_reason") or "WAITING_PROVIDER_OBSERVATION"
+        note = self.notes.get(key) or {}
+        next_at = self.next_poll.get(key)
+        return {
+            "enabled": self.enabled,
+            "wait_reason": reason,
+            "last_error": note.get("last_error"),
+            "last_attempt_at": note.get("last_attempt_at"),
+            "last_observation_at": note.get("last_observation_at"),
+            "next_poll_in_seconds": round(max(0.0, next_at - time.monotonic()), 1) if next_at else None,
+        }
 
     def view(self, state):
         key = (state["source_id"], state["source_symbol"])
@@ -35,6 +65,7 @@ class TrackingMonitor:
         elif self.enabled and observation and self.service.eligible(state, observation):
             status = "ACTIVE"
         return {**state, "tracking_status": status,
+                "monitor": self._monitor_view(key),
                 "last_quote": observation if observation and self.service.eligible(state, observation) else None}
 
     async def poll(self, *, enabled):
@@ -51,7 +82,7 @@ class TrackingMonitor:
                     and state["source_id"] and state["source_symbol"]):
                 key = (state["source_id"], state["source_symbol"])
                 groups.setdefault(key, []).append(state)
-        for cache in (self.quotes, self.next_poll, self.failures):
+        for cache in (self.quotes, self.next_poll, self.failures, self.notes):
             for key in set(cache) - set(groups):
                 cache.pop(key, None)
         semaphore = asyncio.Semaphore(4)
@@ -62,21 +93,34 @@ class TrackingMonitor:
                     return
                 try:
                     observation = await asyncio.wait_for(self.fetch(*key), timeout=12)
-                    self.quotes[key] = observation
-                    if not any(self.service.eligible(state, observation) for state in groups[key]):
-                        raise ValueError("No eligible provider observation")
-                    for state in groups[key]:
-                        await asyncio.to_thread(self.service.observe, state["trade_id"], observation)
-                    self.failures[key] = 0
-                    self.next_poll[key] = time.monotonic() + 15
                 except Exception as exc:
+                    # A real provider failure: back off and say why.
                     self.quotes.pop(key, None)
                     self.failures[key] = min(self.failures.get(key, 0) + 1, 6)
                     delay = max(15 * 2 ** self.failures[key], getattr(exc, "retry_after", 0))
                     self.next_poll[key] = time.monotonic() + delay
                     if getattr(exc, "retry_after", 0):
                         self.provider_backoff[key[0]] = time.monotonic() + delay
-                    logger.debug("Local tracking waits for eligible quote: %s", type(exc).__name__)
+                    self._note(key, "PROVIDER_ERROR", error=str(exc) or type(exc).__name__)
+                    logger.info("Local tracking provider error for %s: %s", key, exc)
+                    return
+                if not any(self.service.eligible(state, observation) for state in groups[key]):
+                    # The provider answered but the observation is not usable yet
+                    # (stale, wrong identity or not newer than armed_at).  That is
+                    # a normal waiting state, not a failure: retry soon, no backoff,
+                    # and keep the reason visible instead of a silent wait.
+                    self.quotes.pop(key, None)
+                    self.next_poll[key] = time.monotonic() + 5
+                    self.failures[key] = 0
+                    self._note(key, "WAITING_FRESH_PROVIDER_EVENT")
+                    logger.info("Local tracking waits for a fresh provider event: %s", key)
+                    return
+                self.quotes[key] = observation
+                for state in groups[key]:
+                    await asyncio.to_thread(self.service.observe, state["trade_id"], observation)
+                self.failures[key] = 0
+                self.next_poll[key] = time.monotonic() + 15
+                self._note(key, None)
 
         due = sorted((key for key in groups if self.next_poll.get(key, 0) <= time.monotonic()),
                      key=lambda key: self.next_poll.get(key, 0))[:20]
