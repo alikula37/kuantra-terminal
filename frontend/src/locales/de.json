@@ -26,7 +26,7 @@
     "source": "Kursquelle",
     "source_symbol": "Exaktes Symbol beim Anbieter",
     "source_help": "Das genaue Symbol dieses Instruments beim gewählten Anbieter verwenden. Aktuelle Binance-/Bybit-Trades können auslösen; Quellen ohne belegte aktuelle Ereigniszeit dienen nur der Anzeige.",
-    "already_reached": "Ein Ziel wurde beim angezeigten Preis bereits überschritten. Nach dem Speichern kann die nächste geeignete Beobachtung die lokale Position schließen.",
+    "already_reached": "Warnung: Dieses Ziel/dieser Stop ist beim angezeigten Preis bereits erreicht. Speichern erzeugt keinen rückwirkenden Abschluss; es wird bei der nächsten frischen gültigen Beobachtung bewertet.",
     "save": "Plan speichern",
     "manual_price": "Lokaler Schließungspreis",
     "manual_close": "Lokale Restmenge schließen",
@@ -43,7 +43,13 @@
     "stooq_public": "Stooq (öffentlich)",
     "biquote_public": "Biquote (öffentlich)",
     "started_at": "Verfolgungsstart",
-    "unit_unverified": "Keine Einheit deklariert: Im Bearbeiten-Dialog einen USD-Positionswert deklarieren, um geldbasierte Tracking-Ergebnisse zu erhalten."
+    "unit_unverified": "Keine Einheit deklariert: Im Bearbeiten-Dialog einen USD-Positionswert deklarieren, um geldbasierte Tracking-Ergebnisse zu erhalten.",
+    "wait_reason_MARKET_DATA_DISABLED": "Marktdaten sind aus: automatisches Tracking wartet, bis sie aktiviert sind.",
+    "wait_reason_PROVIDER_RATE_LIMIT": "Der Anbieter begrenzt Anfragen; das Tracking versucht es automatisch erneut.",
+    "wait_reason_PROVIDER_ERROR": "Der Anbieter war nicht erreichbar; das Tracking wiederholt mit Backoff.",
+    "wait_reason_WAITING_FRESH_PROVIDER_EVENT": "Es wird auf ein frisches Anbieter-Ereignis gewartet (letzte Beobachtung veraltet oder älter als das Planspeichern).",
+    "wait_reason_WAITING_PROVIDER_OBSERVATION": "Erste Anbieter-Beobachtung für diese Identität wird erwartet.",
+    "monitor_next_poll": "Nächster Versuch in ~{seconds}s"
   },
   "updates": {
     "title": "Anwendungsupdates",
@@ -676,7 +682,8 @@
     "position_value_edit_help": "Korrektur in USD: Ein geänderter und gespeicherter Wert deklariert den Trade als USD-Positionswert.",
     "usd_value_declared": "USD-Positionswert deklariert — keine Kontraktgrößen-Prüfung nötig.",
     "summary_position_value": "Positionswert: {value}",
-    "warning_QUOTE_NOT_USD_APPROXIMATE": "Die Quote des Paares ist nicht USD; das USD-Wert-Ergebnis ist eine Näherung."
+    "warning_QUOTE_NOT_USD_APPROXIMATE": "Die Quote des Paares ist nicht USD; das USD-Wert-Ergebnis ist eine Näherung.",
+    "verification_EXPLICIT_USD_VALUE": "Vom Nutzer deklarierter USD-Positionswert; keine Kontraktgrößen-Prüfung nötig."
   },
   "journal": {
     "title": "HANDELSJOURNAL",

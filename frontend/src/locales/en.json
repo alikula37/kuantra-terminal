@@ -26,7 +26,7 @@
     "source": "Quote source",
     "source_symbol": "Exact provider symbol",
     "source_help": "Use the exact symbol for this asset at the chosen provider. Binance/Bybit recent trades can trigger tracking; sources without proven fresh event time remain display-only.",
-    "already_reached": "A target is already beyond the displayed price. After saving, the next eligible observation can close the local position.",
+    "already_reached": "Warning: this target/stop is already reached at the displayed price. Saving does not create a retrospective fill; it is evaluated on the next fresh eligible observation.",
     "save": "Save plan",
     "manual_price": "Local closing price",
     "manual_close": "Close remaining local quantity",
@@ -43,7 +43,13 @@
     "stooq_public": "Stooq (public)",
     "biquote_public": "Biquote (public)",
     "started_at": "Tracking start",
-    "unit_unverified": "No unit declaration: declare a USD position value in Edit to enable money-based tracking results."
+    "unit_unverified": "No unit declaration: declare a USD position value in Edit to enable money-based tracking results.",
+    "wait_reason_MARKET_DATA_DISABLED": "Market data is off: automatic tracking waits until it is enabled.",
+    "wait_reason_PROVIDER_RATE_LIMIT": "The provider is rate-limiting requests; tracking will retry automatically.",
+    "wait_reason_PROVIDER_ERROR": "The provider could not be reached; tracking retries with backoff.",
+    "wait_reason_WAITING_FRESH_PROVIDER_EVENT": "Waiting for a fresh provider event (the last observation was stale or older than the plan save).",
+    "wait_reason_WAITING_PROVIDER_OBSERVATION": "Waiting for the first provider observation for this identity.",
+    "monitor_next_poll": "Next attempt in ~{seconds}s"
   },
   "updates": {
     "title": "Application updates",
@@ -676,7 +682,8 @@
     "position_value_edit_help": "Savings/correction in USD: saving a changed value declares this trade as a USD position.",
     "usd_value_declared": "USD position value declared — no contract-size verification needed.",
     "summary_position_value": "Position value: {value}",
-    "warning_QUOTE_NOT_USD_APPROXIMATE": "The pair's quote is not USD; the USD value result is an approximation."
+    "warning_QUOTE_NOT_USD_APPROXIMATE": "The pair's quote is not USD; the USD value result is an approximation.",
+    "verification_EXPLICIT_USD_VALUE": "USD position value declared by the user; no contract-size verification needed."
   },
   "journal": {
     "title": "TRADE LOGGING JOURNAL",

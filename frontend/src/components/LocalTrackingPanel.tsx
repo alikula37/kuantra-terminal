@@ -135,6 +135,15 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
       </div>
       <p>{t("tracking.remaining")}: {state.qty_unit === "USD" ? formatPositionValue(Number(state.remaining_qty)) : state.remaining_qty} / {state.qty_unit === "USD" ? formatPositionValue(Number(state.initial_qty)) : state.initial_qty} · {t("tracking.gross")}: {state.qty_unit === "USD" ? formatPositionValue(Number(state.gross_pnl)) : state.gross_pnl}</p>
       <p className="k-help">{t("tracking.started_at")}: {formatIstanbulDateTime(state.armed_at, locale)}</p>
+      {state.tracking_status === "WAITING_QUOTE" && state.monitor && (
+        <p className="k-help text-amber-300" data-testid={`tracking-wait-${state.trade_id}`}>
+          {t(`tracking.wait_reason_${state.monitor.wait_reason || "WAITING_PROVIDER_OBSERVATION"}`)}
+          {state.monitor.last_error ? ` (${state.monitor.last_error})` : ""}
+          {state.monitor.next_poll_in_seconds != null
+            ? ` · ${t("tracking.monitor_next_poll", { seconds: Math.ceil(state.monitor.next_poll_in_seconds) })}`
+            : ""}
+        </p>
+      )}
       {state.unit_status === "UNVERIFIED" && <p className="k-help text-amber-300">{t("tracking.unit_unverified")}</p>}
       <p className="k-help">{state.source_id ? t(`tracking.${state.source_id}`) : t("tracking.no_source")} · {state.source_symbol}</p>
       {state.targets.map(target => <span className="inline-block mr-4" key={target.id}>
@@ -171,7 +180,11 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
             disabled={!source || Boolean(editor.plan?.closures.length)} maxLength={128} onChange={e => setSourceSymbol(e.target.value)}
             className="block w-full bg-[#0b0e14] border border-surface-border p-2 rounded" /></label>
           <p className="text-xs text-slate-400">{t("tracking.source_help")}</p>
-          {alreadyReached && <p role="status" className="text-amber-400">{t("tracking.already_reached")}</p>}
+          {alreadyReached && (
+            <p role="alert" data-testid="tracking-already-reached" className="rounded border border-amber-400/40 bg-amber-400/10 p-2 text-amber-300">
+              {t("tracking.already_reached")}
+            </p>
+          )}
           <button type="submit" className="bg-accent/20 text-accent px-4 py-2 rounded">{t("tracking.save")}</button>
           {editor.plan && <div className="border-t border-surface-border pt-3">
             <label>{t("tracking.manual_price")}<input type="number" step="any" value={manualPrice} onChange={e => setManualPrice(e.target.value)}

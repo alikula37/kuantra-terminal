@@ -26,7 +26,7 @@
     "source": "Fiyat kaynağı",
     "source_symbol": "Sağlayıcıdaki tam sembol",
     "source_help": "Seçilen sağlayıcıda bu varlığa ait tam sembolü kullan. Binance/Bybit güncel işlem verisi takibi tetikleyebilir; güncel gözlem zamanı kanıtlanamayan kaynaklar yalnız görüntüleme sağlar.",
-    "already_reached": "Bir hedef gösterilen fiyatla zaten aşılmış. Kaydettikten sonraki uygun yeni gözlem yerel pozisyonu kapatabilir.",
+    "already_reached": "Uyarı: Bu hedef/stop görüntülenen fiyatta zaten aşılmış. Kaydetmek geçmişe dönük kapanış üretmez; kayıttan sonraki ilk taze uygun gözlemde değerlendirilir.",
     "save": "Planı kaydet",
     "manual_price": "Yerel kapanış fiyatı",
     "manual_close": "Kalan yerel miktarı kapat",
@@ -43,7 +43,13 @@
     "stooq_public": "Stooq (ücretsiz)",
     "biquote_public": "Biquote (ücretsiz)",
     "started_at": "Takip başlangıcı",
-    "unit_unverified": "Birim beyanı yok: para bazlı takip sonucu için Düzenle'de USD pozisyon değeri beyan edin."
+    "unit_unverified": "Birim beyanı yok: para bazlı takip sonucu için Düzenle'de USD pozisyon değeri beyan edin.",
+    "wait_reason_MARKET_DATA_DISABLED": "Piyasa verisi kapalı: otomatik takip, açılana kadar bekler.",
+    "wait_reason_PROVIDER_RATE_LIMIT": "Sağlayıcı istekleri sınırlıyor; takip otomatik olarak yeniden deneyecek.",
+    "wait_reason_PROVIDER_ERROR": "Sağlayıcıya ulaşılamadı; takip artan aralıklarla yeniden deniyor.",
+    "wait_reason_WAITING_FRESH_PROVIDER_EVENT": "Taze bir sağlayıcı olayı bekleniyor (son gözlem bayat ya da plan kaydından eski).",
+    "wait_reason_WAITING_PROVIDER_OBSERVATION": "Bu kimlik için ilk sağlayıcı gözlemi bekleniyor.",
+    "monitor_next_poll": "Sonraki deneme ~{seconds} sn içinde"
   },
   "updates": {
     "title": "Uygulama güncellemeleri",
@@ -676,7 +682,8 @@
     "position_value_edit_help": "USD cinsinden düzeltme: değiştirilen değer kaydedilince işlem USD pozisyon değeri olarak beyan edilir.",
     "usd_value_declared": "USD pozisyon değeri beyan edildi — kontrat büyüklüğü doğrulaması gerekmez.",
     "summary_position_value": "Pozisyon değeri: {value}",
-    "warning_QUOTE_NOT_USD_APPROXIMATE": "Paritenin kotasyonu USD değil; USD değeri sonucu yaklaşıktır."
+    "warning_QUOTE_NOT_USD_APPROXIMATE": "Paritenin kotasyonu USD değil; USD değeri sonucu yaklaşıktır.",
+    "verification_EXPLICIT_USD_VALUE": "Kullanıcı tarafından beyan edilen USD pozisyon değeri; kontrat büyüklüğü doğrulaması gerekmez."
   },
   "journal": {
     "title": "İŞLEM GÜNLÜĞÜ",

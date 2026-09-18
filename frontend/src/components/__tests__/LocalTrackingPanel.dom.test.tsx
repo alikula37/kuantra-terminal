@@ -52,7 +52,7 @@ it("keeps a conflicting edit open and offers reload instead of silently overwrit
   mocks.request.mockResolvedValueOnce(response({ detail: "changed" }, 409));
   await act(async () => host.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
   expect(host.querySelector("dialog")).not.toBeNull();
-  expect(host.querySelector('[role="alert"]')?.textContent).toContain("tracking.conflict");
+  expect(Array.from(host.querySelectorAll('[role="alert"]')).some((el) => el.textContent?.includes("tracking.conflict"))).toBe(true);
 });
 
 it("manual close uses only the local endpoint and requires a price", async () => {
@@ -79,4 +79,42 @@ it("contains keyboard focus and closes on Escape without saving", async () => {
   await act(async () => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
   expect(host.querySelector("dialog")).toBeNull();
   expect(mocks.request.mock.calls.some(c => c[1]?.method === "PUT")).toBe(false);
+});
+
+it("explains why automatic tracking is waiting instead of a silent wait", async () => {
+  const waiting = {
+    ...base, remaining_qty: "2", tracking_status: "WAITING_QUOTE", last_quote: null,
+    monitor: { enabled: true, wait_reason: "WAITING_FRESH_PROVIDER_EVENT", last_error: null,
+               last_attempt_at: 1, last_observation_at: null, next_poll_in_seconds: 5 },
+  };
+  mocks.request.mockImplementation((path: string, options?: RequestInit) => Promise.resolve(response(
+    options?.method ? waiting : path.endsWith("/local-tracking") ? [waiting] : { plan: waiting, history: [] })));
+  await act(async () => root.render(<LocalTrackingPanel editTrade={null} onEditorClose={vi.fn()} />));
+  await act(async () => button("tracking.edit").click());
+  const note = host.querySelector('[data-testid="tracking-wait-t1"]');
+  expect(note?.textContent).toContain("tracking.wait_reason_WAITING_FRESH_PROVIDER_EVENT");
+  expect(note?.textContent).toContain("tracking.monitor_next_poll:5");
+});
+
+it("shows a provider error reason with the recorded error", async () => {
+  const failing = {
+    ...base, remaining_qty: "2", tracking_status: "WAITING_QUOTE", last_quote: null,
+    monitor: { enabled: true, wait_reason: "PROVIDER_ERROR", last_error: "provider unreachable",
+               last_attempt_at: 1, last_observation_at: null, next_poll_in_seconds: 30 },
+  };
+  mocks.request.mockImplementation((path: string, options?: RequestInit) => Promise.resolve(response(
+    options?.method ? failing : path.endsWith("/local-tracking") ? [failing] : { plan: failing, history: [] })));
+  await act(async () => root.render(<LocalTrackingPanel editTrade={null} onEditorClose={vi.fn()} />));
+  await act(async () => button("tracking.edit").click());
+  const note = host.querySelector('[data-testid="tracking-wait-t1"]');
+  expect(note?.textContent).toContain("tracking.wait_reason_PROVIDER_ERROR");
+  expect(note?.textContent).toContain("provider unreachable");
+});
+
+it("warns prominently when the target is already reached before saving", async () => {
+  await open();
+  const warning = host.querySelector('[data-testid="tracking-already-reached"]');
+  expect(warning).not.toBeNull();
+  expect(warning?.getAttribute("role")).toBe("alert");
+  expect(warning?.textContent).toContain("tracking.already_reached");
 });

@@ -11,6 +11,11 @@ export interface TrackingState {
   stop_loss: string | null; basis: "LOCAL_ESTIMATE"; external_status?: string;
   qty_unit?: "USD" | "BASE" | "UNKNOWN";
   tracking_status?: string; armed_at?: string; unit_status?: "BASE_UNIT" | "USD_NOTIONAL" | "UNVERIFIED";
+  monitor?: {
+    enabled: boolean; wait_reason: string; last_error?: string | null;
+    last_attempt_at?: number | null; last_observation_at?: number | null;
+    next_poll_in_seconds?: number | null;
+  };
   last_quote?: { price: string; observed_at: string } | null;
 }
 

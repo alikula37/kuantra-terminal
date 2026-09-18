@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
+import { mergePositionUpdates } from "../lib/openPositions";
 import { wsUrl } from "../lib/backend";
 import { getBridge } from "../lib/bridge";
 import { openStream, subscribePush } from "../lib/push";
@@ -20,7 +21,9 @@ export function useWebSocket() {
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const { setConnectionStatus, setMarketDataStatus, updateTick, setMarketSnapshot, updateCandle } = useMarketStore();
-  const { updatePositionPnl } = useTradeStore();
+  const { openPositions, updatePositionPnl } = useTradeStore();
+  const openPositionsRef = useRef(openPositions);
+  openPositionsRef.current = openPositions;
 
   const handleMessage = useCallback(
     (message: any) => {
@@ -34,7 +37,7 @@ export function useWebSocket() {
           message.side === "BUY" || message.side === "SELL" || message.side === "UNKNOWN" ? message.side : "UNKNOWN",
         );
         if (message.open_positions) {
-          updatePositionPnl(message.open_positions);
+          updatePositionPnl(mergePositionUpdates(openPositionsRef.current, message.open_positions));
         }
       } else if (message.type === "CANDLE_UPDATE") {
         updateCandle(message.data);
@@ -48,7 +51,7 @@ export function useWebSocket() {
           normalizeMarketDataStatus(message.status),
         );
         if (message.open_positions) {
-          updatePositionPnl(message.open_positions);
+          updatePositionPnl(mergePositionUpdates(openPositionsRef.current, message.open_positions));
         }
       }
     },

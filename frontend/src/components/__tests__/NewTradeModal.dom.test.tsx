@@ -456,3 +456,23 @@ it("keeps the confirmed provider identity when the entry price is typed manually
   expect(submittedBody.local_tracking?.source_id).toBe("binance_public");
   expect(submittedBody.local_tracking?.source_symbol).toBe("BTCUSDT");
 });
+
+it("computes USD risk and reward from the position value, not base quantity", async () => {
+  mocks.apiFetch.mockResolvedValue(response(savedTrade));
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  const longSide = Array.from(host.querySelectorAll("button"))
+    .find((element) => element.textContent === "order_ticket.side_buy") as HTMLButtonElement;
+  await act(async () => longSide.click());
+  await act(async () => setInputValue(host.querySelectorAll("input[type=number]")[0] as HTMLInputElement, "76000"));
+  await act(async () => setInputValue(host.querySelectorAll("input[type=number]")[1] as HTMLInputElement, "100"));
+  await act(async () => setInputValue(host.querySelector('input[aria-label="order_ticket.sl_label"]') as HTMLInputElement, "70000"));
+  // The first target is the take-profit in the summary.
+  await act(async () => setInputValue(host.querySelector('input[aria-label="tracking.price:1"]') as HTMLInputElement, "90000"));
+
+  const summary = host.querySelector("[data-testid=new-trade-summary]")?.textContent || "";
+  // 100 x 6000/76000 = 7.89 risk; 100 x 14000/76000 = 18.42 reward.
+  expect(summary).toContain("7.89");
+  expect(summary).toContain("18.42");
+  expect(summary).not.toContain("600000");
+  expect(summary).not.toContain("1400000");
+});

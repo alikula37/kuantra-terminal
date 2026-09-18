@@ -202,8 +202,12 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const validTarget = takeProfit > 0;
   const monetaryReady = sizing.monetaryCalculation.status === "READY";
   const trackingSupported = sizing.instrument.contractSize === "BASE_UNIT" || sizing.instrument.contractSize === "USD_NOTIONAL";
-  const totalRisk = monetaryReady && validStop && numericQty > 0 ? Math.abs(numericEntry - Number(stopLoss)) * numericQty : null;
-  const totalReward = monetaryReady && validTarget && numericQty > 0 ? Math.abs(takeProfit - numericEntry) * numericQty : null;
+  // WP46: the position value is USD, so risk/reward are price-return fractions
+  // of that value -- never a base-quantity multiplication.
+  const totalRisk = monetaryReady && validStop && numericQty > 0 && numericEntry > 0
+    ? Math.abs(numericEntry - Number(stopLoss)) / numericEntry * numericQty : null;
+  const totalReward = monetaryReady && validTarget && numericQty > 0 && numericEntry > 0
+    ? Math.abs(takeProfit - numericEntry) / numericEntry * numericQty : null;
   const rrRatio = totalRisk !== null && totalRisk > 0 && totalReward !== null
     ? (totalReward / totalRisk).toFixed(2) : null;
   const enteredPercentTotal = targets
