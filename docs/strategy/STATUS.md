@@ -3,15 +3,29 @@
 
 Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
-The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot
-access); no development proceeds under it without owner approval. Owner instruction
-(2026-09-18): the reported gaps were closed under the bounded
-[P1-WP47 gap-closure package](../archive/strategy/work-packages/P1-WP47-gap-closure.md)
-(complete and archived): a live TP-specific automatic close with the pre-save warning, the
-forensic cadence reconstruction, USD analytics/export and `/trades/open` regressions, an
-exhaustive dynamic-localization audit (three real missing keys fixed), and the packaged-app
-websocket TLS certificate fix. Delivery evidence:
+**Selected work: [P1-WP48 analytics honesty and acceptance](work-packages/P1-WP48-analytics-honesty-and-acceptance.md).**
+Owner instruction (2026-09-18): close every remaining doable item; agent decides at decision
+points. Decisions: OLAP `record_mode` approved (additive, rebuildable); the product `LICENSE`
+text stays an owner/legal gate (H05's recorded disposition — inventory only); P2–P4 and OKX
+A1.2 remain unapproved scope; notarization and the real XM report need owner/external inputs.
+Scope: no invented analytics (pivot seed fabrication removed), OLAP simulation separation
+(`/analytics/overview`, `/analytics/quant`, symbols/equity, pivot, MAE/MFE), candle
+persistence robustness under a locked DuckDB, WP43/WP41 acceptance evidence, the H05
+third-party inventory, the journal test-record cleanup and the `v1.1.6` release train.
+Owner-host obligations of [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
+remain tracked.
+
+**P1-WP48 implementation evidence (this change, uncommitted):** the pivot engine no longer
+fabricates "seed" rows — an empty journal returns `rows: []` with an explicit
+`NO_CLOSED_TRADES` basis and the UI states it; `olap_trades` carries `record_mode` (schema,
+`ADD COLUMN IF NOT EXISTS` migration, both positional insert paths) and the DuckDB
+aggregated stats, symbol breakdown and equity curve exclude simulations; `/analytics/quant`
+excludes them from the real suite and reports `simulation_trades`; the pivot and MAE/MFE
+sources filter them too; closed-candle persistence retries bounded and warns once per process
+instead of ERROR spam under a DuckDB lock. Tests: `test_wp48_analytics_honesty.py` **6
+passed** (red-first), updated WP47 pivot fixture, frontend pivot empty-state and analytics
+exclusion-note tests. The acceptance evidence, cleanup, H05 inventory and v1.1.6 train are
+recorded below once done.
 
 **P1-WP47 delivery and installed-app proof (2026-09-18):** commits `f70fa36`, `f07d5f6`,
 `f0bf150`; backend **1187 passed**, frontend **43 files / 295 tests** plus the audit, i18n
