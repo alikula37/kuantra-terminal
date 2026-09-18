@@ -1,12 +1,12 @@
 <!-- CURRENT_RELEASE_NOTES:START -->
-# Kuantra Terminal v1.1.5 — Trusted macOS Pilot (USD position value sizing)
+# Kuantra Terminal v1.1.6 — Trusted macOS Pilot (analytics honesty + acceptance)
 
-**Pilot Release tag:** `pilot-v1.1.5` (release and tag point at the artifact source commit
-below; the former `pilot-v1.1.4` prerelease keeps its historical 1.1.4 packages and directs
+**Pilot Release tag:** `pilot-v1.1.6` (release and tag point at the artifact source commit
+below; the former `pilot-v1.1.5` prerelease keeps its historical 1.1.5 packages and directs
 users here)
 
-**Artifact source commit:** `592e04ceab2a95c5f57981b7f9bbbe1e19965329` (clean build
-commit; GitHub Actions release run `35223913627`, `workflow_dispatch`, `publish=false`)
+**Artifact source commit:** the clean build commit of this release; the exact SHA and run id
+are recorded in the post-build install evidence in `docs/strategy/STATUS.md`.
 
 **Status:** `PRIVATE_PRERELEASE_PILOT` / `AD_HOC_TRUSTED_PILOT_ONLY`
 
@@ -15,61 +15,46 @@ commit; GitHub Actions release run `35223913627`, `workflow_dispatch`, `publish=
 This private Release is intentionally scoped for the three-person pilot and exposes exactly
 two downloads:
 
-- **`Kuantra-Terminal-1.1.5-arm64.dmg`** for Apple Silicon M-series Macs;
-- **`Kuantra-Terminal-1.1.5-x86_64.dmg`** for native Intel Macs.
+- **`Kuantra-Terminal-1.1.6-arm64.dmg`** for Apple Silicon M-series Macs;
+- **`Kuantra-Terminal-1.1.6-x86_64.dmg`** for native Intel Macs.
 
 Both DMGs require macOS 12 Monterey or later. Choose the file matching the Mac's native
 architecture; an arm64 DMG is not an Intel artifact and an x86_64 DMG is not an Apple
 Silicon artifact. Both native builds come from the same clean commit in the pinned GitHub
 Actions release workflow and pass the native desktop smoke plus the exact read-only
-mounted-DMG smoke on their matching hosts. DMG SHA-256 values are:
+mounted-DMG smoke on their matching hosts. The run id, source commit, DMG SHA-256 and mounted
+executable SHA-256 values are recorded in the post-build install evidence in
+`docs/strategy/STATUS.md`; technical JSON/manifest evidence remains in the repository and
+local audit package, not as separate Release downloads.
 
-- arm64: `b6efc5758aeb9d9891d032eb3c6dae050118d432d4dd5d595ad40e2ffd031184`;
-- x86_64: `99a770d89c5f9436c5c1e8dbfc62014d152a69c8f2fd169103b466e291b184e3`.
+**New in this release: analytics honesty and separation.**
 
-Mounted executable SHA-256 values are arm64
-`1e38bc5bf641f0e94899ef451c8ed8139bfe30edf75b296c19ea22a04d837391` and x86_64
-`93c62ff12b0a7d8a128bf7d1c6a70a4da3ed444cac597b291b7a1817b4333ea0`; the arm64 executable
-matches the app installed and verified on the owner's Mac. Exact smoke/N05 (ad-hoc blocked)
-JSON/manifest evidence remains in the repository and local audit package, not as separate
-Release downloads.
+- **No invented analytics:** the pivot grid no longer fabricates sample rows when the journal
+  has no closed trades; it returns an explicit empty result and the screen states that no
+  closed results exist yet.
+- **Simulations never mix into real metrics:** portfolio summary/breakdown/equity/heatmap,
+  the analytics overview, the quant scorecard, the symbol breakdown, the pivot grid and the
+  MAE/MFE surfaces all exclude simulation records from real figures; the analytics screen
+  shows the excluded simulation count, and the OLAP projection now carries an additive
+  `record_mode` column so the warehouse metrics separate them too.
+- **Robust persistence:** closed-candle persistence retries a bounded number of times when
+  DuckDB is locked (for example during warehouse hydration) and warns once per process
+  instead of logging an error for every minute.
+- **Acceptance evidence carried with the release:** the chart-review product-check surface
+  and the journal CSV/PDF exports were reviewed against real data on the owner's Mac (see
+  `artifacts/evidence/` in the repository); the websocket TLS pin to certifi keeps the live
+  market stream connecting in the packaged app.
 
-**New in this release: traders size in USD.** Every trade entry and edit now carries a single
-**USD position value** instead of a base-unit quantity:
-
-- **One sizing field:** New Trade asks for the position value in USD (the amount actually
-  committed); the value is stored with `qty_unit=USD` and every money figure derives from it
-  — notional equals the value, margin is the value divided by the declared leverage (spot
-  pays in full), gross P/L is the price return applied to the value, and the R multiple is
-  the P/L over the price-risk fraction of the value. No contract-size verification is
-  required for this path, so gold, FX and CFD journals get full monetary math from the
-  amount the trader actually used.
-- **Approximate labels stay honest:** for a pair whose quote is not USD (for example
-  `ETHBTC`) the USD-value result is an approximation and the UI labels it
-  `QUOTE_NOT_USD_APPROXIMATE` instead of pretending exactness.
-- **Everywhere:** the journal, open-positions table, edit dialog, local tracking panel
-  (remaining value, closures, gross estimate) and the exports show the USD value as
-  currency; legacy `BASE`/`UNKNOWN` rows stay readable and are only converted to a USD value
-  when the user explicitly saves a changed value.
-- **Journal reset notice (owner decision):** the previous quantity model was wrong for the
-  pilot's workflow, so the owner instructed that all existing trade records be deleted. The
-  whole data directory was backed up first (a timestamped copy under the owner's
-  `Documents/Kuantra-Backups/` folder) and only trade-domain data was removed — trades,
-  their audit events and projections, local tracking plans and the analytics projection.
-  Preferences, playbooks, instrument verification cache and the market candle cache are
-  kept. The journal intentionally starts empty in this release; the backup makes the old
-  records recoverable.
-
-The v1.1.4 chart review and journal-trust fixes, the v1.1.3 journal export and readable PDF
-reports, the v1.1.2 update-flow patch and the v1.1.1 security hardening remain in place: the
-read-only chart review renders recorded candles or a session-fetched declared-provider
-snapshot (never a cache row or a substituted product) with an independent product
+The v1.1.5 USD position-value sizing, the v1.1.4 chart review and journal-trust fixes, the
+v1.1.3 journal export and readable PDF reports, the v1.1.2 update-flow patch and the v1.1.1
+security hardening remain in place: every money figure derives from the declared USD value
+(with an explicit approximate label for non-USD quotes), the read-only review renders
+recorded candles or a session-fetched declared-provider snapshot with an independent product
 consistency check, the export flow produces spreadsheet-ready CSV and readable PDF reports
 from one snapshot, the update button opens this repository's Releases list, the dev-only
-vitest toolchain is on the patched 4.1.11, and the security fixes (migration
-archive/manifest ceilings, bounded import reviews, paper-mode execution guard, contained
-model paths, constant-time webhook checks, copy-signal HMAC, SHA-pinned actions) are
-unchanged.
+vitest toolchain is on the patched 4.1.11, and the security fixes (migration archive/manifest
+ceilings, bounded import reviews, paper-mode execution guard, contained model paths,
+constant-time webhook checks, copy-signal HMAC, SHA-pinned actions) are unchanged.
 
 **Monetary calculation boundary:** money figures are produced for a USD position value or an
 explicitly declared/verified base-unit quantity; without either, monetary amounts stay
@@ -81,9 +66,9 @@ an assumed close. Local results are gross estimates, never external fills or ver
 profit. The app must be open and awake.
 
 No live broker order, paid data service, credential, migration or automatic update is
-included. Experimental and disabled surfaces remain `EXPERIMENTAL_DISABLED`; AI has
-no execution authority, and connector secrets remain bounded by the OS keychain.
-Settings' update button only opens this fixed Release page.
+included. Experimental and disabled surfaces remain `EXPERIMENTAL_DISABLED`; AI has no
+execution authority, and connector secrets remain bounded by the OS keychain. Settings'
+update button only opens this fixed Release page.
 
 The DMGs are ad-hoc trusted-pilot artifacts without Apple Developer ID signing or
 notarization. On first launch, use Finder → right-click → **Open**. This is not a public,
@@ -97,7 +82,7 @@ their checksums are re-verified locally with `shasum -a 256 -c SHA256SUMS` and
 The release body is generated from this marker-delimited section. Historical notes below are
 repository audit material only. The prior v1.4.0 publication, tag and assets were removed
 from GitHub on 2026-09-11 and must not be used. The exact canonical product tag is guarded by
-`docs/release/truth-matrix.v1.1.5.json`.
+`docs/release/truth-matrix.v1.1.6.json`.
 
 <!-- CURRENT_RELEASE_NOTES:END -->
 

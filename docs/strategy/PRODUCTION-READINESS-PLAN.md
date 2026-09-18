@@ -56,6 +56,14 @@ instruction — all existing trade records were deleted after a full data-direct
 (`truth-matrix.v1.1.5.json`, `pilot-v1.1.5` prerelease with the tag on the verified build
 commit); `pilot-v1.1.4` keeps its historical packages and redirects users to v1.1.5.
 
+Owner decision (2026-09-18): the analytics-honesty and acceptance package (P1-WP48)
+ships as `v1.1.6` (`truth-matrix.v1.1.6.json`, `pilot-v1.1.6` prerelease with the tag on the
+verified build commit); it removes the fabricated pivot seed data, extends the simulation
+separation to every real analytics surface (including the additive OLAP `record_mode`
+projection), hardens candle persistence under a locked DuckDB and carries the acceptance
+evidence for the chart-review/export surfaces. `pilot-v1.1.5` keeps its historical packages
+and redirects users to v1.1.6. The canonical product Release/tag is not moved.
+
 Owner decision (2026-09-17): the owner-approved chart-review package (P1-WP42), the
 independent spot-product consistency check (P1-WP43) and the identity/simulation/journal-action
 fixes (P1-WP44) ship as `v1.1.4` (`truth-matrix.v1.1.4.json`, `pilot-v1.1.4` prerelease with

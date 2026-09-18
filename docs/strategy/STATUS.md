@@ -15,6 +15,12 @@ third-party inventory, the journal test-record cleanup and the `v1.1.6` release 
 Owner-host obligations of [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
 remain tracked.
 
+**v1.1.6 release train (2026-09-18, owner-approved batch):** the analytics-honesty and
+acceptance package ships as `v1.1.6` (`truth-matrix.v1.1.6.json`, `pilot-v1.1.6` prerelease
+with the tag on the verified build commit); `pilot-v1.1.5` keeps its historical packages and
+redirects users here. Release run id, DMG and mounted-executable hashes, the installed-app
+verification and the acceptance/cleanup evidence are recorded below once done.
+
 **P1-WP48 implementation evidence (this change, uncommitted):** the pivot engine no longer
 fabricates "seed" rows — an empty journal returns `rows: []` with an explicit
 `NO_CLOSED_TRADES` basis and the UI states it; `olap_trades` carries `record_mode` (schema,
