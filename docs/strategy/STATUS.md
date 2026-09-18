@@ -3,44 +3,29 @@
 
 Updated: 2026-09-17. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP47 gap closure](work-packages/P1-WP47-gap-closure.md).**
-Owner instruction (2026-09-18): close the gaps the previous delivery honestly reported —
-a live TP-specific automatic-close proof with a new labelled simulation record, the forensic
-cadence reconstruction for the pre-fix wait, end-to-end USD analytics/export tests, a
-`/trades/open` metadata regression, an exhaustive dynamic-localization audit with a
-source-scan guard, and the packaged-app websocket TLS certificate fix. The owner-host
-obligations of [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md)
-(N03/N05/H05/pilot access) remain tracked. Owner instruction
-(2026-09-18): the four real-UI findings on installed 1.1.5 were fixed with red-first
-regressions under the bounded
-[P1-WP46 package](../archive/strategy/work-packages/P1-WP46-usd-math-monitor-and-label-fixes.md)
-— remaining base-quantity money paths (create-form risk/reward, dashboard live feed, replay
-payload), the tracking monitor's silent rejection of fresh provider events (provider clock
-skew) and invisible backoff, lost simulation metadata from live position updates, and a raw
-`verification_EXPLICIT_USD_VALUE` locale key. It is complete and archived; the
-installed-app retest with a new labelled simulation record is recorded below. Owner instruction (2026-09-17): traders size
-positions in USD, not base units — the bounded
-[P1-WP45 USD position value package](../archive/strategy/work-packages/P1-WP45-usd-position-value.md)
-retired the base-quantity entry, made USD value the only sizing (stored as `qty` with
-`qty_unit=USD`), derived money math from the value with an explicit approximate label for
-non-USD quotes, and — by explicit owner instruction ("hepsini sil. mantık hatalıydı") —
-deleted all existing trade records after a full backup, shipping as `v1.1.5`.
+**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot
+access); no development proceeds under it without owner approval. Owner instruction
+(2026-09-18): the reported gaps were closed under the bounded
+[P1-WP47 gap-closure package](../archive/strategy/work-packages/P1-WP47-gap-closure.md)
+(complete and archived): a live TP-specific automatic close with the pre-save warning, the
+forensic cadence reconstruction, USD analytics/export and `/trades/open` regressions, an
+exhaustive dynamic-localization audit (three real missing keys fixed), and the packaged-app
+websocket TLS certificate fix. Delivery evidence:
 
-**P1-WP47 implementation evidence (this change, uncommitted):** (1) the Binance market
-stream now pins its TLS context to the certifi bundle used by REST (the packaged app logged
-`CERTIFICATE_VERIFY_FAILED` while REST worked); (2) `/trades/open` carries `qty_unit`,
-`record_mode` and value-based sizing (regression test); (3) a closed USD simulation flows
-through portfolio summary/breakdown/equity/heatmap, the pivot grid and the journal export
-snapshot with value-based results and explicit units (tests); (4) the pre-fix cadence is
-reconstructed as "consistent with" the old 30/60/120 s backoff arithmetic against the
-surviving 31/61/122 s log gaps, and the new stale-retry policy is pinned; (5) the
-localization audit now covers every dynamically composed key family discovered in the
-source, with a guard that fails on new uncovered prefixes, and it found and fixed three
-real missing keys (`tracking.status_UNKNOWN`, `journal_edit.field_exit_price`,
-`journal_edit.field_exit_time`). Evidence: backend `test_wp47_gap_closure.py` **6 passed**
-(red-first), full backend **1187 passed**, frontend **43 files / 295 tests** plus the extended
-audit, i18n **1238/1238/1238**, `tsc`/build clean. Commit/CI/install and the live TP retest
-are recorded below once done.
+**P1-WP47 delivery and installed-app proof (2026-09-18):** commits `f70fa36`, `f07d5f6`,
+`f0bf150`; backend **1187 passed**, frontend **43 files / 295 tests** plus the audit, i18n
+**1238/1238/1238**; canonical arm64 CI **MERGE READY** (`dist/p1-wp47-local-ci.json`,
+executable `d8a20f48f462a0c503beb1d89c97b8a99180434b9b0d985516dd744aa7658d85`); arm64 DMG
+`Kuantra-Terminal-1.1.5-wp47-arm64.dmg` SHA-256
+`7a37659b15c8218bf89dfc2bfefa35b3e916f5af9c72abd3ece0760a7a46661d` (exact-DMG smoke PASS)
+installed over `/Applications/Kuantra Terminal.app` (backup `/tmp/kuantra-wp47-update.9coCTu`;
+installed executable matches, codesign OK, version 1.1.5). Installed-app proof with the new
+labelled record `TRD-1789717224982`: the stream connects with no certificate error; the
+tracking editor warned before saving an already-reached TP; the plan auto-closed at the next
+eligible provider event in ~14 s (TP1, gross +0.1084 USD = value × return, single closure,
+external OPEN, `USD_NOTIONAL`); the waiting reason was visible while waiting. Evidence
+`artifacts/evidence/p1-wp47-retest/`. Release/tag unchanged.
 
 **P1-WP46 delivery and installed-app retest (2026-09-18):** commits `bd31ba4`, `909aeca`,
 `af185ca`, `8b092b8`; backend **1182 passed**, frontend **43 files / 295 tests**, i18n

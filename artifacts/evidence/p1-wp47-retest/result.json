@@ -1,0 +1,49 @@
+{
+  "work_package": "P1-WP47",
+  "kind": "GAP_CLOSURE_RETEST",
+  "ran_at": "2026-09-18T10:47:17.072902Z",
+  "installed": {
+    "version": "1.1.5",
+    "executable_sha256": "d8a20f48f462a0c503beb1d89c97b8a99180434b9b0d985516dd744aa7658d85",
+    "dmg_sha256": "7a37659b15c8218bf89dfc2bfefa35b3e916f5af9c72abd3ece0760a7a46661d"
+  },
+  "websocket_tls": {
+    "previous": "packaged app logged CERTIFICATE_VERIFY_FAILED and 'No live market data available'",
+    "fix": "the stream pins its SSL context to certifi (backend/app/websocket/binance_client.py)",
+    "installed_log": "2026-09-18 13:38:44 Connected to Binance live market stream. (no certificate error)"
+  },
+  "tp_live_close": {
+    "trade_id": "TRD-1789717224982",
+    "note": "QA-WP47-TP-RETEST | SIMULASYON | gercek islem degil",
+    "entry": 78158.25,
+    "value_usd": 100.0,
+    "leverage": 2,
+    "flow": "created with a pending TP; the tracking editor then set an already-reached valid TP (78238.25) with a role=alert warning before saving",
+    "armed_at": "2026-09-18T10:45:52.126887+00:00",
+    "closure": {
+      "target_id": "TP1",
+      "price": "78242.98",
+      "target_price": "78238.25",
+      "qty": "100",
+      "gross_pnl": "0.1084082614439294636202832074669020864719975178564003160255",
+      "observed_at": "2026-09-18T10:46:06.121000+00:00",
+      "basis": "LOCAL_ESTIMATE"
+    },
+    "expected_gross_value_based": 0.108408,
+    "closures_count": 1,
+    "external_status": "OPEN",
+    "unit": "USD",
+    "record_mode": "SIMULATION",
+    "time_to_close_seconds": 14
+  },
+  "waiting_reason_visible": "after saving, the panel showed 'Bu kimlik i\u00e7in ilk sa\u011flay\u0131c\u0131 g\u00f6zlemi bekleniyor. \u00b7 Sonraki deneme ~14 sn i\u00e7inde'",
+  "screenshots": [
+    "02-presave-warning.png",
+    "03-journal-tp-completed.png",
+    "04-tracking-tp-completed.png"
+  ],
+  "limits": [
+    "The pre-fix wait remains 'consistent with' the old backoff arithmetic (31/61/122 s vs 30/60/120 s); the exact split is unprovable because those sessions logged at DEBUG.",
+    "DuckDB candle persistence logs a lock conflict while a second backend (the test harness) shares the same data directory; the installed app alone owns the lock in normal use."
+  ]
+}
