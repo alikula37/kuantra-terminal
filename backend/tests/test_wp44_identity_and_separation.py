@@ -35,6 +35,7 @@ class _FakeFetcher:
         self.calls.append((symbol, source))
         return {
             "status": "LIVE",
+            "timestamp_basis": "PROVIDER_EVENT",
             "price": 76000.0,
             "price_kind": "LAST",
             "source_id": source,

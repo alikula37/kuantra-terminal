@@ -95,9 +95,9 @@ it("refreshes all open prices and shows status with age", async () => {
         skipped_identities: 0,
         quotes: {
           "TRD-EDIT-1": {
-            quote_status: "LIVE", price: 65000, price_kind: "LAST",
+            quote_status: "LIVE", timestamp_basis: "PROVIDER_EVENT", price: 65000, price_kind: "LAST",
             source_id: "binance_public", source_symbol: "BTCUSDT",
-            observed_at: "2026-09-14T09:59:59Z", checked_at: "2026-09-14T10:00:00Z",
+            observed_at: new Date(Date.now() - 1000).toISOString(), checked_at: new Date().toISOString(),
             age_seconds: 1, reason: null, last_known: null,
           },
         },
@@ -115,7 +115,7 @@ it("refreshes all open prices and shows status with age", async () => {
   await flush();
 
   expect(host.textContent).toContain("65,000");
-  expect(host.textContent).toContain("LIVE");
+  expect(host.querySelector('[data-quote-status="LIVE"]')).not.toBeNull();
   expect(host.textContent).toContain("journal.refresh_checked");
 });
 
@@ -162,7 +162,7 @@ it("demotes a previously live quote after a transport failure and recovers", asy
         skipped_identities: 0,
         quotes: {
           "TRD-EDIT-1": {
-            quote_status: "LIVE", price: 65000, price_kind: "LAST",
+            quote_status: "LIVE", timestamp_basis: "PROVIDER_EVENT", price: 65000, price_kind: "LAST",
             source_id: "binance_public", source_symbol: "BTCUSDT",
             observed_at: observedAt, checked_at: new Date().toISOString(),
             age_seconds: 3, reason: null, last_known: null,
@@ -175,7 +175,7 @@ it("demotes a previously live quote after a transport failure and recovers", asy
 
   await act(async () => root.render(<JournalView onOpenNewTrade={vi.fn()} onEditTrade={vi.fn()} />));
   await flush();
-  expect(host.textContent).toContain("LIVE");
+  expect(host.querySelector('[data-quote-status="LIVE"]')).not.toBeNull();
   expect(host.textContent).toContain("65,000");
 
   failing = true;
@@ -184,7 +184,7 @@ it("demotes a previously live quote after a transport failure and recovers", asy
 
   // The old price is never presented as live; it is demoted to stale data and
   // the attempt/success times stay distinct.
-  expect(host.textContent).not.toContain("LIVE");
+  expect(host.querySelector('[data-quote-status="LIVE"]')).toBeNull();
   expect(host.textContent).toContain("journal.quote_unavailable");
   expect(host.textContent).toContain("journal.quote_last_known");
   expect(host.textContent).toContain("journal.refresh_failed");
@@ -194,7 +194,7 @@ it("demotes a previously live quote after a transport failure and recovers", asy
   failing = false;
   await act(async () => (host.querySelector("[data-testid=journal-refresh-all]") as HTMLButtonElement).click());
   await flush();
-  expect(host.textContent).toContain("LIVE");
+  expect(host.querySelector('[data-quote-status="LIVE"]')).not.toBeNull();
   expect(host.textContent).not.toContain("journal.quote_last_known");
 });
 
@@ -213,7 +213,7 @@ it("advances the displayed quote age between refreshes", async () => {
           skipped_identities: 0,
           quotes: {
             "TRD-EDIT-1": {
-              quote_status: "LIVE", price: 65000, price_kind: "LAST",
+              quote_status: "LIVE", timestamp_basis: "PROVIDER_EVENT", price: 65000, price_kind: "LAST",
               source_id: "binance_public", source_symbol: "BTCUSDT",
               observed_at: observedAt, checked_at: new Date().toISOString(),
               age_seconds: 5, reason: null, last_known: null,

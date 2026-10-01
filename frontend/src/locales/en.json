@@ -1,5 +1,18 @@
 {
+  "quote_quality": {
+    "applied": "Price applied: {price} · {source}. See freshness below.",
+    "status_live": "Live",
+    "status_delayed": "Delayed",
+    "status_eod": "End-of-day",
+    "status_unavailable": "Unavailable",
+    "stale": "Last known price — stale",
+    "unknown_time": "Price observation time not verified; not a live quote.",
+    "candle_open": "Candle start ({interval}): {time} · Türkiye time",
+    "event_time": "Price event: {time} · Türkiye time",
+    "display_only": "Display only: this candle source cannot trigger automatic TP/SL."
+  },
   "tracking": {
+    "wait_reason_PROVIDER_EVENT_TIME_UNAVAILABLE": "This source supplies candle prices, not timestamped live price events. Automatic TP/SL is waiting; manual recording and editing still work.",
     "external_title": "Open external journal records",
     "manage_close": "Local close",
     "title": "Local TP / SL tracking",

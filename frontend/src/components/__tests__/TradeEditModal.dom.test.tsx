@@ -94,7 +94,7 @@ const respond = (trade: Record<string, unknown>, options: {
     if (path.endsWith("/quotes/refresh")) {
       return Promise.resolve(response({
         checked_at: "2026-09-14T10:00:00Z", requested: 1, identities: 1, skipped_identities: 0,
-        quotes: { T1: { quote_status: "LIVE", price: 65000, price_kind: "LAST", source_id: "binance_public", source_symbol: "BTCUSDT", observed_at: "2026-09-14T09:59:59Z", checked_at: "2026-09-14T10:00:00Z", age_seconds: 1, reason: null, last_known: null } },
+        quotes: { T1: { quote_status: "LIVE", timestamp_basis: "PROVIDER_EVENT", price: 65000, price_kind: "LAST", source_id: "binance_public", source_symbol: "BTCUSDT", observed_at: new Date().toISOString(), checked_at: new Date().toISOString(), age_seconds: 1, reason: null, last_known: null } },
       }));
     }
     if (init?.method === "PATCH") {
@@ -223,7 +223,7 @@ it("refresh price shows the exact provider quote and no liquidity claim", async 
   await flush();
 
   expect(host.textContent).toContain("65000");
-  expect(host.textContent).toContain("LIVE");
+  expect(host.querySelector('[data-quote-status="LIVE"]')).not.toBeNull();
   expect(host.textContent).toContain("journal_edit.quote_identity_notice");
 });
 

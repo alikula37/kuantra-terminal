@@ -1,5 +1,18 @@
 {
+  "quote_quality": {
+    "applied": "Fiyat alana yazıldı: {price} · {source}. Güncellik bilgisi aşağıda.",
+    "status_live": "Canlı",
+    "status_delayed": "Gecikmeli",
+    "status_eod": "Gün sonu",
+    "status_unavailable": "Alınamadı",
+    "stale": "Son bilinen fiyat — eski",
+    "unknown_time": "Fiyatın gözlem zamanı doğrulanmadı; canlı fiyat değildir.",
+    "candle_open": "Mum başlangıcı ({interval}): {time} · Türkiye saati",
+    "event_time": "Fiyat olayı: {time} · Türkiye saati",
+    "display_only": "Yalnız görüntüleme: bu mum kaynağı otomatik TP/SL tetikleyemez."
+  },
   "tracking": {
+    "wait_reason_PROVIDER_EVENT_TIME_UNAVAILABLE": "Bu kaynak, zaman damgalı canlı fiyat olayı yerine mum fiyatı veriyor. Otomatik TP/SL beklemede; manuel kayıt ve düzenleme çalışır.",
     "external_title": "Açık harici işlem kayıtları",
     "manage_close": "Yerel kapanış",
     "title": "Yerel TP / SL takibi",

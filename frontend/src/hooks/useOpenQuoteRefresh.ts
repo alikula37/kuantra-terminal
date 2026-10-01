@@ -49,6 +49,8 @@ export function useOpenQuoteRefresh(enabled: boolean) {
             price: quote.price,
             observed_at: quote.observed_at,
             quote_status: quote.quote_status,
+            timestamp_basis: quote.timestamp_basis,
+            candle_interval: quote.candle_interval,
             stale: true,
           },
         };

@@ -25,6 +25,7 @@ from app.services.quote_refresh import quote_refresh_service
 from app.services.market_data.instrument_catalog import instrument_catalog
 from app.services.market_data.public_fetcher import (
     FREE_QUOTE_SOURCES,
+    TrackingQuoteRateLimit,
     public_market_fetcher,
 )
 from app.services.portfolio_service import portfolio_service
@@ -2514,7 +2515,10 @@ async def get_market_quote(
             "credentials_required": False,
         }
 
-    quote = await public_market_fetcher.fetch_quote(requested, source=source)
+    try:
+        quote = await public_market_fetcher.fetch_quote(requested, source=source)
+    except TrackingQuoteRateLimit:
+        quote = public_market_fetcher._unavailable_quote(requested, "PROVIDER_RATE_LIMIT")
     return quote.as_dict()
 
 @router.get("/market-data/candles")

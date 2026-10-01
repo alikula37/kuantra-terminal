@@ -14,6 +14,15 @@ audit: KRR-001@1.0.0
 
 ## 1. Karar özeti ve yetki
 
+Owner-approved UX sequence (2026-10-02): proceed in bounded, tested packages after
+installed-app review. First WP49: truthful quote freshness and understandable automation
+waits. Then journal layout/actions, no-data metrics, translation/readability, form
+simplicity, chart/tracking clarity, first-use/backup guidance and update guidance.
+Reconfirm each subsequent item's current behavior before changing it. Broker integrations,
+real XM compatibility, provider verification, signing and release/tag gates are separate;
+this UX approval does not close or expand those contracts. Install every verified bounded
+change on this Mac under AGENTS; published pilot assets stay unchanged unless authorized.
+
 Owner-approved addition (2026-09-14): P1-WP32 pilot journal trust. Pilot traders
 need user-supplied trade date/time in `Europe/Istanbul` stored as UTC, an explicit
 open/closed-at-entry choice, a working edit/correction flow with revision control

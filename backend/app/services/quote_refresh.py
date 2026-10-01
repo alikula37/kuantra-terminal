@@ -14,7 +14,6 @@ tracking monitor with its stricter LIVE + provider-event + <=60s contract.
 from __future__ import annotations
 
 import asyncio
-import math
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -23,6 +22,7 @@ from app.services.market_data.public_fetcher import (
     TrackingQuoteRateLimit,
     public_market_fetcher,
 )
+from app.services.market_data.quote_quality import quote_age, quote_quality
 
 QuoteIdentity = Tuple[str, str]
 
@@ -59,19 +59,11 @@ class QuoteRefreshService:
 
     @staticmethod
     def _age_seconds(observed_at: Optional[str], now: datetime) -> Optional[float]:
-        if not observed_at:
-            return None
-        try:
-            parsed = datetime.fromisoformat(str(observed_at).replace("Z", "+00:00"))
-        except ValueError:
-            return None
-        if parsed.tzinfo is None:
-            return None
-        age = (now - parsed.astimezone(timezone.utc)).total_seconds()
-        return round(age, 3) if math.isfinite(age) else None
+        return quote_age(observed_at, now)
 
     @staticmethod
     def _quote_view(quote: Dict[str, Any], checked_at: datetime) -> Dict[str, Any]:
+        quote = quote_quality(quote, checked_at)
         return {
             "quote_status": quote.get("status") or "UNAVAILABLE",
             "price": quote.get("price"),
@@ -82,6 +74,9 @@ class QuoteRefreshService:
             "checked_at": checked_at.isoformat(),
             "age_seconds": QuoteRefreshService._age_seconds(quote.get("observed_at"), checked_at),
             "reason": quote.get("reason"),
+            "timestamp_basis": quote["timestamp_basis"],
+            "candle_interval": quote.get("candle_interval"),
+            "freshness": quote["freshness"],
         }
 
     def _cached_quote(self, identity: QuoteIdentity, now: datetime) -> Optional[Dict[str, Any]]:
@@ -122,14 +117,16 @@ class QuoteRefreshService:
             "price": quote.get("price"),
             "observed_at": quote.get("observed_at"),
             "quote_status": quote.get("status"),
+            "timestamp_basis": quote.get("timestamp_basis", "UNKNOWN"),
+            "candle_interval": quote.get("candle_interval"),
         }
 
     def cached_quote(self, trade: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Read the last refreshed quote for one trade without any network call.
 
-        Returns the freshest price this server already obtained — a LIVE quote
-        or the explicit stale "last known" value after a failure — together
-        with its observation time and source status.  ``None`` means no quote
+        Returns the last obtained price with age rechecked on every read. Only
+        a fresh provider event can be LIVE/non-stale; candle/unknown prices and
+        failures stay explicitly non-live. ``None`` means no quote
         was ever fetched for this trade's confirmed identity, so mark-to-market
         math must not invent one.
         """
@@ -148,6 +145,8 @@ class QuoteRefreshService:
             stale = True
         if quote.get("price") is None:
             return None
+        quote = quote_quality(quote, self.clock())
+        stale = stale or quote["freshness"] != "FRESH"
         return {
             "price": quote.get("price"),
             "status": quote.get("status"),
@@ -155,6 +154,9 @@ class QuoteRefreshService:
             "source_id": quote.get("source_id") or identity[0],
             "source_symbol": quote.get("source_symbol") or identity[1],
             "stale": stale,
+            "timestamp_basis": quote["timestamp_basis"],
+            "freshness": quote["freshness"],
+            "age_seconds": quote["age_seconds"],
         }
 
     async def _fetch_identity(
@@ -267,6 +269,9 @@ class QuoteRefreshService:
         fetched = await asyncio.gather(
             *(self._fetch_identity(identity, semaphore, reference) for identity, _ in identities)
         )
+        # Fetch latency must not make a newly received provider event appear
+        # to be in the future. An explicit injected time remains deterministic.
+        checked_at = (now or self.clock()).astimezone(timezone.utc)
         for (identity, trade_ids), quote in zip(identities, fetched):
             view = self._quote_view(quote, checked_at)
             last_known = self._last_known(identity) if view["price"] is None else None

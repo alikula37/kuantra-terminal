@@ -1,5 +1,18 @@
 {
+  "quote_quality": {
+    "applied": "Kurs übernommen: {price} · {source}. Aktualität siehe unten.",
+    "status_live": "Live",
+    "status_delayed": "Verzögert",
+    "status_eod": "Tagesende",
+    "status_unavailable": "Nicht verfügbar",
+    "stale": "Letzter bekannter Kurs — veraltet",
+    "unknown_time": "Kursbeobachtungszeit nicht bestätigt; kein Live-Kurs.",
+    "candle_open": "Kerzenbeginn ({interval}): {time} · Türkei-Zeit",
+    "event_time": "Kursereignis: {time} · Türkei-Zeit",
+    "display_only": "Nur Anzeige: Diese Kerzenquelle kann kein automatisches TP/SL auslösen."
+  },
   "tracking": {
+    "wait_reason_PROVIDER_EVENT_TIME_UNAVAILABLE": "Diese Quelle liefert Kerzenkurse, keine zeitgestempelten Live-Kursereignisse. Automatisches TP/SL wartet; manuelles Erfassen und Bearbeiten funktioniert.",
     "external_title": "Offene externe Journaleinträge",
     "manage_close": "Lokal schließen",
     "title": "Lokale TP-/SL-Verfolgung",

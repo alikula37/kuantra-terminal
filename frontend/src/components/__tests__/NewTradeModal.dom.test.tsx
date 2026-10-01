@@ -152,8 +152,9 @@ afterEach(async () => {
   host.remove();
 });
 
-it("uses a free quote only when the exact quote is available and records the returned trade", async () => {
+it("uses the exact quote and rechecks its age before recording the returned trade", async () => {
   let submittedBody: any;
+  const quoteAt = new Date().toISOString();
   mocks.apiFetch.mockImplementation((path: string, init?: RequestInit) => {
     if (path.startsWith("/api/v1/market-data/quote")) {
       return Promise.resolve(response({
@@ -161,9 +162,9 @@ it("uses a free quote only when the exact quote is available and records the ret
         source_id: "binance_public",
         source_symbol: "BTCUSDT",
         price: 123.45,
-        status: "LIVE",
+        status: "LIVE", timestamp_basis: "PROVIDER_EVENT",
         price_kind: "LAST",
-        observed_at: "2026-09-11T10:00:00Z",
+        observed_at: quoteAt,
         reason: null,
         free_source: true,
         credentials_required: false,
@@ -183,10 +184,13 @@ it("uses a free quote only when the exact quote is available and records the ret
   await flush();
 
   expect((host.querySelectorAll("input[type=number]")[0] as HTMLInputElement).value).toBe("123.45");
-  expect(host.querySelector("[data-testid=trade-quote-status]")?.textContent).toContain("order_ticket.quote_status:LIVE");
+  expect(host.querySelector('[data-quote-status="LIVE"]')).not.toBeNull();
 
   await act(async () => setInputValue(host.querySelectorAll("input[type=number]")[1] as HTMLInputElement, "1"));
-  await act(async () => (host.querySelector("button[type=submit]") as HTMLButtonElement).click());
+  const clock = vi.spyOn(Date, "now").mockReturnValue(Date.parse(quoteAt) + 61_000);
+  try {
+    await act(async () => (host.querySelector("button[type=submit]") as HTMLButtonElement).click());
+  } finally { clock.mockRestore(); }
   await flush();
 
   expect(submittedBody).toMatchObject({
@@ -195,7 +199,7 @@ it("uses a free quote only when the exact quote is available and records the ret
     record_mode: "EXTERNAL",
     price_source: "binance_public",
     price_source_symbol: "BTCUSDT",
-    price_status: "LIVE",
+    price_status: "DELAYED",
     price_origin: "PUBLIC_QUOTE",
   });
   expect(mocks.addTrade).toHaveBeenCalledWith(savedTrade);

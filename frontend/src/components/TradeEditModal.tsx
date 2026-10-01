@@ -13,6 +13,7 @@ import {
 } from "../lib/tradeTime";
 import { formatNotional, positionSizing } from "../lib/positionMath";
 import type { Trade, TradeQuote, TradeRevision, TradeRevisionHistory } from "../types";
+import { QuoteQuality } from "./QuoteQuality";
 
 const REASON_KEYS: Record<string, string> = {
   REVISION_CONFLICT: "journal_edit.reason_revision_conflict",
@@ -373,8 +374,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
     return (
       <span className="text-slate-100">
         <span className="font-semibold">{quote.price}</span>
-        <span className="ml-2 text-accent">{quote.quote_status}</span>
-        <span className="ml-2 k-help">{formatIstanbulDateTime(quote.observed_at)}</span>
+        <QuoteQuality quote={quote} />
       </span>
     );
   })();

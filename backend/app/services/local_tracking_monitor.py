@@ -110,9 +110,10 @@ class TrackingMonitor:
                     # a normal waiting state, not a failure: retry soon, no backoff,
                     # and keep the reason visible instead of a silent wait.
                     self.quotes.pop(key, None)
-                    self.next_poll[key] = time.monotonic() + 5
+                    display_only = observation.get("reason") == "PROVIDER_EVENT_TIME_UNAVAILABLE"
+                    self.next_poll[key] = time.monotonic() + (60 if display_only else 5)
                     self.failures[key] = 0
-                    self._note(key, "WAITING_FRESH_PROVIDER_EVENT")
+                    self._note(key, "PROVIDER_EVENT_TIME_UNAVAILABLE" if display_only else "WAITING_FRESH_PROVIDER_EVENT")
                     logger.info("Local tracking waits for a fresh provider event: %s", key)
                     return
                 self.quotes[key] = observation

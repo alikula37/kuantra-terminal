@@ -487,4 +487,6 @@ class TestPublicMarketDataFetcherAndCache:
         assert quote.source_id == "biquote_public"
         assert quote.source_symbol == "XAUUSD"
         assert quote.price == 4362.537
-        assert quote.status == "LIVE"
+        assert quote.status == "DELAYED"
+        assert quote.timestamp_basis == "CANDLE_OPEN"
+        assert quote.price_kind == "CLOSE"

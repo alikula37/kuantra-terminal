@@ -44,7 +44,13 @@ export interface Trade {
   sizing?: PositionSizing | null;
 }
 
-export interface TradeQuote {
+export interface QuoteTimeMetadata {
+  timestamp_basis?: "PROVIDER_EVENT" | "CANDLE_OPEN" | "REQUEST_TIME" | "UNKNOWN";
+  candle_interval?: string | null;
+  freshness?: "FRESH" | "STALE" | "DISPLAY_ONLY" | "UNKNOWN";
+}
+
+export interface TradeQuote extends QuoteTimeMetadata {
   quote_status: QuoteStatus;
   price: number | null;
   price_kind: "LAST" | "CLOSE" | null;
@@ -54,7 +60,7 @@ export interface TradeQuote {
   checked_at: string;
   age_seconds: number | null;
   reason?: string | null;
-  last_known?: {
+  last_known?: QuoteTimeMetadata & {
     price: number;
     observed_at: string | null;
     quote_status: QuoteStatus;
@@ -84,7 +90,7 @@ export interface TradeRevisionHistory {
   revisions: TradeRevision[];
 }
 
-export interface MarketQuote {
+export interface MarketQuote extends QuoteTimeMetadata {
   requested_symbol: string;
   source_id: string | null;
   source_symbol: string | null;

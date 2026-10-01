@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { Crosshair, Plus, Shield, Edit3, XCircle, RefreshCw } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
 import { Trade } from "../../types";
-import { useOpenQuoteRefresh, quoteAgeSeconds } from "../../hooks/useOpenQuoteRefresh";
+import { useOpenQuoteRefresh } from "../../hooks/useOpenQuoteRefresh";
 import { apiFetch, apiUrl } from "../../lib/backend";
-import { formatIstanbulDateTime, relativeAgeLabel } from "../../lib/tradeTime";
+import { formatIstanbulDateTime } from "../../lib/tradeTime";
+import { QuoteQuality } from "../QuoteQuality";
 import { formatPositionValue, formatPrice, positionSizing } from "../../lib/positionMath";
 
 interface OpenPositionsTableProps {
@@ -171,7 +172,6 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                     ? (isLong ? 1 : -1) * (quotePrice - p.entry_price) / p.entry_price * p.qty
                     : (isLong ? 1 : -1) * (quotePrice - p.entry_price) * p.qty)
                   : null;
-                const quoteAge = quoteAgeSeconds(quote, nowMs);
 
                 return (
                   <tr key={p.id} className="hover:bg-[#0d121c] transition">
@@ -197,10 +197,7 @@ export const OpenPositionsTable: React.FC<OpenPositionsTableProps> = ({
                       {quotePrice != null ? (
                         <span className="leading-tight">
                           <span className="block font-semibold text-slate-100">{formatPrice(p.symbol, quotePrice)}</span>
-                          <span className={`block text-sm ${quote?.quote_status === "LIVE" ? "text-gain" : "text-amber-300"}`}>
-                            {quote?.quote_status}
-                            {quoteAge != null && <span className="ml-1 text-slate-400">· {relativeAgeLabel(quoteAge)}</span>}
-                          </span>
+                          {quote && <QuoteQuality quote={quote} nowMs={nowMs} />}
                           {unrealized != null && (
                             <span className={`block text-sm font-semibold ${unrealized >= 0 ? "text-gain" : "text-loss"}`} data-testid={`open-local-unrealized-${p.id}`}>
                               {t("open_positions.local_unrealized", { value: `${unrealized >= 0 ? "+" : ""}${unrealized.toFixed(2)}` })}

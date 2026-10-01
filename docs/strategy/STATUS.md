@@ -1,9 +1,20 @@
 <!-- doc-role: current-status -->
 # Current development status
 
-Updated: 2026-09-17. Branch: `main` (latest owner instruction).
+Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+**Selected work: [P1-WP49 quote-freshness UX](work-packages/P1-WP49-quote-freshness-ux.md).**
+First bounded item of the approved UX sequence: no candle/download-time `LIVE`, shared
+freshness/source/time labels and an explicit display-only tracking reason. Baseline
+`765ab0a`; red backend tests 11 failed → green 15 focused / **1209 full backend**,
+frontend **45 files / 301 tests**, i18n **1252/1252/1252**, tsc/build/docs/truth/diff PASS.
+Implementation: this change (`quote_quality.py`, `QuoteQuality.tsx`, WP49 tests). Clean
+commit canonical CI, exact-DMG and installed-app evidence remain pending.
+No new provider, broker order, migration or release/tag authority. Next UX dependency:
+journal readability/actions layout; external owner-host obligations remain in
+[P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**Previous selection: P1-WP29 trusted macOS pilot package.**
 The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot access);
 no development proceeds under it without owner approval. Owner instruction (2026-09-18): the
 remaining doable items were closed under the bounded

@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote as url_quote
 
 import httpx
+from app.services.market_data.quote_quality import quote_quality
 
 logger = logging.getLogger("public_market_fetcher")
 
@@ -146,9 +147,11 @@ class PublicQuote:
     price_kind: Optional[str]
     observed_at: Optional[str]
     reason: Optional[str] = None
+    timestamp_basis: str = "UNKNOWN"
+    candle_interval: Optional[str] = None
 
     def as_dict(self) -> Dict[str, Any]:
-        return {
+        return quote_quality({
             "requested_symbol": self.requested_symbol,
             "source_id": self.source_id,
             "source_symbol": self.source_symbol,
@@ -159,7 +162,9 @@ class PublicQuote:
             "reason": self.reason,
             "free_source": True,
             "credentials_required": False,
-        }
+            "timestamp_basis": self.timestamp_basis,
+            "candle_interval": self.candle_interval,
+        }, datetime.now(timezone.utc))
 
 
 @dataclass(frozen=True)
@@ -673,9 +678,11 @@ class PublicMarketDataFetcher:
                         source_id="biquote_public",
                         source_symbol=biquote_symbol,
                         price=price,
-                        status="LIVE",
-                        price_kind="LAST",
+                        status="DELAYED",
+                        price_kind="CLOSE",
                         observed_at=observed_at,
+                        timestamp_basis="CANDLE_OPEN",
+                        candle_interval="1h",
                     )
             failures.append("BIQUOTE_QUOTE_UNAVAILABLE")
             if source == "biquote_public":
@@ -720,6 +727,8 @@ class PublicMarketDataFetcher:
                                 status="DELAYED",
                                 price_kind="CLOSE",
                                 observed_at=observed_at,
+                                timestamp_basis="CANDLE_OPEN",
+                                candle_interval="1m",
                             )
                 failures.append("YAHOO_QUOTE_UNAVAILABLE")
             except Exception:
@@ -748,6 +757,8 @@ class PublicMarketDataFetcher:
                                 status="EOD",
                                 price_kind="CLOSE",
                                 observed_at=observed_at,
+                                timestamp_basis="CANDLE_OPEN",
+                                candle_interval="1d",
                             )
                 failures.append("STOOQ_QUOTE_UNAVAILABLE")
             except Exception:
@@ -807,6 +818,8 @@ class PublicMarketDataFetcher:
                                 status="DELAYED",
                                 price_kind="CLOSE",
                                 observed_at=observed_at,
+                                timestamp_basis="CANDLE_OPEN",
+                                candle_interval="1d",
                             )
                 failures.append("YAHOO_QUOTE_UNAVAILABLE")
             except Exception:
@@ -835,6 +848,8 @@ class PublicMarketDataFetcher:
                                 status="EOD",
                                 price_kind="CLOSE",
                                 observed_at=observed_at,
+                                timestamp_basis="CANDLE_OPEN",
+                                candle_interval="1d",
                             )
                 failures.append("STOOQ_QUOTE_UNAVAILABLE")
             except Exception:
@@ -853,59 +868,27 @@ class PublicMarketDataFetcher:
         failures: List[str] = []
         candidates = ("binance_public", "bybit_public") if source == "auto" else (source,)
 
-        if "binance_public" in candidates:
+        for provider in candidates:
+            if provider not in {"binance_public", "bybit_public"}:
+                continue
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    response = await client.get(
-                        self.BINANCE_TICKER_URL,
-                        params={"symbol": normalized_symbol},
-                        headers=self._get_headers(),
+                # The ticker endpoints do not attest last-trade time. Reuse the
+                # exact recent-trade adapter; download time is never event time.
+                event = await self.fetch_tracking_quote(provider, normalized_symbol)
+                if event.get("status") == "LIVE":
+                    view = quote_quality(event, datetime.now(timezone.utc))
+                    return PublicQuote(
+                        requested_symbol=requested_symbol, source_id=provider,
+                        source_symbol=normalized_symbol, price=float(event["price"]),
+                        status=view["status"], price_kind="LAST",
+                        observed_at=event["observed_at"], timestamp_basis="PROVIDER_EVENT",
                     )
-                if response.status_code == 200:
-                    payload = response.json()
-                    price = float(payload.get("price"))
-                    if math.isfinite(price) and price > 0:
-                        return PublicQuote(
-                            requested_symbol=requested_symbol,
-                            source_id="binance_public",
-                            source_symbol=normalized_symbol,
-                            price=price,
-                            status="LIVE",
-                            price_kind="LAST",
-                            observed_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                        )
-                failures.append("BINANCE_QUOTE_UNAVAILABLE")
+                failures.append(f"{provider.split('_')[0].upper()}_QUOTE_UNAVAILABLE")
+            except TrackingQuoteRateLimit:
+                raise  # preserve shared refresh cooldown, never bypass through fallback
             except Exception:
-                logger.warning("[PUBLIC-FETCHER] Binance quote failed for %s", normalized_symbol)
-                failures.append("BINANCE_QUOTE_UNAVAILABLE")
-
-        if "bybit_public" in candidates:
-            try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    response = await client.get(
-                        self.BYBIT_TICKER_URL,
-                        params={"category": "spot", "symbol": normalized_symbol},
-                        headers=self._get_headers(),
-                    )
-                if response.status_code == 200:
-                    payload = response.json()
-                    rows = payload.get("result", {}).get("list", [])
-                    if rows and isinstance(rows[0], dict):
-                        price = float(rows[0].get("lastPrice"))
-                        if math.isfinite(price) and price > 0:
-                            return PublicQuote(
-                                requested_symbol=requested_symbol,
-                                source_id="bybit_public",
-                                source_symbol=normalized_symbol,
-                                price=price,
-                                status="LIVE",
-                                price_kind="LAST",
-                                observed_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                            )
-                failures.append("BYBIT_QUOTE_UNAVAILABLE")
-            except Exception:
-                logger.warning("[PUBLIC-FETCHER] Bybit quote failed for %s", normalized_symbol)
-                failures.append("BYBIT_QUOTE_UNAVAILABLE")
+                logger.warning("[PUBLIC-FETCHER] Quote failed for %s/%s", provider, normalized_symbol)
+                failures.append(f"{provider.split('_')[0].upper()}_QUOTE_UNAVAILABLE")
 
         return self._unavailable_quote(
             requested_symbol,

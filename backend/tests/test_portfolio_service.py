@@ -30,6 +30,7 @@ class _FakeQuoteFetcher:
             raise RuntimeError("no quote configured")
         return {
             "status": "LIVE",
+            "timestamp_basis": "PROVIDER_EVENT",
             "price": self.prices[symbol],
             "price_kind": "LAST",
             "source_id": source,

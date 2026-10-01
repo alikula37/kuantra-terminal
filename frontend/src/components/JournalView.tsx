@@ -6,8 +6,9 @@ import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
 import { ReconciliationInbox } from "./ReconciliationInbox";
 import { WeeklyReviewPanel } from "./WeeklyReviewPanel";
-import { useOpenQuoteRefresh, quoteAgeSeconds } from "../hooks/useOpenQuoteRefresh";
-import { formatIstanbulDateTime, istanbulDateKey, relativeAgeLabel } from "../lib/tradeTime";
+import { useOpenQuoteRefresh } from "../hooks/useOpenQuoteRefresh";
+import { formatIstanbulDateTime, istanbulDateKey } from "../lib/tradeTime";
+import { QuoteQuality } from "./QuoteQuality";
 import { JournalExportModal } from "./modals/JournalExportModal";
 import { formatPositionValue, formatPrice } from "../lib/positionMath";
 import type { Trade, TradeQuote } from "../types";
@@ -370,7 +371,6 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
     if (!quote) return <span className="k-help">{t("journal.quote_pending")}</span>;
     const live = quote.price != null;
     const stale = quote.last_known?.stale === true;
-    const age = quoteAgeSeconds(quote, nowMs);
     return (
       <div className="leading-tight">
         {live ? (
@@ -378,10 +378,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         ) : (
           <span className="font-semibold text-amber-300">{t("journal.quote_unavailable")}</span>
         )}
-        <span className={`ml-2 text-sm ${live ? (quote.quote_status === "LIVE" ? "text-gain" : "text-amber-300") : "text-loss"}`}>
-          {quote.quote_status}
-          {age != null && <span className="ml-1 text-slate-400">· {relativeAgeLabel(age)}</span>}
-        </span>
+        {live && <QuoteQuality quote={quote} nowMs={nowMs} />}
         {stale && quote.last_known && (
           <span className="block k-help text-amber-300">
             {t("journal.quote_last_known", {
@@ -389,9 +386,6 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
               time: formatIstanbulDateTime(quote.last_known.observed_at, locale),
             })}
           </span>
-        )}
-        {quote.observed_at && !stale && (
-          <span className="block k-help">{formatIstanbulDateTime(quote.observed_at, locale)}</span>
         )}
       </div>
     );

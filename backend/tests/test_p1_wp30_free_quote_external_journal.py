@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import sqlite3
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -32,12 +33,17 @@ def _response(*, status_code: int, payload=None, text: str = "") -> MagicMock:
 @pytest.mark.asyncio
 async def test_free_crypto_quote_has_live_provenance_without_credentials():
     fetcher = PublicMarketDataFetcher()
-    binance = _response(status_code=200, payload={"symbol": "BTCUSDT", "price": "65001.25"})
+    event_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    binance = _response(status_code=200, payload=[{"id": 12, "time": event_ms, "price": "65001.25"}])
 
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=binance)) as get:
         quote = await fetcher.fetch_quote("BTCUSDT")
 
-    assert quote.as_dict() == {
+    result = quote.as_dict()
+    assert {k: result[k] for k in (
+        "requested_symbol", "source_id", "source_symbol", "price", "status", "price_kind",
+        "observed_at", "reason", "free_source", "credentials_required"
+    )} == {
         "requested_symbol": "BTCUSDT",
         "source_id": "binance_public",
         "source_symbol": "BTCUSDT",
@@ -49,6 +55,8 @@ async def test_free_crypto_quote_has_live_provenance_without_credentials():
         "free_source": True,
         "credentials_required": False,
     }
+    assert result["timestamp_basis"] == "PROVIDER_EVENT" and result["freshness"] == "FRESH"
+    assert get.await_args.args[0].endswith("/api/v3/trades")
     get.assert_awaited_once()
 
 

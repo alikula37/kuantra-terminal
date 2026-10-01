@@ -4,6 +4,8 @@ import { useMarketStore } from "../stores/marketStore";
 import { useTradeStore } from "../stores/tradeStore";
 import { useTranslation } from "../context/I18nContext";
 import { MarketQuote, TradeSide } from "../types";
+import { QuoteQuality } from "./QuoteQuality";
+import { quoteQuality } from "../lib/quoteQuality";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { createManualMarketInstrument, normalizeMarketSymbol } from "../lib/marketSymbols";
 import { MarketInstrument } from "../lib/marketSymbols";
@@ -255,10 +257,9 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
         const markPrice = Number(candidate.price);
         setPriceOrigin("PUBLIC_QUOTE");
         setEntryPrice(String(markPrice));
-        setFetchNotice(t("order_ticket.latest_price", {
+        setFetchNotice(t("quote_quality.applied", {
           price: markPrice.toLocaleString(),
           source: candidate.source_symbol || candidate.source_id || "",
-          status: candidate.status,
         }));
       } else {
         setPriceOrigin("MANUAL");
@@ -400,7 +401,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
       execution_venue: executionVenue.trim() || null,
       price_source: confirmedIdentity?.source_id || "manual",
       price_source_symbol: confirmedIdentity?.source_symbol || null,
-      price_status: selectedQuote?.status || "UNAVAILABLE",
+      price_status: selectedQuote ? quoteQuality(selectedQuote, Date.now()).status : "UNAVAILABLE",
       price_observed_at: selectedQuote?.observed_at || null,
       price_origin: useQuoteProvenance ? "PUBLIC_QUOTE" : "MANUAL",
       notes: notes || undefined,
@@ -629,9 +630,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               {fieldError("symbol")}
               {quote && (
                 <div className="mt-2 k-help" data-testid="trade-quote-status">
-                  <span>{t("order_ticket.quote_status", { status: quote.status })}</span>
-                  {quote.source_symbol && <span> · {quote.source_id}: {quote.source_symbol}</span>}
-                  {quote.observed_at && <span> · {quote.observed_at}</span>}
+                  <QuoteQuality quote={quote} />
                 </div>
               )}
             </div>

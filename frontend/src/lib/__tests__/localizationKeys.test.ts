@@ -10,13 +10,14 @@ type Domain = { path: string[]; prefix?: string; discovered: string; values: str
 // Every dynamically composed translation key family in the frontend source.
 // Values come from the backend/component enums that produce them.
 const DYNAMIC_FAMILIES: Domain[] = [
+  { path: ["quote_quality"], prefix: "status_", discovered: "quote_quality.status_", values: ["live", "delayed", "eod", "unavailable"] },
   { path: ["order_ticket"], prefix: "verification_", discovered: "order_ticket.verification_", values: ["PROVIDER_CATALOG", "EXPLICIT_QTY_UNIT", "EXPLICIT_USD_VALUE", "NONE"] },
   { path: ["order_ticket"], prefix: "warning_", discovered: "order_ticket.warning_", values: ["CONTRACT_SIZE_UNVERIFIED", "LEVERAGE_NOT_DECLARED", "FEES_UNKNOWN", "QUOTE_NOT_USD_APPROXIMATE"] },
   { path: ["order_ticket"], prefix: "margin_source_", discovered: "order_ticket.margin_source_", values: ["SPOT_FULL_PAYMENT", "ESTIMATED_FROM_DECLARED_LEVERAGE", "UNVERIFIED_CONTRACT_SIZE", "UNKNOWN"] },
   { path: ["order_ticket"], prefix: "leverage_source_", discovered: "order_ticket.leverage_source_", values: ["SPOT_IMPLIED", "USER_DECLARED", "NOT_DECLARED"] },
   { path: ["order_ticket"], prefix: "side_", discovered: "order_ticket.side_", values: ["spot", "buy", "sell"] },
   { path: ["tracking"], prefix: "status_", discovered: "tracking.status_", values: ["ACTIVE", "WAITING_QUOTE", "WAITING_TARGETS", "PAUSED", "COMPLETED", "UNKNOWN"] },
-  { path: ["tracking"], prefix: "wait_reason_", discovered: "tracking.wait_reason_", values: ["MARKET_DATA_DISABLED", "PROVIDER_RATE_LIMIT", "PROVIDER_ERROR", "WAITING_FRESH_PROVIDER_EVENT", "WAITING_PROVIDER_OBSERVATION"] },
+  { path: ["tracking"], prefix: "wait_reason_", discovered: "tracking.wait_reason_", values: ["MARKET_DATA_DISABLED", "PROVIDER_RATE_LIMIT", "PROVIDER_ERROR", "WAITING_FRESH_PROVIDER_EVENT", "WAITING_PROVIDER_OBSERVATION", "PROVIDER_EVENT_TIME_UNAVAILABLE"] },
   { path: ["journal"], prefix: "local_status_", discovered: "journal.local_status_", values: ["active", "waiting_quote", "waiting_targets", "paused", "completed", "unknown"] },
   { path: ["journal_edit"], prefix: "field_", discovered: "journal_edit.field_", values: ["entry_price", "entry_time", "qty", "leverage", "stop_loss", "take_profit", "notes", "qty_unit", "status", "exit_price", "exit_time", "tracking_plan"] },
   { path: ["replay", "open_review"], prefix: "candle_state_", discovered: "replay.open_review.candle_state_", values: ["open", "closed", "unknown"] },
