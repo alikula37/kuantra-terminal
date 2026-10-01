@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP49-quote-freshness-ux.md"
+    "docs/strategy/work-packages/P1-WP50-journal-layout-ux.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -90,7 +90,8 @@
     "docs/strategy/work-packages/N05-macos-signing-notarization-preflight.md": "reference",
     "docs/strategy/work-packages/P1-WP28-macos-dual-architecture.md": "reference",
     "docs/strategy/work-packages/P1-WP29-trusted-macos-pilot-package.md": "reference",
-    "docs/strategy/work-packages/P1-WP49-quote-freshness-ux.md": "current-work-package",
+    "docs/archive/strategy/work-packages/P1-WP49-quote-freshness-ux.md": "archived",
+    "docs/strategy/work-packages/P1-WP50-journal-layout-ux.md": "current-work-package",
     "docs/archive/strategy/work-packages/P1-WP40-mt5-html-report-preview.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP39-broker-observation-projection.md": "archived",
     "docs/strategy/work-packages/P1-WP32-pilot-journal-trust.md": "reference",
@@ -230,6 +231,7 @@
     "docs/archive/strategy/work-packages/P1-WP45-usd-position-value.md": 0,
     "docs/archive/strategy/work-packages/P1-WP46-usd-math-monitor-and-label-fixes.md": 0,
     "docs/archive/strategy/work-packages/P1-WP47-gap-closure.md": 0,
-    "docs/archive/strategy/work-packages/P1-WP48-analytics-honesty-and-acceptance.md": 0
+    "docs/archive/strategy/work-packages/P1-WP48-analytics-honesty-and-acceptance.md": 0,
+    "docs/archive/strategy/work-packages/P1-WP49-quote-freshness-ux.md": 0
   }
 }

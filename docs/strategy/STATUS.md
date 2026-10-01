@@ -3,16 +3,31 @@
 
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP49 quote-freshness UX](work-packages/P1-WP49-quote-freshness-ux.md).**
-First bounded item of the approved UX sequence: no candle/download-time `LIVE`, shared
-freshness/source/time labels and an explicit display-only tracking reason. Baseline
-`765ab0a`; red backend tests 11 failed → green 15 focused / **1209 full backend**,
-frontend **45 files / 301 tests**, i18n **1252/1252/1252**, tsc/build/docs/truth/diff PASS.
-Implementation: this change (`quote_quality.py`, `QuoteQuality.tsx`, WP49 tests). Clean
-commit canonical CI, exact-DMG and installed-app evidence remain pending.
-No new provider, broker order, migration or release/tag authority. Next UX dependency:
-journal readability/actions layout; external owner-host obligations remain in
+**Selected work: [P1-WP50 journal layout UX](work-packages/P1-WP50-journal-layout-ux.md).**
+Prepared next bounded package; implementation not started. Native visual review confirms
+wide sticky actions still hide price/time/status columns. No API/accounting changes;
+keep primary Edit and all secondary workflows accessible. External obligations remain in
 [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**WP49 complete + archived (2026-10-02):**
+[quote-freshness UX evidence](../archive/strategy/work-packages/P1-WP49-quote-freshness-ux.md).
+Implementation **84e7afd**, pushed main; red 11 → green 15 focused / **1209 backend**,
+**45 files / 301 frontend**, i18n **1252/1252/1252**, tsc/build/docs/truth/diff PASS.
+Canonical native arm64 local CI **13/13 / MERGE READY / COMPLETE**, exact read-only mounted
+DMG WKWebView smoke PASS. Reports retained in `artifacts/evidence/p1-wp49/` (CI SHA-256
+`96660ad7…`, exact-DMG report `dac8fb86…`, N05 report `00503681…`). DMG
+`Kuantra-Terminal-1.1.6-wp49-arm64.dmg` SHA-256 `ec73f15c…`; installed executable
+`61396fefa2660336aa92eb03fa8449249ff29ae73a496c4cde98257585fd3574`, matching CI/mounted
+artifact; codesign PASS, native launch/quote UI verified. Version remains **1.1.6 local
+source build**; no Release/tag change or Intel build. Old app backup
+`/tmp/kuantra-wp49-update.WSISXP/Kuantra Terminal.app`; stopped DB hash unchanged across
+replacement, **5 trades / 24 events / 5 tracking projections** unchanged after launch.
+No saved test trade, user-data reset/migration apply, real order or credential.
+Gold candle now **DELAYED/CLOSE/CANDLE_OPEN**, visible display-only limitation; crypto
+display uses genuine provider events; stale/unknown observations cannot be labelled live
+even after caching or waiting in a form. Tracking eligibility unchanged. **N05 BLOCKED**
+(Developer ID/notarization absent); live/independent gold-source and XM evidence remain
+external open items. Journal geometry issue remains WP50, not a claimed WP49 fix.
 
 **Previous selection: P1-WP29 trusted macOS pilot package.**
 The package is selected for its still-open owner-host obligations (N03/N05/H05/pilot access);

@@ -15,7 +15,8 @@ depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
 
-Selection note (2026-10-02): WP49 is selected for the approved quote-freshness UX fix;
+Selection note (2026-10-02): WP49 is complete/archived; WP50 is selected for the approved
+journal-layout UX fix (prepared, implementation not started);
 this package's N03/N05/H05/pilot-access obligations remain open and are not superseded.
 
 Historical selection note (2026-09-15): P1-WP40 (MT5 HTML report preview) is complete and
