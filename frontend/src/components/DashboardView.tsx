@@ -12,6 +12,7 @@ import type { MarketDataStatus } from "../types";
 import { useTranslation } from "../context/I18nContext";
 import { LocalTrackingPanel } from "./LocalTrackingPanel";
 import type { Trade } from "../types";
+import { validDailyResultCounts, validRealizedCoverage } from "../lib/portfolioCoverage";
 
 interface DashboardViewProps {
   onOpenNewTrade?: () => void;
@@ -54,9 +55,8 @@ function isPortfolioSummaryData(value: unknown): value is PortfolioSummaryData {
   const liveEquityKnown = candidate["live_equity"] === undefined
     || candidate["live_equity"] === null
     || isFiniteNumber(candidate["live_equity"]);
-  return avgRKnown && liveEquityKnown && numericFields.every((field) => isFiniteNumber(candidate[field]))
-    && !!counts && typeof counts === "object"
-    && ["wins", "losses", "total"].every((field) => isFiniteNumber((counts as Record<string, unknown>)[field]));
+  return avgRKnown && liveEquityKnown && validRealizedCoverage(candidate) && numericFields.every((field) => isFiniteNumber(candidate[field]))
+    && validDailyResultCounts(counts);
 }
 
 function isAssetBreakdown(value: unknown): value is AssetBreakdownItem {
@@ -259,7 +259,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         sparkline={equityCurve.map((point) => point.equity)} 
       />
       {!loading && summary && (summary.unknown_pnl_trades ?? 0) > 0 && (
-        <p role="status" data-testid="dashboard-unknown-pnl-note" className="text-sm text-amber-300">
+        <p role="status" data-testid="dashboard-unknown-pnl-note" className="text-sm text-warn">
           {t("dashboard.unknown_pnl_note", { count: summary.unknown_pnl_trades ?? 0 })}
         </p>
       )}

@@ -4,9 +4,14 @@
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP51 no-data metric states](work-packages/P1-WP51-no-data-metrics-ux.md).**
-Prepared, not implemented. Installed dashboard with no real closed results still renders
-win rate 0.0% and drawdown 0.00%; next package distinguishes no data/all unknown/partial
-coverage from genuine measured zero without changing financial formulas or mixing simulations.
+Implementation verified in isolated tests; clean-source native CI/package/install pending.
+No-data/all-unknown win rate, drawdown and nearby confirmed metric states now stay unavailable;
+partial results disclose the known denominator, genuine measured zero and financial formulas
+are preserved. Additive API availability metadata describes recorded-outcome coverage only,
+not broker verification or full-account performance. Red tests → backend **1220 PASS /
+3 warnings**, frontend **48 files / 335 PASS**, i18n **1269** per language, tsc/build PASS.
+Installed WP50 has not yet been replaced; its no-data visual bug is not claimed fixed on
+this Mac until the WP51 binary and native acceptance are verified. No Release/tag authorized.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
 **WP50 complete + archived (2026-10-02):**

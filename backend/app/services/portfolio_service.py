@@ -118,6 +118,16 @@ class PortfolioAnalyticsService:
         open_trades = [t for t in real_trades if str(t.get("status", "")).upper() == "OPEN"]
         known_closed = [t for t in closed_trades if t.get("pnl") is not None]
         unknown_pnl_trades = len(closed_trades) - len(known_closed)
+        # Additive availability contract: keep legacy numeric aggregates for
+        # compatibility, but never present their empty defaults as measurements.
+        if not closed_trades:
+            realized_pnl_basis = "NO_DATA"
+        elif not known_closed:
+            realized_pnl_basis = "NOT_AVAILABLE"
+        elif unknown_pnl_trades:
+            realized_pnl_basis = "PARTIAL"
+        else:
+            realized_pnl_basis = "COMPLETE"
         simulation_closed = [t for t in simulation_trades if str(t.get("status", "")).upper() == "CLOSED"]
         simulation_known = [t for t in simulation_closed if t.get("pnl") is not None]
         simulation_pnl = sum(float(t["pnl"]) for t in simulation_known) if simulation_known else 0.0
@@ -320,7 +330,14 @@ class PortfolioAnalyticsService:
             "unverified_open_positions": unverified_open_positions,
             "open_risk_basis": open_risk_basis,
             "total_closed_trades": len(closed_trades),
+            "known_pnl_trades": len(known_closed),
             "unknown_pnl_trades": unknown_pnl_trades,
+            "realized_pnl_basis": realized_pnl_basis,
+            # Without configured positive starting capital the existing 0%
+            # denominator fallback is not a measured percentage. USD drawdown
+            # still retains the known-series calculation.
+            "drawdown_pct_basis": realized_pnl_basis if balance > 0 else (
+                "NO_DATA" if not closed_trades else "NOT_AVAILABLE"),
             "known_r_trades": len(r_multiples),
             "sharpe_ratio": round(sharpe_ratio, 2) if sharpe_ratio is not None else None,
             "sharpe_basis": sharpe_basis,

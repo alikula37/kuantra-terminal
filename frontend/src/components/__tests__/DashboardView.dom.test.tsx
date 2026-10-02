@@ -201,3 +201,30 @@ it("loads open positions from the server so earlier trades appear on the dashboa
 
   expect(mocks.setOpenPositions).toHaveBeenCalledWith([openTrade]);
 });
+
+it.each([
+  { total_closed_trades: 2, unknown_pnl_trades: 2, known_pnl_trades: 0, realized_pnl_basis: "COMPLETE" },
+  { total_closed_trades: 2, unknown_pnl_trades: 3 },
+  { total_closed_trades: 2, unknown_pnl_trades: 1, known_pnl_trades: 2 },
+])("rejects contradictory coverage instead of rendering a measured zero (%j)", async (coverage) => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(
+    path.endsWith("/summary")
+      ? { ...validSummary, ...coverage, today_trades_count: { wins: 0, losses: 0, total: 0 } }
+      : [],
+  )));
+  await act(async () => root.render(<DashboardView />));
+  await flush();
+  expect(host.querySelector("[data-testid=dashboard-error]")?.textContent).toContain("malformed");
+  expect(host.querySelector("[data-testid=dashboard-summary]")?.textContent).not.toBe("summary");
+});
+
+it("rejects a daily sample that declares the same outcome both winning and unknown", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(
+    path.endsWith("/summary")
+      ? { ...validSummary, today_trades_count: { wins: 1, losses: 0, total: 1, unknown_pnl: 1 } }
+      : [],
+  )));
+  await act(async () => root.render(<DashboardView />));
+  await flush();
+  expect(host.querySelector("[data-testid=dashboard-error]")?.textContent).toContain("malformed");
+});

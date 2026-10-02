@@ -197,7 +197,7 @@ it("flags unpriced exposure and unknown today results instead of hiding them", a
         open_notional_usd: 500,
         open_margin_usd: 0,
         open_margin_positions: 0,
-        today_trades_count: { wins: 1, losses: 0, total: 3 },
+        today_trades_count: { wins: 1, losses: 0, total: 3, unknown_pnl: 2 },
       }}
     />,
   ));

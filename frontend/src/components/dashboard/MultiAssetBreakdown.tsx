@@ -1,6 +1,7 @@
 import React from "react";
 import { PieChart, Layers } from "lucide-react";
 import { useTranslation } from "../../context/I18nContext";
+import { closedResultCoverage, resultCoverageLabel } from "../../lib/portfolioCoverage";
 
 export interface AssetBreakdownItem {
   symbol: string;
@@ -39,7 +40,7 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
         <div className="w-12 h-12 rounded-full bg-soft flex items-center justify-center mb-3 border border-surface-border">
           <Layers className="w-6 h-6 text-slate-500" />
         </div>
-        <h4 className="text-sm font-bold text-white mb-1.5 uppercase tracking-wide">
+        <h4 className="text-sm font-bold text-ink mb-1.5 uppercase tracking-wide">
           {t("breakdown.empty_title")}
         </h4>
         <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
@@ -70,40 +71,46 @@ export const MultiAssetBreakdown: React.FC<MultiAssetBreakdownProps> = ({ items,
       <div className="flex items-center justify-between pb-3 border-b border-surface-border">
         <div className="flex items-center space-x-2">
           <PieChart className="w-4 h-4 text-accent" />
-          <span className="text-xs font-bold text-white uppercase tracking-wider">{t("breakdown.title")}</span>
+          <span className="text-xs font-bold text-ink uppercase tracking-wider">{t("breakdown.title")}</span>
         </div>
         <span className="text-[10px] text-slate-400 font-semibold">{t("breakdown.instruments_count", { count: items.length })}</span>
       </div>
 
       <div className="mt-3 space-y-3 overflow-y-auto flex-1 pr-1 custom-scrollbar">
         {items.map((item) => {
+          const coverage = closedResultCoverage(item.closed_count, item.unknown_pnl_trades);
+          const hasResults = coverage.known != null && coverage.known > 0;
           const isProfitable = item.net_pnl >= 0;
           const barWidth = Math.min(100, Math.max(8, (Math.abs(item.net_pnl) / maxAbsPnl) * 100));
 
           return (
-            <div key={item.symbol} className="bg-[#0d121c] p-2.5 rounded border border-surface-border hover:border-slate-700 transition">
+            <div key={item.symbol} className="bg-soft p-2.5 rounded border border-surface-border hover:border-slate-700 transition">
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <div className="flex items-center space-x-2">
-                  <span className="font-bold text-white">{item.symbol}</span>
+                  <span className="font-bold text-ink">{item.symbol}</span>
                   {getAssetClassBadge(item.asset_class)}
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-[10px] text-slate-400">
-                    {t("breakdown.trades_count", { count: item.trade_count })} ({item.win_rate.toFixed(0)}% WR)
+                    {t("breakdown.trades_count", { count: item.trade_count })}
+                    {hasResults && ` · ${t("breakdown.win_rate", { rate: item.win_rate.toFixed(0) })}`}
                   </span>
-                  <span className={`font-bold ${isProfitable ? "text-gain" : "text-loss"}`}>
-                    {isProfitable ? "+" : ""}${item.net_pnl.toFixed(2)}
+                  <span className={`font-bold ${!hasResults ? "text-muted" : isProfitable ? "text-gain" : "text-loss"}`}>
+                    {hasResults ? `${isProfitable ? "+" : ""}$${item.net_pnl.toFixed(2)}` : "—"}
                   </span>
                 </div>
               </div>
 
               {/* Performance Progress Bar */}
               <div className="w-full bg-[#161f2e] h-1.5 rounded-full overflow-hidden flex">
+                {hasResults && item.net_pnl !== 0 && (
                 <div 
                   className={`h-full rounded-full transition-all duration-500 ${isProfitable ? "bg-gradient-to-r from-emerald-500 to-gain" : "bg-gradient-to-r from-rose-500 to-loss"}`}
                   style={{ width: `${barWidth}%` }}
                 />
+                )}
               </div>
+              <p className="text-sm text-muted mt-1">{resultCoverageLabel(coverage, t)}</p>
 
               <div className="flex items-center justify-between text-[9px] text-slate-500 mt-1">
                 <span>

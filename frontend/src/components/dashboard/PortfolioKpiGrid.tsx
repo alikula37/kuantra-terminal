@@ -18,6 +18,7 @@ import {
 
 import { useTranslation } from "../../context/I18nContext";
 import { relativeAgeLabel } from "../../lib/tradeTime";
+import { closedResultCoverage, resultCoverageLabel, type ResultBasis } from "../../lib/portfolioCoverage";
 
 export interface PortfolioSummaryData {
   initial_balance: number;
@@ -26,7 +27,7 @@ export interface PortfolioSummaryData {
   net_pnl_pct: number;
   today_pnl: number;
   today_pnl_pct: number;
-  today_trades_count: { wins: number; losses: number; total: number };
+  today_trades_count: { wins: number; losses: number; total: number; unknown_pnl?: number };
   open_risk_usd: number;
   open_risk_r: number;
   active_positions_count: number;
@@ -39,6 +40,9 @@ export interface PortfolioSummaryData {
   max_drawdown_usd: number;
   max_drawdown_pct: number;
   unknown_pnl_trades?: number;
+  known_pnl_trades?: number;
+  realized_pnl_basis?: ResultBasis;
+  drawdown_pct_basis?: ResultBasis;
   unverified_open_positions?: number;
   known_r_trades?: number;
   open_risk_basis?: "COMPLETE" | "PARTIAL" | "NOT_AVAILABLE";
@@ -230,6 +234,12 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
   const openRiskBasis = summary.open_risk_basis ?? "COMPLETE";
   const drawdownPct = Math.abs(summary.max_drawdown_pct) < 0.005 ? 0 : summary.max_drawdown_pct;
   const infiniteProfitFactor = (summary.profit_factor_basis ?? (summary.profit_factor >= 999 ? "INFINITE_NO_LOSS" : "READY")) === "INFINITE_NO_LOSS";
+  const results = closedResultCoverage(summary.total_closed_trades, summary.unknown_pnl_trades);
+  const hasResults = results.known != null && results.known > 0;
+  const resultLabel = resultCoverageLabel(results, t);
+  const drawdownPctAvailable = hasResults && summary.initial_balance > 0;
+  const profitFactorAvailable = hasResults && (infiniteProfitFactor ||
+    (summary.gross_loss ?? 0) > 0 || (summary.gross_profit ?? 0) > 0);
 
   const liveBasis = summary.live_equity_basis ?? "COMPLETE";
   const liveEquity = summary.live_equity ?? null;
@@ -247,6 +257,12 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
 
   const hasOpenRisk = openRiskBasis === "COMPLETE";
   const today = summary.today_trades_count ?? { wins: 0, losses: 0, total: 0 };
+  // A residual after wins/losses may be break-even, not unknown. Only the
+  // explicit unknown count (or a fully accounted legacy sample) establishes it.
+  const todayCoverage = closedResultCoverage(today.total, today.unknown_pnl ??
+    (today.total === today.wins + today.losses ? 0 : undefined));
+  const todayAvailable = today.total === 0 || (todayCoverage.known != null && todayCoverage.known > 0);
+  const todayBreakEven = todayCoverage.known == null ? 0 : Math.max(0, todayCoverage.known - today.wins - today.losses);
   const isTodayPositive = summary.today_pnl >= 0;
   const hasOpenPositions = summary.active_positions_count > 0;
   const unverified = summary.unverified_open_positions ?? 0;
@@ -289,9 +305,11 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
                 </span>
                 {sparkline && <EquitySparkline points={sparkline} />}
               </div>
-              <div className={`k-kpi-delta flex items-center ${isNetPnlPositive ? "text-gain" : "text-loss"}`}>
-                {isNetPnlPositive ? <ArrowUpRight className="w-4 h-4 mr-0.5" /> : <ArrowDownRight className="w-4 h-4 mr-0.5" />}
-                <span>{isNetPnlPositive ? "+" : ""}${summary.net_pnl.toFixed(2)} ({isNetPnlPositive ? "+" : ""}{summary.net_pnl_pct.toFixed(1)}%)</span>
+              <div className={`k-kpi-delta flex items-center ${!hasResults ? "text-muted" : isNetPnlPositive ? "text-gain" : "text-loss"}`}>
+                {hasResults && (isNetPnlPositive ? <ArrowUpRight className="w-4 h-4 mr-0.5" /> : <ArrowDownRight className="w-4 h-4 mr-0.5" />)}
+                <span>{hasResults
+                  ? `${isNetPnlPositive ? "+" : ""}$${summary.net_pnl.toFixed(2)} (${isNetPnlPositive ? "+" : ""}${summary.net_pnl_pct.toFixed(1)}%)`
+                  : resultLabel}</span>
               </div>
               {hasOpenPositions && (
                 <div className="k-kpi-sub" data-testid="live-equity-detail">
@@ -339,12 +357,14 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
                 }`}
                 title={t("portfolio.tooltip_unrealized")}
               >
-                {hasOpenPositions ? signedMoney(unrealized) : "—"}
+                {hasOpenPositions && showLiveEquity ? signedMoney(unrealized) : "—"}
               </span>
               <span className="k-kpi-sub">
                 {!hasOpenPositions
                   ? t("portfolio.no_open_positions")
-                  : `${unrealized >= 0 ? "+" : ""}${unrealizedPct.toFixed(2)}% · ${showLiveEquity ? t("portfolio.live_priced") : t("portfolio.live_unpriced", { count: unpricedLive })}`}
+                  : !showLiveEquity
+                    ? t("portfolio.live_unpriced", { count: unpricedLive })
+                    : `${unrealized >= 0 ? "+" : ""}${unrealizedPct.toFixed(2)}% · ${t("portfolio.live_priced")}${liveBasis === "PARTIAL" ? ` · ${t("portfolio.live_equity_partial", { count: unpricedLive })}` : ""}`}
               </span>
             </div>
           )}
@@ -395,13 +415,16 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
                 <span>{t("portfolio.today_pnl")}</span>
                 <Activity className="w-4 h-4 text-accent transition group-hover:opacity-0" />
               </div>
-              <span className={`k-kpi-value-md font-bold ${isTodayPositive ? "text-gain" : "text-loss"}`}>
-                {isTodayPositive ? "+" : ""}${summary.today_pnl.toFixed(2)}
+              <span className={`k-kpi-value-md font-bold ${!todayAvailable ? "text-muted" : isTodayPositive ? "text-gain" : "text-loss"}`}>
+                {todayAvailable ? `${isTodayPositive ? "+" : ""}$${summary.today_pnl.toFixed(2)}` : "—"}
               </span>
               <span className="k-kpi-sub">
-                {t("portfolio.today_wl", { wins: today.wins, losses: today.losses })}
-                {today.total - today.wins - today.losses > 0
-                  ? ` · ${t("portfolio.today_unknown", { count: today.total - today.wins - today.losses })}`
+                {today.total === 0 ? t("portfolio.today_no_closed_results")
+                  : todayCoverage.known === null ? t("portfolio.result_coverage_unknown")
+                  : t("portfolio.today_wl", { wins: today.wins, losses: today.losses })}
+                {todayBreakEven > 0 ? ` · ${t("portfolio.today_break_even", { count: todayBreakEven })}` : ""}
+                {(todayCoverage.unknown ?? 0) > 0
+                  ? ` · ${t("portfolio.today_unknown", { count: todayCoverage.unknown ?? 0 })}`
                   : ""}
               </span>
             </div>
@@ -418,8 +441,8 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
               <span>{t("portfolio.win_rate")}</span>
               <Target className="w-4 h-4 text-muted transition group-hover:opacity-0" />
             </span>
-            <span className="text-lg font-bold text-ink">{summary.win_rate.toFixed(1)}%</span>
-            <span className="k-kpi-sub">{t("portfolio.trades_count", { count: summary.total_closed_trades })}</span>
+            <span className={`text-lg font-bold ${hasResults ? "text-ink" : "text-muted"}`}>{hasResults ? `${summary.win_rate.toFixed(1)}%` : "—"}</span>
+            <span className="k-kpi-sub">{resultLabel}</span>
           </div>
         )}
 
@@ -431,10 +454,13 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
               <Scale className="w-4 h-4 text-muted transition group-hover:opacity-0" />
             </span>
             <span className="text-lg font-bold text-ink">
-              {infiniteProfitFactor ? "∞" : summary.profit_factor.toFixed(2)}
+              {!profitFactorAvailable ? "—" : infiniteProfitFactor ? "∞" : summary.profit_factor.toFixed(2)}
             </span>
             <span className="k-kpi-sub">
-              {infiniteProfitFactor ? t("portfolio.no_losses") : `${money(summary.gross_profit ?? 0)} / ${money(summary.gross_loss ?? 0)}`}
+              {!hasResults ? resultLabel : <>
+                {profitFactorAvailable ? infiniteProfitFactor ? t("portfolio.no_losses") : `${money(summary.gross_profit ?? 0)} / ${money(summary.gross_loss ?? 0)}` : t("portfolio.pf_no_gains_losses")}
+                <span className="block">{resultLabel}</span>
+              </>}
             </span>
           </div>
         )}
@@ -460,8 +486,14 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
               <span>{t("portfolio.max_drawdown")}</span>
               <Gauge className="w-4 h-4 text-muted transition group-hover:opacity-0" />
             </span>
-            <span className="text-lg font-bold text-ink">{drawdownPct.toFixed(2)}%</span>
-            <span className="k-kpi-sub">{t("portfolio.peak_to_trough", { amount: `${summary.max_drawdown_usd.toFixed(2)}` })}</span>
+            <span className={`text-lg font-bold ${drawdownPctAvailable ? "text-ink" : "text-muted"}`}>{drawdownPctAvailable ? `${drawdownPct.toFixed(2)}%` : "—"}</span>
+            <span className="k-kpi-sub">
+              {hasResults && <>
+                {t("portfolio.peak_to_trough", { amount: money(-summary.max_drawdown_usd) })}
+                {!drawdownPctAvailable && <span className="block">{t("portfolio.drawdown_no_capital")}</span>}
+              </>}
+              <span className="block">{resultLabel}</span>
+            </span>
           </div>
         )}
 
@@ -476,7 +508,7 @@ export const PortfolioKpiGrid: React.FC<PortfolioKpiGridProps> = ({
             <span className="k-kpi-sub">
               {unverified > 0
                 ? t("portfolio.unverified_count", { count: unverified })
-                : t("portfolio.all_verified")}
+                : hasOpenPositions ? t("portfolio.all_verified") : t("portfolio.no_open_positions")}
             </span>
           </div>
         )}

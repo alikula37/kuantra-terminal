@@ -81,8 +81,9 @@ export const PnlCalendarHeatmap: React.FC<PnlCalendarHeatmapProps> = ({ data, lo
           <span className="text-[10px] text-slate-400">
             {t("heatmap.active_days", { count: activeDays })}
           </span>
-          <span className={`font-bold ${totalPnL >= 0 ? "text-gain" : "text-loss"}`}>
-            {t("heatmap.net_pnl_val", { pnl: `${totalPnL >= 0 ? "+" : ""}$${totalPnL.toFixed(2)}` })}
+          <span className={`font-bold ${activeDays === 0 ? "text-muted" : totalPnL >= 0 ? "text-gain" : "text-loss"}`}>
+            {activeDays === 0 ? t("portfolio.no_known_results")
+              : t("heatmap.net_pnl_val", { pnl: `${totalPnL >= 0 ? "+" : ""}$${totalPnL.toFixed(2)}` })}
           </span>
         </div>
       </div>
