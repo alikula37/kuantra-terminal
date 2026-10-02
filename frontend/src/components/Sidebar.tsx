@@ -134,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
               key={item.id}
               data-testid={`nav-${item.id}`}
               onClick={() => onTabChange(item.id as NavTab)}
-              className={`k-btn w-full !justify-start text-left transition ${
+              className={`k-btn w-full !justify-start text-left transition-transform ${
                 isActive
                   ? "k-nav-active"
                   : "text-muted hover:text-ink hover:bg-elevated"

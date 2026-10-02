@@ -97,3 +97,9 @@ need sampled core-workflow inspection, not a claim that every screen has been au
   saw no initialized theme/RGB tokens. ThemeProvider now gates child mounting until the
   persisted theme is applied in the pre-paint layout phase. Local candidate was installed
   preserving data, but is **not final acceptance**; rebuild/reinstall is required.
+- Native **0c7c6fc** repeated the mixed first-light appearance; the child-layout gate alone
+  was insufficient. Added deferred initial-settings-read and 1500ms stalled-read fallback
+  tests, plus removal of color interpolation from shared core recipes. Initial backend
+  preference is now applied before controls mount (native storage may be empty). Theme
+  transforms/shadows remain, user toggles still beat late responses. The earlier candidate
+  is not accepted; final build/native checks must prove the first launch, not just a toggle.

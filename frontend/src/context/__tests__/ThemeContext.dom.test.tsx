@@ -36,6 +36,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  vi.useRealTimers();
 });
 
 it("applies light-mode tokens, classes and native color-scheme state", async () => {
@@ -64,6 +65,7 @@ it("applies light-mode tokens, classes and native color-scheme state", async () 
 });
 
 it("does not let a slower initial settings response undo a user toggle", async () => {
+  vi.useFakeTimers();
   let resolveSettings!: (value: Response) => void;
   const pendingSettings = new Promise<Response>((resolve) => { resolveSettings = resolve; });
   mocks.apiFetch.mockImplementation((_path: string, init?: RequestInit) => (
@@ -71,6 +73,7 @@ it("does not let a slower initial settings response undo a user toggle", async (
   ));
 
   await act(async () => root.render(<ThemeProvider><ThemeProbe /></ThemeProvider>));
+  await act(async () => vi.advanceTimersByTime(1500));
   const toggle = host.querySelector("[data-testid=theme-toggle]") as HTMLButtonElement;
   await act(async () => toggle.click());
   await flush();
@@ -81,6 +84,29 @@ it("does not let a slower initial settings response undo a user toggle", async (
   expect(toggle.textContent).toBe("light");
   expect(document.documentElement.dataset.theme).toBe("light");
   expect(document.documentElement.classList.contains("light-theme")).toBe(true);
+});
+
+it("restores the backend theme before mounting controls when native local storage has no saved theme", async () => {
+  let resolve!: (value: Response) => void;
+  mocks.apiFetch.mockReturnValue(new Promise<Response>(r => { resolve = r; }));
+  const layouts: string[] = [];
+  function BackendLayoutProbe() {
+    React.useLayoutEffect(() => { layouts.push(document.documentElement.dataset.theme || ""); }, []);
+    return <ThemeProbe />;
+  }
+  await act(async () => root.render(<ThemeProvider><BackendLayoutProbe /></ThemeProvider>));
+  expect(host.querySelector("button")).toBeNull();
+  await act(async () => resolve(response({ active_theme: "light" })));
+  expect(layouts).toEqual(["light"]);
+  expect(host.textContent).toBe("light");
+});
+
+it("does not leave the app blank when initial settings stall", async () => {
+  vi.useFakeTimers();
+  mocks.apiFetch.mockReturnValue(new Promise<Response>(() => {}));
+  await act(async () => root.render(<ThemeProvider><ThemeProbe /></ThemeProvider>));
+  await act(async () => vi.advanceTimersByTime(1500));
+  expect(host.textContent).toBe("dark");
 });
 
 it.each(["dark", "light"] as const)("applies matching RGB and hex tokens on a cold %s start and roundtrip", async theme => {

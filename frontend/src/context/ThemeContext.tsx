@@ -142,19 +142,23 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // an after-paint effect leaves a mixed palette until the next theme toggle.
   useLayoutEffect(() => {
     applyDomTokens(theme);
-    setThemeReady(true);
   }, [theme, applyDomTokens]);
 
   // Initial load sync from backend if available
   useEffect(() => {
     applyDomTokens(theme);
     const requestVersion = themeMutationVersionRef.current;
+    let active = true;
+    // Native WebView storage may have no saved appearance on a fresh process.
+    // Await the existing settings read before mounting controls, but a stalled
+    // bridge/backend must never prevent the rest of the app from opening.
+    const fallback = window.setTimeout(() => { if (active) setThemeReady(true); }, 1500);
 
     apiFetch(apiUrl("/api/v1/settings"))
       .then((res) => res.json())
       .then((data) => {
         // A user toggle wins over a slower initial settings response.
-        if (themeMutationVersionRef.current !== requestVersion) return;
+        if (!active || themeMutationVersionRef.current !== requestVersion) return;
         if (data && (data.active_theme === "light" || data.active_theme === "dark")) {
           if (data.active_theme !== theme) {
             setThemeState(data.active_theme);
@@ -165,7 +169,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           }
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        window.clearTimeout(fallback);
+        if (active) setThemeReady(true);
+      });
+    return () => { active = false; window.clearTimeout(fallback); };
   }, [applyDomTokens]);
 
   const value = {

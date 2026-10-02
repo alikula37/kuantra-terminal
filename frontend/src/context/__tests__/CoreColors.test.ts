@@ -77,4 +77,5 @@ it("keeps disabled actions distinguishable, excludes disabled hover and preserve
   expect(value(".k-primary:hover:not(:disabled)", "background-color")).toBe("var(--action-hover)");
   expect(value(".k-btn:focus-visible", "outline")).toContain("2px solid");
   expect(value(".k-btn", "min-height")).toBe("44px");
+  expect(value(".k-primary, .k-control, .k-nav-active", "transition-property")).toBe("transform, box-shadow");
 });

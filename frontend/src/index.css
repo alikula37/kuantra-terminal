@@ -152,6 +152,8 @@ body {
 .k-control { background-color: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-color); }
 .k-control:hover:not(:disabled) { background-color: var(--bg-hover); }
 .k-nav-active { background-color: rgba(var(--accent-rgb), 0.15); color: var(--color-accent); border: 1px solid rgba(var(--accent-rgb), 0.3); }
+/* Native startup/theme restoration must not retain interpolated old ink. */
+.k-primary, .k-control, .k-nav-active { transition-property: transform, box-shadow; }
 
 /* WP50: bounded columns and in-flow details, never a wide sticky action overlay. */
 .journal-table td {
