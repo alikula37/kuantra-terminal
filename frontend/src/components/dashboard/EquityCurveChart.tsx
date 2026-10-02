@@ -28,7 +28,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-elevated p-4 rounded-lg border border-surface-border animate-pulse h-80 flex flex-col justify-center items-center text-slate-500 font-mono text-xs">
+      <div className="bg-elevated p-4 rounded-lg border border-surface-border animate-pulse h-80 flex flex-col justify-center items-center text-muted font-sans text-sm">
         <span>{t("equity_curve.loading")}</span>
       </div>
     );
@@ -38,7 +38,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
 
   if (!isRealHistory) {
     return (
-      <div className="bg-elevated p-6 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-center select-none font-mono">
+      <div className="bg-elevated p-6 rounded-lg border border-surface-border flex flex-col justify-center items-center h-80 text-center select-none font-sans">
         <div className="w-12 h-12 rounded-full bg-soft flex items-center justify-center mb-3 border border-surface-border">
           <TrendingUp className="w-6 h-6 text-accent" />
         </div>
@@ -51,7 +51,7 @@ export const EquityCurveChart: React.FC<EquityCurveChartProps> = ({
         {onOpenNewTrade && (
           <button
             onClick={onOpenNewTrade}
-            className="flex items-center space-x-1.5 px-4 py-1.5 bg-accent hover:bg-sky-400 text-black font-bold rounded text-xs transition shadow-md cursor-pointer"
+            className="k-btn k-primary transition shadow-md"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{t("equity_curve.new_trade_action")}</span>

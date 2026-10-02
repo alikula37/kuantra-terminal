@@ -392,14 +392,14 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
             onClose();
           }
         }}
-        className="bg-[#111722] border border-surface-border rounded-xl w-full max-w-2xl p-5 shadow-2xl flex flex-col max-h-[92vh]"
+        className="font-sans bg-[#111722] border border-surface-border rounded-xl w-full max-w-2xl p-5 shadow-2xl flex flex-col max-h-[92vh]"
       >
         <div className="flex items-center justify-between border-b border-surface-border pb-3">
           <h3 id="trade-edit-title" className="text-lg font-bold text-white flex items-center gap-2">
             <Pencil className="w-5 h-5 text-accent" />
             {t("journal_edit.title", { symbol: trade?.symbol || tradeId })}
           </h3>
-          <button type="button" onClick={onClose} aria-label={t("journal_edit.cancel")} className="text-slate-400 hover:text-white p-2 -m-1">
+          <button type="button" onClick={onClose} aria-label={t("journal_edit.cancel")} className="k-btn text-muted hover:text-ink !px-3 -m-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -680,7 +680,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   type="button" data-testid="trade-edit-save"
                   onClick={() => void save()}
                   disabled={isSaving}
-                  className="k-btn bg-accent hover:bg-sky-400 text-black disabled:opacity-50"
+                  className="k-btn k-primary disabled:opacity-50"
                 >
                   {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {isSaving ? t("journal_edit.saving") : t("journal_edit.save")}

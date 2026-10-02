@@ -35,10 +35,10 @@ export const Header: React.FC<HeaderProps> = ({
   const { activePersona, isLiteMode, isPluginActive } = usePluginRegistry();
 
   return (
-    <header className="h-14 border-b border-surface-border bg-[#0d121c] flex items-center justify-between gap-3 px-4 select-none shrink-0">
+    <header className="h-14 border-b border-surface-border bg-surface flex items-center justify-between gap-3 px-4 select-none shrink-0 font-sans">
       {/* Left: Brand Identity */}
       <div className="flex items-center space-x-2 min-w-0">
-        <div className="w-7 h-7 rounded bg-gradient-to-tr from-accent to-blue-600 flex items-center justify-center font-black text-black text-sm shrink-0">
+        <div className="w-7 h-7 rounded k-primary flex items-center justify-center font-black text-sm shrink-0">
           K
         </div>
         <div className="flex flex-col min-w-0">
@@ -60,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenPersonaSelector && (
           <button
             onClick={onOpenPersonaSelector}
-            className="flex items-center space-x-1.5 bg-gradient-to-r from-accent/20 to-blue-600/20 hover:from-accent/30 hover:to-blue-600/30 border border-accent/40 text-accent px-3 py-2 rounded-md text-sm font-bold transition shadow-sm hover:shadow-accent/10 active:scale-95 cursor-pointer"
+            className="k-btn k-nav-active transition shadow-sm active:scale-95"
             title={t("header.change_persona")}
           >
             <Zap className="w-4 h-4 text-accent animate-pulse" />
@@ -71,16 +71,16 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Language Selector */}
-        <div className="flex items-center space-x-1 bg-[#111722] px-2 py-1.5 rounded border border-surface-border text-sm text-slate-300">
+        <div className="flex items-center space-x-1 bg-elevated px-2 rounded border border-surface-border text-sm text-ink">
           <Globe className="w-4 h-4 text-accent" />
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value as Locale)}
             aria-label={t("header.language")}
-            className="bg-transparent border-none text-white text-sm focus:outline-none cursor-pointer"
+            className="k-btn bg-transparent border-none text-ink !px-1 cursor-pointer"
           >
             {SUPPORTED_LOCALES.map((loc) => (
-              <option key={loc.id} value={loc.id} className="bg-[#0d121c] text-white">
+              <option key={loc.id} value={loc.id} className="bg-surface text-ink">
                 {loc.id.toUpperCase()}
               </option>
             ))}
@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
-          className="p-2 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white rounded transition cursor-pointer"
+          className="k-btn k-control !px-3 transition"
           title={t(theme === "dark" ? "header.switch_to_light_theme" : "header.switch_to_dark_theme")}
           aria-label={t(theme === "dark" ? "header.switch_to_light_theme" : "header.switch_to_dark_theme")}
         >
@@ -101,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenApiKeySettings && (
           <button
             onClick={onOpenApiKeySettings}
-            className="flex items-center space-x-1.5 bg-[#111722] hover:bg-[#1a2234] border border-surface-border text-slate-300 hover:text-white px-2.5 py-2 rounded text-sm transition cursor-pointer"
+            className="k-btn k-control transition"
             title={t("exchange.header_btn")}
           >
             <Key className="w-4 h-4 text-accent" />
@@ -135,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Primary Trade Entry Action Button */}
         <button
           onClick={onOpenNewTrade}
-          className="flex items-center space-x-1.5 bg-accent hover:bg-sky-400 text-black font-bold text-sm px-3 py-2 rounded transition shadow-md hover:shadow-cyan-500/20 active:scale-95 cursor-pointer"
+          className="k-btn k-primary transition shadow-md active:scale-95"
         >
           <PlusCircle className="w-4 h-4" />
           <span>{t("header.new_trade_btn")}</span>

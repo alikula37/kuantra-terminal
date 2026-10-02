@@ -21,8 +21,8 @@ export const THEME_PALETTES: Record<Theme, ThemeColors> = {
     surface: "#0d121c",
     surfaceBorder: "#1e293b",
     gridLines: "#1e293b",
-    bullish: "#10b981",
-    bearish: "#f43f5e",
+    bullish: "#34d399",
+    bearish: "#fb7185",
     text: "#f8fafc",
     textMuted: "#94a3b8",
     accent: "#38bdf8",
@@ -32,11 +32,11 @@ export const THEME_PALETTES: Record<Theme, ThemeColors> = {
     surface: "#ffffff",
     surfaceBorder: "#e2e8f0",
     gridLines: "#e2e8f0",
-    bullish: "#059669",
-    bearish: "#e11d48",
+    bullish: "#065f46",
+    bearish: "#9f1239",
     text: "#0f172a",
-    textMuted: "#64748b",
-    accent: "#0284c7",
+    textMuted: "#475569",
+    accent: "#075985",
   },
 };
 
@@ -97,6 +97,13 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     root.style.setProperty("--text-primary", palette.text);
     root.style.setProperty("--text-muted", palette.textMuted);
     root.style.setProperty("--color-accent", palette.accent);
+    // Apply both representations together: utility colors and chart colors
+    // must not disagree during a cold start or a settings/theme roundtrip.
+    const tuple = (hex: string) => hex.slice(1).match(/../g)!.map(v => parseInt(v, 16)).join(", ");
+    root.style.setProperty("--accent-rgb", tuple(palette.accent));
+    root.style.setProperty("--gain-rgb", tuple(palette.bullish));
+    root.style.setProperty("--loss-rgb", tuple(palette.bearish));
+    root.style.setProperty("--border-rgb", tuple(palette.surfaceBorder));
     root.style.colorScheme = activeTheme;
     root.dataset.theme = activeTheme;
 

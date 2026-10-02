@@ -368,7 +368,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   };
 
   const renderQuote = (trade: Trade) => {
-    if (trade.status !== "OPEN") return <span className="text-slate-500">—</span>;
+    if (trade.status !== "OPEN") return <span className="text-muted">—</span>;
     const quote: TradeQuote | undefined = quotes[trade.id];
     if (!quote) return <span className="k-help">{t("journal.quote_pending")}</span>;
     const live = quote.price != null;
@@ -430,7 +430,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
               aria-label={t("journal.filter_date_from")}
               className="bg-transparent text-white focus:outline-none text-sm py-2"
             />
-            <span className="text-slate-500">–</span>
+            <span className="text-muted">–</span>
             <input
               type="date"
               value={filterDateTo}
@@ -489,7 +489,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
 
           <button
             onClick={onOpenNewTrade}
-            className="k-btn bg-accent hover:bg-sky-400 text-black"
+            className="k-btn k-primary"
           >
             <Plus className="w-4 h-4" />
             <span>{t("journal.manual_entry")}</span>
@@ -539,7 +539,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           <div className="flex items-center space-x-3">
             <button
               onClick={onOpenNewTrade}
-              className="k-btn bg-accent hover:bg-sky-400 text-black"
+              className="k-btn k-primary"
             >
               <Plus className="w-4 h-4" />
               <span>{t("journal.manual_entry")}</span>
@@ -577,7 +577,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
             <tbody className="divide-y divide-surface-border/40">
               {filteredTrades.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-muted">
                     {t("journal.no_matching")}
                   </td>
                 </tr>
@@ -794,7 +794,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                 data-testid="journal-cancel-confirm"
                 onClick={() => void cancelTrade()}
                 disabled={cancellingTradeId === cancellationTarget.id}
-                className="k-btn bg-loss text-white hover:bg-rose-700 disabled:opacity-50"
+                className="k-btn bg-loss k-action-ink disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" />
                 {cancellingTradeId === cancellationTarget.id ? t("journal.cancel_in_progress") : t("journal.cancel_confirm")}

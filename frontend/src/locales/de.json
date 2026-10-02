@@ -304,7 +304,12 @@
     "lite_core_badge": "LITE-KERN (0 Plugins)",
     "active_modules_badge": "AKTIVE MODULE ({count})",
     "core_views": "KERNANSICHTEN",
-    "specialized_modules": "SPEZIALISIERTE MODULE"
+    "specialized_modules": "SPEZIALISIERTE MODULE",
+    "engine_diagnostics": "Lokale Datenverarbeitung",
+    "desktop_core": "Desktop-Kern",
+    "on_demand": "Bei Bedarf",
+    "columnar": "Spaltenspeicher",
+    "wal_on": "WAL aktiviert"
   },
   "portfolio": {
     "total_equity": "GESAMTKAPITAL",
@@ -565,7 +570,7 @@
     "side_spot": "SPOT / KAUFEN",
     "spot_notice": "Erfassen Sie Ihren externen Spot-Kauf ohne Hebel. Dies speichert nur einen Journaleintrag und platziert keine Order.",
     "estimate_unavailable": "Nicht verfügbar",
-    "estimate_units_notice": "Schätzung aus Preis × Menge in den Preiseinheiten des Instruments, vor Gebühren. Kontokapitalanteil und Kontraktmultiplikatoren sind nicht verifiziert. Geben Sie bekannte tatsächliche Stop- und Zielkurse ein.",
+    "estimate_units_notice": "Geschätzte Preisrendite × angegebener USD-Positionswert, vor Gebühren und Funding. Der Hebel multipliziert dieses Ergebnis nicht. Kein vom Broker bestätigter Gewinn; bei nicht in USD notierten Instrumenten bleibt es eine Näherung.",
     "selected_symbol": "Ausgewähltes Instrument: {symbol}",
     "symbol_search_label": "Instrumente suchen",
     "modal_title": "TRADE-TICKET ERFASSEN",
@@ -714,7 +719,7 @@
   },
   "journal": {
     "title": "HANDELSJOURNAL",
-    "subtitle": "Institutionelle Ausführungsaufzeichnungen & Audit-Trail",
+    "subtitle": "Erfasste Trades und quellenbezogene Korrekturhistorie — keine Brokeraufträge",
     "empty_title": "Ihr Trading-Journal ist bereit",
     "empty_desc": "Noch keine Trades aufgezeichnet. Beginnen Sie Ihr quantitatives Tracking durch Erfassen eines Trades oder Importieren von CSV-Dateien.",
     "manual_entry": "Manuelle Trade-Eingabe",

@@ -120,7 +120,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
   const completed = editor?.plan && Number(editor.plan.remaining_qty) === 0;
   const inactive = editor && (editor.trade.status !== "OPEN" || current?.external_status !== undefined && current.external_status !== "OPEN");
 
-  return <section className="bg-[#111722] text-white border border-surface-border p-4 rounded space-y-3" data-testid="local-tracking">
+  return <section className="font-sans bg-[#111722] text-white border border-surface-border p-4 rounded space-y-3" data-testid="local-tracking">
     <h3 className="font-semibold text-base">{t("tracking.title")}</h3>
     <p className="k-help">{t("tracking.disclaimer")}</p>
     {error && <p role="alert" className="text-loss">{t("tracking.error")} <button onClick={() => void refresh()}>{t("tracking.reload")}</button></p>}
@@ -129,7 +129,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
       <div className="flex flex-wrap justify-between gap-2">
         <span className="font-semibold">{state.symbol} · {state.side}</span>
         <span>{t(`tracking.status_${state.tracking_status || "WAITING_QUOTE"}`)}</span>
-        <button className="text-accent" onClick={() => void openEditor({ id: state.trade_id, symbol: state.symbol,
+        <button className="k-btn text-accent" onClick={() => void openEditor({ id: state.trade_id, symbol: state.symbol,
           side: state.side as Trade["side"], entry_price: Number(state.entry_price), qty: Number(state.initial_qty),
           entry_time: "", status: (state.external_status || "OPEN") as Trade["status"] })}>{t("tracking.edit")}</button>
       </div>
@@ -159,10 +159,10 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
       }}
-      className="bg-[#111722] text-white rounded-lg border border-surface-border p-5 w-full max-w-xl max-h-[85vh] overflow-y-auto backdrop:bg-black/60"
+      className="font-sans bg-[#111722] text-white rounded-lg border border-surface-border p-5 w-full max-w-xl max-h-[85vh] overflow-y-auto backdrop:bg-black/60"
       aria-labelledby="tracking-editor-title">
       <div className="flex justify-between gap-3 mb-3"><h3 id="tracking-editor-title">{t("tracking.edit")} · {editor.trade.symbol}</h3>
-        <button type="button" onClick={close} disabled={busy}>{t("tracking.dismiss")}</button></div>
+        <button type="button" className="k-btn k-control" onClick={close} disabled={busy}>{t("tracking.dismiss")}</button></div>
       <p className="text-xs text-slate-400 mb-3">{t("tracking.disclaimer")}</p>
       {editor.plan && <p className="text-sm mb-2">{t("tracking.remaining")}: {editor.plan.qty_unit === "USD" ? formatPositionValue(Number(editor.plan.remaining_qty)) : editor.plan.remaining_qty} / {editor.plan.qty_unit === "USD" ? formatPositionValue(Number(editor.plan.initial_qty)) : editor.plan.initial_qty}</p>}
       <form onSubmit={e => { e.preventDefault(); void submit(false); }} className="space-y-3">
@@ -185,7 +185,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
               {t("tracking.already_reached")}
             </p>
           )}
-          <button type="submit" className="bg-accent/20 text-accent px-4 py-2 rounded">{t("tracking.save")}</button>
+          <button type="submit" className="k-btn k-primary">{t("tracking.save")}</button>
           {editor.plan && <div className="border-t border-surface-border pt-3">
             <label>{t("tracking.manual_price")}<input type="number" step="any" value={manualPrice} onChange={e => setManualPrice(e.target.value)}
               aria-label={t("tracking.manual_price")} className="block w-full bg-[#0b0e14] border border-surface-border p-2 rounded" /></label>

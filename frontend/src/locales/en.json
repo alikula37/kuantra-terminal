@@ -304,7 +304,12 @@
     "lite_core_badge": "LITE CORE (0 Plugins)",
     "active_modules_badge": "ACTIVE MODULES ({count})",
     "core_views": "CORE VIEWS",
-    "specialized_modules": "SPECIALIZED MODULES"
+    "specialized_modules": "SPECIALIZED MODULES",
+    "engine_diagnostics": "Local engine",
+    "desktop_core": "Desktop core",
+    "on_demand": "On demand",
+    "columnar": "Column storage",
+    "wal_on": "WAL enabled"
   },
   "portfolio": {
     "total_equity": "TOTAL EQUITY",
@@ -565,7 +570,7 @@
     "side_spot": "SPOT / BUY",
     "spot_notice": "Record your external spot purchase without leverage. This saves a journal entry and does not place an order.",
     "estimate_unavailable": "Not available",
-    "estimate_units_notice": "Price × quantity estimate in the instrument's quote units, before fees. Account-equity percentage and contract multipliers are not verified. Enter your actual stop and target if known.",
+    "estimate_units_notice": "Estimated price return × declared USD position value, before fees and funding. Leverage does not multiply this result. This is not broker-verified profit; non-USD-quoted instruments remain approximate.",
     "selected_symbol": "Selected instrument: {symbol}",
     "symbol_search_label": "Search instruments",
     "modal_title": "RECORD TRADE TICKET",
@@ -714,7 +719,7 @@
   },
   "journal": {
     "title": "TRADE LOGGING JOURNAL",
-    "subtitle": "Institutional Execution Records & Audit Trail",
+    "subtitle": "Recorded trades and source-linked correction history — no broker orders",
     "empty_title": "Your Trade Journal is Clean and Ready",
     "empty_desc": "No trades recorded yet. Start your quantitative performance tracking by recording a trade ticket or importing your historical CSV trades.",
     "manual_entry": "Manual Trade Entry",

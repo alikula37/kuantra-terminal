@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import enDictionary from "../locales/en.json";
 import trDictionary from "../locales/tr.json";
 import deDictionary from "../locales/de.json";
@@ -41,6 +41,7 @@ function getNestedValue(obj: any, path: string): string | undefined {
 }
 
 export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const localeMutationVersion = useRef(0);
   const [locale, setLocaleState] = useState<Locale>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("kuantra_locale") as Locale;
@@ -50,6 +51,7 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const setLocale = useCallback((newLocale: Locale) => {
+    localeMutationVersion.current += 1;
     setLocaleState(newLocale);
     if (typeof window !== "undefined") {
       localStorage.setItem("kuantra_locale", newLocale);
@@ -64,9 +66,11 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   useEffect(() => {
+    const requestVersion = localeMutationVersion.current;
     apiFetch(apiUrl("/api/v1/settings"))
       .then((res) => res.json())
       .then((data) => {
+        if (localeMutationVersion.current !== requestVersion) return;
         if (data && (data.active_locale === "en" || data.active_locale === "tr" || data.active_locale === "de")) {
           if (data.active_locale !== locale) {
             setLocaleState(data.active_locale);
@@ -78,6 +82,8 @@ export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => { document.documentElement.lang = locale; }, [locale]);
 
   const t = useCallback(
     (path: string, params?: Record<string, string | number>): string => {

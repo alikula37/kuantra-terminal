@@ -15,11 +15,13 @@
   --text-primary: #f8fafc;
   --text-muted: #94a3b8;
   --color-accent: #38bdf8;
-  --color-gain: #10b981;
-  --color-loss: #f43f5e;
+  --color-gain: #34d399;
+  --color-loss: #fb7185;
+  --action-ink: #071018;
+  --action-hover: #7dd3fc;
   --accent-rgb: 56, 189, 248;
-  --gain-rgb: 16, 185, 129;
-  --loss-rgb: 244, 63, 94;
+  --gain-rgb: 52, 211, 153;
+  --loss-rgb: 251, 113, 133;
   --border-rgb: 30, 41, 59;
   --warn-rgb: 245, 158, 11;
 }
@@ -35,13 +37,15 @@
   --bg-hover-strong: #cbd5e1;
   --border-color: #e2e8f0;
   --text-primary: #0f172a;
-  --text-muted: #64748b;
-  --color-accent: #0284c7;
-  --color-gain: #059669;
-  --color-loss: #e11d48;
-  --accent-rgb: 2, 132, 199;
-  --gain-rgb: 5, 150, 105;
-  --loss-rgb: 225, 29, 72;
+  --text-muted: #475569;
+  --color-accent: #075985;
+  --color-gain: #065f46;
+  --color-loss: #9f1239;
+  --action-ink: #ffffff;
+  --action-hover: #0c4a6e;
+  --accent-rgb: 7, 89, 133;
+  --gain-rgb: 6, 95, 70;
+  --loss-rgb: 159, 18, 57;
   --border-rgb: 226, 232, 240;
   --warn-rgb: 180, 83, 9;
 }
@@ -137,6 +141,15 @@ body {
 .k-btn:disabled {
   cursor: not-allowed;
 }
+
+/* Filled core actions use theme-specific ink, never black-on-dark fallback. */
+.k-action-ink { color: var(--action-ink); }
+.k-primary { background-color: var(--color-accent); color: var(--action-ink); }
+.k-primary:hover:not(:disabled) { background-color: var(--action-hover); }
+.k-primary:disabled { opacity: 0.6; }
+.k-control { background-color: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border-color); }
+.k-control:hover:not(:disabled) { background-color: var(--bg-hover); }
+.k-nav-active { background-color: rgba(var(--accent-rgb), 0.15); color: var(--color-accent); border: 1px solid rgba(var(--accent-rgb), 0.3); }
 
 /* WP50: bounded columns and in-flow details, never a wide sticky action overlay. */
 .journal-table td {

@@ -304,7 +304,12 @@
     "lite_core_badge": "LİTE ÇEKİRDEK (0 Eklenti)",
     "active_modules_badge": "AKTİF MODÜLLER ({count})",
     "core_views": "ÇEKİRDEK PANELİ",
-    "specialized_modules": "ÖZELLEŞTİRİLMİŞ MODÜLLER"
+    "specialized_modules": "ÖZELLEŞTİRİLMİŞ MODÜLLER",
+    "engine_diagnostics": "Yerel motor",
+    "desktop_core": "Masaüstü çekirdeği",
+    "on_demand": "Gerektiğinde",
+    "columnar": "Sütunlu depolama",
+    "wal_on": "WAL etkin"
   },
   "portfolio": {
     "total_equity": "TOPLAM KASA",
@@ -565,7 +570,7 @@
     "side_spot": "SPOT / AL",
     "spot_notice": "Dışarıda yaptığınız kaldıraçsız spot alımını kaydedin. Bu işlem yalnızca günlüğe kayıt ekler, emir göndermez.",
     "estimate_unavailable": "Hesaplanamıyor",
-    "estimate_units_notice": "Fiyat × miktar tahmini, varlığın fiyat birimindedir ve ücretleri içermez. Kasa yüzdesi ve sözleşme çarpanları doğrulanmış değildir. Biliniyorsa gerçek stop ve hedefinizi girin.",
+    "estimate_units_notice": "Tahmini fiyat getirisi × beyan edilen USD pozisyon değeri; ücret ve funding dahil değildir. Kaldıraç bu sonucu çarpmaz. Borsa tarafından doğrulanmış kazanç değildir; USD dışı fiyatlanan varlıklarda sonuç yaklaşık kalır.",
     "selected_symbol": "Seçili varlık: {symbol}",
     "symbol_search_label": "Varlık ara",
     "modal_title": "İŞLEM BİLETİ OLUŞTUR",
@@ -714,7 +719,7 @@
   },
   "journal": {
     "title": "İŞLEM GÜNLÜĞÜ",
-    "subtitle": "Kurumsal İletim Kayıtları & Denetim İzi",
+    "subtitle": "İşlem kayıtları ve kaynağa bağlı düzeltme geçmişi — borsaya emir gönderilmez",
     "empty_title": "İşlem Günlüğünüz Temiz ve Hazır",
     "empty_desc": "Henüz kaydedilmiş işlem bulunmuyor. Kantitatif performans takibinizi başlatmak için yeni bir işlem bileti girin veya geçmiş CSV dosyalarınızı içe aktarın.",
     "manual_entry": "Yeni İşlem Girişi",

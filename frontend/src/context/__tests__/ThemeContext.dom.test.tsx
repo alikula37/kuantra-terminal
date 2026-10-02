@@ -82,3 +82,23 @@ it("does not let a slower initial settings response undo a user toggle", async (
   expect(document.documentElement.dataset.theme).toBe("light");
   expect(document.documentElement.classList.contains("light-theme")).toBe(true);
 });
+
+it.each(["dark", "light"] as const)("applies matching RGB and hex tokens on a cold %s start and roundtrip", async theme => {
+  localStorage.setItem("kuantra_theme", theme);
+  mocks.apiFetch.mockResolvedValue(response({ active_theme: theme }));
+  await act(async () => root.render(<ThemeProvider><ThemeProbe /></ThemeProvider>));
+  const check = () => {
+    const style = document.documentElement.style;
+    for (const [rgb, hex] of [["accent", "accent"], ["gain", "gain"], ["loss", "loss"]]) {
+      const value = style.getPropertyValue(`--color-${hex}`);
+      const expected = value.slice(1).match(/../g)!.map(v => parseInt(v, 16)).join(", ");
+      expect(style.getPropertyValue(`--${rgb}-rgb`)).toBe(expected);
+    }
+    expect(style.getPropertyValue("--border-rgb")).not.toBe("");
+  };
+  check();
+  const toggle = host.querySelector("button") as HTMLButtonElement;
+  await act(async () => toggle.click()); check();
+  await act(async () => toggle.click()); check();
+  expect(document.documentElement.dataset.theme).toBe(theme);
+});

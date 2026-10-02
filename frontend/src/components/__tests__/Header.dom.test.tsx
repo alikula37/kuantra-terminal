@@ -82,3 +82,16 @@ it("does not expose Chart Vision from the verified Quant persona", async () => {
 
   expect(host.querySelector('button[title="Upload Chart Screenshot for Vision OCR"]')).toBeNull();
 });
+
+it("uses the shared readable primary recipe and keeps the core actions functional", async () => {
+  props.onOpenNewTrade.mockClear();
+  await act(async () => root.render(<Header {...props} />));
+  const action = Array.from(host.querySelectorAll("button")).find(b => b.textContent?.includes("header.new_trade_btn"))!;
+  expect(action.classList.contains("k-primary")).toBe(true);
+  expect(action.classList.contains("k-btn")).toBe(true);
+  expect(action.classList.contains("text-black")).toBe(false);
+  await act(async () => action.click());
+  expect(props.onOpenNewTrade).toHaveBeenCalledOnce();
+  expect(host.querySelector("select")?.classList.contains("k-btn")).toBe(true);
+  expect(host.querySelector('button[aria-label="header.switch_to_light_theme"]')?.classList.contains("k-btn")).toBe(true);
+});

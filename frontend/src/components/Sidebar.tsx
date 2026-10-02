@@ -116,9 +116,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       ];
 
   return (
-    <aside className="w-56 bg-[#0d121c] border-r border-surface-border flex flex-col justify-between select-none shrink-0">
+    <aside className="w-56 bg-surface border-r border-surface-border flex flex-col justify-between select-none shrink-0 font-sans">
       <div className="p-3 space-y-1 overflow-y-auto">
-        <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold flex items-center justify-between">
+        <div className="px-3 py-2 text-sm text-muted font-semibold flex items-center justify-between">
           <span>
             {isLiteMode
               ? t("sidebar.lite_core_badge")
@@ -134,14 +134,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
               key={item.id}
               data-testid={`nav-${item.id}`}
               onClick={() => onTabChange(item.id as NavTab)}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded text-xs font-medium transition ${
+              className={`k-btn w-full !justify-start text-left transition ${
                 isActive
-                  ? "bg-accent/15 text-accent border border-accent/30 font-semibold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-[#111722]"
+                  ? "k-nav-active"
+                  : "text-muted hover:text-ink hover:bg-elevated"
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-accent" : "text-slate-400"}`} />
-              <span className="truncate">{label}</span>
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="min-w-0 whitespace-normal leading-snug">{label}</span>
             </button>
           );
         })}
@@ -150,33 +150,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         {!isLiteMode && <ExtensionSlot slot="sidebar" />}
       </div>
 
-      <div className="p-3 border-t border-surface-border space-y-2 bg-[#090d14]/60">
-        <div className="px-1 text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold">
-          Engine Diagnostics
+      <div className="p-3 border-t border-surface-border space-y-2 bg-deep">
+        <div className="px-1 text-sm text-muted font-semibold">
+          {t("sidebar.engine_diagnostics")}
         </div>
-        <div className="space-y-1.5 text-[11px] font-mono">
-          <div className="flex items-center justify-between text-slate-400">
+        <div className="space-y-1.5 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-1 text-muted">
             <span className="flex items-center space-x-1.5">
               <Database className="w-3 h-3 text-gain" />
               <span>SQLite (OLTP)</span>
             </span>
-            <span className="text-gain text-[10px] font-semibold">WAL ON</span>
+            <span className="text-gain font-semibold">{t("sidebar.wal_on")}</span>
           </div>
 
-          <div className="flex items-center justify-between text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-1 text-muted">
             <span className="flex items-center space-x-1.5">
-              <Layers className={`w-3 h-3 ${isLiteMode ? "text-slate-500" : "text-accent"}`} />
+              <Layers className={`w-3 h-3 ${isLiteMode ? "text-muted" : "text-accent"}`} />
               <span>DuckDB (OLAP)</span>
             </span>
-            <span className={`text-[10px] font-semibold ${isLiteMode ? "text-slate-500" : "text-accent"}`}>
-              {isLiteMode ? "ON DEMAND" : "COLUMNAR"}
+            <span className={`font-semibold ${isLiteMode ? "text-muted" : "text-accent"}`}>
+              {isLiteMode ? t("sidebar.on_demand") : t("sidebar.columnar")}
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-1 text-muted">
             <span className="flex items-center space-x-1.5">
               <Cpu className="w-3 h-3 text-purple-400" />
-              <span>Desktop Core</span>
+              <span>{t("sidebar.desktop_core")}</span>
             </span>
             <span className="text-purple-400 text-[10px] font-semibold">ASYNCIO</span>
           </div>

@@ -451,7 +451,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
             <Zap className="w-5 h-5 text-accent" />
             <span>{t("order_ticket.modal_title")}</span>
           </h3>
-          <button onClick={onClose} aria-label={t("order_ticket.cancel")} className="text-slate-400 hover:text-white cursor-pointer p-2 -m-1">
+          <button onClick={onClose} aria-label={t("order_ticket.cancel")} className="k-btn text-muted hover:text-ink !px-3 -m-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -612,7 +612,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                     type="button"
                     data-testid="new-trade-confirm-symbol"
                     onClick={handleConfirmSymbol}
-                    className="k-btn bg-accent text-black hover:bg-sky-300"
+                    className="k-btn k-primary"
                   >
                     {t("order_ticket.confirm")}
                   </button>
@@ -638,14 +638,14 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
             <div className="grid grid-cols-3 gap-2" role="group" aria-label={t("order_ticket.position_type")}>
               <button type="button" data-testid="new-trade-spot" aria-pressed={positionType === "SPOT"}
                 onClick={() => setPositionType("SPOT")}
-                className={`k-btn justify-center ${positionType === "SPOT" ? "bg-accent text-black" : "bg-[#1a2234] text-slate-300"}`}>
+                className={`k-btn justify-center ${positionType === "SPOT" ? "bg-accent k-action-ink" : "bg-[#1a2234] text-slate-300"}`}>
                 {t("order_ticket.side_spot")}
               </button>
               <button
                 type="button"
                 aria-pressed={positionType === "LONG"}
                 onClick={() => setPositionType("LONG")}
-                className={`k-btn justify-center ${positionType === "LONG" ? "bg-gain text-black" : "bg-[#1a2234] text-slate-300"}`}
+                className={`k-btn justify-center ${positionType === "LONG" ? "bg-gain k-action-ink" : "bg-[#1a2234] text-slate-300"}`}
               >
                 {t("order_ticket.side_buy")}
               </button>
@@ -653,7 +653,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 type="button"
                 aria-pressed={positionType === "SHORT"}
                 onClick={() => setPositionType("SHORT")}
-                className={`k-btn justify-center ${positionType === "SHORT" ? "bg-loss text-white" : "bg-[#1a2234] text-slate-300"}`}
+                className={`k-btn justify-center ${positionType === "SHORT" ? "bg-loss k-action-ink" : "bg-[#1a2234] text-slate-300"}`}
               >
                 {t("order_ticket.side_sell")}
               </button>
@@ -957,7 +957,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           <button
             type="submit"
             disabled={isSubmitting || isFetchingPrice || isSymbolSearchPending}
-            className={`k-btn w-full justify-center ${recordMode === "SIMULATION" ? "bg-amber-400 hover:bg-amber-300 text-black" : "bg-accent hover:bg-sky-400 text-black"} disabled:opacity-60`}
+            className={`k-btn w-full justify-center ${recordMode === "SIMULATION" ? "bg-amber-400 hover:bg-amber-300 text-black" : "k-primary"} disabled:opacity-60`}
           >
             {isSubmitting ? (
               <>

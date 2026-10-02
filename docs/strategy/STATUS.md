@@ -4,9 +4,13 @@
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP52 translation/readability](work-packages/P1-WP52-translation-readability-ux.md).**
-Prepared, not implemented. Reproduce core workflow translation/contrast issues (dark global
-New Trade/empty-state CTA, light initial active-control contrast) and improve only confirmed
-readability defects. No financial formula/provider/schema/authority changes or Release/tag.
+Implemented, installed acceptance pending. Confirmed invalid semantic RGB/alpha CSS (dark
+filled accents disappeared), locale settings-response race, truncated sidebar labels and
+stale base-quantity/institutional execution copy. Shared color/ink/focus recipes, core sans
+labels and accurate EN/TR/DE wording fixed; red **11 failures** → frontend **51/353 PASS**,
+i18n **1274** per language, tsc/build/docs/truth/diff PASS; full backend **1220 PASS / 3 warnings**.
+Clean-source arm64 CI and data-preserving installed native acceptance pending. No financial formula/provider/
+schema/authority changes or Release/tag. See selected WP52 for bounded contract/evidence.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
 **WP51 complete + archived (2026-10-02):**
