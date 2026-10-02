@@ -4,9 +4,11 @@
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP54 chart/tracking clarity](work-packages/P1-WP54-chart-tracking-clarity-ux.md).**
-Ready, not implemented. Reproduce confusing history/source/freshness/automation-wait states
-and observed MAE/MFE English empty text before changing presentation. No expanded provider,
-financial, historical execution or automatic-close authority.
+InProgress: four red regressions reproduced MAE/MFE hardcoded English and tracking unknown
+wait/low-contrast ink. Localized primary explanations and collapsed diagnostics implemented;
+full gates and native installed acceptance pending. Existing chart identity/partial/delayed/
+manual-refresh failure-preservation contracts retained. No expanded provider, financial,
+historical execution or automatic-close authority.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
 **WP53 complete + archived (2026-10-02):**

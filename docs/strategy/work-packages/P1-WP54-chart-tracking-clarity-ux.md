@@ -3,13 +3,13 @@
 
 ```yaml
 work_package: P1-WP54
-status: Ready
+status: InProgress
 date: 2026-10-02
 branch: main
 baseline: d87fc99c35be8b961b12150245a5c575ad4e9e75
 ```
 
-Selected next owner-approved UX item after WP53. Not implemented or verified yet.
+Selected owner-approved UX item after WP53. Presentation implemented; native acceptance pending.
 One presentation task; no new source/automation capability or financial authority.
 WP29 owner-host obligations remain open; Release/tag/Intel refresh is not authorized.
 
@@ -35,7 +35,7 @@ current code and UI. Do not treat an archived promise as a new capability work o
 
 ## Acceptance
 
-- [ ] Reproduce bounded defects and freeze red DOM/behavioral tests before implementation.
+- [x] Reproduce bounded defects and freeze red DOM/behavioral tests before implementation.
 - [ ] Clear empty/unknown/partial/delayed/error states and refresh outcome; no invented bars,
   successful automation or financial results; preserve cached content after refresh failure.
 - [ ] EN/TR/DE parity, both themes and keyboard controls covered; existing chart/tracking,
@@ -48,6 +48,25 @@ current code and UI. Do not treat an archived promise as a new capability work o
 
 ## Expected files
 
-`frontend/src/components/{MarketChartsView,TradeReplayCanvas,MaeMfeVisualizer,LocalTrackingPanel}.tsx`
-(verify actual paths), related DOM tests, EN/TR/DE locales and current governance documents.
+`frontend/src/components/{MaeMfeVisualizer,LocalTrackingPanel}.tsx`, their DOM tests,
+EN/TR/DE locales and current governance documents. Actual Market Charts component is
+`TradingViewChart.tsx`; its refresh regression and `TradeReplayCanvas` partial/delayed/
+exact-identity/manual-refresh/error-preservation regressions are retained, not rewritten.
 Backend behavior changes require a separately reproduced defect and scope review.
+
+## Current evidence
+
+Installed TR/light MAE/MFE no-data state displayed hardcoded English. Four new DOM
+regressions failed before implementation (loading/no-data/ready localization and unknown
+tracking wait reason/theme-aware ink). Localized primary explanations now distinguish
+missing evidence from zero. Raw errors/reason codes remain in collapsed technical details.
+READY labels, direction filter and descriptive distribution use EN/TR/DE; no recommended
+target or simulated stop execution is asserted. Numerical filtering/calculations unchanged.
+Tracking known waits retain localized explanations; unknown waits use a safe localized
+fallback rather than a missing translation key. Warning ink uses existing semantic tokens.
+Full frontend: **51 files / 370 tests PASS**; backend isolated suite: **1220 PASS / 3 warnings**.
+`npm --prefix frontend run build`: typecheck, **1299** EN/TR/DE keys and production build PASS.
+`python3.11 scripts/check_docs.py`: **140 documents / 188 links / 5 startup PASS**;
+`git diff --check` clean. Changed source: `this change`. CI/native installation pending.
+The initial no-plot test selector was corrected to exclude decorative icon SVGs; it checks
+absence of the actual 640px scatter plot. Full CI/install evidence remains pending.

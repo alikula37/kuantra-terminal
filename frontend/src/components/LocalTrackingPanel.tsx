@@ -8,6 +8,7 @@ import { formatPositionValue } from "../lib/positionMath";
 import type { Trade } from "../types";
 
 const sources = ["binance_public", "bybit_public", "yahoo_public", "stooq_public", "biquote_public"];
+const waitReasons = new Set(["PROVIDER_EVENT_TIME_UNAVAILABLE", "MARKET_DATA_DISABLED", "PROVIDER_RATE_LIMIT", "PROVIDER_ERROR", "WAITING_FRESH_PROVIDER_EVENT", "WAITING_PROVIDER_OBSERVATION"]);
 
 export function LocalTrackingPanel({ editTrade, onEditorClose }: {
   editTrade: Trade | null; onEditorClose: () => void;
@@ -136,15 +137,20 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
       <p>{t("tracking.remaining")}: {state.qty_unit === "USD" ? formatPositionValue(Number(state.remaining_qty)) : state.remaining_qty} / {state.qty_unit === "USD" ? formatPositionValue(Number(state.initial_qty)) : state.initial_qty} · {t("tracking.gross")}: {state.qty_unit === "USD" ? formatPositionValue(Number(state.gross_pnl)) : state.gross_pnl}</p>
       <p className="k-help">{t("tracking.started_at")}: {formatIstanbulDateTime(state.armed_at, locale)}</p>
       {state.tracking_status === "WAITING_QUOTE" && state.monitor && (
-        <p className="k-help text-amber-300" data-testid={`tracking-wait-${state.trade_id}`}>
-          {t(`tracking.wait_reason_${state.monitor.wait_reason || "WAITING_PROVIDER_OBSERVATION"}`)}
-          {state.monitor.last_error ? ` (${state.monitor.last_error})` : ""}
+        <div>
+        <p className="k-help text-warn" data-testid={`tracking-wait-${state.trade_id}`}>
+          {t(`tracking.wait_reason_${waitReasons.has(state.monitor.wait_reason || "") ? state.monitor.wait_reason : "WAITING_PROVIDER_OBSERVATION"}`)}
           {state.monitor.next_poll_in_seconds != null
             ? ` · ${t("tracking.monitor_next_poll", { seconds: Math.ceil(state.monitor.next_poll_in_seconds) })}`
             : ""}
         </p>
+        {(state.monitor.last_error || state.monitor.wait_reason && !waitReasons.has(state.monitor.wait_reason)) && <details className="k-help" data-testid={`tracking-diagnostics-${state.trade_id}`}>
+          <summary className="cursor-pointer focus-visible:outline focus-visible:outline-accent">{t("tracking.diagnostics")}</summary>
+          <p className="break-words">{state.monitor.wait_reason} · {state.monitor.last_error}</p>
+        </details>}
+        </div>
       )}
-      {state.unit_status === "UNVERIFIED" && <p className="k-help text-amber-300">{t("tracking.unit_unverified")}</p>}
+      {state.unit_status === "UNVERIFIED" && <p className="k-help text-warn">{t("tracking.unit_unverified")}</p>}
       <p className="k-help">{state.source_id ? t(`tracking.${state.source_id}`) : t("tracking.no_source")} · {state.source_symbol}</p>
       {state.targets.map(target => <span className="inline-block mr-4" key={target.id}>
         {target.id}: {target.price} ({target.percent}%) {state.closures.some(c => c.target_id === target.id) ? t("tracking.hit") : ""}
@@ -181,7 +187,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
             className="block w-full bg-[#0b0e14] border border-surface-border p-2 rounded" /></label>
           <p className="text-xs text-slate-400">{t("tracking.source_help")}</p>
           {alreadyReached && (
-            <p role="alert" data-testid="tracking-already-reached" className="rounded border border-amber-400/40 bg-amber-400/10 p-2 text-amber-300">
+            <p role="alert" data-testid="tracking-already-reached" className="rounded border border-warn/40 bg-warn/10 p-2 text-warn">
               {t("tracking.already_reached")}
             </p>
           )}

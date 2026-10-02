@@ -35,6 +35,20 @@ const open = async () => {
   await act(async () => button("tracking.edit").click());
 };
 
+it("keeps unknown wait codes in diagnostics and uses readable semantic warning ink", async () => {
+  mocks.request.mockResolvedValue(response([{ ...base, tracking_status: "WAITING_QUOTE",
+    monitor: { enabled: true, wait_reason: "FUTURE_WAIT_REASON", last_error: "raw provider diagnostic", next_poll_in_seconds: 20 } }]));
+  await act(async () => root.render(<LocalTrackingPanel editTrade={null} onEditorClose={vi.fn()} />));
+  const note = host.querySelector('[data-testid=tracking-wait-t1]')!;
+  expect(note.className).toContain("text-warn");
+  expect(note.textContent).toContain("tracking.wait_reason_WAITING_PROVIDER_OBSERVATION");
+  expect(note.textContent).not.toContain("FUTURE_WAIT_REASON");
+  const details = host.querySelector('[data-testid=tracking-diagnostics-t1]') as HTMLDetailsElement;
+  expect(details.open).toBe(false);
+  expect(details.textContent).toContain("FUTURE_WAIT_REASON");
+  expect(details.textContent).toContain("raw provider diagnostic");
+});
+
 it("loads partial history, locks completed targets and saves the exact revision", async () => {
   await open();
   expect((host.querySelector('[aria-label="tracking.price:1"]') as HTMLInputElement).disabled).toBe(true);
@@ -108,7 +122,8 @@ it("shows a provider error reason with the recorded error", async () => {
   await act(async () => button("tracking.edit").click());
   const note = host.querySelector('[data-testid="tracking-wait-t1"]');
   expect(note?.textContent).toContain("tracking.wait_reason_PROVIDER_ERROR");
-  expect(note?.textContent).toContain("provider unreachable");
+  expect(note?.textContent).not.toContain("provider unreachable");
+  expect(host.querySelector('[data-testid="tracking-diagnostics-t1"]')?.textContent).toContain("provider unreachable");
 });
 
 it("warns prominently when the target is already reached before saving", async () => {
