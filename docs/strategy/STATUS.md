@@ -3,13 +3,41 @@
 
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP54 chart/tracking clarity](work-packages/P1-WP54-chart-tracking-clarity-ux.md).**
-InProgress: four red regressions reproduced MAE/MFE hardcoded English and tracking unknown
-wait/low-contrast ink. Localized primary explanations and collapsed diagnostics implemented;
-full gates and native installed acceptance pending. Existing chart identity/partial/delayed/
-manual-refresh failure-preservation contracts retained. No expanded provider, financial,
-historical execution or automatic-close authority.
+**Selected work: [P1-WP55 first-use/backup guidance](work-packages/P1-WP55-first-use-backup-guidance-ux.md).**
+Ready, not implemented. Reproduce existing onboarding/data-tool confusion before changing
+guidance. Distinguish reports from restorable backup; no automatic backup, user-data restore,
+reset, migration, broker or cloud capability expansion. Update guidance follows separately.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**WP54 complete + archived (2026-10-02):**
+[chart/tracking clarity and native acceptance](../archive/strategy/work-packages/P1-WP54-chart-tracking-clarity-ux.md).
+MAE/MFE primary loading/no-data/error/READY explanations now EN/TR/DE; descriptive
+distribution, missing result and no recommendation are explicit. Diagnostic codes/messages
+fold separately. Unknown tracking waits get a localized fallback; semantic warning ink
+stays readable. No numerical/API/schema/provider/automatic-close changes. Existing exact
+identity/partial/delayed/manual-refresh failure-preservation regressions retained.
+Four red tests plus native-found CSS recipe red assertion → **16 focused PASS**.
+Full **1220 backend / 3 warnings**, **51 files / 370 frontend**, i18n **1299** per language,
+typecheck/build/docs/truth/packaging/diff PASS. **dceaf0a / e15f4e7** pushed main.
+Native candidate dceaf0a revealed `.k-help` overriding warning ink despite green DOM/CI;
+not accepted as final. Final source **e15f4e7288e1cbf43619d4ca21f849a4504df617**:
+canonical arm64 **13/13 / MERGE READY / COMPLETE**, exact read-only mounted-DMG native
+WKWebView/controller smoke PASS. Reports `artifacts/evidence/p1-wp54/`: CI **64f33ba9…**,
+exact-DMG **422df488…**, N05 **53490d1f…**, installed acceptance.
+DMG **cd0a274bdb47ba678f07f258a98eda73d850ff1aa9b7623eb20b5d18895c3dcc**;
+CI/mounted/installed executable **39549dc77d9eee8969232f1a7c1351422f0c67de77d4d86e9480906e5de53927**.
+Installed **1.1.6 local build**, codesign strict/deep PASS (ad-hoc).
+Final native TR/light and TR/dark tracking warning is brown/yellow; XAUUSD remains
+display-only/waiting. MAE/MFE TR/dark, DE/dark, EN/light and keyboard disclosure checked.
+READY/scatter/error/unknown/partial variants are synthetic automated evidence, not installed
+data injection or an all-app accessibility claim. Stopped DB unchanged across replacement;
+**5 trades / 24 events / 5 tracking rows** and ordered trade/event hashes unchanged after QA.
+TR/light/LITE and **3 hidden metrics** verified after normal quit/reopen.
+Candidate backup `/tmp/kuantra-wp54-final-update.e2YGih/Kuantra Terminal.app`;
+prior accepted WP53 backup `/tmp/kuantra-wp54-update.OEjmGQ/Kuantra Terminal.app`.
+No trade mutation/reset/migration/secrets/Release/tag/workflow/Intel refresh; public market
+network occurred, not runtime-offline evidence. **N05 BLOCKED**, N03/H05/legal/gold/XM and
+previous helper lifecycle obligation unchanged. Docs closure does not change binary source.
 
 **WP53 complete + archived (2026-10-02):**
 [form simplicity and installed acceptance](../archive/strategy/work-packages/P1-WP53-form-simplicity-ux.md).

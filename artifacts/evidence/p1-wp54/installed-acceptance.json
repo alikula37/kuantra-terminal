@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "evidence_type": "operator_native_ui_and_install_attestation",
+  "work_package": "P1-WP54",
+  "observed_date_local": "2026-10-02",
+  "source_commit_sha": "e15f4e7288e1cbf43619d4ca21f849a4504df617",
+  "product_version": "1.1.6",
+  "distribution": "local source build; published Release unchanged",
+  "platform": "macOS 26.6.2 arm64",
+  "reports": {
+    "local-ci.json": "64f33ba9407f389234828887d7d4c37bc1fac858eaa3e5b0de4c63a2353dcbf1",
+    "exact-dmg-smoke.json": "422df48899d6e21562f6fa2d97fafa5f551eaf8be5c419cf91bcac4dacd5be1c",
+    "n05-preflight.json": "53490d1fee73556593f20aa730a0e2a7e670a263b7a762e7a65ac8b9095c2098"
+  },
+  "artifact": {
+    "filename": "Kuantra-Terminal-1.1.6-wp54-final-arm64.dmg",
+    "sha256": "cd0a274bdb47ba678f07f258a98eda73d850ff1aa9b7623eb20b5d18895c3dcc",
+    "exact_read_only_mounted_dmg_smoke": "PASS",
+    "mount_detached_after_install": true,
+    "ci_mounted_and_installed_executable_sha256": "39549dc77d9eee8969232f1a7c1351422f0c67de77d4d86e9480906e5de53927"
+  },
+  "installation": {
+    "app_path": "/Applications/Kuantra Terminal.app",
+    "previous_candidate_backup": "/tmp/kuantra-wp54-final-update.e2YGih/Kuantra Terminal.app",
+    "previous_accepted_wp53_backup": "/tmp/kuantra-wp54-update.OEjmGQ/Kuantra Terminal.app",
+    "codesign_strict_deep": "PASS",
+    "signature_kind": "ad-hoc; no Developer ID/notarization",
+    "n05_status": "BLOCKED",
+    "runtime": "frozen native WKWebView app; visibly running after normal quit/reopen"
+  },
+  "preservation": {
+    "stopped_db_before_and_after_replacement_sha256": "f1ca39060464efd569fb29617056655bc7eb2bad4a8f622d1f57205d0944351e",
+    "counts_before_and_after_native_qa": {
+      "trades": 5,
+      "evidence_events": 24,
+      "local_tracking_projections": 5
+    },
+    "ordered_trade_rows_before_and_after_sha256": "f75212a540951ff32d10ca92689d0318486cad438217f531bb723099f92e5b70",
+    "ordered_event_rows_before_and_after_sha256": "984bfec9de2f30d0f247d99d0506ca61e59684ab1ab84e1cef595a1fd3bd5da9",
+    "final_preferences": "TR/light/LITE; 3 hidden metrics; verified after normal quit/reopen",
+    "trade_mutation_or_migration_performed": false
+  },
+  "native_observations": [
+    "Installed baseline TR/light showed hardcoded English MAE/MFE no-data explanation",
+    "Candidate dceaf0a passed automation but native tracking warning remained gray due to k-help CSS overriding text-warn; rejected as final acceptance",
+    "Final tracking WAITING_QUOTE on existing synthetic XAUUSD: readable brown light / yellow dark; display-only candle explanation and local-estimate disclaimer retained",
+    "Final MAE/MFE no-data sampled TR/dark, DE/dark and EN/light; EN loading text also observed; no scatter plot or invented result",
+    "Technical details collapsed initially; accessibility activation opens raw reason/message; Return closes disclosure",
+    "Normal quit/reopen preserves TR/light/LITE and 3 hidden metrics"
+  ],
+  "automated_evidence": {
+    "red_to_green": "4 initial failing regressions plus a native-found conflicting-recipe red assertion -> 16 focused tests PASS",
+    "backend": "1220 passed / 3 warnings; isolated data",
+    "frontend": "51 files / 370 passed",
+    "i18n": "1299/1299/1299",
+    "canonical_local_ci": "13/13 PASS; MERGE READY; COMPLETE; clean tracked source",
+    "tsc_build_docs_truth_packaging_diff": "PASS"
+  },
+  "limitations": [
+    "READY scatter/sensitivity, unknown waits/provider errors and partial/history/manual-refresh failure scenarios are automated synthetic DOM/API regression evidence, not injected installed user data",
+    "No financial/default/API/schema/provider or automatic-close changes; no broker executions inferred",
+    "Operator screenshots inspected but not retained as committed assets; not all-app accessibility acceptance",
+    "Coordinate input/scroll reports noWindowsAvailable; accessibility Raise plus heading focus/PageDown and disclosure Return worked; no app crash",
+    "Public market network occurred; uv --offline only proves dependency resolution",
+    "N03/N05/H05/legal, independent gold/FX and real XM evidence obligations unchanged",
+    "No Release/tag/workflow/Intel refresh; earlier helper lifecycle follow-up remains open"
+  ]
+}
