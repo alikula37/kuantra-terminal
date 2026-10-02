@@ -3,12 +3,35 @@
 
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP55 first-use/backup guidance](work-packages/P1-WP55-first-use-backup-guidance-ux.md).**
-InProgress: this change adds optional first-record/report/backup guidance and removes
-timer-based fictional onboarding health checks. Setup save failures stay open for retry.
-Red → green DOM evidence; clean-commit native/installed gates pending. No automatic backup,
-user-data restore/reset, migration, broker or cloud capability expansion. Update guidance follows separately.
+**Selected work: [P1-WP56 update guidance](work-packages/P1-WP56-update-guidance-ux.md).**
+Ready, not implemented. Reproduce current manual-update confusion; no automatic installer,
+invented latest-version claim, security bypass, Release/tag/workflow or user-data change.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**WP55 complete + archived (2026-10-02):**
+[first-use/backup guidance](../archive/strategy/work-packages/P1-WP55-first-use-backup-guidance-ux.md).
+Optional Journal/Settings guide explains no-CSV/manual/simulation and opens existing forms/
+reports. CSV/PDF are not a full restorable backup; technical tools/verification/privacy limits
+explicit. Export dialog repeats distinction. Onboarding's timer-only fake health success removed;
+preference summary, network/HTTP save failure retained for retry, keyboard/theme controls.
+Two red tests → green, native-found light primary contrast red → standard `k-primary` fix.
+**164396c / 70aa16a** pushed main; full **1220 backend / 3 warnings**, **51 files / 374 frontend**,
+i18n **1312** per language, tsc/build/docs/truth/packaging/diff PASS. Final source
+**70aa16ab6b53c63c38b218891c8fae55e9395c95**, native arm64 canonical **13/13 / COMPLETE**;
+exact read-only mounted-DMG WKWebView/controller smoke PASS. Reports in
+`artifacts/evidence/p1-wp55/`: CI **6483873b…**, exact-DMG **5f7674a0…**, N05 **6a32a28f…**,
+installed operator acceptance. DMG **c32ff1067d4d28eb067ffbfd5a32cf79c787208a87cce4645c093c17a9eee295**;
+installed executable **aad6e8e46267f627791ed0845fc51344524881485178a480b5c3e267c346cd20**
+matches CI/DMG. **1.1.6 local source build**, strict/deep codesign PASS (ad-hoc).
+Final TR light/dark contrast verified; initial candidate DE/dark + EN/light unchanged guide
+text checked. Settings→Journal→forms/export and keyboard disclosure checked without saving.
+First-boot error/retry is isolated DOM evidence, not installed-profile reset/fresh-profile proof.
+Stopped DB unchanged across replacement; **5 trades / 24 events / 5 tracking rows**, ordered
+trade/event hashes unchanged after QA. Normal reopen TR/light/LITE verified. Backup of previous
+accepted bundle `/tmp/kuantra-wp55-update.j6uzLL/Kuantra Terminal.app`; contrast candidate
+`/tmp/kuantra-wp55-final-update.HZ2AOr/Kuantra Terminal.app`. No user backup/restore/reset/
+migration/secrets/Release/tag/Intel/workflow refresh. Public network is not runtime-offline proof.
+**N05 BLOCKED**, N03/H05/legal/gold/XM/helper obligations unchanged. Docs closure changes no binary.
 
 **WP54 complete + archived (2026-10-02):**
 [chart/tracking clarity and native acceptance](../archive/strategy/work-packages/P1-WP54-chart-tracking-clarity-ux.md).

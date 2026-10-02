@@ -1,0 +1,37 @@
+{
+  "kind": "operator_attestation",
+  "date": "2026-10-02",
+  "platform": "macOS 26.6.2 arm64",
+  "source_commit": "70aa16ab6b53c63c38b218891c8fae55e9395c95",
+  "installed_app": "/Applications/Kuantra Terminal.app",
+  "version": "1.1.6 local source build",
+  "executable_sha256": "aad6e8e46267f627791ed0845fc51344524881485178a480b5c3e267c346cd20",
+  "dmg_sha256": "c32ff1067d4d28eb067ffbfd5a32cf79c787208a87cce4645c093c17a9eee295",
+  "signature": "strict/deep verification PASS, ad-hoc, not Developer ID/notarized",
+  "native_checks": [
+    "Installed baseline Settings had no first-record/report/backup guidance",
+    "Optional collapsed help visible in Settings and Journal",
+    "Settings help opens Journal; Journal help opens existing New Trade and export modal",
+    "Opened forms/modal then canceled: no trade save or exported file",
+    "TR light Settings/help/export boundary and privacy warning readable",
+    "Candidate unchanged guide text checked DE dark and EN light; keyboard summary toggle/focus ring",
+    "Candidate 164396c failed primary-action light contrast; red recipe regression then 70aa16a fixed",
+    "Final 70aa16a TR light white-on-blue and TR dark dark-on-cyan primary action verified visually",
+    "Normal quit/reopen retains TR/light/LITE; first-boot wizard not forced on existing profile"
+  ],
+  "data_preservation": {
+    "stopped_database_sha256_before_and_after_replacements": "ef95c36ea2729a1dfa443bc8aa7d3f95e6e6ffa732558c84b8b3e061b4f9d03e",
+    "trade_count": 5,
+    "event_count": 24,
+    "tracking_projection_count": 5,
+    "ordered_trade_rows_sha256_before_after_qa": "f75212a540951ff32d10ca92689d0318486cad438217f531bb723099f92e5b70",
+    "ordered_event_rows_sha256_before_after_qa": "984bfec9de2f30d0f247d99d0506ca61e59684ab1ab84e1cef595a1fd3bd5da9"
+  },
+  "recoverable_backups": ["/tmp/kuantra-wp55-update.j6uzLL/Kuantra Terminal.app", "/tmp/kuantra-wp55-final-update.HZ2AOr/Kuantra Terminal.app"],
+  "limits": [
+    "First-boot failure/retry/keyboard branches are isolated DOM tests, not installed profile reset",
+    "No backup creation or restore drill on user data; guidance only",
+    "Public market startup network occurred; uv offline is not runtime offline evidence",
+    "No Release/tag/Intel/workflow refresh; N03/N05/H05/legal/XM/gold/helper obligations unchanged"
+  ]
+}

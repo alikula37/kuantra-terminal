@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP55-first-use-backup-guidance-ux.md"
+    "docs/strategy/work-packages/P1-WP56-update-guidance-ux.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -96,7 +96,8 @@
     "docs/archive/strategy/work-packages/P1-WP52-translation-readability-ux.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP53-form-simplicity-ux.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP54-chart-tracking-clarity-ux.md": "archived",
-    "docs/strategy/work-packages/P1-WP55-first-use-backup-guidance-ux.md": "current-work-package",
+    "docs/archive/strategy/work-packages/P1-WP55-first-use-backup-guidance-ux.md": "archived",
+    "docs/strategy/work-packages/P1-WP56-update-guidance-ux.md": "current-work-package",
     "docs/archive/strategy/work-packages/P1-WP40-mt5-html-report-preview.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP39-broker-observation-projection.md": "archived",
     "docs/strategy/work-packages/P1-WP32-pilot-journal-trust.md": "reference",
@@ -242,6 +243,7 @@
     "docs/archive/strategy/work-packages/P1-WP51-no-data-metrics-ux.md": 0,
     "docs/archive/strategy/work-packages/P1-WP52-translation-readability-ux.md": 0,
     "docs/archive/strategy/work-packages/P1-WP53-form-simplicity-ux.md": 0,
-    "docs/archive/strategy/work-packages/P1-WP54-chart-tracking-clarity-ux.md": 0
+    "docs/archive/strategy/work-packages/P1-WP54-chart-tracking-clarity-ux.md": 0,
+    "docs/archive/strategy/work-packages/P1-WP55-first-use-backup-guidance-ux.md": 0
   }
 }
