@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { ShieldCheck, ArrowRight, ArrowLeft, Check, Lock, Sun, Moon, Globe, Layers, Activity, CheckCircle2 } from "lucide-react";
+import React, { useState } from "react";
+import { ShieldCheck, ArrowRight, ArrowLeft, Check, Lock, Sun, Moon, Globe, Layers, Activity } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation, SUPPORTED_LOCALES } from "../../context/I18nContext";
 import { apiFetch, apiUrl } from "../../lib/backend";
@@ -17,40 +17,13 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
   const [tradingMode, setTradingMode] = useState<"external" | "simulation">("external");
   const [paperBalance, setPaperBalance] = useState<number>(100000.0);
 
-  // Verification stage
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [verificationProgress, setVerificationProgress] = useState<number>(0);
-  const [verificationLogs, setVerificationLogs] = useState<string[]>([]);
-  const [isReady, setIsReady] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (isOpen && currentStep === 4) {
-      runVerificationHandshake();
-    }
-  }, [isOpen, currentStep]);
-
-  const runVerificationHandshake = async () => {
-    setIsVerifying(true);
-    setVerificationProgress(20);
-    setVerificationLogs([t("onboarding.verification.checking_desktop_core")]);
-
-    await new Promise((r) => setTimeout(r, 400));
-    setVerificationProgress(50);
-    setVerificationLogs((prev) => [...prev, t("onboarding.verification.checking_sqlite")]);
-
-    await new Promise((r) => setTimeout(r, 400));
-    setVerificationProgress(80);
-    setVerificationLogs((prev) => [...prev, t("onboarding.verification.checking_duckdb")]);
-
-    await new Promise((r) => setTimeout(r, 400));
-    setVerificationProgress(100);
-    setVerificationLogs((prev) => [...prev, t("onboarding.verification.checking_websocket")]);
-
-    setIsVerifying(false);
-    setIsReady(true);
-  };
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   const handleFinish = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveError(false);
     try {
       const payload = {
         trading_mode: tradingMode,
@@ -70,18 +43,17 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
 
       if (res.ok) {
         onCompleted();
-      }
+      } else setSaveError(true);
     } catch (e) {
-      console.error("Onboarding completion error:", e);
-      onCompleted();
-    }
+      setSaveError(true);
+    } finally { setIsSaving(false); }
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 font-mono select-none">
-      <div className="bg-[#0d121c] border border-surface-border rounded-xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col space-y-4 p-6 text-slate-100">
+      <div role="dialog" aria-modal="true" aria-label={t("onboarding.wizard_title")} className="bg-surface border border-surface-border rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col space-y-4 p-6 text-ink">
         {/* Header */}
         <div className="border-b border-surface-border pb-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -89,18 +61,18 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
               K
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
                 {t("onboarding.wizard_title")}
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-sm text-muted">
                 {t("onboarding.wizard_subtitle")}
               </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            <span className="text-[10px] text-accent bg-[#111722] px-2.5 py-1 rounded border border-surface-border font-bold">
-              STEP {currentStep} OF 4
+            <span className="text-sm text-accent bg-elevated px-2.5 py-1 rounded border border-surface-border font-bold">
+              {t("first_use.step", { step: currentStep, total: 4 })}
             </span>
           </div>
         </div>
@@ -111,7 +83,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
             <div
               key={step}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                step <= currentStep ? "bg-accent" : "bg-[#1e293b]"
+                step <= currentStep ? "bg-accent" : "bg-soft"
               }`}
             />
           ))}
@@ -121,66 +93,71 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
         {currentStep === 1 && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+              <h3 className="text-base font-bold text-ink uppercase tracking-wider">
                 {t("onboarding.step1_title")}
               </h3>
-              <p className="text-[11px] text-slate-400">{t("onboarding.step1_desc")}</p>
+              <p className="text-sm text-muted">{t("first_use.manual")}</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-base">
               {/* External journal */}
               <div
+                role="button" tabIndex={0} aria-pressed={tradingMode === "external"}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTradingMode("external"); } }}
                 onClick={() => setTradingMode("external")}
                 className={`p-4 rounded-lg border cursor-pointer transition flex flex-col justify-between space-y-3 ${
                   tradingMode === "external"
-                    ? "bg-accent/10 border-accent text-white shadow-md"
-                    : "bg-[#111722] border-surface-border text-slate-300 hover:border-slate-600"
+                    ? "bg-accent/10 border-accent text-ink shadow-md"
+                    : "bg-elevated border-surface-border text-ink hover:border-slate-600"
                 }`}
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Activity className={`w-5 h-5 ${tradingMode === "external" ? "text-accent" : "text-slate-400"}`} />
+                    <Activity className={`w-5 h-5 ${tradingMode === "external" ? "text-accent" : "text-muted"}`} />
                     {tradingMode === "external" && <Check className="w-4 h-4 text-accent" />}
                   </div>
-                  <span className="font-bold text-xs block">{t("onboarding.mode.external_title")}</span>
-                  <p className="text-[10px] text-slate-400">{t("onboarding.mode.external_desc")}</p>
+                  <span className="font-bold text-base block">{t("onboarding.mode.external_title")}</span>
+                  <p className="text-sm text-muted">{t("onboarding.mode.external_desc")}</p>
                 </div>
-                <span className="text-[9px] bg-[#090d14] px-2 py-0.5 rounded border border-surface-border text-gain font-bold inline-block">
+                <span className="text-sm bg-deep px-2 py-0.5 rounded border border-surface-border text-gain font-bold inline-block">
                   {t("onboarding.mode.external_badge")}
                 </span>
               </div>
 
               {/* Explicit simulation */}
               <div
+                role="button" tabIndex={0} aria-pressed={tradingMode === "simulation"}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTradingMode("simulation"); } }}
                 onClick={() => setTradingMode("simulation")}
                 className={`p-4 rounded-lg border cursor-pointer transition flex flex-col justify-between space-y-3 ${
                   tradingMode === "simulation"
-                    ? "bg-amber-400/10 border-amber-400 text-white shadow-md"
-                    : "bg-[#111722] border-surface-border text-slate-300 hover:border-slate-600"
+                    ? "bg-amber-400/10 border-amber-400 text-ink shadow-md"
+                    : "bg-elevated border-surface-border text-ink hover:border-slate-600"
                 }`}
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Layers className={`w-5 h-5 ${tradingMode === "simulation" ? "text-amber-300" : "text-slate-400"}`} />
+                    <Layers className={`w-5 h-5 ${tradingMode === "simulation" ? "text-amber-300" : "text-muted"}`} />
                     {tradingMode === "simulation" && <Check className="w-4 h-4 text-amber-300" />}
                   </div>
-                  <span className="font-bold text-xs block">{t("onboarding.mode.simulation_title")}</span>
-                  <p className="text-[10px] text-slate-400">{t("onboarding.mode.simulation_desc")}</p>
+                  <span className="font-bold text-base block">{t("onboarding.mode.simulation_title")}</span>
+                  <p className="text-sm text-muted">{t("onboarding.mode.simulation_desc")}</p>
                 </div>
-                <span className="text-[9px] bg-[#090d14] px-2 py-0.5 rounded border border-surface-border text-amber-300 font-bold inline-block">
+                <span className="text-sm bg-deep px-2 py-0.5 rounded border border-surface-border text-amber-300 font-bold inline-block">
                   {t("onboarding.mode.simulation_badge")}
                 </span>
               </div>
             </div>
 
             {tradingMode === "simulation" && (
-              <div className="bg-[#111722] p-3 rounded-lg border border-surface-border space-y-1.5">
-                <span className="text-[10px] text-slate-400 block">{t("onboarding.mode.balance_label")}</span>
+              <div className="bg-elevated p-3 rounded-lg border border-surface-border space-y-1.5">
+                <span className="text-sm text-muted block">{t("onboarding.mode.balance_label")}</span>
                 <input
+                  aria-label={t("onboarding.mode.balance_label")}
                   type="number"
                   value={paperBalance}
                   onChange={(e) => setPaperBalance(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-[#090d14] border border-surface-border text-white text-xs px-3 py-1.5 rounded focus:outline-none focus:border-accent"
+                  className="w-full bg-deep border border-surface-border text-ink text-base px-3 py-1.5 rounded focus:outline-none focus:border-accent"
                 />
               </div>
             )}
@@ -193,14 +170,14 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
             <div>
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-accent" />
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                <h3 className="text-base font-bold text-ink uppercase tracking-wider">
                   {t("onboarding.step2_title")}
                 </h3>
               </div>
-              <p className="text-[11px] text-slate-400">{t("onboarding.step2_desc")}</p>
+              <p className="text-sm text-muted">{t("onboarding.step2_desc")}</p>
             </div>
 
-            <div className="bg-[#111722] p-4 rounded flex items-start space-x-3 text-[10px] text-slate-300" data-testid="onboarding-no-credentials">
+            <div className="bg-elevated p-4 rounded flex items-start space-x-3 text-sm text-ink" data-testid="onboarding-no-credentials">
               <Lock className="w-3.5 h-3.5 text-accent" />
               <span>{t("onboarding.vault.disabled_notice")}</span>
             </div>
@@ -211,19 +188,21 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
         {currentStep === 3 && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+              <h3 className="text-base font-bold text-ink uppercase tracking-wider">
                 {t("onboarding.step3_title")}
               </h3>
-              <p className="text-[11px] text-slate-400">{t("onboarding.step3_desc")}</p>
+              <p className="text-sm text-muted">{t("onboarding.step3_desc")}</p>
             </div>
 
             <div className="space-y-3">
-              <span className="text-[11px] font-bold text-white block">{t("onboarding.preferences.theme_label")}</span>
-              <div className="grid grid-cols-2 gap-3 text-xs">
+              <span className="text-sm font-bold text-ink block">{t("onboarding.preferences.theme_label")}</span>
+              <div className="grid grid-cols-2 gap-3 text-base">
                 <div
+                  role="button" tabIndex={0} aria-pressed={theme === "dark"}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme("dark"); } }}
                   onClick={() => setTheme("dark")}
                   className={`p-3 rounded-lg border cursor-pointer flex items-center space-x-3 ${
-                    theme === "dark" ? "bg-accent/15 border-accent text-white" : "bg-[#111722] border-surface-border text-slate-400"
+                    theme === "dark" ? "bg-accent/15 border-accent text-ink" : "bg-elevated border-surface-border text-muted"
                   }`}
                 >
                   <Moon className="w-4 h-4 text-accent" />
@@ -231,9 +210,11 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
                 </div>
 
                 <div
+                  role="button" tabIndex={0} aria-pressed={theme === "light"}
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTheme("light"); } }}
                   onClick={() => setTheme("light")}
                   className={`p-3 rounded-lg border cursor-pointer flex items-center space-x-3 ${
-                    theme === "light" ? "bg-accent/15 border-accent text-white" : "bg-[#111722] border-surface-border text-slate-400"
+                    theme === "light" ? "bg-accent/15 border-accent text-ink" : "bg-elevated border-surface-border text-muted"
                   }`}
                 >
                   <Sun className="w-4 h-4 text-amber-400" />
@@ -243,21 +224,23 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
             </div>
 
             <div className="space-y-3 pt-2">
-              <span className="text-[11px] font-bold text-white block">{t("onboarding.preferences.locale_label")}</span>
-              <div className="grid grid-cols-3 gap-3 text-xs">
+              <span className="text-sm font-bold text-ink block">{t("onboarding.preferences.locale_label")}</span>
+              <div className="grid grid-cols-3 gap-3 text-base">
                 {SUPPORTED_LOCALES.map((loc) => (
                   <div
                     key={loc.id}
+                    role="button" tabIndex={0} aria-pressed={locale === loc.id}
+                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLocale(loc.id); } }}
                     onClick={() => setLocale(loc.id)}
                     className={`p-3 rounded-lg border cursor-pointer flex items-center justify-between ${
-                      locale === loc.id ? "bg-accent/15 border-accent text-white" : "bg-[#111722] border-surface-border text-slate-400"
+                      locale === loc.id ? "bg-accent/15 border-accent text-ink" : "bg-elevated border-surface-border text-muted"
                     }`}
                   >
                     <div className="flex items-center space-x-2">
                       <Globe className="w-3.5 h-3.5 text-accent" />
                       <span className="font-bold">{loc.label}</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 font-mono">[{loc.flag}]</span>
+                    <span className="text-sm text-muted font-mono">[{loc.flag}]</span>
                   </div>
                 ))}
               </div>
@@ -269,44 +252,24 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
         {currentStep === 4 && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                {t("onboarding.step4_title")}
+              <h3 className="text-base font-bold text-ink uppercase tracking-wider">
+                {t("first_use.setup_summary")}
               </h3>
-              <p className="text-[11px] text-slate-400">{t("onboarding.step4_desc")}</p>
+              <p className="text-sm text-muted">{t("first_use.setup_boundary")}</p>
             </div>
 
-            {/* Progress */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span>{isVerifying ? t("onboarding.verification.running_diagnostics") : t("onboarding.verification.all_systems_go")}</span>
-                <span className="font-bold text-accent">{verificationProgress}%</span>
-              </div>
-              <div className="w-full bg-[#111722] h-2 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-accent transition-all duration-300"
-                  style={{ width: `${verificationProgress}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Diagnostic Logs */}
-            <div className="bg-[#090d14] p-3 rounded-lg border border-surface-border space-y-1 text-[11px] font-mono max-h-36 overflow-y-auto">
-              {verificationLogs.map((log, idx) => (
-                <div key={idx} className="flex items-center space-x-2 text-slate-300">
-                  <CheckCircle2 className="w-3 h-3 text-gain" />
-                  <span>{log}</span>
-                </div>
-              ))}
-            </div>
+            <p className="text-base">{tradingMode === "external" ? t("onboarding.mode.external_title") : t("onboarding.mode.simulation_title")} · {theme === "dark" ? t("onboarding.preferences.theme_dark") : t("onboarding.preferences.theme_light")} · {SUPPORTED_LOCALES.find(loc => loc.id === locale)?.label}</p>
+            <p className="text-sm text-warn">{t("first_use.report_boundary")}</p>
+            {saveError && <p role="alert" className="text-sm text-loss">{t("first_use.save_failed")}</p>}
           </div>
         )}
 
         {/* Navigation Buttons */}
-        <div className="border-t border-surface-border pt-4 flex items-center justify-between text-xs">
+        <div className="border-t border-surface-border pt-4 flex items-center justify-between text-base">
           {currentStep > 1 ? (
             <button
               onClick={() => setCurrentStep((prev) => prev - 1)}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded bg-[#111722] hover:bg-[#1a2333] text-slate-300 transition"
+              className="flex items-center space-x-1.5 px-3 py-2 rounded bg-elevated hover:bg-[#1a2333] text-ink transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>{t("onboarding.buttons.back")}</span>
@@ -326,7 +289,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
           ) : (
             <button
               onClick={handleFinish}
-              disabled={!isReady}
+              disabled={isSaving}
               className="flex items-center space-x-2 px-6 py-2.5 rounded bg-gain hover:bg-emerald-400 text-black font-bold transition shadow"
             >
               <span>{t("onboarding.verification.complete_btn")}</span>

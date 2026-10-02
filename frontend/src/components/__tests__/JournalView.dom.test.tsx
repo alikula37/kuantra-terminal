@@ -34,6 +34,22 @@ let root: ReturnType<typeof createRoot>;
 const props = { onOpenNewTrade: vi.fn() };
 const flush = async () => { await act(async () => { await Promise.resolve(); await Promise.resolve(); }); };
 
+it("offers no-CSV first record and real export actions in optional help without writing trades", async () => {
+  mocks.apiFetch.mockResolvedValue(response([]));
+  props.onOpenNewTrade.mockClear();
+  await act(async () => root.render(<JournalView {...props} />));
+  await flush();
+  const guide = host.querySelector('[data-testid=first-use-guide]') as HTMLDetailsElement;
+  expect(guide.open).toBe(false);
+  expect(guide.textContent).toContain("first_use.manual");
+  expect(guide.textContent).toContain("first_use.report_boundary");
+  await act(async () => Array.from(guide.querySelectorAll('button')).find(b => b.textContent === 'first_use.new_trade')!.click());
+  expect(props.onOpenNewTrade).toHaveBeenCalledOnce();
+  await act(async () => Array.from(guide.querySelectorAll('button')).find(b => b.textContent === 'first_use.reports')!.click());
+  expect(host.querySelector('[role=dialog]')?.getAttribute('aria-label')).toBe('journal_export.title');
+  expect(mocks.apiFetch.mock.calls.every(([, init]) => !init?.method || init.method === 'GET')).toBe(true);
+});
+
 beforeEach(() => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
   host = document.createElement("div");

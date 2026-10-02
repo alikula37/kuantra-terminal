@@ -1,4 +1,19 @@
 {
+  "first_use": {
+  "title": "İlk kayıt ve verilerini koruma",
+  "manual": "CSV gerekmez: Yeni İşlem ile başka yerde yaptığın işlemi gerçek zamanı ve açık/kapalı durumuyla kaydet. Kuantra borsaya emir göndermez.",
+  "simulation": "Deneme için formda açıkça Simülasyon seç. Yerel takip sonuçları tahmindir; broker doğrulamalı gerçekleşme değildir.",
+  "new_trade": "Yeni işlem",
+  "reports": "CSV / PDF raporları",
+  "open_journal": "İşlem günlüğünü aç",
+  "report_boundary": "CSV/PDF rapordur, geri yüklenebilir yedek değildir: tüm kanıt zincirini, takip planlarını ve tercihleri korumaz.",
+  "backup_boundary": "Burada tek tıkla tam yedekleme/geri yükleme yok. Mevcut teknik araçlar SQLite anlık kopyası ve doğrulanabilir geçiş paketi sağlar; güvenmeden önce destekli oluşturma/doğrulama ve ayrı temiz hedefte geri yükleme testi gerekir. Otomatik veya bulut yedekleme iddiası yoktur.",
+  "privacy": "Çıktılar işlem ve hesap bilgisi içerebilir. Paylaşmadan önce kontrol et; yedekleri özel tut. Ayıklanmış destek logları işlem yedeği değildir.",
+  "setup_summary": "Tercihlerini gözden geçir",
+  "setup_boundary": "Bu bir tercih özetidir; veritabanı, bağlantı veya broker sağlık kontrolü değildir. Kaydettikten sonra işlem günlüğünden başlayabilirsin.",
+  "save_failed": "Tercihler kaydedilemedi. Kurulum açık kalıyor; tekrar dene.",
+  "step": "Adım {step} / {total}"
+},
   "quote_quality": {
     "details": "Fiyat ayrıntıları",
     "unknown_time_short": "Fiyat zamanı doğrulanmadı",

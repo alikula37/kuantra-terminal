@@ -1,4 +1,19 @@
 {
+  "first_use": {
+  "title": "Getting started and protecting your records",
+  "manual": "No CSV needed: choose New Trade to record a trade made elsewhere, with its actual time and open/closed status. Kuantra does not send broker orders.",
+  "simulation": "For practice, explicitly choose Simulation in the form. Local tracking results are estimates, not broker-confirmed executions.",
+  "new_trade": "New trade",
+  "reports": "CSV / PDF reports",
+  "open_journal": "Open journal",
+  "report_boundary": "CSV/PDF are reports, not a restorable backup: they do not preserve the full evidence chain, tracking plans or preferences.",
+  "backup_boundary": "There is no one-click full backup/restore here. Existing technical tools provide SQLite snapshots and a verified migration bundle; use assisted creation/verification and a separate clean-target restore test before relying on them. No automatic or cloud backup is claimed.",
+  "privacy": "Exports may contain trading and account details. Review before sharing; keep backups private. Redacted support logs are not a trade backup.",
+  "setup_summary": "Review your preferences",
+  "setup_boundary": "This is a preference summary, not a database, connection or broker health check. After saving, start from the journal.",
+  "save_failed": "Preferences could not be saved. Setup stays open; try again.",
+  "step": "Step {step} of {total}"
+},
   "quote_quality": {
     "details": "Price details",
     "unknown_time_short": "Time unverified",

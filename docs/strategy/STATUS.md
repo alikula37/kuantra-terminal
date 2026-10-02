@@ -4,9 +4,10 @@
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP55 first-use/backup guidance](work-packages/P1-WP55-first-use-backup-guidance-ux.md).**
-Ready, not implemented. Reproduce existing onboarding/data-tool confusion before changing
-guidance. Distinguish reports from restorable backup; no automatic backup, user-data restore,
-reset, migration, broker or cloud capability expansion. Update guidance follows separately.
+InProgress: this change adds optional first-record/report/backup guidance and removes
+timer-based fictional onboarding health checks. Setup save failures stay open for retry.
+Red → green DOM evidence; clean-commit native/installed gates pending. No automatic backup,
+user-data restore/reset, migration, broker or cloud capability expansion. Update guidance follows separately.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
 **WP54 complete + archived (2026-10-02):**

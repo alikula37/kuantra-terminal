@@ -119,6 +119,8 @@ export const JournalExportModal: React.FC<{ onClose: () => void; filters: Journa
         </div>
 
         <div className="p-4 space-y-4 text-xs">
+          <p className="text-sm text-warn">{t("first_use.report_boundary")}</p>
+          <p className="text-sm text-muted">{t("first_use.privacy")}</p>
           <section className="space-y-2">
             <h3 className="text-slate-300 font-bold uppercase tracking-wide">{t("journal_export.scope")}</h3>
             <label className="flex items-start gap-2 text-slate-200">

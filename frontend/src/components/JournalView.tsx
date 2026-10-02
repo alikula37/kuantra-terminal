@@ -4,6 +4,7 @@ import { Filter, Plus, Pencil, BookOpen, Upload, FileCheck2, ClipboardCheck, Cal
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { TradeEvidencePanel } from "./TradeEvidencePanel";
+import { FirstUseGuide } from "./onboarding/FirstUseGuide";
 import { ReconciliationInbox } from "./ReconciliationInbox";
 import { WeeklyReviewPanel } from "./WeeklyReviewPanel";
 import { useOpenQuoteRefresh } from "../hooks/useOpenQuoteRefresh";
@@ -395,6 +396,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-hidden p-4 select-none font-sans">
+      <div className="shrink-0 pb-3"><FirstUseGuide onNewTrade={onOpenNewTrade} onExport={() => setExportOpen(true)} /></div>
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-surface-border">
         <div>
           <h2 className="text-lg font-bold text-white">{t("journal.title")}</h2>

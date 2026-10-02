@@ -28,6 +28,18 @@ beforeEach(() => {
   mocks.apiFetch.mockReset();
 });
 
+it("explains report vs assisted backup without creating a backup or writing data", async () => {
+  mocks.apiFetch.mockResolvedValue(response({ initial_balance: 1000 }));
+  const openJournal = vi.fn();
+  await act(async () => root.render(<SettingsView onOpenJournal={openJournal} />));
+  await flush();
+  expect(host.textContent).toContain("first_use.backup_boundary");
+  expect(host.textContent).toContain("first_use.privacy");
+  await act(async () => (host.querySelector('[data-testid=guidance-journal]') as HTMLButtonElement).click());
+  expect(openJournal).toHaveBeenCalledOnce();
+  expect(mocks.apiFetch.mock.calls.every(([, init]) => !init?.method || init.method === "GET")).toBe(true);
+});
+
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();

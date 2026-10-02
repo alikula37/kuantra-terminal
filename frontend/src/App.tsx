@@ -311,7 +311,7 @@ export default function App() {
             {activeTab === "mae_mfe" && <MaeMfeVisualizer />}
             {activeTab === "prop_shield" && <PropFirmShield />}
             {activeTab === "pivot_grid" && <PivotGrid />}
-            {activeTab === "settings" && <SettingsView />}
+            {activeTab === "settings" && <SettingsView onOpenJournal={() => setActiveTab("journal")} />}
           </Suspense>
         </main>
       </div>

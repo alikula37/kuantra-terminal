@@ -40,6 +40,24 @@ beforeEach(() => {
   mocks.apiFetch.mockReset();
 });
 
+it("shows a preference summary, not fabricated diagnostic success, and retains failed completion", async () => {
+  const completed = vi.fn();
+  mocks.apiFetch.mockRejectedValue(new Error("offline"));
+  await act(async () => root.render(<FirstBootWizard isOpen onCompleted={completed} />));
+  for (let i = 0; i < 3; i++) {
+    await act(async () => Array.from(host.querySelectorAll("button")).find(b => b.textContent?.includes("onboarding.buttons.next"))!.click());
+  }
+  expect(host.textContent).toContain("first_use.setup_summary");
+  expect(host.textContent).not.toContain("onboarding.verification.all_systems_go");
+  expect(host.textContent).not.toContain("onboarding.verification.checking_sqlite");
+  await act(async () => Array.from(host.querySelectorAll("button")).find(b => b.textContent?.includes("onboarding.verification.complete_btn"))!.click());
+  expect(completed).not.toHaveBeenCalled();
+  expect(host.querySelector('[role=alert]')?.textContent).toContain("first_use.save_failed");
+  mocks.apiFetch.mockResolvedValue(new Response("{}", { status: 200 }));
+  await act(async () => Array.from(host.querySelectorAll("button")).find(b => b.textContent?.includes("onboarding.verification.complete_btn"))!.click());
+  expect(completed).toHaveBeenCalledOnce();
+});
+
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
@@ -61,4 +79,18 @@ it("defaults to external journaling and does not collect live or credential inpu
   expect(host.querySelector("[data-testid=onboarding-no-credentials]")).not.toBeNull();
   expect(host.querySelector('input[type="password"]')).toBeNull();
   expect(host.textContent).toContain("onboarding.vault.disabled_notice");
+});
+
+it("supports keyboard mode selection and rejects HTTP completion failure", async () => {
+  const completed = vi.fn();
+  mocks.apiFetch.mockResolvedValue(new Response("{}", { status: 503 }));
+  await act(async () => root.render(<FirstBootWizard isOpen onCompleted={completed} />));
+  const simulation = Array.from(host.querySelectorAll('[role=button]')).find(b => b.textContent?.includes('onboarding.mode.simulation_title'))!;
+  await act(async () => simulation.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })));
+  expect(simulation.getAttribute('aria-pressed')).toBe('true');
+  for (let i = 0; i < 3; i++) await act(async () => Array.from(host.querySelectorAll('button')).find(b => b.textContent?.includes('onboarding.buttons.next'))!.click());
+  await act(async () => Array.from(host.querySelectorAll('button')).find(b => b.textContent?.includes('onboarding.verification.complete_btn'))!.click());
+  expect(completed).not.toHaveBeenCalled();
+  expect(host.querySelector('[role=alert]')).not.toBeNull();
+  expect(JSON.parse(mocks.apiFetch.mock.calls[0][1].body).trading_mode).toBe('simulation');
 });

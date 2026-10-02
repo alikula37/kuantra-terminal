@@ -1,4 +1,19 @@
 {
+  "first_use": {
+  "title": "Erste Schritte und Schutz deiner Aufzeichnungen",
+  "manual": "Keine CSV nötig: Erfasse über Neuer Trade einen anderswo ausgeführten Trade mit tatsächlicher Zeit und offenem/geschlossenem Status. Kuantra sendet keine Brokeraufträge.",
+  "simulation": "Wähle zum Üben ausdrücklich Simulation im Formular. Lokale Ergebnisse sind Schätzungen, keine vom Broker bestätigten Ausführungen.",
+  "new_trade": "Neuer Trade",
+  "reports": "CSV-/PDF-Berichte",
+  "open_journal": "Journal öffnen",
+  "report_boundary": "CSV/PDF sind Berichte, keine wiederherstellbare Sicherung: Beweiskette, Tracking-Pläne und Einstellungen werden nicht vollständig erhalten.",
+  "backup_boundary": "Hier gibt es keine vollständige Ein-Klick-Sicherung/Wiederherstellung. Vorhandene technische Werkzeuge liefern SQLite-Snapshots und ein prüfbares Migrationspaket; nutze unterstützte Erstellung/Prüfung und einen Wiederherstellungstest in einem separaten leeren Ziel, bevor du darauf vertraust. Keine automatische oder Cloud-Sicherung wird behauptet.",
+  "privacy": "Exporte können Handels- und Kontodaten enthalten. Vor dem Teilen prüfen; Sicherungen privat halten. Bereinigte Support-Logs sind keine Trade-Sicherung.",
+  "setup_summary": "Einstellungen prüfen",
+  "setup_boundary": "Dies ist eine Einstellungsübersicht, kein Datenbank-, Verbindungs- oder Broker-Gesundheitstest. Starte nach dem Speichern im Journal.",
+  "save_failed": "Einstellungen konnten nicht gespeichert werden. Die Einrichtung bleibt offen; erneut versuchen.",
+  "step": "Schritt {step} von {total}"
+},
   "quote_quality": {
     "details": "Preisdetails",
     "unknown_time_short": "Preiszeit nicht verifiziert",
