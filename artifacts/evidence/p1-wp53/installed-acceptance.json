@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "evidence_type": "operator_native_ui_and_install_attestation",
+  "work_package": "P1-WP53",
+  "observed_date_local": "2026-10-02",
+  "source_commit_sha": "d87fc99c35be8b961b12150245a5c575ad4e9e75",
+  "product_version": "1.1.6",
+  "distribution": "local source build; published Release unchanged",
+  "platform": "macOS 26.6.2 arm64",
+  "reports": {
+    "local-ci.json": "d5c54f946bd5b86b54c39b729eeee852daa1b7c4991003a213b8b920bba295ea",
+    "exact-dmg-smoke.json": "ecbf4dae7de89f5fdf12db8d9feea8f5bb3f3ea9800aa9d0a9c19bf2ba35f3e1",
+    "n05-preflight.json": "0dda9af8a4abd5083a1a27568d837c47fc112dbbe22f4ac6d9057c6171529e60"
+  },
+  "artifact": {
+    "filename": "Kuantra-Terminal-1.1.6-wp53-arm64.dmg",
+    "sha256": "471ce0ba7ae8fb0eb9d0bc996ca43738db1cac01c842d1bbdbdf7be760471d7d",
+    "exact_read_only_mounted_dmg_smoke": "PASS",
+    "mount_detached_after_install": true,
+    "ci_mounted_and_installed_executable_sha256": "919e3610436692a89218d8fe32c0a99ea9fde2c4cf6cce64e12b4f31fb507384"
+  },
+  "installation": {
+    "app_path": "/Applications/Kuantra Terminal.app",
+    "previous_bundle_backup": "/tmp/kuantra-wp53-update.xQZLD4/Kuantra Terminal.app",
+    "codesign_strict_deep": "PASS",
+    "signature_kind": "ad-hoc; no Developer ID/notarization",
+    "n05_status": "BLOCKED",
+    "runtime": "frozen native WKWebView app; visibly running after normal quit/reopen"
+  },
+  "preservation": {
+    "stopped_db_before_and_after_replacement_sha256": "803dab191661e65f3fd4b1f78b03860d86c1104638f5ad7aaba23750822c7f78",
+    "counts_before_and_after_native_qa": {"trades": 5, "evidence_events": 24, "local_tracking_projections": 5},
+    "ordered_trade_rows_before_and_after_sha256": "f75212a540951ff32d10ca92689d0318486cad438217f531bb723099f92e5b70",
+    "ordered_event_rows_before_and_after_sha256": "984bfec9de2f30d0f247d99d0506ca61e59684ab1ab84e1cef595a1fd3bd5da9",
+    "final_preferences": "TR/light/LITE; 3 hidden metrics; verified after normal quit/reopen",
+    "trade_mutation_or_migration_performed": false
+  },
+  "native_observations": [
+    "TR/light, EN/light and DE/dark New Trade samples at 1440x900 logical: fixed footer summary/actions visible at top and bottom of independent form body",
+    "TR New Trade optional broker and note drafts preserved across native disclosure click and keyboard Return toggles; discarded without save",
+    "Empty New Trade footer submit invokes WKWebView native required-field validation and scrolls/focuses entry input; no record produced",
+    "DE/dark and TR/light Edit: fixed Save/Close visible initially and while inspecting note/calculation details; existing note preserved",
+    "Journal Edit reachable with Option+Tab/Return; Edit Escape closes without save",
+    "Normal quit/reopen preserves TR/light/LITE and 3 hidden metrics"
+  ],
+  "automated_evidence": {
+    "red_to_green": "4 footer/disclosure regressions plus 2 validation-scroll regressions -> 40 focused green",
+    "backend": "1220 passed / 3 warnings; isolated data",
+    "frontend": "51 files / 366 passed",
+    "i18n": "1277/1277/1277",
+    "canonical_local_ci": "13/13 PASS; MERGE READY; COMPLETE; clean tracked source",
+    "tsc_build_docs_truth_packaging_diff": "PASS"
+  },
+  "limitations": [
+    "No financial/default/API/schema/provider/automatic-close changes",
+    "Native valid-save, conflict/partial-close and custom allocation errors are isolated DOM/API test evidence, not mutations of installed user data",
+    "WKWebView built-in empty-field popover follows OS language (English here); not a hardcoded application translation",
+    "Coordinate scroll/click automation reported noWindowsAvailable; accessibility click and keyboard navigation verified the form instead; no application crash observed",
+    "Operator screenshots inspected but not retained as committed assets; not all-small-window or all-app accessibility acceptance",
+    "Public market network occurred; uv --offline is dependency resolution only",
+    "N03/N05/H05/legal, independent gold/FX and real XM evidence obligations unchanged",
+    "No Release/tag/workflow or Intel artifact refresh; historical helper lifecycle follow-up remains open"
+  ]
+}

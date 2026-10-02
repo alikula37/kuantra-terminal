@@ -3,16 +3,36 @@
 
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP53 form simplicity](work-packages/P1-WP53-form-simplicity-ux.md).**
-Implemented; full clean-source gate and installed acceptance pending. Confirmed below-fold
-summary/actions and repeated sizing explanations; fixed footer plus collapsed optional
-venue/note/read-only details preserve required time/mode/source/size/target fields and
-revision/partial-close protections. Red **4 + 2** behavioral tests → **40 focused green**;
-full backend **1220 PASS / 3 warnings**, frontend **51 files / 366 PASS**, i18n **1277**
-per language, tsc/build/docs/truth/packaging/diff PASS. Clean-source CI and installed
-acceptance pending; no completion/native claim yet.
-No new financial defaults, provider fallback, accounting/API/schema/authority or Release/tag.
+**Selected work: [P1-WP54 chart/tracking clarity](work-packages/P1-WP54-chart-tracking-clarity-ux.md).**
+Ready, not implemented. Reproduce confusing history/source/freshness/automation-wait states
+and observed MAE/MFE English empty text before changing presentation. No expanded provider,
+financial, historical execution or automatic-close authority.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**WP53 complete + archived (2026-10-02):**
+[form simplicity and installed acceptance](../archive/strategy/work-packages/P1-WP53-form-simplicity-ux.md).
+New Trade/Edit now have fixed save/cancel and compact draft summaries. Optional broker/note
+and read-only calculation details fold without losing values; required fields and source/
+tracking warnings remain available. Custom validation/conflict alerts scroll into view.
+No financial/default/API/schema/provider/closure-rule changes. Red **4 + 2** → **40 focused**;
+full **1220 backend PASS / 3 warnings**, **51 files / 366 frontend PASS**, i18n **1277** per
+language, tsc/build/docs/truth/packaging/diff PASS. Implementation **d87fc99**, pushed main;
+binary source **d87fc99c35be8b961b12150245a5c575ad4e9e75**. Canonical native arm64 CI
+**13/13 / MERGE READY / COMPLETE**, exact read-only mounted-DMG WKWebView smoke PASS.
+Reports `artifacts/evidence/p1-wp53/`: CI `d5c54f94…`, exact-DMG `ecbf4dae…`, N05 `0dda9af8…`,
+installed acceptance. DMG SHA **471ce0ba7ae8fb0eb9d0bc996ca43738db1cac01c842d1bbdbdf7be760471d7d**;
+installed executable **919e3610436692a89218d8fe32c0a99ea9fde2c4cf6cce64e12b4f31fb507384**
+matches CI/mounted artifact. **1.1.6 local build**, codesign strict/deep PASS (ad-hoc).
+Native TR/EN light and DE dark form samples: footer visible, optional values preserved,
+keyboard disclosure/Edit navigation works, empty native submit focuses missing entry without
+recording. Edit TR/light and DE/dark inspected without save. Custom conflict/partial-close/
+successful-save scenarios are isolated DOM/API evidence, not installed journal mutations.
+Backup `/tmp/kuantra-wp53-update.xQZLD4/Kuantra Terminal.app`; stopped DB hash unchanged
+across replacement; ordered trade/event hashes and **5 trades / 24 events / 5 tracking rows**
+unchanged after native QA. TR/light/LITE and 3 hidden metrics verified after normal quit/reopen.
+No trade mutation/reset/migration/secrets or Release/tag/workflow/Intel refresh. Public market
+network occurred; no runtime-offline claim. **N05 BLOCKED**, N03/H05/legal/gold/XM and earlier
+helper lifecycle obligation unchanged. Docs closure does not change the binary source SHA.
 
 **WP52 complete + archived (2026-10-02):**
 [core translation/readability and native acceptance](../archive/strategy/work-packages/P1-WP52-translation-readability-ux.md).
@@ -89,8 +109,8 @@ Option+Tab/Escape focus workflow verified. User TR/light/LITE restored. Small-wi
 accessibility not claimed. Native startup uses public market network; `uv --offline` is not
 runtime offline proof. **N05 BLOCKED**; commercial-license, gold/XM and clean-profile gates open.
 
-**Observed follow-ups (not claimed closed by WP52):** long/scroll-heavy New Trade/Edit forms
-follow selected WP53. Weekly-review pale warning/raw diagnostic codes, MAE/MFE hardcoded
+**Observed follow-ups:** form-completion obstruction closed by WP53 (not an all-small-window
+redesign claim). Weekly-review pale warning/raw diagnostic codes, MAE/MFE hardcoded
 English no-history state and existing raw BUY/OPEN diagnostic labels need separate bounded
 presentation review; no all-app translation claim. Initial WP50 app quit left two multiprocessing
 helpers (PPID 1, no journal data handles found), safely SIGTERM-stopped before replacement;

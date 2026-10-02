@@ -1,16 +1,16 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
 # P1-WP53 — Simpler New Trade and Edit workflow
 
 ```yaml
 work_package: P1-WP53
-status: InProgress
+status: Complete
 date: 2026-10-02
 branch: main
 baseline: 793cab419ce4ae3aa3a1ae3eb9ea70b75919981a
 ```
 
-Next step in the owner-approved UX sequence after completed WP52. **Implemented; final
-clean-source CI/build and installed acceptance pending.** One form-presentation task, not a financial-model change.
+Owner-approved UX sequence after completed WP52. **Complete with clean-source CI,
+exact-DMG and installed acceptance.** One form-presentation task, not a financial-model change.
 WP29 external obligations and the observed outside-core translation/lifecycle follow-ups
 remain open. Release/tag and Intel refresh are not authorized.
 
@@ -48,11 +48,11 @@ do not hide a required financial/source warning merely to shorten the screen.
   fields preserve values and expose errors; summary/save/cancel are discoverable.
 - [x] Create/edit regressions cover empty/malformed inputs, backdated open/closed entries,
   unknown/delayed price, revision conflict, targets/partial closure and unchanged payloads.
-- [ ] EN/TR/DE, keyboard focus and light/dark visual samples pass without hardcoded new text;
+- [x] EN/TR/DE, keyboard focus and light/dark visual samples pass without hardcoded new text;
   relevant/full suites, i18n/typecheck/build, docs/truth/diff and canonical arm64 CI pass.
-- [ ] Commit/push main, clean-source exact-DMG/native smoke and installed acceptance with
+- [x] Commit/push main, clean-source exact-DMG/native smoke and installed acceptance with
   matching hashes, unchanged trade/evidence data and restored preferences. No Release/tag.
-- [ ] Update STATUS/registry with actual evidence; archive only after verified acceptance,
+- [x] Update STATUS/registry with actual evidence; archive only after verified acceptance,
   then select chart/tracking clarity under the existing roadmap. External obligations stay open.
 
 ## Planned file scope
@@ -86,3 +86,34 @@ require a separately evidenced defect and explicit bounded-scope evaluation.
   i18n **1277/1277/1277**, TypeScript and production build PASS. `check_docs.py` PASS
   (139 documents / 187 links / 5 startup); release truth v1.1.6, packaging preflight and
   `git diff --check` PASS. Clean-commit CI, exact-DMG and installed acceptance still pending.
+
+## Final delivery evidence — d87fc99
+
+- Source **d87fc99c35be8b961b12150245a5c575ad4e9e75**, pushed main. Canonical
+  `uv run --offline --no-project --with-requirements backend/requirements.lock python
+  scripts/run_local_ci.py --expected-architecture arm64 --report dist/p1-wp53-local-ci.json`:
+  **13/13 PASS / MERGE READY / COMPLETE**, clean tracked source. Backend 1220 / frontend 366.
+- Native arm64 package from that source and `smoke_macos_dmg.py` against the explicit
+  read-only mounted executable PASS. Reports: `artifacts/evidence/p1-wp53/` — local CI
+  `d5c54f94…`, exact-DMG `ecbf4dae…`, N05 `0dda9af8…`, installed acceptance attestation.
+  DMG **471ce0ba7ae8fb0eb9d0bc996ca43738db1cac01c842d1bbdbdf7be760471d7d**;
+  installed executable **919e3610436692a89218d8fe32c0a99ea9fde2c4cf6cce64e12b4f31fb507384**
+  matches CI/mounted-DMG. Codesign strict/deep PASS (ad-hoc), version **1.1.6 local build**.
+- Native TR/light and EN/light New Trade, DE/dark New Trade/Edit, TR/light Edit samples
+  at 1440×900 logical: footer summary/actions visible without initial scrolling and while
+  inspecting lower optional details. Native broker/note disclosure Return toggles preserve
+  draft values. Empty footer submission invokes native required-entry validation and focuses
+  the field without creating a record. Edit reachable via Option+Tab/Return; Escape closes.
+  Custom allocation/conflict/partial-close/valid-save states remain isolated DOM/API evidence,
+  not mutations of the installed journal. OS validation popover uses OS language (English).
+- Old bundle retained at `/tmp/kuantra-wp53-update.xQZLD4/Kuantra Terminal.app`.
+  Stopped DB SHA **803dab191661e65f3fd4b1f78b03860d86c1104638f5ad7aaba23750822c7f78**
+  unchanged across replacement. After native QA, **5 trades / 24 evidence events / 5 tracking
+  projections**, ordered trade/event hashes unchanged. TR/light/LITE and 3 hidden metrics
+  verified after normal quit/reopen. No successful trade mutation, reset, migration or secrets.
+- Coordinate CUA input reported `noWindowsAvailable`; accessibility/keyboard navigation
+  completed the checks; app remained running. Screenshots inspected, not retained as assets.
+  No all-small-window/all-app accessibility claim. Public market network occurred; dependency
+  resolution offline is not runtime isolation. **N05 BLOCKED**, N03/H05/legal/gold/XM and
+  historical helper lifecycle follow-ups remain open. No Release/tag/workflow/Intel refresh.
+  Next selected work: WP54 chart/tracking presentation clarity under the existing roadmap.
