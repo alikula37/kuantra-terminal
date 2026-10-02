@@ -143,6 +143,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [fetchNotice, setFetchNotice] = useState<string | null>(null);
   const [errors, setErrors] = useState<TradeFormErrors>({});
+  const formRef = useRef<HTMLFormElement | null>(null);
   const [quote, setQuote] = useState<MarketQuote | null>(null);
   const [priceOrigin, setPriceOrigin] = useState<"MANUAL" | "PUBLIC_QUOTE">("MANUAL");
   const quoteRequestRef = useRef<AbortController | null>(null);
@@ -153,6 +154,13 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
   );
 
   useEffect(() => () => quoteRequestRef.current?.abort(), []);
+
+  useEffect(() => {
+    const alert = formRef.current?.querySelector<HTMLElement>('[role="alert"]');
+    if (!alert) return;
+    alert.scrollIntoView?.({ block: "nearest" });
+    alert.closest("label")?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+  }, [errors]);
 
   useEffect(() => {
     if (isOpen) setTradeTime(istanbulInputValue());
@@ -494,7 +502,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-sm overflow-y-auto flex-1 pr-1">
+        <form id="new-trade-form" ref={formRef} onSubmit={handleSubmit} className="mt-4 space-y-4 text-sm overflow-y-auto flex-1 min-h-0 pr-1">
           {/* 1 — Trade */}
           <section className="k-card space-y-3" aria-labelledby="new-trade-section-trade">
             <h4 id="new-trade-section-trade" className="k-section-title flex items-center gap-2">
@@ -502,7 +510,9 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               {t("order_ticket.section_trade")}
             </h4>
 
-            <label className="block">
+            <details className="rounded border border-surface-border p-2" data-testid="new-trade-venue-details">
+              <summary className="k-section-title cursor-pointer">{t("order_ticket.venue_details")}</summary>
+            <label className="block mt-2">
               <span className="k-label">{t("order_ticket.execution_venue_label")}</span>
               <input
                 type="text"
@@ -512,6 +522,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 className="k-input mt-1"
               />
             </label>
+            </details>
 
             <div>
               <div data-testid="new-trade-selected-symbol" className="mb-2 rounded border border-accent/30 bg-[#0b0e14] px-3 py-2 text-accent text-base font-semibold">
@@ -809,7 +820,17 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 </label>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-sm rounded border border-surface-border bg-[#0b0e14] p-3">
+            <p className="k-help text-gain" data-testid="new-trade-usd-value-declared">
+              {t("order_ticket.usd_value_declared")}
+            </p>
+            {sizing.warnings.length > 0 && (
+              <p className="k-help text-warn">
+                {sizing.warnings.map((warning) => t(`order_ticket.warning_${warning}`)).join(" ")}
+              </p>
+            )}
+            <details className="rounded border border-surface-border p-2" data-testid="new-trade-sizing-details">
+              <summary className="k-section-title cursor-pointer">{t("order_ticket.calculation_details")}</summary>
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div className="min-w-0">
                 <span className="k-help block">{t("order_ticket.derived_notional")}</span>
                 <span className="font-semibold text-slate-100 break-words">{formatNotional(tradeSymbol, sizing.notional.value)}</span>
@@ -828,17 +849,8 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 <span className="k-help block">{t("order_ticket.derived_contract")}</span>
                 <span className="font-semibold text-slate-100 break-words">{t(`order_ticket.verification_${sizing.instrument.verification}`)}</span>
               </div>
-              <div className="col-span-full">
-                <p className="k-help text-gain" data-testid="new-trade-usd-value-declared">
-                  {t("order_ticket.usd_value_declared")}
-                </p>
-              </div>
-              {sizing.warnings.length > 0 && (
-                <p className="col-span-full k-help text-amber-300">
-                  {sizing.warnings.map((warning) => t(`order_ticket.warning_${warning}`)).join(" ")}
-                </p>
-              )}
             </div>
+            </details>
           </section>
 
           {/* 3 — Targets */}
@@ -904,8 +916,8 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
           </section>
 
           {/* 4 — Summary */}
-          <section className="k-card space-y-2" aria-labelledby="new-trade-section-summary" data-testid="new-trade-summary">
-            <h4 id="new-trade-section-summary" className="k-section-title">{t("order_ticket.section_summary")}</h4>
+          <details className="k-card space-y-2" aria-labelledby="new-trade-section-summary" data-testid="new-trade-summary">
+            <summary id="new-trade-section-summary" className="k-section-title cursor-pointer">{t("order_ticket.section_summary")}</summary>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <div className="flex justify-between gap-3 min-w-0"><dt className="text-slate-400">{t("order_ticket.col_symbol")}</dt><dd className="font-semibold break-words">{tradeSymbol}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-400">{t("order_ticket.position_type")}</dt><dd className="font-semibold">{t(`order_ticket.side_${positionType === "SPOT" ? "spot" : positionType === "LONG" ? "buy" : "sell"}`)}</dd></div>
@@ -931,14 +943,14 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                 })}
               </p>
             )}
-            {indicatorReached && (
-              <p role="status" className="text-sm text-amber-300">{t("order_ticket.price_already_reached_warning")}</p>
-            )}
             {sizing.marginEstimate.source === "UNKNOWN" && positionType !== "SPOT" && (
               <p className="k-help">{t("order_ticket.margin_unknown_notice")}</p>
             )}
-            <p className="k-help">{t("order_ticket.estimate_units_notice")}</p>
-          </section>
+          </details>
+          {indicatorReached && (
+            <p role="status" className="text-sm text-warn">{t("order_ticket.price_already_reached_warning")}</p>
+          )}
+          <p className="k-help">{t("order_ticket.estimate_units_notice")}</p>
 
           <details className="k-card" open={advancedOpen} onToggle={(event) => setAdvancedOpen((event.target as HTMLDetailsElement).open)}>
             <summary className="k-section-title cursor-pointer">{t("order_ticket.advanced")}</summary>
@@ -953,11 +965,20 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               />
             </label>
           </details>
-
+        </form>
+        <footer data-testid="new-trade-footer" className="shrink-0 mt-3 border-t border-surface-border pt-3 space-y-2">
+          <dl data-testid="new-trade-compact-summary" className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+            <div className="min-w-0"><dt className="text-muted">{t("order_ticket.col_symbol")}</dt><dd className="font-semibold break-words">{tradeSymbol} · {t(tradeStatus === "OPEN" ? "order_ticket.status_still_open" : "order_ticket.status_already_closed")}</dd></div>
+            <div><dt className="text-muted">{t("order_ticket.position_value_label")}</dt><dd className="font-semibold">{notionalSize ? formatPositionValue(Number(notionalSize)) : "—"} · {t("order_ticket.entry_label")}: {entryPrice || "—"}</dd></div>
+            <div className="col-span-2 text-muted break-words">{t("order_ticket.summary_time", { value: tradeTime.replace("T", " ") })}</div>
+          </dl>
+          <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={onClose} className="k-btn k-control">{t("order_ticket.cancel")}</button>
           <button
             type="submit"
+            form="new-trade-form"
             disabled={isSubmitting || isFetchingPrice || isSymbolSearchPending}
-            className={`k-btn w-full justify-center ${recordMode === "SIMULATION" ? "bg-amber-400 hover:bg-amber-300 text-black" : "k-primary"} disabled:opacity-60`}
+            className={`k-btn flex-1 justify-center ${recordMode === "SIMULATION" ? "bg-amber-400 hover:bg-amber-300 text-black" : "k-primary"} disabled:opacity-60`}
           >
             {isSubmitting ? (
               <>
@@ -973,7 +994,9 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
               </>
             )}
           </button>
-        </form>
+          </div>
+          <p className="k-help">{t("order_ticket.footer_notice")}</p>
+        </footer>
       </div>
     </div>
   );

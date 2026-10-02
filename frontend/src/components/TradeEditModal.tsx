@@ -86,6 +86,12 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
   const [planEnabled, setPlanEnabled] = useState(true);
   const [planError, setPlanError] = useState<string | null>(null);
   const loadRef = useRef<AbortController | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    scrollRef.current?.querySelector<HTMLElement>('[role="alert"], [data-testid="trade-edit-notice"]')
+      ?.scrollIntoView?.({ block: "nearest" });
+  }, [saveError, planError, notice]);
 
   const applyTrade = useCallback((next: Trade) => {
     setTrade(next);
@@ -413,7 +419,8 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
         )}
 
         {trade && !isLoading && (
-          <div className="mt-4 space-y-4 overflow-y-auto pr-1">
+          <>
+          <div ref={scrollRef} data-testid="trade-edit-scroll" className="mt-4 space-y-4 overflow-y-auto min-h-0 flex-1 pr-1">
             {notesOnly && (
               <p role="status" data-testid="trade-edit-closed-notice" className="rounded border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
                 {t("journal_edit.reason_closed_notes_only")}
@@ -615,7 +622,9 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                 </section>
               )}
 
-              <label className="block">
+              <details className="rounded border border-surface-border p-2" open={Boolean(trade.notes) || notesOnly} data-testid="trade-edit-note-details">
+                <summary className="k-section-title cursor-pointer">{t("order_ticket.advanced")}</summary>
+              <label className="block mt-2">
                 <span className="k-label">{t("order_ticket.notes_label")}</span>
                 <textarea
                   value={notes} disabled={false} rows={2}
@@ -623,25 +632,20 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                   className="k-input mt-1 min-h-16 py-2" aria-label={t("order_ticket.notes_label")}
                 />
               </label>
+              </details>
 
               <p className="k-help text-gain" data-testid="trade-edit-usd-value">
                 {t("order_ticket.usd_value_declared")}
               </p>
-              {sizing && (
-                <p className="k-help">
-                  {t(`order_ticket.verification_${sizing.instrument.verification}`)}
-                </p>
-              )}
-
-              {sizing && (
-                <p className="k-help">
-                  {t("journal_edit.sizing_summary", {
-                    notional: formatNotional(trade.symbol, sizing.notional.value),
-                    margin: formatNotional(trade.symbol, sizing.marginEstimate.value),
-                    leverage: sizing.leverage.value ?? "—",
-                  })}
-                </p>
-              )}
+              {sizing && <details className="rounded border border-surface-border p-2">
+                <summary className="k-section-title cursor-pointer">{t("order_ticket.calculation_details")}</summary>
+                <p className="k-help mt-2">{t(`order_ticket.verification_${sizing.instrument.verification}`)}</p>
+                <p className="k-help">{t("journal_edit.sizing_summary", {
+                  notional: formatNotional(trade.symbol, sizing.notional.value),
+                  margin: formatNotional(trade.symbol, sizing.marginEstimate.value),
+                  leverage: sizing.leverage.value ?? "—",
+                })}</p>
+              </details>}
             </section>
 
             <section className="k-card space-y-2">
@@ -673,33 +677,6 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
               </div>
             )}
             {notice && <p role="status" data-testid="trade-edit-notice" className="text-sm text-gain">{notice}</p>}
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button" data-testid="trade-edit-save"
-                  onClick={() => void save()}
-                  disabled={isSaving}
-                  className="k-btn k-primary disabled:opacity-50"
-                >
-                  {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {isSaving ? t("journal_edit.saving") : t("journal_edit.save")}
-                </button>
-                {trade.status === "CLOSED" && onOpenReplay && (
-                  <button
-                    type="button" data-testid="trade-edit-replay"
-                    onClick={() => onOpenReplay(trade.id)}
-                    className="k-btn border border-surface-border text-slate-200 hover:bg-[#1f2d47]"
-                  >
-                    <PlayCircle className="w-4 h-4 text-accent" />
-                    {t("journal_edit.open_replay")}
-                  </button>
-                )}
-              </div>
-              <button type="button" onClick={onClose} className="k-btn border border-surface-border text-slate-300 hover:bg-[#1f2d47]">
-                {t("journal_edit.cancel")}
-              </button>
-            </div>
 
             <section className="k-card">
               <button
@@ -735,6 +712,41 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
               )}
             </section>
           </div>
+          <footer data-testid="trade-edit-footer" className="shrink-0 mt-3 border-t border-surface-border pt-3 space-y-2">
+            <div className="flex flex-wrap justify-between gap-2 text-sm">
+              <span className="font-semibold">{trade.symbol} · {t(statusSelection === "OPEN" ? "journal_edit.status_open" : statusSelection === "CLOSED" ? "journal_edit.status_closed" : "journal_edit.status_canceled")}</span>
+              <span>{t("order_ticket.col_size")}: {qty || "—"} · {t("order_ticket.entry_label")}: {entryPrice || "—"}</span>
+              <span className="text-muted">{t("order_ticket.summary_time", { value: entryTime.replace("T", " ") })}</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button" data-testid="trade-edit-save"
+                  onClick={() => void save()}
+                  disabled={isSaving}
+                  className="k-btn k-primary disabled:opacity-50"
+                >
+                  {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {isSaving ? t("journal_edit.saving") : t("journal_edit.save")}
+                </button>
+                {trade.status === "CLOSED" && onOpenReplay && (
+                  <button
+                    type="button" data-testid="trade-edit-replay"
+                    onClick={() => onOpenReplay(trade.id)}
+                    className="k-btn border border-surface-border text-slate-200 hover:bg-[#1f2d47]"
+                  >
+                    <PlayCircle className="w-4 h-4 text-accent" />
+                    {t("journal_edit.open_replay")}
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={onClose} className="k-btn border border-surface-border text-slate-300 hover:bg-[#1f2d47]">
+                {t("journal_edit.cancel")}
+              </button>
+            </div>
+            <p className="k-help">{t("order_ticket.footer_notice")}</p>
+          </footer>
+          </>
         )}
       </div>
     </div>

@@ -155,6 +155,49 @@ afterEach(async () => {
   host.remove();
 });
 
+it("keeps edit actions and changed-size summary outside the scrolling content", async () => {
+  respond(openTrade);
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+  const footer = host.querySelector('[data-testid="trade-edit-footer"]');
+  expect(footer).not.toBeNull();
+  expect(footer?.querySelector('[data-testid="trade-edit-save"]')).not.toBeNull();
+  expect(footer?.closest('[data-testid="trade-edit-scroll"]')).toBeNull();
+  await act(async () => setInputValue(host.querySelector('[data-testid="trade-edit-qty"]') as HTMLInputElement, "300"));
+  expect(footer?.textContent).toContain("300");
+});
+
+it("opens an existing note, retains it when collapsed, and saves it unchanged with a size correction", async () => {
+  const captured = respond({ ...openTrade, notes: "source note" });
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+  await flush();
+  const disclosure = host.querySelector('[data-testid="trade-edit-note-details"]') as HTMLDetailsElement;
+  expect(disclosure?.open).toBe(true);
+  await act(async () => { disclosure.open = false; });
+  expect(host.querySelector('textarea')?.value).toBe("source note");
+  await act(async () => setInputValue(host.querySelector('[data-testid="trade-edit-qty"]') as HTMLInputElement, "3"));
+  await act(async () => (host.querySelector('[data-testid="trade-edit-save"]') as HTMLButtonElement).click());
+  expect(captured.patch).toMatchObject({ expected_revision: 1, qty: 3 });
+  expect(captured.patch).not.toHaveProperty('notes');
+});
+
+it("scrolls a revision conflict into view without losing the edited value", async () => {
+  const scroll = vi.fn();
+  const previous = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = scroll;
+  try {
+    respond(openTrade, { patchStatus: 409 });
+    await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={vi.fn()} />));
+    await flush();
+    await act(async () => setInputValue(host.querySelector('[data-testid="trade-edit-qty"]') as HTMLInputElement, "3"));
+    await act(async () => (host.querySelector('[data-testid="trade-edit-save"]') as HTMLButtonElement).click());
+    await flush();
+    expect(scroll).toHaveBeenCalled();
+    expect((host.querySelector('[data-testid="trade-edit-qty"]') as HTMLInputElement).value).toBe("3");
+    expect(host.querySelector('[data-testid="trade-edit-reload"]')).not.toBeNull();
+  } finally { Element.prototype.scrollIntoView = previous; }
+});
+
 it("loads the trade and saves changed fields with the expected revision", async () => {
   const trade = { ...openTrade };
   const captured = respond(trade);

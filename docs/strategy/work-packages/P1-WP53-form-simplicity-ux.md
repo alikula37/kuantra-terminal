@@ -3,14 +3,14 @@
 
 ```yaml
 work_package: P1-WP53
-status: Ready
+status: InProgress
 date: 2026-10-02
 branch: main
 baseline: 793cab419ce4ae3aa3a1ae3eb9ea70b75919981a
 ```
 
-Next step in the owner-approved UX sequence after completed WP52. **Selected, not yet
-implemented.** This is one bounded form-presentation task, not a financial-model change.
+Next step in the owner-approved UX sequence after completed WP52. **Implemented; final
+clean-source CI/build and installed acceptance pending.** One form-presentation task, not a financial-model change.
 WP29 external obligations and the observed outside-core translation/lifecycle follow-ups
 remain open. Release/tag and Intel refresh are not authorized.
 
@@ -42,11 +42,11 @@ do not hide a required financial/source warning merely to shorten the screen.
 
 ## Acceptance
 
-- [ ] Reproduce the current form-completion obstruction and freeze red behavioral/DOM tests;
+- [x] Reproduce the current form-completion obstruction and freeze red behavioral/DOM tests;
   inspect current create/edit validation and payload contracts before changing presentation.
-- [ ] Required information, safety warnings and explicit choices remain available; progressive
+- [x] Required information, safety warnings and explicit choices remain available; progressive
   fields preserve values and expose errors; summary/save/cancel are discoverable.
-- [ ] Create/edit regressions cover empty/malformed inputs, backdated open/closed entries,
+- [x] Create/edit regressions cover empty/malformed inputs, backdated open/closed entries,
   unknown/delayed price, revision conflict, targets/partial closure and unchanged payloads.
 - [ ] EN/TR/DE, keyboard focus and light/dark visual samples pass without hardcoded new text;
   relevant/full suites, i18n/typecheck/build, docs/truth/diff and canonical arm64 CI pass.
@@ -61,3 +61,28 @@ do not hide a required financial/source warning merely to shorten the screen.
 helpers/styles if necessary, form DOM tests, EN/TR/DE locales, this WP and STATUS/registry.
 Backend tests may be run to establish unchanged contracts; backend implementation changes
 require a separately evidenced defect and explicit bounded-scope evaluation.
+
+## Implementation evidence — this change
+
+- Installed WP52 form observation and source inspection confirmed summary/save below the
+  initial viewport and repeated sizing explanations. No real user trade was saved/changed.
+  Added four DOM regressions: fixed actions/native form association, compact draft summary,
+  collapsed optional venue persistence and existing-note persistence. **4 red / 34 existing
+  green → 38 green**. Two more red tests reproduced hidden allocation/conflict feedback
+  after fixed-footer submission; scoped scroll-to-alert behavior → **40 focused green**.
+- Create/Edit actions are now outside the scrolling body, with a live compact draft summary.
+  New Trade keeps a native form-associated submit button (`form=new-trade-form`), including
+  existing busy/unconfirmed-symbol disabling and native validation. Required time/status/
+  entry/size, declared leverage and TP/SL controls stay unfolded; only venue/note and read-only
+  calculation/detail explanations fold. Values stay mounted and enter the identical payload.
+  Existing edit notes open initially; partial-close/revision/close protections stay unchanged.
+- Source/unknown/delayed/contract warnings, reached-level warning and tracking disclaimer
+  remain outside collapsed explanations; fixed footer reiterates record-only/no broker orders
+  and fee/funding exclusion. No leverage multiplication, source fallback, inferred closure,
+  new defaults or backend/API/schema changes. Edit compact size uses neutral quantity/size
+  wording rather than asserting legacy entries are already USD. EN/TR/DE add three matching
+  keys; native presentation acceptance and full gate not yet claimed.
+- Full isolated backend: **1220 passed / 3 warnings**; frontend: **51 files / 366 passed**;
+  i18n **1277/1277/1277**, TypeScript and production build PASS. `check_docs.py` PASS
+  (139 documents / 187 links / 5 startup); release truth v1.1.6, packaging preflight and
+  `git diff --check` PASS. Clean-commit CI, exact-DMG and installed acceptance still pending.

@@ -676,7 +676,10 @@
     "summary_quantity_notional": "Menge {qty} · Nominal {notional}",
     "price_already_reached_warning": "Der aktuelle Preis scheint ein Ziel bereits überschritten zu haben. Die lokale Verfolgung beginnt mit der nächsten geeigneten Beobachtung; die Lücke gilt nicht als realisierte Bewegung.",
     "margin_unknown_notice": "Ohne angegebenen Hebel wird keine Margin-Schätzung gezeigt.",
-    "advanced": "Erweitert: Notiz",
+    "advanced": "Optionale Notiz",
+    "venue_details": "Broker / Plattform (optional)",
+    "calculation_details": "Berechnungsdetails",
+    "footer_notice": "Nur Aufzeichnungen; keine Brokeraufträge. Lokale Schätzungen ohne Gebühren und Funding.",
     "errors": {
       "entry_required": "Einstiegspreis ist erforderlich.",
       "qty_required": "Menge ist erforderlich.",

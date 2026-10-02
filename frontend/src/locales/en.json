@@ -676,7 +676,10 @@
     "summary_quantity_notional": "Quantity {qty} · Notional {notional}",
     "price_already_reached_warning": "The current price already appears beyond a target. Local tracking starts evaluating from the next eligible observation; the gap is not treated as a realized move.",
     "margin_unknown_notice": "No margin estimate is shown without declared leverage.",
-    "advanced": "Advanced: note",
+    "advanced": "Optional note",
+    "venue_details": "Broker / platform (optional)",
+    "calculation_details": "Calculation details",
+    "footer_notice": "Records only; no broker orders. Local estimates exclude fees and funding.",
     "errors": {
       "entry_required": "Entry price is required.",
       "qty_required": "Quantity is required.",

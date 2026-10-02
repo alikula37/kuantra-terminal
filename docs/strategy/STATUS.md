@@ -4,9 +4,13 @@
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP53 form simplicity](work-packages/P1-WP53-form-simplicity-ux.md).**
-Ready, not yet implemented. Next approved step: reproduce the long New Trade/Edit journey,
-reduce repeated explanations and present optional fields progressively, while preserving
-required time/mode/source/size/target validation and revision/partial-close protections.
+Implemented; full clean-source gate and installed acceptance pending. Confirmed below-fold
+summary/actions and repeated sizing explanations; fixed footer plus collapsed optional
+venue/note/read-only details preserve required time/mode/source/size/target fields and
+revision/partial-close protections. Red **4 + 2** behavioral tests → **40 focused green**;
+full backend **1220 PASS / 3 warnings**, frontend **51 files / 366 PASS**, i18n **1277**
+per language, tsc/build/docs/truth/packaging/diff PASS. Clean-source CI and installed
+acceptance pending; no completion/native claim yet.
 No new financial defaults, provider fallback, accounting/API/schema/authority or Release/tag.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 

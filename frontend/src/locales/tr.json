@@ -676,7 +676,10 @@
     "summary_quantity_notional": "Miktar {qty} · Nominal {notional}",
     "price_already_reached_warning": "Güncel fiyat hedeflerden birini geçmiş görünüyor. Yerel takip kayıttan sonraki ilk uygun gözlemle başlar; aradaki hareket gerçekleşmiş sayılmaz.",
     "margin_unknown_notice": "Kaldıraç girilmediği için teminat tahmini gösterilmiyor.",
-    "advanced": "Gelişmiş: not",
+    "advanced": "İsteğe bağlı not",
+    "venue_details": "Broker / platform (isteğe bağlı)",
+    "calculation_details": "Hesap ayrıntıları",
+    "footer_notice": "Yalnız kayıt; borsaya emir gönderilmez. Yerel tahminler ücret ve funding içermez.",
     "errors": {
       "entry_required": "Giriş fiyatı gerekli.",
       "qty_required": "Miktar gerekli.",

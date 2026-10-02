@@ -73,6 +73,61 @@ const renderModal = () => {
   return { onClose };
 };
 
+it("keeps summary and submission outside the scrolling form and preserves native form submission", async () => {
+  const close = vi.fn();
+  mocks.apiFetch.mockResolvedValue(response(savedTrade));
+  await act(async () => root.render(<NewTradeModal isOpen onClose={close} />));
+  const footer = host.querySelector('[data-testid="new-trade-footer"]');
+  expect(footer).not.toBeNull();
+  expect(footer?.closest('form')).toBeNull();
+  expect(footer?.querySelector('[data-testid="new-trade-compact-summary"]')).not.toBeNull();
+  const submit = footer?.querySelector('button[type="submit"]') as HTMLButtonElement;
+  expect(submit?.form).toBe(host.querySelector('form'));
+  await act(async () => setInputValue(host.querySelector('input[type="number"]') as HTMLInputElement, "100"));
+  await act(async () => setInputValue(host.querySelectorAll('input[type="number"]')[1] as HTMLInputElement, "1000"));
+  expect(footer?.textContent).toContain("$1,000");
+  await act(async () => submit.click());
+  await flush();
+  const payload = JSON.parse(String(mocks.apiFetch.mock.calls.at(-1)?.[1]?.body));
+  expect(payload).toMatchObject({ notional_size: 1000, entry_price: 100, qty_unit: "USD", record_mode: "EXTERNAL" });
+  expect(close).toHaveBeenCalledOnce();
+});
+
+it("folds optional venue and sizing explanations without dropping a entered venue", async () => {
+  mocks.apiFetch.mockResolvedValue(response(savedTrade));
+  await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+  const venue = host.querySelector('[data-testid="new-trade-venue-details"]') as HTMLDetailsElement;
+  const sizing = host.querySelector('[data-testid="new-trade-sizing-details"]') as HTMLDetailsElement;
+  expect(venue).not.toBeNull();
+  expect(venue?.open).toBe(false);
+  expect(sizing?.open).toBe(false);
+  await act(async () => { venue.open = true; });
+  const input = venue.querySelector('input') as HTMLInputElement;
+  await act(async () => setInputValue(input, "XM demo"));
+  await act(async () => { venue.open = false; });
+  expect(input.value).toBe("XM demo");
+  await act(async () => setInputValue(host.querySelector('input[type="number"]') as HTMLInputElement, "100"));
+  await act(async () => setInputValue(host.querySelectorAll('input[type="number"]')[1] as HTMLInputElement, "1000"));
+  await act(async () => host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  expect(JSON.parse(String(mocks.apiFetch.mock.calls.at(-1)?.[1]?.body)).execution_venue).toBe("XM demo");
+});
+
+it("scrolls a target allocation error into view when submitting from the fixed footer", async () => {
+  const scroll = vi.fn();
+  const previous = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = scroll;
+  try {
+    await act(async () => root.render(<NewTradeModal isOpen onClose={vi.fn()} />));
+    await act(async () => setInputValue(host.querySelector('input[type="number"]') as HTMLInputElement, "100"));
+    await act(async () => setInputValue(host.querySelectorAll('input[type="number"]')[1] as HTMLInputElement, "1000"));
+    await act(async () => setInputValue(host.querySelector('[aria-label="tracking.price:1"]') as HTMLInputElement, "110"));
+    await act(async () => host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(host.querySelector('[data-testid="new-trade-error-target"]')).not.toBeNull();
+    expect(scroll).toHaveBeenCalled();
+    expect(mocks.apiFetch).not.toHaveBeenCalled();
+  } finally { Element.prototype.scrollIntoView = previous; }
+});
+
 beforeEach(async () => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
   host = document.createElement("div");
