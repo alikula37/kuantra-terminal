@@ -103,3 +103,13 @@ need sampled core-workflow inspection, not a claim that every screen has been au
   preference is now applied before controls mount (native storage may be empty). Theme
   transforms/shadows remain, user toggles still beat late responses. The earlier candidate
   is not accepted; final build/native checks must prove the first launch, not just a toggle.
+- Native **70ecb85** cold light and cold dark launch both showed coherent header/nav/control
+  colors without a theme roundtrip. Further DE/light journal/edit sampling found two more
+  bounded defects: fixed amber-500 quote-quality ink unreadable on light surfaces, and edit
+  tracking-start date using Turkish month text in EN/DE. QuoteQuality now shares the tested
+  theme warning/muted tokens; all three edit date displays pass the active locale while
+  preserving Europe/Istanbul. Red **3 failures** → **31 focused PASS**. A new clean-source
+  build is required for these final changes. An accidentally opened weekly-review panel
+  revealed separate legacy pale warning text/raw diagnostic codes; no review was saved.
+  That panel is outside the selected core form scope and remains a visible follow-up, not
+  an all-app translation/accessibility claim.

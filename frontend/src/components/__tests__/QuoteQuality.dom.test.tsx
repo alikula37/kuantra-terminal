@@ -58,3 +58,19 @@ it("compact disclosure never conceals delayed or unknown quality and retains the
   expect(host.querySelector("details")?.previousElementSibling?.textContent).toContain("quote_quality.unknown_time_short");
   expect(host.querySelector("details")?.textContent).toContain("quote_quality.unknown_time");
 });
+
+it("uses contrast-tested theme warning ink for delayed and unknown quote disclosures", async () => {
+  for (const compact of [false, true]) {
+    for (const timestamp_basis of ["CANDLE_OPEN", "UNKNOWN"] as const) {
+      await act(async () => root.render(<QuoteQuality compact={compact} quote={{ ...quote,
+        timestamp_basis, candle_interval: "1h" }} />));
+      const status = host.querySelector("[data-quote-status]")?.firstElementChild;
+      expect(status?.classList.contains("text-warn")).toBe(true);
+      const warnings = Array.from(host.querySelectorAll("span"))
+        .filter(span => span.children.length === 0 && /quote_quality\.(display_only|unknown_time|stale)/.test(span.textContent || ""));
+      expect(warnings.length).toBeGreaterThan(0);
+      for (const warning of warnings) expect(warning.classList.contains("text-warn")).toBe(true);
+      expect(host.querySelector('[class*="text-amber-"]')).toBeNull();
+    }
+  }
+});

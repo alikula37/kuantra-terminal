@@ -54,7 +54,7 @@ interface TradeEditModalProps {
 }
 
 export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose, onSaved, onOpenReplay }) => {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [trade, setTrade] = useState<Trade | null>(null);
   const [tracking, setTracking] = useState<TrackingState | null>(null);
   const [revisions, setRevisions] = useState<TradeRevision[]>([]);
@@ -364,7 +364,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
             <span className="block k-help">
               {t("journal_edit.quote_last_known", {
                 price: quote.last_known.price,
-                time: formatIstanbulDateTime(quote.last_known.observed_at),
+                time: formatIstanbulDateTime(quote.last_known.observed_at, locale),
               })}
             </span>
           )}
@@ -447,7 +447,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                 <div className="text-right k-help">
                   <span className="block">{t("journal_edit.revision", { value: trade.revision ?? 1 })}</span>
                   {trade.tracking_started_at && (
-                    <span className="block">{t("journal_edit.tracking_started", { time: formatIstanbulDateTime(trade.tracking_started_at) })}</span>
+                    <span className="block">{t("journal_edit.tracking_started", { time: formatIstanbulDateTime(trade.tracking_started_at, locale) })}</span>
                   )}
                 </div>
               </div>
@@ -721,7 +721,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
                     <div key={revision.event_id} className="rounded border border-surface-border p-2 text-sm">
                       <div className="flex justify-between">
                         <span className="font-semibold">{t("journal_edit.revision", { value: revision.revision ?? "?" })}</span>
-                        <span className="k-help">{formatIstanbulDateTime(revision.occurred_at_utc)}</span>
+                        <span className="k-help">{formatIstanbulDateTime(revision.occurred_at_utc, locale)}</span>
                       </div>
                       {Object.entries(revision.changed_fields).map(([field, change]) => (
                         <p key={field} className="k-help">

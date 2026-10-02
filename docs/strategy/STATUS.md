@@ -9,10 +9,14 @@ filled accents disappeared), locale settings-response race, truncated sidebar la
 stale base-quantity/institutional execution copy. Shared color/ink/focus recipes, core sans
 labels and accurate EN/TR/DE wording fixed; red **11 failures** → frontend **51/353 PASS**,
 i18n **1274** per language, tsc/build/docs/truth/diff PASS; full backend **1220 PASS / 3 warnings**.
-Two clean-source candidates passed arm64 CI (13/13 COMPLETE), but native **59ecbd0**
-first light launch still mixed dark header/nav colors. Red child-first-layout tests reproduced
-initialization after child mounting; pre-paint theme initialization/mount gate added.
-Final clean-source rebuild and installed acceptance pending; no false closure. No financial formula/provider/
+Native **59ecbd0 / 0c7c6fc** first light launch still mixed dark header/nav colors despite
+passing CI. Deferred persisted-theme read / bounded fallback and shared-control color
+transition fix at **70ecb85** passed cold light and cold dark installed launch. Further
+DE/light journal/edit review found pale delayed-quote ink and Turkish month text in edit
+dates: red **3 failures** → **31 focused PASS**, full frontend **51/360 PASS**. Both fixed
+in this change; final clean-source rebuild and installed recheck pending. No false closure.
+Weekly-review pale warning/raw diagnostic copy is an observed separate follow-up, not
+claimed fixed by this core form package. No financial formula/provider/
 schema/authority changes or Release/tag. See selected WP52 for bounded contract/evidence.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 

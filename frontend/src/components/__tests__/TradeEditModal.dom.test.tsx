@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   apiFetch: vi.fn(),
+  locale: "tr",
   t: (key: string, params?: Record<string, string | number>) =>
     params ? `${key}:${Object.values(params).join("|")}` : key,
 }));
@@ -13,11 +14,11 @@ vi.mock("../../lib/backend", () => ({
   apiFetch: mocks.apiFetch,
 }));
 vi.mock("../../context/I18nContext", () => ({
-  useTranslation: () => ({ t: mocks.t, locale: "tr" }),
+  useTranslation: () => ({ t: mocks.t, locale: mocks.locale }),
 }));
 
 import { TradeEditModal } from "../TradeEditModal";
-import { istanbulInputToUtcIso } from "../../lib/tradeTime";
+import { formatIstanbulDateTime, istanbulInputToUtcIso } from "../../lib/tradeTime";
 
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -136,6 +137,17 @@ beforeEach(async () => {
   const { createRoot } = await import("react-dom/client");
   root = createRoot(host);
   mocks.apiFetch.mockReset();
+  mocks.locale = "tr";
+});
+
+it.each(["en", "de"])("formats tracking start in the selected %s language without changing Istanbul time", async (locale) => {
+  mocks.locale = locale;
+  respond(openTrade);
+  await act(async () => root.render(<TradeEditModal tradeId="T1" onClose={() => {}} />));
+  await flush();
+  expect(host.textContent).toContain(`journal_edit.tracking_started:${formatIstanbulDateTime(openTrade.tracking_started_at, locale)}`);
+  expect((host.querySelector('[data-testid="trade-edit-time"]') as HTMLInputElement | null)?.value
+    ?? host.querySelector('input[type="datetime-local"]')?.getAttribute("value")).toBe("2026-09-14T00:00");
 });
 
 afterEach(async () => {
