@@ -41,6 +41,7 @@ it("keeps unknown wait codes in diagnostics and uses readable semantic warning i
   await act(async () => root.render(<LocalTrackingPanel editTrade={null} onEditorClose={vi.fn()} />));
   const note = host.querySelector('[data-testid=tracking-wait-t1]')!;
   expect(note.className).toContain("text-warn");
+  expect(note.classList.contains("k-help")).toBe(false);
   expect(note.textContent).toContain("tracking.wait_reason_WAITING_PROVIDER_OBSERVATION");
   expect(note.textContent).not.toContain("FUTURE_WAIT_REASON");
   const details = host.querySelector('[data-testid=tracking-diagnostics-t1]') as HTMLDetailsElement;

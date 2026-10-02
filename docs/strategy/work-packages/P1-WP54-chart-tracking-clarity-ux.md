@@ -68,5 +68,8 @@ Full frontend: **51 files / 370 tests PASS**; backend isolated suite: **1220 PAS
 `npm --prefix frontend run build`: typecheck, **1299** EN/TR/DE keys and production build PASS.
 `python3.11 scripts/check_docs.py`: **140 documents / 188 links / 5 startup PASS**;
 `git diff --check` clean. Changed source: `this change`. CI/native installation pending.
+Native candidate dceaf0a revealed `.k-help` overrides Tailwind warning color. A red
+DOM assertion freezes the absence of that conflicting recipe on warning text; keep the
+14px size through `text-sm` instead. Candidate is not final acceptance; rebuild required.
 The initial no-plot test selector was corrected to exclude decorative icon SVGs; it checks
 absence of the actual 640px scatter plot. Full CI/install evidence remains pending.

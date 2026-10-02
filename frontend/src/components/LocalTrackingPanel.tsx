@@ -138,7 +138,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
       <p className="k-help">{t("tracking.started_at")}: {formatIstanbulDateTime(state.armed_at, locale)}</p>
       {state.tracking_status === "WAITING_QUOTE" && state.monitor && (
         <div>
-        <p className="k-help text-warn" data-testid={`tracking-wait-${state.trade_id}`}>
+        <p className="text-sm text-warn" data-testid={`tracking-wait-${state.trade_id}`}>
           {t(`tracking.wait_reason_${waitReasons.has(state.monitor.wait_reason || "") ? state.monitor.wait_reason : "WAITING_PROVIDER_OBSERVATION"}`)}
           {state.monitor.next_poll_in_seconds != null
             ? ` · ${t("tracking.monitor_next_poll", { seconds: Math.ceil(state.monitor.next_poll_in_seconds) })}`
@@ -150,7 +150,7 @@ export function LocalTrackingPanel({ editTrade, onEditorClose }: {
         </details>}
         </div>
       )}
-      {state.unit_status === "UNVERIFIED" && <p className="k-help text-warn">{t("tracking.unit_unverified")}</p>}
+      {state.unit_status === "UNVERIFIED" && <p className="text-sm text-warn">{t("tracking.unit_unverified")}</p>}
       <p className="k-help">{state.source_id ? t(`tracking.${state.source_id}`) : t("tracking.no_source")} · {state.source_symbol}</p>
       {state.targets.map(target => <span className="inline-block mr-4" key={target.id}>
         {target.id}: {target.price} ({target.percent}%) {state.closures.some(c => c.target_id === target.id) ? t("tracking.hit") : ""}
