@@ -3,16 +3,33 @@
 
 Updated: 2026-10-03. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP56 update guidance](work-packages/P1-WP56-update-guidance-ux.md).**
-InProgress: presentation-only update guide implemented in this change. One missing-guidance
-red regression → 12 focused PASS; build/tsc and EN/TR/DE 1318 parity PASS; docs/diff clean.
-Fixed Releases action remains unchanged; architecture choice, manual replacement/data
-preservation, same-version artifact boundary and ad-hoc signing limits are explicit.
-Full clean-commit CI/packaging and native acceptance remain pending. Installed app UI access
-returns `noWindowsAvailable`/`timeoutReached` while its process remains running; safe normal
-quit and visual acceptance are blocked. Installed bundle/data untouched. No automatic installer,
-invented latest-version claim, security bypass, Release/tag/workflow or user-data change.
-External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+**Selected work: [P1-WP29 owner-host obligations](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
+Approved WP49–WP56 UX sequence complete. N03/N05/H05/pilot access and existing gold/XM/helper
+obligations remain open; this selection does not authorize new features, Release/tag, remote
+workflow or user-data operations. Next development sequence needs an explicit owner decision.
+
+**WP56 complete + archived (2026-10-03):**
+[update guidance](../archive/strategy/work-packages/P1-WP56-update-guidance-ux.md).
+Optional manual guide clarifies architecture choice, private Releases access, package hashes,
+data preservation, same-version artifact boundary and ad-hoc signing limits. Fixed browser
+action unchanged; no automatic version check/download/install or security bypass.
+One red regression → 12 focused PASS. `db196c3` pushed main; full **1220 backend / 3 warnings**,
+**51 files / 375 frontend**, EN/TR/DE **1318**, tsc/build/docs/truth/packaging/diff PASS.
+Clean source **db196c3523d3b7bf1b83861f4d83804857123078**, canonical arm64 **13/13 / COMPLETE**;
+exact read-only mounted-DMG WKWebView/controller smoke PASS. Reports
+`artifacts/evidence/p1-wp56/`: CI **a20a17dc…**, exact-DMG **f037b82c…**, N05 **0a4e34d6…**,
+installed operator acceptance. DMG **6c0ac2c0b03a946296c300b09ac98983ce855be40818d2bf4477b6c6ea6f5ade**;
+installed executable **8b39c385972cfe1e8a192a50f415405fc0319c24784a41c9447dd24c9c020570**
+matches CI/DMG, **1.1.6 local source build**, strict/deep codesign PASS (ad-hoc).
+Initial native UI timeout recovered; old screen inspected, normal quit/install/reopen verified.
+TR light/dark, DE dark, EN light, keyboard disclosure and Chrome Releases handoff checked.
+Stopped DB hash unchanged across replacement; **5 trades / 24 events / 5 tracking rows**,
+ordered trade/event hashes unchanged after QA; TR/light/LITE persists after normal reopen.
+Previous bundle `/tmp/kuantra-wp56-update.mKkuYp/Kuantra Terminal.app` remains recoverable.
+No trade mutation/reset/migration/credential/Release/tag/Intel/workflow change. Published
+pilot remains its existing artifact, not this local build. Runtime public network occurred;
+uv offline is dependency resolution only. **N05 BLOCKED**, other owner-host obligations unchanged.
+Docs closure changes no binary.
 
 **WP55 complete + archived (2026-10-02):**
 [first-use/backup guidance](../archive/strategy/work-packages/P1-WP55-first-use-backup-guidance-ux.md).

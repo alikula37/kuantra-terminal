@@ -1,4 +1,4 @@
-<!-- doc-role: reference -->
+<!-- doc-role: current-work-package -->
 # P1-WP29 — Trusted macOS Pilot Package
 
 ```yaml
@@ -15,9 +15,11 @@ depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
 
-Selection note (2026-10-02): WP49 is complete/archived; WP50 is selected for the approved
-journal-layout UX fix (prepared, implementation not started);
-this package's N03/N05/H05/pilot-access obligations remain open and are not superseded.
+Selection note (2026-10-03): approved WP49–WP56 UX sequence is complete/archived.
+This package is selected strictly for existing N03/N05/H05/pilot-access owner-host obligations;
+they remain open and are not superseded. No new development sequence, Release/tag or remote
+workflow is authorized by this selection. Latest installed local build is WP56 source
+`db196c3`, version 1.1.6; published pilot assets are unchanged and not identical to that build.
 
 Historical selection note (2026-09-15): P1-WP40 (MT5 HTML report preview) is complete and
 archived, so this package is selected again strictly for its still-open owner-host

@@ -1,0 +1,31 @@
+{
+  "work_package": "P1-WP56",
+  "source_commit": "db196c3523d3b7bf1b83861f4d83804857123078",
+  "platform": "macOS 26.6.2 arm64",
+  "version": "1.1.6",
+  "distribution": "LOCAL_SOURCE_BUILD_NOT_PUBLISHED",
+  "dmg_sha256": "6c0ac2c0b03a946296c300b09ac98983ce855be40818d2bf4477b6c6ea6f5ade",
+  "installed_executable_sha256": "8b39c385972cfe1e8a192a50f415405fc0319c24784a41c9447dd24c9c020570",
+  "previous_bundle_backup": "/tmp/kuantra-wp56-update.mKkuYp/Kuantra Terminal.app",
+  "codesign_strict_deep": "PASS_AD_HOC_NOT_NOTARIZED",
+  "stopped_db_sha256_before_and_after_replacement": "201a8b26fdf43f3b3d5bef193320b18004a13a03740e94bf25b3de1638e659a4",
+  "counts_before_and_after_qa": {"trades": 5, "evidence_events": 24, "local_tracking_projections": 5},
+  "ordered_trade_sha256_before_and_after_qa": "f75212a540951ff32d10ca92689d0318486cad438217f531bb723099f92e5b70",
+  "ordered_event_sha256_before_and_after_qa": "984bfec9de2f30d0f247d99d0506ca61e59684ab1ab84e1cef595a1fd3bd5da9",
+  "native_operator_checks": [
+    "TR light and dark: guidance and warning contrast readable",
+    "DE dark and EN light: localized guidance renders without raw keys",
+    "Collapsed initially; focused summary Return opens/closes",
+    "Existing action opens Chrome at github.com/alikula37/kuantra-terminal/releases; Kuantra WebView remains local",
+    "No version-check success, download or installation claim after browser handoff",
+    "Normal quit/reopen preserves TR/light/LITE"
+  ],
+  "limits": [
+    "Initial native UI timeout recovered; it was not treated as app crash evidence",
+    "No user trade mutation, database reset, migration, backup/restore or credential operation",
+    "No new Intel artifact, Release/tag or workflow dispatch",
+    "N05 remains BLOCKED; existing WP29 owner-host obligations unchanged",
+    "Public Binance runtime network occurred; uv offline is dependency resolution only",
+    "Native observations are operator evidence, not all-screen accessibility or fresh-profile proof"
+  ]
+}
