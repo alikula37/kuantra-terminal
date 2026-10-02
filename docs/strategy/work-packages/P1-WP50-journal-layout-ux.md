@@ -9,8 +9,8 @@ branch: main
 baseline: 84e7afd
 ```
 
-Next bounded item of the owner-approved UX sequence. **Selected/prepared; implementation
-not started.** WP49 quote-truth package is complete; WP29 external obligations remain open.
+Next bounded item of the owner-approved UX sequence. **Implementation tested; clean native
+delivery and visual acceptance pending.** WP49 is complete; WP29 obligations remain open.
 
 ## Verified starting finding
 
@@ -33,10 +33,38 @@ their presence in AX is not evidence that the trader can see them without scroll
   cancellation, chart, evidence, simulation separation and quote-truth rules stay intact.
 - No release/tag or Intel build is authorized by this UI package.
 
-## Acceptance (not yet completed)
+## Acceptance
 
-- [ ] Red regression for action discoverability/focus and preserved secondary workflows.
+- [x] Red regression for action discoverability/focus and preserved secondary workflows.
+  WP50 DOM suite: 5 real red failures (12 columns / no disclosure) after correcting unstable
+  test doubles, then green. Primary Edit, evidence/chart routing, confirmation-only cancellation,
+  canceled tombstone, Escape focus return and EN/TR/DE text checked. Existing sticky assertion
+  superseded by the no-overlay contract; original workflow regression tests retained.
 - [ ] Bounded frontend implementation; no date/price/status overlap in native visual QA.
 - [ ] Focused/full frontend, i18n/tsc/build; relevant backend regressions and full local CI.
 - [ ] Clean commit/push main, native arm64 build/exact-DMG smoke, data-preserving install.
 - [ ] STATUS/registry closure with actual evidence; archive only after verified acceptance.
+
+## Implementation and pre-delivery evidence
+
+Seven fixed-width columns replace the 12-column table; instrument, Istanbul entry time,
+entry price, position value, quote quality and external/local statuses remain in the main row.
+Edit and a labelled 44px disclosure control are in-flow, never a sticky overlay. Secondary
+actions and complete ID/entry time/exit/PnL/R open in a full-width inline row. Closed PnL
+remains in the main status cell (unknown is not zero). Cancellation still requires the existing
+confirmation and keeps its audit tombstone. No API, schema or accounting change.
+
+Compact journal quote rendering always shows status, age, provider/symbol and display-only
+or unverified-time warning; only long timestamp explanation is disclosed. Entry/edit/dashboard
+keep the existing full presentation. Local tracking and simulation labels remain separate.
+
+Pre-delivery: focused frontend 29 PASS, related backend 89 PASS / 2 warnings (WP49,
+WP44, WP32 trade edits, local tracking, journal export); i18n/tsc/build PASS. Full frontend
+first found the new dynamic status-key family missing from the key-content registry; registry
+extended with OPEN/CLOSED/CANCELED, not bypassed. Final suites and native proof recorded below.
+
+Final pre-commit suites: full backend **1209 PASS / 3 warnings** in fresh isolated data;
+full frontend **46 files / 309 tests PASS**, i18n **1259/1259/1259**, tsc/production build,
+docs (**136 documents / 184 links / 5 startup**), release truth and diff check PASS.
+No dependency install required; `uv --offline` proves dependency resolution only.
+Native visual acceptance, canonical clean-source CI and install remain pending.

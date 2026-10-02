@@ -1,5 +1,8 @@
 {
   "quote_quality": {
+    "details": "Preisdetails",
+    "unknown_time_short": "Preiszeit nicht verifiziert",
+    "display_only_short": "Nur Anzeige · kein automatisches TP/SL",
     "applied": "Kurs übernommen: {price} · {source}. Aktualität siehe unten.",
     "status_live": "Live",
     "status_delayed": "Verzögert",
@@ -714,6 +717,10 @@
     "status_closed": "Geschlossen",
     "status_canceled": "Storniert",
     "col_trade_id": "Trade-ID",
+    "col_size": "Position / Menge",
+    "details_action": "Details und Aktionen",
+    "details_for": "Details und Aktionen für {symbol} ({id})",
+    "row_details_hint": "Der Pfeil neben Bearbeiten öffnet Nachweise, Chartansicht, Stornierung und vollständige Trade-Details.",
     "col_symbol": "Symbol",
     "col_side": "Richtung",
     "col_entry": "Einstieg ($)",

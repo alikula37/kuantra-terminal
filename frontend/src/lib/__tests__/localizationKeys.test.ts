@@ -19,6 +19,7 @@ const DYNAMIC_FAMILIES: Domain[] = [
   { path: ["tracking"], prefix: "status_", discovered: "tracking.status_", values: ["ACTIVE", "WAITING_QUOTE", "WAITING_TARGETS", "PAUSED", "COMPLETED", "UNKNOWN"] },
   { path: ["tracking"], prefix: "wait_reason_", discovered: "tracking.wait_reason_", values: ["MARKET_DATA_DISABLED", "PROVIDER_RATE_LIMIT", "PROVIDER_ERROR", "WAITING_FRESH_PROVIDER_EVENT", "WAITING_PROVIDER_OBSERVATION", "PROVIDER_EVENT_TIME_UNAVAILABLE"] },
   { path: ["journal"], prefix: "local_status_", discovered: "journal.local_status_", values: ["active", "waiting_quote", "waiting_targets", "paused", "completed", "unknown"] },
+  { path: ["journal"], prefix: "status_", discovered: "journal.status_", values: ["open", "closed", "canceled"] },
   { path: ["journal_edit"], prefix: "field_", discovered: "journal_edit.field_", values: ["entry_price", "entry_time", "qty", "leverage", "stop_loss", "take_profit", "notes", "qty_unit", "status", "exit_price", "exit_time", "tracking_plan"] },
   { path: ["replay", "open_review"], prefix: "candle_state_", discovered: "replay.open_review.candle_state_", values: ["open", "closed", "unknown"] },
   { path: ["replay", "product_reason"], prefix: "", discovered: "replay.product_reason.", values: ["NO_INDEPENDENT_SOURCE", "INSUFFICIENT_OVERLAP", "FETCH_FAILED", "NO_PRODUCT_KEY", "CHECK_NOT_RUN", "UNKNOWN"] },

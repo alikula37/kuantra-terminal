@@ -46,3 +46,15 @@ it("a future event and legacy LIVE payload have no freshness claim", async () =>
   await act(async () => root.render(<QuoteQuality quote={{ ...quote, timestamp_basis: undefined }} />));
   expect(host.textContent).toContain("quote_quality.unknown_time");
 });
+
+it("compact disclosure never conceals delayed or unknown quality and retains the exact source time", async () => {
+  await act(async () => root.render(<QuoteQuality compact quote={{ ...quote,
+    timestamp_basis: "CANDLE_OPEN", candle_interval: "1h" }} />));
+  expect(host.querySelector("details")?.open).toBe(false);
+  expect(host.querySelector("[data-quote-status]")?.getAttribute("data-quote-status")).toBe("DELAYED");
+  expect(host.querySelector("details")?.textContent).toContain("15:00");
+  expect(host.querySelector("details")?.previousElementSibling?.textContent).toContain("quote_quality.display_only_short");
+  await act(async () => root.render(<QuoteQuality compact quote={{ ...quote, timestamp_basis: undefined }} />));
+  expect(host.querySelector("details")?.previousElementSibling?.textContent).toContain("quote_quality.unknown_time_short");
+  expect(host.querySelector("details")?.textContent).toContain("quote_quality.unknown_time");
+});

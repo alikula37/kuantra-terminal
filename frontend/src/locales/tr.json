@@ -1,5 +1,8 @@
 {
   "quote_quality": {
+    "details": "Fiyat ayrıntıları",
+    "unknown_time_short": "Fiyat zamanı doğrulanmadı",
+    "display_only_short": "Yalnız gösterim · Otomatik TP/SL yok",
     "applied": "Fiyat alana yazıldı: {price} · {source}. Güncellik bilgisi aşağıda.",
     "status_live": "Canlı",
     "status_delayed": "Gecikmeli",
@@ -714,6 +717,10 @@
     "status_closed": "Kapatıldı",
     "status_canceled": "İptal edildi",
     "col_trade_id": "İşlem ID",
+    "col_size": "Büyüklük / miktar",
+    "details_action": "Ayrıntılar ve işlemler",
+    "details_for": "{symbol} ({id}) için ayrıntılar ve işlemler",
+    "row_details_hint": "Kanıt, grafik incelemesi, iptal ve tam işlem ayrıntıları için Düzenle yanındaki oku aç.",
     "col_symbol": "Sembol",
     "col_side": "Yön",
     "col_entry": "Giriş ($)",

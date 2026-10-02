@@ -4,9 +4,11 @@
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP50 journal layout UX](work-packages/P1-WP50-journal-layout-ux.md).**
-Prepared next bounded package; implementation not started. Native visual review confirms
-wide sticky actions still hide price/time/status columns. No API/accounting changes;
-keep primary Edit and all secondary workflows accessible. External obligations remain in
+Implementation tested; full clean native delivery and visual acceptance pending. Seven in-flow
+columns, visible Edit, accessible inline secondary actions and compact honest quote metadata
+replace the verified sticky overlay. No API/accounting changes. Related backend 89 PASS;
+full backend 1209 PASS / 3 warnings, frontend 46 files / 309 PASS, i18n 1259 per language,
+tsc/build/docs/truth/diff PASS; clean native CI/installed visual proof pending. External obligations remain in
 [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 
 **WP49 complete + archived (2026-10-02):**

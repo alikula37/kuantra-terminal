@@ -153,6 +153,8 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const [filterDateFrom, setFilterDateFrom] = useState<string>("");
   const [filterDateTo, setFilterDateTo] = useState<string>("");
   const [exportOpen, setExportOpen] = useState(false);
+  const [expandedTradeId, setExpandedTradeId] = useState<string | null>(null);
+  const detailButtonsRef = useRef<Record<string, HTMLButtonElement | null>>({});
   const [evidenceTradeId, setEvidenceTradeId] = useState<string | null>(null);
   const [reconciliationInboxOpen, setReconciliationInboxOpen] = useState(false);
   const [weeklyReviewOpen, setWeeklyReviewOpen] = useState(false);
@@ -334,7 +336,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
   const renderSimulationBadge = (trade: Trade) => trade.record_mode === "SIMULATION" ? (
     <span
       data-testid={`journal-sim-badge-${trade.id}`}
-      className="ml-2 align-middle px-2 py-0.5 rounded text-sm font-bold bg-amber-400/15 text-amber-300 border border-amber-400/40"
+      className="mt-1 inline-block max-w-full break-words px-2 py-0.5 rounded text-sm font-bold bg-amber-400/15 text-amber-300 border border-amber-400/40"
     >
       {t("journal.simulation_badge")}
     </span>
@@ -353,7 +355,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         data-testid={`journal-local-tracking-${trade.id}`}
         data-tracking-status={status}
       >
-        <span className="block text-sm text-slate-400 whitespace-nowrap">
+        <span className="block text-sm text-slate-400">
           {t(`journal.local_status_${status.toLowerCase()}`, { remaining })}
         </span>
         {status === "COMPLETED" && trade.status === "OPEN" && (
@@ -378,7 +380,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         ) : (
           <span className="font-semibold text-amber-300">{t("journal.quote_unavailable")}</span>
         )}
-        {live && <QuoteQuality quote={quote} nowMs={nowMs} />}
+        {live && <QuoteQuality quote={quote} nowMs={nowMs} compact />}
         {stale && quote.last_known && (
           <span className="block k-help text-amber-300">
             {t("journal.quote_last_known", {
@@ -553,27 +555,29 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
         </div>
       ) : (
         <div className="flex-1 mt-4 overflow-auto rounded-lg border border-surface-border bg-[#0d121c]">
-          <table className="w-full text-left text-sm">
+          <p className="px-3 py-2 k-help border-b border-surface-border">{t("journal.row_details_hint")}</p>
+          <table className="journal-table w-full min-w-[900px] table-fixed text-left text-sm">
+            <colgroup>
+              <col style={{ width: "18%" }} /><col style={{ width: "7%" }} />
+              <col style={{ width: "10%" }} /><col style={{ width: "11%" }} />
+              <col style={{ width: "19%" }} /><col style={{ width: "20%" }} />
+              <col style={{ width: "15%" }} />
+            </colgroup>
             <thead className="bg-[#090d14] text-sm text-slate-400 sticky top-0 border-b border-surface-border">
               <tr>
-                <th className="px-3 py-3">{t("journal.col_trade_id")}</th>
                 <th className="px-3 py-3">{t("journal.col_symbol")}</th>
                 <th className="px-3 py-3">{t("journal.col_side")}</th>
                 <th className="px-3 py-3">{t("journal.col_entry")}</th>
-                <th className="px-3 py-3">{t("journal.col_exit")}</th>
-                <th className="px-3 py-3">{t("journal.col_qty")}</th>
-                <th className="px-3 py-3">{t("journal.col_pnl")}</th>
-                <th className="px-3 py-3">{t("journal.col_r")}</th>
-                <th className="px-3 py-3">{t("journal.col_time")}</th>
+                <th className="px-3 py-3">{t("journal.col_size")}</th>
                 <th className="px-3 py-3">{t("journal.col_quote")}</th>
                 <th className="px-3 py-3">{t("journal.col_status")}</th>
-                <th className="px-3 py-3 text-right sticky right-0 z-10 bg-[#090d14] border-l border-surface-border/40">{t("journal.col_actions")}</th>
+                <th className="px-3 py-3">{t("journal.col_actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border/40">
               {filteredTrades.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
                     {t("journal.no_matching")}
                   </td>
                 </tr>
@@ -582,12 +586,16 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                 const pnl = tItem.pnl;
                 const hasPnl = pnl != null;
                 const isWin = hasPnl && pnl > 0;
+                const expanded = expandedTradeId === tItem.id;
+                const detailsId = `journal-details-${encodeURIComponent(tItem.id)}`;
                 return (
-                  <tr key={tItem.id} className="group hover:bg-[#111722] transition">
-                    <td className="px-3 py-3 font-bold text-accent">{tItem.id}</td>
+                  <React.Fragment key={tItem.id}>
+                  <tr data-trade-id={tItem.id} className="group align-top hover:bg-[#111722] transition">
                     <td className="px-3 py-3 font-bold text-white">
-                      <span>{tItem.symbol}</span>
+                      <span className="block">{tItem.symbol}</span>
                       {renderSimulationBadge(tItem)}
+                      <span className="mt-1 block text-sm font-normal text-slate-400">{formatIstanbulDateTime(tItem.entry_time, locale)}</span>
+                      <span className="block truncate text-sm font-normal text-slate-400" title={tItem.id}>{tItem.id}</span>
                     </td>
                     <td className="px-3 py-3">
                       <span
@@ -601,19 +609,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                       </span>
                     </td>
                     <td className="px-3 py-3 text-slate-200 font-semibold">{formatPrice(tItem.symbol, tItem.entry_price)}</td>
-                    <td className="px-3 py-3 text-slate-200">
-                      {tItem.exit_price != null ? formatPrice(tItem.symbol, tItem.exit_price) : "—"}
-                    </td>
                     <td className="px-3 py-3 text-slate-300">{tItem.qty_unit === "USD" ? formatPositionValue(tItem.qty) : tItem.qty}</td>
-                    <td className={`px-3 py-3 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
-                      {tItem.status !== "CLOSED" ? "—" : hasPnl ? `${isWin ? "+" : ""}${pnl.toFixed(2)}` : t("journal.unknown_value")}
-                    </td>
-                    <td className={`px-3 py-3 font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
-                      {tItem.r_multiple != null ? `${tItem.r_multiple > 0 ? "+" : ""}${tItem.r_multiple}R` : "—"}
-                    </td>
-                    <td className="px-3 py-3 text-slate-400 text-sm">
-                      {formatIstanbulDateTime(tItem.entry_time, locale)}
-                    </td>
                     <td className="px-3 py-3">{renderQuote(tItem)}</td>
                     <td className="px-3 py-3">
                       <span
@@ -623,11 +619,15 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                             : "bg-slate-800 text-slate-300"
                         }`}
                       >
-                        {tItem.status}
+                        {t(`journal.status_${tItem.status.toLowerCase()}`)}
                       </span>
                       {renderLocalTracking(tItem)}
+                      {tItem.status === "CLOSED" && <span className={`mt-1 block font-bold ${!hasPnl ? "text-slate-400" : isWin ? "text-gain" : pnl < 0 ? "text-loss" : "text-slate-400"}`}>
+                        {t("journal.col_pnl")}: {hasPnl ? `${isWin ? "+" : ""}${pnl.toFixed(2)}` : t("journal.unknown_value")}
+                      </span>}
                     </td>
-                    <td className="px-3 py-3 text-right whitespace-nowrap sticky right-0 z-10 bg-[#0d121c] group-hover:bg-[#111722] border-l border-surface-border/40 transition">
+                    <td className="px-2 py-3">
+                      <div className="journal-row-actions flex flex-wrap items-center gap-1">
                       <button
                         type="button"
                         data-testid="journal-edit-action"
@@ -639,6 +639,40 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                         <Pencil className="w-4 h-4" />
                         <span>{t("journal.edit_action")}</span>
                       </button>
+                      <button
+                        type="button"
+                        ref={(button) => { detailButtonsRef.current[tItem.id] = button; }}
+                        data-testid="journal-details-action"
+                        data-trade-id={tItem.id}
+                        aria-label={t("journal.details_for", { symbol: tItem.symbol, id: tItem.id })}
+                        aria-expanded={expanded}
+                        aria-controls={detailsId}
+                        onClick={() => setExpandedTradeId(expanded ? null : tItem.id)}
+                        className="k-btn border border-surface-border text-slate-300 hover:bg-[#111722] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        title={t("journal.details_action")}
+                      >
+                        <ChevronDown aria-hidden="true" className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                      </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {expanded && <tr id={detailsId} data-testid="journal-row-details" className="bg-[#111722]" onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.stopPropagation();
+                      setExpandedTradeId(null);
+                      detailButtonsRef.current[tItem.id]?.focus();
+                    }
+                  }}>
+                    <td colSpan={7} className="p-4">
+                      <p className="mb-3 font-semibold text-slate-200">{t("journal.details_action")}</p>
+                      <dl className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                        <div><dt className="k-help">{t("journal.col_trade_id")}</dt><dd className="text-slate-200 break-all select-text">{tItem.id}</dd></div>
+                        <div><dt className="k-help">{t("journal.col_time")} · {t("order_ticket.turkey_time")}</dt><dd className="text-slate-200">{formatIstanbulDateTime(tItem.entry_time, locale)}</dd></div>
+                        <div><dt className="k-help">{t("journal.col_exit")}</dt><dd className="text-slate-200">{tItem.exit_price != null ? formatPrice(tItem.symbol, tItem.exit_price) : "—"}</dd></div>
+                        <div><dt className="k-help">{t("journal.col_pnl")}</dt><dd className="text-slate-200">{tItem.status !== "CLOSED" ? "—" : hasPnl ? `${isWin ? "+" : ""}${pnl.toFixed(2)}` : t("journal.unknown_value")}</dd></div>
+                        <div><dt className="k-help">{t("journal.col_r")}</dt><dd className="text-slate-200">{tItem.r_multiple != null ? `${tItem.r_multiple > 0 ? "+" : ""}${tItem.r_multiple}R` : "—"}</dd></div>
+                      </dl>
+                      <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         data-testid="journal-evidence-action"
@@ -679,8 +713,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
                           <span>{t("journal.cancel_action")}</span>
                         </button>
                       )}
+                      </div>
                     </td>
-                  </tr>
+                  </tr>}
+                  </React.Fragment>
                 );
               })
             )}

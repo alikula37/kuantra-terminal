@@ -1,5 +1,8 @@
 {
   "quote_quality": {
+    "details": "Price details",
+    "unknown_time_short": "Time unverified",
+    "display_only_short": "Display only · no automatic TP/SL",
     "applied": "Price applied: {price} · {source}. See freshness below.",
     "status_live": "Live",
     "status_delayed": "Delayed",
@@ -714,6 +717,10 @@
     "status_closed": "Closed",
     "status_canceled": "Canceled",
     "col_trade_id": "Trade ID",
+    "col_size": "Position / qty",
+    "details_action": "Details & actions",
+    "details_for": "Details and actions for {symbol} ({id})",
+    "row_details_hint": "Use the arrow beside Edit for evidence, chart inspection, cancellation and full trade details.",
     "col_symbol": "Symbol",
     "col_side": "Side",
     "col_entry": "Entry ($)",

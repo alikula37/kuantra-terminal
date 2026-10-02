@@ -141,6 +141,7 @@ it("offers a confirmed audit-safe cancellation instead of physically deleting a 
   await act(async () => root.render(<JournalView {...props} />));
   await flush();
 
+  await act(async () => (host.querySelector("[data-testid=journal-details-action]") as HTMLButtonElement).click());
   const action = host.querySelector("[data-testid=journal-cancel-action]") as HTMLButtonElement;
   expect(action).toBeTruthy();
   expect(action.dataset.tradeId).toBe(trade.id);
@@ -178,6 +179,7 @@ it("keeps the cancellation confirmation open when the server response is unsafe"
   await act(async () => root.render(<JournalView {...props} />));
   await flush();
   mocks.setTrades.mockClear();
+  await act(async () => (host.querySelector("[data-testid=journal-details-action]") as HTMLButtonElement).click());
   await act(async () => (host.querySelector("[data-testid=journal-cancel-action]") as HTMLButtonElement).click());
   await act(async () => (host.querySelector("[data-testid=journal-cancel-confirm]") as HTMLButtonElement).click());
   await flush();
@@ -203,7 +205,9 @@ it("does not offer a second cancellation action for a retained tombstone", async
   await flush();
 
   expect(host.querySelector("[data-testid=journal-cancel-action]")).toBeNull();
-  expect(host.textContent).toContain("CANCELED");
+  await act(async () => (host.querySelector("[data-testid=journal-details-action]") as HTMLButtonElement).click());
+  expect(host.textContent).toContain("journal.status_canceled");
+  expect(host.querySelector("[data-testid=journal-cancel-action]")).toBeNull();
 });
 
 it("loads older journal pages without silently replacing the first page", async () => {
@@ -271,6 +275,7 @@ it("offers a read-only chart inspection action per trade and routes it to the re
   await act(async () => root.render(<JournalView {...props} onOpenCsvImport={vi.fn()} onOpenReplay={onOpenReplay} />));
   await flush();
 
+  await act(async () => (host.querySelector('[data-testid="journal-details-action"][data-trade-id="TRD-REPLAY"]') as HTMLButtonElement).click());
   const action = host.querySelector('[data-testid="journal-replay-action"][data-trade-id="TRD-REPLAY"]') as HTMLButtonElement;
   expect(action).not.toBeNull();
   await act(async () => action.dispatchEvent(new MouseEvent("click", { bubbles: true })));
@@ -308,10 +313,10 @@ it("labels a simulation row and shows the local plan separately from the externa
   expect(host.querySelector('[data-testid="journal-local-completed-note-TRD-SIM"]')?.textContent)
     .toContain("journal.local_completed_external_open");
   // The external lifecycle status is never rewritten by the local estimate.
-  expect(tracking?.parentElement?.textContent).toContain("OPEN");
+  expect(tracking?.parentElement?.textContent).toContain("journal.status_open");
 });
 
-it("keeps the row actions in a sticky column with keyboard focus styling", async () => {
+it("keeps compact actions in flow with keyboard focus styling and discloses secondary workflows", async () => {
   const openTrade = {
     id: "TRD-ACTIONS", symbol: "BTCUSDT", side: "BUY", position_type: "LONG", status: "OPEN",
     entry_price: 76000, exit_price: null, qty: 0.001, stop_loss: 70000, take_profit: 90000,
@@ -331,11 +336,11 @@ it("keeps the row actions in a sticky column with keyboard focus styling", async
 
   const actionsHeader = Array.from(host.querySelectorAll("th"))
     .find((cell) => cell.textContent === "journal.col_actions");
-  expect(actionsHeader?.className).toContain("sticky");
-  expect(actionsHeader?.className).toContain("right-0");
+  expect(actionsHeader?.className).not.toContain("sticky");
   const editCell = host.querySelector('[data-testid="journal-edit-action"]')?.closest("td");
-  expect(editCell?.className).toContain("sticky");
-  expect(editCell?.className).toContain("right-0");
+  expect(editCell?.className).not.toContain("sticky");
+  expect(editCell?.querySelectorAll("button")).toHaveLength(2);
+  await act(async () => (host.querySelector("[data-testid=journal-details-action]") as HTMLButtonElement).click());
   for (const testId of ["journal-edit-action", "journal-evidence-action", "journal-replay-action", "journal-cancel-action"]) {
     const button = host.querySelector(`[data-testid="${testId}"]`) as HTMLButtonElement | null;
     expect(button).not.toBeNull();

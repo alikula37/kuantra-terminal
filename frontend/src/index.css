@@ -138,6 +138,18 @@ body {
   cursor: not-allowed;
 }
 
+/* WP50: bounded columns and in-flow details, never a wide sticky action overlay. */
+.journal-table th,
+.journal-table td {
+  overflow-wrap: anywhere;
+}
+.journal-row-actions .k-btn {
+  padding-inline: 8px;
+}
+.journal-row-actions [data-testid="journal-details-action"] {
+  min-width: 44px;
+}
+
 textarea.k-input {
   min-height: 64px;
 }
