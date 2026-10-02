@@ -11,7 +11,7 @@ export function FirstUseGuide({ onNewTrade, onExport, onOpenJournal }: {
       <p>{t("first_use.manual")}</p>
       <p className="text-sm text-muted">{t("first_use.simulation")}</p>
       <div className="flex flex-wrap gap-2">
-        {onNewTrade && <button type="button" className="k-btn bg-accent text-black" onClick={onNewTrade}>{t("first_use.new_trade")}</button>}
+        {onNewTrade && <button type="button" className="k-btn k-primary" onClick={onNewTrade}>{t("first_use.new_trade")}</button>}
         {onExport && <button type="button" className="k-btn border border-surface-border" onClick={onExport}>{t("first_use.reports")}</button>}
         {onOpenJournal && <button type="button" data-testid="guidance-journal" className="k-btn border border-surface-border" onClick={onOpenJournal}>{t("first_use.open_journal")}</button>}
       </div>

@@ -281,7 +281,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
           {currentStep < 4 ? (
             <button
               onClick={() => setCurrentStep((prev) => prev + 1)}
-              className="flex items-center space-x-1.5 px-5 py-2 rounded bg-accent hover:bg-sky-400 text-black font-bold transition shadow"
+              className="k-btn k-primary"
             >
               <span>{t("onboarding.buttons.next")}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -290,7 +290,7 @@ export const FirstBootWizard: React.FC<FirstBootWizardProps> = ({ isOpen, onComp
             <button
               onClick={handleFinish}
               disabled={isSaving}
-              className="flex items-center space-x-2 px-6 py-2.5 rounded bg-gain hover:bg-emerald-400 text-black font-bold transition shadow"
+              className="k-btn k-primary disabled:opacity-50"
             >
               <span>{t("onboarding.verification.complete_btn")}</span>
               <Check className="w-4 h-4" />

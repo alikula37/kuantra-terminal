@@ -43,6 +43,7 @@ it("offers no-CSV first record and real export actions in optional help without 
   expect(guide.open).toBe(false);
   expect(guide.textContent).toContain("first_use.manual");
   expect(guide.textContent).toContain("first_use.report_boundary");
+  expect(Array.from(guide.querySelectorAll('button')).find(b => b.textContent === 'first_use.new_trade')!.classList.contains('k-primary')).toBe(true);
   await act(async () => Array.from(guide.querySelectorAll('button')).find(b => b.textContent === 'first_use.new_trade')!.click());
   expect(props.onOpenNewTrade).toHaveBeenCalledOnce();
   await act(async () => Array.from(guide.querySelectorAll('button')).find(b => b.textContent === 'first_use.reports')!.click());
