@@ -415,7 +415,7 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
         {trade && !isLoading && (
           <div className="mt-4 space-y-4 overflow-y-auto pr-1">
             {notesOnly && (
-              <p role="status" data-testid="trade-edit-closed-notice" className="rounded border border-amber-400/40 bg-amber-950/20 p-3 text-sm text-amber-200">
+              <p role="status" data-testid="trade-edit-closed-notice" className="rounded border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
                 {t("journal_edit.reason_closed_notes_only")}
               </p>
             )}
@@ -425,12 +425,12 @@ export const TradeEditModal: React.FC<TradeEditModalProps> = ({ tradeId, onClose
               </p>
             )}
             {status === "CLOSED" && statusSelection === "OPEN" && (
-              <p role="status" data-testid="trade-edit-reopen-notice" className="rounded border border-amber-400/40 bg-amber-950/20 p-3 text-sm text-amber-200">
+              <p role="status" data-testid="trade-edit-reopen-notice" className="rounded border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
                 {t("journal_edit.reopen_notice")}
               </p>
             )}
             {sizeLocked && (
-              <p role="status" className="rounded border border-amber-400/40 bg-amber-950/20 p-3 text-sm text-amber-200">
+              <p role="status" className="rounded border border-warn/40 bg-warn/10 p-3 text-sm text-warn">
                 {t("journal_edit.reason_partial_close_locked")}
               </p>
             )}

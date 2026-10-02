@@ -593,7 +593,7 @@ export const NewTradeModal: React.FC<NewTradeModalProps> = ({
                         role="option"
                         data-testid="new-trade-manual-symbol-result"
                         onClick={() => handleSelectSearchResult(manualInstrument)}
-                        className="mt-1 w-full rounded border border-amber-400/30 bg-amber-950/20 px-2 py-2 text-left text-sm text-amber-200 hover:bg-amber-950/40"
+                        className="mt-1 w-full rounded border border-warn/30 bg-warn/10 px-2 py-2 text-left text-sm text-warn hover:bg-warn/20"
                       >
                         <span className="block">{t("order_ticket.manual_symbol_option", { symbol: manualInstrument.symbol })}</span>
                         <span className="block k-help text-amber-300/80">{t("order_ticket.manual_symbol_notice")}</span>

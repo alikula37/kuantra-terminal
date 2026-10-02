@@ -85,3 +85,9 @@ need sampled core-workflow inspection, not a claim that every screen has been au
   `uv run --offline --no-project --with-requirements backend/requirements.lock python -m
   pytest backend/tests -q`: **1220 PASS / 3 warnings**, isolated synthetic test directories.
   Native installed acceptance and canonical clean-source results are not claimed yet.
+- Initial clean-source CI at **31f11bf** passed all 13 steps, COMPLETE. Final review found
+  legacy pale amber warning text/light footer purple text outside that contrast recipe.
+  Core manual-symbol/refresh/edit warning panels now share tested warning ink/tints;
+  footer technical text uses normal muted ink. Extended warning recipe test red (missing
+  explicit warning token) → green. A new clean-source build is required after this change;
+  the earlier executable is not installed or offered as the final binary.

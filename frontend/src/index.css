@@ -17,13 +17,14 @@
   --color-accent: #38bdf8;
   --color-gain: #34d399;
   --color-loss: #fb7185;
+  --color-warn: #fbbf24;
   --action-ink: #071018;
   --action-hover: #7dd3fc;
   --accent-rgb: 56, 189, 248;
   --gain-rgb: 52, 211, 153;
   --loss-rgb: 251, 113, 133;
   --border-rgb: 30, 41, 59;
-  --warn-rgb: 245, 158, 11;
+  --warn-rgb: 251, 191, 36;
 }
 
 :root.light-theme {
@@ -41,13 +42,14 @@
   --color-accent: #075985;
   --color-gain: #065f46;
   --color-loss: #9f1239;
+  --color-warn: #92400e;
   --action-ink: #ffffff;
   --action-hover: #0c4a6e;
   --accent-rgb: 7, 89, 133;
   --gain-rgb: 6, 95, 70;
   --loss-rgb: 159, 18, 57;
   --border-rgb: 226, 232, 240;
-  --warn-rgb: 180, 83, 9;
+  --warn-rgb: 146, 64, 14;
 }
 
 body {

@@ -175,10 +175,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
 
           <div className="flex flex-wrap items-center justify-between gap-1 text-muted">
             <span className="flex items-center space-x-1.5">
-              <Cpu className="w-3 h-3 text-purple-400" />
+              <Cpu className="w-3 h-3 text-muted" />
               <span>{t("sidebar.desktop_core")}</span>
             </span>
-            <span className="text-purple-400 text-[10px] font-semibold">ASYNCIO</span>
+            <span className="text-muted font-semibold">ASYNCIO</span>
           </div>
         </div>
       </div>

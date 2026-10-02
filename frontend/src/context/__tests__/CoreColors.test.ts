@@ -53,6 +53,11 @@ it.each([false, true])("meets 4.5:1 for core enabled text, tinted badges and fil
     expect(contrast(rgb(vars["--action-ink"]), ink), `${color} filled`).toBeGreaterThanOrEqual(4.5);
   }
   expect(contrast(rgb(vars["--action-ink"]), rgb(vars["--action-hover"])), "primary hover").toBeGreaterThanOrEqual(4.5);
+  const warning = rgb(vars["--color-warn"]);
+  for (const alpha of [.1, .2]) {
+    const background = rgb(vars["--bg-elevated"]).map((v, i) => warning[i] * alpha + v * (1 - alpha));
+    expect(contrast(warning, background), `warning / tint ${alpha}`).toBeGreaterThanOrEqual(4.5);
+  }
 });
 
 it.each(["dark", "light"] as const)("keeps cold CSS and runtime/chart palette consistent (%s)", theme => {

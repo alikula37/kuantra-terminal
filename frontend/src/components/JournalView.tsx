@@ -498,7 +498,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
       </div>
 
       {(cancellationNotice || quoteError || lastSuccessAt) && (
-        <div role="status" data-testid="journal-cancel-success" className={`mt-3 rounded border px-3 py-2 text-sm ${quoteError ? "border-amber-400/40 bg-amber-950/20 text-amber-200" : "border-gain/40 bg-gain/10 text-gain"}`}>
+        <div role="status" data-testid="journal-cancel-success" className={`mt-3 rounded border px-3 py-2 text-sm ${quoteError ? "border-warn/40 bg-warn/10 text-warn" : "border-gain/40 bg-gain/10 text-gain"}`}>
           {quoteError && (
             <span>
               {t("journal.refresh_failed")}: {quoteError}
