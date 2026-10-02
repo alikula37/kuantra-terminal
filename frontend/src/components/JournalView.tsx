@@ -558,9 +558,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenNewTrade, onOpen
           <p className="px-3 py-2 k-help border-b border-surface-border">{t("journal.row_details_hint")}</p>
           <table className="journal-table w-full min-w-[900px] table-fixed text-left text-sm">
             <colgroup>
-              <col style={{ width: "18%" }} /><col style={{ width: "7%" }} />
+              <col style={{ width: "18%" }} /><col style={{ width: "9%" }} />
               <col style={{ width: "10%" }} /><col style={{ width: "11%" }} />
-              <col style={{ width: "19%" }} /><col style={{ width: "20%" }} />
+              <col style={{ width: "19%" }} /><col style={{ width: "18%" }} />
               <col style={{ width: "15%" }} />
             </colgroup>
             <thead className="bg-[#090d14] text-sm text-slate-400 sticky top-0 border-b border-surface-border">

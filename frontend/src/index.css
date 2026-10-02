@@ -139,9 +139,11 @@ body {
 }
 
 /* WP50: bounded columns and in-flow details, never a wide sticky action overlay. */
-.journal-table th,
 .journal-table td {
   overflow-wrap: anywhere;
+}
+.journal-table th {
+  overflow-wrap: normal;
 }
 .journal-row-actions .k-btn {
   padding-inline: 8px;

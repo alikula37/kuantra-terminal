@@ -68,3 +68,10 @@ full frontend **46 files / 309 tests PASS**, i18n **1259/1259/1259**, tsc/produc
 docs (**136 documents / 184 links / 5 startup**), release truth and diff check PASS.
 No dependency install required; `uv --offline` proves dependency resolution only.
 Native visual acceptance, canonical clean-source CI and install remain pending.
+
+Initial native candidate `a187e94`: canonical CI 13/13 COMPLETE, exact DMG smoke PASS,
+data-preserving install; TR/EN light/dark and DE light main/disclosed rows showed no overlay.
+Native DE revealed a real layout defect: `Richtung` split at its final letter. Direction
+width increased 7% → 9% (status 20% → 18%), header wrapping restricted to normal word
+boundaries. Final clean build and native acceptance use the follow-up commit, not the first
+candidate's report. The initial candidate is not final package proof.
