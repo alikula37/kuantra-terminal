@@ -9,7 +9,10 @@ filled accents disappeared), locale settings-response race, truncated sidebar la
 stale base-quantity/institutional execution copy. Shared color/ink/focus recipes, core sans
 labels and accurate EN/TR/DE wording fixed; red **11 failures** → frontend **51/353 PASS**,
 i18n **1274** per language, tsc/build/docs/truth/diff PASS; full backend **1220 PASS / 3 warnings**.
-Clean-source arm64 CI and data-preserving installed native acceptance pending. No financial formula/provider/
+Two clean-source candidates passed arm64 CI (13/13 COMPLETE), but native **59ecbd0**
+first light launch still mixed dark header/nav colors. Red child-first-layout tests reproduced
+initialization after child mounting; pre-paint theme initialization/mount gate added.
+Final clean-source rebuild and installed acceptance pending; no false closure. No financial formula/provider/
 schema/authority changes or Release/tag. See selected WP52 for bounded contract/evidence.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 

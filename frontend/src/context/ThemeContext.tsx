@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect, useCallback, useRef, ReactNode } from "react";
 import { apiFetch, apiUrl } from "../lib/backend";
 
 export type Theme = "dark" | "light";
@@ -75,6 +75,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const themeMutationVersionRef = useRef(0);
+  const [themeReady, setThemeReady] = useState(false);
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("kuantra_theme") as Theme;
@@ -136,6 +137,14 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setTheme(theme === "dark" ? "light" : "dark");
   }, [theme, setTheme]);
 
+  // A child may resolve/cache its inherited colors at its first layout (native
+  // WKWebView included). Mount it only after the persisted theme is applied;
+  // an after-paint effect leaves a mixed palette until the next theme toggle.
+  useLayoutEffect(() => {
+    applyDomTokens(theme);
+    setThemeReady(true);
+  }, [theme, applyDomTokens]);
+
   // Initial load sync from backend if available
   useEffect(() => {
     applyDomTokens(theme);
@@ -167,7 +176,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     getChartTheme: () => getChartTheme(theme),
   };
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={value}>{themeReady ? children : null}</ThemeContext.Provider>;
 };
 
 export const useTheme = (): ThemeContextType => {

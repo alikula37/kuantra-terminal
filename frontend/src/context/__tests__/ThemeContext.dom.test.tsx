@@ -102,3 +102,21 @@ it.each(["dark", "light"] as const)("applies matching RGB and hex tokens on a co
   await act(async () => toggle.click()); check();
   expect(document.documentElement.dataset.theme).toBe(theme);
 });
+
+it.each(["dark", "light"] as const)("initializes inherited colors before the first child layout (%s)", async theme => {
+  localStorage.setItem("kuantra_theme", theme);
+  mocks.apiFetch.mockResolvedValue(response({ active_theme: theme }));
+  const firstLayouts: Array<{ theme: string | undefined; accent: string; rgb: string }> = [];
+  function LayoutProbe() {
+    React.useLayoutEffect(() => {
+      const root = document.documentElement;
+      firstLayouts.push({ theme: root.dataset.theme, accent: root.style.getPropertyValue("--color-accent"), rgb: root.style.getPropertyValue("--accent-rgb") });
+    }, []);
+    return <ThemeProbe />;
+  }
+  await act(async () => root.render(<ThemeProvider><LayoutProbe /></ThemeProvider>));
+  expect(firstLayouts).toHaveLength(1);
+  expect(firstLayouts[0].theme).toBe(theme);
+  expect(firstLayouts[0].accent).not.toBe("");
+  expect(firstLayouts[0].rgb).not.toBe("");
+});

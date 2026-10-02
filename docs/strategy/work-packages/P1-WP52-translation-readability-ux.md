@@ -91,3 +91,9 @@ need sampled core-workflow inspection, not a claim that every screen has been au
   footer technical text uses normal muted ink. Extended warning recipe test red (missing
   explicit warning token) → green. A new clean-source build is required after this change;
   the earlier executable is not installed or offered as the final binary.
+- Installed **59ecbd0** candidate exposed a second genuine native startup defect: first
+  light launch had dark header/nav/control colors while other surfaces were light; theme
+  roundtrip resolved it. Child-layout tests failed in both themes: the first child layout
+  saw no initialized theme/RGB tokens. ThemeProvider now gates child mounting until the
+  persisted theme is applied in the pre-paint layout phase. Local candidate was installed
+  preserving data, but is **not final acceptance**; rebuild/reinstall is required.
