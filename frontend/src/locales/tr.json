@@ -85,6 +85,12 @@
     "status_UNKNOWN": "Bilinmeyen durum"
   },
   "updates": {
+    "build_boundary": "Sürüm numarasının aynı olması paketlerin aynı olduğunu kanıtlamaz. Yerel build, yayımlanan pilottan farklı olabilir; pilot sahibinin sağladığı kaynak/paket kanıtıyla karşılaştır.",
+    "guide_title": "Manuel güncelleme nasıl yapılır?",
+    "choose_package": "Apple menüsü → Bu Mac Hakkında: Apple/M-serisi çip → arm64.dmg; Intel işlemci → x86_64.dmg. Onaylı pilotun doğru paketini seç; Source code ZIP/TAR uygulama kurulumu değildir. macOS 12 veya üzeri gerekir.",
+    "check_package": "Yukarıdaki düğmeyle Releases’ı aç; private erişim için GitHub hesabın gerekebilir. Kurmadan önce sürüm notlarını, mimariyi ve paket hash’ini sahibin güvenilir kanıtıyla karşılaştır. DMG sağlama toplamının geçmesi Apple güvenlik onayı değildir.",
+    "preserve_data": "Applications içindeki .app’i değiştirmeden önce Kuantra’yı tamamen kapat. Ayrı yerel veri klasörünü ve tercihlerini koru; silme/sıfırlama yapma, başka bir uygulamanın üzerine yazma. Gerekiyorsa şema uyumluluğunu ve uygun yedeği destekle doğrula. Yeniden açıp sürümü ve kayıtlarını kontrol et; bu ekran kurulum yapmaz veya kurulum sonucunu doğrulamaz.",
+    "security_boundary": "Pilot, Developer ID/notarization olmadan ad-hoc imzalı olabilir; macOS açılışı engelleyebilir. Gatekeeper’ı kapatma veya karantina korumasını kaldırma. Zarar verecek/bozuk uyarısında dur ve pilot sahibine bildir.",
     "title": "Uygulama güncellemeleri",
     "version": "Yüklü sürüm: {version}",
     "description": "Deponun GitHub Releases sayfasını tarayıcınızda açar; Mac'inize uygun paketi buradan seçebilirsiniz. Bu ekran sürümünüzü otomatik denetlemez; kurulum manueldir ve GitHub hesabınızla giriş yapmanız gerekebilir.",

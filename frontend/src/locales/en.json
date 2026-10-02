@@ -85,6 +85,12 @@
     "status_UNKNOWN": "Unknown state"
   },
   "updates": {
+    "build_boundary": "A matching version number does not prove matching builds. A locally built app may differ from the published pilot; compare the source/artifact evidence supplied by the pilot owner.",
+    "guide_title": "How to update manually",
+    "choose_package": "Apple menu → About This Mac: Apple/M-series chip → arm64.dmg; Intel processor → x86_64.dmg. Choose the matching approved pilot package, not Source code ZIP/TAR. macOS 12 or later is required.",
+    "check_package": "Open Releases with the button above; private access may require your GitHub account. Check the release notes, architecture and package hash against trusted owner evidence before installation. A valid DMG checksum is not Apple security approval.",
+    "preserve_data": "Quit Kuantra completely before replacing its .app in Applications. Keep the separate local data directory and preferences; do not reset/delete them or overwrite an unrelated app. Verify schema compatibility and an appropriate backup with support when needed. Reopen and check the version and your records; this screen does not perform or verify installation.",
+    "security_boundary": "The pilot may be ad-hoc signed without Developer ID/notarization; macOS may block opening. Do not disable Gatekeeper or remove quarantine protections. If macOS reports damage or malware, stop and contact the pilot owner.",
     "title": "Application updates",
     "version": "Installed version: {version}",
     "description": "Opens the repository's GitHub Releases page in your browser so you can choose the package for your Mac. This screen does not check your version automatically; installation is manual and you may need to sign in to your GitHub account.",

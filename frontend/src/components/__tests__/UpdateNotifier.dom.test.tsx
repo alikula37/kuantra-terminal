@@ -25,6 +25,19 @@ beforeEach(async () => {
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.useRealTimers(); });
 const render = async () => { await act(async () => root.render(<UpdateNotifier />)); };
 const click = async () => { await act(async () => host.querySelector("button")!.click()); };
+it("offers optional architecture/install guidance without checking or installing anything", async () => {
+  await render();
+  expect(host.textContent).toContain("updates.build_boundary");
+  const guide = host.querySelector('[data-testid=update-guide]') as HTMLDetailsElement;
+  expect(guide).not.toBeNull();
+  expect(guide.open).toBe(false);
+  expect(guide.querySelectorAll('ol > li')).toHaveLength(3);
+  expect(guide.textContent).toContain("updates.choose_package");
+  expect(guide.textContent).toContain("updates.preserve_data");
+  expect(guide.textContent).toContain("updates.security_boundary");
+  expect(host.querySelector('button')!.classList.contains('k-btn')).toBe(true);
+  expect(mocks.open).not.toHaveBeenCalled();
+});
 it("opens the fixed pilot URL only on click and never claims a version check", async () => {
   mocks.open.mockResolvedValue({ ok: true });
   await render();

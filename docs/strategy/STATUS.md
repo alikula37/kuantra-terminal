@@ -1,10 +1,16 @@
 <!-- doc-role: current-status -->
 # Current development status
 
-Updated: 2026-10-02. Branch: `main` (latest owner instruction).
+Updated: 2026-10-03. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP56 update guidance](work-packages/P1-WP56-update-guidance-ux.md).**
-Ready, not implemented. Reproduce current manual-update confusion; no automatic installer,
+InProgress: presentation-only update guide implemented in this change. One missing-guidance
+red regression → 12 focused PASS; build/tsc and EN/TR/DE 1318 parity PASS; docs/diff clean.
+Fixed Releases action remains unchanged; architecture choice, manual replacement/data
+preservation, same-version artifact boundary and ad-hoc signing limits are explicit.
+Full clean-commit CI/packaging and native acceptance remain pending. Installed app UI access
+returns `noWindowsAvailable`/`timeoutReached` while its process remains running; safe normal
+quit and visual acceptance are blocked. Installed bundle/data untouched. No automatic installer,
 invented latest-version claim, security bypass, Release/tag/workflow or user-data change.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
 

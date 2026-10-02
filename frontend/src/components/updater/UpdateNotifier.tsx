@@ -31,12 +31,13 @@ export const UpdateNotifier: React.FC = () => {
     } catch { finish(false); }
   };
 
-  const actionClass = "inline-flex items-center gap-2 px-3 py-2 border border-surface-border rounded text-xs text-white hover:bg-slate-800 disabled:opacity-50";
+  const actionClass = "k-btn k-control disabled:opacity-50";
   return (
-    <section aria-label={t("updates.title")} className="bg-[#0d121c] p-4 rounded-lg border border-surface-border space-y-3">
-      <h2 className="text-sm font-bold text-white">{t("updates.title")}</h2>
-      <p className="text-xs text-slate-300">{t("updates.version", { version: packageJson.version })}</p>
-      <p className="text-xs text-slate-400">{t("updates.description")}</p>
+    <section aria-label={t("updates.title")} className="bg-surface text-ink p-4 rounded-lg border border-surface-border space-y-3">
+      <h2 className="text-base font-bold">{t("updates.title")}</h2>
+      <p className="text-base">{t("updates.version", { version: packageJson.version })}</p>
+      <p className="text-sm text-muted">{t("updates.build_boundary")}</p>
+      <p className="text-sm text-muted">{t("updates.description")}</p>
       {expectsDesktop() ? (
         <button type="button" className={actionClass} onClick={() => void openRelease()} disabled={status === "opening"}>
           <ExternalLink className="w-4 h-4" aria-hidden="true" />
@@ -47,7 +48,16 @@ export const UpdateNotifier: React.FC = () => {
           <ExternalLink className="w-4 h-4" aria-hidden="true" />{t("updates.open")}
         </a>
       )}
-      {status === "error" && <p role="alert" className="text-xs text-loss">{t("updates.error")}</p>}
+      {status === "error" && <p role="alert" className="text-sm text-loss">{t("updates.error")}</p>}
+      <details data-testid="update-guide" className="border border-surface-border rounded p-3">
+        <summary className="text-base cursor-pointer rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">{t("updates.guide_title")}</summary>
+        <ol className="list-decimal pl-6 space-y-3 mt-3 text-sm">
+          <li>{t("updates.choose_package")}</li>
+          <li>{t("updates.check_package")}</li>
+          <li>{t("updates.preserve_data")}</li>
+        </ol>
+        <p className="text-sm text-warn mt-3">{t("updates.security_boundary")}</p>
+      </details>
     </section>
   );
 };
