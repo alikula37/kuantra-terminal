@@ -3,13 +3,39 @@
 
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP50 journal layout UX](work-packages/P1-WP50-journal-layout-ux.md).**
-Implementation tested; full clean native delivery and visual acceptance pending. Seven in-flow
-columns, visible Edit, accessible inline secondary actions and compact honest quote metadata
-replace the verified sticky overlay. No API/accounting changes. Related backend 89 PASS;
-full backend 1209 PASS / 3 warnings, frontend 46 files / 309 PASS, i18n 1259 per language,
-tsc/build/docs/truth/diff PASS; clean native CI/installed visual proof pending. External obligations remain in
-[P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+**Selected work: [P1-WP51 no-data metric states](work-packages/P1-WP51-no-data-metrics-ux.md).**
+Prepared, not implemented. Installed dashboard with no real closed results still renders
+win rate 0.0% and drawdown 0.00%; next package distinguishes no data/all unknown/partial
+coverage from genuine measured zero without changing financial formulas or mixing simulations.
+External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**WP50 complete + archived (2026-10-02):**
+[journal layout and installed acceptance](../archive/strategy/work-packages/P1-WP50-journal-layout-ux.md).
+Seven in-flow columns, visible Edit, keyboard-accessible inline Evidence/Chart/Cancel and
+compact honest quote metadata replace the sticky overlay. No API/accounting/schema changes.
+Commits **a187e94 / efe269b** pushed main; final binary source **efe269b**. Red 5 → green,
+full backend **1209 PASS / 3 warnings**, frontend **46 files / 309 PASS**, i18n **1259**
+per language, tsc/build/docs/truth/diff PASS. Canonical native arm64 CI **13/13 / MERGE
+READY / COMPLETE**, exact read-only mounted-DMG WKWebView smoke PASS. Final reports in
+`artifacts/evidence/p1-wp50/` (CI `824b2e37…`, exact-DMG `e3c686f4…`, N05 `a2e0f21e…`);
+DMG SHA-256 `7383e8bc33dbaaed3f3e98e3c5f4f498ba7e8f539810db7b388f0f2f685f59c0`.
+Installed executable `965063656d0da0eda37cefefc64847b0847a3e96e5933011d741cbe8e347e8c7`
+matches CI/mounted artifact; codesign PASS, native launch/journal verified. Version **1.1.6
+local source build**; no Release/tag or Intel refresh. Backup
+`/tmp/kuantra-wp50-final.1hiB7V/Kuantra Terminal.app`; prior WP49 app at
+`/tmp/kuantra-wp50-update.kRrFe6/Kuantra Terminal.app`. Stopped DB hash unchanged across
+replacement, **5 trades / 24 events / 5 tracking projections** unchanged after launch.
+No saved/edited/cancelled test trade, user-data reset/migration apply or credentials.
+Native TR/EN/DE light/dark rows checked; final German header wrap fixed and rechecked;
+Option+Tab/Escape focus workflow verified. User TR/light/LITE restored. Small-window/all-app
+accessibility not claimed. Native startup uses public market network; `uv --offline` is not
+runtime offline proof. **N05 BLOCKED**; commercial-license, gold/XM and clean-profile gates open.
+
+**Observed follow-ups (not claimed closed by WP50):** dark-theme global New Trade/manual-entry
+accents can appear black-on-dark (approved translation/readability step); initial WP50
+app quit left two multiprocessing helpers (PPID 1, no journal data handles found), safely
+SIGTERM-stopped before replacement. Shutdown lifecycle needs reproduction/diagnosis in a
+separate bounded task. Journal's new controls remain readable and its layout acceptance passed.
 
 **WP49 complete + archived (2026-10-02):**
 [quote-freshness UX evidence](../archive/strategy/work-packages/P1-WP49-quote-freshness-ux.md).

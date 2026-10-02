@@ -1,0 +1,73 @@
+{
+  "schema_version": "N05.macos-distribution.v1",
+  "status": "BLOCKED",
+  "acceptance_status": "OWNER_REVIEW_REQUIRED",
+  "recorded_at_utc": "2026-10-02T07:54:51Z",
+  "platform": {
+    "os": "darwin",
+    "os_version": "macOS-26.6.2-arm64-arm-64bit",
+    "architecture": "arm64"
+  },
+  "source": {
+    "commit_sha": "efe269b26ebd503692ccbe16f02e3c4e801a44f4",
+    "tracked_tree_status": "clean",
+    "provenance_status": "COMPLETE"
+  },
+  "artifacts": {
+    "dmg_sha256": "7383e8bc33dbaaed3f3e98e3c5f4f498ba7e8f539810db7b388f0f2f685f59c0",
+    "dmg_size_bytes": 94439473,
+    "app_tree_sha256": "cdf968b59e25f08c182160834c7aea222bca923f0bc229de95c665285dd889a4",
+    "executable_sha256": "965063656d0da0eda37cefefc64847b0847a3e96e5933011d741cbe8e347e8c7",
+    "mounted_app_relative_path": "Kuantra Terminal.app",
+    "executable_relative_path": "Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal"
+  },
+  "signing": {
+    "codesign_verify": "PASS",
+    "identity_type": "AD_HOC",
+    "identifier": "com.kuantra.terminal",
+    "team_identifier": "not set",
+    "authorities": [],
+    "signature": "adhoc",
+    "hardened_runtime": false,
+    "entitlement_keys": [],
+    "unapproved_entitlement_keys": []
+  },
+  "notarization": {
+    "gatekeeper_assessment": "FAIL",
+    "dmg_ticket_validation": "FAIL",
+    "release_gate_pass": false
+  },
+  "commands": {
+    "raw_output_recorded": false,
+    "codesign_identity": "codesign -dv --verbose=4",
+    "codesign_verify": "codesign --verify --deep --strict --verbose=2",
+    "entitlements": "codesign -d --entitlements :-",
+    "gatekeeper": "spctl --assess --type execute --verbose=4",
+    "ticket": "xcrun stapler validate"
+  },
+  "issues": [
+    "developer_id_application_signature_required",
+    "hardened_runtime_required",
+    "gatekeeper_assessment_failed",
+    "dmg_notarization_ticket_missing_or_invalid"
+  ],
+  "claims": {
+    "production_ready": false,
+    "commercial_support": false,
+    "signing": false,
+    "notarized": false,
+    "live_execution": false
+  },
+  "contract": {
+    "user_data_read": false,
+    "credentials_read": false,
+    "signing_secret_read": false,
+    "application_network_used": false,
+    "live_execution": false
+  },
+  "mount": {
+    "mode": "readonly",
+    "attached": true,
+    "detached": true
+  }
+}
