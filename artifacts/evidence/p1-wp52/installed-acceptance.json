@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "evidence_type": "operator_native_ui_and_install_attestation",
+  "work_package": "P1-WP52",
+  "observed_date_local": "2026-10-02",
+  "timezone": "Europe/Istanbul",
+  "source_commit_sha": "793cab419ce4ae3aa3a1ae3eb9ea70b75919981a",
+  "product_version": "1.1.6",
+  "distribution": "local source build; published Release unchanged",
+  "platform": "macOS 26.6.2 arm64",
+  "toolchain": {
+    "python": "3.11.16",
+    "node": "24.20.0",
+    "npm": "11.19.0",
+    "uv": "0.12.10",
+    "pyinstaller": "6.22.2"
+  },
+  "reports": {
+    "local-ci.json": "915bca313742a775ca07de0770e11b6dbc7e966ae2503c674d8075a760d647ae",
+    "exact-dmg-smoke.json": "bba6d7df8f2c60ae401841629c780fca5c3fb3c87bc1470903dbb30bee3e9ddb",
+    "n05-preflight.json": "02fadb0dc0453d8995a734301c78f4e88f724e971b4cb470964141552ddd24aa"
+  },
+  "artifact": {
+    "filename": "Kuantra-Terminal-1.1.6-wp52-arm64.dmg",
+    "sha256": "61f9b61bfc11d936d2373e674b51597f727e59b01cd2498f60c20761a970d3cd",
+    "exact_read_only_mounted_dmg_smoke": "PASS",
+    "mount_detached_after_install": true,
+    "ci_mounted_and_installed_executable_sha256": "1f0fae9de0df19e1fe5cd55d91e65bae45774f2922e9efc5a18afdb262dfbb86"
+  },
+  "installation": {
+    "app_path": "/Applications/Kuantra Terminal.app",
+    "previous_bundle_backup": "/tmp/kuantra-wp52-final-acceptance.NsYllN/Kuantra Terminal.app",
+    "codesign_strict_deep": "PASS",
+    "signature_kind": "ad-hoc; no Developer ID/notarization",
+    "n05_status": "BLOCKED",
+    "runtime": "frozen=True; wkwebview; in-process ASGI/no socket; visibly running"
+  },
+  "preservation": {
+    "stopped_db_before_and_after_replacement_sha256": "f6bfe9056a04e721e31024b8d59a5778165e98173d374e63d2e55cbec24422c1",
+    "counts_before_and_after_native_qa": {
+      "trades": 5,
+      "evidence_events": 24,
+      "local_tracking_projections": 5
+    },
+    "ordered_trade_rows_before_and_after_sha256": "f75212a540951ff32d10ca92689d0318486cad438217f531bb723099f92e5b70",
+    "ordered_event_rows_before_and_after_sha256": "984bfec9de2f30d0f247d99d0506ca61e59684ab1ab84e1cef595a1fd3bd5da9",
+    "final_preferences": "TR/light/LITE; 3 hidden metrics; verified after normal quit/reopen",
+    "trade_save_edit_cancel_or_reset_performed": false,
+    "user_data_migration_or_credential_write_performed": false
+  },
+  "native_observations": [
+    "Cold light and cold dark coherent header/nav/filled actions; no theme roundtrip required",
+    "DE/light and DE/dark journal delayed/display-only quote warning readable",
+    "DE edit tracking-start uses 18.09.2026, 14:32 instead of Turkish month text",
+    "Edit Tab input navigation and Escape close without save",
+    "EN/dark New Trade and EN/light journal readable; New Trade canceled without save",
+    "TR/light tracking warning states candle/display-only automatic-close wait",
+    "TR/light Dashboard and final quit/reopen preserve preferences and readable CTA"
+  ],
+  "automated_evidence": {
+    "backend": "1220 passed / 3 warnings, isolated synthetic test data",
+    "frontend": "51 files / 360 passed",
+    "i18n": "1274/1274/1274",
+    "tsc_and_production_build": "PASS",
+    "canonical_local_ci": "13/13 PASS; MERGE READY; COMPLETE; clean tracked source",
+    "changed_enabled_core_text_contrast": ">=4.5:1 tested token/recipe matrix",
+    "disabled_error_partial_busy_states": "DOM/API evidence, not all native scenarios"
+  },
+  "limitations": [
+    "Operator observations; screenshots not retained as committed assets",
+    "Not all-app WCAG, translation or small-window acceptance",
+    "Weekly-review warning/raw diagnostics, MAE/MFE English empty state and existing BUY/OPEN diagnostic labels remain follow-ups",
+    "Previous shutdown-helper observation still requires separate reproduction",
+    "Form length/simplicity selected as WP53, not implemented by this package",
+    "Public market network occurred; uv --offline is not runtime offline proof",
+    "N03/H05/legal, independent gold/FX provider and real XM evidence obligations unchanged",
+    "No Release/tag, workflow or Intel artifact refresh"
+  ]
+}

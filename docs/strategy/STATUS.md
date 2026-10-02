@@ -3,22 +3,40 @@
 
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP52 translation/readability](work-packages/P1-WP52-translation-readability-ux.md).**
-Implemented, installed acceptance pending. Confirmed invalid semantic RGB/alpha CSS (dark
-filled accents disappeared), locale settings-response race, truncated sidebar labels and
-stale base-quantity/institutional execution copy. Shared color/ink/focus recipes, core sans
-labels and accurate EN/TR/DE wording fixed; red **11 failures** → frontend **51/353 PASS**,
-i18n **1274** per language, tsc/build/docs/truth/diff PASS; full backend **1220 PASS / 3 warnings**.
-Native **59ecbd0 / 0c7c6fc** first light launch still mixed dark header/nav colors despite
-passing CI. Deferred persisted-theme read / bounded fallback and shared-control color
-transition fix at **70ecb85** passed cold light and cold dark installed launch. Further
-DE/light journal/edit review found pale delayed-quote ink and Turkish month text in edit
-dates: red **3 failures** → **31 focused PASS**, full frontend **51/360 PASS**. Both fixed
-in this change; final clean-source rebuild and installed recheck pending. No false closure.
-Weekly-review pale warning/raw diagnostic copy is an observed separate follow-up, not
-claimed fixed by this core form package. No financial formula/provider/
-schema/authority changes or Release/tag. See selected WP52 for bounded contract/evidence.
+**Selected work: [P1-WP53 form simplicity](work-packages/P1-WP53-form-simplicity-ux.md).**
+Ready, not yet implemented. Next approved step: reproduce the long New Trade/Edit journey,
+reduce repeated explanations and present optional fields progressively, while preserving
+required time/mode/source/size/target validation and revision/partial-close protections.
+No new financial defaults, provider fallback, accounting/API/schema/authority or Release/tag.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**WP52 complete + archived (2026-10-02):**
+[core translation/readability and native acceptance](../archive/strategy/work-packages/P1-WP52-translation-readability-ux.md).
+Fixed invalid RGB/alpha CSS (invisible filled accents), locale-read race, truncated navigation,
+stale quantity/execution wording, native initial-theme read, pale quote-warning ink and
+nonlocalized edit dates. Implementation **31f11bf / 59ecbd0 / 0c7c6fc / 70ecb85 / 793cab4**
+pushed main; final binary source **793cab419ce4ae3aa3a1ae3eb9ea70b75919981a**. Earlier native
+first-light candidates failed despite green CI and were not accepted. Final cold light/dark,
+theme/language roundtrips, DE quote warning/date, EN form/journal and TR tracking/Dashboard
+samples passed; Tab/Escape/cancel checked without saving trades. Changed enabled core
+text/recipe contrast >=4.5:1 tested; disabled/error/partial variants are DOM/API evidence,
+not an all-app or all-native accessibility claim.
+Red regressions → full **1220 backend PASS / 3 warnings**, **51 files / 360 frontend PASS**,
+i18n **1274/1274/1274**, tsc/build/docs/truth/diff PASS. Canonical native arm64 **13/13 /
+MERGE READY / COMPLETE**, exact read-only mounted-DMG WKWebView/controller smoke PASS.
+Final reports `artifacts/evidence/p1-wp52/`: CI `915bca31…`, exact-DMG `bba6d7df…`, N05
+`02fadb0d…`, installed operator acceptance. DMG SHA-256
+`61f9b61bfc11d936d2373e674b51597f727e59b01cd2498f60c20761a970d3cd`;
+installed executable `1f0fae9de0df19e1fe5cd55d91e65bae45774f2922e9efc5a18afdb262dfbb86`
+matches CI/mounted artifact. **1.1.6 local source build**, codesign strict/deep PASS (ad-hoc),
+running frozen WKWebView/in-process backend. Backup
+`/tmp/kuantra-wp52-final-acceptance.NsYllN/Kuantra Terminal.app`; stopped DB hash unchanged
+across replacement, ordered trade/event hashes and **5 trades / 24 events / 5 tracking
+projections** unchanged after final native QA. TR/light/LITE and **3 hidden metrics** preserved
+and verified after quit/reopen. No saved/edited/canceled trade, data reset/migration or
+credentials. No Release/tag/workflow/Intel refresh; binary source remains 793cab4, not this
+docs-only closure. Public market network occurred; no offline-runtime claim. **N05 BLOCKED**,
+N03/H05/legal/gold/XM obligations unchanged. Next dependency is selected WP53.
 
 **WP51 complete + archived (2026-10-02):**
 [no-data metric UX and installed acceptance](../archive/strategy/work-packages/P1-WP51-no-data-metrics-ux.md).
@@ -67,12 +85,13 @@ Option+Tab/Escape focus workflow verified. User TR/light/LITE restored. Small-wi
 accessibility not claimed. Native startup uses public market network; `uv --offline` is not
 runtime offline proof. **N05 BLOCKED**; commercial-license, gold/XM and clean-profile gates open.
 
-**Observed follow-ups (not claimed closed by WP50/WP51):** dark-theme global New Trade/manual-entry
-accents can appear black-on-dark (selected WP52; WP51 first light screenshot also showed
-low-contrast active header/sidebar controls until a theme roundtrip); initial WP50
-app quit left two multiprocessing helpers (PPID 1, no journal data handles found), safely
-SIGTERM-stopped before replacement. Shutdown lifecycle needs reproduction/diagnosis in a
-separate bounded task. Journal's new controls remain readable and its layout acceptance passed.
+**Observed follow-ups (not claimed closed by WP52):** long/scroll-heavy New Trade/Edit forms
+follow selected WP53. Weekly-review pale warning/raw diagnostic codes, MAE/MFE hardcoded
+English no-history state and existing raw BUY/OPEN diagnostic labels need separate bounded
+presentation review; no all-app translation claim. Initial WP50 app quit left two multiprocessing
+helpers (PPID 1, no journal data handles found), safely SIGTERM-stopped before replacement;
+later normal quits do not by themselves close that lifecycle reproduction/diagnosis obligation.
+Core global CTA and mixed initial-theme defects are now closed by WP52 native evidence.
 
 **WP49 complete + archived (2026-10-02):**
 [quote-freshness UX evidence](../archive/strategy/work-packages/P1-WP49-quote-freshness-ux.md).
