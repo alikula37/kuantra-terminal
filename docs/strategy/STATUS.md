@@ -3,16 +3,36 @@
 
 Updated: 2026-10-02. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP51 no-data metric states](work-packages/P1-WP51-no-data-metrics-ux.md).**
-Implementation verified in isolated tests; clean-source native CI/package/install pending.
-No-data/all-unknown win rate, drawdown and nearby confirmed metric states now stay unavailable;
-partial results disclose the known denominator, genuine measured zero and financial formulas
-are preserved. Additive API availability metadata describes recorded-outcome coverage only,
-not broker verification or full-account performance. Red tests → backend **1220 PASS /
-3 warnings**, frontend **48 files / 335 PASS**, i18n **1269** per language, tsc/build PASS.
-Installed WP50 has not yet been replaced; its no-data visual bug is not claimed fixed on
-this Mac until the WP51 binary and native acceptance are verified. No Release/tag authorized.
+**Selected work: [P1-WP52 translation/readability](work-packages/P1-WP52-translation-readability-ux.md).**
+Prepared, not implemented. Reproduce core workflow translation/contrast issues (dark global
+New Trade/empty-state CTA, light initial active-control contrast) and improve only confirmed
+readability defects. No financial formula/provider/schema/authority changes or Release/tag.
 External obligations remain in [P1-WP29](work-packages/P1-WP29-trusted-macos-pilot-package.md).
+
+**WP51 complete + archived (2026-10-02):**
+[no-data metric UX and installed acceptance](../archive/strategy/work-packages/P1-WP51-no-data-metrics-ux.md).
+No-data/all-unknown win rate/drawdown/profit factor and adjacent confirmed metric states stay
+unavailable; partial results disclose known denominator; genuine measured zero and formulas
+preserved. API availability metadata is additive, recorded-outcome coverage only, not broker
+verification/full-account performance. Implementation **2383cca**, pushed main; red behavioral
+regressions → **1220 backend PASS / 3 warnings**, **48 files / 335 frontend PASS**; i18n
+**1269** per language, tsc/build/docs/truth/diff PASS. Canonical native arm64 **13/13 / MERGE
+READY / COMPLETE**, exact read-only mounted-DMG WKWebView/controller smoke PASS. Reports
+`artifacts/evidence/p1-wp51/`: CI `dfb23dea…`, exact-DMG `98d402a5…`, N05 `b01cb5d3…`,
+installed acceptance attestation; DMG SHA-256
+`fb0c98eac2ebdecaf3fc771ff4dc7fddee8588238521fb2a6abad7081c1bfa7d`.
+Installed executable `ac56f48b4c22c2274df79099edb0ff6ffcf78f22fb919c8f11c54ee21511231a`
+matches CI/mounted artifact; codesign PASS, running native app/summary 200. **1.1.6 local
+source build**, no Release/tag/Intel refresh. Backup `/tmp/kuantra-wp51-update.5ZvXLa/Kuantra
+Terminal.app`; stopped DB hash unchanged across replacement, **5 trades / 24 events / 5
+tracking projections** unchanged after native QA. No saved/edited/canceled test trade,
+data reset/migration apply or credentials. New no-data labels checked TR/EN/DE light/dark
+at 1440×900 logical without overlap; unknown/partial/known-zero/loading/error synthetic API/DOM
+acceptance, not native real-result evidence. TR/light/LITE and 3 hidden metrics restored.
+Existing global CTA/initial active-control contrast follows WP52; earlier orphan-helper
+shutdown observation remains open. Runtime public market network occurred; no offline-runtime
+claim. **N05 BLOCKED**, N03/H05/legal/gold/XM gates unchanged. Closure is docs/evidence only;
+binary source remains 2383cca, not the later closure commit.
 
 **WP50 complete + archived (2026-10-02):**
 [journal layout and installed acceptance](../archive/strategy/work-packages/P1-WP50-journal-layout-ux.md).
@@ -36,8 +56,9 @@ Option+Tab/Escape focus workflow verified. User TR/light/LITE restored. Small-wi
 accessibility not claimed. Native startup uses public market network; `uv --offline` is not
 runtime offline proof. **N05 BLOCKED**; commercial-license, gold/XM and clean-profile gates open.
 
-**Observed follow-ups (not claimed closed by WP50):** dark-theme global New Trade/manual-entry
-accents can appear black-on-dark (approved translation/readability step); initial WP50
+**Observed follow-ups (not claimed closed by WP50/WP51):** dark-theme global New Trade/manual-entry
+accents can appear black-on-dark (selected WP52; WP51 first light screenshot also showed
+low-contrast active header/sidebar controls until a theme roundtrip); initial WP50
 app quit left two multiprocessing helpers (PPID 1, no journal data handles found), safely
 SIGTERM-stopped before replacement. Shutdown lifecycle needs reproduction/diagnosis in a
 separate bounded task. Journal's new controls remain readable and its layout acceptance passed.

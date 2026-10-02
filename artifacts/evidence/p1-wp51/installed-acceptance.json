@@ -1,0 +1,60 @@
+{
+  "work_package": "P1-WP51",
+  "recorded_date": "2026-10-02",
+  "evidence_kind": "operator_native_ui_and_install_attestation",
+  "source_commit_sha": "2383cca0e251517af19b3e8e5376de88ec37d407",
+  "product_version": "1.1.6",
+  "version_scope": "local source build, not a new published pilot version",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "executable_sha256": "ac56f48b4c22c2274df79099edb0ff6ffcf78f22fb919c8f11c54ee21511231a",
+  "dmg_sha256": "fb0c98eac2ebdecaf3fc771ff4dc7fddee8588238521fb2a6abad7081c1bfa7d",
+  "report_hashes": {
+    "local-ci.json": "dfb23dea7dcb20354a505db3a2ab6d44bcd167d8829b1ef826c4177681e82677",
+    "exact-dmg-smoke.json": "98d402a596a45303055084d0b93fa6c56a116f4b5817542f4d241c76c97cc68e",
+    "n05-preflight.json": "b01cb5d349e71195b14f32dc5ac26c3cb0a6356b1604c48edaf5d7078aa526da"
+  },
+  "install": {
+    "path": "/Applications/Kuantra Terminal.app",
+    "backup": "/tmp/kuantra-wp51-update.5ZvXLa/Kuantra Terminal.app",
+    "source": "copied from exact verified DMG read-only mount; detached after copy",
+    "codesign_verification": "PASS, ad-hoc only",
+    "database_sha256_before_and_after_replacement_before_launch": "7deb63db39421ac6920378170920fb0ea1249c65c9d67f20dc16e8aaca2cf0a8",
+    "counts_before_and_after_native_qa": {
+      "trades": 5,
+      "evidence_events": 24,
+      "local_tracking_projections": 5
+    },
+    "trade_sample": "simulation only: 4 canceled, 1 open; no real closed result",
+    "saved_edited_or_canceled_test_trades": false,
+    "user_data_reset_or_migration_apply": false,
+    "preferences_restored": "TR / light / LITE, 3 hidden metrics unchanged"
+  },
+  "installed_runtime": {
+    "status": "RUNNING",
+    "frozen": true,
+    "backend": "in-process ASGI",
+    "renderer": "wkwebview",
+    "portfolio_summary_http_status": 200,
+    "startup_local_time": "2026-10-02 11:38:49 Europe/Istanbul"
+  },
+  "native_ui_qa": {
+    "method": "CUA accessibility trees and screenshots inspected in this task; no screenshot files retained",
+    "logical_window": "1440x900",
+    "screenshot_pixels": "2880x1800",
+    "checked": ["TR light", "TR dark", "EN light", "EN dark", "DE light", "DE dark"],
+    "new_no_data_metric_labels": "PASS, win rate and drawdown unavailable, known-result status visible; cash remains configured 5000 USD; no-data heatmap does not advertise gain",
+    "today_zero_activity": "0 USD remains, explicitly labelled no closed trades today",
+    "loading_error_unknown_partial_known_zero": "synthetic API/DOM tests, not real journal edits or native real-result evidence",
+    "hidden_profit_factor": "covered in DOM tests; user metric visibility preferences were not changed",
+    "all_app_accessibility_or_small_window_acceptance": "NOT_CLAIMED"
+  },
+  "open_boundaries": [
+    "N05 Developer ID/notarization BLOCKED",
+    "Existing dark global New Trade/empty-state CTA low contrast; occasional light active-control contrast issue remains for WP52 reproduction",
+    "Earlier orphan-helper shutdown observation not closed by one clean quit in this task",
+    "Full-account accounting, broker verification, actual gold/XM and clean-profile gates unchanged",
+    "Public market startup occurred in smoke/native runs; uv offline is dependency resolution only",
+    "No Release/tag refresh or Intel build"
+  ]
+}
