@@ -121,6 +121,33 @@ it("puts focus in the dialog and closes on Escape", async () => {
   expect(onClose).toHaveBeenCalledTimes(1);
 });
 
+it("moves through every export action without relying on native WebView Tab settings", async () => {
+  mockPanelResponse(basePack);
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  const actions = Array.from(host.querySelectorAll("[data-testid='evidence-export-actions'] button"));
+  expect(actions).toHaveLength(4);
+  for (const action of actions) {
+    const event = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
+    await act(async () => document.dispatchEvent(event));
+    expect(event.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(action);
+  }
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true })));
+  expect(document.activeElement).toBe(actions[2]);
+});
+
+it("includes folded diagnostics in keyboard navigation and wraps focus in the dialog", async () => {
+  mockPanelResponse({ ...basePack, market_context: { ...basePack.market_context, reason: "TRADE_NOT_CLOSED" } });
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  const close = document.activeElement;
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true })));
+  expect(document.activeElement?.tagName).toBe("SUMMARY");
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true })));
+  expect(document.activeElement).toBe(close);
+});
+
 it("keeps a failed Evidence Pack request recoverable", async () => {
   let packCalls = 0;
   mocks.apiFetch.mockImplementation((path: string) => {

@@ -65,12 +65,21 @@ the new revision status family was registered, not bypassed. Full backend caught
 `timestamp` candle-shape compatibility regression; same-bar `time`/`timestamp` are supported
 without a guessed time. Full backend retry **1245 PASS / 3 warnings**; one producer-contract
 negative test subsequently added (clean gate includes it). Final frontend **51 files / 382 PASS**.
-Typecheck/build/i18n **1329** and docs/diff PASS. Clean/native evidence pending; no completion
-or installed-new-binary claim yet.
+Typecheck/build/i18n **1329** and docs/diff PASS. Initial clean source **802db05** passed
+canonical arm64 **13/13 / COMPLETE**, backend **1246** and frontend **382**. Exact mounted-DMG
+smoke passed; installed candidate matched executable **b99e3075…** with user rows unchanged.
+Native 1440x900 and ~1028x705 confirmed all four wrapped exports. Public Biquote refresh
+returned 301 delayed/partial XAUUSD candles, with independent product check unavailable;
+keyboard selector exposed the local event/hash/revision/TR recording instant, not broker
+validity. No user trade mutation. Native Tab did not leave the close button under default
+WKWebView keyboard settings: **candidate is not final acceptance**. Two additional red DOM
+tests pin explicit export traversal and diagnostic-summary wrap. Evidence Pack now opts into
+deterministic Tab/Shift+Tab navigation without changing macOS preferences or other dialogs'
+navigation mode. Final clean/native acceptance remains pending.
 
 Changed scope: `backend/app/{quant/trade_plan_reference,replay/replay_service,services/local_tracking}.py`,
 `backend/tests/test_wp58_recorded_plan_review.py`, EvidencePanel/ReplayCanvas + DOM tests,
-frontend types, EN/TR/DE, dynamic locale regression, this WP and STATUS. No DB schema,
+frontend types, EN/TR/DE, dynamic locale regression, opt-in dialog accessibility, this WP and STATUS. No DB schema,
 provider, financial calculation, execution, release/version or lifecycle implementation change.
 
 Real three-person pilot acceptance and WP29 N03/N05/H05 remain

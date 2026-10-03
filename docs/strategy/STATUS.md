@@ -9,7 +9,11 @@ plan revisions, conservative candle-opening UTC cutoff, separate current-referen
 selector, no historical backfill/financial-metric change. Focused backend 90 / frontend 49
 PASS; full backend pre-final-producer-test 1245 / 3 warnings, frontend 51 files / 382,
 i18n 1329, build/docs/diff PASS. Native baseline reproduced both UI findings. Clean native acceptance pending;
-no new installed artifact or release claim. Details and remaining criteria in selected WP.
+Initial implementation **802db05** pushed, clean canonical arm64 **13/13 / COMPLETE**
+(1246 backend, 382 frontend), exact-DMG and installed candidate verified. Native export
+wrap and source-linked plan selector worked; default WKWebView Tab skipped export controls.
+Two red regressions → explicit opt-in dialog navigation; candidate is not final acceptance.
+Final clean gate/reinstall pending. Release unchanged. Details in selected WP.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
 First WP58 prerequisites are the audit's actual Evidence Pack PDF-action clipping and raw

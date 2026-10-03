@@ -171,7 +171,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
   const { t } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  useDialogAccessibility(dialogRef, onClose, closeRef);
+  useDialogAccessibility(dialogRef, onClose, closeRef, true);
   const [pack, setPack] = useState<TradeEvidencePack | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -443,7 +443,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
                 <>
                   <p data-testid="evidence-context-explanation" className="text-xs text-slate-400 mt-2">{contextExplanation(pack.market_context.reason, t)}</p>
                   <details data-testid="evidence-context-diagnostic" className="mt-2 text-xs text-slate-500 break-words">
-                    <summary className="cursor-pointer focus-visible:outline-accent">{t("evidence_pack.context_diagnostic")}</summary>
+                    <summary tabIndex={0} className="cursor-pointer focus-visible:outline-accent">{t("evidence_pack.context_diagnostic")}</summary>
                     <p>{pack.market_context.reason || "UNKNOWN"}{pack.market_context.message ? ` · ${pack.market_context.message}` : ""}</p>
                   </details>
                 </>
