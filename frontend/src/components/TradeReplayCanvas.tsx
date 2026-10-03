@@ -332,7 +332,7 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
   const evidence = session.close_evidence;
   const openReview: OpenReviewBlock | null = session.review_mode === "OPEN" ? session.open_review ?? null : null;
   const istanbul = (value: string | null | undefined) => value ? formatIstanbulDateTime(value, locale) : "—";
-  return <div className="flex-1 flex flex-col h-full bg-[#0b0e14] overflow-hidden select-none font-mono">
+  return <div className="flex-1 flex flex-col h-full min-h-0 bg-[#0b0e14] overflow-y-auto overflow-x-hidden select-none font-mono">
     <div className="p-3 bg-[#0d121c] border-b border-surface-border flex items-center justify-between">
       <div className="flex items-center space-x-3">
         <span className="px-2 py-0.5 bg-accent/20 border border-accent/40 text-accent font-bold text-xs rounded">REPLAY</span>
@@ -470,8 +470,8 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
         )}
       </div>
     )}
-    <div className="flex-1 relative" data-testid="replay-chart"><div ref={chartContainerRef} className="w-full h-full" /></div>
-    <div className="p-3 bg-[#0d121c] border-t border-surface-border flex flex-col space-y-2">
+    <div className="flex-1 min-h-[160px] relative" data-testid="replay-chart"><div ref={chartContainerRef} className="w-full h-full" /></div>
+    <div className="shrink-0 p-3 bg-[#0d121c] border-t border-surface-border flex flex-col space-y-2">
       <input data-testid="replay-slider" aria-label={t("replay.action.seek")} type="range" min={0} max={Math.max(0, totalBars - 1)} value={currentIndex} onChange={(e) => void requestUpdate("seek", { target_index: Number(e.target.value) })} className="flex-1 accent-sky-500" />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">

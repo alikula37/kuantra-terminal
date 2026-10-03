@@ -79,7 +79,13 @@ navigation mode. Second native candidate **a31889b** passed clean gates but back
 parent price updates recreated the close callback and reset export focus. A third red
 DOM regression reproduced it. Opt-in navigation now retains focus across callback changes
 and Escape uses the latest callback; non-opt-in dialogs keep their previous lifecycle.
-Final clean/native acceptance remains pending; neither earlier candidate is final evidence.
+Third native candidate **f64d702** retained keyboard focus correctly and passed clean gates;
+recorded-plan selection exposed another native layout fault: long provenance/revision text
+pushed seek/play controls outside an unscrollable review surface. One red layout-contract
+DOM regression pins a scrollable bounded root, minimum chart height and retained controls;
+the reader is now vertically scrollable, with a non-shrinking controls footer. Actual pixel
+acceptance remains native, not inferred from jsdom layout. Final clean/native acceptance
+remains pending; prior candidates are not final acceptance.
 
 Changed scope: `backend/app/{quant/trade_plan_reference,replay/replay_service,services/local_tracking}.py`,
 `backend/tests/test_wp58_recorded_plan_review.py`, EvidencePanel/ReplayCanvas + DOM tests,

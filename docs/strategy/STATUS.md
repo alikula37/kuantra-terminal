@@ -15,7 +15,10 @@ wrap and source-linked plan selector worked; default WKWebView Tab skipped expor
 Two red regressions → explicit opt-in dialog navigation; candidate is not final acceptance.
 Second candidate **a31889b** passed clean gates, but native background-price rerenders
 reset keyboard focus. Third red regression → opt-in stable focus/latest close callback;
-final clean gate/reinstall pending. Release unchanged. Details in selected WP.
+Third candidate **f64d702** passed clean gates and retained focus, but long revision/source
+text hid the replay controls in an unscrollable native view. One red layout-contract test
+→ scrollable bounded review/minimum chart height; final clean gate/reinstall pending.
+Release unchanged. Details in selected WP.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
 First WP58 prerequisites are the audit's actual Evidence Pack PDF-action clipping and raw

@@ -83,6 +83,15 @@ let host: HTMLDivElement; let root: Root;
 const flush = async () => { await act(async () => { await Promise.resolve(); await Promise.resolve(); }); };
 const byTestId = (id: string) => host.querySelector(`[data-testid="${id}"]`) as HTMLElement | null;
 
+it("keeps review controls reachable when revision and provenance text exceed the viewport", async () => {
+  apiFetch.mockResolvedValue(response(ready()));
+  await act(async () => root.render(<TradeReplayCanvas tradeId="T1" />)); await flush();
+  expect(host.firstElementChild?.classList.contains("overflow-y-auto")).toBe(true);
+  expect(host.firstElementChild?.classList.contains("min-h-0")).toBe(true);
+  expect(byTestId("replay-chart")?.classList.contains("min-h-[160px]")).toBe(true);
+  expect(byTestId("replay-slider")).not.toBeNull();
+});
+
 it("keeps unavailable historical plans separate from the current reference", async () => {
   apiFetch.mockResolvedValue(response(ready("BTCUSDT", {
     recorded_plans: { status: "NOT_AVAILABLE", as_of_utc: "2026-10-03T10:00:00Z", available_revisions: [], plan: null },
