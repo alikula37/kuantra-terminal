@@ -111,12 +111,18 @@ def test_cocoa_termination_uses_confirmed_decision_before_cleanup(monkeypatch, a
         def applicationShouldTerminate_(self, _app): return allowed
     browser = SimpleNamespace(AppDelegate=OriginalDelegate)
     monkeypatch.setitem(sys.modules, "webview.platforms.cocoa", SimpleNamespace(BrowserView=browser))
+    super_calls = []
+    def native_super(cls, instance):
+        super_calls.append(cls)
+        return super(cls, instance)
+    monkeypatch.setitem(sys.modules, "objc", SimpleNamespace(super=native_super))
     calls = []
     ctx = object()
     monkeypatch.setattr(desktop_main, "shutdown", lambda context: calls.append(context))
     desktop_main._install_macos_shutdown(ctx)
     assert browser.AppDelegate().applicationShouldTerminate_(object()) is allowed
     assert calls == ([ctx] if allowed else [])
+    assert super_calls == [browser.AppDelegate]
 
 
 def test_close_bounds_real_busy_owned_process_and_is_idempotent(monkeypatch):

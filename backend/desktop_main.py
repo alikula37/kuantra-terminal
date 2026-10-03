@@ -293,12 +293,13 @@ def _install_macos_shutdown(ctx: AppContext) -> None:
     finish our resource cleanup before AppKit accepts process termination.
     """
     from webview.platforms.cocoa import BrowserView
+    import objc
 
     original = BrowserView.AppDelegate
 
     class KuantraAppDelegate(original):
         def applicationShouldTerminate_(self, app):
-            allowed = super().applicationShouldTerminate_(app)
+            allowed = objc.super(KuantraAppDelegate, self).applicationShouldTerminate_(app)
             if allowed:
                 shutdown(ctx)
             return allowed

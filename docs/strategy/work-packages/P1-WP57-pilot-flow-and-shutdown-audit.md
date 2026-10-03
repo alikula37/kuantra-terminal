@@ -79,6 +79,10 @@ native Cmd+Q must be rerun from the final clean binary before closure.
 Follow-up focused lifecycle/main/bridge/smoke **32 passed**; full backend **1230 passed /
 3 warnings** (32.47s). Frontend unchanged by this native termination fix. Final clean
 canonical gate and installed Cmd+Q acceptance still pending.
+Candidate `b6b485d` canonical gate passed but emitted PyObjC's ObjCSuperWarning. Before
+native termination acceptance the delegate was corrected to `objc.super`, with a red
+dispatch assertion → focused green; no dependency change. Candidate report is retained
+as superseded, not the final installed evidence.
 
 Separate visible UI findings from this read-only native audit: Evidence Pack export row clips
 the PDF action at 1440x900 light/TR; open-trade market-context explanation prints a raw English
