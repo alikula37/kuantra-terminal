@@ -15,10 +15,10 @@ depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
 
-Selection note (2026-10-03): WP57 is selected for the owner-approved pilot-flow/shutdown
-audit. This package is reference only; N03/N05/H05/pilot-access obligations remain open
+Selection note (2026-10-03): WP57 completed its bounded audit; WP58 review/revision UX is
+selected next. This package is reference only; N03/N05/H05/pilot-access obligations remain open
 and are not superseded. Release/tag and remote workflow are not authorized. Latest installed
-local build before WP57 is WP56 source `db196c3`, version 1.1.6; published pilot assets
+local build is WP57 source `ab5ee8b`, version 1.1.6; published pilot assets
 are unchanged and not identical to that local build.
 
 Historical selection note (2026-09-15): P1-WP40 (MT5 HTML report preview) is complete and

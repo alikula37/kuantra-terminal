@@ -1,0 +1,46 @@
+{
+  "work_package": "P1-WP57",
+  "source_commit": "ab5ee8bb8834b349a04a05320da1c3c311800632",
+  "platform": "macOS 26.6.2 arm64",
+  "version": "1.1.6",
+  "distribution": "LOCAL_SOURCE_BUILD_NOT_PUBLISHED",
+  "installed_executable_sha256": "77cd355058972935916393e51d191c46636bf2de14e0aeaf483fd52feac7c3d8",
+  "dmg_sha256": "a7221d068e5a90404e0344f41a35f89d4b25114fe9e80a791f54023d036c3a16",
+  "codesign_strict_deep": "PASS_AD_HOC_NOT_NOTARIZED",
+  "stopped_db_sha256_before_and_after_final_replacement": "1601f62bd89e030ce3b0bb437117120faf5e31a16dbe76919f026d2680efc745",
+  "counts_before_and_after_qa": {"trades": 5, "evidence_events": 24, "local_tracking_projections": 5},
+  "ordered_trade_sha256_before_and_after_qa": "883434021610f37d7aba3a422b0ab44325abfdea9a872c048db680137eb20e5d",
+  "ordered_event_sha256_before_and_after_qa": "4a49f460b366465a6f7c74b3b17dbd8f65d6c99810b5cdb15a5b8ef680a745c5",
+  "ordered_tracking_sha256_before_and_after_qa": "0e33c0c7817cd63e7c9f2763c9257a07403dcd43a35369b8b85b7448614f3e9b",
+  "row_hash_serialization": "SELECT * ORDER BY 1; UTF-8 compact JSON arrays, ensure_ascii=false, default=str",
+  "previous_accepted_bundle_backup": "/tmp/kuantra-wp57-update.CNBezs/Kuantra Terminal.app",
+  "superseded_candidate_backup": "/tmp/kuantra-wp57-final-update.IWbBmm/Kuantra Terminal.app",
+  "native_operator_checks": [
+    "Journal opens with existing simulation records; no saves/edits/cancels",
+    "Evidence Pack launches owned worker; read-only coverage remains PARTIAL/NOT_AVAILABLE",
+    "Final installed parent PID 12911, tracker 12947, worker 12948 observed before Cmd+Q",
+    "Cmd+Q removes all three; independent process snapshot shows no remaining Kuantra worker/tracker",
+    "CUA noWindowsAvailable after quit is expected; process snapshot confirms exit",
+    "Reopen shows TR/light/LITE preserved and Settings reports installed version 1.1.6"
+  ],
+  "synthetic_exact_dmg_checks": [
+    "read-only mount of exact DMG and matching executable SHA",
+    "native WKWebView/controller",
+    "CSV/PDF export and spawned Evidence Pack worker",
+    "synthetic create, partial local close, locked completed target editor, final local close",
+    "external journal status remains OPEN after local estimated completion"
+  ],
+  "open_followups": [
+    "Evidence Pack PDF action clips at native 1440x900 light/TR",
+    "Open-trade market-context explanation exposes raw English backend message",
+    "Three-person pilot acceptance, N03, N05, H05, real XM statement and independent gold remain external"
+  ],
+  "limits": [
+    "No Release/tag/workflow/Intel artifact refresh",
+    "No real trade mutations, credential writes, reset or migration apply",
+    "Market stream disabled in exact synthetic smoke, but public catalog network still occurred; not a runtime firewall",
+    "Superseded 7fef432 Cmd+Q failed; exact owned orphan worker was terminated and is not final acceptance",
+    "Busy-worker timeout and unrelated-process survival are isolated regression evidence; no artificial blocker injected into user profile",
+    "Existing worker adapter may bootstrap schema; logical read-only is not filesystem read-only"
+  ]
+}

@@ -3,18 +3,41 @@
 
 Updated: 2026-10-03. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP57 pilot-flow/shutdown audit](work-packages/P1-WP57-pilot-flow-and-shutdown-audit.md).**
+**Selected work: [P1-WP58 review/revisions and Evidence Pack UX](work-packages/P1-WP58-review-revisions-and-evidence-ux.md) — Ready, not implemented.**
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
-WP57 baseline `0118367`: lifecycle/smoke fixes in `7fef432` passed 1228 backend / 375 frontend
-and clean canonical 13/13 COMPLETE plus exact-DMG synthetic tracking. Installed native Cmd+Q
-still orphaned its Evidence Pack worker; candidate NOT accepted as final. Cocoa termination
-follow-up in progress, user 5/24/5 trade/event/tracking counts and row hashes unchanged.
-Audit also found Evidence Pack PDF action clipping and raw English open-trade context text;
-explicit next review-surface follow-ups, not silently closed. Final clean build/install pending.
+First WP58 prerequisites are the audit's actual Evidence Pack PDF-action clipping and raw
+English open-trade context explanation; then source-linked plan revisions/as-of review.
 Three-person pilot acceptance is external and is NOT replaced by synthetic tests.
 N03/N05/H05 and gold/XM obligations remain open under reference WP29. No Release/tag,
 remote workflow or real user-data mutation is authorized by this sequence.
+
+**WP57 complete + archived (2026-10-03):**
+[synthetic pilot-flow and shutdown audit](../archive/strategy/work-packages/P1-WP57-pilot-flow-and-shutdown-audit.md).
+Seven demonstrated lifecycle/smoke defects fixed: failed lifespan cleanup, partial context
+setup, failed renderer/window cleanup, unbounded Evidence Pack join, concurrent cleanup/exit
+race, export smoke false-success, and native AppKit Quit bypass. Commit chain **7fef432 /
+b6b485d / ab5ee8b**, pushed main. First installed candidate failed Cmd+Q; not final evidence.
+Final source **ab5ee8bb8834b349a04a05320da1c3c311800632**: full **1230 backend / 3 warnings**,
+**51 files / 375 frontend**, i18n **1318**, tsc/build/docs/truth/packaging/diff PASS; canonical
+arm64 **13/13 MERGE READY / COMPLETE**. Exact read-only mounted-DMG **WKWebView/controller**,
+CSV/PDF, actual spawned Evidence Pack, synthetic partial-close/editor/final-local-close PASS.
+Reports `artifacts/evidence/p1-wp57/`: CI **3b1e8869…**, exact smoke **8d39cb4f…**, N05
+**f5126720…**, installed operator acceptance. DMG
+**a7221d068e5a90404e0344f41a35f89d4b25114fe9e80a791f54023d036c3a16**;
+CI/mounted/installed executable
+**77cd355058972935916393e51d191c46636bf2de14e0aeaf483fd52feac7c3d8**,
+**1.1.6 local source build**, strict/deep codesign PASS (ad-hoc). Installed Settings runtime
+version confirmed. Evidence Pack → Cmd+Q: final parent/worker/tracker all exited; normal
+reopen **TR/light/LITE** retained. No manual termination of accepted final binary/helpers.
+Stopped DB SHA unchanged across replacement; **5 trades / 24 events / 5 tracking**, all three
+ordered row hashes unchanged after QA. Original accepted app backup
+`/tmp/kuantra-wp57-update.CNBezs/`; superseded candidate `/tmp/kuantra-wp57-final-update.IWbBmm/`.
+No user trade mutation/reset/migration/credential/Release/tag/Intel/workflow change. Public
+catalog network occurred even in stream-disabled synthetic smoke; uv offline is dependency
+resolution only. **N05 BLOCKED** and real pilot/N03/H05/XM/gold obligations remain open.
+Review UI findings belong to WP58; not an all-screen/real-pilot acceptance claim. Closure docs
+do not change installed source/binary.
 
 **WP56 complete + archived (2026-10-03):**
 [update guidance](../archive/strategy/work-packages/P1-WP56-update-guidance-ux.md).

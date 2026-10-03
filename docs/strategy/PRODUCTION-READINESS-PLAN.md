@@ -17,7 +17,9 @@ audit: KRR-001@1.0.0
 Owner-approved continuation (2026-10-03), after WP49–WP56: first WP57 audits the
 synthetic create/edit/partial-close/chart/export flow and bounds owned read-only worker
 shutdown. Actual three-person pilot acceptance remains a separate external obligation.
-Then proceed one bounded package at a time: revision-aware chart review (historical plan
+Then proceed one bounded package at a time: WP58 review-surface UX and revision-aware chart
+review (first fix WP57's verified PDF-action clipping and raw English context explanation;
+historical plan
 versus current reference, no look-ahead), useful weekly review (coverage/unknown results
 explicit), and safe in-app backup/restore (preview/validation/explicit confirmation; no
 automatic destructive apply). Scope/acceptance must be recorded before each implementation.
