@@ -142,12 +142,18 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshState, setRefreshState] = useState<"idle" | "refreshing" | "error">("idle");
+  const [planView, setPlanView] = useState("current");
+  const recordedPlans = session?.recorded_plans;
+  const displayedPlan = planView === "current" ? session?.plan
+    : planView === "asof" ? recordedPlans?.plan
+    : recordedPlans?.available_revisions.find((item) => `event:${item.source_event_id}` === planView);
 
   useEffect(() => {
     const generation = ++generationRef.current;
     updateAbortRef.current?.abort(); stepInFlight.current = false; setIsStepPending(false);
     const controller = new AbortController(); let active = true;
     setIsLoading(true); setError(null); setSession(null); setIsPlaying(false); setRefreshState("idle");
+    setPlanView("current");
     (async () => {
       try {
         const res = await apiFetch(`${apiBase()}/api/v1/replay/session/${encodeURIComponent(tradeId)}`, { signal: controller.signal });
@@ -201,8 +207,8 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
     if (!series) return;
     for (const line of priceLinesRef.current) series.removePriceLine(line);
     priceLinesRef.current = [];
-    if (!session || session.status !== "READY" || !session.plan) return;
-    for (const level of session.plan.levels) {
+    if (!session || session.status !== "READY" || !displayedPlan) return;
+    for (const level of displayedPlan.levels) {
       const weight = isFiniteNumber(level.weight_pct ?? null) ? ` · ${formatWeight(level.weight_pct as number)}` : "";
       const line = series.createPriceLine({
         price: level.price,
@@ -214,7 +220,7 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
       });
       priceLinesRef.current.push(line);
     }
-  }, [session?.session_id, session?.plan, session?.status]);
+  }, [session?.session_id, displayedPlan, session?.status]);
 
   useEffect(() => {
     const series = candleSeriesRef.current;
@@ -340,18 +346,41 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
       </div>
       <span className="text-[10px] text-amber-300">{t(openReview ? "replay.boundary_note_open" : "replay.boundary_note")}</span>
     </div>
-    {session.plan && (
+    {(session.plan || recordedPlans) && (
       <section className="px-3 py-2 bg-[#111722] border-b border-surface-border space-y-1">
-        <p data-testid="replay-reference-banner" className="text-[11px] text-amber-300">{t("replay.reference_banner")}</p>
+        <p data-testid="replay-reference-banner" className="text-[11px] text-amber-300">{t(planView === "current" ? "replay.reference_banner" : "replay.revisions.disclaimer")}</p>
+        {recordedPlans && (
+          <div className="flex flex-wrap gap-2 items-center text-xs">
+            <label className="text-slate-400" htmlFor="replay-plan-view">{t("replay.revisions.view")}</label>
+            <select id="replay-plan-view" data-testid="replay-plan-view" className="k-input max-w-full w-auto" value={planView}
+              onChange={(event) => setPlanView(event.target.value)}>
+              <option value="current">{t("replay.revisions.current")}</option>
+              <option value="asof">{t("replay.revisions.asof")}</option>
+              {recordedPlans.available_revisions.map((item) => (
+                <option key={item.source_event_id} value={`event:${item.source_event_id}`}>
+                  {t("replay.revisions.revision", { revision: item.plan_revision ?? "—", reset: item.plan_reset_count ?? 0 })} · {istanbul(item.recorded_at_utc)}
+                </option>
+              ))}
+              {planView.startsWith("event:") && !displayedPlan && <option value={planView}>{t("replay.revisions.NOT_AVAILABLE")}</option>}
+            </select>
+            {planView !== "current" && <span>{t("replay.revisions.cursor")} {istanbul(recordedPlans.as_of_utc)}</span>}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <span className="px-2 py-0.5 rounded border border-surface-border font-bold text-white">{trade?.side ? t(`replay.side.${trade.side === "SELL" || trade.side === "SHORT" ? "short" : "long"}`) : "—"}</span>
-          <span data-testid="replay-plan-kind" className="text-slate-400">{t(`replay.plan_kind.${session.plan.kind === "LOCAL_PLAN" ? "local" : "trade_row"}`)}</span>
-          {session.plan.created_after_entry === true && (
+          {displayedPlan && <span data-testid="replay-plan-kind" className="text-slate-400">{t(`replay.plan_kind.${displayedPlan.kind === "LOCAL_PLAN" ? "local" : "trade_row"}`)}</span>}
+          {displayedPlan?.created_after_entry === true && planView === "current" && (
             <span data-testid="replay-plan-created-after" className="text-amber-300">{t("replay.plan_after_entry")}</span>
           )}
           <span data-testid="replay-origin" className="text-slate-400">{t(originKey(session.origin_class))}</span>
         </div>
-        <PlanLevels plan={session.plan} />
+        {planView !== "current" && !displayedPlan && <p data-testid="replay-recorded-plan-state" className="text-xs text-amber-300">{t(`replay.revisions.${recordedPlans?.status === "UNKNOWN" ? "UNKNOWN" : "NOT_AVAILABLE"}`)}</p>}
+        {planView !== "current" && displayedPlan && (
+          <p data-testid="replay-recorded-source" className="text-xs text-slate-400 break-all">
+            {t("replay.revisions.revision", { revision: displayedPlan.plan_revision ?? "—", reset: displayedPlan.plan_reset_count ?? 0 })} · {istanbul(displayedPlan.recorded_at_utc)} · {displayedPlan.source_event_id} · <span title={displayedPlan.source_event_hash}>{displayedPlan.source_event_hash?.slice(0, 12)}…</span>
+          </p>
+        )}
+        <PlanLevels plan={displayedPlan} />
         {evidence && (
           <p className="text-xs text-slate-300">
             <span data-testid="replay-close-source">

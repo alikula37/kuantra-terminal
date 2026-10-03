@@ -296,7 +296,11 @@ export interface ReplayPlanLevel {
 export interface ReplayPlanReference {
   kind: "LOCAL_PLAN" | "TRADE_ROW";
   reference: true;
-  reference_code: "CURRENT_PLAN_REFERENCE";
+  reference_code: "CURRENT_PLAN_REFERENCE" | "RECORDED_LOCAL_PLAN";
+  source_event_id?: string;
+  source_event_hash?: string;
+  recorded_at_utc?: string;
+  broker_verified?: false;
   plan_revision: number | null;
   plan_reset_count: number | null;
   created_after_entry: boolean | null;
@@ -378,6 +382,12 @@ export interface ReplaySessionResponse {
   trade: ReplayTradeState | null;
   visible_candles: Candle[];
   plan?: ReplayPlanReference | null;
+  recorded_plans?: {
+    status: "READY" | "NOT_AVAILABLE" | "UNKNOWN";
+    as_of_utc: string;
+    available_revisions: ReplayPlanReference[];
+    plan: ReplayPlanReference | null;
+  };
   close_evidence?: ReplayCloseEvidence | null;
   origin_class?: "IMPORTED_FILE" | "JOURNAL" | "UNKNOWN" | null;
   market_context?: Record<string, unknown> | null;

@@ -194,14 +194,43 @@ class LocalTrackingService:
     def history(self, trade_id):
         self._verified()
         with self.driver.get_connection() as conn:
+            conn.execute("BEGIN")
+            # Validate the complete lineage in this same read snapshot. Reading
+            # individual valid snapshots alone does not validate their links.
+            self._load(conn, trade_id)
             rows = conn.execute(
                 "SELECT * FROM evidence_events WHERE correlation_id=? AND account_id='local-journal' "
                 "AND venue='local-journal' AND event_type='PositionProjectionUpdated' "
                 "ORDER BY chain_date_utc, chain_sequence", (trade_id,),
             ).fetchall()
-            return [{"event_id": row["event_id"], "event_hash": row["event_hash"],
-                     "state": state} for row in rows
-                    if (state := project_tracking_event(None, dict(row))) is not None]
+            history, previous, reset_index = [], None, 0
+            for row in rows:
+                state = project_tracking_event(None, dict(row))
+                if state is None:
+                    continue
+                provenance = json.loads(row["provenance_json"])
+                if (provenance.get("source") != "local_tracking" or provenance.get("basis") != "LOCAL_ESTIMATE"
+                        or provenance.get("broker_execution") is not False
+                        or row["adapter_version"] != "local-tracking-v1" or row["schema_version"] != "1"):
+                    raise ValueError("Unverified tracking history producer")
+                action = json.loads(row["normalized_payload_json"]).get("action")
+                if action not in {"PLAN_SAVED", "PLAN_RESET", "LOCAL_CLOSE"}:
+                    raise ValueError("Unknown tracking history action")
+                if action == "PLAN_RESET":
+                    if state["revision"] != 1 or state["closures"] or (previous and previous["state"]["closures"]):
+                        raise ValueError("Invalid tracking reset history")
+                    if row["causation_id"] != (previous["event_id"] if previous else None):
+                        raise ValueError("Broken tracking reset lineage")
+                    reset_index += 1
+                record = {"event_id": row["event_id"], "event_hash": row["event_hash"],
+                          "causation_id": row["causation_id"], "action": action,
+                          # Producer _save writes occurred_at=now_utc. This is a
+                          # hash-bound local recording time, NOT broker validity.
+                          "recorded_at_utc": row["occurred_at_utc"],
+                          "reset_index": reset_index, "state": state}
+                history.append(record)
+                previous = record
+            return history
 
     def list(self):
         self._verified()

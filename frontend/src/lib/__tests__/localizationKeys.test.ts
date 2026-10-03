@@ -40,6 +40,7 @@ const DYNAMIC_FAMILIES: Domain[] = [
   { path: ["replay", "phase"], prefix: "", discovered: "replay.phase.", values: ["pre_entry", "active", "closed"] },
   { path: ["replay", "plan_kind"], prefix: "", discovered: "replay.plan_kind.", values: ["local", "trade_row"] },
   { path: ["replay", "side"], prefix: "", discovered: "replay.side.", values: ["long", "short"] },
+  { path: ["replay", "revisions"], prefix: "", discovered: "replay.revisions.", values: ["UNKNOWN", "NOT_AVAILABLE"] },
 ];
 
 function node(lang: string, path: string[]): Record<string, string> {

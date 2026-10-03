@@ -890,6 +890,9 @@
     "inputs_changed": "İnceleme girdileri değişti. Karar kaydetmeden önce incelemeyi yeniden yükleyin."
   },
   "evidence_pack": {
+    "context_closed_only": "Kanıt paketinin geçmiş piyasa bağlamı için kayıtlı çıkış gerekir; bu işlem hâlâ açık.",
+    "context_unavailable": "Kayıtlı piyasa bağlamı kullanılamıyor; eksiksizliği bilinmiyor.",
+    "context_diagnostic": "Teknik açıklama",
     "coverage_title": "Kanıt kapsamı",
     "overall": "Genel",
     "trade_snapshot": "İşlem snapshot'ı",
@@ -1307,6 +1310,16 @@
     "close": "Kapat"
   },
   "replay": {
+    "revisions": {
+      "view": "Plan görünümü",
+      "current": "Güncel referans (geçmiş plan değil)",
+      "asof": "İmleç zamanında son kayıtlı yerel plan",
+      "revision": "Revizyon {revision} · sıfırlama {reset}",
+      "cursor": "İmleç (Türkiye saati):",
+      "disclaimer": "Yerelde kayıtlı plan — broker geçerliliğinin kanıtı değildir. Yalnız imleç zamanına kadar kaydedilmiş revizyonlar gösterilir. Sınır, ihtiyatlı olarak mum başlangıcıdır; metrikler değişmez.",
+      "NOT_AVAILABLE": "Bu zamanda uygun kayıtlı plan yok; güncel seviyeler yerine konulmadı.",
+      "UNKNOWN": "Plan geçmişi doğrulanamadı; geçmiş seviyeler gösterilmiyor."
+    },
     "bar_of": "Bar {current} / {total}",
     "boundary_note": "Bar yaklaşımı · DuckDB mumları · broker gerçekleşmesi değil · R brüt fiyat hareketidir",
     "reference_banner": "Güncel plan referansı — geçmişte bu seviyelerin geçerli olduğu doğrulanmadı.",

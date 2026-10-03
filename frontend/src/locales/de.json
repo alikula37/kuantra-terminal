@@ -890,6 +890,9 @@
     "inputs_changed": "Die Prüfungsparameter wurden geändert. Laden Sie die Prüfung neu, bevor Sie eine Entscheidung speichern."
   },
   "evidence_pack": {
+    "context_closed_only": "Der historische Marktkontext des Evidenzpakets benötigt einen erfassten Ausstieg; dieser Trade ist noch offen.",
+    "context_unavailable": "Der erfasste Marktkontext ist nicht verfügbar; die Vollständigkeit ist unbekannt.",
+    "context_diagnostic": "Technische Diagnose",
     "coverage_title": "Evidenzabdeckung",
     "overall": "Gesamt",
     "trade_snapshot": "Trade-Snapshot",
@@ -1307,6 +1310,16 @@
     "close": "Schließen"
   },
   "replay": {
+    "revisions": {
+      "view": "Planansicht",
+      "current": "Aktuelle Referenz (kein historischer Plan)",
+      "asof": "Letzter lokal erfasster Plan am Cursor",
+      "revision": "Revision {revision} · Zurücksetzung {reset}",
+      "cursor": "Cursor (türkische Zeit):",
+      "disclaimer": "Lokal erfasster Plan — kein Nachweis der Gültigkeit beim Broker. Nur bis zur Cursorzeit erfasste Revisionen werden angezeigt. Konservative Grenze ist der Kerzenbeginn; Kennzahlen bleiben unverändert.",
+      "NOT_AVAILABLE": "Zu diesem Zeitpunkt liegt kein passender erfasster Plan vor; aktuelle Ebenen wurden nicht eingesetzt.",
+      "UNKNOWN": "Der Planverlauf konnte nicht verifiziert werden; historische Ebenen werden nicht angezeigt."
+    },
     "bar_of": "Bar {current} / {total}",
     "boundary_note": "Bar-Näherung · DuckDB-Kerzen · keine Broker-Ausführungen · R ist eine Bruttopreisbewegung",
     "reference_banner": "Referenz auf den aktuellen Plan — es ist nicht bestätigt, dass diese Level zum gezeigten Zeitpunkt galten.",

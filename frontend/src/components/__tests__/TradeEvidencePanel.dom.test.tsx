@@ -68,6 +68,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  localStorage.removeItem("kuantra_locale");
 });
 
 it("renders policy provenance, ledger integrity, and unverified market context", async () => {
@@ -263,4 +264,42 @@ it("does not report a cancelled native export as ready", async () => {
 
   expect(host.textContent).toContain("Export cancelled or was not saved.");
   expect(host.textContent).not.toContain("JSON export ready.");
+});
+
+it("wraps all four exports within their narrow card instead of clipping PDF", async () => {
+  mockPanelResponse(basePack);
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  const actions = host.querySelector("[data-testid=evidence-export-actions]");
+  expect(actions?.classList.contains("flex-wrap")).toBe(true);
+  expect(actions?.querySelectorAll("button")).toHaveLength(4);
+});
+
+it("localizes known context reasons and folds unknown server prose into diagnostics", async () => {
+  const renderContext = async (reason: string) => {
+    mockPanelResponse({ ...basePack, market_context: { status: "NO_DATA", reason, message: "Historical evidence currently supports closed trades only." } });
+    await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId={reason} onClose={vi.fn()} /></I18nProvider>));
+    await flush();
+  };
+  await renderContext("TRADE_NOT_CLOSED");
+  expect(host.querySelector("[data-testid=evidence-context-explanation]")?.textContent).toContain("recorded exit");
+  expect(host.querySelector("[data-testid=evidence-context-explanation]")?.textContent).not.toContain("Historical evidence");
+  await renderContext("NEW_REASON");
+  expect(host.querySelector("[data-testid=evidence-context-explanation]")?.textContent).toContain("unavailable");
+  const diagnostic = host.querySelector("[data-testid=evidence-context-diagnostic]") as HTMLDetailsElement;
+  expect(diagnostic.open).toBe(false);
+  expect(diagnostic.textContent).toContain("NEW_REASON");
+});
+
+it.each([
+  ["en", "recorded exit"], ["tr", "kayıtlı çıkış"], ["de", "erfassten Ausstieg"],
+])("explains the open-trade evidence boundary in %s", async (locale, fragment) => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(
+    path === "/api/v1/settings" ? { active_locale: locale } : {
+      ...basePack, market_context: { status: "NO_DATA", reason: "TRADE_NOT_CLOSED", message: "Historical evidence currently supports closed trades only." },
+    },
+  )));
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  expect(host.querySelector("[data-testid=evidence-context-explanation]")?.textContent).toContain(fragment);
 });

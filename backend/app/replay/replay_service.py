@@ -17,7 +17,7 @@ from app.quant.open_position_evidence import (
     declared_provider_identity, load_open_position_evidence,
 )
 from app.quant.trade_plan_reference import (
-    classify_origin, close_evidence, close_source_class, plan_reference,
+    classify_origin, close_evidence, close_source_class, plan_reference, recorded_plan_context,
 )
 from app.services.trade_read_adapter import trade_read_adapter
 
@@ -32,6 +32,7 @@ class ReplaySession:
         *,
         plan: dict[str, Any] | None = None,
         origin_class: str = "UNKNOWN",
+        plan_history: list[dict[str, Any]] | None = None,
     ):
         self.session_id = session_id
         self.symbol = evidence.trade["symbol"]
@@ -44,6 +45,7 @@ class ReplaySession:
         self.market_context = evidence.market_context
         self.replay_fingerprint = self.market_context["fingerprint_sha256"]
         self.plan = plan
+        self.plan_history = plan_history
         self.origin_class = origin_class
         self.close_class = close_source_class(self.trade, origin_class)
 
@@ -93,6 +95,9 @@ class ReplaySession:
             "market_context": self.market_context,
             "review_mode": "CLOSED",
             "plan": self.plan,
+            "recorded_plans": recorded_plan_context(
+                self.trade, self.plan_history,
+                datetime.fromtimestamp(current.get("time", current.get("timestamp")), timezone.utc).isoformat()),
             "origin_class": self.origin_class,
             # The close marker is only disclosed once the cursor reaches the exit
             # bar; earlier frames must not leak the future outcome.
@@ -115,6 +120,7 @@ class OpenReviewSession:
         *,
         plan: dict[str, Any] | None = None,
         origin_class: str = "UNKNOWN",
+        plan_history: list[dict[str, Any]] | None = None,
     ):
         self.session_id = session_id
         self.symbol = evidence.symbol
@@ -127,6 +133,7 @@ class OpenReviewSession:
         self.is_playing = False
         self.created_at = time.time()
         self.plan = plan
+        self.plan_history = plan_history
         self.origin_class = origin_class
         self.evidence_block = {
             "history_status": evidence.history_status,
@@ -197,6 +204,8 @@ class OpenReviewSession:
             },
             "open_review": block,
             "plan": self.plan, "origin_class": self.origin_class, "close_evidence": None,
+            "recorded_plans": recorded_plan_context(
+                self.trade, self.plan_history, datetime.fromtimestamp(current["timestamp"], timezone.utc).isoformat()),
             "current_candle": self._as_candle(current), "trade": trade_state,
             "visible_candles": [self._as_candle(candle)
                                 for candle in self.candles[:self.current_index + 1]],
@@ -235,7 +244,8 @@ class ReplayService:
         origin_class = classify_origin(self._trade_events(trade_id))
         plan = self._plan_reference(trade)
         session_id = f"REP-{uuid.uuid4().hex}"
-        session = ReplaySession(session_id, evidence, plan=plan, origin_class=origin_class)
+        session = ReplaySession(session_id, evidence, plan=plan, origin_class=origin_class,
+                                plan_history=self._plan_history(trade_id))
         # These UI snapshots are not a canonical ledger. Bound memory in the
         # long-running desktop; evicted sessions return an explicit 404 on use.
         if len(self.sessions) >= 32:
@@ -288,7 +298,8 @@ class ReplayService:
         origin_class = classify_origin(self._trade_events(str(trade.get("id") or "")))
         plan = self._plan_reference(trade)
         session_id = f"OPR-{uuid.uuid4().hex}"
-        session = OpenReviewSession(session_id, evidence, plan=plan, origin_class=origin_class)
+        session = OpenReviewSession(session_id, evidence, plan=plan, origin_class=origin_class,
+                                    plan_history=self._plan_history(str(trade["id"])))
         if len(self.sessions) >= 32:
             del self.sessions[next(iter(self.sessions))]
         self.sessions[session_id] = session
@@ -422,7 +433,12 @@ class ReplayService:
         except Exception:  # noqa: BLE001 - missing plan falls back to the trade row
             state = None
         return plan_reference(trade, state)
-        return session.to_dict()
+
+    def _plan_history(self, trade_id: str) -> list[dict[str, Any]] | None:
+        try:
+            return self.tracking_reader.history(trade_id)
+        except Exception:  # Missing, invalid or unavailable history is UNKNOWN.
+            return None
 
     def _require_session(self, session_id: str) -> ReplaySession:
         session = self.sessions.get(session_id)

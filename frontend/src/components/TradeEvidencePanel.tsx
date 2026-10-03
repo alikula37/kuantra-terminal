@@ -13,6 +13,20 @@ interface TradeEvidencePanelProps {
 
 type Translate = (path: string, params?: Record<string, string | number>) => string;
 
+const CONTEXT_REASONS = new Set([
+  "TRADE_NOT_FOUND", "CANDLE_STORE_UNAVAILABLE", "CANDLE_ROW_LIMIT", "WINDOW_TOO_LARGE",
+  "NO_DATA", "NO_CANDLE_HISTORY", "INCOMPLETE_CANDLE_HISTORY", "CANDLE_IDENTITY_MISMATCH",
+  "CONFLICTING_CANDLES", "UNALIGNED_CANDLE", "INVALID_CANDLE_PROVENANCE", "INVALID_OHLC",
+  "INVALID_TIMESTAMP", "INVALID_VOLUME", "INVALID_TRADE", "INVALID_TRADE_WINDOW",
+  "INVALID_CONTEXT_WINDOW",
+]);
+
+function contextExplanation(reason: string | null | undefined, t: Translate): string {
+  if (reason === "TRADE_NOT_CLOSED") return t("evidence_pack.context_closed_only");
+  return reason && CONTEXT_REASONS.has(reason)
+    ? t(`replay.reason.${reason}`) : t("evidence_pack.context_unavailable");
+}
+
 type PolicyReference = {
   kind: "risk" | "playbook" | "unknown";
   label: string;
@@ -289,7 +303,7 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
               </div>
               <div className="bg-[#111722] border border-surface-border rounded p-3">
                 <span className="block text-[10px] text-slate-500 uppercase">{t("evidence_pack.exports")}</span>
-                <div className="flex gap-2 mt-1">
+                <div data-testid="evidence-export-actions" className="flex flex-wrap gap-2 mt-1 min-w-0">
                   {(["json", "html", "csv", "pdf"] as const).map((format) => (
                     <button key={format} type="button" onClick={() => downloadExport(format)} disabled={exporting !== null} className="inline-flex items-center gap-1 px-2 py-1 rounded border border-accent/50 text-accent hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                       <Download className="w-3 h-3" />{exporting === format ? "…" : t(`evidence_pack.${format}_export`)}
@@ -425,7 +439,15 @@ export const TradeEvidencePanel: React.FC<TradeEvidencePanelProps> = ({ tradeId,
                 <span className="text-slate-400">{t("evidence_pack.recorded_candles", { count: pack.market_context.candles?.length || 0 })}</span>
                 <span className="text-slate-400">{contextSourceVerified ? t("evidence_pack.source_verified") : t("evidence_pack.source_unverified")}</span>
               </div>
-              {pack.market_context.message && <p className="text-[11px] text-slate-500 mt-2">{pack.market_context.message}</p>}
+              {(pack.market_context.reason || pack.market_context.message) && (
+                <>
+                  <p data-testid="evidence-context-explanation" className="text-xs text-slate-400 mt-2">{contextExplanation(pack.market_context.reason, t)}</p>
+                  <details data-testid="evidence-context-diagnostic" className="mt-2 text-xs text-slate-500 break-words">
+                    <summary className="cursor-pointer focus-visible:outline-accent">{t("evidence_pack.context_diagnostic")}</summary>
+                    <p>{pack.market_context.reason || "UNKNOWN"}{pack.market_context.message ? ` · ${pack.market_context.message}` : ""}</p>
+                  </details>
+                </>
+              )}
             </section>
 
             {pack.ledger_integrity.errors.length > 0 && (

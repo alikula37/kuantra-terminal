@@ -890,6 +890,9 @@
     "inputs_changed": "Review inputs changed. Reload the review before recording a decision."
   },
   "evidence_pack": {
+    "context_closed_only": "Historical Evidence Pack context requires a recorded exit; this trade is still open.",
+    "context_unavailable": "Recorded market context is unavailable; completeness is unknown.",
+    "context_diagnostic": "Technical diagnostic",
     "coverage_title": "Evidence coverage",
     "overall": "Overall",
     "trade_snapshot": "Trade snapshot",
@@ -1307,6 +1310,16 @@
     "close": "Close"
   },
   "replay": {
+    "revisions": {
+      "view": "Plan view",
+      "current": "Current reference (not historical)",
+      "asof": "Last locally recorded plan at cursor",
+      "revision": "Revision {revision} · reset {reset}",
+      "cursor": "Cursor (Türkiye time):",
+      "disclaimer": "Locally recorded plan — not proof of broker validity. Only revisions recorded by the cursor time are shown. Candle opening time is the conservative boundary; metrics are unchanged.",
+      "NOT_AVAILABLE": "No eligible recorded plan at this time; current levels were not substituted.",
+      "UNKNOWN": "Plan history could not be verified; no historical levels are shown."
+    },
     "bar_of": "Bar {current} / {total}",
     "boundary_note": "Bar approximation · DuckDB candles · not broker fills · R is a gross price move",
     "reference_banner": "Current plan reference — it is not verified that these levels applied at the time shown.",

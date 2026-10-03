@@ -83,6 +83,39 @@ let host: HTMLDivElement; let root: Root;
 const flush = async () => { await act(async () => { await Promise.resolve(); await Promise.resolve(); }); };
 const byTestId = (id: string) => host.querySelector(`[data-testid="${id}"]`) as HTMLElement | null;
 
+it("keeps unavailable historical plans separate from the current reference", async () => {
+  apiFetch.mockResolvedValue(response(ready("BTCUSDT", {
+    recorded_plans: { status: "NOT_AVAILABLE", as_of_utc: "2026-10-03T10:00:00Z", available_revisions: [], plan: null },
+  })));
+  await act(async () => root.render(<TradeReplayCanvas tradeId="T1" />)); await flush();
+  const select = byTestId("replay-plan-view") as HTMLSelectElement;
+  expect(select).not.toBeNull();
+  await act(async () => { select.value = "asof"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  expect(byTestId("replay-recorded-plan-state")?.textContent).toContain("replay.revisions.NOT_AVAILABLE");
+  expect(byTestId("replay-levels")).toBeNull();
+  expect(removePriceLine).toHaveBeenCalledTimes(4);
+});
+
+it("shows only eligible source-linked revisions and never falls back on rewind", async () => {
+  const recorded = { ...plan, reference_code: "RECORDED_LOCAL_PLAN", source_event_id: "EV1", source_event_hash: "a".repeat(64), recorded_at_utc: "2026-10-03T10:00:00Z" };
+  apiFetch.mockResolvedValueOnce(response(ready("BTCUSDT", {
+    current_index: 1,
+    recorded_plans: { status: "READY", as_of_utc: "2026-10-03T10:01:00Z", available_revisions: [recorded], plan: recorded },
+  })));
+  await act(async () => root.render(<TradeReplayCanvas tradeId="T1" />)); await flush();
+  const select = byTestId("replay-plan-view") as HTMLSelectElement;
+  await act(async () => { select.value = "event:EV1"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  expect(byTestId("replay-recorded-source")?.textContent).toContain("EV1");
+  expect(byTestId("replay-reference-banner")?.textContent).toContain("replay.revisions.disclaimer");
+  apiFetch.mockResolvedValueOnce(response(ready("BTCUSDT", {
+    recorded_plans: { status: "NOT_AVAILABLE", as_of_utc: "2026-10-03T09:59:00Z", available_revisions: [], plan: null },
+  })));
+  await act(async () => (host.querySelector("button[aria-label='replay.action.step_back']") as HTMLButtonElement).click());
+  await flush();
+  expect(byTestId("replay-levels")).toBeNull();
+  expect(byTestId("replay-recorded-source")).toBeNull();
+});
+
 beforeEach(() => {
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
   mocks.theme = "dark";

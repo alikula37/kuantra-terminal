@@ -1,8 +1,7 @@
 """Read-only plan reference and close provenance for the chart trade review.
 
-P1 scope: the review shows the *current* recorded plan as an explicitly labelled
-reference.  It never claims those levels were valid at the replay cursor; that
-historical, revision-aware rendering belongs to a later package.
+The current plan is an explicitly labelled reference, not a historical claim.
+Recorded, revision-aware rendering is a separate local-evidence context.
 
 Nothing here writes: the functions are pure readers over the recorded trade, the
 local tracking plan and the append-only ledger provenance.
@@ -163,3 +162,68 @@ def plan_reference(trade: Dict[str, Any], tracking_state: Optional[Dict[str, Any
     add_level("SL", trade.get("stop_loss"))
     add_level("TP1", trade.get("take_profit"))
     return reference
+
+
+def recorded_plan_context(trade: Dict[str, Any], history: Optional[List[Dict[str, Any]]],
+                          as_of: str) -> Dict[str, Any]:
+    """Only hash-verified local revisions at/before the cursor's UTC instant.
+
+    Callers obtain history from LocalTrackingService.history (chain verified).
+    No current trade-row levels backfill missing history. No closures or PnL
+    leave this reader. Same-time revisions use verified chain order, not UUIDs.
+    Candle *opening* time is intentionally conservative: a plan written inside
+    a bar cannot appear before its recording time or be assumed active all bar.
+    """
+    from app.services.local_tracking import timestamp, validate_snapshot
+
+    result = {"status": "NOT_AVAILABLE", "as_of_utc": as_of,
+              "available_revisions": [], "plan": None}
+    if history is None:
+        return {**result, "status": "UNKNOWN"}
+    try:
+        cutoff = timestamp(as_of)
+        result["as_of_utc"] = cutoff.isoformat()
+        previous, previous_time, reset_index = None, None, 0
+        available = []
+        for record in history:
+            state = record["state"]
+            validate_snapshot(state)
+            if (state["trade_id"] != str(trade["id"]) or state["symbol"] != trade["symbol"]
+                    or state["side"] != trade["side"]):
+                raise ValueError("Plan review scope mismatch")
+            if not record["event_id"] or len(record["event_hash"]) != 64:
+                raise ValueError("Missing source evidence")
+            recorded = timestamp(record["recorded_at_utc"])
+            if previous_time is not None and recorded < previous_time:
+                raise ValueError("Nonmonotonic local recording clock")
+            action = record["action"]
+            if action == "PLAN_RESET":
+                if state["revision"] != 1 or state["closures"] or (previous and previous["state"]["closures"]):
+                    raise ValueError("Invalid reset")
+                reset_index += 1
+            elif action not in {"PLAN_SAVED", "LOCAL_CLOSE"} or state["revision"] != (previous["state"]["revision"] + 1 if previous else 1):
+                raise ValueError("Invalid revision")
+            elif previous:
+                old = previous["state"]
+                if (state["closures"][:len(old["closures"])] != old["closures"]
+                        or any(state.get(key) != old.get(key) for key in ("initial_qty", "entry_price", "symbol", "side", "qty_unit"))):
+                    raise ValueError("History changed")
+            if (record["reset_index"] != reset_index
+                    or record["causation_id"] != (previous["event_id"] if previous else None)):
+                raise ValueError("Broken lineage")
+            if recorded <= cutoff:
+                # Use only that snapshot's basis. A later trade correction must
+                # not rewrite an older entry line. Unknown units stay unknown.
+                basis = {**trade, "entry_price": state["entry_price"]}
+                plan = plan_reference(basis, state)
+                plan.update(reference_code="RECORDED_LOCAL_PLAN", plan_reset_count=reset_index,
+                            source_event_id=record["event_id"], source_event_hash=record["event_hash"],
+                            recorded_at_utc=recorded.isoformat(), broker_verified=False)
+                available.append(plan)
+            previous, previous_time = record, recorded
+        result["available_revisions"] = available
+        result["plan"] = available[-1] if available else None
+        result["status"] = "READY" if available else "NOT_AVAILABLE"
+        return result
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return {**result, "status": "UNKNOWN", "available_revisions": [], "plan": None}

@@ -3,7 +3,13 @@
 
 Updated: 2026-10-03. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP58 review/revisions and Evidence Pack UX](work-packages/P1-WP58-review-revisions-and-evidence-ux.md) — Ready, not implemented.**
+**Selected work: [P1-WP58 review/revisions and Evidence Pack UX](work-packages/P1-WP58-review-revisions-and-evidence-ux.md) — InProgress, final verification pending.**
+This change: export-action wrapping and localized context diagnostics; hash-linked local
+plan revisions, conservative candle-opening UTC cutoff, separate current-reference/as-of
+selector, no historical backfill/financial-metric change. Focused backend 90 / frontend 49
+PASS; full backend pre-final-producer-test 1245 / 3 warnings, frontend 51 files / 382,
+i18n 1329, build/docs/diff PASS. Native baseline reproduced both UI findings. Clean native acceptance pending;
+no new installed artifact or release claim. Details and remaining criteria in selected WP.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
 First WP58 prerequisites are the audit's actual Evidence Pack PDF-action clipping and raw
