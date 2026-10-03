@@ -21,6 +21,7 @@ def test_smoke_fails_fast_when_renderer_controller_never_becomes_ready():
             "push_sink": False,
             "plugin_boundary": False,
             "journal_export": False,
+            "evidence_worker": False,
         },
     }
 
@@ -58,3 +59,29 @@ def test_journal_export_smoke_check_rejects_missing_fonts_or_failures():
     assert _check_journal_export(SimpleNamespace(runtime=bad_csv)) is False
     bad_preview = _Runtime([_Call(200, b"%PDF"), _Call(200, b"\xef\xbb\xbf"), _Call(500, b"{}")])
     assert _check_journal_export(SimpleNamespace(runtime=bad_preview)) is False
+
+
+def test_smoke_export_failure_is_not_success(monkeypatch):
+    import desktop.smoke as smoke
+    window = SimpleNamespace(evaluate_js=lambda script, **_kw: "synthetic" if "innerText" in script else 1)
+    runtime = _Runtime([_Call(200, b'{"status":"online"}')])
+    monkeypatch.setattr(smoke, "_eval", lambda *_a: {"version": "synthetic"})
+    monkeypatch.setattr(smoke, "_check_plugin_boundary", lambda _ctx: True)
+    monkeypatch.setattr(smoke, "_check_journal_export", lambda _ctx: False)
+    monkeypatch.setattr(smoke, "_check_evidence_worker", lambda _ctx: True)
+    monkeypatch.delenv("KUANTRA_SMOKE_LOCAL_TRACKING", raising=False)
+    result = run_smoke(window, SimpleNamespace(runtime=runtime), timeout=1)
+    assert result["checks"]["journal_export"] is False
+    assert result["ok"] is False
+
+
+def test_worker_failure_cannot_pass_packaged_smoke(monkeypatch):
+    import desktop.smoke as smoke
+    window = SimpleNamespace(evaluate_js=lambda script, **_kw: "synthetic" if "innerText" in script else 1)
+    runtime = _Runtime([_Call(200, b'{"status":"online"}')])
+    monkeypatch.setattr(smoke, "_eval", lambda *_a: {"version": "synthetic"})
+    monkeypatch.setattr(smoke, "_check_plugin_boundary", lambda _ctx: True)
+    monkeypatch.setattr(smoke, "_check_journal_export", lambda _ctx: True)
+    monkeypatch.setattr(smoke, "_check_evidence_worker", lambda _ctx: False)
+    monkeypatch.delenv("KUANTRA_SMOKE_LOCAL_TRACKING", raising=False)
+    assert run_smoke(window, SimpleNamespace(runtime=runtime), timeout=1)["ok"] is False

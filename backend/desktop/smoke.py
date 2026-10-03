@@ -207,9 +207,23 @@ def _check_plugin_boundary(ctx) -> bool:
     )
 
 
+def _check_evidence_worker(ctx) -> bool:
+    """Exercise the real spawned read-only worker; shutdown must reap the idle pool."""
+    started = ctx.bridge.start_evidence_pack({"trade_id": "WP57-SYNTHETIC-MISSING"})
+    if started.get("status") != "PENDING":
+        return False
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        result = ctx.bridge.get_evidence_pack_job({"job_id": started["job_id"]})
+        if result.get("status") != "PENDING":
+            return result.get("status") == "COMPLETED" and result.get("response", {}).get("status") == 404
+        time.sleep(0.05)
+    return False
+
+
 def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
     checks = {"react_mounted": False, "bridge_roundtrip": False, "health": False, "push_sink": False,
-              "plugin_boundary": False, "journal_export": False}
+              "plugin_boundary": False, "journal_export": False, "evidence_worker": False}
     # pywebview's evaluate_js waits 20 seconds per call when the native controller never became
     # ready. Check the readiness event once so a renderer failure produces a bounded diagnostic
     # instead of multiplying that wait across every smoke assertion.
@@ -232,20 +246,25 @@ def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
                 if checks["health"] and not checks["plugin_boundary"]:
                     checks["plugin_boundary"] = _check_plugin_boundary(ctx)
             gate_ready = all(
-                value for name, value in checks.items() if name != "journal_export"
+                value for name, value in checks.items() if name not in {"journal_export", "evidence_worker"}
             )
             if gate_ready:
                 try:
                     checks["journal_export"] = _check_journal_export(ctx)
                 except Exception:  # noqa: BLE001
                     checks["journal_export"] = False
+                try:
+                    checks["evidence_worker"] = _check_evidence_worker(ctx)
+                except Exception:  # noqa: BLE001
+                    checks["evidence_worker"] = False
                 if os.environ.get("KUANTRA_SMOKE_LOCAL_TRACKING") == "1":
                     try:
                         checks["local_tracking"] = _check_local_tracking(window, ctx)
                     except Exception as exc:
                         checks["local_tracking"] = False
                         return {"ok": False, "reason": str(exc), "checks": checks}
-                return {"ok": True, "reason": "", "checks": checks}
+                passed = all(checks.values())
+                return {"ok": passed, "reason": "" if passed else "packaged export/worker check failed", "checks": checks}
         except Exception as exc:  # noqa: BLE001
             reason = f"{type(exc).__name__}: {exc}"
         time.sleep(0.5)

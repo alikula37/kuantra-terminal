@@ -65,6 +65,12 @@ def test_request_binary_body_is_base64(bridge, tmp_path):
 
 
 def test_evidence_pack_job_is_async_and_completes(bridge):
+    from app.api import endpoints
+    def counts():
+        with endpoints.sqlite_driver.get_connection() as conn:
+            return tuple(conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                         for table in ("trades", "evidence_events", "local_tracking_projections"))
+    before = counts()
     started_at = time.perf_counter()
     started = bridge.start_evidence_pack({"trade_id": "MISSING"})
     elapsed = time.perf_counter() - started_at
@@ -82,6 +88,7 @@ def test_evidence_pack_job_is_async_and_completes(bridge):
         time.sleep(0.01)
     assert result is not None and result["status"] == "COMPLETED"
     assert result["response"]["status"] == 404
+    assert counts() == before
 
 
 def test_evidence_pack_job_rejects_invalid_or_unknown_requests(bridge):

@@ -3,10 +3,14 @@
 
 Updated: 2026-10-03. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 owner-host obligations](work-packages/P1-WP29-trusted-macos-pilot-package.md).**
-Approved WP49–WP56 UX sequence complete. N03/N05/H05/pilot access and existing gold/XM/helper
-obligations remain open; this selection does not authorize new features, Release/tag, remote
-workflow or user-data operations. Next development sequence needs an explicit owner decision.
+**Selected work: [P1-WP57 pilot-flow/shutdown audit](work-packages/P1-WP57-pilot-flow-and-shutdown-audit.md).**
+Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
+revision-aware chart review, useful weekly review, then safe in-app backup/restore.
+WP57 baseline `0118367`: three reproduced failures (failed lifespan cleanup, renderer failure
+cleanup, non-cancellable Evidence Pack shutdown). Implementation and verification in progress.
+Three-person pilot acceptance is external and is NOT replaced by synthetic tests.
+N03/N05/H05 and gold/XM obligations remain open under reference WP29. No Release/tag,
+remote workflow or real user-data mutation is authorized by this sequence.
 
 **WP56 complete + archived (2026-10-03):**
 [update guidance](../archive/strategy/work-packages/P1-WP56-update-guidance-ux.md).

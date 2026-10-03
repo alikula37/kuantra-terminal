@@ -39,6 +39,7 @@ class BackendRuntime:
         self._startup_error: Optional[BaseException] = None
         self._client: Optional[httpx.AsyncClient] = None
         self._lifespan_cm = None
+        self._lifespan_started = False
         self._stopped = threading.Event()
         self._stopping = threading.Event()
         # Futures handed to caller threads; cancelled on stop() so no UI thread waits on a dead loop.
@@ -73,8 +74,12 @@ class BackendRuntime:
             self.loop.run_until_complete(self._startup())
         except BaseException as exc:  # noqa: BLE001 - surfaced to start()
             self._startup_error = exc
-            self._ready.set()
-            self._stopped.set()
+            try:
+                self.loop.run_until_complete(self._shutdown())
+            finally:
+                self.loop.close()
+                self._stopped.set()
+                self._ready.set()
             return
         self._ready.set()
         try:
@@ -98,9 +103,11 @@ class BackendRuntime:
         self._client = httpx.AsyncClient(transport=transport, base_url=INTERNAL_BASE_URL, timeout=None)
         self._lifespan_cm = self.app.router.lifespan_context(self.app)
         await self._lifespan_cm.__aenter__()
+        self._lifespan_started = True
 
     async def _shutdown(self) -> None:
-        if self._lifespan_cm is not None:
+        if self._lifespan_cm is not None and self._lifespan_started:
+            self._lifespan_started = False
             try:
                 await self._lifespan_cm.__aexit__(None, None, None)
             except Exception as exc:  # noqa: BLE001

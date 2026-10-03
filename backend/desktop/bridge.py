@@ -181,6 +181,7 @@ def _evidence_pack_worker(
 class DesktopBridge:
     _MAX_EVIDENCE_PACK_JOBS = 4
     _EVIDENCE_PACK_JOB_TTL_SECONDS = 300.0
+    _EVIDENCE_SHUTDOWN_GRACE_SECONDS = 3.0
     _EVIDENCE_PACK_JOB_ID = re.compile(r"^[0-9a-f]{32}$")
 
     def __init__(
@@ -396,8 +397,35 @@ class DesktopBridge:
             self._evidence_jobs_closed = True
             executor = self._evidence_executor
             self._evidence_executor = None
+            jobs = tuple(self._evidence_jobs.values())
+            self._evidence_jobs.clear()
+        for future, _created_at in jobs:
+            future.cancel()
         if executor is not None:
-            executor.shutdown(wait=True, cancel_futures=True)
+            # Python 3.11 ProcessPoolExecutor has no bounded shutdown API. Capture ONLY
+            # this read-only pool's handles before shutdown clears its private registry.
+            # Never enumerate/kill unrelated children or processes by executable name.
+            owned = tuple((getattr(executor, "_processes", None) or {}).values())
+            stopped = threading.Event()
+
+            def reap():
+                try:
+                    executor.shutdown(wait=True, cancel_futures=True)
+                finally:
+                    stopped.set()
+
+            threading.Thread(target=reap, name="kuantra-evidence-reaper", daemon=True).start()
+            if not stopped.wait(self._EVIDENCE_SHUTDOWN_GRACE_SECONDS):
+                logger.warning("Read-only Evidence Pack worker exceeded shutdown grace")
+                for process in owned:
+                    if process.is_alive():
+                        process.terminate()
+                for process in owned:
+                    process.join(timeout=0.5)
+                    if process.is_alive():
+                        process.kill()
+                        process.join(timeout=0.5)
+                stopped.wait(1.0)
 
     # ---- live stream -----------------------------------------------------------------------
     def stream_open(self) -> dict:

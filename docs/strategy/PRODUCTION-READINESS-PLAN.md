@@ -3,7 +3,7 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.42
+version: 1.0.43
 status: Proposed
 date: 2026-09-11
 reviewed_commit: this change
@@ -13,6 +13,18 @@ audit: KRR-001@1.0.0
 ```
 
 ## 1. Karar özeti ve yetki
+
+Owner-approved continuation (2026-10-03), after WP49–WP56: first WP57 audits the
+synthetic create/edit/partial-close/chart/export flow and bounds owned read-only worker
+shutdown. Actual three-person pilot acceptance remains a separate external obligation.
+Then proceed one bounded package at a time: revision-aware chart review (historical plan
+versus current reference, no look-ahead), useful weekly review (coverage/unknown results
+explicit), and safe in-app backup/restore (preview/validation/explicit confirmation; no
+automatic destructive apply). Scope/acceptance must be recorded before each implementation.
+XM permanent import awaits a genuine anonymized statement; multi-trade comparison awaits
+demonstrated pilot need. No Pine runtime, new general AI, live orders or paid data are added.
+Existing owner-host gates remain open; each verified local change is installed under AGENTS,
+while Release/tag updates still require separate authorization.
 
 Owner-approved UX sequence (2026-10-02): proceed in bounded, tested packages after
 installed-app review. First WP49: truthful quote freshness and understandable automation

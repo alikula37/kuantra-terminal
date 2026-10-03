@@ -116,20 +116,27 @@ def build_app(args) -> AppContext:
     from app.core.config import settings
 
     runtime = BackendRuntime()
-    runtime.start()
-    push = PushChannel()
-    push.attach_windows(lambda: list(webview.windows))
-    push.start()
+    push = None
     gateway = None
-    if settings.gateway_enabled:
-        gateway = IntegrationsGateway(runtime)
-        gateway.start()
-    index_url = args.dev_url or resolve_frontend_index(args.frontend_dir).as_uri()
-    bridge = DesktopBridge(runtime, push, gateway=gateway, index_url=index_url, windows_getter=lambda: list(webview.windows))
+    bridge = None
+    try:
+        runtime.start()
+        push = PushChannel()
+        push.attach_windows(lambda: list(webview.windows))
+        push.start()
+        if settings.gateway_enabled:
+            gateway = IntegrationsGateway(runtime)
+            gateway.start()
+        index_url = args.dev_url or resolve_frontend_index(args.frontend_dir).as_uri()
+        bridge = DesktopBridge(runtime, push, gateway=gateway, index_url=index_url, windows_getter=lambda: list(webview.windows))
+    except BaseException:
+        _stop_resources(AppContext(runtime=runtime, push=push, gateway=gateway, bridge=bridge, index_url=""))
+        raise
     return AppContext(runtime=runtime, push=push, gateway=gateway, bridge=bridge, index_url=index_url)
 
 
 _shutdown_done = threading.Event()
+_shutdown_lock = threading.Lock()
 
 
 def shutdown(ctx: AppContext) -> None:
@@ -139,13 +146,26 @@ def shutdown(ctx: AppContext) -> None:
     whichever happens first. Timeouts are short because the first call runs on the GUI thread and
     a slow shutdown there looks like a frozen window.
     """
-    if _shutdown_done.is_set():
-        return
-    _shutdown_done.set()
+    # A window callback and the main thread can arrive concurrently. "Started"
+    # is not "finished": os._exit must not orphan the pool while the callback
+    # is still reaping it. Acquire is bounded by the resource timeout budget.
+    if not _shutdown_lock.acquire(timeout=20.0):
+        raise RuntimeError("desktop cleanup did not complete within its shutdown budget")
+    try:
+        if _shutdown_done.is_set():
+            return
+        _stop_resources(ctx)
+        _shutdown_done.set()
+    finally:
+        _shutdown_lock.release()
+
+
+def _stop_resources(ctx: AppContext) -> None:
+    """Also usable for a partially constructed context without marking the shell closed."""
     for step in (
-        lambda: ctx.push.stop(),
+        lambda: ctx.push and ctx.push.stop(),
         lambda: ctx.gateway and ctx.gateway.stop(timeout=3.0),
-        lambda: ctx.bridge._close(),
+        lambda: ctx.bridge and ctx.bridge._close(),
         lambda: ctx.runtime.stop(timeout=5.0),
     ):
         try:
@@ -260,6 +280,15 @@ def main(argv=None) -> int:
     import webview
 
     ctx = build_app(args)
+    try:
+        return _run_window(args, ctx, renderer, log)
+    finally:
+        shutdown(ctx)
+
+
+def _run_window(args, ctx, renderer, log) -> int:
+    import webview
+
     exit_code = {"code": 0}
 
     window = webview.create_window(
@@ -335,7 +364,6 @@ def main(argv=None) -> int:
     window.events.closed += on_closed
     log.info("Starting %s (frozen=%s, data=%s, gateway=%s)", APP_TITLE, is_frozen(), DATA_DIR, getattr(ctx.gateway, "url", None))
     webview.start(on_start, private_mode=False, storage_path=str(DATA_DIR / "webview"), debug=args.debug, gui=renderer)
-    shutdown(ctx)
     return exit_code["code"]
 
 
