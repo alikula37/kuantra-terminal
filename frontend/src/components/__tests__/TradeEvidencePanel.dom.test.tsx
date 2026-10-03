@@ -148,6 +148,20 @@ it("includes folded diagnostics in keyboard navigation and wraps focus in the di
   expect(document.activeElement).toBe(close);
 });
 
+it("does not reset export focus when background prices rerender the parent's close callback", async () => {
+  mockPanelResponse(basePack);
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  const action = host.querySelector("[data-testid='evidence-export-actions'] button");
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true })));
+  expect(document.activeElement).toBe(action);
+  const latestClose = vi.fn();
+  await act(async () => root.render(<I18nProvider><TradeEvidencePanel tradeId="TRD-1" onClose={latestClose} /></I18nProvider>));
+  expect(document.activeElement).toBe(action);
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
+  expect(latestClose).toHaveBeenCalledTimes(1);
+});
+
 it("keeps a failed Evidence Pack request recoverable", async () => {
   let packCalls = 0;
   mocks.apiFetch.mockImplementation((path: string) => {

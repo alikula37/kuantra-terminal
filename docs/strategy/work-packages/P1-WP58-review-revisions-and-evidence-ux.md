@@ -75,7 +75,11 @@ validity. No user trade mutation. Native Tab did not leave the close button unde
 WKWebView keyboard settings: **candidate is not final acceptance**. Two additional red DOM
 tests pin explicit export traversal and diagnostic-summary wrap. Evidence Pack now opts into
 deterministic Tab/Shift+Tab navigation without changing macOS preferences or other dialogs'
-navigation mode. Final clean/native acceptance remains pending.
+navigation mode. Second native candidate **a31889b** passed clean gates but background
+parent price updates recreated the close callback and reset export focus. A third red
+DOM regression reproduced it. Opt-in navigation now retains focus across callback changes
+and Escape uses the latest callback; non-opt-in dialogs keep their previous lifecycle.
+Final clean/native acceptance remains pending; neither earlier candidate is final evidence.
 
 Changed scope: `backend/app/{quant/trade_plan_reference,replay/replay_service,services/local_tracking}.py`,
 `backend/tests/test_wp58_recorded_plan_review.py`, EvidencePanel/ReplayCanvas + DOM tests,

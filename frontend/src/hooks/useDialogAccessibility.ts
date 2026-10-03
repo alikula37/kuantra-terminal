@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type ElementRef = { current: HTMLElement | null };
 
@@ -18,6 +18,11 @@ export function useDialogAccessibility(
   initialFocusRef?: ElementRef,
   nativeTabNavigation = false,
 ): void {
+  const closeCallbackRef = useRef(onClose);
+  useEffect(() => { closeCallbackRef.current = onClose; }, [onClose]);
+  // Opt-in native navigation keeps focus during parent price updates. Other
+  // dialogs retain their existing effect lifecycle until independently tested.
+  const closeLifecycleDependency = nativeTabNavigation ? null : onClose;
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return undefined;
@@ -28,7 +33,7 @@ export function useDialogAccessibility(
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        closeCallbackRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -65,5 +70,5 @@ export function useDialogAccessibility(
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [dialogRef, initialFocusRef, onClose, nativeTabNavigation]);
+  }, [dialogRef, initialFocusRef, closeLifecycleDependency, nativeTabNavigation]);
 }

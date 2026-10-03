@@ -13,7 +13,9 @@ Initial implementation **802db05** pushed, clean canonical arm64 **13/13 / COMPL
 (1246 backend, 382 frontend), exact-DMG and installed candidate verified. Native export
 wrap and source-linked plan selector worked; default WKWebView Tab skipped export controls.
 Two red regressions → explicit opt-in dialog navigation; candidate is not final acceptance.
-Final clean gate/reinstall pending. Release unchanged. Details in selected WP.
+Second candidate **a31889b** passed clean gates, but native background-price rerenders
+reset keyboard focus. Third red regression → opt-in stable focus/latest close callback;
+final clean gate/reinstall pending. Release unchanged. Details in selected WP.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
 First WP58 prerequisites are the audit's actual Evidence Pack PDF-action clipping and raw
