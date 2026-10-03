@@ -286,9 +286,31 @@ def main(argv=None) -> int:
         shutdown(ctx)
 
 
+def _install_macos_shutdown(ctx: AppContext) -> None:
+    """NSApplication Quit can terminate without windowWillClose or returning start().
+
+    Preserve pywebview's close/cancellation decision for ALL windows, then synchronously
+    finish our resource cleanup before AppKit accepts process termination.
+    """
+    from webview.platforms.cocoa import BrowserView
+
+    original = BrowserView.AppDelegate
+
+    class KuantraAppDelegate(original):
+        def applicationShouldTerminate_(self, app):
+            allowed = super().applicationShouldTerminate_(app)
+            if allowed:
+                shutdown(ctx)
+            return allowed
+
+    BrowserView.AppDelegate = KuantraAppDelegate
+
+
 def _run_window(args, ctx, renderer, log) -> int:
     import webview
 
+    if sys.platform == "darwin":
+        _install_macos_shutdown(ctx)
     exit_code = {"code": 0}
 
     window = webview.create_window(

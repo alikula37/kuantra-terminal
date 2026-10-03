@@ -51,6 +51,7 @@ def test_webview_start_failure_always_closes_owned_context(monkeypatch, fail_cre
     monkeypatch.setattr(desktop_main, "shutdown", lambda context: calls.append(context))
     monkeypatch.setattr(desktop_main, "_configure_logging", lambda *_a: None)
     monkeypatch.setattr(desktop_main, "_preflight_renderer", lambda *_a: None)
+    monkeypatch.setattr(desktop_main, "_install_macos_shutdown", lambda *_a: None, raising=False)
     with pytest.raises(RuntimeError, match="synthetic renderer failure"):
         desktop_main.main([])
     assert len(calls) == 1
@@ -101,6 +102,21 @@ def test_concurrent_shell_close_waits_for_cleanup_completion(monkeypatch):
         first.join(2)
         second.join(2)
     assert second_done.is_set()
+
+
+@pytest.mark.parametrize("allowed", [False, True])
+def test_cocoa_termination_uses_confirmed_decision_before_cleanup(monkeypatch, allowed):
+    import desktop_main
+    class OriginalDelegate:
+        def applicationShouldTerminate_(self, _app): return allowed
+    browser = SimpleNamespace(AppDelegate=OriginalDelegate)
+    monkeypatch.setitem(sys.modules, "webview.platforms.cocoa", SimpleNamespace(BrowserView=browser))
+    calls = []
+    ctx = object()
+    monkeypatch.setattr(desktop_main, "shutdown", lambda context: calls.append(context))
+    desktop_main._install_macos_shutdown(ctx)
+    assert browser.AppDelegate().applicationShouldTerminate_(object()) is allowed
+    assert calls == ([ctx] if allowed else [])
 
 
 def test_close_bounds_real_busy_owned_process_and_is_idempotent(monkeypatch):

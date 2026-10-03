@@ -6,8 +6,12 @@ Updated: 2026-10-03. Branch: `main` (latest owner instruction).
 **Selected work: [P1-WP57 pilot-flow/shutdown audit](work-packages/P1-WP57-pilot-flow-and-shutdown-audit.md).**
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
-WP57 baseline `0118367`: three reproduced failures (failed lifespan cleanup, renderer failure
-cleanup, non-cancellable Evidence Pack shutdown). Implementation and verification in progress.
+WP57 baseline `0118367`: lifecycle/smoke fixes in `7fef432` passed 1228 backend / 375 frontend
+and clean canonical 13/13 COMPLETE plus exact-DMG synthetic tracking. Installed native Cmd+Q
+still orphaned its Evidence Pack worker; candidate NOT accepted as final. Cocoa termination
+follow-up in progress, user 5/24/5 trade/event/tracking counts and row hashes unchanged.
+Audit also found Evidence Pack PDF action clipping and raw English open-trade context text;
+explicit next review-surface follow-ups, not silently closed. Final clean build/install pending.
 Three-person pilot acceptance is external and is NOT replaced by synthetic tests.
 N03/N05/H05 and gold/XM obligations remain open under reference WP29. No Release/tag,
 remote workflow or real user-data mutation is authorized by this sequence.

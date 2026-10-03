@@ -38,10 +38,11 @@ Real three-person pilot acceptance is an external obligation, not synthetic evid
 
 ## Implementation evidence (this change)
 
-Six demonstrated defect classes: failed lifespan loop/client leak; partial context setup
+Seven demonstrated defect classes: failed lifespan loop/client leak; partial context setup
 leak; failed window create/start bypassing cleanup; unbounded busy Evidence Pack join;
 window/main concurrent shutdown treating started as finished (real source smoke orphaned
-test-owned workers); failed CSV/PDF smoke still returning `ok=true`.
+test-owned workers); failed CSV/PDF smoke still returning `ok=true`; macOS AppKit Quit
+bypassing window-close cleanup entirely (native installed Cmd+Q reproduction).
 The first reproduction had a test typo/non-running job and was repaired before recording
 the actual three baseline failures (3.18s). Export reproduction was corrected to reach the
 success path and then failed `assert True is False`; it is not a collection-only red claim.
@@ -62,3 +63,24 @@ install evidence follows before closure; unchecked criteria remain unchecked unt
 Synthetic regressions cover the constituent create/edit/partial-close/chart/export contracts;
 they do not prove three-person usability or an all-screen click-through. Public startup network
 was possible; uv offline proves dependency resolution only. No real user trade writes occurred.
+
+## Candidate/native follow-up (not final acceptance)
+
+Candidate `7fef432`: clean canonical arm64 13/13 COMPLETE; exact mounted DMG smoke passed
+including synthetic partial-close/editor/local-close and spawned Evidence Pack. However the
+installed Cmd+Q check left exact-owned PIDs 10519/10520 after parent 10487 exited. Worker
+10520 was explicitly terminated (tracker then exited); not recorded as clean native acceptance.
+Trade/event/tracking hashes and 5/24/5 counts remained unchanged. Existing pywebview Cocoa
+`AppDelegate.applicationShouldTerminate_` checks close permissions but directly lets AppKit
+terminate; it need not deliver windowWillClose or return start(). Follow-up subclass preserves
+the existing permission/cancellation decision across all windows and synchronously completes
+owned cleanup before granting native termination. Two callback contract reds, then green;
+native Cmd+Q must be rerun from the final clean binary before closure.
+Follow-up focused lifecycle/main/bridge/smoke **32 passed**; full backend **1230 passed /
+3 warnings** (32.47s). Frontend unchanged by this native termination fix. Final clean
+canonical gate and installed Cmd+Q acceptance still pending.
+
+Separate visible UI findings from this read-only native audit: Evidence Pack export row clips
+the PDF action at 1440x900 light/TR; open-trade market-context explanation prints a raw English
+message. Retain as explicit next review-surface follow-ups; NOT fixed or closed by backend
+shutdown work. No all-screen UX acceptance is claimed.
