@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "observed_date": "2026-10-04",
+  "status": "ACCEPTED_FOR_WP59_LOCAL_ARM64_SCOPE",
+  "source_commit": "3b773515dc2789ff9d094eba8c73ca8b0dd94668",
+  "platform": "macOS 26.6.2 arm64",
+  "installed_path": "/Applications/Kuantra Terminal.app",
+  "runtime_version": "1.1.6",
+  "version_kind": "local source build, GitHub pilot Release unchanged",
+  "executable_sha256": "5a97624748f7539feeb41baaa90efce9c2edde73416fd4fac5693c498e6f4aa9",
+  "dmg_sha256": "502de48b667b1fe4e3ce8e440d1c3878bd93c189ae6dd42ff0dd18561ec5d2ef",
+  "codesign": "PASS_STRICT_DEEP_ADHOC",
+  "previous_recoverable_bundle": "/tmp/kuantra-wp59-update.GuUne2/Kuantra Terminal.app",
+  "checks": {
+    "tr_light_dark_and_de_dark_en_light_readable": true,
+    "wide_1440x900_narrow_1060x715_scroll_reachable": true,
+    "tab_now_summary_load_skips_closed_inputs": true,
+    "note_tab_skips_disabled_completion_to_diagnostics": true,
+    "return_opens_diagnostics_escape_closes": true,
+    "cutoff_change_invalidates_loaded_review_no_automatic_decision": true,
+    "reload_updates_istanbul_snapshot_cutoff": true,
+    "no_data_labels_and_zero_record_counts_no_success_claim": true,
+    "primary_warnings_localized_raw_folded": true,
+    "runtime_settings_version_1_1_6": true,
+    "normal_cmd_q_parent_13451_exited": true,
+    "normal_reopen_TR_light_LITE": true,
+    "user_core_row_hashes_unchanged": true
+  },
+  "user_data": {
+    "stopped_db_hash_before_and_after_replacement": "98d85a0be4d496dec16f39c9742b6c94d1bce8b2556ee4eefa210b57f2e385e6",
+    "core_tables": {
+      "trades": {
+        "count": 5,
+        "rows_sha256": "c9f1f5b6f7b3954b10e33d05023bb66ad2ffb7bcdd0c8fec14e345947ee838d2"
+      },
+      "evidence_events": {
+        "count": 24,
+        "rows_sha256": "b3f8d5e1a29abfbc1305f69404966e7d182ed2e4eb29bc66de17911eb6e9905a"
+      },
+      "local_tracking_projections": {
+        "count": 5,
+        "rows_sha256": "5b5bd6c0935bf87789bac2fb49f37bf8f1d7cb9c03b65ae2032a830f51af01f0"
+      }
+    },
+    "ordered_hash_method": "SHA256 of sorted compact JSON row strings, UTF8 joined with LF; readonly SQLite",
+    "whole_database_across_runtime_qa_claimed_unchanged": false
+  },
+  "limitations": [
+    "Synthetic decision/partial/unknown/stale/error cases are DOM/backend evidence; no real-profile decision was saved",
+    "Installed native period had no evidence; tests do not replace actual three-person pilot acceptance",
+    "Exact mounted DMG passed eight checks; previous WP58 intermittent smoke follow-up remains open",
+    "N05 BLOCKED: no Developer ID/notarization; N03/H05/legal/gold/XM remain open",
+    "Runtime public network occurred; uv offline is dependency resolution only",
+    "No Release/tag/Intel/workflow, credential, user reset/restore/migration or trade edits",
+    "First install mount attempt collided with concurrent N05 mount (resource busy); no installed bundle changed until successful sequential readonly mount"
+  ]
+}

@@ -3,23 +3,46 @@
 
 Updated: 2026-10-04. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP59 useful weekly review UX](work-packages/P1-WP59-useful-weekly-review-ux.md) — InProgress; full/native/install acceptance pending.**
-Next bounded scope: understandable Istanbul period/as-of guidance, verified-count summary,
-localized coverage/warnings, readable theme/keyboard UX. No invented financial metrics or
-automatic completion; no-data/unknown/partial/stale review is not PASS. Existing manual
-decision/input-key/async boundaries remain authoritative. After WP59: safe in-app backup/
-restore with a separate preview/validation/explicit-confirmation contract.
-WP59 implementation in this change: seven baseline UX red tests plus own-key unknown-code
-crash and two focus/Tab red regressions → focused **51 PASS**, full frontend **409 PASS**,
-weekly backend **5 PASS**; i18n **1370** per language, tsc/build/docs/diff PASS. Returned
-counts only, localized known warnings, folded unknown diagnostics, semantic theme controls,
-Istanbul timestamps/explicit cutoff advance; manual UTC/input-key/decision boundaries kept.
-Clean native artifact and installed acceptance remain pending, not yet Complete.
+**Selected work: [P1-WP60 safe backup and restore preview](work-packages/P1-WP60-safe-backup-restore-preview.md) — Ready, not implemented.**
+Next bounded scope: explicit local snapshot backup using the existing bundle contract and
+read-only selected-bundle preview; no implicit overwrite/arbitrary-path API or destructive
+restore/apply. Reproduce destination-race safety before UI exposure. Actual apply remains a
+separate recovery/explicit-confirmation obligation; preview does not close it. Synthetic data
+only for agent bundle tests; no real-user ZIP or apply without explicit approval.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
 Three-person pilot acceptance is external and is NOT replaced by synthetic tests.
 N03/N05/H05 and gold/XM obligations remain open under reference WP29. No Release/tag,
 remote workflow or real user-data mutation is authorized by this sequence.
+
+**WP59 complete + archived (2026-10-04):**
+[useful weekly review UX](../archive/strategy/work-packages/P1-WP59-useful-weekly-review-ux.md).
+Code **3b773515dc2789ff9d094eba8c73ca8b0dd94668**, pushed main. Seven baseline UX red tests,
+unknown-code crash and two focus/Tab regressions → **51 focused PASS**; full **1246 backend /
+3 warnings**, **51 files / 409 frontend**, **1370** EN/TR/DE keys; tsc/build/docs/truth/
+packaging/diff PASS. Counts/rule references only, localized coverage/warnings, folded raw
+diagnostics, readable semantic themes, Istanbul snapshot period/cutoff and explicit advance.
+UTC identity/exclusive end/manual decisions preserved; missing/stale/unknown is not PASS.
+Clean canonical arm64 **13/13 MERGE READY / COMPLETE**, exact read-only mounted-DMG **8/8 PASS**,
+WKWebView/controller, CSV/PDF, spawned Evidence Pack and synthetic partial/editor/final close.
+Persistent `artifacts/evidence/p1-wp59/`: CI **5c5a78f9…**, exact **18e5f272…**, N05 **9e566e8d…**,
+installed acceptance **950d7117…**. CI/exact copies add final LF, JSON-equivalent to dist,
+not byte-identical (raw hashes in archived WP). DMG
+**502de48b667b1fe4e3ce8e440d1c3878bd93c189ae6dd42ff0dd18561ec5d2ef**;
+CI/mounted/installed executable
+**5a97624748f7539feeb41baaa90efce9c2edde73416fd4fac5693c498e6f4aa9**.
+Installed Settings **1.1.6 local source build**, strict/deep codesign PASS (ad-hoc).
+Native TR light/dark, DE dark, EN light, 1440x900 and ~1060x715 scroll/key controls accepted;
+explicit cutoff invalidates old review, no automatic decision/load. Actual installed period
+had no evidence; partial/unknown/stale/completed/error decisions are synthetic DOM/backend
+evidence, not real-profile/pilot financial acceptance. Normal Cmd+Q parent **13451** exited;
+normal reopen **TR/light/LITE**. Stopped DB unchanged across replacement; **5 trades /
+24 events / 5 tracking** canonical row hashes unchanged after QA/reopen. Previous bundle
+`/tmp/kuantra-wp59-update.GuUne2/Kuantra Terminal.app` recoverable. No saved user review decision/
+note/trade, reset/delete/migration/restore/credential/Release/tag/Intel/workflow change.
+Runtime public network occurred; uv offline is resolution only. **N05 BLOCKED**, WP58
+repeatability follow-up and WP29 owner-host obligations unchanged. Closure docs do not change
+the accepted binary; GitHub pilot remains a different artifact. WP60 Ready is the next scope.
 
 **WP58 complete + archived (2026-10-04):**
 [review revisions and Evidence Pack UX](../archive/strategy/work-packages/P1-WP58-review-revisions-and-evidence-ux.md).

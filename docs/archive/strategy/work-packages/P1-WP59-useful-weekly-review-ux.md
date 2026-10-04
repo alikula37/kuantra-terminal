@@ -1,9 +1,9 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: archived -->
 # P1-WP59 — Useful weekly review UX
 
 ```yaml
 work_package: P1-WP59
-status: InProgress
+status: Complete
 date: 2026-10-04
 branch: main
 baseline: 24c3c5f
@@ -50,10 +50,10 @@ owner-host obligations and WP58 smoke-repeatability follow-up remain open.
 - [x] No-data/UNKNOWN/PARTIAL/STALE/COMPLETED and true zero are not misrepresented as PASS.
 - [x] Known codes EN/TR/DE; unknown diagnostic fallback honest; no raw primary warnings.
 - [x] Current-input/manual decision and abort/late/cancel/retry regressions remain green.
-- [ ] Readable responsive light/dark, keyboard controls and native scroll reachability verified.
-- [ ] Full relevant backend/frontend/i18n/docs and clean canonical native arm64 CI; exact DMG
+- [x] Readable responsive light/dark, keyboard controls and native scroll reachability verified.
+- [x] Full relevant backend/frontend/i18n/docs and clean canonical native arm64 CI; exact DMG
       and installed hashes, normal quit/reopen and core user-row preservation verified.
-- [ ] STATUS/registry updated with commands, exact counts/hashes and limitations; commit/push
+- [x] STATUS/registry updated with commands, exact counts/hashes and limitations; commit/push
       main and installed update under standing instruction; no Release/tag refresh.
 
 ## File scope and verification
@@ -80,7 +80,7 @@ in Europe/Istanbul; advanced IANA/UTC inputs preserved without rounding or chang
 identity. Inclusive start/exclusive end and recorded evidence vs financial verdict explicit.
 Manual decisions retain freshness/abort guards; unknown/NOT_READY/STALE status cannot
 complete even if an unexpected response flags permission. No backend/schema/formula change.
-Full/native/install acceptance remains pending; no completed claim yet.
+Implementation-stage evidence below is followed by final clean/native/install acceptance.
 
 Additional red regression: prototype-like unknown code crashed translation lookup; explicit
 own-key lookup now rejects it. Two red focus/Tab regressions justified opting this panel
@@ -95,3 +95,59 @@ build PASS. Backend weekly regression **5 PASS / 2 warnings**. Earlier dirty can
 candidate had **1246 backend / 3 warnings**, 13/13 MERGE READY, but predates final focus/
 cutoff/code-lookup adjustments and is **not final binary acceptance**. Clean source CI,
 exact DMG, N05 boundary and installed read-only acceptance follow this implementation commit.
+
+## Final acceptance — 2026-10-04
+
+Implementation **3b773515dc2789ff9d094eba8c73ca8b0dd94668**, pushed main. Clean canonical:
+`uv run --offline --no-project --with-requirements backend/requirements.lock python
+scripts/run_local_ci.py --expected-architecture arm64 --report
+dist/p1-wp59-committed-local-ci.json`: **13/13 MERGE READY / COMPLETE**, full backend
+**1246 PASS / 3 warnings**, frontend **51 files / 409 PASS**, i18n **1370** each EN/TR/DE,
+typecheck/build/docs/release-truth/packaging/diff PASS. Python **3.11.16**, Node **24.20.0**,
+npm **11.19.0**, uv **0.12.10**, PyInstaller **6.22.2**, macOS **26.6.2 arm64**.
+
+`PYTHON_BIN=python3.11 bash scripts/package_macos.sh --architecture arm64 --output
+dist/Kuantra-Terminal-1.1.6-wp59-arm64.dmg`; exact read-only mounted-DMG smoke via
+`KUANTRA_MARKET_DATA_ENABLED=false KUANTRA_SMOKE_LOCAL_TRACKING=1 uv run --offline
+--no-project --with-requirements backend/requirements.lock python scripts/smoke_macos_dmg.py
+--dmg dist/Kuantra-Terminal-1.1.6-wp59-arm64.dmg --expected-architecture arm64
+--report dist/p1-wp59-exact-dmg-smoke.json`: **8/8 PASS / COMPLETE**, actual WKWebView/controller,
+CSV/PDF, spawned Evidence Pack and synthetic partial-close/editor/final-local-close.
+Mount detached safely. Runtime public network occurred; uv offline is resolution only.
+N05 distribution preflight **BLOCKED**, not PASS: ad-hoc, no Developer ID/notarization.
+Previous WP58 intermittent tracking-editor smoke follow-up remains open despite this PASS.
+
+Persistent evidence: `artifacts/evidence/p1-wp59/`.
+
+| Report | SHA-256 |
+| --- | --- |
+| local-ci.json | 5c5a78f960be674080c46eac152a721ac46fdb9dd4cd6a9ef8fe6111d9e72701 |
+| exact-dmg-smoke.json | 18e5f272f2ea9769c9416f0d37233fc4b9d946656fc815f59f4786eab8216163 |
+| n05-preflight.json | 9e566e8d3beed1665519a55696b341162ff0c0c3dcdfaa809f4bc9374d9b39c0 |
+| installed-acceptance.json | 950d7117a2d62b3794aa9f3ea251998f6589f407ba28cf7e6693e2f7c78fc110 |
+
+CI/smoke copies are JSON-equivalent to raw dist reports with an added final LF, not
+byte-identical. Raw CI hash **23a05243098301f8e0ef6349378787a19a233d7990436156a9562dffd79176e8**;
+raw smoke **ba178be0e5a0502429e03c477238e3cae1c1f250fe4e1e50704f8a521fc6efc3**.
+DMG SHA-256 **502de48b667b1fe4e3ce8e440d1c3878bd93c189ae6dd42ff0dd18561ec5d2ef**.
+CI/mounted/installed executable SHA-256
+**5a97624748f7539feeb41baaa90efce9c2edde73416fd4fac5693c498e6f4aa9**.
+
+Installed `/Applications/Kuantra Terminal.app`: Settings runtime **1.1.6 local source build**,
+strict/deep ad-hoc codesign PASS. Native TR light/dark, DE dark, EN light, 1440x900 and
+~1060x715 scrolling, folded advanced settings/diagnostics, explicit cutoff invalidation,
+Tab/Return/Escape and disabled completion accepted. Installed period contained no review
+evidence; partial/unknown/stale/completed/manual-decision/error cases are isolated DOM/backend
+evidence, not real-profile financial acceptance. No real review decision/note/trade saved.
+Normal Cmd+Q parent **13451** exited without manual termination; normal reopen **TR/light/LITE**.
+Previous bundle `/tmp/kuantra-wp59-update.GuUne2/Kuantra Terminal.app` is recoverable.
+Stopped database SHA unchanged across replacement; **5 trades / 24 events / 5 tracking**
+canonical row hashes unchanged after QA and normal reopen (recorded in installed acceptance).
+Runtime cache/preferences may change; no whole-DB-unchanged claim across runtime QA.
+No Release/tag/Intel/workflow/credential/user reset/delete/restore/migration change.
+N03/N05/H05/legal/gold/XM/actual pilot obligations stay open. Closure docs do not change binary.
+Next selected bounded work: WP60 safe in-app backup and restore **preview**, Ready; actual
+restore apply requires a separate recovery/explicit-confirmation contract and is not implemented.
+Closure validation: `python3.11 scripts/check_docs.py` **146 documents / 193 links / 5 startup**
+PASS; `python3.11 scripts/check_release_truth.py`, `python3.11 scripts/verify_packaging.py`
+and `git diff --check` PASS. Only documentation/evidence changes follow the accepted binary.
