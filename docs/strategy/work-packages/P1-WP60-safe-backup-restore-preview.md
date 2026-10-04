@@ -3,14 +3,15 @@
 
 ```yaml
 work_package: P1-WP60
-status: Ready
+status: InProgress
 date: 2026-10-04
 branch: main
 baseline: 3b773515
 depends_on: P1-WP59
 ```
 
-Next bounded piece of the owner-approved backup/restore sequence. Not implemented.
+Next bounded piece of the owner-approved backup/restore sequence. In implementation;
+not final native/install acceptance yet.
 Expose a user-initiated local backup and **read-only restore preview**, not destructive apply.
 CSV/PDF reports are not a complete restorable backup. Reuse the existing bundle contract;
 inspect `docs/MACOS_MIGRATION.md`, migration service, desktop bridge and relevant tests before
@@ -40,17 +41,20 @@ cross-version restore compatibility.
   complete that obligation or authorize an agent to restore real user data.
 - EN/TR/DE, readable light/dark, keyboard, progress/cancel/error/retry and diagnostic details.
   Actual selected-file contents and failures are shown; no fabricated completion.
+  Cancellation is via the native chooser before confirmation. Once snapshot processing starts,
+  controls wait for completion; navigation is not a rollback/cancel. Shutdown checks cooperate
+  before publication. No claim of interactive interruption or cross-store atomic backup.
 
 ## Acceptance
 
-- [ ] Inspect existing runbook/service/bridge; record baseline and red tests for actual gaps.
-- [ ] Explicit local backup snapshot verifies canonical rows/ledger/tracking/review coverage
+- [x] Inspect existing runbook/service/bridge; record baseline and red tests for actual gaps.
+- [x] Explicit local backup snapshot verifies canonical rows/ledger/tracking/review coverage
       and documented exclusions using synthetic fixtures; no silent omission/compatibility claim.
-- [ ] No-clobber, source containment, concurrent writes/WAL, failure/cancel/cleanup tested;
+- [x] No-clobber, source containment, concurrent writes/WAL, failure/cancel/cleanup tested;
       original journal and any preexisting destination remain unchanged on rejected attempts.
-- [ ] User-selected read-only preview preserves source bundle and active data; invalid archive,
+- [x] User-selected read-only preview preserves source bundle and active data; invalid archive,
       schema/resource/path boundaries and unknown compatibility are explicit and tested.
-- [ ] No restore apply path exposed; reports vs backups and remaining apply obligation explicit.
+- [x] No restore apply path exposed; reports vs backups and remaining apply obligation explicit.
 - [ ] EN/TR/DE/keyboard/theme/async tests and relevant full backend/frontend/local CI pass.
 - [ ] Clean arm64 build, exact DMG and installed native open/cancel acceptance verified;
       core user-row preservation and normal quit/reopen under standing instruction.
@@ -65,3 +69,33 @@ orders/AI/Pine/provider, Release/tag/workflow/Intel/signing changes. Read local 
 uv offline is dependency resolution only. Existing WP29 owner-host obligations and WP58
 intermittent smoke follow-up remain open. Record exact tests/hashes and native limitations
 before closure, not implementation intent as evidence.
+
+## Implementation-stage evidence — 2026-10-04
+
+Six baseline red tests: overwrite race, live-source rather than snapshot projection preflight,
+missing cancellation/service paths and world-readable ZIP permissions. Additional cold-storage
+root symlink red test reproduced copying outside source. Fixed atomic same-directory no-clobber
+link publication (unsupported filesystem fails closed), unique 0600 staging, same sanitized
+SQLite preflight/record counts, cooperative shutdown checks, root-symlink rejection and bounded
+local snapshot verification before publication. Source rows stay untouched; partial temp ZIP
+cleanup tested, explicit CLI force retained and never available to renderer.
+SQLite includes committed WAL and saved tracking/review events; cold files copied separately,
+not a simultaneous multi-store snapshot. Browser-only preferences are explicitly excluded.
+Two desktop actions accept **empty specs only**; source is native DATA_DIR and destinations/
+inputs come from native file dialogs. No HTTP path/upload/restore API added. Preview verifies
+a bounded disposable input copy; reports/backup/integrity/authenticity/apply distinctions explicit.
+Four bridge tests initially red (missing methods). New UI collection red (missing component),
+then **9 DOM** plus **12 helper** tests green; initial full frontend **430 PASS**, i18n **1397**.
+Initial focused backend safety/bridge/migration/ZIP/H02/native bridge **57 PASS / 1 warning**;
+subsequent additional checks and full clean/native/install gates pending. No real-user ZIP made.
+Pre-commit full backend **1263 PASS / 3 warnings**, frontend **53 files / 435 PASS**, TypeScript/
+production build/docs/truth/packaging/diff PASS. Four additional red malformed diagnostic
+metadata tests → validated helper metadata rather than a React object-render crash; **16 helper**
+tests now pass. Additional pending-transaction/WAL coherence test and canonical clean gate
+follow; previous full suite is not evidence for a different final binary. Read-only native
+baseline is TR/light/LITE, **5 trades / 24 events / 5 tracking**; canonical row hashes recorded
+before replacement. A focused disk-failure test exposed a WAL checkpoint changing physical
+SQLite bytes without a row mutation; source access is now explicit read-only URI, and logical
+source rows/settings/credential-table preservation is tested rather than claiming live WAL
+byte identity. Actual backup/preview native smoke is opt-in against isolated synthetic
+data; native chooser open/cancel acceptance remains separate and pending.

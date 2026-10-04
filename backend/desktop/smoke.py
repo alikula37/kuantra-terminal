@@ -221,6 +221,46 @@ def _check_evidence_worker(ctx) -> bool:
     return False
 
 
+def _check_local_backup(ctx) -> bool:
+    """Frozen synthetic service/bridge integration; native chooser QA is separate.
+
+    Smoke launchers supply disposable KUANTRA_DATA_DIR. Never run this helper against
+    an installed profile: its explicit environment opt-in is only for isolated smoke.
+    """
+    import tempfile
+    from pathlib import Path
+    from app.api import endpoints
+    def rows():
+        with endpoints.sqlite_driver.get_connection() as conn:
+            return [list(map(tuple, conn.execute(f"SELECT * FROM {table} ORDER BY rowid")))
+                    for table in ("trades", "evidence_events", "local_tracking_projections")]
+    before = rows()
+    bridge = ctx.bridge
+    save = bridge._pick_save_path
+    dialog = bridge._dialog_window
+    with tempfile.TemporaryDirectory(prefix="kuantra-synthetic-backup-smoke-") as temp:
+        target = str(Path(temp) / "synthetic-wp60.zip")
+        class Selected:
+            def create_file_dialog(self, *_args, **_kwargs):
+                return [target]
+        try:
+            bridge._pick_save_path = lambda _name: target
+            bridge._dialog_window = lambda: Selected()
+            saved = bridge.create_local_backup({})
+            if saved.get("status") != "SAVED":
+                return False
+            preview = bridge.preview_local_backup({})
+            duplicate = bridge.create_local_backup({})
+            return (preview.get("status") == "VERIFIED"
+                    and preview.get("restore_applied") is False
+                    and preview.get("sha256") == saved.get("sha256")
+                    and preview.get("counts") == saved.get("counts")
+                    and duplicate.get("status") == "FAILED" and rows() == before)
+        finally:
+            bridge._pick_save_path = save
+            bridge._dialog_window = dialog
+
+
 def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
     checks = {"react_mounted": False, "bridge_roundtrip": False, "health": False, "push_sink": False,
               "plugin_boundary": False, "journal_export": False, "evidence_worker": False}
@@ -263,6 +303,11 @@ def run_smoke(window, ctx, timeout: float = 90.0) -> dict:
                     except Exception as exc:
                         checks["local_tracking"] = False
                         return {"ok": False, "reason": str(exc), "checks": checks}
+                if os.environ.get("KUANTRA_SMOKE_LOCAL_BACKUP") == "1":
+                    try:
+                        checks["local_backup"] = _check_local_backup(ctx)
+                    except Exception:
+                        checks["local_backup"] = False
                 passed = all(checks.values())
                 return {"ok": passed, "reason": "" if passed else "packaged export/worker check failed", "checks": checks}
         except Exception as exc:  # noqa: BLE001

@@ -50,6 +50,14 @@ function node(lang: string, path: string[]): Record<string, string> {
 }
 
 describe("dynamic localization keys resolve for every composed family", () => {
+  it("resolves every backup label and outcome in EN/TR/DE", () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/settings/LocalBackupSettings.tsx'), 'utf8');
+    const keys = [...source.matchAll(/'(backup\.[a-z_]+)'/g)].map(match => match[1]);
+    expect(keys.length).toBeGreaterThan(20);
+    for (const lang of locales) for (const key of keys) {
+      expect(node(lang, ['backup'])[key.split('.')[1]], `${lang} ${key}`).toBeTruthy();
+    }
+  });
   it("resolves the weekly review code maps and count labels in EN/TR/DE", () => {
     const source = readFileSync(join(process.cwd(), 'src/components/WeeklyReviewPanel.tsx'), 'utf8');
     const keys = [...source.matchAll(/"(weekly_review\.[a-z_]+)"/g)].map(match => match[1]);

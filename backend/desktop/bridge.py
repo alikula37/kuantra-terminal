@@ -209,6 +209,8 @@ class DesktopBridge:
         self._evidence_jobs_lock = threading.Lock()
         self._evidence_executor: Optional[ProcessPoolExecutor] = None
         self._evidence_jobs_closed = False
+        self._local_backup_lock = threading.Lock()
+        self._local_backup_closed = threading.Event()
 
     # ---- HTTP-shaped requests, no HTTP ---------------------------------------------------
     def request(self, req: dict) -> dict:
@@ -391,6 +393,7 @@ class DesktopBridge:
         return {"job_id": job_id, "status": status, "response": response}
 
     def _close(self) -> None:
+        self._local_backup_closed.set()
         with self._evidence_jobs_lock:
             if self._evidence_jobs_closed:
                 return
@@ -483,6 +486,51 @@ class DesktopBridge:
         return {"created": True, "label": label}
 
     # ---- files -----------------------------------------------------------------------------
+    def _local_backup_action(self, spec: dict, *, preview: bool) -> dict:
+        # No paths, source directory, force or file content can come from the renderer.
+        if not isinstance(spec, dict) or spec:
+            return {"status": "REJECTED"}
+        if self._local_backup_closed.is_set():
+            return {"status": "UNAVAILABLE"}
+        if not self._local_backup_lock.acquire(blocking=False):
+            return {"status": "BUSY"}
+        try:
+            from app.services.local_backup import create_local_backup, preview_local_backup
+            from app.services.macos_migration import MigrationBundleError
+
+            def check():
+                if self._local_backup_closed.is_set():
+                    raise MigrationBundleError("operation cancelled during shutdown")
+
+            if preview:
+                import webview
+                win = self._dialog_window() if self._dialog_window else webview.active_window()
+                if win is None:
+                    return {"status": "UNAVAILABLE"}
+                result = win.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=False,
+                                               file_types=("Kuantra ZIP (*.zip)",))
+                path = result[0] if isinstance(result, (tuple, list)) and result else result
+            else:
+                path = self._pick_save_path(f"kuantra-backup-{time.strftime('%Y%m%d-%H%M%S')}.zip")
+            if not path:
+                return {"status": "CANCELLED"}
+            check()
+            if preview:
+                report = preview_local_backup(str(path))
+                check()
+                return report
+            return create_local_backup(DATA_DIR, str(path), cancel_check=check)
+        except Exception:  # Fail closed; no private paths/raw OS errors in logs or primary UI.
+            return {"status": "CANCELLED" if self._local_backup_closed.is_set() else "FAILED"}
+        finally:
+            self._local_backup_lock.release()
+
+    def create_local_backup(self, spec: dict) -> dict:
+        return self._local_backup_action(spec, preview=False)
+
+    def preview_local_backup(self, spec: dict) -> dict:
+        return self._local_backup_action(spec, preview=True)
+
     def _pick_save_path(self, filename: str) -> Optional[str]:
         import webview
         win = self._dialog_window() if self._dialog_window else (webview.active_window() or (webview.windows[0] if webview.windows else None))

@@ -1,9 +1,32 @@
 # Windows-to-macOS migration runbook
 
 Document ID: KMP-001
-Version: 1.2.1
+Version: 1.2.2
 Status: Accepted
-Last updated: 2026-09-10
+Last updated: 2026-10-04
+
+## Local desktop backup and read-only preview (WP60)
+
+The updated desktop Settings surface exposes user-initiated **local backup** and
+**backup verification/preview**, using this same versioned bundle format. It does not
+restore, replace or upgrade the active profile. No restore/apply button is available;
+the separately approved clean-target procedure below remains necessary. The original
+code-only Windows transition restriction is not permission to reset today's records.
+
+Choose a new output filename outside the data directory in the native save dialog.
+Existing/concurrently-created destinations are never overwritten; publication requires
+same-directory hard-link support and fails closed on unsupported filesystems. ZIP permissions
+are private (0600 where supported), but the contents are **not encrypted**: protect them.
+Cancel in the native chooser before confirmation. Once processing starts, wait for its
+actual outcome; leaving Settings is not cancellation or deletion of a saved file.
+
+The sanitized SQLite snapshot includes committed WAL, journal/ledger, saved local tracking
+plans and weekly-review decisions and non-secret SQLite preferences. Exclusions below remain
+binding; **WebView/browser-only preferences are not included**. SQLite is a single coherent
+snapshot; Parquet archives are copied sequentially, not a cross-store atomic snapshot.
+Preview verifies a bounded disposable copy, schema/chain/projection and member checks without
+touching active journal rows. A SHA-256/valid report proves integrity, not source authenticity,
+broker completeness, financial correctness or guaranteed future restore compatibility.
 
 ## Initial Windows transition decision: no-user-data path
 
@@ -77,7 +100,7 @@ corrupt backup, malformed legacy rows, or any failed validation stops the operat
 without promoting staged data. It does not remove credentials; bundle creation has
 the separate credential-sanitization policy below.
 
-The current additive journal revision is `005_trade_position_type` (schema version 5).
+The current additive schema head is `008_broker_observation_projection` (schema version 8).
 Spot/long/short identity is retained through snapshots and export; historical rows
 receive `UNKNOWN`, never an inferred spot classification. Supported stamped and
 unstamped pre-quote/pre-position layouts are recognized only when the core trade,

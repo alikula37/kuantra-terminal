@@ -5,6 +5,7 @@ import { SystemHealthSettings } from "./settings/SystemHealthSettings";
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { FirstUseGuide } from "./onboarding/FirstUseGuide";
+import { LocalBackupSettings } from "./settings/LocalBackupSettings";
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
@@ -165,6 +166,7 @@ export const SettingsView: React.FC<{ onOpenJournal?: () => void }> = ({ onOpenJ
 
       {/* Account & Capital Management */}
       <FirstUseGuide onOpenJournal={onOpenJournal} />
+      <LocalBackupSettings />
       <div className="bg-[#0d121c] p-4 rounded-lg border border-surface-border space-y-3">
         <div className="flex items-center justify-between">
           <span className="font-bold text-white text-xs flex items-center space-x-2">

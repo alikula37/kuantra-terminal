@@ -3,12 +3,20 @@
 
 Updated: 2026-10-04. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP60 safe backup and restore preview](work-packages/P1-WP60-safe-backup-restore-preview.md) — Ready, not implemented.**
+**Selected work: [P1-WP60 safe backup and restore preview](work-packages/P1-WP60-safe-backup-restore-preview.md) — InProgress; final clean/native/install acceptance pending.**
 Next bounded scope: explicit local snapshot backup using the existing bundle contract and
 read-only selected-bundle preview; no implicit overwrite/arbitrary-path API or destructive
 restore/apply. Reproduce destination-race safety before UI exposure. Actual apply remains a
 separate recovery/explicit-confirmation obligation; preview does not close it. Synthetic data
 only for agent bundle tests; no real-user ZIP or apply without explicit approval.
+Implementation in this change: red overwrite/snapshot/permission/root-symlink findings fixed;
+native-only empty-spec backup/preview actions, same-snapshot counts and no restore apply.
+Initial **57 backend focused / 430 frontend PASS**, **1397** locales; additional/full gates pending.
+Pre-commit full **1263 backend / 3 warnings**, **53 files / 435 frontend PASS**, tsc/build/docs/
+truth/packaging/diff PASS; final clean commit/native/install evidence still pending.
+Native chooser cancellation is supported; once processing starts, wait for completion, not a
+fake abort/rollback. SQLite snapshot is coherent; cold files are separately copied and browser
+preferences excluded. No final completed/distribution claim yet; no real-user ZIP created.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
 Three-person pilot acceptance is external and is NOT replaced by synthetic tests.

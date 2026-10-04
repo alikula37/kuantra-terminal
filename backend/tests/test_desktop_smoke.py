@@ -3,6 +3,22 @@ from types import SimpleNamespace
 from desktop.smoke import _check_journal_export, run_smoke
 
 
+def test_frozen_backup_smoke_rejects_false_success_and_restores_dialogs():
+    import desktop.smoke as smoke
+    from app.api import endpoints
+    from unittest.mock import patch
+    from contextlib import contextmanager
+    @contextmanager
+    def connection():
+        yield SimpleNamespace(execute=lambda *_: [])
+    bridge = SimpleNamespace(_pick_save_path=lambda *_: None, _dialog_window=None,
+                             create_local_backup=lambda *_: {'status': 'FAILED'})
+    save = bridge._pick_save_path
+    with patch.object(endpoints.sqlite_driver, 'get_connection', connection):
+        assert smoke._check_local_backup(SimpleNamespace(bridge=bridge)) is False
+    assert bridge._pick_save_path is save and bridge._dialog_window is None
+
+
 class _NeverReady:
     def wait(self, timeout):
         return False

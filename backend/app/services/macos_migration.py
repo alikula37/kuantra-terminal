@@ -283,15 +283,17 @@ def _inspect_sqlite_schema(conn: sqlite3.Connection) -> dict[str, Any]:
     }
 
 
-def _copy_sqlite_snapshot(source: Path, destination: Path) -> dict[str, Any]:
+def _copy_sqlite_snapshot(source: Path, destination: Path,
+                          *, cancel_check: Callable[[], None] | None = None) -> dict[str, Any]:
     """Copy a live SQLite database, including WAL state, without scrubbing it."""
 
     destination.parent.mkdir(parents=True, exist_ok=True)
-    source_conn = sqlite3.connect(str(source))
+    source_conn = sqlite3.connect(source.resolve().as_uri() + "?mode=ro", uri=True)
     target_conn = sqlite3.connect(str(destination))
     try:
         source_conn.execute("PRAGMA query_only = ON")
-        source_conn.backup(target_conn)
+        source_conn.backup(target_conn, pages=256,
+                           progress=(lambda *_args: cancel_check()) if cancel_check else None)
         target_conn.commit()
         integrity = [row[0] for row in target_conn.execute("PRAGMA integrity_check").fetchall()]
         if integrity != ["ok"]:
@@ -327,7 +329,8 @@ def _is_sensitive_setting(key: str) -> bool:
     return any(token in normalized for token in _SENSITIVE_SETTING_TOKENS)
 
 
-def _snapshot_sqlite(source: Path, destination: Path) -> dict[str, Any]:
+def _snapshot_sqlite(source: Path, destination: Path,
+                     *, cancel_check: Callable[[], None] | None = None) -> dict[str, Any]:
     """Create a compact SQLite snapshot and remove credential material.
 
     ``Connection.backup`` is used instead of copying the live ``.sqlite3``
@@ -336,7 +339,10 @@ def _snapshot_sqlite(source: Path, destination: Path) -> dict[str, Any]:
     freelist.
     """
 
-    _copy_sqlite_snapshot(source, destination)
+    if cancel_check:
+        _copy_sqlite_snapshot(source, destination, cancel_check=cancel_check)
+    else:
+        _copy_sqlite_snapshot(source, destination)
     target_conn = sqlite3.connect(str(destination))
     deleted_legacy_credentials = 0
     deleted_credential_refs = 0
@@ -487,6 +493,8 @@ def _projection_preflight(source: Path) -> dict[str, Any]:
 
 def _iter_cold_storage_files(source_root: Path) -> Iterable[tuple[Path, Path]]:
     cold_root = source_root / "cold_storage"
+    if cold_root.is_symlink():
+        raise MigrationBundleError("cold storage root symlink is not allowed")
     if not cold_root.is_dir():
         return
     for path in sorted(cold_root.rglob("*")):
@@ -581,16 +589,25 @@ def create_migration_bundle(
     output_bundle: str | Path,
     *,
     force: bool = False,
+    cancel_check: Callable[[], None] | None = None,
+    require_ready: bool = False,
 ) -> dict[str, Any]:
     """Create a credential-safe, hash-addressed migration ZIP."""
 
+    check = cancel_check or (lambda: None)
+    check()
     source_root = Path(source_data_dir).expanduser().resolve()
-    output_path = Path(output_bundle).expanduser().resolve()
+    chosen_output = Path(output_bundle).expanduser()
+    if chosen_output.is_symlink() and not force:
+        raise MigrationBundleError("output bundle symlink is not allowed")
+    output_path = chosen_output.resolve()
     source_db = source_root / "kuantra_oltp.sqlite3"
     if not source_root.is_dir():
         raise MigrationBundleError(f"source data directory does not exist: {source_root}")
     if not source_db.is_file():
         raise MigrationBundleError(f"canonical SQLite database is missing: {source_db}")
+    if require_ready and source_db.stat().st_size > MAX_ARCHIVE_MEMBER_BYTES:
+        raise MigrationBundleError("SQLite backup exceeds archive member limit")
     try:
         output_path.relative_to(source_root)
     except ValueError:
@@ -604,15 +621,35 @@ def create_migration_bundle(
     with tempfile.TemporaryDirectory(prefix="kuantra-macos-migration-") as temp_dir:
         staging = Path(temp_dir)
         staged_db = staging / _SQLITE_RELATIVE_PATH
-        sqlite_meta = _snapshot_sqlite(source_db, staged_db)
+        sqlite_meta = (_snapshot_sqlite(source_db, staged_db, cancel_check=cancel_check)
+                       if cancel_check else _snapshot_sqlite(source_db, staged_db))
+        check()
         sqlite_preflight = _verify_sqlite_snapshot(staged_db)
-        projection_preflight = _projection_preflight(source_db)
+        projection_preflight = _projection_preflight(staged_db)
         staged_files: list[tuple[Path, Path]] = [(staged_db, _SQLITE_RELATIVE_PATH)]
+        total_bytes = staged_db.stat().st_size
+        if require_ready and total_bytes > MAX_ARCHIVE_MEMBER_BYTES:
+            raise MigrationBundleError("SQLite snapshot exceeds archive member limit")
 
         for source_file, relative in _iter_cold_storage_files(source_root):
+            check()
+            if require_ready and len(staged_files) + 1 >= MAX_ARCHIVE_MEMBERS:
+                raise MigrationBundleError("backup archive member limit exceeded")
             staged_file = staging / relative
             staged_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source_file, staged_file)
+            if require_ready:
+                # Limit actual bytes while reading, not a possibly stale stat declaration.
+                copied = 0
+                with source_file.open('rb') as src, staged_file.open('xb') as dst:
+                    while chunk := src.read(64 * 1024):
+                        check()
+                        copied += len(chunk)
+                        total_bytes += len(chunk)
+                        if copied > MAX_ARCHIVE_MEMBER_BYTES or total_bytes > MAX_ARCHIVE_TOTAL_UNCOMPRESSED_BYTES:
+                            raise MigrationBundleError("backup uncompressed byte limit exceeded")
+                        dst.write(chunk)
+            else:
+                shutil.copy2(source_file, staged_file)
             staged_files.append((staged_file, relative))
 
         manifest: dict[str, Any] = {
@@ -641,15 +678,30 @@ def create_migration_bundle(
             encoding="utf-8",
         )
 
-        temp_output = output_path.with_name(f".{output_path.name}.tmp-{os.getpid()}")
+        fd, temp_name = tempfile.mkstemp(prefix=f".{output_path.name}.tmp-", dir=output_path.parent)
+        os.close(fd)  # mkstemp grants 0600 and prevents same-process filename collisions.
+        temp_output = Path(temp_name)
         try:
             with zipfile.ZipFile(temp_output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
                 archive.write(manifest_path, "manifest.json")
                 for path, relative in staged_files:
+                    check()
                     archive.write(path, relative.as_posix())
-            if output_path.exists():
-                output_path.unlink()
-            os.replace(temp_output, output_path)
+            check()
+            if require_ready:
+                verified = verify_migration_bundle(temp_output)
+                if not verified["valid"] or not verified["migration_ready"]:
+                    raise MigrationBundleError("backup snapshot failed verification")
+            check()
+            bundle_hash = _sha256_file(temp_output)
+            with temp_output.open('rb') as handle:
+                os.fsync(handle.fileno())
+            if force:
+                os.replace(temp_output, output_path)
+            else:
+                # Atomic no-clobber publication, even if another writer created the
+                # destination after the initial check. Unsupported filesystems fail closed.
+                os.link(temp_output, output_path)
         finally:
             if temp_output.exists():
                 temp_output.unlink()
@@ -657,7 +709,7 @@ def create_migration_bundle(
     return {
         "valid": True,
         "bundle_path": str(output_path),
-        "bundle_sha256": _sha256_file(output_path),
+        "bundle_sha256": bundle_hash,
         "migration_ready": bool(
             manifest["projection_preflight"].get("ready")
             and manifest["sqlite_preflight"].get("valid")
@@ -750,6 +802,20 @@ def _verify_sqlite_snapshot(path: Path) -> dict[str, Any]:
             "event_count": event_count,
             "ledger_integrity": chain,
             "schema": schema,
+            "record_counts": {
+                "trades": int(conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0]),
+                "events": event_count,
+                "tracking_plans": (
+                    int(conn.execute("SELECT COUNT(*) FROM local_tracking_projections").fetchone()[0])
+                    if _table_exists(conn, "local_tracking_projections") else None
+                ),
+                "weekly_reviews": sum(
+                    json.loads(row[0]).get("review_kind") == "WEEKLY_REVIEW"
+                    for row in conn.execute(
+                        "SELECT normalized_payload_json FROM evidence_events WHERE event_type='JournalReviewAdded'"
+                    )
+                ),
+            },
         }
     except (sqlite3.DatabaseError, OSError, ValueError) as exc:
         return {

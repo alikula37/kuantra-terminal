@@ -21,6 +21,8 @@ export interface StreamSnapshot {
 }
 export interface AppInfo { version: string; platform: string; gui: string | null; frozen: boolean; data_dir: string; gateway_url: string | null; }
 export interface BridgeApi {
+  create_local_backup(spec: Record<string, never>): Promise<unknown>;
+  preview_local_backup(spec: Record<string, never>): Promise<unknown>;
   request(req: BridgeRequest): Promise<BridgeResponse>;
   stream_open(): Promise<StreamSnapshot>;
   open_popout(spec: { label: string; title: string; query: string; width: number; height: number }): Promise<{ created: boolean; label: string }>;

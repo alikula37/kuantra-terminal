@@ -146,6 +146,7 @@ def test_only_intended_methods_are_exposed_to_js(bridge):
         "request", "stream_open", "open_popout", "save_file", "download",
         "copy_text", "open_external", "get_app_info", "start_evidence_pack",
         "get_evidence_pack_job",
+        "create_local_backup", "preview_local_backup",
     }
     for name in public:
         value = getattr(bridge, name)
