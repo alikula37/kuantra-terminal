@@ -10,7 +10,14 @@ Delivered A **37d4ed3**, pushed and installed from clean commit: full 1276 backe
 53/436 frontend, canonical arm64 **13/13 COMPLETE**, exact DMG **9/9 PASS**. Installed
 1.1.6 executable **b3031a4d…**, DMG **46ddc486…**; stopped DB and 5/24/5 canonical row
 hashes unchanged, TR/light/LITE preserved. Evidence `artifacts/evidence/p1-wp61/a-*`.
-Current bounded B: immutable copy, explicit inventory, private current-schema candidate,
+Delivered B source **cc400e3**, clean canonical **13/13 COMPLETE**, exact-DMG **9/9 PASS**;
+Mac locked, normal close/native install pending (installed A unchanged). Current C engine
+has **26 engine + 14 guard + 22 preparation = 62 PASS**: actual subprocess crashes across
+commit/rollback boundaries, no-clobber native renames, strict generation recovery and
+review-before-runtime guard. Full **1326 backend / 4 warnings**, unchanged **53/436 frontend**,
+canonical arm64 **13/13 MERGE READY / DEVELOPER_DIRTY**. Clean commit verification follows.
+No real-user restore; D/E remain open.
+B: immutable copy, explicit inventory, private current-schema candidate,
 verified pre-restore safety snapshot and staged DuckDB. **22 focused PASS / 1 warning**;
 no promotion or apply UI. Entry import guards add two regressions; **51 focused PASS**,
 final full **1300 backend / 4 warnings**, preceding dirty canonical **13/13** with unchanged

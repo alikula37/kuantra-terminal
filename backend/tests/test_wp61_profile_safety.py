@@ -63,12 +63,15 @@ def test_unrecognized_or_oversized_state_and_symlink_are_rejected(tmp_path):
         read_operation(profile)
 
 
-def test_terminal_states_allow_existing_profile_but_applied_requires_target(tmp_path):
+def test_applied_requires_explicit_review_even_with_existing_target(tmp_path):
     profile = tmp_path / 'synthetic'
     write_operation(profile, {'version': 1, 'operation_id': 'b'*32, 'phase': 'APPLIED_AWAITING_REVIEW'})
     with pytest.raises(ProfileSafetyError):
         assert_boot_allowed(profile)
     profile.mkdir()
+    with pytest.raises(ProfileSafetyError):
+        assert_boot_allowed(profile)
+    write_operation(profile, {'version': 1, 'operation_id': 'b'*32, 'phase': 'REVIEWED'})
     assert_boot_allowed(profile)
     assert (workspace_for(profile).stat().st_mode & 0o077) == 0
 

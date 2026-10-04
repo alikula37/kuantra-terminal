@@ -27,6 +27,17 @@ from app.core.input_limits import MAX_ARCHIVE_BYTES
 MAX_PROFILE_BYTES = 2 * 1024**3
 MAX_PROFILE_FILES = 20000
 INTENT_LIFETIME_SECONDS = 900
+BOUND_FIELDS = ('version', 'operation_id', 'expires_at', 'source_sha256', 'safety_sha256',
+                'original_fingerprint', 'candidate_fingerprint', 'before_counts', 'after_counts',
+                'schema_version', 'financial_hashes', 'recovery_location')
+
+
+def confirmation_binding(state):
+    try:
+        payload = {key: state[key] for key in BOUND_FIELDS}
+    except KeyError as exc:
+        raise ProfileSafetyError('INVALID_CONFIRMATION_BINDING') from exc
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 UI_SETTINGS = frozenset({'active_theme', 'active_locale', 'first_boot_completed', 'telemetry_opt_in'})
 JOURNAL_SETTINGS = frozenset({'user_initial_balance', 'initial_balance', 'paper_balance'})
 INACTIVE_SETTINGS = {'ai_mode': 'disabled', 'trading_mode': 'paper'}
@@ -348,6 +359,7 @@ class RestorePreparation:
                          before_counts=before_report['counts'], after_counts=after_report['counts'],
                          schema_version=after_report['schema_version'], financial_hashes=after_report['financial_hashes'],
                          confirmation=secrets.token_hex(32), recovery_location=str(directory / 'original'))
+            state['confirmation_binding'] = confirmation_binding(state)
             write_operation(self.profile, state)
             return state
         except BaseException:
@@ -357,6 +369,8 @@ class RestorePreparation:
 
     def validate_prepared(self, operation_id, confirmation):
         state = self.state(operation_id, {'PREPARED'})
+        if state.get('confirmation_binding') != confirmation_binding(state):
+            raise ProfileSafetyError('INVALID_CONFIRMATION_BINDING')
         if not isinstance(confirmation, str) or not re.fullmatch('[0-9a-f]{64}', confirmation) or not secrets.compare_digest(confirmation, state['confirmation']):
             raise ProfileSafetyError('INVALID_CONFIRMATION')
         directory = self.directory(state)

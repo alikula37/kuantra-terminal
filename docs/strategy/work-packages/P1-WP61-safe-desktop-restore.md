@@ -145,9 +145,9 @@ tag, workflow, billing or Intel refresh. One successful arm64 drill is not dual-
       no normal runtime or blank profile creation while maintenance/recovery is pending.
 - [x] B: fixed native target, changed bundle/target, token replay/expiry, settings conflicts,
       current/future/legacy schema, chain/hash/duplicate/traversal/symlink/archive caps tested.
-- [ ] B: verified pre-restore snapshot + retained complete original; WAL/coherent committed
+- [x] B: verified pre-restore snapshot + retained complete original; WAL/coherent committed
       rows, secrets exclusion from ZIP, UI preferences and journal capital basis preserved.
-- [ ] C: real subprocess crash injection before/after each durable transition and rename,
+- [x] C: real subprocess crash injection before/after each durable transition and rename,
       disk-full/read-only/fsync/promotion/rollback failures, missing/corrupt journal, repeat
       recovery/apply and competing writer tested; original or candidate complete, never mixed.
 - [ ] C: source event hashes, revisions/correction lineage, local estimates, broker observations,
@@ -176,6 +176,38 @@ cleanup, data reset/delete, agent-run real-user restore or release/signing expan
 smoke follow-up and WP29 N03/N05/H05/pilot/gold/XM obligations remain open.
 
 ## Planning verification
+
+## C engine validation (this change)
+
+Offline `RestoreCommit` consumes the final token durably, uses macOS SDK
+`renameatx_np(RENAME_EXCL)` per-directory no-clobber renames and fsync, and proves
+both retained-original and promoted-candidate fingerprints before requiring review.
+These two renames are explicitly not globally atomic. Recovery never merges,
+reapplies, deletes generations or invents an empty target. Missing/corrupt journals,
+foreign target generations and failed rollback block normal boot; recovery material
+is retained. Confirmation digest binds input/safety, identities, schema, counts,
+history hashes, lifetime and fixed recovery location. Applied generation remains
+offline until explicit review; connector fence/resume timestamp stay outside history.
+
+**26 engine + 14 guard + 22 preparation = 62 PASS / 1 synthetic duplicate warning**.
+Actual subprocess `os._exit(73)` before/after every commit phase and both renames,
+five rollback interruption points, repeated recovery/apply, exclusive-name collision,
+metadata tampering, foreign generation, lost/corrupt journal, promotion/disk/read-only
+failure and persistent fsync failure tested. Fsync regression initially returned the
+unchanged PREPARED state instead of reporting failure; now propagates actual error.
+Validation canonical arm64 **13/13 MERGE READY / DEVELOPER_DIRTY**, full **1326
+backend / 4 warnings**, unchanged **53 files / 436 frontend**, 1397 locales and
+actual WKWebView/owned Evidence worker PASS. Clean source install follows; D/E not delivered. Whole-generation
+fingerprints preserve history bytes; explicit Evidence Pack/broker/review acceptance
+remains unchecked until the final synthetic drill. No real-user restore.
+
+B clean **cc400e36d01661d1e730f5682180a6fbfe15d95b**, pushed: canonical
+**13/13 COMPLETE**, full **1300 backend / 4 warnings**, frontend **53/436**, exact
+mounted DMG **9/9 PASS**, executable **4d4a0225c6616751da7489f47cadf11408e32e5f6e430a39e703bebcb4ccacaa**,
+DMG **9353ddb795f0628a15052c05629f16b2380be0964680cbe766357e51aa3a849c**.
+Persistent JSON-equivalent reserialized reports `artifacts/evidence/p1-wp61/b-*`.
+Mac screen locked: native close/install acceptance is pending, not falsely PASS.
+Installed A source remains 37d4ed3 until safe ordinary close is available.
 
 ## A implementation evidence (this change)
 
