@@ -16,8 +16,9 @@ release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
 
 Selection note (2026-10-04): WP57–WP60 bounded audit/review/weekly-review/backup-preview
-sequence is complete. This package is selected strictly for open N03/N05/H05/pilot-access
-owner-host obligations; none is superseded. No development under it, Release/tag or remote
+sequence is complete. WP61 is a reference proposal for restore design only. This package stays
+selected strictly for open N03/N05/H05/pilot-access owner-host obligations; none is superseded.
+No development under it, Release/tag or remote
 workflow without explicit owner approval. Latest installed local build is WP60 source
 `60341ee`, version 1.1.6; published pilot assets are unchanged and not identical to that local
 build. Actual restore apply requires a separate recovery/explicit-confirmation design and

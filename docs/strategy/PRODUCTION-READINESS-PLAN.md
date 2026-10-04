@@ -3,7 +3,7 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.43
+version: 1.0.44
 status: Proposed
 date: 2026-09-11
 reviewed_commit: this change
@@ -13,6 +13,14 @@ audit: KRR-001@1.0.0
 ```
 
 ## 1. Karar özeti ve yetki
+
+Continuation (2026-10-04): WP57–WP60 is delivered through local backup/read-only preview.
+The owner continued the next planning step: [WP61 safe desktop restore](work-packages/P1-WP61-safe-desktop-restore.md)
+defines A maintenance/lease/early recovery guard → B immutable input/staged candidate/safety
+backup → C offline crash-recoverable promotion → D explicit confirmation/post-restore review
+→ E clean/native acceptance. **Design only; implementation approval pending.** Existing CLI
+force restore is not a live desktop quiescence/crash-recovery guarantee. No real-user apply,
+Release/tag or platform/authority expansion is granted; owner-host obligations remain open.
 
 Owner-approved continuation (2026-10-03), after WP49–WP56: first WP57 audits the
 synthetic create/edit/partial-close/chart/export flow and bounds owned read-only worker
@@ -578,6 +586,13 @@ sıradaki bağımlılık. Uygun testleri geçmeden “tamamlandı”, phase gate
 işlemi yapılmadı; docs-only diff/link/release-truth/packaging kontrolleri uygulanır.
 
 ## Değişiklik geçmişi
+
+### 1.0.44 — 2026-10-04
+
+- WP61 proposed restore sequence/verification gates added after WP60. Maintenance-first,
+  verified recovery material, immutable input, explicit replace-not-merge confirmation,
+  crash recovery and post-restore automation fence specified. Planning is not implementation
+  or permission to apply a restore to the current user profile.
 
 ### 1.0.42 — 2026-09-12
 

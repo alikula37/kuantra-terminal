@@ -4,6 +4,24 @@
 Updated: 2026-10-04. Branch: `main` (latest owner instruction).
 
 **Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md) — InProgress for open owner-host obligations only.**
+**Next proposal: [P1-WP61 safe desktop restore](work-packages/P1-WP61-safe-desktop-restore.md) — planning complete; implementation approval pending.**
+Owner continued the proposed planning step after WP60. In this change the baseline CLI/
+preview/runtime/shutdown/initialization code was inspected; maintenance-first recovery,
+fixed native target/immutable input, verified safety snapshot + retained original, explicit
+replacement confirmation and post-restore automation fence are specified in proposed WP61.
+Sequence A lease/early recovery guard → B prepare → C synthetic crash-recoverable engine →
+D confirmation UX → E clean native acceptance. First code delivery after approval is A only.
+Existing isolated backup/restore regressions **43 PASS / 1 warning**; this is baseline evidence,
+not testing proposed restore behavior. No runtime/bridge/schema/UI/binary change or real-user
+data access/backup/apply, new build/full CI, Release/tag/workflow in this planning change.
+Initial docs gate rejected a Proposed package as current (only Ready/InProgress allowed).
+WP61 remains a reference proposal and WP29 stays selected; no false Ready status or validator
+change to bypass this authority boundary. Docs-only diff/link/truth/packaging validation
+follows LOCAL-CI-POLICY: **147 docs / 197 links / 5 startup PASS**, release-truth/packaging/
+diff PASS, **20 documentation/packaging/truth regression tests PASS**. Installed source stays
+**60341ee**, local runtime **1.1.6**, executable hash recorded in WP60 below. This change is
+committed/pushed under the owner continuation; no needless reinstall for a docs-only plan.
+
 Owner-approved bounded WP57–WP60 sequence is delivered through local backup/read-only preview.
 No automatic development under WP29 or production/distribution approval. N03/N05/H05,
 three-person actual pilot, gold/XM and WP58 intermittent smoke follow-up remain open.
