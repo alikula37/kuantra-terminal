@@ -1,4 +1,4 @@
-<!-- doc-role: reference -->
+<!-- doc-role: current-work-package -->
 # P1-WP29 — Trusted macOS Pilot Package
 
 ```yaml
@@ -15,11 +15,13 @@ depends_on: P1-WP28 (arm64 chain for M-series; x86_64 chain for dual), N05
 release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
 
-Selection note (2026-10-03): WP57 completed its bounded audit; WP58 review/revision UX is
-selected next. This package is reference only; N03/N05/H05/pilot-access obligations remain open
-and are not superseded. Release/tag and remote workflow are not authorized. Latest installed
-local build is WP57 source `ab5ee8b`, version 1.1.6; published pilot assets
-are unchanged and not identical to that local build.
+Selection note (2026-10-04): WP57–WP60 bounded audit/review/weekly-review/backup-preview
+sequence is complete. This package is selected strictly for open N03/N05/H05/pilot-access
+owner-host obligations; none is superseded. No development under it, Release/tag or remote
+workflow without explicit owner approval. Latest installed local build is WP60 source
+`60341ee`, version 1.1.6; published pilot assets are unchanged and not identical to that local
+build. Actual restore apply requires a separate recovery/explicit-confirmation design and
+authorization; completed read-only preview does not deliver it. WP58 smoke follow-up remains open.
 
 Historical selection note (2026-09-15): P1-WP40 (MT5 HTML report preview) is complete and
 archived, so this package is selected again strictly for its still-open owner-host

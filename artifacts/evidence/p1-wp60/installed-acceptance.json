@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "observed_date": "2026-10-04",
+  "status": "ACCEPTED_FOR_WP60_LOCAL_ARM64_SCOPE",
+  "source_commit": "60341ee3cecc3adc540f32f76415b3f724a6effe",
+  "implementation_commit": "69f0937db2ea5eceb27e13e42b3ac7120a4a88fa",
+  "platform": "macOS 26.6.2 arm64",
+  "installed_path": "/Applications/Kuantra Terminal.app",
+  "runtime_version": "1.1.6",
+  "version_kind": "local source build, GitHub pilot Release unchanged",
+  "executable_sha256": "ad62b1c9ddcd0f3e06adcec2b4045fc262c1e6307eb898b7a3ec2e7d4628c454",
+  "dmg_sha256": "a70d846678fa7cd1fb3f3b33a1511285fed415c2956b98627e80fd226ed9b36f",
+  "codesign": "PASS_STRICT_DEEP_ADHOC",
+  "previous_recoverable_bundle": "/tmp/kuantra-wp60-keyboard-update.7pJ4hr/Kuantra Terminal.app",
+  "preceding_candidate_recoverable_bundle": "/tmp/kuantra-wp60-update.7fTquc/Kuantra Terminal.app",
+  "checks": {
+    "settings_has_backup_and_preview_only_no_apply": true,
+    "no_backup_on_settings_open": true,
+    "tab_first_use_summary_create_preview_and_shift_tab_reverse": true,
+    "return_opens_native_save_dialog_escape_cancels": true,
+    "return_opens_native_open_dialog_escape_cancels": true,
+    "cancel_no_success_message_actions_reenabled": true,
+    "TR_light_dark_DE_dark_EN_light_readable": true,
+    "wide_1440x900_narrow_1060x715_controls_reachable": true,
+    "runtime_settings_version_1_1_6": true,
+    "normal_cmd_q_parent_29258_exited": true,
+    "normal_reopen_TR_light_LITE": true,
+    "user_core_row_hashes_unchanged_after_reopen": true,
+    "exact_DMG_synthetic_backup_preview_no_clobber_source_rows_unchanged": true
+  },
+  "user_data": {
+    "stopped_db_sha256_before_and_after_replacement": "b96d167960b134155d51905279ef48fe6740d7edab80ab3ffb1f63c256b1f452",
+    "core_tables": {
+      "trades": { "count": 5, "rows_sha256": "c9f1f5b6f7b3954b10e33d05023bb66ad2ffb7bcdd0c8fec14e345947ee838d2" },
+      "evidence_events": { "count": 24, "rows_sha256": "b3f8d5e1a29abfbc1305f69404966e7d182ed2e4eb29bc66de17911eb6e9905a" },
+      "local_tracking_projections": { "count": 5, "rows_sha256": "5b5bd6c0935bf87789bac2fb49f37bf8f1d7cb9c03b65ae2032a830f51af01f0" }
+    },
+    "ordered_hash_method": "SHA256 of sorted compact JSON row strings, UTF8 joined with LF; readonly SQLite",
+    "whole_database_across_runtime_qa_claimed_unchanged": false,
+    "real_user_backup_zip_created": false,
+    "restore_applied": false
+  },
+  "candidate_finding": {
+    "source_commit": "69f0937db2ea5eceb27e13e42b3ac7120a4a88fa",
+    "finding": "WKWebView plain Tab skipped both new backup buttons",
+    "resolution": "Explicit tabindex=0; red DOM regression and installed native Tab/Shift+Tab/Return/Escape recheck",
+    "candidate_executable_sha256": "5bdaab1b11d139a4f6ccd93473f29096ba46aae772f89776c45b08e2327ba435",
+    "candidate_is_final_acceptance": false
+  },
+  "limitations": [
+    "Actual saves and invalid/schema/path/error cases tested only against isolated synthetic data; installed real-profile native QA opens/cancels selectors",
+    "Native Save confirmation with real user data was not attempted; no agent-created real-user backup ZIP",
+    "Preview verifies integrity, not source authenticity or guaranteed future restore; actual restore apply is not implemented",
+    "Native chooser cancellation only; processing waits for completion, navigation is not rollback, shutdown cancellation is cooperative not a guaranteed whole-job time bound",
+    "SQLite is a coherent snapshot; archived cold files are separate copies, browser-only preferences excluded, ZIP not encrypted",
+    "N05 BLOCKED: Developer ID/notarization absent; N03/H05/gold/XM and WP58 intermittent smoke follow-up remain open",
+    "Runtime public network occurred; uv offline is dependency resolution only",
+    "No Release/tag/Intel/workflow, credential, user reset/restore/migration or trade edits"
+  ]
+}

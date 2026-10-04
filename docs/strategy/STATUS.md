@@ -3,28 +3,51 @@
 
 Updated: 2026-10-04. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP60 safe backup and restore preview](work-packages/P1-WP60-safe-backup-restore-preview.md) — InProgress; final clean/native/install acceptance pending.**
-Next bounded scope: explicit local snapshot backup using the existing bundle contract and
-read-only selected-bundle preview; no implicit overwrite/arbitrary-path API or destructive
-restore/apply. Reproduce destination-race safety before UI exposure. Actual apply remains a
-separate recovery/explicit-confirmation obligation; preview does not close it. Synthetic data
-only for agent bundle tests; no real-user ZIP or apply without explicit approval.
-Implementation in this change: red overwrite/snapshot/permission/root-symlink findings fixed;
-native-only empty-spec backup/preview actions, same-snapshot counts and no restore apply.
-Initial **57 backend focused / 430 frontend PASS**, **1397** locales; additional/full gates pending.
-Pre-commit full **1263 backend / 3 warnings**, **53 files / 435 frontend PASS**, tsc/build/docs/
-truth/packaging/diff PASS; final clean commit/native/install evidence still pending.
-Native chooser cancellation is supported; once processing starts, wait for completion, not a
-fake abort/rollback. SQLite snapshot is coherent; cold files are separately copied and browser
-preferences excluded. No final completed/distribution claim yet; no real-user ZIP created.
-Candidate `69f0937` clean CI/exact-DMG and install succeeded, but native Tab skipped both new
-backup controls. Explicit keyboard inclusion is corrected in this change with a red DOM
-regression; final new binary/native acceptance still pending. No real-user ZIP created.
-Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
-revision-aware chart review, useful weekly review, then safe in-app backup/restore.
-Three-person pilot acceptance is external and is NOT replaced by synthetic tests.
-N03/N05/H05 and gold/XM obligations remain open under reference WP29. No Release/tag,
-remote workflow or real user-data mutation is authorized by this sequence.
+**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md) — InProgress for open owner-host obligations only.**
+Owner-approved bounded WP57–WP60 sequence is delivered through local backup/read-only preview.
+No automatic development under WP29 or production/distribution approval. N03/N05/H05,
+three-person actual pilot, gold/XM and WP58 intermittent smoke follow-up remain open.
+Actual restore apply is **not implemented**: next possible scope needs separate quiesce,
+pre-restore backup/recovery/explicit-confirmation design and owner authorization. Read-only
+preview does not close it; no real-user ZIP/apply authorized by agent QA.
+
+**WP60 complete + archived (2026-10-04):**
+[safe local backup and restore preview](../archive/strategy/work-packages/P1-WP60-safe-backup-restore-preview.md).
+Implementation **69f0937**, native keyboard correction **60341ee3cecc3adc540f32f76415b3f724a6effe**,
+both pushed `main`. Red overwrite race/snapshot/0600 staging/root-symlink/service/bridge and
+malformed diagnostic metadata tests → fixed. Native candidate plain Tab skipped buttons;
+explicit tabindex red regression plus final actual native recheck now pass. **13 safety /
+4 bridge / 10 DOM / 16 helper** tests; final full **1264 backend / 3 warnings**, **53 files /
+436 frontend**, **1397** locales, tsc/build/docs/truth/packaging/diff PASS.
+Native-only empty-spec actions select files via native chooser; no arbitrary path/HTTP/upload/
+restore API. Coherent SQLite snapshot including WAL/tracking/review, same-snapshot preflight/
+counts, verified 0600 ZIP before atomic no-clobber publication, fail-closed resource limits.
+Cold files copied separately (not cross-store atomic); browser prefs/credentials/Keychain/logs/
+models/plugins/DuckDB excluded. ZIP unencrypted. Preview uses bounded disposable copy and
+never applies restore; integrity is not authenticity or guaranteed future compatibility.
+Chooser cancellation only; processing waits, navigation is not rollback, shutdown cooperative.
+
+Clean canonical arm64 **13/13 MERGE READY / COMPLETE**; exact read-only mounted-DMG **9/9 PASS**,
+WKWebView/controller plus synthetic backup/preview/no-clobber/source-row conservation and
+existing CSV/PDF/Evidence worker/partial-editor-final close checks. Persistent evidence
+`artifacts/evidence/p1-wp60/`: CI **0744f6ae…**, exact **ea88cfaa…**, N05 **0bb2af4d…**,
+installed acceptance **d102ff79…** (full hashes/commands in archived WP). CI/exact append LF
+and are JSON-equivalent, not byte-identical to raw dist. Final DMG
+**a70d846678fa7cd1fb3f3b33a1511285fed415c2956b98627e80fd226ed9b36f**;
+CI/mounted/installed executable
+**ad62b1c9ddcd0f3e06adcec2b4045fc262c1e6307eb898b7a3ec2e7d4628c454**.
+Settings runtime **1.1.6 local source build**, strict/deep ad-hoc codesign PASS. Native Tab/
+Shift+Tab focus both buttons, Enter opens Save/Open, Escape cancels with no success and
+re-enabled actions; TR light/dark, DE dark, EN light, 1440x900/~1060x715 readable/reachable.
+Actual writes/verification/invalid/error cases are synthetic; native real-profile acceptance
+is chooser open/cancel only. No real-user ZIP created. Normal Cmd+Q parent **29258** exited;
+reopen **TR/light/LITE**. Stopped DB unchanged across replacement; **5 trades / 24 events /
+5 tracking** canonical row hashes unchanged after QA/reopen. Previous bundle
+`/tmp/kuantra-wp60-keyboard-update.7pJ4hr/Kuantra Terminal.app` recoverable; original WP59
+bundle also retained. Closure is docs/evidence only, installed source remains `60341ee`.
+**N05 BLOCKED** exit 2: Developer ID/notarization absent. Runtime public network occurred;
+uv offline is dependency resolution only. No Release/tag/workflow/Intel/credential/real trade
+edit/reset/delete/restore/migration. Local binary is not the unchanged GitHub pilot asset.
 
 **WP59 complete + archived (2026-10-04):**
 [useful weekly review UX](../archive/strategy/work-packages/P1-WP59-useful-weekly-review-ux.md).
@@ -53,7 +76,8 @@ normal reopen **TR/light/LITE**. Stopped DB unchanged across replacement; **5 tr
 note/trade, reset/delete/migration/restore/credential/Release/tag/Intel/workflow change.
 Runtime public network occurred; uv offline is resolution only. **N05 BLOCKED**, WP58
 repeatability follow-up and WP29 owner-host obligations unchanged. Closure docs do not change
-the accepted binary; GitHub pilot remains a different artifact. WP60 Ready is the next scope.
+the accepted binary; GitHub pilot remains a different artifact. WP60 was the next scope,
+and is now completed above.
 
 **WP58 complete + archived (2026-10-04):**
 [review revisions and Evidence Pack UX](../archive/strategy/work-packages/P1-WP58-review-revisions-and-evidence-ux.md).
