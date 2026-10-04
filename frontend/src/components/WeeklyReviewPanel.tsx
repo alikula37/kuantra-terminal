@@ -3,7 +3,31 @@ import { AlertTriangle, CalendarClock, CheckCircle2, RefreshCw, X, XCircle } fro
 import { useTranslation } from "../context/I18nContext";
 import { apiFetch, apiUrl } from "../lib/backend";
 import { useDialogAccessibility } from "../hooks/useDialogAccessibility";
-import { istanbulDateKey } from "../lib/tradeTime";
+import { formatIstanbulDateTime, istanbulDateKey } from "../lib/tradeTime";
+
+const STATUS_KEYS: Record<string, string> = {
+  NOT_READY: "weekly_review.status_no_data", STALE_REVIEW: "weekly_review.status_stale",
+  LIMITED: "weekly_review.status_limited", READY: "weekly_review.status_ready",
+  COMPLETED: "weekly_review.status_completed",
+};
+const COVERAGE_KEYS: Record<string, string> = {
+  overall: "weekly_review.coverage_overall", realized_pnl: "weekly_review.coverage_pnl",
+  fees: "weekly_review.coverage_fees", funding_transfer: "weekly_review.coverage_funding",
+  market_context: "weekly_review.coverage_market", account_events: "weekly_review.coverage_account",
+};
+const STATE_KEYS: Record<string, string> = {
+  UNKNOWN: "weekly_review.state_unknown", PARTIAL: "weekly_review.state_partial",
+  NOT_AVAILABLE: "weekly_review.state_unavailable", COMPLETE: "weekly_review.state_complete",
+};
+const WARNING_KEYS: Record<string, string> = {
+  NO_EVIDENCE_IN_PERIOD: "weekly_review.warning_no_evidence",
+  LATE_EVENT_AFTER_AS_OF: "weekly_review.warning_late",
+  MALFORMED_EVENT_EXCLUDED: "weekly_review.warning_malformed",
+  RULE_EFFECTIVE_TIME_NOT_AVAILABLE: "weekly_review.warning_rule_time",
+  FUTURE_RULE_EXCLUDED: "weekly_review.warning_future",
+};
+const hasKey = (mapping: Record<string, string>, key: string) => Object.prototype.hasOwnProperty.call(mapping, key);
+const mappedKey = (mapping: Record<string, string>, key: string, fallback: string) => hasKey(mapping, key) ? mapping[key] : fallback;
 
 type ReviewStatus = "NOT_READY" | "STALE_REVIEW" | "LIMITED" | "READY" | "COMPLETED" | string;
 
@@ -100,7 +124,7 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
   const { t, locale } = useTranslation();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  useDialogAccessibility(dialogRef, onClose, closeRef);
+  useDialogAccessibility(dialogRef, onClose, closeRef, true);
   const today = new Date();
   const [periodStart, setPeriodStart] = useState(() => istanbulDateKey(new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()) || isoDate(today));
   const [periodEnd, setPeriodEnd] = useState(() => istanbulDateKey(today.toISOString()) || isoDate(today));
@@ -195,7 +219,9 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
   };
 
   const recordDecision = async (decision: "COMPLETE" | "REOPEN") => {
-    if (!review || !reviewIsCurrent) return;
+    if (!review || !reviewIsCurrent || !hasKey(STATUS_KEYS, review.review_status) || review.event_count === 0
+      || review.review_status === "STALE_REVIEW" || review.review_status === "NOT_READY"
+      || (decision === "COMPLETE" && !review.completion_allowed)) return;
     setSaving(true);
     setError(null);
     setDecisionMessage(null);
@@ -229,109 +255,135 @@ export const WeeklyReviewPanel: React.FC<WeeklyReviewPanelProps> = ({ onClose })
   };
 
   const formatCount = (value: number): string => new Intl.NumberFormat(locale).format(value);
-  const stateMessage = review?.review_status === "STALE_REVIEW"
-    ? t("weekly_review.stale")
-    : t("weekly_review.limited");
-
-  const statusClass = review?.review_status === "COMPLETED"
-    ? "border-gain/40 bg-gain/10 text-gain"
-    : review?.review_status === "READY"
-      ? "border-accent/40 bg-accent/10 text-accent"
-      : "border-amber-400/40 bg-amber-400/10 text-amber-300";
+  const coverageName = (key: string) => t(mappedKey(COVERAGE_KEYS, key, "weekly_review.coverage_other"));
+  const coverageState = (value: string) => t(mappedKey(STATE_KEYS, value, "weekly_review.state_unknown"));
+  const warningText = (code: string) => {
+    if (hasKey(WARNING_KEYS, code)) return t(WARNING_KEYS[code]);
+    const match = /^(FEES|FUNDING_TRANSFER|MARKET_CONTEXT)_(UNKNOWN|PARTIAL|NOT_AVAILABLE)$/.exec(code);
+    return match ? `${coverageName(match[1].toLowerCase())}: ${coverageState(match[2])}`
+      : t("weekly_review.warning_unknown");
+  };
+  const decisionSupported = Boolean(review && hasKey(STATUS_KEYS, review.review_status)
+    && review.event_count > 0 && !["NOT_READY", "STALE_REVIEW"].includes(review.review_status));
+  const unknownCoverage = review && Object.entries(review.coverage)
+    .some(([key, value]) => !hasKey(COVERAGE_KEYS, key) || !hasKey(STATE_KEYS, value));
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={t("weekly_review.title")}>
-      <div ref={dialogRef} data-testid="weekly-review-panel" className="w-full max-w-5xl max-h-[92vh] overflow-y-auto overflow-x-hidden bg-[#0b0e14] border border-surface-border rounded-lg shadow-2xl font-mono">
-        <div className="sticky top-0 z-10 bg-[#0d121c] border-b border-surface-border px-4 py-3 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-white flex items-center gap-2"><CalendarClock className="w-4 h-4 text-accent" />{t("weekly_review.title")}</h2>
-            <p className="text-[11px] text-slate-400 mt-1">{t("weekly_review.subtitle")}</p>
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true" aria-label={t("weekly_review.title")}>
+      <div ref={dialogRef} data-testid="weekly-review-panel" className="w-full min-w-0 max-w-5xl max-h-[92vh] overflow-y-auto overflow-x-hidden bg-background border border-surface-border rounded-lg shadow-2xl text-sm text-slate-200">
+        <header className="sticky top-0 z-10 bg-background border-b border-surface-border p-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="k-section-title flex items-center gap-2"><CalendarClock className="w-5 h-5 text-accent shrink-0" />{t("weekly_review.title")}</h2>
+            <p className="k-help mt-1">{t("weekly_review.guide")}</p>
           </div>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label={t("weekly_review.close")} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><X className="w-4 h-4" /></button>
-        </div>
+          <button ref={closeRef} type="button" onClick={onClose} aria-label={t("weekly_review.close")} className="k-btn border border-surface-border shrink-0"><X className="w-5 h-5" /></button>
+        </header>
 
-        <form onSubmit={submit} className="p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-[10px] text-slate-400">
-            <label htmlFor="weekly-period-start">{t("weekly_review.period_start")}
-              <input id="weekly-period-start" name="period_start" type="date" value={periodStart} onChange={(event) => { setPeriodStart(event.target.value); invalidateLoadedReview(); }} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+        <form onSubmit={submit} className="p-4 space-y-3">
+          <p className="k-help">{t("weekly_review.period_help")}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label htmlFor="weekly-period-start" className="k-label">{t("weekly_review.period_start")}
+              <input id="weekly-period-start" name="period_start" type="date" required disabled={saving} value={periodStart} onChange={(event) => { setPeriodStart(event.target.value); invalidateLoadedReview(); }} className="k-input mt-1" />
             </label>
-            <label htmlFor="weekly-period-end">{t("weekly_review.period_end")}
-              <input id="weekly-period-end" name="period_end" type="date" value={periodEnd} onChange={(event) => { setPeriodEnd(event.target.value); invalidateLoadedReview(); }} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
-            </label>
-            <label htmlFor="weekly-timezone">{t("weekly_review.timezone")}
-              <input id="weekly-timezone" name="timezone" value={timezone} onChange={(event) => { setTimezone(event.target.value); invalidateLoadedReview(); }} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
-            </label>
-            <label htmlFor="weekly-as-of">{t("weekly_review.as_of_label")}
-              <input id="weekly-as-of" name="as_of_utc" value={asOfUtc} onChange={(event) => { setAsOfUtc(event.target.value); invalidateLoadedReview(); }} className="mt-1 w-full bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+            <label htmlFor="weekly-period-end" className="k-label">{t("weekly_review.period_end")}
+              <input id="weekly-period-end" name="period_end" type="date" required disabled={saving} value={periodEnd} onChange={(event) => { setPeriodEnd(event.target.value); invalidateLoadedReview(); }} className="k-input mt-1" />
             </label>
           </div>
-          <div className="flex justify-end">
-            <button type="submit" disabled={loading} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-accent/50 text-accent text-[10px] font-bold hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />{t("weekly_review.load")}
-            </button>
-          </div>
+          <p className="k-help">{t("weekly_review.cutoff_help")} <span className="font-semibold">{formatIstanbulDateTime(asOfUtc, locale)} · Europe/Istanbul</span></p>
+          <button type="button" disabled={saving || loading} data-testid="weekly-review-now" onClick={() => { setAsOfUtc(new Date().toISOString()); invalidateLoadedReview(); }} className="k-btn border border-surface-border">{t("weekly_review.use_now")}</button>
+          <details className="k-card">
+            <summary tabIndex={0} className="cursor-pointer font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">{t("weekly_review.time_settings")}</summary>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <label htmlFor="weekly-timezone" className="k-label">{t("weekly_review.timezone")}
+                <input id="weekly-timezone" name="timezone" required disabled={saving} value={timezone} onChange={(event) => { setTimezone(event.target.value); invalidateLoadedReview(); }} className="k-input mt-1" />
+              </label>
+              <label htmlFor="weekly-as-of" className="k-label">{t("weekly_review.as_of_label")}
+                <input id="weekly-as-of" name="as_of_utc" required disabled={saving} value={asOfUtc} onChange={(event) => { setAsOfUtc(event.target.value); invalidateLoadedReview(); }} className="k-input mt-1" />
+              </label>
+            </div>
+            <p className="k-help mt-2">{t("weekly_review.time_help")}</p>
+          </details>
+          <button type="submit" disabled={loading || saving} className="k-btn k-primary disabled:opacity-50">
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />{t("weekly_review.load")}
+          </button>
         </form>
 
-        {loading && <div role="status" className="p-8 text-center text-slate-400 text-xs space-y-3"><span className="block">{t("weekly_review.loading")}</span><button type="button" data-testid="weekly-review-cancel" onClick={cancelLoad} className="px-2 py-1 rounded border border-surface-border text-slate-300 hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">{t("weekly_review.cancel_load")}</button></div>}
-        {!loading && error && <div role="alert" data-testid={cancelled ? "weekly-review-cancelled" : undefined} className="m-4 p-4 rounded border border-loss/50 bg-loss/10 text-loss text-xs flex items-start gap-2"><XCircle className="w-4 h-4 shrink-0" /><div className="flex-1 space-y-2"><span className="block break-words">{error}</span><button type="button" data-testid="weekly-review-retry" onClick={() => void loadReview()} className="px-2 py-1 rounded border border-loss/50 text-loss font-bold hover:bg-loss/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-loss">{t("weekly_review.retry")}</button></div></div>}
+        {loading && <div role="status" className="p-6 text-center space-y-3"><p>{t("weekly_review.loading")}</p><button type="button" data-testid="weekly-review-cancel" onClick={cancelLoad} className="k-btn border border-surface-border">{t("weekly_review.cancel_load")}</button></div>}
+        {!loading && error && <div role="alert" data-testid={cancelled ? "weekly-review-cancelled" : undefined} className="m-4 k-card border-loss bg-loss/10 text-loss space-y-2">
+          <p className="flex items-center gap-2"><XCircle className="w-5 h-5 shrink-0" />{cancelled ? t("weekly_review.cancelled") : t("weekly_review.error")}</p>
+          {!cancelled && <details><summary tabIndex={0} className="cursor-pointer">{t("weekly_review.diagnostics")}</summary><p className="break-words mt-2">{error}</p></details>}
+          <button type="button" data-testid="weekly-review-retry" disabled={saving} onClick={() => void loadReview()} className="k-btn border border-loss">{t("weekly_review.retry")}</button>
+        </div>}
 
-        {!loading && !error && review && !reviewIsCurrent && (
-          <div role="status" data-testid="weekly-review-inputs-changed" className="m-4 p-3 rounded border border-amber-400/40 bg-amber-400/10 text-amber-300 text-xs">
-            {t("weekly_review.inputs_changed")}
-          </div>
-        )}
+        {!loading && !error && review && !reviewIsCurrent && <div role="status" data-testid="weekly-review-inputs-changed" className="m-4 k-card text-warn border-warn bg-warn/10">{t("weekly_review.inputs_changed")}</div>}
 
         {!loading && !error && review && (
           <div className="px-4 pb-4 space-y-4">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-surface-border pb-3">
-              <div>
-                <p className="text-[10px] text-slate-500">{review.review_id} · {t("weekly_review.as_of")}: {review.as_of_utc}</p>
-                <p className="text-[11px] text-slate-400 mt-1">{review.period.start_local} → {review.period.end_local} ({review.period.timezone})</p>
-              </div>
-              <span className={`px-2 py-1 rounded border text-[10px] font-bold ${statusClass}`}>{review.review_status}</span>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-[10px]">
-              <div className="bg-[#111722] border border-surface-border rounded p-2"><span className="block text-slate-500">{t("weekly_review.events")}</span><span className="block mt-1 text-white font-bold">{formatCount(review.event_count)}</span></div>
-              <div className="bg-[#111722] border border-surface-border rounded p-2"><span className="block text-slate-500">{t("weekly_review.trades")}</span><span className="block mt-1 text-white font-bold">{formatCount(review.trade_count)}</span></div>
-              <div className="bg-[#111722] border border-surface-border rounded p-2"><span className="block text-slate-500">{t("weekly_review.late_events")}</span><span className="block mt-1 text-amber-300 font-bold">{formatCount(review.late_event_count)}</span></div>
-              <div className="bg-[#111722] border border-surface-border rounded p-2"><span className="block text-slate-500">{t("weekly_review.future_rules")}</span><span className="block mt-1 text-amber-300 font-bold">{formatCount(review.excluded_future_rule_count)}</span></div>
-              <div className="bg-[#111722] border border-surface-border rounded p-2 min-w-0"><span className="block text-slate-500">{t("weekly_review.snapshot")}</span><span className="block mt-1 text-white font-bold break-all" title={review.snapshot_sha256}>{shortHash(review.snapshot_sha256)}</span></div>
-            </div>
-
-            <section className="bg-[#0d121c] border border-amber-400/30 rounded-lg p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-xs font-bold text-white uppercase tracking-wide">{t("weekly_review.coverage_title")}</h3>
-                <span className="px-2 py-1 rounded border border-amber-400/40 bg-amber-400/10 text-amber-300 text-[10px] font-bold">{review.coverage.overall || "UNKNOWN"}</span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3 text-[10px]">
-                {Object.entries(review.coverage).filter(([key]) => key !== "overall").map(([key, value]) => (
-                  <div key={key} className="border border-surface-border/70 bg-[#111722] rounded p-2"><span className="block text-slate-500">{key}</span><span className="block mt-1 text-amber-300 font-bold">{value}</span></div>
-                ))}
-              </div>
+            <section className="k-card space-y-2">
+              <h3 data-testid="weekly-review-status" className="k-section-title">{t(mappedKey(STATUS_KEYS, review.review_status, "weekly_review.status_unknown"))}</h3>
+              <p data-testid="weekly-review-period" className="break-words">{t("weekly_review.loaded_period")}: {formatIstanbulDateTime(review.period.start_utc, locale)} → {formatIstanbulDateTime(review.period.end_utc, locale)} · Europe/Istanbul</p>
+              <p data-testid="weekly-review-cutoff" className="k-help">{t("weekly_review.as_of")}: {formatIstanbulDateTime(review.as_of_utc, locale)} · Europe/Istanbul</p>
+              <p className="k-help">{review.event_count === 0 ? t("weekly_review.no_data_help") : t("weekly_review.summary_help")}</p>
+              <p className="k-help">{t("weekly_review.completion_not_validation")}</p>
             </section>
 
-            <section className="bg-[#0d121c] border border-surface-border rounded-lg p-4">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wide">{t("weekly_review.rules_title")}</h3>
-              {review.applicable_rules.length ? review.applicable_rules.map((rule) => (
-                <div key={`${rule.kind}-${rule.rule_id}-${rule.event_hash}`} className="mt-2 border border-surface-border/70 bg-[#111722] rounded p-2 text-[10px] text-slate-400 break-all">
-                  <span className="text-accent font-bold">{rule.rule_id}</span><span className="ml-3">{rule.kind}</span><span className="ml-3">v{rule.version}</span>
-                </div>
-              )) : <p className="text-[11px] text-amber-300 mt-2">{t("weekly_review.no_rules")}</p>}
+            <dl data-testid="weekly-review-summary" className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[
+                ["weekly_review.trades", review.trade_count], ["weekly_review.events", review.event_count],
+                ["weekly_review.late_events", review.late_event_count], ["weekly_review.malformed_events", review.malformed_event_count],
+                ["weekly_review.rule_count", review.applicable_rules.length], ["weekly_review.future_rules", review.excluded_future_rule_count],
+              ].map(([key, count]) => <div key={key} className="k-card min-w-0"><dt className="k-label">{t(key as string)}</dt><dd className="mt-1 text-lg font-semibold">{formatCount(count as number)}</dd></div>)}
+            </dl>
+
+            <section data-testid="weekly-review-coverage" className="k-card space-y-3">
+              <h3 className="k-section-title">{t("weekly_review.coverage_title")}: {coverageState(review.coverage.overall || "UNKNOWN")}</h3>
+              <p className="k-help">{t("weekly_review.coverage_help")}</p>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {Object.entries(review.coverage).filter(([key]) => key !== "overall").map(([key, value]) => <div key={key} className="border border-surface-border rounded p-3 min-w-0">
+                  <dt className="k-label">{coverageName(key)}</dt><dd className={`mt-1 font-semibold ${value === "COMPLETE" ? "text-slate-200" : "text-warn"}`}>{coverageState(value)}</dd>
+                </div>)}
+              </dl>
+              {unknownCoverage && <p className="text-warn">{t("weekly_review.warning_unknown")}</p>}
             </section>
 
-            {review.warnings.length > 0 && <div role="status" className="border border-amber-400/30 bg-amber-400/10 rounded-lg p-3 text-[10px] text-amber-200"><div className="flex items-center gap-2 font-bold"><AlertTriangle className="w-3.5 h-3.5" />{stateMessage}</div><ul className="mt-2 space-y-1 list-disc list-inside">{review.warnings.map((warning) => <li key={warning} className="break-words">{warning}</li>)}</ul></div>}
+            <section className="k-card">
+              <h3 className="k-section-title">{t("weekly_review.rules_title")}</h3>
+              <p className="k-help mt-2">{t("weekly_review.rules_help")}</p>
+              {review.applicable_rules.length ? <ul className="mt-3 space-y-2">{review.applicable_rules.map((rule, index) => <li key={`${rule.event_hash}-${index}`} className="border border-surface-border rounded p-3 break-words">
+                <span className="font-semibold">{rule.rule_id || t("weekly_review.rule_unknown")}</span> · {t("weekly_review.rule_version", { version: rule.version || "—" })}
+              </li>)}</ul> : <p className="text-warn mt-2">{t("weekly_review.no_rules")}</p>}
+            </section>
 
-            <div className="border-t border-surface-border pt-3 space-y-2">
-              <p className="text-[10px] text-slate-500">{t("weekly_review.completion_not_validation")}</p>
-              <label className="block text-[10px] text-slate-400">{t("weekly_review.note")}
-                <textarea id="weekly-review-note" value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder={t("weekly_review.note_placeholder")} className="mt-1 w-full min-h-16 bg-[#090d14] border border-surface-border rounded px-2 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+            {review.warnings.length > 0 && <section data-testid="weekly-review-warnings" role="status" className="k-card border-warn bg-warn/10 text-warn">
+              <h3 className="flex items-center gap-2 font-semibold"><AlertTriangle className="w-5 h-5 shrink-0" />{t(review.review_status === "STALE_REVIEW" ? "weekly_review.stale" : "weekly_review.limited")}</h3>
+              <ul className="mt-2 space-y-2 list-disc pl-5">{review.warnings.map((warning, index) => <li key={`${warning}-${index}`} className="break-words">{warningText(warning)}</li>)}</ul>
+            </section>}
+
+            <section className="k-card space-y-3">
+              <p>{t("weekly_review.completion_not_validation")}</p>
+              {review.completion?.note && <p className="break-words">{t("weekly_review.saved_note")}: {review.completion.note}</p>}
+              <label className="k-label" htmlFor="weekly-review-note">{t("weekly_review.note")}
+                <textarea id="weekly-review-note" disabled={saving} value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} placeholder={t("weekly_review.note_placeholder")} className="k-input mt-1 min-h-24" />
               </label>
-              <div className="flex flex-wrap items-center gap-2">
-                {review.completion?.decision === "COMPLETED" ? <button type="button" disabled={saving || !reviewIsCurrent} onClick={() => void recordDecision("REOPEN")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-amber-400/50 text-amber-300 text-[10px] font-bold hover:bg-amber-400/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"><AlertTriangle className="w-3.5 h-3.5" />{t("weekly_review.reopen")}</button> : <button type="button" disabled={saving || !review.completion_allowed || !reviewIsCurrent} onClick={() => void recordDecision("COMPLETE")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-accent/50 text-accent text-[10px] font-bold hover:bg-accent/10 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"><CheckCircle2 className="w-3.5 h-3.5" />{t("weekly_review.record_complete")}</button>}
-                {decisionMessage && <span aria-live="polite" className="text-[10px] text-gain">{decisionMessage}</span>}
+              <p className="k-help">{t("weekly_review.note_limit")}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                {review.completion?.decision === "COMPLETED"
+                  ? <button type="button" data-testid="weekly-review-reopen" disabled={saving || !reviewIsCurrent || !decisionSupported} onClick={() => void recordDecision("REOPEN")} className="k-btn border border-warn text-warn disabled:opacity-50">{t("weekly_review.reopen")}</button>
+                  : <button type="button" data-testid="weekly-review-complete" disabled={saving || !review.completion_allowed || !reviewIsCurrent || !decisionSupported} onClick={() => void recordDecision("COMPLETE")} className="k-btn k-primary disabled:opacity-50"><CheckCircle2 className="w-5 h-5" />{t("weekly_review.record_complete")}</button>}
+                {decisionMessage && <span aria-live="polite">{decisionMessage}</span>}
               </div>
-            </div>
+            </section>
+
+            <details data-testid="weekly-review-diagnostics" className="k-card">
+              <summary tabIndex={0} className="cursor-pointer font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">{t("weekly_review.diagnostics")}</summary>
+              <div className="mt-3 space-y-2 break-all">
+                <p>{review.review_id} · {review.review_status}</p>
+                <p>{review.period.start_local} → {review.period.end_local} · {review.period.timezone}</p>
+                <p>{t("weekly_review.as_of_label")}: {review.as_of_utc}</p>
+                <p>{t("weekly_review.snapshot")}: <span title={review.snapshot_sha256}>{shortHash(review.snapshot_sha256)}</span></p>
+                <pre className="whitespace-pre-wrap text-sm">{JSON.stringify({ coverage: review.coverage, warnings: review.warnings, rules: review.applicable_rules }, null, 2)}</pre>
+              </div>
+            </details>
           </div>
         )}
       </div>

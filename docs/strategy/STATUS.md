@@ -3,12 +3,18 @@
 
 Updated: 2026-10-04. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP59 useful weekly review UX](work-packages/P1-WP59-useful-weekly-review-ux.md) — Ready; implementation not started.**
+**Selected work: [P1-WP59 useful weekly review UX](work-packages/P1-WP59-useful-weekly-review-ux.md) — InProgress; full/native/install acceptance pending.**
 Next bounded scope: understandable Istanbul period/as-of guidance, verified-count summary,
 localized coverage/warnings, readable theme/keyboard UX. No invented financial metrics or
 automatic completion; no-data/unknown/partial/stale review is not PASS. Existing manual
 decision/input-key/async boundaries remain authoritative. After WP59: safe in-app backup/
 restore with a separate preview/validation/explicit-confirmation contract.
+WP59 implementation in this change: seven baseline UX red tests plus own-key unknown-code
+crash and two focus/Tab red regressions → focused **51 PASS**, full frontend **409 PASS**,
+weekly backend **5 PASS**; i18n **1370** per language, tsc/build/docs/diff PASS. Returned
+counts only, localized known warnings, folded unknown diagnostics, semantic theme controls,
+Istanbul timestamps/explicit cutoff advance; manual UTC/input-key/decision boundaries kept.
+Clean native artifact and installed acceptance remain pending, not yet Complete.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
 Three-person pilot acceptance is external and is NOT replaced by synthetic tests.

@@ -11,6 +11,18 @@ const FOCUSABLE = [
   "[tabindex]:not([tabindex=\"-1\"])",
 ].join(",");
 
+function insideClosedDetails(element: HTMLElement, dialog: HTMLElement): boolean {
+  let parent = element.parentElement;
+  while (parent && parent !== dialog) {
+    if (parent.tagName === "DETAILS" && !(parent as HTMLDetailsElement).open) {
+      // Only the direct summary remains keyboard-accessible while folded.
+      if (element.tagName !== "SUMMARY" || element.parentElement !== parent) return true;
+    }
+    parent = parent.parentElement;
+  }
+  return false;
+}
+
 /** Keep modal keyboard behavior local and deterministic across native WebViews. */
 export function useDialogAccessibility(
   dialogRef: ElementRef,
@@ -42,6 +54,7 @@ export function useDialogAccessibility(
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(selector))
         .filter((element) => nativeTabNavigation
           ? !element.closest('[hidden], [aria-hidden="true"]') && element.tabIndex >= 0
+            && !insideClosedDetails(element, dialog)
           : !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
       if (focusable.length === 0) {
         event.preventDefault();

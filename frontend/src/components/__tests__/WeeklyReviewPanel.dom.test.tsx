@@ -42,6 +42,7 @@ let root: ReturnType<typeof createRoot>;
 const flush = async () => { await act(async () => { await Promise.resolve(); await Promise.resolve(); }); };
 
 beforeEach(() => {
+  localStorage.clear();
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
   host = document.createElement("div");
   document.body.append(host);
@@ -55,6 +56,159 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  localStorage.clear();
+});
+
+it("localizes coverage and warnings while folding unknown diagnostics", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(path === "/api/v1/settings" ? { locale: "en" } : {
+    ...review, warnings: ["FEES_UNKNOWN", "FUTURE_SERVER_CODE"],
+  })));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  expect(host.querySelector('[data-testid="weekly-review-status"]')?.textContent).toBe("Limited evidence");
+  expect(host.querySelector('[data-testid="weekly-review-warnings"]')?.textContent).toContain("Fees: Unknown");
+  expect(host.querySelector('[data-testid="weekly-review-warnings"]')?.textContent).not.toContain("FUTURE_SERVER_CODE");
+  expect(host.querySelector('details[data-testid="weekly-review-diagnostics"]')?.hasAttribute("open")).toBe(false);
+  expect(host.querySelector('details[data-testid="weekly-review-diagnostics"]')?.textContent).toContain("FUTURE_SERVER_CODE");
+});
+
+it("explains Istanbul cutoff and exclusive period end using the returned snapshot", async () => {
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  expect(host.querySelector('[data-testid="weekly-review-period"]')?.textContent).toContain("07:00");
+  expect(host.querySelector('[data-testid="weekly-review-cutoff"]')?.textContent).toContain("15:00");
+  expect(host.textContent).toContain("The end date is excluded");
+  expect(host.querySelector('[data-testid="weekly-review-cutoff"]')?.textContent).toContain("Europe/Istanbul");
+});
+
+it.each(["NOT_READY", "STALE_REVIEW", "FUTURE_STATUS"])("does not allow a manual completion for %s even if flagged", async (status) => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(path === "/api/v1/settings" ? { locale: "en" } : {
+    ...review, review_status: status, completion_allowed: true, event_count: status === "NOT_READY" ? 0 : 1,
+  })));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  expect((host.querySelector('[data-testid="weekly-review-complete"]') as HTMLButtonElement)?.disabled).toBe(true);
+  expect(host.textContent).not.toContain("PASS");
+});
+
+it("keeps completed review distinct from complete coverage and renders genuine zero", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(path === "/api/v1/settings" ? { locale: "en" } : {
+    ...review, review_status: "COMPLETED", completion: { decision: "COMPLETED", note: "Synthetic review" },
+  })));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  expect(host.querySelector('[data-testid="weekly-review-status"]')?.textContent).toBe("Your review is completed");
+  expect(host.querySelector('[data-testid="weekly-review-summary"]')?.textContent).toContain("0");
+  expect(host.querySelector('[data-testid="weekly-review-coverage"]')?.textContent).toContain("Unknown");
+  expect(host.textContent).toContain("Synthetic review");
+});
+
+it("uses standard theme-aware readable controls instead of fixed dark surfaces", async () => {
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>));
+  await flush();
+  expect(host.innerHTML).not.toMatch(/bg-\[#|text-white|text-\[10px\]|text-amber-300/);
+  expect(host.querySelector('input[name="period_start"]')?.classList.contains("k-input")).toBe(true);
+});
+
+it.each([['tr', 'Sınırlı kanıt', 'Komisyonlar: Bilinmiyor'], ['de', 'Begrenzte Belege', 'Gebühren: Unbekannt'], ['en', 'Limited evidence', 'Fees: Unknown']])("localizes primary states and warnings in %s", async (locale, status, warning) => {
+  localStorage.setItem('kuantra_locale', locale);
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(path === '/api/v1/settings' ? { active_locale: locale } : { ...review, warnings: ['FEES_UNKNOWN'] })));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  expect(host.querySelector('[data-testid="weekly-review-status"]')?.textContent).toBe(status);
+  expect(host.querySelector('[data-testid="weekly-review-warnings"]')?.textContent).toContain(warning);
+});
+
+it.each(['timezone', 'as_of_utc'])("requires reload after %s changes and sends no decision", async (name) => {
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  const input = host.querySelector(`input[name=${name}]`) as HTMLInputElement;
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, name === 'timezone' ? 'UTC' : '2026-09-09T12:00:00Z');
+  await act(async () => input.dispatchEvent(new Event('input', { bubbles: true })));
+  const complete = host.querySelector('[data-testid="weekly-review-complete"]') as HTMLButtonElement;
+  expect(complete.disabled).toBe(true);
+  await act(async () => complete.click());
+  expect(mocks.apiFetch.mock.calls.some(([path]) => path.includes('/decision'))).toBe(false);
+});
+
+it("records only an explicit synthetic decision with the unchanged UTC boundary and bounded note", async () => {
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  expect(mocks.apiFetch.mock.calls.some(([path]) => path.includes('/decision'))).toBe(false);
+  const note = host.querySelector('textarea') as HTMLTextAreaElement;
+  expect(note.maxLength).toBe(500);
+  Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set?.call(note, '  Synthetic review only  ');
+  await act(async () => note.dispatchEvent(new Event('input', { bubbles: true })));
+  const cutoff = (host.querySelector('input[name=as_of_utc]') as HTMLInputElement).value;
+  await act(async () => (host.querySelector('[data-testid="weekly-review-complete"]') as HTMLButtonElement).click()); await flush();
+  const decision = mocks.apiFetch.mock.calls.find(([path]) => path.includes('/decision'));
+  expect(JSON.parse(decision?.[1].body)).toMatchObject({ decision: 'COMPLETE', timezone: 'Europe/Istanbul', as_of_utc: cutoff, note: 'Synthetic review only' });
+});
+
+it("retains the synthetic note and retry after a failed decision without claiming completion", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(path === '/api/v1/settings' ? { locale: 'en' } : review, path.includes('/decision') ? 409 : 200)));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  await act(async () => (host.querySelector('[data-testid="weekly-review-complete"]') as HTMLButtonElement).click()); await flush();
+  expect(host.querySelector('[role="alert"]')).not.toBeNull();
+  expect(host.textContent).not.toContain('Review decision recorded.');
+  expect(host.querySelector('[data-testid="weekly-review-retry"]')).not.toBeNull();
+});
+
+it("lets the user advance cutoff explicitly without automatically recording or loading a decision", async () => {
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  const calls = mocks.apiFetch.mock.calls.length;
+  await act(async () => (host.querySelector('[data-testid="weekly-review-now"]') as HTMLButtonElement).click()); await flush();
+  expect(host.querySelector('[data-testid="weekly-review-inputs-changed"]')).not.toBeNull();
+  expect(mocks.apiFetch.mock.calls.length).toBe(calls);
+  expect((host.querySelector('[data-testid="weekly-review-complete"]') as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("rejects an old response for completion after inputs change during its load", async () => {
+  let resolve!: (value: Response) => void;
+  mocks.apiFetch.mockImplementation((path: string) => path === '/api/v1/settings' ? Promise.resolve(response({ locale: 'en' })) : new Promise<Response>(r => { resolve = r; }));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  const input = host.querySelector('input[name=timezone]') as HTMLInputElement;
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, 'UTC');
+  await act(async () => input.dispatchEvent(new Event('input', { bubbles: true })));
+  await act(async () => resolve(response(review))); await flush();
+  expect(host.querySelector('[data-testid="weekly-review-inputs-changed"]')).not.toBeNull();
+  expect((host.querySelector('[data-testid="weekly-review-complete"]') as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("reopens only by explicit choice and keeps unknown coverage visible", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(path === '/api/v1/settings' ? { locale: 'en' } : { ...review, review_status: 'COMPLETED', completion: { decision: 'COMPLETED' } })));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  expect(mocks.apiFetch.mock.calls.some(([path]) => path.includes('/decision'))).toBe(false);
+  await act(async () => (host.querySelector('[data-testid="weekly-review-reopen"]') as HTMLButtonElement).click()); await flush();
+  const call = mocks.apiFetch.mock.calls.find(([path]) => path.includes('/decision'));
+  expect(JSON.parse(call?.[1].body).decision).toBe('REOPEN');
+  expect(host.querySelector('[data-testid="weekly-review-coverage"]')?.textContent).toContain('Unknown');
+});
+
+it("handles prototype-like unknown codes without treating them as supported states", async () => {
+  mocks.apiFetch.mockImplementation((path: string) => Promise.resolve(response(path === '/api/v1/settings' ? { locale: 'en' } : {
+    ...review, review_status: 'constructor', warnings: ['constructor'], coverage: { overall: 'constructor', constructor: 'toString' },
+  })));
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  expect(host.querySelector('[data-testid="weekly-review-status"]')?.textContent).toBe('Review status could not be interpreted');
+  expect(host.querySelector('[data-testid="weekly-review-warnings"]')?.textContent).toContain('unrecognized evidence condition');
+  expect((host.querySelector('[data-testid="weekly-review-complete"]') as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("keeps note focus during parent quote updates and uses the latest Escape callback", async () => {
+  const oldClose = vi.fn(), newClose = vi.fn();
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={oldClose} /></I18nProvider>)); await flush();
+  const note = host.querySelector('textarea') as HTMLTextAreaElement; note.focus();
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={newClose} /></I18nProvider>)); await flush();
+  expect(document.activeElement).toBe(note);
+  await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+  expect(newClose).toHaveBeenCalledTimes(1); expect(oldClose).not.toHaveBeenCalled();
+});
+
+it("tabs through visible buttons and summaries, never folded advanced inputs", async () => {
+  await act(async () => root.render(<I18nProvider><WeeklyReviewPanel onClose={vi.fn()} /></I18nProvider>)); await flush();
+  const now = host.querySelector('[data-testid="weekly-review-now"]') as HTMLButtonElement; now.focus();
+  await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })));
+  expect(document.activeElement?.tagName).toBe('SUMMARY');
+  await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })));
+  expect((document.activeElement as HTMLButtonElement).type).toBe('submit');
 });
 
 it("shows limited coverage and never presents it as PASS", async () => {

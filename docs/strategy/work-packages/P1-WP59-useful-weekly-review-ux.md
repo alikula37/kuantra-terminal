@@ -3,14 +3,14 @@
 
 ```yaml
 work_package: P1-WP59
-status: Ready
+status: InProgress
 date: 2026-10-04
 branch: main
 baseline: 24c3c5f
 depends_on: P1-WP58
 ```
 
-Selected next in the owner-approved sequence; no WP59 implementation yet. Make the
+Selected in the owner-approved sequence. Make the
 existing weekly evidence review understandable and usable, not a new financial/AI engine.
 
 ## Inspected baseline and bounded scope
@@ -45,11 +45,11 @@ owner-host obligations and WP58 smoke-repeatability follow-up remain open.
 
 ## Acceptance
 
-- [ ] Baseline UX findings recorded with failing tests before bounded implementation.
-- [ ] Period/as-of guidance and summary use verified response data; UTC/determinism unchanged.
-- [ ] No-data/UNKNOWN/PARTIAL/STALE/COMPLETED and true zero are not misrepresented as PASS.
-- [ ] Known codes EN/TR/DE; unknown diagnostic fallback honest; no raw primary warnings.
-- [ ] Current-input/manual decision and abort/late/cancel/retry regressions remain green.
+- [x] Baseline UX findings recorded with failing tests before bounded implementation.
+- [x] Period/as-of guidance and summary use verified response data; UTC/determinism unchanged.
+- [x] No-data/UNKNOWN/PARTIAL/STALE/COMPLETED and true zero are not misrepresented as PASS.
+- [x] Known codes EN/TR/DE; unknown diagnostic fallback honest; no raw primary warnings.
+- [x] Current-input/manual decision and abort/late/cancel/retry regressions remain green.
 - [ ] Readable responsive light/dark, keyboard controls and native scroll reachability verified.
 - [ ] Full relevant backend/frontend/i18n/docs and clean canonical native arm64 CI; exact DMG
       and installed hashes, normal quit/reopen and core user-row preservation verified.
@@ -67,3 +67,31 @@ DOM + weekly backend regressions, full suites/i18n/build, `python3.11 scripts/ch
 diff/release-truth and canonical locked offline-resolution CI. Native operator acceptance
 must not write decisions into the real user journal. After this WP, safe in-app backup/
 restore requires its own contract; it is not implemented or authorized to apply here.
+
+## Current implementation evidence (2026-10-04)
+
+Baseline installed WKWebView TR/light showed raw NOT_READY/NOT_AVAILABLE, coverage field
+names and NO_EVIDENCE/FEES/FUNDING/MARKET codes; pale warnings, small fixed-dark recipes
+and technical UTC input. Seven added DOM regressions failed before implementation.
+This change uses standard semantic theme recipes; returned snapshot counts (including
+malformed events and rule references); localized known state/coverage/warning maps and
+honest unknown fallback with folded raw diagnostics. Loaded start/end/cutoff displayed
+in Europe/Istanbul; advanced IANA/UTC inputs preserved without rounding or changing UTC
+identity. Inclusive start/exclusive end and recorded evidence vs financial verdict explicit.
+Manual decisions retain freshness/abort guards; unknown/NOT_READY/STALE status cannot
+complete even if an unexpected response flags permission. No backend/schema/formula change.
+Full/native/install acceptance remains pending; no completed claim yet.
+
+Additional red regression: prototype-like unknown code crashed translation lookup; explicit
+own-key lookup now rejects it. Two red focus/Tab regressions justified opting this panel
+into existing native navigation; folded details children are skipped, summary stays reachable,
+parent quote callbacks do not reset note focus and Escape uses the latest callback.
+Manual "use current cutoff" invalidates the old review without auto-load/decision. Folded
+advanced UTC input retains original precision. Note max 500 and explicit COMPLETE/REOPEN
+API body unchanged. No installed-profile decisions written.
+Focused WeeklyReview/Evidence/localization: **51 PASS** (28 weekly, 20 Evidence, 3 locale).
+Full frontend **51 files / 409 PASS**, i18n **1370** each EN/TR/DE, TypeScript and production
+build PASS. Backend weekly regression **5 PASS / 2 warnings**. Earlier dirty canonical
+candidate had **1246 backend / 3 warnings**, 13/13 MERGE READY, but predates final focus/
+cutoff/code-lookup adjustments and is **not final binary acceptance**. Clean source CI,
+exact DMG, N05 boundary and installed read-only acceptance follow this implementation commit.
