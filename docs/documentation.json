@@ -5,7 +5,7 @@
     "docs/strategy/PRODUCT.md",
     "docs/strategy/PRODUCTION-READINESS-PLAN.md",
     "docs/strategy/STATUS.md",
-    "docs/strategy/work-packages/P1-WP58-review-revisions-and-evidence-ux.md"
+    "docs/strategy/work-packages/P1-WP59-useful-weekly-review-ux.md"
   ],
   "documents": {
     "ARCHITECTURE.md": "reference",
@@ -91,7 +91,8 @@
     "docs/strategy/work-packages/P1-WP28-macos-dual-architecture.md": "reference",
     "docs/strategy/work-packages/P1-WP29-trusted-macos-pilot-package.md": "reference",
     "docs/archive/strategy/work-packages/P1-WP57-pilot-flow-and-shutdown-audit.md": "archived",
-    "docs/strategy/work-packages/P1-WP58-review-revisions-and-evidence-ux.md": "current-work-package",
+    "docs/archive/strategy/work-packages/P1-WP58-review-revisions-and-evidence-ux.md": "archived",
+    "docs/strategy/work-packages/P1-WP59-useful-weekly-review-ux.md": "current-work-package",
     "docs/archive/strategy/work-packages/P1-WP49-quote-freshness-ux.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP50-journal-layout-ux.md": "archived",
     "docs/archive/strategy/work-packages/P1-WP51-no-data-metrics-ux.md": "archived",
@@ -248,6 +249,7 @@
     "docs/archive/strategy/work-packages/P1-WP54-chart-tracking-clarity-ux.md": 0,
     "docs/archive/strategy/work-packages/P1-WP55-first-use-backup-guidance-ux.md": 0,
     "docs/archive/strategy/work-packages/P1-WP56-update-guidance-ux.md": 0,
-    "docs/archive/strategy/work-packages/P1-WP57-pilot-flow-and-shutdown-audit.md": 0
+    "docs/archive/strategy/work-packages/P1-WP57-pilot-flow-and-shutdown-audit.md": 0,
+    "docs/archive/strategy/work-packages/P1-WP58-review-revisions-and-evidence-ux.md": 1
   }
 }

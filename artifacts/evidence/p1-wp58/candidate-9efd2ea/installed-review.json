@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "observed_date": "2026-10-04",
+  "source_commit": "9efd2eaf607de7cb92bef32520468b2642600bdf",
+  "status": "NOT_ACCEPTED",
+  "installed_version": "1.1.6",
+  "installed_executable_sha256": "2b8586f0f69c52b3441161c8f870556c59dc0acb9cad863080b7fb3bab38af92",
+  "dmg_sha256": "d2eea51dd2d7b7fbe7e9c2c002b34576c048f5f6cad620ddd8632f1d07423970",
+  "passed_operator_checks": [
+    "Four Evidence Pack exports wrap at 1440x900 and 1028x705",
+    "Tab reaches PDF; Shift+Tab reaches CSV; diagnostic disclosure and Escape work",
+    "TR primary context explanation with folded raw diagnostic",
+    "As-of selector exposes eligible recorded plan and source metadata",
+    "TR/light/LITE restored; normal Cmd+Q exits parent 2858 and helpers 3409/3410"
+  ],
+  "failed_operator_check": "Long recorded revision/provenance hides replay controls; scrolling metadata does not recover them",
+  "user_data": {
+    "database_sha256_before_and_after_replacement": "4121586c93f1074cd908fdd6c676fb0b07560dffef89bf9052f6f82b261e4026",
+    "trade_count": 5,
+    "event_count": 24,
+    "tracking_count": 5,
+    "ordered_core_row_hashes_unchanged_after_review": true
+  },
+  "recoverable_previous_bundle": "/tmp/kuantra-wp58-controls-update.ZqRcXH/Kuantra Terminal.app",
+  "limitations": [
+    "First exact-DMG synthetic tracking editor timed out; two unchanged retries passed; cause unconfirmed",
+    "Biquote download is delayed and partial, product comparison unavailable, not broker verification",
+    "Ad-hoc signature; N05 BLOCKED; no Release/tag change"
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "ok": true,
+  "reason": "",
+  "checks": {
+    "react_mounted": true,
+    "bridge_roundtrip": true,
+    "health": true,
+    "push_sink": true,
+    "plugin_boundary": true,
+    "journal_export": true,
+    "evidence_worker": true,
+    "local_tracking": true
+  },
+  "version": "1.1.6",
+  "renderer_expected": null,
+  "renderer_actual": "wkwebview",
+  "renderer_controller_ready": true,
+  "smoke_schema_version": 2,
+  "version_expected": "1.1.6",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "architecture_verified": true,
+  "build_host_architecture": "arm64",
+  "executable_path": "/private/var/folders/20/zl6nfjyj66z1mnks1fr1zy5c0000gn/T/kuantra-dmg-smoke-kpquuepf/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal",
+  "executable_sha256": "6a6922a1271805ac5d3c27c6dc934345689b8e12d771b3db23f66351b41ab398",
+  "artifact_path": "/Users/kula/Documents/ChatGPT/kuantra_terminal/dist/Kuantra-Terminal-1.1.6-wp58-container-arm64.dmg",
+  "artifact_sha256": "05c698b258bf930135ce49df53405706b0edab34941e48a763d1a19977a91316",
+  "build_commit": "ebea2bba531b801843deccb49a4e6af56bb9a6c5",
+  "provenance_status": "COMPLETE",
+  "build_provenance": {
+    "source_commit_sha": "ebea2bba531b801843deccb49a4e6af56bb9a6c5",
+    "checkout_commit_sha": "ebea2bba531b801843deccb49a4e6af56bb9a6c5",
+    "source_commit_origin": "checkout",
+    "source_commit_matches_checkout": true,
+    "tracked_source_tree_status": "clean",
+    "tracked_source_tree_sha256": "d10fa1fe805d5001c09cf0dd6dde9a31ec1f6cec54c67097457c976c476d6fe0",
+    "lock_hashes": {
+      "backend_requirements_lock_sha256": "dede5665a97e1052e066ee09f91f2fde68605a30d470ad8f8e39f406623c813a",
+      "frontend_package_lock_sha256": "a24caaf49bdc9c7ec7629b52b7e7730320676be95a8665ee0816e05736e27f42"
+    },
+    "toolchain": {
+      "python": "3.11.16",
+      "node": "v24.20.0",
+      "npm": "11.19.0",
+      "uv": "uv 0.12.10 (Homebrew 2026-09-04 aarch64-apple-darwin)",
+      "pyinstaller": "6.22.2"
+    },
+    "os": "darwin",
+    "os_version": "macOS-26.6.2-arm64-arm-64bit",
+    "architecture": "arm64",
+    "architecture_verified": true,
+    "architecture_source": "executable",
+    "architecture_detection_tool": "lipo",
+    "executable_architectures": [
+      "arm64"
+    ],
+    "build_host_architecture": "arm64",
+    "build_host_translation": "native",
+    "executable_path": "/private/var/folders/20/zl6nfjyj66z1mnks1fr1zy5c0000gn/T/kuantra-dmg-smoke-kpquuepf/Kuantra Terminal.app/Contents/MacOS/Kuantra Terminal",
+    "executable_sha256": "6a6922a1271805ac5d3c27c6dc934345689b8e12d771b3db23f66351b41ab398",
+    "artifact_path": "/Users/kula/Documents/ChatGPT/kuantra_terminal/dist/Kuantra-Terminal-1.1.6-wp58-container-arm64.dmg",
+    "artifact_sha256": "05c698b258bf930135ce49df53405706b0edab34941e48a763d1a19977a91316",
+    "provenance_status": "COMPLETE"
+  },
+  "truth_matrix": {
+    "document_id": "KTR-001",
+    "version": "1.1.6",
+    "product_version": "1.1.6",
+    "sha256": "1d2b0b57df9ad83d5a9948de447aa8e945f720e6e641fafe7ded1fce750b480a"
+  },
+  "recorded_at_utc": "2026-10-04T10:08:14Z",
+  "macos_dmg_smoke": {
+    "status": "PASS",
+    "dmg_image_integrity": "PASS",
+    "mount_mode": "readonly",
+    "executable_from_mount": true,
+    "renderer": "wkwebview",
+    "architecture": "arm64",
+    "executable_sha256": "6a6922a1271805ac5d3c27c6dc934345689b8e12d771b3db23f66351b41ab398",
+    "artifact_sha256": "05c698b258bf930135ce49df53405706b0edab34941e48a763d1a19977a91316",
+    "mount_detached": true
+  }
+}

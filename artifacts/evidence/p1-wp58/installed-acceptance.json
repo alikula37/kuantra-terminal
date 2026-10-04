@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "observed_date": "2026-10-04",
+  "status": "ACCEPTED_FOR_WP58_LOCAL_ARM64_SCOPE",
+  "source_commit": "24c3c5fbce2d0dd9bdceda392b7b16c1a8ab6a5d",
+  "platform": "macOS 26.6.2 arm64",
+  "installed_path": "/Applications/Kuantra Terminal.app",
+  "runtime_version": "1.1.6",
+  "version_kind": "local source build, not a refreshed GitHub Release",
+  "dmg_sha256": "5591b7d8b5d1b54ca50b63453b0df20520895f4912176e43aa5425f5307e65b6",
+  "ci_mounted_installed_executable_sha256": "068d1353fd2a23922917676bf53ed630e5956fa3fa03006176fcbe4ec0a4f843",
+  "codesign_strict_deep": "PASS_ADHOC_NOT_DEVELOPER_ID",
+  "checks": {
+    "exports_wrap_1440x900_and_1028x705": true,
+    "tab_pdf_shift_tab_csv_and_focus_preserved": true,
+    "diagnostic_summary_keyboard_and_escape": true,
+    "localized_primary_open_trade_context": true,
+    "recorded_revision_source_hash_and_tr_recording_time": true,
+    "long_revision_controls_visible_or_scroll_reachable_both_viewports": true,
+    "forward_and_reset_work_read_only": true,
+    "light_dark_light_chart_palette_updates_cursor_revision_preserved": true,
+    "settings_runtime_version_1_1_6": true,
+    "normal_cmd_q_parent_worker_tracker_exit": true,
+    "normal_reopen_TR_light_LITE": true,
+    "ordered_user_core_rows_unchanged_after_qa_and_reopen": true
+  },
+  "normal_quit_observed_pids": [7301, 7392, 7393],
+  "user_data": {
+    "stopped_database_sha256_before_and_after_final_replacement": "d2ad53ecd74e03cf1cfc459feef2d11508df4e49d2b35ba6fb44cfcd56e48f1f",
+    "whole_database_across_runtime_qa_claimed_unchanged": false,
+    "trades": {"count": 5, "rows_sha256": "883434021610f37d7aba3a422b0ab44325abfdea9a872c048db680137eb20e5d"},
+    "evidence_events": {"count": 24, "rows_sha256": "4a49f460b366465a6f7c74b3b17dbd8f65d6c99810b5cdb15a5b8ef680a745c5"},
+    "local_tracking_projections": {"count": 5, "rows_sha256": "0e33c0c7817cd63e7c9f2763c9257a07403dcd43a35369b8b85b7448614f3e9b"}
+  },
+  "recoverable_previous_bundle": "/tmp/kuantra-wp58-theme-update.5QSTXL/Kuantra Terminal.app",
+  "limitations": [
+    "Earlier candidates are not final acceptance; their reports are retained",
+    "9efd2ea first exact-DMG tracking-editor timeout remains an unconfirmed repeatability follow-up despite two unchanged retries passing",
+    "Final exact smoke passed all eight checks; synthetic fixtures do not replace real pilot acceptance",
+    "Biquote returned 301 delayed/partial bars; independent comparison unavailable; no broker verification or automatic closure claim",
+    "Runtime public network occurred; uv offline is dependency resolution only",
+    "N05 BLOCKED, N03/H05/real XM and pilot obligations remain open",
+    "No user trade edits, reset, migration, restore, credentials, Release/tag, Intel or workflow refresh"
+  ]
+}

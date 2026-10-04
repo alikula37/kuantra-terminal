@@ -1,39 +1,53 @@
 <!-- doc-role: current-status -->
 # Current development status
 
-Updated: 2026-10-03. Branch: `main` (latest owner instruction).
+Updated: 2026-10-04. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP58 review/revisions and Evidence Pack UX](work-packages/P1-WP58-review-revisions-and-evidence-ux.md) — InProgress, final verification pending.**
-This change: export-action wrapping and localized context diagnostics; hash-linked local
-plan revisions, conservative candle-opening UTC cutoff, separate current-reference/as-of
-selector, no historical backfill/financial-metric change. Focused backend 90 / frontend 49
-PASS; full backend pre-final-producer-test 1245 / 3 warnings, frontend 51 files / 382,
-i18n 1329, build/docs/diff PASS. Native baseline reproduced both UI findings. Clean native acceptance pending;
-Initial implementation **802db05** pushed, clean canonical arm64 **13/13 / COMPLETE**
-(1246 backend, 382 frontend), exact-DMG and installed candidate verified. Native export
-wrap and source-linked plan selector worked; default WKWebView Tab skipped export controls.
-Two red regressions → explicit opt-in dialog navigation; candidate is not final acceptance.
-Second candidate **a31889b** passed clean gates, but native background-price rerenders
-reset keyboard focus. Third red regression → opt-in stable focus/latest close callback;
-Third candidate **f64d702** passed clean gates and retained focus, but long revision/source
-text hid the replay controls in an unscrollable native view. One red layout-contract test
-→ scrollable bounded review/minimum chart height. Fourth candidate **9efd2ea** clean CI
-1246/386 passed, but installed native footer still clipped: percent-height/intrinsic canvas
-layout remained unbounded. Two red regressions → zero-basis flex root, contained canvas,
-container ResizeObserver/disconnect; final clean gate/reinstall pending. First 9efd2ea
-exact-smoke tracking-editor timeout followed by two unchanged PASS retries remains an
-open timing/repeatability investigation, not closed by reruns. Candidate **ebea2bb** clean
-1246/387 CI and exact smoke passed; native long-revision controls now work even at ~1028x705.
-Native theme hot-switch found stale chart palette; red regression → in-place chart/series
-palette update without reset/refetch. Final theme acceptance/reinstall pending.
-Release unchanged. Details in selected WP.
+**Selected work: [P1-WP59 useful weekly review UX](work-packages/P1-WP59-useful-weekly-review-ux.md) — Ready; implementation not started.**
+Next bounded scope: understandable Istanbul period/as-of guidance, verified-count summary,
+localized coverage/warnings, readable theme/keyboard UX. No invented financial metrics or
+automatic completion; no-data/unknown/partial/stale review is not PASS. Existing manual
+decision/input-key/async boundaries remain authoritative. After WP59: safe in-app backup/
+restore with a separate preview/validation/explicit-confirmation contract.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
-First WP58 prerequisites are the audit's actual Evidence Pack PDF-action clipping and raw
-English open-trade context explanation; then source-linked plan revisions/as-of review.
 Three-person pilot acceptance is external and is NOT replaced by synthetic tests.
 N03/N05/H05 and gold/XM obligations remain open under reference WP29. No Release/tag,
 remote workflow or real user-data mutation is authorized by this sequence.
+
+**WP58 complete + archived (2026-10-04):**
+[review revisions and Evidence Pack UX](../archive/strategy/work-packages/P1-WP58-review-revisions-and-evidence-ux.md).
+Wrapped four exports/localized context; source-linked recorded local plan revisions with
+conservative candle-opening UTC cutoff, separate current/as-of/selected revision, no
+backfill/look-ahead or financial change. Native testing found and fixed export Tab skipping,
+background callback focus resets, long-source footer clipping (two candidates), and stale
+chart palette on theme hot-switch. Prior green CI candidates are not final acceptance.
+Commit chain **802db05 / a31889b / f64d702 / 9efd2ea / ebea2bb / 24c3c5f**, pushed main.
+Final source **24c3c5fbce2d0dd9bdceda392b7b16c1a8ab6a5d**: **1246 backend / 3 warnings**,
+**51 files / 388 frontend**, **1329** locale keys, typecheck/build/docs/truth/packaging/diff
+PASS. Clean canonical native arm64 **13/13 MERGE READY / COMPLETE**; exact readonly
+mounted-DMG **8/8 PASS**, WKWebView/controller, synthetic CSV/PDF, spawned Evidence Pack,
+partial-close/editor/final-local-close. Reports `artifacts/evidence/p1-wp58/`: CI
+**49bd788a…**, exact smoke **ed04f03d…**, N05 **ba17032e…**, installed operator acceptance.
+DMG **5591b7d8b5d1b54ca50b63453b0df20520895f4912176e43aa5425f5307e65b6**;
+CI/mounted/installed executable
+**068d1353fd2a23922917676bf53ed630e5956fa3fa03006176fcbe4ec0a4f843**.
+Installed **1.1.6 local source build**, strict/deep codesign PASS (ad-hoc). Native 1440x900
+and ~1028x705 export/keyboard/diagnostic/revision/control reachability accepted; light-dark-
+light updates candles in place, bar/revision retained. Settings version confirmed. Normal
+Cmd+Q exits parent **7301**, worker **7393**, tracker **7392**; reopen **TR/light/LITE**.
+Stopped DB hash unchanged across replacement; **5 trades / 24 events / 5 tracking** ordered
+row hashes unchanged after QA/reopen. Previous bundle `/tmp/kuantra-wp58-theme-update.5QSTXL/`
+recoverable. No user trade mutation/reset/migration/restore/credential/Release/tag/Intel/
+workflow changes. Runtime public network occurred; uv offline is dependency resolution only.
+Closure docs change no binary; GitHub pilot is not this new local build.
+
+**Open WP58 follow-up:** 9efd2ea first exact-DMG tracking-editor timeout (`None`), two
+unchanged retries PASS; root cause unconfirmed, not fixed by retries. Failed report retained
+under `artifacts/evidence/p1-wp58/candidate-9efd2ea/`; later final smoke PASS is point-in-time
+evidence, not a repeatability closure. Maintainer-owned bounded reproduction/diagnosis needed.
+**N05 remains BLOCKED**; N03/H05/real pilot/XM sample and gold independent-source obligations
+remain open. Actual gold download was 301 delayed/partial bars, not broker verification.
 
 **WP57 complete + archived (2026-10-03):**
 [synthetic pilot-flow and shutdown audit](../archive/strategy/work-packages/P1-WP57-pilot-flow-and-shutdown-audit.md).
