@@ -108,20 +108,29 @@ def _print_result(result: dict, *, as_json: bool) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    from app.core.profile_safety import ProfileLease, assert_boot_allowed
+    from contextlib import nullcontext
+    # The verifier is read-only. All mutation commands coordinate with desktop.
+    target = (getattr(args, 'target_data_dir', None) or getattr(args, 'data_dir', None)
+              or (args.db_path.parent if hasattr(args, 'db_path') else None))
+    lease = ProfileLease(target) if target is not None else nullcontext()
     try:
-        if args.command == "create":
-            result = create_migration_bundle(args.source_data_dir, args.output, force=args.force)
-        elif args.command == "verify":
-            result = verify_migration_bundle(args.bundle)
-        elif args.command == "restore":
-            result = restore_migration_bundle(args.bundle, args.target_data_dir, force=args.force)
-        elif args.command == "upgrade-schema":
-            result = upgrade_sqlite_schema(args.db_path)
-        else:
-            result = rebuild_duckdb_projection(args.data_dir)
+        with lease:
+            if target is not None:
+                assert_boot_allowed(target.absolute())
+            if args.command == "create":
+                result = create_migration_bundle(args.source_data_dir, args.output, force=args.force)
+            elif args.command == "verify":
+                result = verify_migration_bundle(args.bundle)
+            elif args.command == "restore":
+                result = restore_migration_bundle(args.bundle, args.target_data_dir, force=args.force)
+            elif args.command == "upgrade-schema":
+                result = upgrade_sqlite_schema(args.db_path)
+            else:
+                result = rebuild_duckdb_projection(args.data_dir)
         _print_result(result, as_json=args.as_json)
         return 0 if result.get("valid") is True else 1
-    except (OSError, MigrationBundleError, ValueError) as exc:
+    except (OSError, MigrationBundleError, ValueError, RuntimeError) as exc:
         print(f"[macos-migration] FAIL: {exc}", file=sys.stderr)
         return 1
 

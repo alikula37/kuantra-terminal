@@ -1,4 +1,7 @@
 import argparse
+if __name__ == '__main__':
+    from app.core.profile_safety import claim_writer
+    claim_writer()
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
@@ -21,6 +24,10 @@ async def lifespan(app: FastAPI):
         await binance_client.stop()
 
 def create_app() -> FastAPI:
+    # Also covers programmatic ASGI/dev-server factories. Owned workers never
+    # create an application; they use an explicit read-only adapter instead.
+    from app.core.profile_safety import claim_writer
+    claim_writer()
     app = FastAPI(
         title=settings.app_name,
         version=settings.version,

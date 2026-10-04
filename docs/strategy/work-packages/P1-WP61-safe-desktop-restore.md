@@ -1,24 +1,22 @@
-<!-- doc-role: reference -->
+<!-- doc-role: current-work-package -->
 # P1-WP61 — Safe desktop restore: maintenance, recovery and explicit confirmation
 
 ```yaml
 work_package: P1-WP61
-status: Proposed
+status: InProgress
 planning_status: Complete
 date: 2026-10-04
 branch: main
 baseline: 3cd0cd54745132804c9199fa6d15a6d1fcd3a482
 depends_on: P1-WP60
-authorization: design-only; implementation requires owner approval
+authorization: owner-approved A–E implementation; isolated restore drills only
 ```
 
-The owner continued the proposed next **planning** step after WP60. This document specifies
+The owner approved all remaining A–E development steps on 2026-10-04. This document specifies
 the next bounded implementation sequence; it does not authorize an agent to restore real
 user data, enable an apply button now, publish a Release or close owner-host obligations.
-No restore implementation or new binary is delivered by this planning change.
-WP29 remains the single selected current package for owner-host obligations. WP61 is a
-reference proposal until owner implementation approval; it must not be labelled Ready solely
-to satisfy the document gate. After approval, select this package for step A and update roles.
+WP61 is now the single selected package. WP29 obligations remain open as reference.
+Development approval is not approval to apply a restore to the owner's real journal.
 
 ## Goal and observed baseline
 
@@ -134,16 +132,16 @@ Required invariants:
 | D | Explicit maintenance confirmation and post-restore review UX, EN/TR/DE/light/dark/keyboard | Opaque revision-bound intent, no force/path HTTP API; no automated apply/resume; real-profile agent QA remains selector/cancel only |
 | E | Full clean arm64 CI, exact-DMG synthetic restore/recovery and install preserving current data | Hash-bound binary, native cancel/reopen acceptance; docs/archive only with all measured criteria |
 
-Do not expose step D before A–C pass. First implementation after approval is **A only**, not a
+Do not expose step D before A–C pass. First bounded delivery is **A only**, followed by B–E,
 combined speculative rewrite. Do not bypass the recovery gate because the CLI already restores.
 Each bounded code delivery follows AGENTS commit/push/clean build/exact hash/install; no Release,
 tag, workflow, billing or Intel refresh. One successful arm64 drill is not dual-platform evidence.
 
-## Acceptance (all implementation criteria remain unverified)
+## Acceptance
 
 - [x] Inspect current preview/CLI/runtime/paths and record specific lifecycle/recovery gaps.
 - [x] Define order, authority, content policy, confirmation, recovery states and red-test gates.
-- [ ] A: profile lease contention/ownership, failure/timeouts and early boot ordering tested;
+- [x] A: profile lease contention/ownership, failure/timeouts and early boot ordering tested;
       no normal runtime or blank profile creation while maintenance/recovery is pending.
 - [ ] B: fixed native target, changed bundle/target, token replay/expiry, settings conflicts,
       current/future/legacy schema, chain/hash/duplicate/traversal/symlink/archive caps tested.
@@ -178,6 +176,29 @@ cleanup, data reset/delete, agent-run real-user restore or release/signing expan
 smoke follow-up and WP29 N03/N05/H05/pilot/gold/XM obligations remain open.
 
 ## Planning verification
+
+## A implementation evidence (this change)
+
+`app/core/profile_safety.py` is stdlib-only and guards `paths` before mkdir.
+Desktop/dev ASGI factory/maintenance CLI and migration mutation commands claim the
+same OS lease, outside the renamed profile. Read-only bundle verification needs no lease;
+H07/G0-G2/N03 diagnostic entry points constrain their own isolated synthetic profiles and
+do not select the user's profile. Evidence Pack owned processes extend the actual parent's
+OS lock through `DupFd`; cancellation/PID strings are not ownership proof. POSIX/macOS v1
+only; no Windows support claim. Advisory locking does not constrain external DB editors.
+Maintenance status dispatch imports no ordinary runtime and creates no active profile.
+
+Red missing module → **12 profile safety + 15 desktop/shutdown PASS**; existing isolated
+backup/migration/archive suite **43 PASS / 1 warning**. Missing/corrupt/unknown/oversized
+operation journal, symlink, live writer, worker lease survival, pre-write fsync failure and
+early empty-profile prevention tested. Docs **147/196/5 PASS**, diff clean. First dirty
+canonical run: **1274 backend / 3 warnings**, **53 files / 436 frontend**, 1397 locale keys,
+build passed but frozen worker failed `PROFILE_BUSY` (freeze_support dispatched too late).
+Moved frozen spawn dispatch before the exclusive desktop claim; rerun **1276 backend /
+3 warnings**, **53 files / 436 frontend**, canonical arm64 **13/13 MERGE READY**, actual
+WKWebView + spawned Evidence Pack PASS. Dirty-tree validation is not clean binary provenance.
+This failed first candidate is not installed and not acceptance evidence.
+No apply UI, profile move or user-data restore. B–E criteria remain open.
 
 Baseline read-only inspection at `3cd0cd5`; isolated existing backup/restore regressions:
 `test_wp60_backup_safety.py`, `test_wp60_backup_bridge.py`, `test_h02_schema_upgrade_restore.py`,

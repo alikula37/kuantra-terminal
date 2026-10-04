@@ -19,6 +19,18 @@ BACKEND_DIR = Path(__file__).resolve().parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+# Frozen spawn/resource-tracker children are not independent desktop writers.
+# Dispatch them before the ordinary exclusive lease; the owned pool receives
+# an OS duplicate of the parent's lease in its initializer instead.
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+
+# This process-only diagnostic must dispatch before app.core.paths creates or
+# Offline maintenance must not import the normal runtime, paths or databases.
+if __name__ == "__main__" and "--restore-maintenance" in sys.argv[1:]:
+    from desktop.restore_maintenance import main as restore_main
+    raise SystemExit(restore_main(sys.argv[1:]))
+
 # This process-only diagnostic must dispatch before app.core.paths creates or
 # tightens the normal user data directory. It never enters the GUI lifecycle.
 if __name__ == "__main__" and "--h07-benchmark" in sys.argv[1:]:
@@ -37,6 +49,10 @@ if __name__ == "__main__" and "--g0-g2-audit" in sys.argv[1:]:
 if __name__ == "__main__" and "--n03-audit" in sys.argv[1:]:
     from desktop.n03_worker import main as n03_main
     raise SystemExit(n03_main(sys.argv[1:]))
+
+if __name__ == "__main__":
+    from app.core.profile_safety import claim_writer
+    claim_writer()
 
 from app.core.paths import DATA_DIR, PROJECT_ROOT, bundle_root, is_frozen  # noqa: E402
 
@@ -391,7 +407,6 @@ def _run_window(args, ctx, renderer, log) -> int:
 
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
     _code = main()
     # pywebview answers a js_api call by evaluating JS back into the window. A call still in
     # flight when the last window closes parks its (non-daemon) worker thread forever, so the

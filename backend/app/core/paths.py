@@ -48,6 +48,9 @@ def resolve_data_dir() -> Path:
 
 
 DATA_DIR = resolve_data_dir()
+# Must precede mkdir and singleton initialization, including CLI imports.
+from app.core.profile_safety import assert_boot_allowed
+assert_boot_allowed(DATA_DIR.absolute())
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 USER_PLUGINS_DIR = DATA_DIR / "plugins"

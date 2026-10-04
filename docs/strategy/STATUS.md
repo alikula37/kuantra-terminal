@@ -3,8 +3,18 @@
 
 Updated: 2026-10-04. Branch: `main` (latest owner instruction).
 
-**Selected work: [P1-WP29 trusted macOS pilot package](work-packages/P1-WP29-trusted-macos-pilot-package.md) — InProgress for open owner-host obligations only.**
-**Next proposal: [P1-WP61 safe desktop restore](work-packages/P1-WP61-safe-desktop-restore.md) — planning complete; implementation approval pending.**
+**Selected work: [P1-WP61 safe desktop restore](work-packages/P1-WP61-safe-desktop-restore.md) — InProgress, owner-approved sequential A–E implementation.**
+Owner asked to complete all remaining development on 2026-10-04. First bounded code delivery
+A adds a pre-initialization guard, OS-owned profile lease and offline maintenance dispatch.
+This change: 12 new profile safety and 15 desktop/shutdown tests PASS; existing backup/
+restore/security 43 PASS. Full **1276 backend / 3 warnings**, **53 files / 436 frontend**,
+1397 locales, canonical dirty arm64 **13/13 MERGE READY**. First frozen candidate failed
+worker lease dispatch; freeze_support now precedes exclusive desktop claim and the actual
+spawned worker smoke passed. A acceptance met; clean-commit build/install follows before B.
+No apply UI or real-user restore. B–E follow after measured gates; WP29 owner-host obligations
+remain open. Historical planning baseline below is not current authorization.
+
+**Planning baseline (e40e3e0):**
 Owner continued the proposed planning step after WP60. In this change the baseline CLI/
 preview/runtime/shutdown/initialization code was inspected; maintenance-first recovery,
 fixed native target/immutable input, verified safety snapshot + retained original, explicit

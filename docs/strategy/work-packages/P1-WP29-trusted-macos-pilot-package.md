@@ -1,4 +1,4 @@
-<!-- doc-role: current-work-package -->
+<!-- doc-role: reference -->
 # P1-WP29 — Trusted macOS Pilot Package
 
 ```yaml
@@ -16,8 +16,8 @@ release_gate: owner-pilot-approval, exact-architecture-evidence
 ```
 
 Selection note (2026-10-04): WP57–WP60 bounded audit/review/weekly-review/backup-preview
-sequence is complete. WP61 is a reference proposal for restore design only. This package stays
-selected strictly for open N03/N05/H05/pilot-access owner-host obligations; none is superseded.
+sequence is complete. Owner approved WP61 A–E implementation; WP61 is selected.
+This package is reference for open N03/N05/H05/pilot-access obligations; none is superseded.
 No development under it, Release/tag or remote
 workflow without explicit owner approval. Latest installed local build is WP60 source
 `60341ee`, version 1.1.6; published pilot assets are unchanged and not identical to that local

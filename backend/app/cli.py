@@ -17,6 +17,13 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+if __name__ == "__main__":
+    from app.core.profile_safety import claim_writer
+    claim_writer()
+    if '--db-path' in sys.argv:
+        from pathlib import Path
+        claim_writer(Path(sys.argv[sys.argv.index('--db-path') + 1]).absolute().parent)
+
 from app.services.maintenance.log_sanitizer import log_sanitizer_engine
 from app.services.maintenance.db_maintenance import db_maintenance_engine
 from app.core.security import StrongholdVault, vault as stronghold_vault
@@ -205,6 +212,11 @@ def create_parser() -> argparse.ArgumentParser:
 def main():
     parser = create_parser()
     args = parser.parse_args()
+    from app.core.profile_safety import claim_writer
+    claim_writer()
+    if getattr(args, 'db_path', None):
+        from pathlib import Path
+        claim_writer(Path(args.db_path).absolute().parent)
 
     if args.command == "maintenance":
         handle_maintenance(args)

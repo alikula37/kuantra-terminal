@@ -178,6 +178,19 @@ def _evidence_pack_worker(
     )
 
 
+_owned_profile_fd = None
+
+
+def _extend_profile_lease(duplicate):
+    """Keep the parent's exact OS lock alive until this owned worker exits.
+
+    A PID/liveness check alone would race a parent crash. DupFd transfers the
+    same open file description on macOS spawn, not an independent lock attempt.
+    """
+    global _owned_profile_fd
+    _owned_profile_fd = duplicate.detach()
+
+
 class DesktopBridge:
     _MAX_EVIDENCE_PACK_JOBS = 4
     _EVIDENCE_PACK_JOB_TTL_SECONDS = 300.0
@@ -344,7 +357,13 @@ class DesktopBridge:
             job_id = uuid.uuid4().hex
             try:
                 if self._evidence_executor is None:
-                    self._evidence_executor = ProcessPoolExecutor(max_workers=1)
+                    from multiprocessing.reduction import DupFd
+                    from app.core.profile_safety import claim_writer
+                    lease = claim_writer(Path(db_path).parent)
+                    self._evidence_executor = ProcessPoolExecutor(
+                        max_workers=1, initializer=_extend_profile_lease,
+                        initargs=(DupFd(lease.fd),),
+                    )
                 future = self._evidence_executor.submit(
                     _evidence_pack_worker,
                     db_path,

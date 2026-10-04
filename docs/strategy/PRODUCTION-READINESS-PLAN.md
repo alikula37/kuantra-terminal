@@ -3,7 +3,7 @@
 
 ```yaml
 document_id: KPR-001
-version: 1.0.44
+version: 1.0.45
 status: Proposed
 date: 2026-09-11
 reviewed_commit: this change
@@ -18,7 +18,7 @@ Continuation (2026-10-04): WP57–WP60 is delivered through local backup/read-on
 The owner continued the next planning step: [WP61 safe desktop restore](work-packages/P1-WP61-safe-desktop-restore.md)
 defines A maintenance/lease/early recovery guard → B immutable input/staged candidate/safety
 backup → C offline crash-recoverable promotion → D explicit confirmation/post-restore review
-→ E clean/native acceptance. **Design only; implementation approval pending.** Existing CLI
+→ E clean/native acceptance. **Owner approved sequential A–E implementation (2026-10-04).** Existing CLI
 force restore is not a live desktop quiescence/crash-recovery guarantee. No real-user apply,
 Release/tag or platform/authority expansion is granted; owner-host obligations remain open.
 
