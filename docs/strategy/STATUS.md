@@ -17,6 +17,9 @@ truth/packaging/diff PASS; final clean commit/native/install evidence still pend
 Native chooser cancellation is supported; once processing starts, wait for completion, not a
 fake abort/rollback. SQLite snapshot is coherent; cold files are separately copied and browser
 preferences excluded. No final completed/distribution claim yet; no real-user ZIP created.
+Candidate `69f0937` clean CI/exact-DMG and install succeeded, but native Tab skipped both new
+backup controls. Explicit keyboard inclusion is corrected in this change with a red DOM
+regression; final new binary/native acceptance still pending. No real-user ZIP created.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.
 Three-person pilot acceptance is external and is NOT replaced by synthetic tests.

@@ -33,8 +33,8 @@ export function LocalBackupSettings() {
     <p className="text-sm text-warn">{t('backup.privacy')}</p>
     <p className="text-sm">{t('backup.boundary')}</p>
     <div className="flex flex-wrap gap-3">
-      <button type="button" className="k-btn k-primary" data-testid="backup-create" disabled={busy} onClick={() => void run(false)}>{t('backup.create')}</button>
-      <button type="button" className="k-btn border border-surface-border" data-testid="backup-preview" disabled={busy} onClick={() => void run(true)}>{t('backup.preview')}</button>
+      <button type="button" tabIndex={0} className="k-btn k-primary" data-testid="backup-create" disabled={busy} onClick={() => void run(false)}>{t('backup.create')}</button>
+      <button type="button" tabIndex={0} className="k-btn border border-surface-border" data-testid="backup-preview" disabled={busy} onClick={() => void run(true)}>{t('backup.preview')}</button>
     </div>
     {busy && <p role="status">{t('backup.working')}</p>}
     {result && <div className="space-y-2 break-words" data-testid="backup-result">
@@ -51,7 +51,7 @@ export function LocalBackupSettings() {
         <p>{t('backup.files')}: {result.files_checked ?? t('backup.unknown')}</p>
       </div>}
       {!!result.errors?.length && <details className="text-sm">
-        <summary className="cursor-pointer k-btn focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">{t('backup.diagnostics')}</summary>
+        <summary tabIndex={0} className="cursor-pointer k-btn focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">{t('backup.diagnostics')}</summary>
         <ul className="space-y-2 select-text">{result.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
       </details>}
     </div>}

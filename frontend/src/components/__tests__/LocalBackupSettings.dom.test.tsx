@@ -27,6 +27,15 @@ it('has no automatic work and explains reports and preview-only restore', async 
   expect(host.querySelectorAll('button')).toHaveLength(2);
   expect(host.innerHTML).not.toMatch(/text-white|bg-\[#|text-\[10px\]/);
 });
+it('explicitly includes both actions and diagnostics in WKWebView keyboard navigation', async () => {
+  mocks.preview.mockResolvedValue({ status: 'INVALID', errors: ['INVALID_ARCHIVE'], restore_applied: false });
+  await mount();
+  for (const button of host.querySelectorAll('button')) {
+    expect(button.getAttribute('tabindex')).toBe('0');
+  }
+  await click('backup-preview');
+  expect(host.querySelector('summary')?.getAttribute('tabindex')).toBe('0');
+});
 it('shows actual saved counts, destination and hash, not a restored claim', async () => {
   mocks.create.mockResolvedValue(result); await mount(); await click('backup-create');
   expect(host.textContent).toContain('/chosen/test.zip'); expect(host.textContent).toContain('Backup saved');

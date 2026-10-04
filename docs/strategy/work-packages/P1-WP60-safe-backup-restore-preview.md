@@ -99,3 +99,9 @@ SQLite bytes without a row mutation; source access is now explicit read-only URI
 source rows/settings/credential-table preservation is tested rather than claiming live WAL
 byte identity. Actual backup/preview native smoke is opt-in against isolated synthetic
 data; native chooser open/cancel acceptance remains separate and pending.
+
+Native candidate `69f0937` passed both chooser open/cancel flows and theme inspection, but
+plain Tab skipped both new buttons in this WKWebView profile. An additional red DOM test
+pinpoints missing explicit keyboard inclusion; buttons/diagnostic summary now declare
+`tabIndex=0`. New clean binary and actual native Tab verification are required; the preceding
+candidate's CI/DMG evidence is not final acceptance for this keyboard correction.
