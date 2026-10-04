@@ -127,7 +127,7 @@ const MarketInfo: React.FC<{ session: ReplaySessionResponse }> = ({ session }) =
 
 export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = "TRD-DEFAULT" }) => {
   const { t, locale } = useTranslation();
-  const { getChartTheme } = useTheme();
+  const { theme, getChartTheme } = useTheme();
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -197,8 +197,18 @@ export const TradeReplayCanvas: React.FC<TradeReplayCanvasProps> = ({ tradeId = 
       priceLinesRef.current = [];
       candleSeriesRef.current = null; chartRef.current = null; chart.remove();
     };
-    // The chart is created once per READY session; the theme is applied at this point.
+    // Create once per READY session; update the palette in place below.
   }, [session?.session_id, session?.status]);
+
+  useEffect(() => {
+    if (!chartRef.current || !candleSeriesRef.current) return;
+    const palette = getChartTheme();
+    chartRef.current.applyOptions({ layout: palette.layout, grid: palette.grid,
+      timeScale: { borderColor: palette.grid.horzLines.color },
+      rightPriceScale: { borderColor: palette.grid.horzLines.color } });
+    candleSeriesRef.current.applyOptions(palette.candlestick);
+    // Update in place: theme changes must not refetch or reset cursor/revision.
+  }, [theme, session?.session_id, session?.status]);
 
   useEffect(() => {
     if (!candleSeriesRef.current || !session || session.status !== "READY") return;

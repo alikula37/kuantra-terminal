@@ -22,7 +22,10 @@ text hid the replay controls in an unscrollable native view. One red layout-cont
 layout remained unbounded. Two red regressions → zero-basis flex root, contained canvas,
 container ResizeObserver/disconnect; final clean gate/reinstall pending. First 9efd2ea
 exact-smoke tracking-editor timeout followed by two unchanged PASS retries remains an
-open timing/repeatability investigation, not closed by reruns.
+open timing/repeatability investigation, not closed by reruns. Candidate **ebea2bb** clean
+1246/387 CI and exact smoke passed; native long-revision controls now work even at ~1028x705.
+Native theme hot-switch found stale chart palette; red regression → in-place chart/series
+palette update without reset/refetch. Final theme acceptance/reinstall pending.
 Release unchanged. Details in selected WP.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.

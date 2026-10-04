@@ -12,8 +12,9 @@ const mocks = vi.hoisted(() => {
   const createPriceLine = vi.fn((options: unknown) => ({ options, remove: removePriceLine }));
   const addCandlestickSeries = vi.fn(() => ({ setData, setMarkers, createPriceLine, removePriceLine }));
   const applyOptions = vi.fn();
-  const createChart = vi.fn(() => ({ addCandlestickSeries, applyOptions, remove }));
-  return { apiFetch, setData, setMarkers, remove, removePriceLine, createPriceLine, addCandlestickSeries, applyOptions, createChart, theme: "dark" as "dark" | "light" };
+  const seriesApplyOptions = vi.fn();
+  const createChart = vi.fn(() => ({ addCandlestickSeries: () => ({ ...addCandlestickSeries(), applyOptions: seriesApplyOptions }), applyOptions, remove }));
+  return { apiFetch, setData, setMarkers, remove, removePriceLine, createPriceLine, addCandlestickSeries, applyOptions, seriesApplyOptions, createChart, theme: "dark" as "dark" | "light" };
 });
 const { apiFetch, setData, setMarkers, removePriceLine, createPriceLine, createChart } = mocks;
 
@@ -249,6 +250,20 @@ describe("TradeReplayCanvas read-only chart review (P1)", () => {
     await act(async () => root.render(<TradeReplayCanvas tradeId="T1" />)); await flush();
     const options = createChart.mock.calls[0][1] as { layout: { background: { color: string } } };
     expect(options.layout.background.color).toBe("#f8fafc");
+  });
+
+  it("updates the existing chart palette on theme switch without resetting the review", async () => {
+    apiFetch.mockResolvedValue(response(ready()));
+    await act(async () => root.render(<TradeReplayCanvas tradeId="T1" />)); await flush();
+    const fetchCount = apiFetch.mock.calls.length;
+    mocks.applyOptions.mockClear(); mocks.seriesApplyOptions.mockClear();
+    mocks.theme = "light";
+    await act(async () => root.render(<TradeReplayCanvas tradeId="T1" />)); await flush();
+    expect(mocks.applyOptions).toHaveBeenCalledWith(expect.objectContaining({ layout: expect.objectContaining({ background: { color: "#f8fafc" } }) }));
+    expect(mocks.seriesApplyOptions).toHaveBeenCalledWith(expect.objectContaining({ upColor: "#059669" }));
+    expect(createChart).toHaveBeenCalledOnce();
+    expect(apiFetch).toHaveBeenCalledTimes(fetchCount);
+    expect(byTestId("replay-slider")).not.toBeNull();
   });
 
   it("shows provider, timeframe and the explicit gap note", async () => {

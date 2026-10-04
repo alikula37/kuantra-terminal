@@ -99,6 +99,14 @@ fixed timing defect. First failed report retained under `candidate-9efd2ea`.
 Container-layout red regressions → focused **52 PASS**, full frontend **51 files / 387 PASS**,
 EN/TR/DE **1329**, typecheck/production build/docs/diff PASS. Clean build/native pixel
 acceptance must still verify the actual replacement, not jsdom class assertions.
+Candidate **ebea2bb** passed clean CI **1246/387**, exact mounted-DMG eight checks and
+native long-revision controls at 1440x900 and ~1028x705 (including forward/reset and
+vertical scroll). Native theme switching exposed a pre-existing chart-only stale palette:
+the surrounding panel changed, the candle canvas did not. One red regression pins in-place
+chart/series palette updates without a refetch, cursor reset or chart recreation. Final
+native theme acceptance remains pending for its replacement.
+Theme red → focused **53 PASS**, full frontend **51 files / 388 PASS**, typecheck,
+i18n **1329**, production build/docs/diff PASS; clean source artifact validation follows.
 
 Changed scope: `backend/app/{quant/trade_plan_reference,replay/replay_service,services/local_tracking}.py`,
 `backend/tests/test_wp58_recorded_plan_review.py`, EvidencePanel/ReplayCanvas + DOM tests,
