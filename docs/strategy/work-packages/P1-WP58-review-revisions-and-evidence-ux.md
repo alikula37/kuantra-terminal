@@ -87,6 +87,19 @@ the reader is now vertically scrollable, with a non-shrinking controls footer. A
 acceptance remains native, not inferred from jsdom layout. Final clean/native acceptance
 remains pending; prior candidates are not final acceptance.
 
+Fourth candidate **9efd2ea** passed clean CI (1246 backend / 386 frontend) and was installed
+with exact hashes/data preservation, but native selection still clipped the footer:
+the percent-height flex root and canvas intrinsic size were not bounded by the viewport.
+It is **not final native acceptance**. Two red DOM regressions now require a zero-basis
+flex root, absolute-contained canvas and a ResizeObserver that updates the chart when
+revision text changes allocated space (and disconnects on unmount). Native retry required.
+Its first exact-DMG tracking-editor smoke timed out (`None`); two unchanged-artifact
+retries passed. Root cause unconfirmed; this is an open repeatability follow-up, not a
+fixed timing defect. First failed report retained under `candidate-9efd2ea`.
+Container-layout red regressions → focused **52 PASS**, full frontend **51 files / 387 PASS**,
+EN/TR/DE **1329**, typecheck/production build/docs/diff PASS. Clean build/native pixel
+acceptance must still verify the actual replacement, not jsdom class assertions.
+
 Changed scope: `backend/app/{quant/trade_plan_reference,replay/replay_service,services/local_tracking}.py`,
 `backend/tests/test_wp58_recorded_plan_review.py`, EvidencePanel/ReplayCanvas + DOM tests,
 frontend types, EN/TR/DE, dynamic locale regression, opt-in dialog accessibility, this WP and STATUS. No DB schema,

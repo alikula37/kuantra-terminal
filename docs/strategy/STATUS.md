@@ -17,7 +17,12 @@ Second candidate **a31889b** passed clean gates, but native background-price rer
 reset keyboard focus. Third red regression → opt-in stable focus/latest close callback;
 Third candidate **f64d702** passed clean gates and retained focus, but long revision/source
 text hid the replay controls in an unscrollable native view. One red layout-contract test
-→ scrollable bounded review/minimum chart height; final clean gate/reinstall pending.
+→ scrollable bounded review/minimum chart height. Fourth candidate **9efd2ea** clean CI
+1246/386 passed, but installed native footer still clipped: percent-height/intrinsic canvas
+layout remained unbounded. Two red regressions → zero-basis flex root, contained canvas,
+container ResizeObserver/disconnect; final clean gate/reinstall pending. First 9efd2ea
+exact-smoke tracking-editor timeout followed by two unchanged PASS retries remains an
+open timing/repeatability investigation, not closed by reruns.
 Release unchanged. Details in selected WP.
 Owner approved the next bounded sequence on 2026-10-03: synthetic pilot-flow/shutdown audit,
 revision-aware chart review, useful weekly review, then safe in-app backup/restore.

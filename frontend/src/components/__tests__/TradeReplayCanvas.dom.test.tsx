@@ -88,8 +88,32 @@ it("keeps review controls reachable when revision and provenance text exceed the
   await act(async () => root.render(<TradeReplayCanvas tradeId="T1" />)); await flush();
   expect(host.firstElementChild?.classList.contains("overflow-y-auto")).toBe(true);
   expect(host.firstElementChild?.classList.contains("min-h-0")).toBe(true);
+  expect(host.firstElementChild?.classList.contains("h-0")).toBe(true);
+  expect(host.firstElementChild?.classList.contains("h-full")).toBe(false);
   expect(byTestId("replay-chart")?.classList.contains("min-h-[160px]")).toBe(true);
+  expect(byTestId("replay-chart")?.firstElementChild?.classList.contains("absolute")).toBe(true);
   expect(byTestId("replay-slider")).not.toBeNull();
+});
+
+it("resizes the chart when provenance changes its allocated space and disconnects on unmount", async () => {
+  let onResize: ResizeObserverCallback | undefined;
+  const observe = vi.fn(); const disconnect = vi.fn();
+  vi.stubGlobal("ResizeObserver", class {
+    constructor(callback: ResizeObserverCallback) { onResize = callback; }
+    observe = observe;
+    disconnect = disconnect;
+  });
+  try {
+    apiFetch.mockResolvedValue(response(ready()));
+    await act(async () => root.render(<TradeReplayCanvas tradeId="T1" />)); await flush();
+    expect(observe).toHaveBeenCalledWith(byTestId("replay-chart")?.firstElementChild);
+    expect(onResize).toBeDefined();
+    mocks.applyOptions.mockClear();
+    onResize!([], {} as ResizeObserver);
+    expect(mocks.applyOptions).toHaveBeenCalledWith({ width: 0, height: 0 });
+    await act(async () => root.render(null));
+    expect(disconnect).toHaveBeenCalledOnce();
+  } finally { vi.unstubAllGlobals(); }
 });
 
 it("keeps unavailable historical plans separate from the current reference", async () => {
