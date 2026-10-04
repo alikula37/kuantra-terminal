@@ -17,9 +17,10 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+from app.core.profile_safety import claim_writer
+# Console-script imports are also writer entry points, not just `python -m`.
+claim_writer()
 if __name__ == "__main__":
-    from app.core.profile_safety import claim_writer
-    claim_writer()
     if '--db-path' in sys.argv:
         from pathlib import Path
         claim_writer(Path(sys.argv[sys.argv.index('--db-path') + 1]).absolute().parent)

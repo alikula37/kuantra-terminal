@@ -143,7 +143,7 @@ tag, workflow, billing or Intel refresh. One successful arm64 drill is not dual-
 - [x] Define order, authority, content policy, confirmation, recovery states and red-test gates.
 - [x] A: profile lease contention/ownership, failure/timeouts and early boot ordering tested;
       no normal runtime or blank profile creation while maintenance/recovery is pending.
-- [ ] B: fixed native target, changed bundle/target, token replay/expiry, settings conflicts,
+- [x] B: fixed native target, changed bundle/target, token replay/expiry, settings conflicts,
       current/future/legacy schema, chain/hash/duplicate/traversal/symlink/archive caps tested.
 - [ ] B: verified pre-restore snapshot + retained complete original; WAL/coherent committed
       rows, secrets exclusion from ZIP, UI preferences and journal capital basis preserved.
@@ -199,6 +199,50 @@ Moved frozen spawn dispatch before the exclusive desktop claim; rerun **1276 bac
 WKWebView + spawned Evidence Pack PASS. Dirty-tree validation is not clean binary provenance.
 This failed first candidate is not installed and not acceptance evidence.
 No apply UI, profile move or user-data restore. B–E criteria remain open.
+
+A clean delivery **37d4ed31ab2ea32ef19cad521e9dd0c85289b325**, pushed main:
+canonical **13/13 MERGE READY / COMPLETE**, exact read-only mounted DMG **9/9 PASS**,
+frozen offline maintenance status `NONE` without an active profile. Installed runtime
+**1.1.6**, executable **b3031a4d3dba1ac42ebe2cd222aff8d10fe3d53213703f186f0ecedb2d5cf1aa**,
+DMG **46ddc48627e900a8fc1fda478398bee44b4975581f4def118f53ed8c769c6ba4**.
+Stopped DB **af9a570a…** unchanged across replacement; **5 trades / 24 events / 5 tracking**
+canonical row hashes unchanged after normal quit/reopen, TR/light/LITE preserved. Strict
+deep ad-hoc codesign PASS, not Apple trust. Prior bundle retained at
+`/tmp/kuantra-wp61-a-update.EhmNHv/Kuantra Terminal.app`. Persistent evidence in
+`artifacts/evidence/p1-wp61/a-{committed-local-ci,exact-dmg-smoke,installed-acceptance}.json`.
+JSON copies are reserialized with a final LF, not raw report byte-identical copies.
+
+## B preparation evidence (this change)
+
+`desktop_restore.py`: bounded immutable native selection, 15-minute operation/confirmation,
+explicit file/table/settings inventory, current-schema/chain/projection/tracking/review
+checks on private copies, raw quiesced DB/WAL/SHM copy then coherent safety SQLite snapshot,
+staged DuckDB rebuild and post-hydration history hash verification. No promotion/apply UI.
+Offline maintenance accepts opaque operation ID, not renderer paths/force/SQL.
+Unknown settings/files/tables or malformed/archive-limited candidates reject unchanged.
+Original total cap 2 GiB/20k paths; financial table cap 250k rows/256 MiB canonical text
+and 1 MiB per row. Free-space estimate is conservative; disk errors still fail closed.
+
+Machine policy: current locale/theme/first-use/telemetry/layout settings + WebView storage;
+snapshot capital/paper basis/rule/decision history. `trading_mode=paper`, `ai_mode=disabled`,
+installed-plugin and verified-instrument cache rows not activated. ZIP permits only SQLite
+and cold Parquet paths. No credential references/Keychain material enter candidate;
+current credential references remain only in owner-private safety/original recovery data.
+Complete original retention is still C's promotion criterion, not claimed from B.
+
+Red absent module → corrected constructor/test fixtures; two real safety gaps caught:
+SQLite mode=ro changed SHM read marks (now opens private raw copy only), and projection
+rebuild defaulted dry-run (explicit apply on private validation copy + equality check now
+rejects corrupted derived values). **22 preparation PASS / 1 duplicate-ZIP warning**,
+including a fresh network-denied maintenance subprocess with no normal runtime startup,
+hot WAL, expired/replayed/wrong token, changed source/target/candidate, schema/chain/coverage,
+malicious extra ZIP content, unknown inventory, disk/hydration failure and current UI/secret
+policy. The entry-point review also found ASGI factory/console imports could initialize
+singletons before taking the lease: moved claims before those imports, two red→green
+subprocess regressions; focused safety/preparation/desktop **51 PASS / 1 warning**.
+Final full backend **1300 PASS / 4 warnings**; pre-final-import canonical dirty run
+**13/13 MERGE READY**, frontend **53/436**, i18n **1397**. Clean commit CI/native acceptance
+must bind the final import changes before installation; no real-user restore.
 
 Baseline read-only inspection at `3cd0cd5`; isolated existing backup/restore regressions:
 `test_wp60_backup_safety.py`, `test_wp60_backup_bridge.py`, `test_h02_schema_upgrade_restore.py`,

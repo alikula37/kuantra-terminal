@@ -6,7 +6,19 @@ Updated: 2026-10-04. Branch: `main` (latest owner instruction).
 **Selected work: [P1-WP61 safe desktop restore](work-packages/P1-WP61-safe-desktop-restore.md) — InProgress, owner-approved sequential A–E implementation.**
 Owner asked to complete all remaining development on 2026-10-04. First bounded code delivery
 A adds a pre-initialization guard, OS-owned profile lease and offline maintenance dispatch.
-This change: 12 new profile safety and 15 desktop/shutdown tests PASS; existing backup/
+Delivered A **37d4ed3**, pushed and installed from clean commit: full 1276 backend,
+53/436 frontend, canonical arm64 **13/13 COMPLETE**, exact DMG **9/9 PASS**. Installed
+1.1.6 executable **b3031a4d…**, DMG **46ddc486…**; stopped DB and 5/24/5 canonical row
+hashes unchanged, TR/light/LITE preserved. Evidence `artifacts/evidence/p1-wp61/a-*`.
+Current bounded B: immutable copy, explicit inventory, private current-schema candidate,
+verified pre-restore safety snapshot and staged DuckDB. **22 focused PASS / 1 warning**;
+no promotion or apply UI. Entry import guards add two regressions; **51 focused PASS**,
+final full **1300 backend / 4 warnings**, preceding dirty canonical **13/13** with unchanged
+53/436 frontend and 1397 locales. Final clean source/binary verification follows.
+Source SQLite is not opened (even mode=ro can update SHM); raw
+DB/WAL/SHM copied first under lease. C/D/E remain unverified. Full gates/install follow.
+
+A validation history: 12 new profile safety and 15 desktop/shutdown tests PASS; existing backup/
 restore/security 43 PASS. Full **1276 backend / 3 warnings**, **53 files / 436 frontend**,
 1397 locales, canonical dirty arm64 **13/13 MERGE READY**. First frozen candidate failed
 worker lease dispatch; freeze_support now precedes exclusive desktop claim and the actual

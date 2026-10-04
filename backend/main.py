@@ -1,7 +1,7 @@
 import argparse
-if __name__ == '__main__':
-    from app.core.profile_safety import claim_writer
-    claim_writer()
+from app.core.profile_safety import claim_writer
+# Covers `uvicorn main:create_app --factory` before import-time DB singletons.
+claim_writer()
 from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI

@@ -1,14 +1,15 @@
 # Windows-to-macOS migration runbook
 
 Document ID: KMP-001
-Version: 1.2.3
+Version: 1.2.4
 Status: Accepted
 Last updated: 2026-10-04
 
 ## Local desktop backup and read-only preview (WP60)
 
-The proposed next [WP61 desktop restore design](strategy/work-packages/P1-WP61-safe-desktop-restore.md)
-is **not implemented**. Its maintenance/recovery/explicit-confirmation gates must pass before
+The owner-approved [WP61 desktop restore](strategy/work-packages/P1-WP61-safe-desktop-restore.md)
+has delivered A's lease/early guard and B's isolated preparation; **desktop apply is not
+exposed**. Its recovery/explicit-confirmation gates must pass before
 desktop apply is exposed. Do not wire the CLI `--force` path to a running app or interpret
 this plan as permission to restore a real user profile. Two directory renames with exception
 rollback do not alone guarantee recovery after process termination/power loss.

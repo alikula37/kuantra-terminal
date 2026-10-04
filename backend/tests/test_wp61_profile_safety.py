@@ -116,3 +116,12 @@ def test_state_fsync_failure_keeps_previous_journal(tmp_path, monkeypatch):
         write_operation(profile, dict(state, phase='PREPARING'))
     assert read_operation(profile) == state
     assert not list(workspace_for(profile).glob('.state-*'))
+
+
+@pytest.mark.parametrize('module', ['main', 'app.cli'])
+def test_console_and_asgi_imports_claim_before_db_singletons(tmp_path, module):
+    profile = tmp_path / 'synthetic-console'
+    with ProfileLease(profile):
+        result = child('import '+module, profile)
+        assert result.returncode != 0 and 'PROFILE_BUSY' in result.stderr
+        assert not profile.exists()

@@ -1,0 +1,28 @@
+{
+  "source_commit": "37d4ed31ab2ea32ef19cad521e9dd0c85289b325",
+  "version": "1.1.6",
+  "architecture": "arm64",
+  "executable_sha256": "b3031a4d3dba1ac42ebe2cd222aff8d10fe3d53213703f186f0ecedb2d5cf1aa",
+  "dmg_sha256": "46ddc48627e900a8fc1fda478398bee44b4975581f4def118f53ed8c769c6ba4",
+  "stopped_db_sha256_before_and_after": "af9a570aa3da36ae66119f7b6d70857e60f5ef4f1ccd138eb07cbbe4d5696b25",
+  "core_rows_before_and_after": {
+    "trades": {
+      "count": 5,
+      "sha256": "c9f1f5b6f7b3954b10e33d05023bb66ad2ffb7bcdd0c8fec14e345947ee838d2"
+    },
+    "evidence_events": {
+      "count": 24,
+      "sha256": "b3f8d5e1a29abfbc1305f69404966e7d182ed2e4eb29bc66de17911eb6e9905a"
+    },
+    "local_tracking_projections": {
+      "count": 5,
+      "sha256": "5b5bd6c0935bf87789bac2fb49f37bf8f1d7cb9c03b65ae2032a830f51af01f0"
+    }
+  },
+  "normal_quit_reopen": true,
+  "preferences": "TR/light/LITE",
+  "codesign": "strict deep PASS, ad-hoc not notarized",
+  "previous_bundle": "/tmp/kuantra-wp61-a-update.EhmNHv/Kuantra Terminal.app",
+  "maintenance_frozen_status": "NONE, no active profile initialized",
+  "scope": "A only; no real restore, Release, tag or credentials"
+}
